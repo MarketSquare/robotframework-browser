@@ -48,6 +48,13 @@ class Waiter(LibraryComponent):
         Note that Browser library has `Implicit waiting` mechanisms. Depending on
         the situation you might not need to use `Wait for Elements State`.
 
+        If users experience reliability issues with this keyword, consider using
+        `Wait for Condition` with `Get Element States` keyword instead.
+        `Wait For Elements State` uses features of Playwright to wait for element states.
+        However, in some situations these features might not work as expected.
+        `Wait for Condition` with `Get Element States` is more robust as it uses
+        Browser library's own waiting mechanisms that actively polls the state of an element.
+
         State options could be either appear/disappear from dom, or become visible/hidden.
         If at the moment of calling the keyword, the selector already satisfies the condition,
         the keyword will return immediately.
