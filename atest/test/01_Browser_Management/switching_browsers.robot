@@ -74,7 +74,7 @@ Switch Page
     Get Title    matches    (?i)login
     Switch Page    ${pg1_1_1}    CURRENT    ALL
     Get Title    ==    prefilled_email_form.html
-    Switch Page  # This passses because the browser and context are ignored
+    Switch Page    # This passses because the browser and context are ignored
     ...    ${pg2_1_2}
     ...    ${ctx1_1}
     ...    ${br1}
