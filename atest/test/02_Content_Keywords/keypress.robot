@@ -35,3 +35,18 @@ Press Keys With Nonmatching Selector
     ...    *Error: locator.press: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Press Keys    css=notamatch    F
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+
+Check Press Keys Events
+    [Setup]    New Page    ${EVENTS_URL}
+    Click    id=event_log_clear
+    Press Keys    id=event_test_input    a    b    press_duration=200 ms    key_delay=100ms
+    ${log} =    Get Text    id=event_log_text
+    Assert Key Timings    ${log}    a    b    expected_press_duration_ms=200ms    expected_key_delay_ms=100ms
+    Click    id=event_log_clear
+    Press Keys    id=event_test_input    c    d    e    press_duration=10ms    key_delay=0
+    ${log} =    Get Text    id=event_log_text
+    Assert Key Timings    ${log}    c    d    e    expected_press_duration_ms=10ms    expected_key_delay_ms=0
+    Click    id=event_log_clear
+    Press Keys    id=event_test_input    f    g    h
+    ${log} =    Get Text    id=event_log_text
+    Assert Key Timings    ${log}    f    g    h    expected_press_duration_ms=0    expected_key_delay_ms=0

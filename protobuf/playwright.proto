@@ -252,6 +252,8 @@ message Request {
     string selector = 1;
     bool strict = 2;
     repeated string key = 3;
+    int32 pressDelay = 4;
+    int32 keyDelay = 5;
   }
 
   message ElementSelector {

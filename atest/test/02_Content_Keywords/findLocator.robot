@@ -44,7 +44,7 @@ Get Element And Get Elements
     ${element} =    Get Element    input#login_button
     Should Start With    ${element}    input
     ${elements} =    Get Elements    input
-    Length Should Be    ${elements}    5
+    Length Should Be    ${elements}    ${INPUT_ELEMENT_COUNT_IN_LOGIN}
     FOR    ${element}    IN    @{elements}
         Should Start With    ${element}    input
     END

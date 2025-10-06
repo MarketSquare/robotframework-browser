@@ -17,6 +17,7 @@ ${HTTPS_ROOT_URL} =                     https://${HTTPS_SERVER}/${SUFFIX}
 ${HTTPS_SERVER_URL} =                   https://${HTTPS_SERVER}
 ${LOGIN_URL} =                          ${ROOT_URL}dist/#/
 ${DRAGGAME_URL} =                       ${ROOT_URL}dist/#/draggame
+${EVENTS_URL} =                         ${ROOT_URL}dist/#/events
 ${DOG_AND_CAT_URL} =                    ${ROOT_URL}dogandcat.html
 ${SHELLGAME_URL} =                      ${ROOT_URL}shell_game.html
 ${FORM_URL} =                           ${ROOT_URL}prefilled_email_form.html
