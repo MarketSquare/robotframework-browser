@@ -26,13 +26,13 @@ Get Style Custom Error
 Get BoundingBox Normal Error
     [Tags]    expect_error
     Run Keyword And Expect Error
-    ...    BoundingBox x is '500' (int) should be '99.0' (float)
+    ...    BoundingBox x is '0' (int) should be '99.0' (float)
     ...    Get BoundingBox    \#progress_bar    x    ==    99
 
 Get BoundingBox Custom Error
     [Tags]    expect_error
     Run Keyword And Expect Error
-    ...    Custom Error 500 int 99.0 float
+    ...    Custom Error 0 int 99.0 float
     ...    Get BoundingBox
     ...    \#progress_bar    x    ==    99
     ...    Custom Error {value} {value_type} {expected} {expected_type}

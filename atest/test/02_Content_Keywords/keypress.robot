@@ -37,7 +37,7 @@ Press Keys With Nonmatching Selector
     [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Check Press Keys Events
-    [Setup]    New Page    ${LOGIN_URL}
+    [Setup]    New Page    ${EVENTS_URL}
     Click    id=event_log_clear
     Press Keys    id=event_test_input    a    b    press_duration=200 ms    key_delay=100ms
     ${log} =    Get Text    id=event_log_text
