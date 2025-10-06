@@ -255,13 +255,21 @@ class Interaction(LibraryComponent):
             raise Exception(str(e).replace(secret, "***"))
 
     @keyword(tags=("Setter", "PageContent"))
-    def press_keys(self, selector: str, *keys: str):
+    def press_keys(
+        self,
+        selector: str,
+        *keys: str,
+        press_duration: timedelta = timedelta(0),
+        key_delay: timedelta = timedelta(0),
+    ):
         """Types the given key combination into element found by ``selector``.
 
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``*keys`` | Keys to be press after each other. Using + to chain combine modifiers with a single keypress ``Control+Shift+T`` is supported. |
+        | ``press_duration`` | Delay between keydown and keyup of each key. Can be given as seconds (float) or as Robot Framework time string. Defaults to ``0 ms``. Example: ``50 ms`` |
+        | ``key_delay`` | Delay between key presses. Can be given as seconds (float) or as Robot Framework time string. Defaults to ``0 ms``. Example: ``50 ms`` |
 
 
         Supports values like "a, b" which will be automatically typed.
@@ -284,7 +292,11 @@ class Interaction(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.Press(
                 Request().PressKeys(
-                    selector=selector, strict=self.strict_mode, key=keys
+                    selector=selector,
+                    strict=self.strict_mode,
+                    pressDelay=int(press_duration.total_seconds() * 1000),
+                    keyDelay=int(key_delay.total_seconds() * 1000),
+                    key=keys,
                 )
             )
             logger.debug(response.log)

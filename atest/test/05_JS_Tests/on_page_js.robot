@@ -25,7 +25,7 @@ Evaluate Multiline JavaScript With Array
     ...    }
     ...    all_elements=True
     ...    arg=${{[1,2,3]}}
-    Length Should Be    ${texts}    ${17}
+    Length Should Be    ${texts}    ${BUTTON_ELEMENT_COUNT_IN_LOGIN + 1}
     Should Be Equal    ${texts}[-1]    ${{[1,2,3]}}
 
 Evaluate Multiline JavaScript With Singel Element

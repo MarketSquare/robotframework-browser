@@ -47,17 +47,18 @@ Screenshotting With Jpeg Extension And Quality
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.jpeg
 
 Screenshotting With Jpeg Extension And Quality Borders
-    ${diffrence} =    Set Variable    42    # Seems usually be 28 but use 42 to be safe side
+    [Setup]    Screenshot Timeout    ${FORM_URL}    # used form url as login page has too much active elements
+    ${difference} =    Set Variable    ${42}    # Seems usually be 28 but use 42 to be safe side
     Take Screenshot    fullPage=True    fileType=jpeg    quality=0    timeout=10s
     ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s
     ${size_1} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-2.jpeg
-    Numbers Are Close    ${size_0}    ${size_1}    ${diffrence}
+    Numbers Are Close    ${size_0}    ${size_1}    ${difference}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=100    timeout=10s
     ${size_100} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-3.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=2023    timeout=10s
     ${size_101} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-4.jpeg
-    Numbers Are Close    ${size_100}    ${size_101}    ${diffrence}
+    Numbers Are Close    ${size_100}    ${size_101}    ${difference}
     Take Screenshot    fullPage=True    fileType=jpeg    quality=50    timeout=10s
     ${size_50} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-5.jpeg
     Should Be True    ${size_0} < ${size_50} < ${size_100}
@@ -231,7 +232,7 @@ Screenshot Returns Bytes And Path String
 
 Screenshot On Failure
     [Documentation]
-    ...    LOG 6:2    INFO    Highlighting 5 elements
+    ...    LOG 6:2    INFO    Highlighting ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements
     ...    LOG 7.1:3    INFO    Highlighting failing selector: input
     Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.*
     ${no_highlight} =    Take Screenshot
@@ -277,5 +278,6 @@ Run On Failure Variable Assertion
     Should Be Equal    ${selector}    ${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}
 
 Screenshot Timeout
+    [Arguments]    ${url}=${LOGIN_URL}
     Set Browser Timeout    1s
-    New Page    ${LOGIN_URL}
+    New Page    ${url}

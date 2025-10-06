@@ -85,9 +85,14 @@ export async function press(request: Request.PressKeys, state: PlaywrightState):
     const selector = request.getSelector();
     const keyList = request.getKeyList();
     const strictMode = request.getStrict();
+    const pressDelay = request.getPressdelay();
+    const keyDelay = request.getKeydelay();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     for (const i of keyList) {
-        await locator.press(i);
+        await locator.press(i, { delay: pressDelay });
+        if (keyDelay > 0) {
+            await new Promise((r) => setTimeout(r, keyDelay));
+        }
     }
     return emptyWithLog(`Pressed keys: "${keyList}" on ${selector} `);
 }

@@ -32,8 +32,8 @@ function ProgressBar() {
             id="progress"
             style={{
                 position: 'absolute',
-                top: '660px',
-                left: '0px',
+                top: '20px',
+                left: '500px',
                 width: '400px',
                 height: '30px',
                 backgroundColor: 'gray',
@@ -86,6 +86,210 @@ function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
     const input = prompt('Enter a value');
     if (input) promptResultElement.current!.innerHTML = input;
     else promptResultElement.current!.innerHTML = 'prompt_not_filled';
+}
+
+/**
+ * EventLogger — a compact test bench that attaches listeners to the test input and button
+ * and logs all events with timestamps to a visual log and a textarea.
+ *
+ * - Visual log: #event_log (div, scrolls as entries arrive)
+ * - Plain text log: #event_log_text (textarea containing one JSON line per event)
+ */
+function EventLogger() {
+    const logRef = React.useRef<HTMLDivElement>(null);
+    const textRef = React.useRef<HTMLTextAreaElement>(null);
+
+    // NEW: refs for the actual controls (no querySelector/id lookups)
+    const inputRef = React.useRef<HTMLInputElement>(null);
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+    // Expose a deterministic “ready” signal for your tests
+    const [isAttached, setIsAttached] = React.useState(false);
+
+    function formatTime(d: Date): string {
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        const ms = String(d.getMilliseconds()).padStart(3, '0');
+        return `${hh}:${mm}:${ss}.${ms}`;
+    }
+
+    const pushVisual = (text: string) => {
+        const root = logRef.current;
+        if (!root) return;
+        const el = document.createElement('div');
+        el.textContent = text;
+        root.appendChild(el);
+        root.scrollTop = root.scrollHeight;
+    };
+
+    const pushText = (obj: Record<string, unknown>) => {
+        const ta = textRef.current;
+        if (!ta) return;
+        ta.value += JSON.stringify(obj) + '\n';
+        ta.scrollTop = ta.scrollHeight;
+    };
+
+    const buildEventSummary = (e: Event) => {
+        const base: Record<string, unknown> = {
+            time: formatTime(new Date()),
+            type: e.type,
+            targetId: (e.target as HTMLElement | null)?.id || '',
+        };
+        if ('button' in e) {
+            const me = e as unknown as MouseEvent;
+            base.button = me.button;
+            // @ts-ignore
+            base.pageX = (me as any).pageX;
+            // @ts-ignore
+            base.pageY = (me as any).pageY;
+        }
+        if ('key' in e) {
+            const ke = e as unknown as KeyboardEvent;
+            base.key = ke.key;
+            base.code = ke.code;
+            base.altKey = ke.altKey;
+            base.ctrlKey = ke.ctrlKey;
+            base.metaKey = ke.metaKey;
+            base.shiftKey = ke.shiftKey;
+            base.repeat = ke.repeat;
+        }
+        if ('pointerType' in e) {
+            const pe = e as unknown as PointerEvent;
+            base.pointerType = pe.pointerType;
+            base.pointerId = pe.pointerId;
+        }
+        return base;
+    };
+
+    // IMPORTANT: useLayoutEffect => attaches before paint
+    React.useLayoutEffect(() => {
+        const input = inputRef.current;
+        const button = buttonRef.current;
+        if (!input || !button) return;
+
+        const targets: Element[] = [input, button];
+        const events = [
+            'click',
+            'dblclick',
+            'mousedown',
+            'mouseup',
+            'mouseenter',
+            'mouseleave',
+            'mouseover',
+            'mouseout',
+            'mousemove',
+            'contextmenu',
+            'focus',
+            'blur',
+            'keydown',
+            'keypress',
+            'keyup',
+            'input',
+            'change',
+            'submit',
+            'drag',
+            'dragstart',
+            'dragend',
+            'dragenter',
+            'dragleave',
+            'dragover',
+            'drop',
+            'copy',
+            'cut',
+            'paste',
+            'touchstart',
+            'touchend',
+            'touchmove',
+            'touchcancel',
+            'pointerdown',
+            'pointerup',
+            'pointermove',
+            'pointerenter',
+            'pointerleave',
+            'pointercancel',
+            'pointerover',
+            'pointerout',
+        ];
+
+        const handler = (e: Event) => {
+            const data = buildEventSummary(e);
+            pushVisual(`[${data.time}] ${data.type} on #${data.targetId}`);
+            pushText(data);
+        };
+
+        for (const t of targets)
+            for (const ev of events) {
+                t.addEventListener(ev, handler as EventListener, { passive: true });
+            }
+
+        // Mark ready synchronously (your tests can wait on this)
+        setIsAttached(true);
+        (window as any).__eventLoggerReady = 1; // window flag
+        document.documentElement.setAttribute('data-eventlogger', '1'); // HTML attr
+        window.dispatchEvent(new Event('event-logger-ready')); // DOM event
+
+        return () => {
+            for (const t of targets)
+                for (const ev of events) {
+                    t.removeEventListener(ev, handler as EventListener);
+                }
+            setIsAttached(false);
+            (window as any).__eventLoggerReady = 0;
+            document.documentElement.removeAttribute('data-eventlogger');
+        };
+    }, []);
+
+    const clearLogs = () => {
+        if (logRef.current) logRef.current.innerHTML = '';
+        if (textRef.current) textRef.current.value = '';
+    };
+
+    return (
+        <div id="event_logger_section" style={{ marginTop: '20px' }}>
+            <h2>Event Test Area</h2>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                {/* NEW: refs instead of ids */}
+                <input ref={inputRef} id="event_test_input" type="text" placeholder="Type or focus here" />
+                <button ref={buttonRef} id="event_test_button">
+                    Test Button
+                </button>
+                <button id="event_log_clear" type="button" onClick={clearLogs}>
+                    Clear Log
+                </button>
+                <span id="event_listeners_status" aria-live="polite">
+                    {isAttached ? 'Listeners attached' : 'Listeners detached'}
+                </span>
+                {/* Hidden, deterministic readiness marker */}
+                <div id="rf-ready" data-ready={isAttached ? '1' : '0'} style={{ display: 'none' }} />
+            </div>
+
+            <div
+                id="event_log"
+                ref={logRef}
+                style={{
+                    marginTop: '10px',
+                    width: '80%',
+                    maxHeight: '240px',
+                    overflowY: 'auto',
+                    border: '1px solid gray',
+                    padding: '6px',
+                    fontFamily: 'monospace',
+                    background: '#f9f9f9',
+                }}
+            />
+
+            <label htmlFor="event_log_text" style={{ display: 'block', marginTop: '10px' }}>
+                Raw event log (JSON lines)
+            </label>
+            <textarea
+                id="event_log_text"
+                ref={textRef}
+                readOnly
+                style={{ width: '80%', height: '160px', fontFamily: 'monospace', whiteSpace: 'pre' }}
+            />
+        </div>
+    );
 }
 
 export default function Site() {
@@ -362,7 +566,11 @@ export default function Site() {
                 <a id="file_download" href="index.js" download="test_download_file">
                     Download file{' '}
                 </a>
+
                 <ProgressBar />
+
+                {/* >>> Event Test Area (for Robot Framework Browser / Playwright event tracing) <<< */}
+                <EventLogger />
             </>
         );
     }

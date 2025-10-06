@@ -45,5 +45,5 @@ ${TABLES_URL} =                         ${ROOT_URL}tables.html
 ${SYS_VAR_CI} =                         False
 ${SYS_VAR_CLEAN} =                      ${True}
 ${NETWORK_IDLE_FILE_DATA} =             ${EMPTY}
-${INPUT_ELEMENT_COUNT_IN_LOGIN} =       5
-${BUTTON_ELEMENT_COUNT_IN_LOGIN} =      ${16}
+${INPUT_ELEMENT_COUNT_IN_LOGIN} =       6
+${BUTTON_ELEMENT_COUNT_IN_LOGIN} =      ${18}

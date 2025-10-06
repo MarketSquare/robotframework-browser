@@ -15,6 +15,7 @@ Library     ../library/common.py
 Library     ../library/os_wrapper.py
 Library     ../library/show_trace_tool.py
 Library     ../library/screenshot.py
+Library     ../library/event_delay.py
 
 
 *** Keywords ***
