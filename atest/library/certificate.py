@@ -1,13 +1,13 @@
 import datetime
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
 from cryptography import x509
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.x509.oid import NameOID
 
 
 def generate_ca_certificate(cert_path: str, key_path: str):
-
     # generate CA key
     ca_key = ec.generate_private_key(ec.SECP256R1())
 
@@ -71,7 +71,6 @@ def generate_ca_certificate(cert_path: str, key_path: str):
 def generate_server_certificate(
     server_san: str, cert_path: str, key_path: str, ca_cert_path: str, ca_key_path: str
 ):
-
     # load CA key
     with open(ca_key_path, "rb") as f:
         ca_key_data = f.read()
@@ -169,7 +168,6 @@ def generate_server_certificate(
 def generate_client_certificate(
     client_cn: str, cert_path: str, key_path: str, ca_cert_path: str, ca_key_path: str
 ):
-
     # load CA key
     with open(ca_key_path, "rb") as f:
         ca_key_data = f.read()

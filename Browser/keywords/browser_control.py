@@ -13,6 +13,7 @@
 # limitations under the License.
 import base64
 import json
+import sys
 import uuid
 from collections.abc import Iterable
 from contextlib import contextmanager
@@ -105,17 +106,18 @@ class Control(LibraryComponent):
             filename = Path(filename).stem
         else:
             directory = self.screenshots_output
-        # Filename didn't contain {index}
-        if "{index}" not in filename:
-            return directory / filename
+        directory.mkdir(parents=True, exist_ok=True)
         index = 0
-        while True:
+        while index < sys.maxsize:
             index += 1
-            indexed = Path(filename.replace("{index}", str(index)))
+            indexed = self._format_path(filename, index)
             path = directory / indexed
-            # Unique path was found
             if not path.with_suffix(f".{fileType}").is_file():
                 return path
+        raise RuntimeError("Could not find a unique filename for the screenshot.")
+
+    def _format_path(self, file_path: str, index: int) -> str:
+        return file_path.format(index=index)
 
     old_take_screenshot_args: ClassVar[dict] = {
         "fullPage": bool,

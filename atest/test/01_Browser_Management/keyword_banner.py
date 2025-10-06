@@ -1,7 +1,9 @@
-from robot.libraries.BuiltIn import BuiltIn
-from Browser import Browser
-from assertionengine.assertion_engine import verify_assertion, AssertionOperator
 from typing import Optional
+
+from assertionengine.assertion_engine import AssertionOperator, verify_assertion
+from robot.libraries.BuiltIn import BuiltIn
+
+from Browser import Browser
 
 
 def get_computed_banner_style():

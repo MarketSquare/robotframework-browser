@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Optional
 
 from robot.api import logger  # type: ignore
-from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
+from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
 from robot.utils import timestr_to_secs  # type: ignore
 
 
@@ -50,7 +50,7 @@ def glob_files(path: str) -> list:
     """Returns files path.glob(**/*)."""
     files = Path(path).glob("**/*")
     find_files = [str(file.absolute()) for file in files if file.is_file()]
-    logger.info(f"Files: \"{', '.join(find_files)}\"")
+    logger.info(f'Files: "{", ".join(find_files)}"')
     return find_files
 
 
@@ -214,6 +214,7 @@ def get_parent(path: str) -> Path:
 def relative_to(path1: Path, path2: Path) -> str:
     """Return relative path."""
     return path1.relative_to(path2)
+
 
 def get_file_name(path: str) -> str:
     """Return file name from path."""

@@ -1,8 +1,9 @@
 import base64
 from enum import Enum, auto
 from io import BytesIO
-from PIL import Image, ImageChops
 from typing import Tuple, Union
+
+from PIL import Image, ImageChops
 from robot.api import logger
 
 
@@ -58,6 +59,6 @@ def compare_images(
         if error_sum > error_threshold:
             raise ValueError(f"Box {box} has difference of {error_sum}")
         return
-    elif box and expect_failure == ExpectFailure.yes:
+    if box and expect_failure == ExpectFailure.yes:
         logger.info(f"box: {box}, type({type(box)})")
     assert box is None

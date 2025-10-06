@@ -1,5 +1,7 @@
-from robot.libraries.BuiltIn import BuiltIn
 from pathlib import Path
+
+from robot.libraries.BuiltIn import BuiltIn
+
 from Browser import Browser
 
 

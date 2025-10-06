@@ -47,9 +47,9 @@ def start_show_trace(zip_file: str):
     logger.info("Give process time to start")
     time.sleep(3)
     logger.info(f"Trace viewer output: {out_file.read_text()}")
-    assert (
-        process.returncode is None
-    ), "Process should be still running, but it was not."
+    assert process.returncode is None, (
+        "Process should be still running, but it was not."
+    )
     return process, out_file
 
 
@@ -95,12 +95,10 @@ def _check_trace_process(process: subprocess.Popen, out_file: Path):
         if chromium and node:
             logger.info("Child process found")
             return True
-        else:
-            logger.info("No children")
-            return False
-    else:
-        logger.info("Not process found")
+        logger.info("No children")
         return False
+    logger.info("Not process found")
+    return False
 
 
 def check_trace_process(prcess: subprocess.Popen, out_file: Path):
