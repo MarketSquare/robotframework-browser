@@ -12,6 +12,6 @@ def get_trace_lines(path: Path) -> list[dict]:
 
 def get_file_line(file: Union[Path, None], line: int, column: int) -> str:
     if file is None:
-        return
+        return None
     with file.open(encoding="utf-8") as file:
         return file.readlines()[line - 1]

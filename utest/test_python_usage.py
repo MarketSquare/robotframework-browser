@@ -1,22 +1,21 @@
+import logging
 import subprocess
-from pathlib import Path
 import time
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 from assertionengine import AssertionOperator
-import logging
 
 import Browser
-from Browser import SupportedBrowsers
 import Browser.playwright
+from Browser import SupportedBrowsers
 from Browser.utils import PlaywrightLogTypes
-
 
 PW_LOG = "playwright-log.txt"
 
 
-@pytest.fixture()
+@pytest.fixture
 def application_server():
     process = subprocess.Popen(
         ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
@@ -49,7 +48,7 @@ def application_server():
     process.terminate()
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser(tmpdir):
     Browser.Browser._output_dir = tmpdir
     browser = Browser.Browser()
@@ -57,7 +56,7 @@ def browser(tmpdir):
     browser.close_browser("ALL")
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser_no_log(tmpdir):
     Browser.Browser._output_dir = tmpdir
     browser = Browser.Browser(enable_playwright_debug=PlaywrightLogTypes.disabled)
@@ -65,7 +64,7 @@ def browser_no_log(tmpdir):
     browser.close_browser("ALL")
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser_log_exist(tmpdir):
     log_file = Path(tmpdir, PW_LOG)
     log_file.touch()
@@ -75,7 +74,7 @@ def browser_log_exist(tmpdir):
     browser.close_browser("ALL")
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser_log_exist_unlink_false(tmpdir):
     log_file = Path(tmpdir, PW_LOG)
     log_file.touch()
@@ -90,7 +89,7 @@ def browser_log_exist_unlink_false(tmpdir):
     browser.close_browser("ALL")
 
 
-@pytest.fixture()
+@pytest.fixture
 def atexit_register(monkeypatch):
     import atexit
 
@@ -233,7 +232,7 @@ def test_promise_to_wait_for_elements_state_with_name_arguments(browser):
     assert (promise.running() or promise.done()) is True
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser_locator_handler(tmpdir):
     Browser.Browser._output_dir = tmpdir
     extension = Path(__file__).parent / "custom_locator_handler.js"

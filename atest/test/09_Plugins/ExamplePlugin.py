@@ -8,7 +8,7 @@ from robot.utils import DotDict
 from Browser import Browser
 from Browser.base.librarycomponent import LibraryComponent
 from Browser.generated.playwright_pb2 import Request
-from Browser.utils import SettingsStack, Scope
+from Browser.utils import Scope, SettingsStack
 
 
 class ExamplePlugin(LibraryComponent):
@@ -43,7 +43,7 @@ class ExamplePlugin(LibraryComponent):
 
         This keyword calles the python keyword `Evaluate Javascript` to get the location object.
         """
-        location_dict = self.library.evaluate_javascript(None, f"window.location")
+        location_dict = self.library.evaluate_javascript(None, "window.location")
         logger.info(f"Location object:\n {json.dumps(location_dict, indent=2)}")
         return DotDict(location_dict)
 

@@ -1,12 +1,12 @@
 from approvaltests import verify_all
 
 from Browser.entry.translation import (
+    DOC_CHANGED,
     MISSING_CHECKSUM,
+    MISSING_TRANSLATION,
+    NO_LIB_KEYWORD,
     _get_heading,
     _table_doc_updated,
-    DOC_CHANGED,
-    NO_LIB_KEYWORD,
-    MISSING_TRANSLATION,
 )
 
 

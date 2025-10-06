@@ -1,13 +1,12 @@
-import importlib
-from pathlib import Path
-import pkgutil
 import sys
+from pathlib import Path
+
 import pytest
 
 from Browser import Browser
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser() -> Browser:
     sys.path.append(str(Path(__file__).parent.absolute()))
     return Browser(language="ENG")

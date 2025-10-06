@@ -8,8 +8,8 @@ import pytest
 from robot.libraries.BuiltIn import RobotNotRunningError
 
 import Browser
-from Browser.base.librarycomponent import LibraryComponent
 import Browser.keywords as interaction
+from Browser.base.librarycomponent import LibraryComponent
 from Browser.keywords import PlaywrightState
 
 ERROR_MESSAGE = (
@@ -23,7 +23,7 @@ class Response:
     log = "log message"
 
 
-@pytest.fixture()
+@pytest.fixture
 def application_server():
     process = subprocess.Popen(
         ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
@@ -32,7 +32,7 @@ def application_server():
     process.terminate()
 
 
-@pytest.fixture()
+@pytest.fixture
 def browser(tmpdir):
     Browser.Browser._output_dir = tmpdir
     browser = Browser.Browser()
@@ -99,7 +99,7 @@ def test_fill_secret_reformat_error():
     with pytest.raises(Exception) as excinfo:
         secrets.fill_secret("selector", "$password")
 
-    assert "Failure filling: ***" == str(excinfo.value)
+    assert str(excinfo.value) == "Failure filling: ***"
 
 
 def test_type_secret_reformat_error():
@@ -115,7 +115,7 @@ def test_type_secret_reformat_error():
     with pytest.raises(Exception) as excinfo:
         secrets.type_secret("selector", "$password")
 
-    assert "Failure typing: ***" == str(excinfo.value)
+    assert str(excinfo.value) == "Failure typing: ***"
 
 
 @pytest.mark.skipif(sys.version_info.minor == 7, reason="Does not work with Python 3.7")

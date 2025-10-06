@@ -102,8 +102,12 @@ Screenshot Filename Incrementation
     ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" width="800px"/></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
+    Take Screenshot    ${TestScreenshot}_{{index}}_{index}
+    Take Screenshot    ${TestScreenshot}
     File Should Exist    ${TestScreenshot}_1.png
     File Should Exist    ${TestScreenshot}_2.png
+    File Should Exist    ${TestScreenshot}_{index}_1.png
+    File Should Exist    ${TestScreenshot}.png
     [Teardown]    Remove File    ${TestScreenshot}_*.png
 
 Embed ScreenShot To Log.html File

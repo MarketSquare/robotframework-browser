@@ -8,9 +8,8 @@ import sys
 import sysconfig
 import traceback
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path, PurePath
-from typing import Iterable
-from xml.etree import ElementTree as ET
 
 from invoke import Exit, task
 from invoke.context import Context
@@ -263,10 +262,9 @@ def _os_platform() -> str:
     pl = platform.system().lower()
     if pl == "darwin":
         return "macos"
-    elif pl == "windows":
+    if pl == "windows":
         return "win"
-    else:
-        return "linux"
+    return "linux"
 
 
 def _build_nodejs(c: Context, architecture: str):
