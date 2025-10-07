@@ -138,9 +138,10 @@ Update later if necessary.
 ### Create release
 1. [Create Github release](https://github.com/MarketSquare/robotframework-browser/releases/new)
 2. Wait that [release build](https://github.com/MarketSquare/robotframework-browser/blob/main/.github/workflows/on-release.yml) completes
-3. Check that [PyPi](https://pypi.org/project/robotframework-browser/) looks good.
-4. Install package from PyPi and test that it works.
-5. Wait that Docker build is ready and check that [Docker hub](https://hub.docker.com/r/marketsquare/robotframework-browser/tags) looks good.
+3. Check that [Browser PyPi](https://pypi.org/project/robotframework-browser/) looks good.
+4. Check that [BrowserBatteries PyPi](https://pypi.org/project/robotframework-browser-batteries/) looks good.
+5. Install package from PyPi and test that it works.
+6. Wait that Docker build is ready and check that [Docker hub](https://hub.docker.com/r/marketsquare/robotframework-browser/tags) looks good.
 
 ### Announce release
 Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).
