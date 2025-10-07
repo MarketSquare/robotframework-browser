@@ -5,6 +5,8 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
+from robot.libraries.BuiltIn import BuiltIn
+
 TIME_FMT = "%H:%M:%S.%f"
 
 
@@ -189,5 +191,7 @@ def assert_key_timings(
         if res.messages:
             lines.append("Details:")
             lines.extend(f"  * {m}" for m in res.messages)
+        browser = BuiltIn().get_library_instance("Browser")
+        browser.take_screenshot()
         raise AssertionError("\n".join(lines))
     return res
