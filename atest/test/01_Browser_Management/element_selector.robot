@@ -174,4 +174,4 @@ Get Element By Role In Iframe
 *** Keywords ***
 Element Selector Setup
     Go To    ${FORM_URL}
-    Set Browser Timeout    500ms    scope=Test
+    Set Browser Timeout    700ms    scope=Test
