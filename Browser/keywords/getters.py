@@ -17,6 +17,7 @@ from contextlib import suppress
 from typing import Any, Optional, Union
 
 import grpc  # type: ignore
+import yaml
 from assertionengine import (
     AssertionOperator,
     bool_verify_assertion,
@@ -37,6 +38,7 @@ from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import (
     AreaFields,
+    AriaSnapshotReturnType,
     BoundingBox,
     BoundingBoxFields,
     Dimensions,
@@ -54,6 +56,60 @@ from ..utils.data_types import (
 
 
 class Getters(LibraryComponent):
+    @keyword(tags=("Getter", "Assertion", "PageContent"))
+    @with_assertion_polling
+    @assertion_formatter_used
+    def get_aria_snapshot(
+        self,
+        selector: str,
+        return_type: AriaSnapshotReturnType = AriaSnapshotReturnType.yaml,
+        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_expected: Optional[Any] = None,
+        message: Optional[str] = None,
+    ) -> Union[str, dict]:
+        """Returns the aria snapshot of the element found by ``selector``.
+
+        | =Arguments= | =Description= |
+        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
+        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default) and ``dict``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. |
+        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
+        | ``assertion_expected`` | Expected value for the state |
+        | ``message`` | overrides the default error message for assertion. |
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        Optionally asserts that the state matches the specified assertion. See
+        `Assertions` for further details for the assertion arguments. By default assertion
+        is not done.
+
+        Example:
+        | ${aria} =    `Get Aria Snapshot`    id=main   # returns YAML string
+        | Log Many    ${aria}
+        | ${aria_dict} =    `Get Aria Snapshot`    id=main    dict   # returns dictionary
+        | Log Many    ${aria_dict}
+
+        [https://forum.robotframework.org/t//4303|Comment >>]
+        """
+        selector = self.presenter_mode(selector, self.strict_mode)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AriaSnapShot(
+                Request.AriaSnapShot(locator=selector, strict=self.strict_mode)
+            )
+        logger.info(response.log)
+        value = response.body
+        logger.info(f"Aria Snapshot: {value}")
+        if return_type is AriaSnapshotReturnType.dict:
+            value = yaml.safe_load(value) if value else {}
+        formatter = self.get_assertion_formatter("Get Aria Snapshot")
+        return verify_assertion(
+            value,
+            assertion_operator,
+            assertion_expected,
+            "Aria Snapshot",
+            message,
+            formatter,
+        )
+
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     @assertion_formatter_used

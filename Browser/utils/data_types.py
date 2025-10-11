@@ -97,6 +97,18 @@ class NotSet(Enum):
     not_set = "not_set"
 
 
+class AriaSnapshotReturnType(Enum):
+    """Defines the return type of the AriaSnapshot.
+
+    | =Value=  | =Description= |
+    | ``dict`` | returns the snapshot as a dictionary. |
+    | ``yaml`` | returns the snapshot as a yaml string. |
+    """
+
+    dict = auto()
+    yaml = auto()
+
+
 class KeywordCallStackEntry(TypedDict):
     """Information about the keyword call stack."""
 
