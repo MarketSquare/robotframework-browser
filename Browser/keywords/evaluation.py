@@ -14,7 +14,7 @@
 
 import json
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any
 
 from robot.utils import DotDict
 
@@ -27,7 +27,7 @@ class Evaluation(LibraryComponent):
     @keyword(name="Evaluate JavaScript", tags=("Setter", "Getter", "PageContent"))
     def evaluate_javascript(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         *function: str,
         arg: Any = None,
         all_elements: bool = False,
@@ -156,7 +156,7 @@ class Evaluation(LibraryComponent):
         url: str,
         saveAs: str = "",
         wait_for_finished: bool = True,
-        download_timeout: Optional[timedelta] = None,
+        download_timeout: timedelta | None = None,
     ) -> DownloadInfo:
         """Download given url content.
 

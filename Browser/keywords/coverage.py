@@ -17,7 +17,6 @@ import tempfile
 from collections.abc import Iterator
 from os import PathLike
 from pathlib import Path
-from typing import Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -29,7 +28,7 @@ class Coverage(LibraryComponent):
     def start_coverage(
         self,
         *,
-        config_file: Optional[PathLike] = None,
+        config_file: PathLike | None = None,
         coverage_type: CoverageType = CoverageType.all,
         path: Path = Path(),
         raw: bool = False,
@@ -121,9 +120,9 @@ class Coverage(LibraryComponent):
         self,
         input_folder: Path,
         output_folder: Path,
-        config_file: Optional[Path] = None,
-        name: Optional[str] = None,
-        reports: Optional[list[str]] = None,
+        config_file: Path | None = None,
+        name: str | None = None,
+        reports: list[str] | None = None,
     ) -> Path:
         """Combines multiple raw coverage reports to single report.
 

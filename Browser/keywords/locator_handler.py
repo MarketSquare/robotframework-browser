@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import json
-from typing import Optional
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -28,7 +27,7 @@ class LocatorHandler(LibraryComponent):
         click_selector: str,
         *,
         noWaitAfter: bool = True,
-        times: Optional[int] = None,
+        times: int | None = None,
         click_clickCount: int = 1,
         click_delay: int = 0,
         click_force: bool = False,
@@ -102,7 +101,7 @@ class LocatorHandler(LibraryComponent):
         selector: str,
         handler_spec: list[dict],
         noWaitAfter: bool = True,
-        times: Optional[int] = None,
+        times: int | None = None,
     ):
         """Add a handler function which will activate when `selector` is visible and performs handler specification.
 

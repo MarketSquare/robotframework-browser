@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 from .data_types import Scope
 
@@ -18,7 +19,7 @@ class SettingsStack:
         self,
         global_setting: Any,
         ctx: "Browser",
-        setter_function: Optional[Callable] = None,
+        setter_function: Callable | None = None,
     ):
         self.library = ctx
         self.setter_function = setter_function
@@ -47,7 +48,7 @@ class SettingsStack:
         ):
             self.setter_function(self._last_setting.setting)
 
-    def set(self, setting: Any, scope: Optional[Scope] = Scope.Global):
+    def set(self, setting: Any, scope: Scope | None = Scope.Global):
         if not self.library.suite_ids:
             scope = Scope.Global
         original = self.get()

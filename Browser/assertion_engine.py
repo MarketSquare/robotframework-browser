@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import time
-from typing import Optional, Union, get_args, get_origin
+from types import UnionType
+from typing import get_args, get_origin
 
 import wrapt  # type: ignore
 from assertionengine import AssertionOperator
@@ -25,7 +26,7 @@ def assertion_operator_is_set(wrapped, args, kwargs):
     assertion_op_name = None
     assertion_op_index = None
     for index, (_arg, typ) in enumerate(wrapped.__annotations__.items()):
-        if get_origin(typ) is Union and AssertionOperator in get_args(typ):
+        if get_origin(typ) is UnionType and AssertionOperator in get_args(typ):
             assertion_op_index = index
             break
         if typ is AssertionOperator:
@@ -44,7 +45,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
     start = time.time()
     timeout = instance.timeout / 1000
     retry_assertions_until = instance.retry_assertions_for / 1000
-    retries_start: Optional[float] = None
+    retries_start: float | None = None
     tries = 1
     try:
         logger.stash_this_thread()

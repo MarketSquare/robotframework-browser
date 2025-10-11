@@ -14,7 +14,7 @@
 import json
 import re
 from contextlib import suppress
-from typing import Any, Optional, Union
+from typing import Any
 
 import grpc  # type: ignore
 import yaml
@@ -63,10 +63,10 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         return_type: AriaSnapshotReturnType = AriaSnapshotReturnType.yaml,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Union[str, dict]:
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+    ) -> str | dict:
         """Returns the aria snapshot of the element found by ``selector``.
 
         | =Arguments= | =Description= |
@@ -115,9 +115,9 @@ class Getters(LibraryComponent):
     @assertion_formatter_used
     def get_url(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> str:
         """Returns the current URL.
 
@@ -145,9 +145,9 @@ class Getters(LibraryComponent):
     @assertion_formatter_used
     def get_page_source(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> str:
         """Gets pages HTML source as a string.
 
@@ -185,9 +185,9 @@ class Getters(LibraryComponent):
     @assertion_formatter_used
     def get_title(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> str:
         """Returns the title of the current page.
 
@@ -222,9 +222,9 @@ class Getters(LibraryComponent):
     def get_text(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> str:
         """Returns text attribute of the element found by ``selector``.
 
@@ -275,9 +275,9 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         property: str,  # noqa:  A002
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
@@ -334,10 +334,10 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         attribute: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Optional[str]:
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+    ) -> str | None:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
         | =Arguments= | =Description= |
@@ -396,9 +396,9 @@ class Getters(LibraryComponent):
     def get_attribute_names(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_operator: AssertionOperator | None = None,
         *assertion_expected,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> list[str]:
         """Returns all HTML attribute names of an element as a list.
 
@@ -449,9 +449,9 @@ class Getters(LibraryComponent):
     def get_classes(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_operator: AssertionOperator | None = None,
         *assertion_expected,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> list[str]:
         """Returns all classes of an element as a list.
 
@@ -496,9 +496,9 @@ class Getters(LibraryComponent):
     def get_select_options(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> list[SelectOptions]:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
@@ -556,10 +556,10 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         option_attribute: SelectAttribute = SelectAttribute.label,
-        assertion_operator: Optional[AssertionOperator] = None,
+        assertion_operator: AssertionOperator | None = None,
         *assertion_expected,
-        message: Optional[str] = None,
-    ) -> list[Union[str, int]]:
+        message: str | None = None,
+    ) -> list[str | int]:
         """Returns the specified attribute of selected options of the ``select`` element.
 
         | =Arguments= | =Description= |
@@ -599,7 +599,7 @@ class Getters(LibraryComponent):
             )
         logger.info(response)
         expected = list(assertion_expected)
-        selected: Union[list[int], list[str]]
+        selected: list[int] | list[str]
 
         if option_attribute is SelectAttribute.index:
             expected = [int(exp) for exp in expected]
@@ -617,9 +617,9 @@ class Getters(LibraryComponent):
     def get_checkbox_state(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Union[bool, str] = "Unchecked",
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: bool | str = "Unchecked",
+        message: str | None = None,
     ) -> bool:
         """Returns the state of the checkbox found by ``selector``.
 
@@ -667,9 +667,9 @@ class Getters(LibraryComponent):
     def get_element_count(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Union[int, str] = 0,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: int | str = 0,
+        message: str | None = None,
     ) -> int:
         """Returns the count of elements found with ``selector``.
 
@@ -707,10 +707,10 @@ class Getters(LibraryComponent):
     def get_viewport_size(
         self,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Optional[ViewportDimensions]:
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+    ) -> ViewportDimensions | None:
         """Returns the current viewport dimensions.
 
         | =Arguments= | =Description= |
@@ -813,9 +813,9 @@ class Getters(LibraryComponent):
     def get_table_cell_index(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Union[int, str] = 0,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: int | str = 0,
+        message: str | None = None,
     ) -> int:
         """Returns the index (0 based) of a table cell within its row.
 
@@ -856,9 +856,9 @@ class Getters(LibraryComponent):
     def get_table_row_index(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Union[int, str] = 0,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: int | str = 0,
+        message: str | None = None,
     ) -> int:
         """Returns the index (0 based) of a table row.
 
@@ -962,15 +962,15 @@ class Getters(LibraryComponent):
         role: ElementRole,
         *,
         all_elements: bool = False,
-        checked: Optional[bool] = None,
-        disabled: Optional[bool] = None,
-        exact: Optional[bool] = None,
-        expanded: Optional[bool] = None,
-        include_hidden: Optional[bool] = None,
-        level: Optional[int] = None,
-        name: Union[str, RegExp, None] = None,
-        pressed: Optional[bool] = None,
-        selected: Optional[bool] = None,
+        checked: bool | None = None,
+        disabled: bool | None = None,
+        exact: bool | None = None,
+        expanded: bool | None = None,
+        include_hidden: bool | None = None,
+        level: int | None = None,
+        name: str | RegExp | None = None,
+        pressed: bool | None = None,
+        selected: bool | None = None,
     ) -> str:
         """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
         for the matched element by ``role`` or a list of references if ``all_elements`` is set to ``True``.
@@ -1042,7 +1042,7 @@ class Getters(LibraryComponent):
             logger.info(response.log)
             return self._disable_selector_prefix(json.loads(response.json))
 
-    def _disable_selector_prefix(self, selector: Union[str, list[str]]):
+    def _disable_selector_prefix(self, selector: str | list[str]):
         if isinstance(selector, list):
             return (
                 selector
@@ -1055,7 +1055,7 @@ class Getters(LibraryComponent):
     def get_element_by(
         self,
         selection_strategy: SelectionStrategy,
-        text: Union[str, RegExp],
+        text: str | RegExp,
         exact: bool = False,
         all_elements: bool = False,
     ) -> str:
@@ -1117,12 +1117,12 @@ class Getters(LibraryComponent):
     def get_style(
         self,
         selector: str,
-        key: Optional[str] = "ALL",
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-        pseudo_element: Optional[str] = None,
-    ) -> Union[dict[str, str], str]:
+        key: str | None = "ALL",
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+        pseudo_element: str | None = None,
+    ) -> dict[str, str] | str:
         """Gets the computed style properties of the element selected by ``selector``.
 
         Optionally matches with any sequence assertion operator.
@@ -1189,12 +1189,12 @@ class Getters(LibraryComponent):
         self,
         selector: str,
         key: BoundingBoxFields = BoundingBoxFields.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
         *,
         allow_hidden: bool = False,
-    ) -> Union[BoundingBox, float, int, None]:
+    ) -> BoundingBox | float | int | None:
         """Gets elements size and location as an object ``{x: float, y: float, width: float, height: float}``.
 
         Alternatively you can select a single attribute of the bounding box by setting the ``key`` argument.
@@ -1270,12 +1270,12 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_scroll_size(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Union[Dimensions, float, int]:
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+    ) -> Dimensions | float | int:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
 
@@ -1326,12 +1326,12 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_scroll_position(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         key: AreaFields = AreaFields.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-    ) -> Union[ScrollPosition, float]:
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+    ) -> ScrollPosition | float:
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
         It describes the rectangle which is visible of the scrollable content of that element.
@@ -1382,11 +1382,11 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_client_size(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         key: SizeFields = SizeFields.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> Dimensions:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
@@ -1433,11 +1433,11 @@ class Getters(LibraryComponent):
     def get_element_states(
         self,
         selector: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        *assertion_expected: Union[ElementState, str],
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        *assertion_expected: ElementState | str,
+        message: str | None = None,
         return_names=True,
-    ) -> Union[list[str], ElementState]:
+    ) -> list[str] | ElementState:
         """Get the active states from the element found by ``selector``.
 
         This Keyword returns a list of states that are valid for the selected element.
@@ -1518,10 +1518,10 @@ class Getters(LibraryComponent):
     @with_assertion_polling
     def get_download_state(
         self,
-        download: Union[DownloadInfo, str],
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        download: DownloadInfo | str,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> DownloadInfo:
         """Gets the state of a download.
 

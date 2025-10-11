@@ -15,7 +15,7 @@
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any, Optional, Union
+from typing import Any
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -60,8 +60,8 @@ class Network(LibraryComponent):
         self,
         url: str,
         method: RequestMethod = RequestMethod.GET,
-        body: Optional[str] = None,
-        headers: Optional[dict] = None,
+        body: str | None = None,
+        headers: dict | None = None,
     ) -> Any:
         """Performs an HTTP request in the current browser context
 
@@ -141,7 +141,7 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
-        self, matcher: Union[str, RegExp] = "", timeout: Optional[timedelta] = None
+        self, matcher: str | RegExp = "", timeout: timedelta | None = None
     ) -> Any:
         """Waits for request matching matcher to be made.
 
@@ -167,8 +167,8 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_response(
-        self, matcher: Union[str, RegExp] = "", timeout: Optional[timedelta] = None
-    ) -> Union[DotDict, Any]:
+        self, matcher: str | RegExp = "", timeout: timedelta | None = None
+    ) -> DotDict | Any:
         """Waits for response matching matcher and returns the response as robot dict.
 
         The response, which is returned by this keyword, is a robot dictionary with following attributes:
@@ -252,7 +252,7 @@ class Network(LibraryComponent):
             return response
 
     @keyword(tags=("Wait", "HTTP"))
-    def wait_until_network_is_idle(self, timeout: Optional[timedelta] = None):
+    def wait_until_network_is_idle(self, timeout: timedelta | None = None):
         """*DEPRECATED!!* Use `Wait For Load State` instead. rfbrowser transform --wait-until-network-is-idle path/to/test command automatically transforms keyword to new format.
 
         If you have:
@@ -278,8 +278,8 @@ class Network(LibraryComponent):
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_navigation(
         self,
-        url: Union[str, RegExp],
-        timeout: Optional[timedelta] = None,
+        url: str | RegExp,
+        timeout: timedelta | None = None,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):
         """Waits until page has navigated to given ``url``.

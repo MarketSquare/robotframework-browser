@@ -18,7 +18,7 @@ from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 from uuid import uuid4
 
 from assertionengine import AssertionOperator, list_verify_assertion, verify_assertion
@@ -64,7 +64,7 @@ class PlaywrightState(LibraryComponent):
 
     # Helpers for Switch_ and Close_ keywords
 
-    def _correct_browser(self, browser: Union[SelectionType, str]):
+    def _correct_browser(self, browser: SelectionType | str):
         if browser == SelectionType.ALL:
             raise ValueError
         if browser == SelectionType.CURRENT:
@@ -74,7 +74,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def open_browser(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = False,
         pause_on_failure: bool = True,
@@ -114,7 +114,7 @@ class PlaywrightState(LibraryComponent):
             self.library.pause_on_failure.add(browser_id)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def close_browser(self, browser: Union[SelectionType, str] = SelectionType.CURRENT):
+    def close_browser(self, browser: SelectionType | str = SelectionType.CURRENT):
         """Closes the current browser.
 
         Active browser is set to the browser that was active before this one. Closes all context and pages belonging
@@ -161,8 +161,8 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def close_context(
         self,
-        context: Union[SelectionType, str] = SelectionType.CURRENT,
-        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        context: SelectionType | str = SelectionType.CURRENT,
+        browser: SelectionType | str = SelectionType.CURRENT,
         *,
         save_trace: bool = True,
     ):
@@ -246,7 +246,7 @@ class PlaywrightState(LibraryComponent):
     @staticmethod
     def _get_active_triplet(
         catalog: list[dict],
-    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None, str | None]:
         browser = next((b for b in catalog if b.get("activeBrowser")), None)
         if not browser:
             return None, None, None
@@ -263,9 +263,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def close_page(
         self,
-        page: Union[SelectionType, NewPageDetails, str] = SelectionType.CURRENT,
-        context: Union[SelectionType, str] = SelectionType.CURRENT,
-        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        page: SelectionType | NewPageDetails | str = SelectionType.CURRENT,
+        context: SelectionType | str = SelectionType.CURRENT,
+        browser: SelectionType | str = SelectionType.CURRENT,
         runBeforeUnload: bool = False,
     ) -> list[dict]:
         """Closes the ``page`` in ``context`` in ``browser``.
@@ -421,19 +421,19 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         *,
-        args: Optional[list[str]] = None,
-        channel: Optional[str] = None,
+        args: list[str] | None = None,
+        channel: str | None = None,
         chromiumSandbox: bool = False,
         devtools: bool = False,
-        downloadsPath: Optional[str] = None,
-        env: Optional[dict] = None,
-        executablePath: Optional[str] = None,
-        firefoxUserPrefs: Optional[dict[str, Union[str, int, float, bool]]] = None,
+        downloadsPath: str | None = None,
+        env: dict | None = None,
+        executablePath: str | None = None,
+        firefoxUserPrefs: dict[str, str | int | float | bool] | None = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Union[list[str], bool, None] = None,
-        proxy: Optional[Proxy] = None,
+        ignoreDefaultArgs: list[str] | bool | None = None,
+        proxy: Proxy | None = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
@@ -492,24 +492,24 @@ class PlaywrightState(LibraryComponent):
         browser: SupportedBrowsers = SupportedBrowsers.chromium,
         headless: bool = True,
         *,
-        args: Optional[list[str]] = None,
-        channel: Optional[str] = None,
+        args: list[str] | None = None,
+        channel: str | None = None,
         chromiumSandbox: bool = False,
         devtools: bool = False,
-        downloadsPath: Optional[str] = None,
-        env: Optional[dict] = None,
-        executablePath: Optional[str] = None,
-        firefoxUserPrefs: Optional[dict[str, Union[str, int, float, bool]]] = None,
+        downloadsPath: str | None = None,
+        env: dict | None = None,
+        executablePath: str | None = None,
+        firefoxUserPrefs: dict[str, str | int | float | bool] | None = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        ignoreDefaultArgs: Union[list[str], bool, None] = None,
-        port: Optional[int] = None,
-        proxy: Optional[Proxy] = None,
+        ignoreDefaultArgs: list[str] | bool | None = None,
+        port: int | None = None,
+        proxy: Proxy | None = None,
         reuse_existing: bool = True,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
-        wsPath: Optional[str] = None,
+        wsPath: str | None = None,
     ) -> str:
         """Launches a new playwright Browser server with specified options.
 
@@ -555,7 +555,7 @@ class PlaywrightState(LibraryComponent):
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
-    ) -> Optional[str]:
+    ) -> str | None:
         if not reuse_existing:
             return None
         existing_browser_id = self.browser_arg_mapping.get(parameter_hash)
@@ -578,36 +578,35 @@ class PlaywrightState(LibraryComponent):
         self,
         *,
         acceptDownloads: bool = True,
-        baseURL: Optional[str] = None,
+        baseURL: str | None = None,
         bypassCSP: bool = False,
-        clientCertificates: Optional[list[ClientCertificate]] = None,
-        colorScheme: Optional[ColorScheme] = None,
-        defaultBrowserType: Optional[SupportedBrowsers] = None,
-        deviceScaleFactor: Optional[float] = None,
-        extraHTTPHeaders: Optional[dict[str, str]] = None,
+        clientCertificates: list[ClientCertificate] | None = None,
+        colorScheme: ColorScheme | None = None,
+        defaultBrowserType: SupportedBrowsers | None = None,
+        deviceScaleFactor: float | None = None,
+        extraHTTPHeaders: dict[str, str] | None = None,
         forcedColors: ForcedColors = ForcedColors.none,
-        geolocation: Optional[GeoLocation] = None,
-        hasTouch: Optional[bool] = None,
-        httpCredentials: Optional[HttpCredentials] = None,
+        geolocation: GeoLocation | None = None,
+        hasTouch: bool | None = None,
+        httpCredentials: HttpCredentials | None = None,
         ignoreHTTPSErrors: bool = False,
-        isMobile: Optional[bool] = None,
+        isMobile: bool | None = None,
         javaScriptEnabled: bool = True,
-        locale: Optional[str] = None,
+        locale: str | None = None,
         offline: bool = False,
-        permissions: Optional[list[Permission]] = None,
-        proxy: Optional[Proxy] = None,
-        recordHar: Optional[RecordHar] = None,
-        recordVideo: Optional[RecordVideo] = None,
+        permissions: list[Permission] | None = None,
+        proxy: Proxy | None = None,
+        recordHar: RecordHar | None = None,
+        recordVideo: RecordVideo | None = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: Optional[dict[str, int]] = None,
-        serviceWorkers: Optional[
-            ServiceWorkersPermissions
-        ] = ServiceWorkersPermissions.allow,
-        storageState: Optional[str] = None,
-        timezoneId: Optional[str] = None,
-        tracing: Union[bool, Path, None] = None,
-        userAgent: Optional[str] = None,
-        viewport: Optional[ViewportDimensions] = ViewportDimensions(
+        screen: dict[str, int] | None = None,
+        serviceWorkers: ServiceWorkersPermissions
+        | None = ServiceWorkersPermissions.allow,
+        storageState: str | None = None,
+        timezoneId: str | None = None,
+        tracing: bool | Path | None = None,
+        userAgent: str | None = None,
+        viewport: ViewportDimensions | None = ViewportDimensions(
             width=1280, height=720
         ),
     ) -> str:
@@ -700,48 +699,47 @@ class PlaywrightState(LibraryComponent):
         headless: bool = True,
         *,
         acceptDownloads: bool = True,
-        args: Optional[list[str]] = None,
-        baseURL: Optional[str] = None,
+        args: list[str] | None = None,
+        baseURL: str | None = None,
         bypassCSP: bool = False,
-        channel: Optional[str] = None,
+        channel: str | None = None,
         chromiumSandbox: bool = False,
-        colorScheme: Optional[ColorScheme] = None,
-        defaultBrowserType: Optional[SupportedBrowsers] = None,
-        deviceScaleFactor: Optional[float] = None,
+        colorScheme: ColorScheme | None = None,
+        defaultBrowserType: SupportedBrowsers | None = None,
+        deviceScaleFactor: float | None = None,
         devtools: bool = False,
-        downloadsPath: Optional[str] = None,
-        env: Optional[dict] = None,
-        executablePath: Optional[str] = None,
-        extraHTTPHeaders: Optional[dict[str, str]] = None,
+        downloadsPath: str | None = None,
+        env: dict | None = None,
+        executablePath: str | None = None,
+        extraHTTPHeaders: dict[str, str] | None = None,
         forcedColors: ForcedColors = ForcedColors.none,
-        geolocation: Optional[GeoLocation] = None,
+        geolocation: GeoLocation | None = None,
         handleSIGHUP: bool = True,
         handleSIGINT: bool = True,
         handleSIGTERM: bool = True,
-        hasTouch: Optional[bool] = None,
-        httpCredentials: Optional[HttpCredentials] = None,
-        ignoreDefaultArgs: Union[list[str], bool, None] = None,
+        hasTouch: bool | None = None,
+        httpCredentials: HttpCredentials | None = None,
+        ignoreDefaultArgs: list[str] | bool | None = None,
         ignoreHTTPSErrors: bool = False,
-        isMobile: Optional[bool] = None,
+        isMobile: bool | None = None,
         javaScriptEnabled: bool = True,
-        locale: Optional[str] = None,
+        locale: str | None = None,
         offline: bool = False,
-        permissions: Optional[list[Permission]] = None,
-        proxy: Optional[Proxy] = None,
-        recordHar: Optional[RecordHar] = None,
-        recordVideo: Optional[RecordVideo] = None,
+        permissions: list[Permission] | None = None,
+        proxy: Proxy | None = None,
+        recordHar: RecordHar | None = None,
+        recordVideo: RecordVideo | None = None,
         reducedMotion: ReduceMotion = ReduceMotion.no_preference,
-        screen: Optional[dict[str, int]] = None,
-        serviceWorkers: Optional[
-            ServiceWorkersPermissions
-        ] = ServiceWorkersPermissions.allow,
+        screen: dict[str, int] | None = None,
+        serviceWorkers: ServiceWorkersPermissions
+        | None = ServiceWorkersPermissions.allow,
         slowMo: timedelta = timedelta(seconds=0),
         timeout: timedelta = timedelta(seconds=30),
-        timezoneId: Optional[str] = None,
-        tracing: Union[bool, Path, None] = None,
-        url: Optional[str] = None,
-        userAgent: Optional[str] = None,
-        viewport: Optional[ViewportDimensions] = ViewportDimensions(
+        timezoneId: str | None = None,
+        tracing: bool | Path | None = None,
+        url: str | None = None,
+        userAgent: str | None = None,
+        viewport: ViewportDimensions | None = ViewportDimensions(
             width=1280, height=720
         ),
     ):
@@ -838,7 +836,7 @@ class PlaywrightState(LibraryComponent):
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
 
-    def _resolve_trace_file(self, tracing: Union[bool, None, Path]) -> str:
+    def _resolve_trace_file(self, tracing: bool | None | Path) -> str:
         if isinstance(tracing, str):
             tracing = Path(tracing)
         tracing_by_var = (
@@ -891,7 +889,7 @@ class PlaywrightState(LibraryComponent):
         params["tracesDir"] = str(self.traces_temp / str(uuid4()))
         return params
 
-    def _new_context(self, options: str, trace_file: Union[Path, str]):
+    def _new_context(self, options: str, trace_file: Path | str):
         with self.playwright.grpc_channel() as stub:
             context = stub.NewContext(
                 Request().Context(
@@ -939,7 +937,7 @@ class PlaywrightState(LibraryComponent):
         params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
         return params
 
-    def _get_record_video_size(self, params) -> tuple[Optional[int], Optional[int]]:
+    def _get_record_video_size(self, params) -> tuple[int | None, int | None]:
         width = params.get("recordVideo", {}).get("size", {}).get("width")
         height = params.get("recordVideo", {}).get("size", {}).get("height")
         return int(width) if width else None, int(height) if height else None
@@ -961,7 +959,7 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def new_page(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         wait_until: PageLoadStates = PageLoadStates.load,
     ) -> NewPageDetails:
         """Open a new Page.
@@ -1033,9 +1031,9 @@ class PlaywrightState(LibraryComponent):
     @assertion_formatter_used
     def get_browser_catalog(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
     ) -> list[BrowserInfo]:
         """Returns all browsers, open contexts in them and open pages in these contexts.
 
@@ -1135,12 +1133,12 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_console_log(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
         *,
         full: bool = False,
-        last: Union[int, timedelta, None] = None,
+        last: int | timedelta | None = None,
     ) -> list[dict]:
         """Returns the console log of the active page.
 
@@ -1207,12 +1205,12 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl", "Assertion"))
     def get_page_errors(
         self,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
         *,
         full: bool = False,
-        last: Union[int, timedelta, None] = None,
+        last: int | timedelta | None = None,
     ) -> dict:
         """Returns the page errors of the active page.
 
@@ -1317,7 +1315,7 @@ class PlaywrightState(LibraryComponent):
     def switch_context(
         self,
         id: str,  # noqa: A002
-        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        browser: SelectionType | str = SelectionType.CURRENT,
     ) -> str:
         """Switches the active BrowserContext to another open context.
 
@@ -1369,9 +1367,9 @@ class PlaywrightState(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def switch_page(
         self,
-        id: Union[NewPageDetails, SelectionType, str],  # noqa: A002
-        context: Union[SelectionType, str] = SelectionType.CURRENT,
-        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        id: NewPageDetails | SelectionType | str,  # noqa: A002
+        context: SelectionType | str = SelectionType.CURRENT,
+        browser: SelectionType | str = SelectionType.CURRENT,
     ) -> str:
         """Switches the active browser page to another open page by ``id`` or ``NEW``.
 
@@ -1400,9 +1398,9 @@ class PlaywrightState(LibraryComponent):
 
     def _switch_page(
         self,
-        id: Union[NewPageDetails, SelectionType, str],  # noqa: A002
-        context: Union[SelectionType, str] = SelectionType.CURRENT,
-        browser: Union[SelectionType, str] = SelectionType.CURRENT,
+        id: NewPageDetails | SelectionType | str,  # noqa: A002
+        context: SelectionType | str = SelectionType.CURRENT,
+        browser: SelectionType | str = SelectionType.CURRENT,
     ) -> str:
         context = SelectionType.create(context)
         browser = SelectionType.create(browser)
@@ -1469,9 +1467,9 @@ class PlaywrightState(LibraryComponent):
     def get_browser_ids(
         self,
         browser: SelectionType = SelectionType.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        *assertion_expected: Optional[Any],
-        message: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        *assertion_expected: Any | None,
+        message: str | None = None,
     ) -> list[str]:
         """Returns a list of ids from open browsers.
         See `Browser, Context and Page` for more information about Browser and related concepts.
@@ -1501,10 +1499,10 @@ class PlaywrightState(LibraryComponent):
     def get_context_ids(
         self,
         context: SelectionType = SelectionType.ALL,
-        browser: Union[SelectionType, str] = SelectionType.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        *assertion_expected: Optional[Any],
-        message: Optional[str] = None,
+        browser: SelectionType | str = SelectionType.ALL,
+        assertion_operator: AssertionOperator | None = None,
+        *assertion_expected: Any | None,
+        message: str | None = None,
     ) -> list:
         """Returns a list of context ids based on the browser selection.
         See `Browser, Context and Page` for more information about Context and related concepts.
@@ -1537,7 +1535,7 @@ class PlaywrightState(LibraryComponent):
 
     @staticmethod
     def _get_filtered_page_items_from_context_list(
-        page: Union[SelectionType, str], context_list
+        page: SelectionType | str, context_list
     ) -> list[dict]:
         return [
             page_item
@@ -1553,7 +1551,7 @@ class PlaywrightState(LibraryComponent):
 
     @staticmethod
     def _get_filtered_context_items_from_catalog(
-        context: Union[SelectionType, str], catalog: list[dict]
+        context: SelectionType | str, catalog: list[dict]
     ) -> list[dict]:
         return [
             context_item
@@ -1568,7 +1566,7 @@ class PlaywrightState(LibraryComponent):
         ]
 
     def _get_filtered_browser_catalog(
-        self, browser: Union[SelectionType, str], catalog: Optional[list[dict]] = None
+        self, browser: SelectionType | str, catalog: list[dict] | None = None
     ) -> list[dict]:
         if catalog is None:
             catalog = self._get_browser_catalog(include_page_details=False)
@@ -1585,11 +1583,11 @@ class PlaywrightState(LibraryComponent):
     def get_page_ids(
         self,
         page: SelectionType = SelectionType.ALL,
-        context: Union[SelectionType, str] = SelectionType.ALL,
-        browser: Union[SelectionType, str] = SelectionType.ALL,
-        assertion_operator: Optional[AssertionOperator] = None,
-        *assertion_expected: Optional[Any],
-        message: Optional[str] = None,
+        context: SelectionType | str = SelectionType.ALL,
+        browser: SelectionType | str = SelectionType.ALL,
+        assertion_operator: AssertionOperator | None = None,
+        *assertion_expected: Any | None,
+        message: str | None = None,
     ) -> list:
         """Returns a list of page ids based on the context and browser selection.
         See `Browser, Context and Page` for more information about Page and related concepts.
@@ -1712,7 +1710,7 @@ class PlaywrightState(LibraryComponent):
             return response.body
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def cancel_download(self, download: Union[DownloadInfo, str]):
+    def cancel_download(self, download: DownloadInfo | str):
         """Cancels an active download.
 
         | =Arguments= | =Description= |
@@ -1730,7 +1728,7 @@ class PlaywrightState(LibraryComponent):
     def open_trace_group(
         self,
         name: str,
-        file: Union[Path, str, None] = None,
+        file: Path | str | None = None,
         line: int = 0,
         column: int = 0,
         context_id: str = "",

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from pathlib import Path
-from typing import Optional, Union
 
 from .constant import get_browser_lib, logger
 
@@ -20,8 +19,8 @@ from .constant import get_browser_lib, logger
 def combine(
     input_folder: Path,
     output_folder: Path,
-    config: Union[Path, None],
-    name: Optional[str] = None,
+    config: Path | None,
+    name: str | None = None,
     reports: str = "v8",
 ) -> None:
     cwd = Path(Path.cwd())

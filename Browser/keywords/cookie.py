@@ -14,7 +14,6 @@
 
 import json
 from datetime import datetime, timezone
-from typing import Optional, Union
 
 from robot.libraries.DateTime import convert_date
 from robot.utils import DotDict
@@ -28,7 +27,7 @@ class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "PageContent"))
     def get_cookies(
         self, return_type: CookieType = CookieType.dictionary
-    ) -> Union[list[DotDict], str]:
+    ) -> list[DotDict] | str:
         """Returns cookies from the current active browser context.
 
         If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
@@ -92,13 +91,13 @@ class Cookie(LibraryComponent):
         self,
         name: str,
         value: str,
-        url: Optional[str] = None,
-        domain: Optional[str] = None,
-        path: Optional[str] = None,
-        expires: Union[str, datetime, None] = None,
-        httpOnly: Optional[bool] = None,
-        secure: Optional[bool] = None,
-        sameSite: Optional[CookieSameSite] = None,
+        url: str | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+        expires: str | datetime | None = None,
+        httpOnly: bool | None = None,
+        secure: bool | None = None,
+        sameSite: CookieSameSite | None = None,
     ):
         """Adds a cookie to currently active browser context.
 
@@ -131,7 +130,7 @@ class Cookie(LibraryComponent):
             response = stub.AddCookie(Request.Json(body=cookie_json))
             logger.info(response.log)
 
-    def _expiry(self, expiry: Union[str, datetime]) -> int:
+    def _expiry(self, expiry: str | datetime) -> int:
         if isinstance(expiry, datetime):
             return int(expiry.timestamp())
         try:
@@ -180,7 +179,7 @@ class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl"))
     def get_cookie(
         self, cookie: str, return_type: CookieType = CookieType.dictionary
-    ) -> Union[DotDict, str]:
+    ) -> DotDict | str:
         """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
 
         | =Arguments= | =Description= |

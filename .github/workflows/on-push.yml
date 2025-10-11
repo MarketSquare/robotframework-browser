@@ -44,7 +44,7 @@ jobs:
             node-version: 20.x
             shard: 4
           - os: windows-latest
-            python-version: "3.9"
+            python-version: "3.10"
             node-version: 20.x
             shard: 1
           - os: ubuntu-latest
@@ -213,13 +213,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
-        python-version: [3.9, 3.13]
+        python-version: [3.10, 3.13]
         node-version: [20.x, 24.x]
         exclude:
-          - python-version: 3.9
+          - python-version: 3.10
             node-version: 20.x
           - os: windows-latest
-            python-version: 3.9
+            python-version: 3.10
           - os: windows-latest
             node-version: 20.x
     steps:

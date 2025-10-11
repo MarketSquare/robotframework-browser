@@ -19,7 +19,7 @@ from os import PathLike
 from pathlib import Path
 from sys import maxsize
 from time import sleep
-from typing import Any, Optional
+from typing import Any
 
 from robot.api.deco import keyword
 from robot.utils import DotDict
@@ -141,7 +141,7 @@ class Promises(LibraryComponent):
         self,
         saveAs: str = "",
         wait_for_finished: bool = True,
-        download_timeout: Optional[timedelta] = None,
+        download_timeout: timedelta | None = None,
     ) -> Future:
         """Returns a promise that waits for next download event on page.
 

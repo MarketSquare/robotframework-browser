@@ -9,7 +9,7 @@ dependencies = [
   "grpcio == 1.75.1",
   "grpcio-tools == 1.75.1",
   "protobuf == 6.32.1",
-  "robotframework >= 5.0.1, < 8.0.0",
+  "robotframework >= 5.1.1, < 9.0.0",
   "robotframework-pythonlibcore >= 4.4.1, < 5.0.0",
   "robotframework-assertion-engine >= 3.0.3, < 4.0.0",
   "wrapt >= 1.17.2",
@@ -19,7 +19,7 @@ dependencies = [
   "psutil >= 3.3.11",
   "PyYAML >= 6.0.3"
 ]
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 authors = [
   {name = "MarketSquare - Robot Framework community"}
 ]
@@ -97,7 +97,7 @@ lint.ignore = [
   "N999",  # Invalid module name: 'Browser'
   "PLR0913",  # too many arguments
 ]
-target-version = "py39"
+target-version = "py310"
 lint.select = [
   "E",
   "F",

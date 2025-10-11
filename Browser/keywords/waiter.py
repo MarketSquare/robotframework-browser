@@ -16,7 +16,7 @@ import json
 import re
 import time
 from datetime import timedelta
-from typing import Any, Optional, Union
+from typing import Any
 
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -40,8 +40,8 @@ class Waiter(LibraryComponent):
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ):
         """Waits for the element found by ``selector`` to satisfy state option.
 
@@ -142,7 +142,7 @@ class Waiter(LibraryComponent):
         self,
         selector: str,
         state: ElementState = ElementState.visible,
-        timeout: Optional[timedelta] = None,
+        timeout: timedelta | None = None,
         strict: bool = True,
     ):
         selector = self.resolve_selector(selector)
@@ -163,9 +163,9 @@ class Waiter(LibraryComponent):
         self,
         function: str,
         selector: str = "",
-        polling: Union[str, timedelta] = "raf",
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        polling: str | timedelta = "raf",
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
@@ -211,8 +211,8 @@ class Waiter(LibraryComponent):
         self,
         function: str,
         selector: str = "",
-        polling: Union[str, timedelta] = "raf",
-        timeout: Optional[timedelta] = None,
+        polling: str | timedelta = "raf",
+        timeout: timedelta | None = None,
         strict: bool = True,
     ):
         selector = self.resolve_selector(selector)
@@ -239,8 +239,8 @@ class Waiter(LibraryComponent):
         self,
         condition: ConditionInputs,
         *args: Any,
-        timeout: Optional[timedelta] = None,
-        message: Optional[str] = None,
+        timeout: timedelta | None = None,
+        message: str | None = None,
     ) -> Any:
         """Waits for a condition, defined with Browser getter keywords to become True.
 
@@ -307,7 +307,7 @@ class Waiter(LibraryComponent):
     def wait_for_load_state(
         self,
         state: PageLoadStates = PageLoadStates.load,
-        timeout: Optional[timedelta] = None,
+        timeout: timedelta | None = None,
     ):
         """Waits that the page reaches the required load state.
 

@@ -1,5 +1,4 @@
 import urllib.parse
-from typing import Optional
 
 from robot.api.deco import keyword
 from robot.libraries.BuiltIn import BuiltIn
@@ -13,7 +12,7 @@ class Crawling(LibraryComponent):
     @keyword(tags=["Crawling"])
     def crawl_site(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         page_crawl_keyword="take_screenshot",
         max_number_of_page_to_crawl: int = 1000,
         max_depth_to_crawl: int = 50,
