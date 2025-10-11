@@ -284,6 +284,7 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     takeScreenshot = this.wrapping(browserControl.takeScreenshot);
     getBoundingBox = this.wrapping(getters.getBoundingBox);
+    ariaSnapShot = this.wrappingStatePage(getters.getAriaSnapshot);
 
     async getPageSource(
         call: ServerUnaryCall<Request.Empty, Response.String>,
