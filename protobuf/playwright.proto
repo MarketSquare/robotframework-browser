@@ -17,6 +17,11 @@ syntax = "proto3";
 message Request {
   message Empty {}
 
+  message AriaSnapShot {
+    string locator = 1;
+    bool strict = 2;
+  }
+
   message ClosePage {
     bool runBeforeUnload = 1;
   }
@@ -451,6 +456,8 @@ message Response {
 }
 
 service  Playwright {
+  /* Aria Snapshot */
+  rpc AriaSnapShot(Request.AriaSnapShot) returns (Response.String);
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
   rpc GetCookies(Request.Empty) returns (Response.Json);

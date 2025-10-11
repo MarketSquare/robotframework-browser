@@ -17,6 +17,7 @@ dependencies = [
   "click >= 8.1.8",
   "seedir >= 0.5.1",
   "psutil >= 3.3.11",
+  "PyYAML >= 6.0.3"
 ]
 requires-python = ">= 3.9"
 authors = [
