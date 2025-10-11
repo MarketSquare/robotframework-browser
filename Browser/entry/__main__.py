@@ -19,7 +19,7 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 import click
@@ -309,7 +309,7 @@ def _normalize_traces(item: str) -> str:
     help="Accept trace URLs over stdin to update the viewer.",
 )
 def show_trace(
-    file: str, browser: str, host: Optional[str], port: Optional[int], stdin: bool
+    file: str, browser: str, host: str | None, port: int | None, stdin: bool
 ):
     """Start the Playwright trace viewer.
 
@@ -473,7 +473,7 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
     required=False,
     default=None,
 )
-def install(browser: Optional[str] = None, **flags):
+def install(browser: str | None = None, **flags):
     """Install Playwright Browsers binaries.
 
     It installs the specified browser by executing 'npx playwright install' command.
@@ -591,8 +591,8 @@ def transform(path: Path, wait_until_network_is_idle: bool):
 )
 def translation(
     filename: Path,
-    plugings: Optional[str] = None,
-    jsextension: Optional[str] = None,
+    plugings: str | None = None,
+    jsextension: str | None = None,
     compare: bool = False,
 ):
     """Default translation file from library keywords.
@@ -662,8 +662,8 @@ def translation(
 def coverage(
     input: Path,  # noqa: A002
     output: Path,
-    config: Optional[Path] = None,
-    name: Optional[str] = None,
+    config: Path | None = None,
+    name: str | None = None,
     reports: str = "v8",
 ):
     """Combine coverage reports from the pages and create a single report.

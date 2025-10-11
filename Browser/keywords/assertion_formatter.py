@@ -1,4 +1,4 @@
-from typing import Callable, Optional, Union
+from collections.abc import Callable
 
 from assertionengine.formatter import FormatRules
 from assertionengine.formatter import Formatter as ASFormatter
@@ -21,8 +21,8 @@ from ..utils import keyword as keyword_deco
 class Formatter(ASFormatter, LibraryComponent):
     def set_assertion_formatter(
         self,
-        keyword: Optional[FormatterKeywords] = None,
-        *formatters: Union[FormatingRules, LambdaFunction],
+        keyword: FormatterKeywords | None = None,
+        *formatters: FormatingRules | LambdaFunction,
         scope: Scope = Scope.Global,
     ) -> dict[str, list[str]]:
         """Set keyword assertion formatter with defined scope.

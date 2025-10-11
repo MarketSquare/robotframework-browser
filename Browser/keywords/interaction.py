@@ -19,7 +19,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from time import sleep
-from typing import Any, Optional, Union
+from typing import Any
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -336,11 +336,11 @@ class Interaction(LibraryComponent):
         button: MouseButton = MouseButton.left,
         *modifiers: KeyboardModifier,
         clickCount: int = 1,
-        delay: Optional[timedelta] = None,
+        delay: timedelta | None = None,
         force: bool = False,
         noWaitAfter: bool = False,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
+        position_x: float | None = None,
+        position_y: float | None = None,
         trial: bool = False,
     ):
         """Simulates mouse click on the element found by ``selector``.
@@ -412,8 +412,8 @@ class Interaction(LibraryComponent):
         *modifiers: KeyboardModifier,
         force: bool = False,
         noWaitAfter: bool = False,
-        position_x: Optional[int] = None,
-        position_y: Optional[int] = None,
+        position_x: int | None = None,
+        position_y: int | None = None,
         trial: bool = False,
     ):
         """Simulates tap on the element found by ``selector``.
@@ -464,7 +464,7 @@ class Interaction(LibraryComponent):
     @keyword(tags=("PageContent",))
     def record_selector(
         self,
-        label: Optional[str] = None,
+        label: str | None = None,
     ):
         """Record the selector that is under mouse.
 
@@ -495,8 +495,8 @@ class Interaction(LibraryComponent):
     def hover(
         self,
         selector: str,
-        position_x: Optional[float] = None,
-        position_y: Optional[float] = None,
+        position_x: float | None = None,
+        position_y: float | None = None,
         force: bool = False,
         *modifiers: KeyboardModifier,
     ):
@@ -566,7 +566,7 @@ class Interaction(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def scroll_to(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         vertical: str = "top",
         horizontal: str = "left",
         behavior: ScrollBehavior = ScrollBehavior.auto,
@@ -603,7 +603,7 @@ class Interaction(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def scroll_by(
         self,
-        selector: Optional[str] = None,
+        selector: str | None = None,
         vertical: str = "height",
         horizontal: str = "0",
         behavior: ScrollBehavior = ScrollBehavior.auto,
@@ -872,8 +872,8 @@ class Interaction(LibraryComponent):
         self,
         action: DialogAction,
         prompt_input: str = "",
-        text: Optional[str] = None,
-        timeout: Optional[timedelta] = None,
+        text: str | None = None,
+        timeout: timedelta | None = None,
     ):
         """Returns a promise to wait for next dialog on page, handles it with ``action`` and optionally verifies the dialogs text.
 
@@ -921,9 +921,9 @@ class Interaction(LibraryComponent):
     def wait_for_alerts(
         self,
         actions: list[DialogAction],
-        prompt_inputs: list[Union[None, str]],
-        texts: list[Union[None, str]],
-        timeout: Optional[timedelta] = None,
+        prompt_inputs: list[None | str],
+        texts: list[None | str],
+        timeout: timedelta | None = None,
     ) -> list[str]:
         """Returns a promise to wait for multiple dialog on a page.
 
@@ -973,7 +973,7 @@ class Interaction(LibraryComponent):
             )
         lib_default_or_timeout = self.get_timeout(timeout)
         alert_actions = Request().AlertActions()
-        for action, prompt_input in zip(actions, prompt_inputs):
+        for action, prompt_input in zip(actions, prompt_inputs, strict=False):
             alert_action = Request().AlertAction()
             alert_action.alertAction = action.name
             alert_action.promptInput = prompt_input or ""
@@ -983,7 +983,7 @@ class Interaction(LibraryComponent):
             response = stub.WaitForAlerts(alert_actions)
             logger.debug(response.items)
         index = 1
-        for expected_text, received_text in zip(texts, response.items):
+        for expected_text, received_text in zip(texts, response.items, strict=False):
             if expected_text is None:
                 index += 1
                 continue
@@ -997,11 +997,11 @@ class Interaction(LibraryComponent):
     def mouse_button(
         self,
         action: MouseButtonAction,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
+        x: float | None = None,
+        y: float | None = None,
         button: MouseButton = MouseButton.left,
         clickCount: int = 1,
-        delay: Union[int, timedelta] = timedelta(seconds=0),
+        delay: int | timedelta = timedelta(seconds=0),
         # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):
         """Clicks, presses or releases a mouse button.
@@ -1296,7 +1296,7 @@ class Interaction(LibraryComponent):
         self,
         action: KeyboardInputAction,
         input: str,  # noqa: A002
-        delay: Union[int, timedelta] = timedelta(milliseconds=0),
+        delay: int | timedelta = timedelta(milliseconds=0),
         # TODO: remove int special handling. Was only here since 09.2022 for removing delay ms to timedelta
     ):
         """Input text into page with virtual keyboard.
@@ -1343,7 +1343,7 @@ class Interaction(LibraryComponent):
     def upload_file_by_selector(
         self,
         selector: str,
-        path: Union[PathLike, FileUploadBuffer],
+        path: PathLike | FileUploadBuffer,
         *extra_paths: PathLike,
     ):
         """Uploads file from ``path`` to file input element matched by selector.

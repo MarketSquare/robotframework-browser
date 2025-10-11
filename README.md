@@ -18,7 +18,7 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Installation instructions
 
-For both installation options only Python 3.9 or newer is supported. There are two main ways
+For both installation options only Python 3.10 or newer is supported. There are two main ways
 to install Browser library, with or without user having NodeJS installed.
 
 The easiest way to install the Browser library is to use the

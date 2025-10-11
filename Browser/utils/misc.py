@@ -20,7 +20,7 @@ import string
 import subprocess
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import psutil  # type: ignore[import-untyped]
 from robot.api import logger
@@ -123,7 +123,7 @@ def type_converter(argument: Any) -> str:
     return type(argument).__name__.lower()
 
 
-def get_download_id(download: Union[DownloadInfo, str]) -> str:
+def get_download_id(download: DownloadInfo | str) -> str:
     if isinstance(download, str):
         return download
     if isinstance(download, dict):

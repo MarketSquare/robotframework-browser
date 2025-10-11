@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from assertionengine import AssertionOperator, verify_assertion
 
@@ -24,7 +24,7 @@ from ..utils import keyword, logger
 
 
 class WebAppState(LibraryComponent):
-    def eval_js(self, script: str, frame_selector: Optional[str] = None) -> Any:
+    def eval_js(self, script: str, frame_selector: str | None = None) -> Any:
         with self.playwright.grpc_channel() as stub:
             return stub.EvaluateJavascript(
                 Request().EvaluateAll(
@@ -42,10 +42,10 @@ class WebAppState(LibraryComponent):
     def local_storage_get_item(
         self,
         key: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-        frame_selector: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+        frame_selector: str | None = None,
     ) -> Any:
         """Get saved data from the local storage.
 
@@ -79,7 +79,7 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="LocalStorage Set Item", tags=("Setter", "PageContent"))
     def local_storage_set_item(
-        self, key: str, value: str, frame_selector: Optional[str] = None
+        self, key: str, value: str, frame_selector: str | None = None
     ):
         """Save data to the local storage.
 
@@ -100,7 +100,7 @@ class WebAppState(LibraryComponent):
         logger.info(response.log)
 
     @keyword(name="LocalStorage Remove Item", tags=("Setter", "PageContent"))
-    def local_storage_remove_item(self, key: str, frame_selector: Optional[str] = None):
+    def local_storage_remove_item(self, key: str, frame_selector: str | None = None):
         """Remove saved data with key from the local storage.
 
         | =Arguments= | =Description= |
@@ -121,7 +121,7 @@ class WebAppState(LibraryComponent):
         logger.info(response.log)
 
     @keyword(name="LocalStorage Clear", tags=("Setter", "PageContent"))
-    def local_storage_clear(self, frame_selector: Optional[str] = None):
+    def local_storage_clear(self, frame_selector: str | None = None):
         """Remove all saved data from the local storage.
 
         | =Arguments= | =Description= |
@@ -146,10 +146,10 @@ class WebAppState(LibraryComponent):
     def session_storage_get_item(
         self,
         key: str,
-        assertion_operator: Optional[AssertionOperator] = None,
-        assertion_expected: Optional[Any] = None,
-        message: Optional[str] = None,
-        frame_selector: Optional[str] = None,
+        assertion_operator: AssertionOperator | None = None,
+        assertion_expected: Any | None = None,
+        message: str | None = None,
+        frame_selector: str | None = None,
     ) -> Any:
         """Get saved data from from session storage.
 
@@ -183,7 +183,7 @@ class WebAppState(LibraryComponent):
 
     @keyword(name="SessionStorage Set Item", tags=("Setter", "PageContent"))
     def session_storage_set_item(
-        self, key: str, value: str, frame_selector: Optional[str] = None
+        self, key: str, value: str, frame_selector: str | None = None
     ):
         """Save data to session storage.
 
@@ -203,9 +203,7 @@ class WebAppState(LibraryComponent):
         logger.info(response.log)
 
     @keyword(name="SessionStorage Remove Item", tags=("Setter", "PageContent"))
-    def session_storage_remove_item(
-        self, key: str, frame_selector: Optional[str] = None
-    ):
+    def session_storage_remove_item(self, key: str, frame_selector: str | None = None):
         """
         Remove saved data with key from the session storage.
 
@@ -226,7 +224,7 @@ class WebAppState(LibraryComponent):
         logger.info(response.log)
 
     @keyword(name="SessionStorage Clear", tags=("Setter", "PageContent"))
-    def session_storage_clear(self, frame_selector: Optional[str] = None):
+    def session_storage_clear(self, frame_selector: str | None = None):
         """Remove all saved data from the session storage.
 
         | =Arguments= | =Description= |

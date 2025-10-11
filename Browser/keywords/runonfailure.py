@@ -19,8 +19,6 @@
 # Copyright 2020-     Robot Framework Foundation
 
 
-from typing import Optional
-
 from ..base import LibraryComponent
 from ..utils import keyword, logger
 from ..utils.data_types import DelayedKeyword, Scope
@@ -29,7 +27,7 @@ from ..utils.data_types import DelayedKeyword, Scope
 class RunOnFailureKeywords(LibraryComponent):
     @keyword(tags=("Config",))
     def register_keyword_to_run_on_failure(
-        self, keyword: Optional[str], *args: str, scope: Scope = Scope.Global
+        self, keyword: str | None, *args: str, scope: Scope = Scope.Global
     ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 

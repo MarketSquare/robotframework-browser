@@ -15,7 +15,7 @@ Create Video With Full Path
     Go To    ${FRAMES_URL}
     Get Browser Catalog
     Verify Video Files    1
-    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/video    type=Path
 
 Create Video With Relative Path
     [Documentation]
@@ -31,7 +31,7 @@ Create Video With Relative Path
     Wait File Count In Directory    ${OUTPUT_DIR}/browser/video/my_video    ${1}
     Should Start With    ${details}[video_path]    ${OUTPUT_DIR}${/}browser${/}video${/}my_video
     Should End With    ${details}[video_path]    .webm
-    Should Be Equal    ${record_video.dir}    my_video
+    Should Be Equal    ${record_video.dir}    ${OUTPUT_DIR}/browser/video/my_video    type=Path
     New Context    viewport={'width': 2048, 'height': 1200}
     New Page    file://${details}[video_path]
     Get BoundingBox    video    ALL    validate    value['width'] == 1280 and value['height'] == 720

@@ -20,7 +20,7 @@ import time
 from functools import cached_property
 from pathlib import Path
 from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
-from typing import TYPE_CHECKING, Optional, TextIO, Union
+from typing import TYPE_CHECKING, TextIO
 
 import grpc  # type: ignore
 
@@ -52,15 +52,15 @@ if TYPE_CHECKING:
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwright process."""
 
-    port: Optional[str]
+    port: str | None
 
     def __init__(
         self,
         library: "Browser",
-        enable_playwright_debug: Union[PlaywrightLogTypes, bool],
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        playwright_log: Optional[Union[Path, TextIO]] = Path(Path.cwd()),
+        enable_playwright_debug: PlaywrightLogTypes | bool,
+        host: str | None = None,
+        port: int | None = None,
+        playwright_log: Path | TextIO | None = Path(Path.cwd()),
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
@@ -70,7 +70,7 @@ class Playwright(LibraryComponent):
         self.playwright_log = playwright_log
 
     @cached_property
-    def _playwright_process(self) -> Optional[Popen]:
+    def _playwright_process(self) -> Popen | None:
         process = self.start_playwright()
         atexit.register(self.close)
         self.wait_until_server_up()
@@ -132,7 +132,7 @@ class Playwright(LibraryComponent):
             return Path(os.devnull).open("w", encoding="utf-8")
         return self.playwright_log
 
-    def start_playwright(self) -> Optional[Popen]:
+    def start_playwright(self) -> Popen | None:
         env_node_port = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT")
         existing_port = self.port or env_node_port
         if existing_port is not None:
