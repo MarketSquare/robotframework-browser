@@ -21,6 +21,15 @@ import { boolResponse, intResponse, jsonResponse, stringResponse } from './respo
 import { exists, findLocator } from './playwright-invoke';
 import { logger } from './browser_logger';
 
+export async function getAriaSnapshot(request: Request.AriaSnapShot, state: PlaywrightState): Promise<Response.String> {
+    const selector = request.getLocator();
+    const strictMode = request.getStrict();
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const snapshot = await locator.ariaSnapshot();
+    logger.info(`Aria snapshot for ${selector}: ${snapshot}`);
+    return stringResponse(snapshot, 'Aria snapshot received successfully.');
+}
+
 export async function getTitle(page: Page): Promise<Response.String> {
     const title = await page.title();
     return stringResponse(title, 'Active page title is: ' + title);
