@@ -584,6 +584,9 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//4320|Comment >>]
         """
         scroll_size = self.library.get_scroll_size(selector)
+        if isinstance(scroll_size, (int, float)):
+            logger.debug("Scroll size is not Dimensions:")
+            return
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
         client_size = self.library.get_client_size(selector)
@@ -621,6 +624,9 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//4319|Comment >>]
         """
         scroll_size = self.library.get_scroll_size(selector)
+        if isinstance(scroll_size, (int, float)):
+            logger.debug("Scroll size is not Dimensions:")
+            return
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
         client_size = self.library.get_client_size(selector)
@@ -1094,8 +1100,14 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//4247|Comment >>]
         """
         from_bbox = self.library.get_boundingbox(selector_from)
+        if isinstance(from_bbox, (int, float)) or not from_bbox:
+            logger.debug("From bounding box is not BoundingBox:")
+            return
         from_xy = self._center_of_boundingbox(from_bbox)
         to_bbox = self.library.get_boundingbox(selector_to)
+        if isinstance(to_bbox, (int, float)) or not to_bbox:
+            logger.debug("From bounding box is not BoundingBox:")
+            return
         to_xy = self._center_of_boundingbox(to_bbox)
         self.mouse_button(MouseButtonAction.down, **from_xy)
         self.mouse_move(**to_xy, steps=steps)
@@ -1168,6 +1180,9 @@ class Interaction(LibraryComponent):
         [https://forum.robotframework.org/t//4249|Comment >>]
         """
         from_bbox = self.library.get_boundingbox(selector_from)
+        if isinstance(from_bbox, (int, float)) or not from_bbox:
+            logger.debug("From bounding box is not BoundingBox:")
+            return
         from_xy = self._center_of_boundingbox(from_bbox)
         to_x = from_xy["x"] + x
         to_y = from_xy["y"] + y
@@ -1206,6 +1221,9 @@ class Interaction(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             bbox = self.library.get_boundingbox(selector)
+            if isinstance(bbox, (int, float)) or not bbox:
+                logger.debug("Bounding box is not BoundingBox:")
+                return
             center = self._center_of_boundingbox(bbox)
             body: MouseOptionsDict = {
                 "x": center["x"] + x,
