@@ -48,3 +48,4 @@ ${SYS_VAR_CLEAN} =                      ${True}
 ${NETWORK_IDLE_FILE_DATA} =             ${EMPTY}
 ${INPUT_ELEMENT_COUNT_IN_LOGIN} =       5
 ${BUTTON_ELEMENT_COUNT_IN_LOGIN} =      ${16}
+${PYTHON_314} =                         ${None}
