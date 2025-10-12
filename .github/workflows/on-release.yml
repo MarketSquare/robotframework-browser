@@ -72,11 +72,10 @@ jobs:
           python -c "import sysconfig;print(sysconfig.get_platform())"
           python -c "import platform;print(platform.machine().lower())"
           inv deps
-      - name: Build Protos and check with tsc
+      - name: Build stubs
         if: matrix.os == 'ubuntu-latest'
         run: |
           inv node-build
-          python -m Browser.gen_stub
       - name: Create Distributable Browser Package
         if: matrix.os == 'ubuntu-latest'
         run: |

@@ -100,10 +100,9 @@ jobs:
         uv pip install wheel --python ${{ matrix.python-version }} --system
         uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
         uv pip install -r pyproject.toml  --python ${{ matrix.python-version }} --system
-    - name: Build Protos and check with tsc
+    - name: Build stubs
       run: |
         inv node-build
-        python -m Browser.gen_stub
     - name: Check types with mypy on Linux
       if: matrix.os == 'ubuntu-latest' && matrix.shard == 1 && matrix.python-version != '3.10'
       run: |
@@ -180,11 +179,10 @@ jobs:
         uv pip install wheel --python 3.12  --system --verbose
         uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
         uv pip install -r pyproject.toml  --python 3.12  --system
-    - name: Build Protos and check with tsc
+    - name: Build stubs
       if: matrix.os == 'ubuntu-latest'
       run: |
         inv node-build
-        python -m Browser.gen_stub
     - name: Build test app
       run: |
         inv create-test-app
@@ -329,11 +327,10 @@ jobs:
           python -c "import sysconfig;print(sysconfig.get_platform())"
           python -c "import platform;print(platform.machine().lower())"
           inv deps
-      - name: Build Protos and check with tsc
+      - name: Build stubs
         if: matrix.os == 'ubuntu-latest'
         run: |
           inv node-build
-          python -m Browser.gen_stub
       - name: Create Distributable Browser Package
         if: matrix.os == 'ubuntu-latest'
         run: |
