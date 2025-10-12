@@ -135,6 +135,10 @@ def get_python_binary_path() -> str:
     return sys.executable
 
 
+def is_python_314() -> bool:
+    return sys.version_info >= (3, 14) and sys.version_info < (3, 15)
+
+
 def _parse_fi_date(date: str) -> datetime:
     if not date:
         # 2000-01-01 because of Windos raising OsError
@@ -211,7 +215,7 @@ def get_parent(path: str) -> Path:
     return Path(path).parent
 
 
-def relative_to(path1: Path, path2: Path) -> str:
+def relative_to(path1: Path, path2: Path) -> Path:
     """Return relative path."""
     return path1.relative_to(path2)
 

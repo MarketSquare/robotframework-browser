@@ -74,7 +74,7 @@ Create New Context With RecordVideo.Dir As String And Validate That RecordVideo.
     [Arguments]    ${path}
     ${dir_type} =    Create Context With String Type RecordVideodir And Get Type Of RecordVideo Dir    ${path}
     Log    Type of recordVideo.dir with given value (${path}) is ${dir_type}
-    Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>
+    Verify Video File Type    ${dir_type}
 
 Create New Context With RecordVideo.Dir As Path And Validate That RecordVideo.Dir After New Context Call Is Of Type Path
     [Arguments]    ${path}
@@ -87,10 +87,18 @@ Create New Persistent Context With RecordVideo.Dir As String And Validate That R
     ${dir_type} =    Create Persistent Context With String Type RecordVideodir And Get Type Of RecordVideo Dir
     ...    ${path}
     Log    Type of recordVideo.dir with given value (${path}) is ${dir_type}
-    Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>    # Python 3.13 need mode wired regex
+    Verify Video File Type    ${dir_type}
 
 Create New Persistent Context With RecordVideo.Dir As Path And Validate That RecordVideo.Dir After New Context Call Is Of Type Path
     [Arguments]    ${path}
     ${dir_type} =    Create Persistent Context With Path Type RecordVideodir And Get Type Of RecordVideo Dir    ${path}
     Log    Type of recordVideo.dir with given value (${path}) is ${dir_type}
     Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>    # Python 3.13 need mode wired regex
+
+Verify Video File Type
+    [Arguments]    ${dir_type}
+    IF    ${PYTHON_314}
+        Should Match Regexp    ${dir_type}    <class 'str'>
+    ELSE
+        Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>    # Python 3.13 need mode wired regex
+    END
