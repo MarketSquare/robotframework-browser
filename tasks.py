@@ -60,25 +60,35 @@ the Playwright_ tool internally. Browser library {version} is a new release with
 **UPDATE** enhancements and bug fixes.
 All issues targeted for Browser library {version.milestone} can be found
 from the `issue tracker`_.
-For first time installation with pip_, just run
+For first time installation with pip_ and BrowserBatteries_ just run
+::
+   pip install robotframework-browser robotframework-browser-batteries
+   rfbrowser install
+to install the latest available release. If you upgrading
+from previous release with pip_, run
+::
+   pip install --upgrade robotframework-browser robotframework-browser-batteries
+   rfbrowser clean-node
+   rfbrowser install
+For first time installation with pip_ with Browser library only, just run
 ::
    pip install robotframework-browser
    rfbrowser init
-to install the latest available release. If you upgrading
-from previous release with pip_, run
+If you upgrading from previous release with pip_, run
 ::
    pip install --upgrade robotframework-browser
    rfbrowser clean-node
    rfbrowser init
 Alternatively you can download the source distribution from PyPI_ and
 install it manually. Browser library {version} was released on {date}.
-Browser supports Python 3.10+, Node 20/22/24 LTS and Robot Framework 5.0+.
+Browser supports Python 3.10+, Node 20/22/24 LTS and Robot Framework 6.1+.
 Library was tested with Playwright REPLACE_PW_VERSION
 
 .. _Robot Framework: http://robotframework.org
 .. _Browser: https://github.com/MarketSquare/robotframework-browser
 .. _Playwright: https://github.com/microsoft/playwright
 .. _pip: http://pip-installer.org
+.. _BrowserBatteries: https://pypi.org/project/robotframework-browser-batteries/
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
 .. _issue tracker: https://github.com/MarketSquare/robotframework-browser/issues?q=state%3Aclosed%20milestone%3A{version.milestone}
 """
