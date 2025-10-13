@@ -50,13 +50,13 @@ Library was tested with Playwright 1.56.0
 Most important enhancements
 ===========================
 
-- Get Aria Snapshots for Page (as alternative to 'Get Page Source') (`#4471`_)
+Get Aria Snapshots for Page (as alternative to 'Get Page Source') (`#4471`_)
 ------------------------------------------------------------------------------
 New keyword to get the ARIA tree snapshot of the current page. This is useful
 for accessibility testing and for verifying the structure of the page for LLM
 based testing.
 
-Browser.pyi stub file genration does not work if python > 3.9 (`#4475`_)
+Browser.pyi stub file generation does not work if python > 3.9 (`#4475`_)
 ------------------------------------------------------------------------
 Fixed the stub file generation for newer Python versions. Now we use MyPy
 directly instead of relying on Robot Framework's stub generation.
