@@ -1750,6 +1750,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "johndoorzon",
+      "name": "Sebastiaan Molenaar",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11929554?v=4",
+      "profile": "https://github.com/johndoorzon",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
