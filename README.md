@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-189-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-190-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -466,6 +466,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tobiasBora"><img src="https://avatars.githubusercontent.com/u/2164118?v=4?s=100" width="100px;" alt="Tobias Bora"/><br /><sub><b>Tobias Bora</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AtobiasBora" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/frste"><img src="https://avatars.githubusercontent.com/u/50555939?v=4?s=100" width="100px;" alt="Frank Stenzhorn"/><br /><sub><b>Frank Stenzhorn</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Afrste" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.lakitna.nl/"><img src="https://avatars.githubusercontent.com/u/22448210?v=4?s=100" width="100px;" alt="Sander van Beek"/><br /><sub><b>Sander van Beek</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ALakitna" title="Bug reports">🐛</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=Lakitna" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/johndoorzon"><img src="https://avatars.githubusercontent.com/u/11929554?v=4?s=100" width="100px;" alt="Sebastiaan Molenaar"/><br /><sub><b>Sebastiaan Molenaar</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ajohndoorzon" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
