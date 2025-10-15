@@ -107,6 +107,8 @@ class Control(LibraryComponent):
         else:
             directory = self.screenshots_output
         directory.mkdir(parents=True, exist_ok=True)
+        if "{index}" not in filename:
+            return directory / filename
         index = 0
         while index < sys.maxsize:
             index += 1

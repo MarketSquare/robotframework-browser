@@ -276,6 +276,12 @@ Screenshot With UUID
     Length Should Be    ${file}    36
     Should Match Regexp    ${file}    [a-f0-9]{32}\\.png
 
+Screenshot With Same Filename And No Index
+    ${file1} =    Take Screenshot    same_name
+    ${file2} =    Take Screenshot    same_name
+    Should Be Equal    ${file1}    ${file2}
+    [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/same_name*.png
+
 *** Keywords ***
 Run On Failure Variable Assertion
     [Arguments]    ${selector}
