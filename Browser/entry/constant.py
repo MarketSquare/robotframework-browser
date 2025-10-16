@@ -30,43 +30,58 @@ LOG_FILE = "rfbrowser.log"
 PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
 IS_TERMINAL = sys.stdout.isatty()
 
-# Logger is initialized lazily to avoid permission errors when importing
-# this module in production environments with read-only filesystems
-_logger = None
-_log_file_path = None
+
+class _LoggerManager:
+    """Manages lazy initialization of the logger for CLI commands.
+
+    This class ensures the logger is only initialized when actually needed,
+    preventing permission errors in production environments with read-only
+    filesystems where log file creation would fail during module import.
+    """
+
+    def __init__(self) -> None:
+        self._logger: logging.Logger | None = None
+        self._log_file_path: Path | None = None
+
+    def get_logger(self) -> logging.Logger:
+        """Get or initialize the logger."""
+        if self._logger is not None:
+            return self._logger
+
+        install_log = ROOT_FOLDER / LOG_FILE
+        try:
+            install_log.touch(exist_ok=True)
+            self._log_file_path = install_log
+        except Exception as error:
+            print(f"Could not write to {install_log}, got error: {error}")  # noqa: T201
+            install_log = Path.cwd() / LOG_FILE
+            self._log_file_path = install_log
+            print(f"Writing install log to: {install_log}")  # noqa: T201
+
+        self._logger = logging.getLogger(__name__)
+        self._logger.setLevel(logging.INFO)
+        handlers: list[logging.StreamHandler] = [
+            RotatingFileHandler(
+                install_log, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
+            ),
+        ]
+        if not IS_TERMINAL:
+            handlers.append(logging.StreamHandler(sys.stdout))
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s [%(levelname)-8s] %(message)s",
+            handlers=handlers,
+        )
+        return self._logger
 
 
-def _init_logger():
+# Module-level singleton instance
+_logger_manager = _LoggerManager()
+
+
+def _init_logger() -> logging.Logger:
     """Initialize the logger for CLI commands only (lazy initialization)."""
-    global _logger, _log_file_path
-    if _logger is not None:
-        return _logger
-
-    install_log = ROOT_FOLDER / LOG_FILE
-    try:
-        install_log.touch(exist_ok=True)
-        _log_file_path = install_log
-    except Exception as error:
-        print(f"Could not write to {install_log}, got error: {error}")  # noqa: T201
-        install_log = Path.cwd() / LOG_FILE
-        _log_file_path = install_log
-        print(f"Writing install log to: {install_log}")  # noqa: T201
-
-    _logger = logging.getLogger(__name__)
-    _logger.setLevel(logging.INFO)
-    handlers: list[logging.StreamHandler] = [
-        RotatingFileHandler(
-            install_log, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
-        ),
-    ]
-    if not IS_TERMINAL:
-        handlers.append(logging.StreamHandler(sys.stdout))
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format="%(asctime)s [%(levelname)-8s] %(message)s",
-        handlers=handlers,
-    )
-    return _logger
+    return _logger_manager.get_logger()
 
 
 def log(message: str, silent_mode: bool = False):
