@@ -16,6 +16,7 @@ import os
 import platform
 import re
 import sys
+from functools import cached_property
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -26,12 +27,11 @@ IS_WINDOWS = platform.system() == "Windows"
 # But shell=True breaks our linux CI
 SHELL = bool(IS_WINDOWS)
 ROOT_FOLDER = Path(__file__).resolve().parent.parent
-LOG_FILE = "rfbrowser.log"
 PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
 IS_TERMINAL = sys.stdout.isatty()
 
 
-class _LoggerManager:
+class LogWriter:
     """Manages lazy initialization of the logger for CLI commands.
 
     This class ensures the logger is only initialized when actually needed,
@@ -39,27 +39,19 @@ class _LoggerManager:
     filesystems where log file creation would fail during module import.
     """
 
-    def __init__(self) -> None:
-        self._logger: logging.Logger | None = None
-        self._log_file_path: Path | None = None
-
-    def get_logger(self) -> logging.Logger:
-        """Get or initialize the logger."""
-        if self._logger is not None:
-            return self._logger
-
-        install_log = ROOT_FOLDER / LOG_FILE
+    @cached_property
+    def logger(self) -> logging.Logger:
+        log_file = "rfbrowser.log"
+        install_log = ROOT_FOLDER / log_file
         try:
             install_log.touch(exist_ok=True)
-            self._log_file_path = install_log
         except Exception as error:
             print(f"Could not write to {install_log}, got error: {error}")  # noqa: T201
-            install_log = Path.cwd() / LOG_FILE
-            self._log_file_path = install_log
+            install_log = Path.cwd() / log_file
             print(f"Writing install log to: {install_log}")  # noqa: T201
 
-        self._logger = logging.getLogger(__name__)
-        self._logger.setLevel(logging.INFO)
+        log = logging.getLogger(__name__)
+        log.setLevel(logging.INFO)
         handlers: list[logging.StreamHandler] = [
             RotatingFileHandler(
                 install_log,
@@ -76,30 +68,29 @@ class _LoggerManager:
             format="%(asctime)s [%(levelname)-8s] %(message)s",
             handlers=handlers,
         )
-        return self._logger
+        return log
+
+    def log(self, message: str, silent_mode: bool = False):
+        if silent_mode:
+            return
+        if os.name == "nt":
+            message = re.sub(r"[^\x00-\x7f]", r" ", message)
+        try:
+            self.logger.info(message.strip("\n"))
+            if IS_TERMINAL:
+                print(message.strip("\n"), flush=True)  # noqa: T201
+        except Exception as error:
+            self.logger.info(f"Could not log line, suppress error {error}")
+
+    def info(self, message: str):
+        self.logger.info(message)
 
 
-# Module-level singleton instance
-_logger_manager = _LoggerManager()
-
-
-def _init_logger() -> logging.Logger:
-    """Initialize the logger for CLI commands only (lazy initialization)."""
-    return _logger_manager.get_logger()
+log_writer = LogWriter()
 
 
 def log(message: str, silent_mode: bool = False):
-    if silent_mode:
-        return
-    logger = _init_logger()
-    if os.name == "nt":
-        message = re.sub(r"[^\x00-\x7f]", r" ", message)
-    try:
-        logger.info(message.strip("\n"))
-        if IS_TERMINAL:
-            print(message.strip("\n"), flush=True)  # noqa: T201
-    except Exception as error:
-        logger.info(f"Could not log line, suppress error {error}")
+    log_writer.log(message, silent_mode)
 
 
 def write_marker(silent_mode: bool = False):
