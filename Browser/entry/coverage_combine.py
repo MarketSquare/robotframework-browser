@@ -13,7 +13,7 @@
 # limitations under the License.
 from pathlib import Path
 
-from .constant import _init_logger, get_browser_lib
+from .constant import get_browser_lib, log_writer
 
 
 def combine(
@@ -23,11 +23,10 @@ def combine(
     name: str | None = None,
     reports: str = "v8",
 ) -> None:
-    logger = _init_logger()
     cwd = Path(Path.cwd())
     if not cwd.is_relative_to(output_folder):
         output_folder = cwd.joinpath(output_folder)
-    logger.info(f"Combining coverage files from {input_folder} to {output_folder}")
+    log_writer.info(f"Combining coverage files from {input_folder} to {output_folder}")
     browser_lib = get_browser_lib()
     reports_list = reports.split(";") if ";" in reports else [reports]
     folder = browser_lib.merge_coverage_reports(
@@ -37,4 +36,4 @@ def combine(
         name=name,
         reports=reports_list,
     )
-    logger.info(f"Combined coverage files to {folder}")
+    log_writer.info(f"Combined coverage files to {folder}")
