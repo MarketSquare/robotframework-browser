@@ -62,7 +62,11 @@ class _LoggerManager:
         self._logger.setLevel(logging.INFO)
         handlers: list[logging.StreamHandler] = [
             RotatingFileHandler(
-                install_log, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
+                install_log,
+                maxBytes=2000000,
+                backupCount=10,
+                mode="a",
+                encoding="utf-8",
             ),
         ]
         if not IS_TERMINAL:
