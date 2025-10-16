@@ -13,7 +13,7 @@
 # limitations under the License.
 from pathlib import Path
 
-from .constant import get_browser_lib, logger
+from .constant import _init_logger, get_browser_lib
 
 
 def combine(
@@ -23,6 +23,7 @@ def combine(
     name: str | None = None,
     reports: str = "v8",
 ) -> None:
+    logger = _init_logger()
     cwd = Path(Path.cwd())
     if not cwd.is_relative_to(output_folder):
         output_folder = cwd.joinpath(output_folder)

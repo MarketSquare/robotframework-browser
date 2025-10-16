@@ -27,35 +27,52 @@ IS_WINDOWS = platform.system() == "Windows"
 SHELL = bool(IS_WINDOWS)
 ROOT_FOLDER = Path(__file__).resolve().parent.parent
 LOG_FILE = "rfbrowser.log"
-INSTALL_LOG = ROOT_FOLDER / LOG_FILE
 PLAYWRIGHT_BROWSERS_PATH = "PLAYWRIGHT_BROWSERS_PATH"
 IS_TERMINAL = sys.stdout.isatty()
-try:
-    INSTALL_LOG.touch(exist_ok=True)
-except Exception as error:
-    print(f"Could not write to {INSTALL_LOG}, got error: {error}")  # noqa: T201
-    INSTALL_LOG = Path.cwd() / LOG_FILE
-    print(f"Writing install log to: {INSTALL_LOG}")  # noqa: T201
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handlers: list[logging.StreamHandler] = [
-    RotatingFileHandler(
-        INSTALL_LOG, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
-    ),
-]
-if not IS_TERMINAL:
-    handlers.append(logging.StreamHandler(sys.stdout))
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)-8s] %(message)s",
-    handlers=handlers,
-)
+# Logger is initialized lazily to avoid permission errors when importing
+# this module in production environments with read-only filesystems
+_logger = None
+_log_file_path = None
+
+
+def _init_logger():
+    """Initialize the logger for CLI commands only (lazy initialization)."""
+    global _logger, _log_file_path
+    if _logger is not None:
+        return _logger
+
+    install_log = ROOT_FOLDER / LOG_FILE
+    try:
+        install_log.touch(exist_ok=True)
+        _log_file_path = install_log
+    except Exception as error:
+        print(f"Could not write to {install_log}, got error: {error}")  # noqa: T201
+        install_log = Path.cwd() / LOG_FILE
+        _log_file_path = install_log
+        print(f"Writing install log to: {install_log}")  # noqa: T201
+
+    _logger = logging.getLogger(__name__)
+    _logger.setLevel(logging.INFO)
+    handlers: list[logging.StreamHandler] = [
+        RotatingFileHandler(
+            install_log, maxBytes=2000000, backupCount=10, mode="a", encoding="utf-8"
+        ),
+    ]
+    if not IS_TERMINAL:
+        handlers.append(logging.StreamHandler(sys.stdout))
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format="%(asctime)s [%(levelname)-8s] %(message)s",
+        handlers=handlers,
+    )
+    return _logger
 
 
 def log(message: str, silent_mode: bool = False):
     if silent_mode:
         return
+    logger = _init_logger()
     if os.name == "nt":
         message = re.sub(r"[^\x00-\x7f]", r" ", message)
     try:
