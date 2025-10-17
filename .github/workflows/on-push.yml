@@ -148,6 +148,8 @@ jobs:
       if: ${{ always() }}
       run: |
         python -m GHAReports --robotlog atest/output/output.xml
+        python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+        cat fail.md
 
   build:
     runs-on: ${{ matrix.os }}
@@ -296,6 +298,8 @@ jobs:
         if: ${{ always() }}
         run: |
           python -m GHAReports --robotlog atest/output/output.xml
+          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
 
   build_browser_batteries_wheels:
     name: Build wheels on ${{ matrix.os }} for BrowserBatteries tests
@@ -434,3 +438,5 @@ jobs:
         if: ${{ always() }}
         run: |
           python -m GHAReports --robotlog atest/output/output.xml
+          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
