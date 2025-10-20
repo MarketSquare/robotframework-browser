@@ -1,7 +1,7 @@
 invoke >= 2.2.0
 pytest >= 8.4.2
 pytest-watch >= 4.2.0
-mypy >= 1.17.1
+mypy >= 1.18.2
 mypy-protobuf >= 3.5.0
 ruff>=0.12.12
 wheel>=0.45.1
