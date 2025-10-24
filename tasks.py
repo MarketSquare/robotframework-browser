@@ -14,6 +14,7 @@ from pathlib import Path, PurePath
 
 from invoke import Exit, task
 from invoke.context import Context
+import uv
 
 try:
     import bs4
@@ -109,15 +110,18 @@ def _node_deps(context: Context):
 
 
 @task
-def deps(c, system=False, force=False):
+def deps(c, system=False, force=False, uv=False):
     """Install dependencies for development.
 
     Args:
         system: When set, installs packages to system Python instead of user.
         force: When set, installs dependencies even there is no changes.
     """
-    c.run("pip install -U pip")
-    c.run("pip install -U uv")
+    if uv:
+        print("No pip install.")
+    else:
+        c.run("pip install -U pip")
+        c.run("pip install -U uv")
     print("Installing dev dependencies.")
 
     package_manager_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
