@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-192-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-193-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -471,6 +471,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/johndoorzon"><img src="https://avatars.githubusercontent.com/u/11929554?v=4?s=100" width="100px;" alt="Sebastiaan Molenaar"/><br /><sub><b>Sebastiaan Molenaar</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ajohndoorzon" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://blog.davidsommers.com"><img src="https://avatars.githubusercontent.com/u/12738?v=4?s=100" width="100px;" alt="David Sommers"/><br /><sub><b>David Sommers</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=databyte" title="Code">💻</a> <a href="#ideas-databyte" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MailChailBail"><img src="https://avatars.githubusercontent.com/u/238522466?v=4?s=100" width="100px;" alt="Alfred_Bail"/><br /><sub><b>Alfred_Bail</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AMailChailBail" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/eslamelmishtawy"><img src="https://avatars.githubusercontent.com/u/20448355?v=4?s=100" width="100px;" alt="Eslam Elmishtawy"/><br /><sub><b>Eslam Elmishtawy</b></sub></a><br /><a href="#ideas-eslamelmishtawy" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>
