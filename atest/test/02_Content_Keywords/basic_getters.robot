@@ -178,8 +178,8 @@ Get Element Size And Assert
     Get BoundingBox    \#progress_bar    ALL    ==    ${{{'x': 0, 'y': 660, 'width': 40, 'height': 30}}}
 
 Get Bounding Box Of Hidden Elements
-    VAR    @{hidden_with_bbox}    id=no-size    id=hidden-visibility-btn
-    VAR    @{hidden_without_bbox}    id=hidden-btn    id=hidden-display-btn
+    VAR    @{hidden_with_bbox} =    id=no-size    id=hidden-visibility-btn
+    VAR    @{hidden_without_bbox} =    id=hidden-btn    id=hidden-display-btn
     FOR    ${element}    IN    @{hidden_with_bbox}
         ${bbox} =    Get BoundingBox    ${element}
         Should Be True    ${bbox}
@@ -345,13 +345,13 @@ Get Console Log Test
     ${logs} =    Get Console Log    validate    len(value) == 5 or len(value) == 3
     ${logs_len} =    Get Length    ${logs}
     IF    $logs_len == 5
-        VAR    ${index1}    ${2}
-        VAR    ${index2}    ${3}
-        VAR    ${index3}    ${4}
+        VAR    ${index1} =    ${2}
+        VAR    ${index2} =    ${3}
+        VAR    ${index3} =    ${4}
     ELSE
-        VAR    ${index1}    ${0}
-        VAR    ${index2}    ${1}
-        VAR    ${index3}    ${2}
+        VAR    ${index1} =    ${0}
+        VAR    ${index2} =    ${1}
+        VAR    ${index3} =    ${2}
     END
     Should Be Equal    ${logs}[${index1}][type]    log
     Should Start With    ${logs}[${index1}][text]    Mouse button: left

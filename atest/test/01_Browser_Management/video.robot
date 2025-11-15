@@ -34,9 +34,9 @@ Create Video With Relative Path
     Should End With    ${details}[video_path]    .webm
     ${type} =    Get Video Path Type
     IF    ${PYTHON_314}
-        VAR    ${expected_path}    my_video
+        VAR    ${expected_path} =    my_video
     ELSE
-        VAR    ${expected_path}    ${OUTPUT_DIR}/browser/video/my_video
+        VAR    ${expected_path} =    ${OUTPUT_DIR}/browser/video/my_video
     END
     Should Be Equal    ${record_video.dir}    ${expected_path}    type=${type}
     New Context    viewport={'width': 2048, 'height': 1200}
@@ -131,8 +131,8 @@ Clean Up Persistent Test
 
 Get Video Path Type
     IF    ${PYTHON_314}
-        VAR    ${type}    str
+        VAR    ${type} =    str
     ELSE
-        VAR    ${type}    Path
+        VAR    ${type} =    Path
     END
     RETURN    ${type}

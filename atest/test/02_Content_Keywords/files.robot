@@ -43,7 +43,7 @@ Upload Many Files
     ...    ${CURDIR}/assertions.robot
     ...    ${CURDIR}/files.robot
     ...    ${CURDIR}/__init__.robot
-    VAR    @{exptected_list}    __init__.robot    assertions.robot    files.robot    __init__.robot
+    VAR    @{exptected_list} =    __init__.robot    assertions.robot    files.robot    __init__.robot
     Check Upload Result    ${exptected_list}
 
 Upload Files And Directories
@@ -60,7 +60,7 @@ Upload Files And Directories
     ...    ${CURDIR}/__init__.robot
     ...    ${CURDIR}/tmp_dir
     ...    ${CURDIR}/__init__.robot
-    VAR    @{exptected_list}    __init__.robot    tmp_file1.txt    tmp_file2.txt    __init__.robot
+    VAR    @{exptected_list} =    __init__.robot    tmp_file1.txt    tmp_file2.txt    __init__.robot
     Check Upload Result    ${exptected_list}
     [Teardown]    OperatingSystem.Remove Directory    ${CURDIR}/tmp_dir    recursive=True
 
@@ -68,7 +68,7 @@ Upload File As Buffer
     New Context
     New Page    ${LOGIN_URL}
     ${text} =    Get File    ${CURDIR}/__init__.robot
-    VAR    &{buffer}    name=not_here.txt    mimeType=text/plain    buffer=${text}
+    VAR    &{buffer} =    name=not_here.txt    mimeType=text/plain    buffer=${text}
     Upload File By Selector    id=file_chooser    ${buffer}
     Get Text    id=upload_result    ==    not_here.txt
 
@@ -78,7 +78,7 @@ Upload Large File As Buffer
     ${file_name} =    Generate Test Text File    ${10 000 000}
     ${text} =    Get File    ${CURDIR}/${file_name}
     Log    ${text}[:100]    formatter=repr
-    VAR    &{buffer}    name=large_not_here.txt    mimeType=text/plain    buffer=${text}
+    VAR    &{buffer} =    name=large_not_here.txt    mimeType=text/plain    buffer=${text}
     Upload File By Selector    id=file_chooser    ${buffer}
     Get Text    id=upload_result    ==    large_not_here.txt
     [Teardown]    Remove File    ${CURDIR}/${file_name}

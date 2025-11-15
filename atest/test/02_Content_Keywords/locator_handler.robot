@@ -84,12 +84,12 @@ Adding Locator Handler With All Args Should Work
     END
 
 Add Custom Locator Handler For Click
-    VAR    &{handler_spec}    action=click    selector=id=OverlayCloseButton
+    VAR    &{handler_spec} =    action=click    selector=id=OverlayCloseButton
     Add Locator Handler Custom    id=overlay    [${handler_spec}]
     Click    id=CreateOverlayButton    # Overlay is displayed
     Click    id=textHeading    # Overlay should be closed
     Remove Locator Handler    id=overlay
-    VAR    &{handler_spec}
+    VAR    &{handler_spec} =
     ...    action=click
     ...    selector=id=OverlayCloseButton
     ...    button=left
@@ -101,23 +101,23 @@ Add Custom Locator Handler For Click
     Click    id=textHeading    # Overlay should be closed
 
 Add Custom Locator Handler With Click Check Fill And Uncheck
-    VAR    &{handler_spec_check}
+    VAR    &{handler_spec_check} =
     ...    action=CHECK    # Case of action does not matter
     ...    selector=id=overlayCheckbox
     ...    force=${True}
     ...    timeout=${4}
-    VAR    &{handler_spec_fill}
+    VAR    &{handler_spec_fill} =
     ...    action=Fill
     ...    selector=id=overlayInput
     ...    value=This is a value
     ...    force=${True}
     ...    timeout=${4}
-    VAR    &{handler_spec_uncheck}
+    VAR    &{handler_spec_uncheck} =
     ...    action=uncheck
     ...    selector=id=overlayCheckbox
     ...    force=${True}
     ...    timeout=${4}
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    action=click
     ...    selector=id=OverlayCloseButton
     ...    button=left
@@ -132,14 +132,14 @@ Add Custom Locator Handler With Click Check Fill And Uncheck
 
 Adding Custom Locator Handler With Wrong Order Does Not Fail
     [Documentation]    This test will pass because if the handler will fail whole NodeJS grpc server would close.
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    action=click
     ...    selector=id=OverlayCloseButton
     ...    button=left
     ...    clickCount=${1}
     ...    delay=${0.1}
     ...    force=${True}
-    VAR    &{handler_spec_check}
+    VAR    &{handler_spec_check} =
     ...    action=CHECK
     ...    selector=id=overlayCheckbox
     ...    force=${True}
@@ -151,7 +151,7 @@ Adding Custom Locator Handler With Wrong Order Does Not Fail
     Click    id=textHeading    # Overlay should be closed
 
 Adding Custom Locator Handler Fill Without Value Shuld Fail
-    VAR    &{handler_spec_fill}
+    VAR    &{handler_spec_fill} =
     ...    action=Fill
     ...    selector=id=overlayInput
     ...    force=${True}
@@ -165,7 +165,7 @@ Adding Custom Locator Handler Fill Without Value Shuld Fail
     END
 
 Add Custom Locator Handler Which Is Not Fill But Constains Value Should Fail
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    action=click
     ...    selector=id=OverlayCloseButton
     ...    value=Should not be here
@@ -182,7 +182,7 @@ Add Custom Locator Handler Which Is Not Fill But Constains Value Should Fail
     END
 
 Adding Custom Locator Handler Without Action Should Fail
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    selector=id=OverlayCloseButton
     ...    value=Should not be here
     ...    button=left
@@ -198,7 +198,7 @@ Adding Custom Locator Handler Without Action Should Fail
     END
 
 Adding Custom Locator Handler Without Selector Should Fail
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    action=click
     ...    button=left
     ...    clickCount=${1}
@@ -213,7 +213,7 @@ Adding Custom Locator Handler Without Selector Should Fail
     END
 
 Adding Custom Locator Handler Wiht Invalid Action Should Fail
-    VAR    &{handler_spec_click}
+    VAR    &{handler_spec_click} =
     ...    action=INVALID
     ...    selector=id=OverlayCloseButton
     ...    button=left
@@ -231,7 +231,7 @@ Adding Custom Locator Handler Wiht Invalid Action Should Fail
 *** Keywords ***
 Overlay Suite Setup
     ${TIMEOUT} =    Set Browser Timeout    0.5s
-    VAR    ${TIMEOUT}    ${TIMEOUT}    scope=SUITE
+    VAR    ${TIMEOUT} =    ${TIMEOUT}    scope=SUITE
 
 Overlay Suite Teardown
     Set Browser Timeout    ${TIMEOUT}

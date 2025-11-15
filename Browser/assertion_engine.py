@@ -15,7 +15,7 @@ import time
 from types import UnionType
 from typing import get_args, get_origin
 
-import wrapt
+import wrapt  # type: ignore
 from assertionengine import AssertionOperator
 
 from .utils import logger

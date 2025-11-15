@@ -1,54 +1,69 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+    "setuptools>=61.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser"
 version = "19.10.1"
 dependencies = [
-  "grpcio == 1.76.0",
-  "grpcio-tools == 1.76.0",
-  "protobuf == 6.33.0",
-  "robotframework >= 5.1.1, < 9.0.0",
-  "robotframework-pythonlibcore >= 4.4.1, < 5.0.0",
-  "robotframework-assertion-engine >= 3.0.3, < 4.0.0",
-  "wrapt >= 1.17.2",
-  "overrides >= 7.7.0",
-  "click >= 8.1.8",
-  "seedir >= 0.5.1",
-  "psutil >= 7.1.3",
-  "PyYAML >= 6.0.3"
+    "grpcio == 1.76.0",
+    "grpcio-tools == 1.76.0",
+    "protobuf == 6.33.0",
+    "robotframework >= 5.1.1, < 9.0.0",
+    "robotframework-pythonlibcore >= 4.4.1, < 5.0.0",
+    "robotframework-assertion-engine >= 3.0.3, < 4.0.0",
+    "wrapt >= 1.17.2",
+    "overrides >= 7.7.0",
+    "click >= 8.1.8",
+    "seedir >= 0.5.1",
+    "psutil >= 7.1.3",
+    "PyYAML >= 6.0.3",
 ]
 requires-python = ">= 3.10"
 authors = [
-  {name = "MarketSquare - Robot Framework community"}
+    { name = "MarketSquare - Robot Framework community" },
 ]
 maintainers = [
-  {name = "Tatu Aalto", email = "aalto.aalto@gmail.com"},
-  {name = "Mikko Korpela", email = "mikko.korpela@gmail.com"},
-  {name = "Kerkko Pelttari", email = "kerk.pelt@gmail.com"},
-  {name = "René Rohner", email = "rene@robotframework.org"}
+    { name = "Tatu Aalto", email = "aalto.aalto@gmail.com" },
+    { name = "Mikko Korpela", email = "mikko.korpela@gmail.com" },
+    { name = "Kerkko Pelttari", email = "kerk.pelt@gmail.com" },
+    { name = "René Rohner", email = "rene@robotframework.org" },
 ]
 description = "Robot Framework Browser library powered by Playwright. Aiming for speed, reliability and visibility."
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
-keywords = ["robotframework", "playwright", "testing", "automation", "web", "browser"]
+license-files = [
+    "LICENSE",
+]
+keywords = [
+    "robotframework",
+    "playwright",
+    "testing",
+    "automation",
+    "web",
+    "browser",
+]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
-  "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
-  "Topic :: Software Development :: Testing",
-  "Framework :: Robot Framework",
-  "Framework :: Robot Framework :: Library",
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Testing",
+    "Framework :: Robot Framework",
+    "Framework :: Robot Framework :: Library",
 ]
 
 [project.scripts]
 rfbrowser = "Browser.entry.__main__:cli"
 
 [project.optional-dependencies]
-tidy = ["robotframework-tidy>=4.12.0"]
-bb = ["robotframework-browser-batteries>=19.7.2"]
+robocop = [
+    "robotframework-robocop>=6.10.0",
+]
+bb = [
+    "robotframework-browser-batteries>=19.7.2",
+]
 
 [project.urls]
 Homepage = "https://robotframework-browser.org/"
@@ -62,84 +77,88 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 exclude = [
-  "utest*",
-  "atest*",
-  "node_modules*",
-  "docs*",
-  "node*",
-  "browser_batteries*",
+    "utest*",
+    "atest*",
+    "node_modules*",
+    "docs*",
+    "node*",
+    "browser_batteries*",
 ]
 
 [tool.setuptools.package-data]
 "*" = [
-  "index.js",
-  "package.json",
-  "package-lock.json",
-  "selector-finder.js",
+    "index.js",
+    "package.json",
+    "package-lock.json",
+    "selector-finder.js",
 ]
 
 [tool.ruff]
-lint.unfixable = []
 exclude = [
-  "__pycache__",
-  "generated",
-  "wrapper",
-  "browser.pyi",
-]
-lint.ignore = [
-  "B008",  # do not perform function calls in argument defaults
-  "B904",  # TODO only temporary. should be fixed.
-  "E501",  # line too long
-  "N815",  # mixedCase variable in class scope
-  "N803",  # argument name should be lowercase
-  "N806",  # variable in function should be lowercase
-  "N812",  # lowercase imported as non lowercase
-  "N999",  # Invalid module name: 'Browser'
-  "PLR0913",  # too many arguments
+    "__pycache__",
+    "generated",
+    "wrapper",
+    "browser.pyi",
 ]
 target-version = "py310"
-lint.select = [
-  "E",
-  "F",
-  "W",
-  "C90",
-  "I",
-  "N",
-  "B",
-  "PYI",
-  "PL",
-  "PTH",
-  "UP",
-  "A",
-  "C4",
-  "DTZ",
-  "ISC",
-  "ICN",
-  "INP",
-  "PIE",
-  "T20",
-  "PYI",
-  "PT",
-  "RSE",
-  "RET",
-  "SIM",
-  "RUF"
+
+[tool.ruff.lint]
+unfixable = []
+ignore = [
+    "B008", # do not perform function calls in argument defaults
+    "B904", # TODO only temporary. should be fixed.
+    "E501", # line too long
+    "N815", # mixedCase variable in class scope
+    "N803", # argument name should be lowercase
+    "N806", # variable in function should be lowercase
+    "N812", # lowercase imported as non lowercase
+    "N999", # Invalid module name: 'Browser'
+    "PLR0913", # too many arguments
 ]
+select = [
+    "E",
+    "F",
+    "W",
+    "C90",
+    "I",
+    "N",
+    "B",
+    "PYI",
+    "PL",
+    "PTH",
+    "UP",
+    "A",
+    "C4",
+    "DTZ",
+    "ISC",
+    "ICN",
+    "INP",
+    "PIE",
+    "T20",
+    "PYI",
+    "PT",
+    "RSE",
+    "RET",
+    "SIM",
+    "RUF",
+]
+
 [tool.ruff.lint.per-file-ignores]
 "tasks.py" = [
-  "T201",
-  "PTH123",
-  "PTH120"
+    "T201",
+    "PTH123",
+    "PTH120",
 ]
-"bootstrap.py" = ["T201"]
+"bootstrap.py" = [
+    "T201",
+]
 
-[tool.robotidy]
-src = ["atest"]
-lineseparator = "unix"
+[tool.robocop.format]
+line_ending = "unix"
 configure = [
-  "NormalizeAssignments:equal_sign_type=space_and_equal_sign",
-  "NormalizeAssignments:equal_sign_type_variables=space_and_equal_sign",
-  "NormalizeNewLines:section_lines=1",
-  "RenameKeywords:enabled=True",
-  "RenameTestCases:capitalize_each_word=True:enabled=True"
+    "NormalizeAssignments.equal_sign_type=space_and_equal_sign",
+    "NormalizeAssignments.equal_sign_type_variables=space_and_equal_sign",
+    "NormalizeNewLines.section_lines=1",
+    "RenameKeywords.enabled=True",
+    "RenameTestCases.capitalize_each_word=True:enabled=True",
 ]
