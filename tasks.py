@@ -14,7 +14,6 @@ from pathlib import Path, PurePath
 
 from invoke import Exit, task
 from invoke.context import Context
-import uv
 
 try:
     import bs4
@@ -116,7 +115,13 @@ def deps(c, system=False, force=False, uv=False):
     Args:
         system: When set, installs packages to system Python instead of user.
         force: When set, installs dependencies even there is no changes.
+        uv: When set, skips pip install step assuming uv is already installed.
     """
+    try:
+        c.run("pip --version", hide=True)
+    except Exception as error:
+        if "Encountered a bad command exit code" in str(error):
+            uv = True
     if uv:
         print("No pip install.")
     else:
