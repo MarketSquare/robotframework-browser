@@ -13,9 +13,9 @@
 # limitations under the License.
 import string
 
+from robocop.formatter.formatters import Formatter  # type: ignore
 from robot.api.parsing import Token
 from robot.parsing.model.statements import KeywordCall
-from robotidy.transformers import Transformer  # type: ignore
 
 
 def is_same_keyword(first: str, second: str) -> bool:
@@ -42,7 +42,7 @@ OLD_KW_NAME = "wait until network is idle"
 OLD_KW_NAME_WITH_LIB = "browser.wait until network is idle"
 
 
-class NetworkIdle(Transformer):
+class NetworkIdle(Formatter):
     def visit_KeywordCall(self, node: KeywordCall):  # noqa: N802
         keyword_token = node.get_token(Token.KEYWORD)
         if is_same_keyword(keyword_token.value, OLD_KW_NAME):

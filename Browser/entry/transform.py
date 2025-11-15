@@ -15,17 +15,17 @@
 import subprocess
 from pathlib import Path
 
-TIDY_TRANSFORMER_DIR = Path(__file__).parent.parent / "tidy_transformer"
+ROBOCOP_TRANSFORMER_DIR = Path(__file__).parent.parent / "robocop_transformer"
 
 
 def transform(
     path: Path,
     wait_until_network_is_idle: bool,
 ) -> None:
-    cmd = ["robotidy"]
+    cmd = ["robocop", "format"]
     if wait_until_network_is_idle:
-        wait_until_network_is_idle_file = TIDY_TRANSFORMER_DIR / "network_idle.py"
-        cmd.append("--transform")
+        wait_until_network_is_idle_file = ROBOCOP_TRANSFORMER_DIR / "network_idle.py"
+        cmd.append("--select")
         cmd.append(str(wait_until_network_is_idle_file))
     cmd.extend([str(item) for item in path])  # type: ignore
     subprocess.run(cmd, check=False)

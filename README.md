@@ -71,10 +71,10 @@ Or use the
 
 ## Install with transformer
 
-Starting from release 18.3.0 Browser library has optional dependency with
-[Robotidy](https://robotidy.readthedocs.io/en/stable/). Install library with Robotidy, run install with:
-`pip install robotframework-browser[tidy]`. Starting from 18.3.0 release, library will provide external
-Robotidy [transformer](https://robotidy.readthedocs.io/en/stable/external_transformers.html). Transformer provided
+Starting from release 19.11.0 Browser library has optional dependency with
+[Robocop](https://github.com/MarketSquare/robotframework-robocop). Install library with Robocop, run install with:
+`pip install robotframework-browser[robocop]`. Starting from 18.3.0 release, library will provide external
+Robocop [transformer](https://robocop.dev/stable/formatter/custom_formatters/). Transformer provided
 by Browser library can be run with command: `rfbrowser transform --transformer-name /path/to/tests`. Example:
 `rfbrowser transform --wait-until-network-is-idle /path/to/tests` would transform deprecated `Wait Until Network Is Idle`
 keyword to `Wait For Load State` keyword. To see full list of transformers provided by Browser library, run

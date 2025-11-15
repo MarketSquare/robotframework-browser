@@ -13,7 +13,7 @@ Aria Snapshot YAML
 Aria Snapshot Dict
     ${snapshot} =    Get Aria Snapshot    h1    dict
     Should Be Equal    ${snapshot}    ['heading "Login Page" [level=1]']    type=list
-    VAR    @{expected}    textbox "User Name:"
+    VAR    @{expected} =    textbox "User Name:"
     ${snapshot} =    Get Aria Snapshot    id=username_field    dict    ==    ${expected}
 
 Aria Snapshot Strict Mode
