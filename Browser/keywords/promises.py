@@ -265,7 +265,7 @@ class Promises(LibraryComponent):
         self.wait_for(*self.unresolved_promises)
 
     @keyword(tags=("Setter", "PageContent"))
-    def promise_to_upload_file(self, path: PathLike):
+    def promise_to_upload_file(self, path: PathLike) -> Future:
         """Returns a promise that resolves when file from ``path`` has been uploaded.
 
         Fails if the upload has not happened during timeout.
@@ -296,3 +296,4 @@ class Promises(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.UploadFile(Request().FilePath(path=path))
             logger.debug(response.log)
+        return response.log
