@@ -926,6 +926,8 @@ Permission = Enum(
         "clipboard_write": "clipboard-write",
         "geolocation": "geolocation",
         "gyroscope": "gyroscope",
+        "local-network-access": "local-network-access",
+        "local_network_access": "local-network-access",
         "magnetometer": "magnetometer",
         "midi": "midi",
         "midi-sysex": "midi-sysex",
