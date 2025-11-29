@@ -27,7 +27,7 @@ Move Obstacle Away And Drag And Drop
 Test Shell Game By Clicking Indicator
     [Tags]    slow
     [Setup]    New Page
-    FOR    ${i}    IN RANGE    20
+    FOR    ${_}    IN RANGE    20
         Go To    ${SHELLGAME_URL}
         Mouse Move Relative To    id=indicator    -100
         Mouse Button    click

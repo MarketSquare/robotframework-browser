@@ -162,3 +162,20 @@ configure = [
     "RenameKeywords.enabled=True",
     "RenameTestCases.capitalize_each_word=True:enabled=True",
 ]
+
+[tool.robocop.lint]
+ignore = [
+    "missing-doc-test-case",
+    "missing-doc-suite",
+    "missing-doc-keyword",
+    "missing-doc-resource-file",
+    "replace-set-variable-with-var", # Enable when RF 7.0 is minimum version
+    "no-suite-variable", # Enable when RF 7.0 is minimum version
+    "replace-create-with-var", # Enable when RF 7.0 is minimum version
+    "too-many-calls-in-test-case",
+    "too-long-test-case",
+    "line-too-long",
+]
+configure = [
+    "empty-lines-between-sections.empty_lines=1"
+]
