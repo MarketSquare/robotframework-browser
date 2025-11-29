@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser-batteries"
-version = "19.11.0"
-dependencies = ["robotframework-browser==19.11.0"]
+version = "19.12.0"
+dependencies = ["robotframework-browser==19.12.0"]
 requires-python = ">= 3.10"
 authors = [
   {name = "MarketSquare - Robot Framework community"}
