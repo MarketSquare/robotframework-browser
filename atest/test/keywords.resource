@@ -17,7 +17,6 @@ Library     ../library/show_trace_tool.py
 Library     ../library/screenshot.py
 Library     ../library/event_delay.py
 
-
 *** Keywords ***
 Open Browser To No Page
     New Browser    ${BROWSER}    headless=${HEADLESS}

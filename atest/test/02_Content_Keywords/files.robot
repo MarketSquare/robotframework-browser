@@ -252,7 +252,6 @@ Upload Named File
     New Page    ${LOGIN_URL}
     Get Text    \#upload_result    ==    ${EMPTY}
     Upload File By Selector    \#file_chooser    ${CURDIR}/${file_name}
-    ${result_name} =    Get Text    \#upload_result
     Get Text    \#upload_result    ==    ${file_name}
 
 Check Upload Result

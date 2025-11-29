@@ -35,8 +35,13 @@ Create Translation File With Python Plugin
 Create Translation File With JS Plugin
     [Tags]    no-docker-pr
     ${entry_cmd} =    Get Enty Command
+    ${cmd} =    Catenate    ${entry_cmd}
+    ...    translation
+    ...    ${OUTPUT_DIR}/translation.json
+    ...    --plugings ${CURDIR}/SomePlugin.py
+    ...    --jsextension ${CURDIR}/jsplugin.js
     ${process} =    Run Process
-    ...    ${entry_cmd} translation ${OUTPUT_DIR}/translation.json --plugings ${CURDIR}/SomePlugin.py --jsextension ${CURDIR}/jsplugin.js
+    ...    ${cmd}
     ...    shell=True
     Log    ${process.stdout}
     Log    ${process.stderr}
@@ -97,7 +102,7 @@ Compare Translation Files
 
 Translation Files Does Not Require Updates
     ${entry_cmd} =    Get Enty Command
-    ${process} =    Run Process
+    Run Process
     ...    ${entry_cmd} translation ${OUTPUT_DIR}/translation_new.json
     ...    shell=True
     ${process} =    Run Process

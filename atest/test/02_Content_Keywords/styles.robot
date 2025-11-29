@@ -3,7 +3,7 @@ Resource        imports.resource
 
 Test Setup      New Page    ${LOGIN_URL}
 
-Force Tags      no-iframe
+Test Tags       no-iframe
 
 *** Test Cases ***
 Add Style
