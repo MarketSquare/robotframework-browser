@@ -54,8 +54,8 @@ Library was tested with Playwright 1.57.0
 Most important enhancements
 ===========================
 
-- Drop support for Robot Framework 5 (`#4563`_)
------------------------------------------------
+Drop support for Robot Framework 5 (`#4563`_)
+---------------------------------------------
 We did announce about dropping RF5 support in previous releases, but did
 not actually drop it. Now Browser library 19.12.0 drops support for Robot Framework 5.
 
