@@ -443,7 +443,7 @@ class HttpCredentials(_HttpCredentials, total=False):
     | ***** *Variables* *****
     | ${username}=       admin
     | ${pwd}=            1234
-    | ${credentials}=    username=$username    password=$pwd
+    | &{credentials}=    username=$username    password=$pwd
     |
     | ***** *Keywords* *****
     | Open Context
