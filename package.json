@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "bin": "Browser/wrapper/index.js",
   "devDependencies": {
-    "@types/express": "^5.0.5",
+    "@types/express": "^5.0.6",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
@@ -21,7 +21,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
-    "express": "^5.1.0",
+    "express": "^5.2.1",
     "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.13.0",
     "husky": "^9.1.7",
