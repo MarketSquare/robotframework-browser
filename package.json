@@ -23,7 +23,7 @@
     "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
     "express": "^5.2.1",
     "grpc_tools_node_protoc_ts": "^5.3.3",
-    "grpc-tools": "^1.13.0",
+    "grpc-tools": "^1.13.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "^3.7.3",
