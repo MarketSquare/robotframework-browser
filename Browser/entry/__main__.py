@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import contextlib
+import importlib.util
 import json
 import shutil
 import subprocess
@@ -52,6 +53,7 @@ if TYPE_CHECKING:
 
 
 CONTEXT_SETTINGS = {"help_option_names": ["-h", "--help"]}
+HAS_BROWSER_BATTERIES = bool(importlib.util.find_spec("BrowserBatteries"))
 
 
 def _python_info():
@@ -256,7 +258,10 @@ def clean_node():
     """
     write_marker()
     _python_info()
-    _node_info()
+    if HAS_BROWSER_BATTERIES:
+        log("BrowserBatteries library detected, skipping node dependencies cleanup.")
+    else:
+        _node_info()
     log_install_dir(False)
     write_marker()
 

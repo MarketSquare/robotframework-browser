@@ -440,6 +440,11 @@ jobs:
           python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
+      - name: Uninstall
+        run: |
+          rfbrowser clean-node
+          pip uninstall -y robotframework-browser-batteries
+          pip uninstall -y robotframework-browser
 
   docker_image:
     runs-on: ubuntu-latest
