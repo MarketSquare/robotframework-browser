@@ -82,6 +82,7 @@ Run `inv version $VERSION` to update the version information to both Python
 and Node components.
 
 ```
+export VERSION=<version>
 inv version $VERSION
 inv build
 git add Browser/version.py browser_batteries/pyproject.toml package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release
@@ -97,7 +98,6 @@ Generate the keyword documentation with version number and add the keyword docum
 to the repository main branch.
 
 ```
-export VERSION=<version>
 inv docs -v $VERSION
 git add docs/versions/Browser-*.html
 git commit -m "Add $VERSION keyword documentation to repository."
