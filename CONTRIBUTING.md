@@ -129,7 +129,7 @@ notes. This allows re-generating the list of issues later if more issues are add
 
 Add, commit and push:
 ```
-git add docs/releasenotes/Browser-$VERSION.rst
+git add docs/releasenotes/Browser-$VERSION.md
 git commit -m "Release notes for $VERSION"
 git push
 ```
