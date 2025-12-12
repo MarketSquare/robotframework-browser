@@ -63,7 +63,9 @@ library {version} is a new release with **UPDATE** enhancements and bug fixes.
 All issues targeted for Browser library {version.milestone} can be found
 from the
 [issue tracker](https://github.com/MarketSquare/robotframework-browser/issues?q=state%3Aclosed%20milestone%3A{version.milestone}).
-For first time installation with pip_ and BrowserBatteries_ just run
+For first time installation with [pip](https://pip.pypa.io/en/stable/) and
+[BrowserBatteries](https://pypi.org/project/robotframework-browser-batteries/)
+just run
 ```bash
    pip install robotframework-browser robotframework-browser-batteries
    rfbrowser install
