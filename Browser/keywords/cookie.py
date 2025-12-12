@@ -145,7 +145,7 @@ class Cookie(LibraryComponent):
                 expiry_cleaned = expiry_cleaned.rsplit(".", maxsplit=1)[0]
             return int(expiry_cleaned)
         except ValueError:
-            return int(convert_date(expiry, result_format="epoch"))
+            return int(convert_date(expiry, result_format="epoch"))  # type: ignore[arg-type]
 
     @keyword(tags=("Setter", "BrowserControl"))
     def delete_all_cookies(self):

@@ -274,7 +274,7 @@ class LibraryComponent:
                         "Trying to import CryptoLibrary instance from Robot Framework."
                     )
                     crypto_library = BuiltIn().get_library_instance("CryptoLibrary")
-                    self._crypto = crypto_library.crypto
+                    self._crypto = crypto_library.crypto  # type: ignore[attr-defined]
                 except RuntimeError:
                     logger.trace(
                         "Getting CryptoLibrary failed, trying to import directly."
