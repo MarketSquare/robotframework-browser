@@ -259,7 +259,8 @@ def clean_node():
     write_marker()
     _python_info()
     if HAS_BROWSER_BATTERIES:
-        log("BrowserBatteries library detected, skipping node dependencies cleanup.")
+        log("BrowserBatteries library detected, skipping node details.")
+        write_marker()
     else:
         _node_info()
     log_install_dir(False)
