@@ -187,7 +187,7 @@ jobs:
         run: |
           xvfb-run --auto-servernum invoke atest-robot --smoke
       - name: Run tests on ${{ matrix.os }} with packed demoapp
-        if : matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-13'
+        if : matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
           inv atest-robot
       - uses: actions/upload-artifact@v5
