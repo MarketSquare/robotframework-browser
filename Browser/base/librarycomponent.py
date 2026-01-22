@@ -24,6 +24,7 @@ from time import sleep
 from typing import TYPE_CHECKING, Any
 
 from robot import version as robot_version
+
 if robot_version.get_version() >= "7.4":
     from robot.api.types import Secret
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
