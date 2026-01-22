@@ -23,6 +23,9 @@ from pathlib import Path
 from time import sleep
 from typing import TYPE_CHECKING, Any
 
+from robot import version as robot_version
+if robot_version.get_version() >= "7.4":
+    from robot.api.types import Secret
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import timestr_to_secs
 
@@ -249,7 +252,9 @@ class LibraryComponent:
                 "Use special variable syntax ($var instead of ${var}) "
                 "to prevent variable values from being spoiled."
             )
-        return secret
+        if robot_version.get_version() < "7.4":
+            return secret
+        return secret.value if isinstance(secret, Secret) else secret
 
     def decrypt_with_crypto_library(self, secret):
         if not isinstance(secret, str) or not re.match(r"^crypt:(.*)", secret):
