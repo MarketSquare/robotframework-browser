@@ -694,7 +694,7 @@ class Getters(LibraryComponent):
                 Request().ElementSelector(selector=selector, strict=False)
             )
             count = response.body
-            return float_str_verify_assertion(
+            return int_dict_verify_assertion(
                 int(count),
                 assertion_operator,
                 assertion_expected,
