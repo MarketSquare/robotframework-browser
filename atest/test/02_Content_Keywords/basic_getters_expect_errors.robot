@@ -246,7 +246,7 @@ Get Classes Custom Error
 
 Get Element Count Default Error
     Run Keyword And Expect Error
-    ...    Element count for selector `${SELECTOR_PREFIX_SPACED}h1` is '1' (int) should be less than '1.0' (float)
+    ...    Element count for selector `${SELECTOR_PREFIX_SPACED}h1` is '1' (int) should be less than '1' (int)
     ...    Get Element Count    h1    <    1
 
 Get Element Count Custom Error
