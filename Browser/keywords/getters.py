@@ -25,6 +25,7 @@ from assertionengine import (
     flag_verify_assertion,
     float_str_verify_assertion,
     int_dict_verify_assertion,
+    int_str_verify_assertion,
     list_verify_assertion,
     verify_assertion,
 )
@@ -693,9 +694,9 @@ class Getters(LibraryComponent):
             response = stub.GetElementCount(
                 Request().ElementSelector(selector=selector, strict=False)
             )
-            count = response.body
-            return float_str_verify_assertion(
-                int(count),
+            count = int(response.body)
+            return int_str_verify_assertion(
+                count,
                 assertion_operator,
                 assertion_expected,
                 f"Element count for selector `{selector}` is",
