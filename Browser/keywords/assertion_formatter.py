@@ -1,7 +1,7 @@
 from collections.abc import Callable
 
-from assertionengine.formatter import FormatRules
-from assertionengine.formatter import Formatter as ASFormatter
+from assertionengine.assertion_formatter import FormatRules
+from assertionengine.assertion_formatter import Formatter as ASFormatter
 from robot.utils import DotDict
 
 from Browser.utils.data_types import ensure_formatter_type
