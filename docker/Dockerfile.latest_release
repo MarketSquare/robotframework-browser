@@ -31,7 +31,7 @@ ENV PATH="/home/pwuser/.venv/bin:$PATH"
 RUN pip3 install --no-cache-dir --upgrade pip wheel uv
 
 # Install RobotFramework and Browser library
-RUN uv pip install --no-cache-dir --upgrade robotframework robotframework-browser==19.12.3
+RUN uv pip install --no-cache-dir --upgrade robotframework robotframework-browser==19.12.4
 
 # Initialize Browser library without browsers binaries
 RUN python3 -m Browser.entry init --skip-browsers
