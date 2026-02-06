@@ -14,7 +14,7 @@
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.41.0",
     "@yao-pkg/pkg": "github:yao-pkg/pkg",
-    "esbuild": "^0.27.2",
+    "esbuild": "^0.27.3",
     "esbuild-node-externals": "^1.20.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
