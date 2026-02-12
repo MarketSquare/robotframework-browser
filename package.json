@@ -7,7 +7,7 @@
   "bin": "Browser/wrapper/index.js",
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/react": "^19.2.13",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
