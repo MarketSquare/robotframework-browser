@@ -79,7 +79,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           inv create-package
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         name: Upload rfbrowser-wheel
         if: matrix.os == 'ubuntu-latest'
         with:
@@ -92,7 +92,7 @@ jobs:
       - name: Package demoapp
         run: |
           inv demo-app
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: demoapp-${{ matrix.os }}
           path: zip_results/demoapp
@@ -100,7 +100,7 @@ jobs:
       - name: Create Distributable BrowserBatteries Package
         run: |
           inv package-nodejs
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: browser-batteries-wheels-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
@@ -190,7 +190,7 @@ jobs:
         if : matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
           inv atest-robot
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: Clean_install_results_${{ matrix.os }}
@@ -358,7 +358,7 @@ jobs:
         # continue on error until all docker tests pass
         run: |
           invoke docker-test
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: Docker test results

@@ -139,7 +139,7 @@ jobs:
       if: matrix.os == 'macos-latest'
       run: |
         inv atest --shard ${{ matrix.shard }}/4
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: ${{ always() }}
       with:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
@@ -193,7 +193,7 @@ jobs:
       run: |
         inv docs
         inv create-package
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       if: matrix.os == 'ubuntu-latest'
       with:
         name: rfbrowser-wheel
@@ -201,7 +201,7 @@ jobs:
     - name: Package demoapp
       run: |
         inv demo-app
-    - uses: actions/upload-artifact@v6
+    - uses: actions/upload-artifact@v7
       with:
         name: demoapp-${{ matrix.os }}
         path: zip_results/demoapp
@@ -289,7 +289,7 @@ jobs:
         run: |
           rfbrowser clean-node
           uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
@@ -339,7 +339,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           inv create-package
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         name: Upload rfbrowser-wheel for BrowserBatteries tests
         if: matrix.os == 'ubuntu-latest'
         with:
@@ -352,7 +352,7 @@ jobs:
       - name: Package demoapp
         run: |
           inv demo-app
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: demoapp-bb-test-${{ matrix.os }}
           path: zip_results/demoapp
@@ -360,7 +360,7 @@ jobs:
       - name: Create Distributable BrowserBatteries Package
         run: |
           inv package-nodejs
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: browser-batteries-wheels-bb-test-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
@@ -429,7 +429,7 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           inv atest-robot
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
           name: Clean_install_results_${{ matrix.os }}
