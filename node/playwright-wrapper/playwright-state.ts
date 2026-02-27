@@ -918,7 +918,20 @@ export async function launchElectron(
     const electronApp: ElectronApplication = await electron.launch(launchOptions as Parameters<typeof electron.launch>[0]);
     openBrowsers.electronApp = electronApp;
 
-    const page: Page = await electronApp.firstWindow();
+    // firstWindow() may return a splash screen (no title, closes quickly).
+    // If the first window has no title, wait for the real main window.
+    let page: Page = await electronApp.firstWindow();
+    const firstTitle = await page.title().catch(() => '');
+    if (!firstTitle) {
+        const alreadyOpen = electronApp.windows().find((w) => w !== page);
+        if (alreadyOpen) {
+            page = alreadyOpen;
+        } else {
+            page = await electronApp
+                .waitForEvent('window', { timeout: timeout || 30000 })
+                .catch(() => page);
+        }
+    }
     const context: BrowserContext = page.context();
 
     const browserAndConfs: BrowserAndConfs = {
