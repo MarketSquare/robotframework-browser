@@ -253,6 +253,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     mergeCoverage = this.wrapping(playwrightState.mergeCoverage);
     launchBrowserServer = this.wrapping(playwrightState.launchBrowserServer);
     newPersistentContext = this.wrapping(playwrightState.newPersistentContext);
+    launchElectron = this.wrapping(playwrightState.launchElectron);
+    closeElectron = this.wrappingState(playwrightState.closeElectron);
     connectToBrowser = this.wrapping(playwrightState.connectToBrowser);
     goTo = this.wrappingPage(browserControl.goTo);
     pdf = this.wrapping(pdf.savePageAsPdf);
