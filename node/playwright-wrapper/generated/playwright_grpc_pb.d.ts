@@ -90,6 +90,7 @@ interface IPlaywrightService extends grpc.ServiceDefinition<grpc.UntypedServiceI
     newPersistentContext: IPlaywrightService_INewPersistentContext;
     launchElectron: IPlaywrightService_ILaunchElectron;
     closeElectron: IPlaywrightService_ICloseElectron;
+    openElectronDevTools: IPlaywrightService_ICloseElectron;
     connectToBrowser: IPlaywrightService_IConnectToBrowser;
     closeBrowser: IPlaywrightService_ICloseBrowser;
     closeAllBrowsers: IPlaywrightService_ICloseAllBrowsers;
@@ -1196,6 +1197,7 @@ export interface IPlaywrightServer {
     newPersistentContext: grpc.handleUnaryCall<playwright_pb.Request.PersistentContext, playwright_pb.Response.NewPersistentContextResponse>;
     launchElectron: grpc.handleUnaryCall<playwright_pb.Request.ElectronLaunch, playwright_pb.Response.NewPersistentContextResponse>;
     closeElectron: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.Empty>;
+    openElectronDevTools: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.Empty>;
     connectToBrowser: grpc.handleUnaryCall<playwright_pb.Request.ConnectBrowser, playwright_pb.Response.String>;
     closeBrowser: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.String>;
     closeAllBrowsers: grpc.handleUnaryCall<playwright_pb.Request.Empty, playwright_pb.Response.Empty>;
@@ -1473,6 +1475,9 @@ export interface IPlaywrightClient {
     closeElectron(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     closeElectron(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     closeElectron(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    openElectronDevTools(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    openElectronDevTools(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    openElectronDevTools(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     connectToBrowser(request: playwright_pb.Request.ConnectBrowser, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     connectToBrowser(request: playwright_pb.Request.ConnectBrowser, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     connectToBrowser(request: playwright_pb.Request.ConnectBrowser, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
@@ -1806,6 +1811,9 @@ export class PlaywrightClient extends grpc.Client implements IPlaywrightClient {
     public closeElectron(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public closeElectron(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public closeElectron(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public openElectronDevTools(request: playwright_pb.Request.Empty, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public openElectronDevTools(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
+    public openElectronDevTools(request: playwright_pb.Request.Empty, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.Empty) => void): grpc.ClientUnaryCall;
     public connectToBrowser(request: playwright_pb.Request.ConnectBrowser, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public connectToBrowser(request: playwright_pb.Request.ConnectBrowser, metadata: grpc.Metadata, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;
     public connectToBrowser(request: playwright_pb.Request.ConnectBrowser, metadata: grpc.Metadata, options: Partial<grpc.CallOptions>, callback: (error: grpc.ServiceError | null, response: playwright_pb.Response.String) => void): grpc.ClientUnaryCall;

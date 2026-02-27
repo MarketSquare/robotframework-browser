@@ -1445,6 +1445,17 @@ var PlaywrightService = exports.PlaywrightService = {
     responseSerialize: serialize_Response_Empty,
     responseDeserialize: deserialize_Response_Empty,
   },
+  openElectronDevTools: {
+    path: '/Playwright/OpenElectronDevTools',
+    requestStream: false,
+    responseStream: false,
+    requestType: playwright_pb.Request.Empty,
+    responseType: playwright_pb.Response.Empty,
+    requestSerialize: serialize_Request_Empty,
+    requestDeserialize: deserialize_Request_Empty,
+    responseSerialize: serialize_Response_Empty,
+    responseDeserialize: deserialize_Response_Empty,
+  },
   connectToBrowser: {
     path: '/Playwright/ConnectToBrowser',
     requestStream: false,
