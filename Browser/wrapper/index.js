@@ -13090,6 +13090,17 @@ async function launchElectron(request2, openBrowsers) {
   response.setBrowserid(browserState.id);
   return response;
 }
+async function openElectronDevTools(openBrowsers) {
+  const app = openBrowsers.electronApp;
+  if (!app) {
+    return emptyWithLog("No Electron app open, doing nothing");
+  }
+  await app.evaluate(async ({ BrowserWindow }) => {
+    const wins = BrowserWindow.getAllWindows();
+    wins.forEach((w) => w.webContents.openDevTools());
+  });
+  return emptyWithLog("Opened DevTools for all Electron windows");
+}
 async function closeElectron(openBrowsers) {
   const app = openBrowsers.electronApp;
   if (!app) {
@@ -13685,6 +13696,7 @@ var PlaywrightServer = class {
     this.newPersistentContext = this.wrapping(newPersistentContext);
     this.launchElectron = this.wrapping(launchElectron);
     this.closeElectron = this.wrappingState(closeElectron);
+    this.openElectronDevTools = this.wrappingState(openElectronDevTools);
     this.connectToBrowser = this.wrapping(connectToBrowser);
     this.goTo = this.wrappingPage(goTo);
     this.pdf = this.wrapping(savePageAsPdf);
