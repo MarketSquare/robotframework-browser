@@ -225,11 +225,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Download package for install testing
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel
       - name: Download package for install testing
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: demoapp-${{ matrix.os }}
           path: zip_results/demoapp
@@ -390,17 +390,17 @@ jobs:
         with:
           node-version: "22.x"
       - name: Download browser-wheel
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel-bb-test
           path: rfbrowser-wheel
       - name: Download BrowserBatteries wheel
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: browser-batteries-wheels-bb-test-${{ matrix.os }}
           path: browser-batteries-wheels
       - name: Download demoapp
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: demoapp-bb-test-${{ matrix.os }}
           path: demoapp
@@ -464,7 +464,7 @@ jobs:
           tags: |
             type=raw,value=tidii
       - name: Download browser wheel
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel-bb-test
           path: docker/dist
@@ -483,7 +483,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           push: false
       - name: Download demo app
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: demoapp-bb-test-ubuntu-latest
           path: demoapp

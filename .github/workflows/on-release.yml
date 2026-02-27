@@ -133,17 +133,17 @@ jobs:
         with:
           node-version: "22.x"
       - name: Download rfbrowser-wheel artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel
           path: rfbrowser-wheel
       - name: Download BrowserBatteries wheels
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: browser-batteries-wheels-${{ matrix.os }}
           path: browser-batteries-wheels
       - name: Download demoapp wheels
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: demoapp-${{ matrix.os }}
           path: demoapp
@@ -220,7 +220,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Download rfbrowser-wheel artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel
           path: dist
@@ -251,7 +251,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: Download rfbrowser-browser-wheels
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: browser-batteries-wheels-*
           path: dist
