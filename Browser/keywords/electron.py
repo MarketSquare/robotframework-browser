@@ -75,6 +75,41 @@ class Electron(LibraryComponent):
                 NewPageDetails(page_id=response.pageId, video_path=None),
             )
 
+    @keyword(tags=("Wait", "BrowserControl"))
+    def wait_for_electron_app_ready(
+        self,
+        state: str = "domcontentloaded",
+        timeout: timedelta | None = None,
+    ) -> str:
+        """Waits for the Electron window to finish loading and confirms the Browser
+        library is connected and ready for page-level keywords.
+
+        Call this immediately after `New Electron Application` to ensure the DOM is
+        ready before using ``Get Text``, ``Click``, ``Wait For Elements State``, etc.
+        Returns the window title so you can verify the correct window is active.
+
+        | =Argument=  | =Description= |
+        | ``state``   | Page load state to wait for: ``domcontentloaded`` (default), ``load``, or ``networkidle``. |
+        | ``timeout`` | Timeout for the load-state wait. Defaults to the library default timeout. |
+
+        Example:
+        | `New Electron Application`    executable_path=C:/path/to/app.exe
+        | `Wait For Electron App Ready`
+        | Get Text    css=h1    ==    Welcome
+
+        [https://forum.robotframework.org/t//4309|Comment >>]
+        """
+        timeout_ = int(timeout.total_seconds() * 1000) if timeout else int(self.timeout)
+        with self.playwright.grpc_channel() as stub:
+            load_resp = stub.WaitForPageLoadState(
+                Request().PageLoadState(state=state, timeout=timeout_)
+            )
+            logger.info(load_resp.log)
+            title_resp = stub.GetTitle(Request().Empty())
+        title = title_resp.body
+        logger.info(f"Electron app ready — active window: '{title}'")
+        return title
+
     @keyword(tags=("Setter", "BrowserControl"))
     def close_electron_application(self):
         """Closes the currently running Electron application and cleans up state.
