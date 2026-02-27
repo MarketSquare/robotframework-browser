@@ -110,6 +110,31 @@ class Electron(LibraryComponent):
         logger.info(f"Electron app ready — active window: '{title}'")
         return title
 
+    @keyword(tags=("Getter", "BrowserControl"))
+    def open_electron_dev_tools(self):
+        """Opens Chromium DevTools for all windows of the running Electron application.
+
+        Uses Playwright's ``ElectronApplication.evaluate()`` to call
+        ``BrowserWindow.getAllWindows()`` in the **main process** — the only context
+        where the Electron/Node.js API is available.  This is why calling
+        ``Evaluate JavaScript`` with ``require('electron')`` fails: that keyword runs
+        in the renderer process where Node integration is disabled.
+
+        Use this keyword to inspect the DOM, find element locators, and debug your
+        Electron UI during test development.  DevTools will open docked to the
+        application window.
+
+        Example:
+        | `New Electron Application`    executable_path=C:/path/to/app.exe
+        | `Wait For Electron App Ready`
+        | `Open Electron Dev Tools`    # DevTools panel opens inside the app window
+
+        [https://forum.robotframework.org/t//4309|Comment >>]
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.OpenElectronDevTools(Request().Empty())
+            logger.info(response.log)
+
     @keyword(tags=("Setter", "BrowserControl"))
     def close_electron_application(self):
         """Closes the currently running Electron application and cleans up state.

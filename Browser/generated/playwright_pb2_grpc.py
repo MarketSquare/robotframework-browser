@@ -444,6 +444,11 @@ class PlaywrightStub(object):
                 request_serializer=playwright__pb2.Request.Empty.SerializeToString,
                 response_deserializer=playwright__pb2.Response.Empty.FromString,
                 _registered_method=True)
+        self.OpenElectronDevTools = channel.unary_unary(
+                '/Playwright/OpenElectronDevTools',
+                request_serializer=playwright__pb2.Request.Empty.SerializeToString,
+                response_deserializer=playwright__pb2.Response.Empty.FromString,
+                _registered_method=True)
         self.ConnectToBrowser = channel.unary_unary(
                 '/Playwright/ConnectToBrowser',
                 request_serializer=playwright__pb2.Request.ConnectBrowser.SerializeToString,
@@ -1127,6 +1132,12 @@ class PlaywrightServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def OpenElectronDevTools(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def ConnectToBrowser(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -1709,6 +1720,11 @@ def add_PlaywrightServicer_to_server(servicer, server):
             ),
             'CloseElectron': grpc.unary_unary_rpc_method_handler(
                     servicer.CloseElectron,
+                    request_deserializer=playwright__pb2.Request.Empty.FromString,
+                    response_serializer=playwright__pb2.Response.Empty.SerializeToString,
+            ),
+            'OpenElectronDevTools': grpc.unary_unary_rpc_method_handler(
+                    servicer.OpenElectronDevTools,
                     request_deserializer=playwright__pb2.Request.Empty.FromString,
                     response_serializer=playwright__pb2.Response.Empty.SerializeToString,
             ),
@@ -4065,6 +4081,33 @@ class Playwright(object):
             request,
             target,
             '/Playwright/CloseElectron',
+            playwright__pb2.Request.Empty.SerializeToString,
+            playwright__pb2.Response.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def OpenElectronDevTools(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/Playwright/OpenElectronDevTools',
             playwright__pb2.Request.Empty.SerializeToString,
             playwright__pb2.Response.Empty.FromString,
             options,

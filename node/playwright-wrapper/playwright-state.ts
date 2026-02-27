@@ -958,6 +958,20 @@ export async function launchElectron(
     return response;
 }
 
+export async function openElectronDevTools(
+    openBrowsers: PlaywrightState,
+): Promise<Response.Empty> {
+    const app = openBrowsers.electronApp;
+    if (!app) {
+        return emptyWithLog('No Electron app open, doing nothing');
+    }
+    await app.evaluate(async ({ BrowserWindow }) => {
+        const wins = BrowserWindow.getAllWindows();
+        wins.forEach((w) => w.webContents.openDevTools());
+    });
+    return emptyWithLog('Opened DevTools for all Electron windows');
+}
+
 export async function closeElectron(
     openBrowsers: PlaywrightState,
 ): Promise<Response.Empty> {
