@@ -105,6 +105,59 @@ Check Checkbox Works
     Check Checkbox    css=#checkbox
     Get Checkbox State    css=#checkbox    ==    True
 
+Wait For Elements State Works
+    [Documentation]    Wait For Elements State correctly tracks a DOM element
+    ...                that is toggled from hidden to visible via a button click.
+    ...                This exercises Playwright's promise-based selector API
+    ...                through the gRPC bridge.
+    [Teardown]    Close Electron Application
+    Launch Test App
+    Wait For Elements State    css=#toggle-target    hidden
+    Click    css=#btn-toggle
+    Wait For Elements State    css=#toggle-target    visible
+    Get Text    css=#toggle-target    ==    Now you see me
+    Click    css=#btn-toggle
+    Wait For Elements State    css=#toggle-target    hidden
+
+Async Content Appears After Delay
+    [Documentation]    An element that becomes visible after an 800 ms
+    ...                JavaScript timeout is correctly awaited by
+    ...                Wait For Elements State (tests promise handling).
+    [Teardown]    Close Electron Application
+    Launch Test App
+    Wait For Elements State    css=#async-output    hidden
+    Click    css=#btn-async
+    Wait For Elements State    css=#async-output    visible    timeout=5s
+    Get Text    css=#async-output    ==    Loaded
+
+Keyboard Input Works
+    [Documentation]    Press a keyboard shortcut and verify the effect.
+    ...                Uses Ctrl+A to select all text then Delete to clear.
+    [Teardown]    Close Electron Application
+    Launch Test App
+    Fill Text    css=#text-input    to be deleted
+    Click    css=#text-input
+    Keyboard Key    press    Control+a
+    Keyboard Key    press    Delete
+    Get Property    css=#text-input    value    ==    ${EMPTY}
+
+File Input Accepts A File
+    [Documentation]    Upload a file through the native file input element
+    ...                and verify the filename is reflected in the page.
+    [Teardown]    Close Electron Application
+    Launch Test App
+    Upload File By Selector    css=#file-input    ${ELECTRON_APP_DIR}${/}package.json
+    Get Text    css=#file-name    ==    package.json
+
+Evaluate JavaScript Returns Promise Result
+    [Documentation]    Evaluate JavaScript can run async JS and return a
+    ...                resolved promise value (tests the async eval path).
+    [Teardown]    Close Electron Application
+    Launch Test App
+    ${result}=    Evaluate JavaScript    css=#title
+    ...    async (el) => { await new Promise(r => setTimeout(r, 50)); return el.textContent.trim(); }
+    Should Be Equal    ${result}    Electron Test App
+
 New Electron Application With Explicit Timeout
     [Documentation]    Passing an explicit timeout does not prevent a
     ...                successful launch.

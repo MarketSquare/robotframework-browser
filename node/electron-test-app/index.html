@@ -7,12 +7,16 @@
   <style>
     body { font-family: sans-serif; padding: 2rem; }
     button { margin-top: 1rem; padding: 0.5rem 1rem; }
+    #toggle-target { display: none; padding: 0.5rem; background: #eef; }
+    #async-output { display: none; color: green; }
+    #file-name { color: #555; font-style: italic; }
   </style>
 </head>
 <body>
   <h1 id="title">Electron Test App</h1>
   <p id="description">Browser library Electron test application.</p>
 
+  <!-- Click counter -->
   <div>
     <button id="btn-click" onclick="document.getElementById('click-counter').textContent = ++counter">
       Click Me
@@ -20,10 +24,12 @@
     <span id="click-counter">0</span>
   </div>
 
+  <!-- Text input with live mirror -->
   <div>
     <input id="text-input" type="text" placeholder="Type here…" />
   </div>
 
+  <!-- Select box -->
   <div>
     <select id="select-box">
       <option value="one">One</option>
@@ -32,15 +38,49 @@
     </select>
   </div>
 
+  <!-- Checkbox -->
   <div>
     <input id="checkbox" type="checkbox" />
     <label for="checkbox">Check me</label>
   </div>
 
+  <!-- Toggle visibility (tests Wait For Elements State) -->
+  <div>
+    <button id="btn-toggle" onclick="
+      var t = document.getElementById('toggle-target');
+      t.style.display = t.style.display === 'block' ? 'none' : 'block';
+    ">Toggle element</button>
+    <div id="toggle-target">Now you see me</div>
+  </div>
+
+  <!-- Async element (tests promise / Wait For Elements State with timeout) -->
+  <div>
+    <button id="btn-async" onclick="
+      setTimeout(function() {
+        var el = document.getElementById('async-output');
+        el.textContent = 'Loaded';
+        el.style.display = 'inline';
+      }, 800);
+    ">Load async</button>
+    <span id="async-output"></span>
+  </div>
+
+  <!-- File input (tests file handling) -->
+  <div>
+    <input id="file-input" type="file" />
+    <span id="file-name">no file chosen</span>
+  </div>
+
   <script>
     var counter = 0;
+
     document.getElementById('text-input').addEventListener('input', function () {
       document.getElementById('description').textContent = this.value;
+    });
+
+    document.getElementById('file-input').addEventListener('change', function () {
+      document.getElementById('file-name').textContent =
+        this.files.length ? this.files[0].name : 'no file chosen';
     });
   </script>
 </body>

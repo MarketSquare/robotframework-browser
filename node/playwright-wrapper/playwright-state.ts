@@ -896,6 +896,13 @@ export async function newPersistentContext(
     return response;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Electron support — the following functions were written with AI assistance
+// (Claude by Anthropic) under the supervision of the contributor.
+// The contributor is the copyright holder for this section; the Robot Framework
+// Foundation copyright in the file header does not extend to AI-generated code.
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function launchElectron(
     request: Request.ElectronLaunch,
     openBrowsers: PlaywrightState,

@@ -11,6 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# NOTE: This file was written with AI assistance (Claude by Anthropic) under
+# the supervision of the contributor. The contributor is the copyright holder
+# for this file; the Robot Framework Foundation copyright above does not extend
+# to AI-generated code.
 
 from datetime import timedelta
 from pathlib import Path
