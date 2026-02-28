@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browser Library Electron Test App</title>
+  <style>
+    body { font-family: sans-serif; padding: 2rem; }
+    button { margin-top: 1rem; padding: 0.5rem 1rem; }
+  </style>
+</head>
+<body>
+  <h1 id="title">Electron Test App</h1>
+  <p id="description">Browser library Electron test application.</p>
+
+  <div>
+    <button id="btn-click" onclick="document.getElementById('click-counter').textContent = ++counter">
+      Click Me
+    </button>
+    <span id="click-counter">0</span>
+  </div>
+
+  <div>
+    <input id="text-input" type="text" placeholder="Type here…" />
+  </div>
+
+  <div>
+    <select id="select-box">
+      <option value="one">One</option>
+      <option value="two">Two</option>
+      <option value="three">Three</option>
+    </select>
+  </div>
+
+  <div>
+    <input id="checkbox" type="checkbox" />
+    <label for="checkbox">Check me</label>
+  </div>
+
+  <script>
+    var counter = 0;
+    document.getElementById('text-input').addEventListener('input', function () {
+      document.getElementById('description').textContent = this.value;
+    });
+  </script>
+</body>
+</html>
