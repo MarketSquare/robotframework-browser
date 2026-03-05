@@ -17,12 +17,24 @@
 # for this file; the Robot Framework Foundation copyright above does not extend
 # to AI-generated code.
 
+import json
+from copy import copy
 from datetime import timedelta
 from pathlib import Path
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import NewPageDetails, keyword, logger
+from ..utils import (
+    ColorScheme,
+    GeoLocation,
+    HttpCredentials,
+    NewPageDetails,
+    RecordHar,
+    RecordVideo,
+    ViewportDimensions,
+    keyword,
+    logger,
+)
 from ..utils.data_types import PageLoadStates
 
 
@@ -35,54 +47,158 @@ class Electron(LibraryComponent):
         executable_path: Path,
         args: list[str] | None = None,
         env: dict[str, str] | None = None,
-        timeout: timedelta | None = None,
+        timeout: timedelta = timedelta(seconds=30),
         wait_until: PageLoadStates = PageLoadStates.domcontentloaded,
+        *,
+        acceptDownloads: bool = True,
+        bypassCSP: bool = False,
+        colorScheme: ColorScheme | None = None,
+        cwd: str | None = None,
+        extraHTTPHeaders: dict[str, str] | None = None,
+        geolocation: GeoLocation | None = None,
+        hasTouch: bool | None = None,
+        httpCredentials: HttpCredentials | None = None,
+        ignoreHTTPSErrors: bool = False,
+        isMobile: bool | None = None,
+        javaScriptEnabled: bool = True,
+        locale: str | None = None,
+        offline: bool = False,
+        recordHar: RecordHar | None = None,
+        recordVideo: RecordVideo | None = None,
+        slowMo: timedelta = timedelta(seconds=0),
+        timezoneId: str | None = None,
+        tracesDir: str | None = None,
+        viewport: ViewportDimensions | None = ViewportDimensions(
+            width=1280, height=720
+        ),
     ) -> tuple[str, str, NewPageDetails]:
         """Launches an Electron application and sets its first window as the active page.
 
-        Uses Playwright's Electron API: ``_electron.launch()`` →
-        ``ElectronApplication`` → ``firstWindow()`` → ``Page`` → ``page.context()``.
+        Uses Playwright's ``_electron.launch()`` API to start the application, then
+        attaches the first window as the active ``Page``.  All standard Browser library
+        page keywords (``Click``, ``Get Text``, ``Wait For Elements State``, …) work
+        against the Electron window without any extra setup.
 
-        After this keyword, standard Browser library page keywords (``Click``,
-        ``Get Text``, ``Wait For Elements State``, etc.) work against the
-        Electron window without any extra setup.
-
-        Returns a tuple of ``(browser_id, context_id, page_details)`` — the same
-        shape as `New Persistent Context` — so ``Switch Page`` works if multiple
+        Returns a ``(browser_id, context_id, page_details)`` tuple — the same shape as
+        `New Persistent Context` — so ``Switch Page`` and friends work if multiple
         windows are open.
 
-        | =Argument=           | =Description= |
-        | ``executable_path``  | Path to the Electron runtime binary (e.g. ``node_modules/.bin/electron``) or a packaged application executable. |
-        | ``args``             | Optional list of command-line arguments forwarded to the Electron process. Pass the path to ``main.js`` here when using the bare Electron binary. |
-        | ``env``              | Optional mapping of environment variables merged with the current process environment. |
-        | ``timeout``          | Timeout for ``firstWindow()``. Defaults to the library default timeout. |
-        | ``wait_until``       | Page load state to wait for before returning. One of ``load``, ``domcontentloaded`` (default), or ``networkidle``. |
+        *Note on headless mode*
 
-        Example — bare Electron binary with source:
+        Playwright does not expose a ``headless`` option for Electron — the application
+        always opens a native GUI window.  On Linux CI machines, run the process inside a
+        virtual display:
+
+        | # Before running tests, start a virtual display:
+        | Xvfb :99 -screen 0 1280x720x24 &
+        | export DISPLAY=:99
+
+        | =Argument=            | =Description= |
+        | ``executable_path``   | Path to the Electron binary or packaged application executable. When using the bare ``electron`` npm package pass the path to ``main.js`` via ``args``. |
+        | ``args``              | Additional command-line arguments forwarded to the Electron process. Use this to pass the entry-point script when running the bare Electron binary, e.g. ``[node/my-app/main.js]``. |
+        | ``env``               | Environment variables for the launched process. Merged on top of the current process environment so ``PATH`` and other system variables are still inherited. |
+        | ``timeout``           | Maximum time to wait for the first window to appear. Defaults to ``30 seconds``. Pass ``0`` to disable. |
+        | ``wait_until``        | Page-load state to wait for before returning. One of ``load``, ``domcontentloaded`` (default), or ``networkidle``. |
+        | ``acceptDownloads``   | Whether to automatically download all attachments. Defaults to ``True``. |
+        | ``bypassCSP``         | Toggles bypassing page's Content-Security-Policy. Defaults to ``False``. |
+        | ``colorScheme``       | Emulates ``prefers-color-scheme`` media feature: ``dark``, ``light``, ``no-preference``, or ``null`` to disable emulation. |
+        | ``cwd``               | Working directory for the launched Electron process. Defaults to the current working directory. |
+        | ``extraHTTPHeaders``  | Additional HTTP headers sent with every renderer request. |
+        | ``geolocation``       | Geolocation to emulate. Dictionary with ``latitude``, ``longitude``, and optional ``accuracy`` keys. |
+        | ``hasTouch``          | Whether the viewport should support touch events. |
+        | ``httpCredentials``   | Credentials for HTTP Basic Authentication. Dictionary with ``username`` and ``password`` keys. |
+        | ``ignoreHTTPSErrors`` | Whether to ignore HTTPS errors during navigation. Defaults to ``False``. |
+        | ``isMobile``          | Whether to emulate a mobile device (meta-viewport tag, touch events, …). |
+        | ``javaScriptEnabled`` | Whether to enable JavaScript in the renderer. Defaults to ``True``. |
+        | ``locale``            | Renderer locale, e.g. ``en-GB``. Affects ``navigator.language`` and date/number formatting. |
+        | ``offline``           | Emulates network being offline. Defaults to ``False``. |
+        | ``recordHar``         | Enable HAR recording. Dictionary with ``path`` (required) and optional ``omitContent``. |
+        | ``recordVideo``       | Enable video recording. Dictionary with ``dir`` (required) and optional ``size``. |
+        | ``slowMo``            | Slows down all Playwright operations by the given duration. Useful for visual debugging. Defaults to no delay. |
+        | ``timezoneId``        | Overrides the system timezone for the renderer, e.g. ``Europe/Berlin``. |
+        | ``tracesDir``         | Directory where Playwright trace files are written. |
+        | ``viewport``          | Initial viewport dimensions. Defaults to ``{'width': 1280, 'height': 720}``. Pass ``None`` to use the native window size. |
+
+        Example — bare Electron binary with a source checkout:
         | ${ELECTRON}=    Set Variable    node_modules/.bin/electron
         | @{ARGS}=        Create List     node/electron-test-app/main.js
         | ${browser}    ${context}    ${page}=    `New Electron Application`
         | ...    executable_path=${ELECTRON}    args=@{ARGS}
         | `Get Title`    ==    My App
 
-        Example — packaged executable:
+        Example — packaged application executable:
         | ${browser}    ${context}    ${page}=    `New Electron Application`
         | ...    executable_path=/usr/share/myapp/myapp
         | `Get Title`    ==    My App
 
+        Example — French locale, larger viewport, video recording:
+        | &{VIDEO}=    Create Dictionary    dir=videos
+        | ${browser}    ${context}    ${page}=    `New Electron Application`
+        | ...    executable_path=/usr/share/myapp/myapp
+        | ...    locale=fr-FR
+        | ...    viewport={'width': 1920, 'height': 1080}
+        | ...    recordVideo=${VIDEO}
+
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
-        timeout_ms = int(timeout.total_seconds() * 1000) if timeout else int(self.timeout)
+        timeout_ms = int(timeout.total_seconds() * 1000)
+        slow_mo_ms = int(slowMo.total_seconds() * 1000)
+
+        options: dict = {
+            "executablePath": str(executable_path),
+            "acceptDownloads": acceptDownloads,
+        }
+
+        if args:
+            options["args"] = args
+        if env:
+            options["env"] = env
+        if bypassCSP:
+            options["bypassCSP"] = bypassCSP
+        if colorScheme is not None:
+            options["colorScheme"] = colorScheme.name.replace("_", "-")
+        if cwd is not None:
+            options["cwd"] = cwd
+        if extraHTTPHeaders is not None:
+            options["extraHTTPHeaders"] = extraHTTPHeaders
+        if geolocation is not None:
+            options["geolocation"] = dict(geolocation)
+        if hasTouch is not None:
+            options["hasTouch"] = hasTouch
+        if httpCredentials is not None:
+            options["httpCredentials"] = dict(httpCredentials)
+        if ignoreHTTPSErrors:
+            options["ignoreHTTPSErrors"] = ignoreHTTPSErrors
+        if isMobile is not None:
+            options["isMobile"] = isMobile
+        if not javaScriptEnabled:
+            options["javaScriptEnabled"] = javaScriptEnabled
+        if locale is not None:
+            options["locale"] = locale
+        if offline:
+            options["offline"] = offline
+        if recordHar is not None:
+            options["recordHar"] = dict(recordHar)
+        if recordVideo is not None:
+            options["recordVideo"] = dict(recordVideo)
+        if slow_mo_ms > 0:
+            options["slowMo"] = slow_mo_ms
+        if timeout_ms:
+            options["timeout"] = timeout_ms
+        if timezoneId is not None:
+            options["timezoneId"] = timezoneId
+        if tracesDir is not None:
+            options["tracesDir"] = tracesDir
+        if viewport is not None:
+            options["viewport"] = copy(viewport)
 
         with self.playwright.grpc_channel() as stub:
-            req = Request().ElectronLaunch(
-                executable_path=str(executable_path),
-                args=args or [],
-                timeout=timeout_ms,
+            response = stub.LaunchElectron(
+                Request().ElectronLaunch(
+                    rawOptions=json.dumps(options, default=str),
+                    defaultTimeout=timeout_ms,
+                )
             )
-            if env:
-                req.env.update(env)
-            response = stub.LaunchElectron(req)
             logger.info(response.log)
 
             load_resp = stub.WaitForPageLoadState(
@@ -90,27 +206,38 @@ class Electron(LibraryComponent):
             )
             logger.info(load_resp.log)
 
+            video_path = None
+            if recordVideo is not None:
+                try:
+                    video_path = response.video
+                except Exception:
+                    pass
+
             return (
                 response.browserId,
                 response.id,
-                NewPageDetails(page_id=response.pageId, video_path=None),
+                NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
 
     @keyword(tags=("Setter", "BrowserControl"))
     def close_electron_application(self) -> None:
         """Closes the running Electron application and cleans up library state.
 
-        Removes the associated browser, context, and page from the Browser library
-        state stack.  After this keyword there is no active browser; use
-        `New Browser` or another state-creating keyword before issuing further
-        page interactions.
+        Equivalent to `Close Browser` for Electron apps. Closes the
+        ``ElectronApplication`` handle and removes the associated browser, context,
+        and page from the Browser library state stack.
 
-        Calling this keyword when no Electron app is open is safe and does nothing.
+        After this keyword there is no active browser; call `New Electron Application`,
+        `New Browser`, or `New Persistent Context` before issuing further page
+        interactions.
+
+        Calling this keyword when no Electron app is open is safe — it logs a message
+        and does nothing.
 
         Example:
         | `New Electron Application`    executable_path=/path/to/app
         | # ... test steps ...
-        | `Close Electron Application`
+        | [Teardown]    `Close Electron Application`
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
@@ -122,16 +249,19 @@ class Electron(LibraryComponent):
     def open_electron_dev_tools(self) -> None:
         """Opens Chromium DevTools for every window of the running Electron application.
 
-        Calls ``BrowserWindow.getAllWindows()`` in the Electron **main process**
-        via ``ElectronApplication.evaluate()``.  This is necessary because Node.js
-        and Electron APIs are only available in the main process, not in renderer
-        contexts where ``Evaluate JavaScript`` executes.
+        Calls ``BrowserWindow.getAllWindows()`` in the Electron **main process** via
+        ``ElectronApplication.evaluate()``.  Node.js and Electron APIs are only
+        available in the main process — renderer contexts (where `Evaluate JavaScript`
+        runs) cannot access them.
 
-        Intended as a development-time debugging aid for locating element selectors.
+        Intended as a development-time debugging aid: use it to inspect the live DOM,
+        find element selectors, and debug JavaScript.
 
         Example:
         | `New Electron Application`    executable_path=/path/to/app
         | `Open Electron Dev Tools`
+        | Sleep    30s    # manually inspect the DevTools panel
+        | `Close Electron Application`
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """

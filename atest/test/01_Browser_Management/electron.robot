@@ -207,6 +207,46 @@ New Electron Application With Extra Args
     New Electron Application    executable_path=${ELECTRON_BIN}    args=@{args}
     Get Title    ==    Browser Library Electron Test App
 
+New Electron Application With slowMo
+    [Documentation]    slowMo slows down operations without causing a launch failure.
+    [Teardown]    Close Electron Application
+    @{args}=    Create List    ${ELECTRON_APP_MAIN}
+    New Electron Application
+    ...    executable_path=${ELECTRON_BIN}
+    ...    args=@{args}
+    ...    slowMo=100ms
+    Get Title    ==    Browser Library Electron Test App
+
+New Electron Application With colorScheme Dark
+    [Documentation]    colorScheme=dark is accepted without error.
+    [Teardown]    Close Electron Application
+    @{args}=    Create List    ${ELECTRON_APP_MAIN}
+    New Electron Application
+    ...    executable_path=${ELECTRON_BIN}
+    ...    args=@{args}
+    ...    colorScheme=dark
+    Get Title    ==    Browser Library Electron Test App
+
+New Electron Application With acceptDownloads False
+    [Documentation]    acceptDownloads=False is forwarded to Playwright without error.
+    [Teardown]    Close Electron Application
+    @{args}=    Create List    ${ELECTRON_APP_MAIN}
+    New Electron Application
+    ...    executable_path=${ELECTRON_BIN}
+    ...    args=@{args}
+    ...    acceptDownloads=False
+    Get Title    ==    Browser Library Electron Test App
+
+New Electron Application With bypassCSP
+    [Documentation]    bypassCSP=True is accepted and the page still loads.
+    [Teardown]    Close Electron Application
+    @{args}=    Create List    ${ELECTRON_APP_MAIN}
+    New Electron Application
+    ...    executable_path=${ELECTRON_BIN}
+    ...    args=@{args}
+    ...    bypassCSP=True
+    Get Title    ==    Browser Library Electron Test App
+
 Open Electron Dev Tools Does Not Raise
     [Documentation]    Open Electron Dev Tools executes without error.
     ...                The visual effect is not asserted because headless

@@ -184,10 +184,8 @@ message Request {
   }
 
   message ElectronLaunch {
-    string executable_path = 1;
-    repeated string args = 2;
-    map<string, string> env = 3;
-    int32 timeout = 4;
+    string rawOptions = 1;
+    int32 defaultTimeout = 2;
   }
 
   message Permissions {

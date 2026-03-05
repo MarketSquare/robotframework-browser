@@ -907,23 +907,19 @@ export async function launchElectron(
     request: Request.ElectronLaunch,
     openBrowsers: PlaywrightState,
 ): Promise<Response.NewPersistentContextResponse> {
-    const executablePath = request.getExecutablePath();
-    const args = request.getArgsList();
-    const envMap = request.getEnvMap();
-    const timeout = request.getTimeout() || undefined;
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    const timeout = request.getDefaulttimeout() || undefined;
 
-    const env: Record<string, string> = {};
-    envMap.forEach((value: string, key: string) => {
-        env[key] = value;
-    });
+    // Merge caller-supplied env on top of process.env so the child inherits
+    // the full environment (PATH etc.) and the caller can override individual vars.
+    if (options.env && typeof options.env === 'object') {
+        options.env = { ...process.env, ...(options.env as Record<string, string>) };
+    }
 
-    const launchOptions: Record<string, unknown> = { executablePath };
-    if (args && args.length > 0) launchOptions.args = args;
-    if (Object.keys(env).length > 0) launchOptions.env = { ...process.env, ...env };
-    if (timeout) launchOptions.timeout = timeout;
+    const executablePath = options.executablePath as string;
 
     const electronApp: ElectronApplication = await electron.launch(
-        launchOptions as Parameters<typeof electron.launch>[0],
+        options as Parameters<typeof electron.launch>[0],
     );
     openBrowsers.electronApp = electronApp;
 
