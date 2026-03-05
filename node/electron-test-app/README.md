@@ -34,23 +34,50 @@ npm start
 
 ## CI integration
 
-The repository `tasks.py` exposes an `electron_test_app` task that runs
-`npm install` in this directory.  The CI workflow calls this task before
-executing the acceptance tests.
+The acceptance tests (``atest/test/01_Browser_Management/electron.robot``) run
+**without skipping** on all platforms in CI. The suite setup runs `npm install`
+inside this directory automatically, so the Electron binary is downloaded fresh
+on each CI run — no pre-built binaries are committed to the repository.
 
-The acceptance tests (``atest/test/01_Browser_Management/electron.robot``) read
-the Electron binary path and the main-process entry-point path from Robot
-Framework variables that are automatically resolved relative to the repository
-root, so no environment variables need to be set on CI.
+### Step-by-step CI setup (Linux)
+
+Electron always opens a native GUI window. On headless Linux agents you must
+provide a virtual display **before** starting the test run:
+
+```bash
+# 1. Install Xvfb (once, during environment setup)
+sudo apt-get install -y xvfb
+
+# 2. Start a virtual display
+Xvfb :99 -screen 0 1280x720x24 &
+export DISPLAY=:99
+
+# 3. Run the project build (compiles protobuf, builds the Node wrapper)
+invoke build
+
+# 4. Run the Electron acceptance tests
+robot atest/test/01_Browser_Management/electron.robot
+```
+
+The `DISPLAY` variable must be set in the same shell that runs `robot`.
 
 ### Platform notes
 
-| Platform | Electron binary path (after `npm install`) |
-|----------|--------------------------------------------|
-| Linux | `node/electron-test-app/node_modules/.bin/electron` |
-| macOS | `node/electron-test-app/node_modules/.bin/electron` |
-| Windows | `node/electron-test-app/node_modules/.bin/electron.cmd` |
+| Platform | Electron binary path (after `npm install`) | Virtual display needed? |
+|----------|--------------------------------------------|------------------------|
+| Linux    | `node/electron-test-app/node_modules/.bin/electron` | Yes — Xvfb or Xvnc |
+| macOS    | `node/electron-test-app/node_modules/.bin/electron` | No                    |
+| Windows  | `node/electron-test-app/node_modules/.bin/electron.cmd` | No               |
 
-Tests that cover UI interactions work on all three platforms.  Tests that use
-`Open Electron Dev Tools` require a display; on headless CI agents this keyword
-is called but its visible effect is not asserted.
+### What the test suite setup does
+
+The Robot Framework suite setup in `electron.robot` performs the following steps
+automatically before any test case runs:
+
+1. Detects the current platform (`sys.platform`).
+2. Runs `npm install` in `node/electron-test-app/` to download the Electron
+   binary for that platform.
+3. Resolves the correct binary path for the platform and stores it in
+   `${ELECTRON_BIN}`.
+
+No manual setup beyond providing a `DISPLAY` on headless Linux is required.

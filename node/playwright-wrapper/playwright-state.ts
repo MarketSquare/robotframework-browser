@@ -896,13 +896,13 @@ export async function newPersistentContext(
     return response;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Electron support — the following functions were written with AI assistance
-// (Claude by Anthropic) under the supervision of the contributor.
-// The contributor is the copyright holder for this section; the Robot Framework
-// Foundation copyright in the file header does not extend to AI-generated code.
-// ─────────────────────────────────────────────────────────────────────────────
 
+// NOTE: The launchElectron, closeElectron, and openElectronDevTools functions below
+// were contributed by an external contributor with AI assistance and are NOT covered
+// by the Robot Framework Foundation copyright at the top of this file.
+// SPDX-SnippetBegin
+// SPDX-SnippetCopyrightText: Contributors to the robotframework-browser project
+// SPDX-License-Identifier: Apache-2.0
 export async function launchElectron(
     request: Request.ElectronLaunch,
     openBrowsers: PlaywrightState,
@@ -985,6 +985,7 @@ export async function openElectronDevTools(openBrowsers: PlaywrightState): Promi
     });
     return emptyWithLog('Opened DevTools for all Electron windows');
 }
+// SPDX-SnippetEnd
 
 export async function connectToBrowser(
     request: Request.ConnectBrowser,

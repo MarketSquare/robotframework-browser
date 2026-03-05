@@ -169,16 +169,6 @@ New Electron Application With Explicit Timeout
     ...    timeout=30 seconds
     Get Title    ==    Browser Library Electron Test App
 
-New Electron Application With Wait Until Load
-    [Documentation]    wait_until=load waits for the load event before
-    ...                returning control to the test.
-    [Teardown]    Close Electron Application
-    @{args}=    Create List    ${ELECTRON_APP_MAIN}
-    New Electron Application
-    ...    executable_path=${ELECTRON_BIN}
-    ...    args=@{args}
-    ...    wait_until=load
-    Get Title    ==    Browser Library Electron Test App
 
 Close Electron Application Removes Active Browser
     [Documentation]    After Close Electron Application there is no active

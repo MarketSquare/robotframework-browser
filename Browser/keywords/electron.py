@@ -11,11 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# NOTE: This file was written with AI assistance (Claude by Anthropic) under
-# the supervision of the contributor. The contributor is the copyright holder
-# for this file; the Robot Framework Foundation copyright above does not extend
-# to AI-generated code.
 
 import json
 from copy import copy
@@ -35,7 +30,6 @@ from ..utils import (
     keyword,
     logger,
 )
-from ..utils.data_types import PageLoadStates
 
 
 class Electron(LibraryComponent):
@@ -48,7 +42,6 @@ class Electron(LibraryComponent):
         args: list[str] | None = None,
         env: dict[str, str] | None = None,
         timeout: timedelta = timedelta(seconds=30),
-        wait_until: PageLoadStates = PageLoadStates.domcontentloaded,
         *,
         acceptDownloads: bool = True,
         bypassCSP: bool = False,
@@ -98,7 +91,6 @@ class Electron(LibraryComponent):
         | ``args``              | Additional command-line arguments forwarded to the Electron process. Use this to pass the entry-point script when running the bare Electron binary, e.g. ``[node/my-app/main.js]``. |
         | ``env``               | Environment variables for the launched process. Merged on top of the current process environment so ``PATH`` and other system variables are still inherited. |
         | ``timeout``           | Maximum time to wait for the first window to appear. Defaults to ``30 seconds``. Pass ``0`` to disable. |
-        | ``wait_until``        | Page-load state to wait for before returning. One of ``load``, ``domcontentloaded`` (default), or ``networkidle``. |
         | ``acceptDownloads``   | Whether to automatically download all attachments. Defaults to ``True``. |
         | ``bypassCSP``         | Toggles bypassing page's Content-Security-Policy. Defaults to ``False``. |
         | ``colorScheme``       | Emulates ``prefers-color-scheme`` media feature: ``dark``, ``light``, ``no-preference``, or ``null`` to disable emulation. |
@@ -200,11 +192,6 @@ class Electron(LibraryComponent):
                 )
             )
             logger.info(response.log)
-
-            load_resp = stub.WaitForPageLoadState(
-                Request().PageLoadState(state=wait_until.name, timeout=timeout_ms)
-            )
-            logger.info(load_resp.log)
 
             video_path = None
             if recordVideo is not None:
