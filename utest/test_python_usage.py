@@ -21,7 +21,6 @@ def application_server():
         ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
     )
 
-    # Wait for server to bind to port
     import socket
 
     start_time = time.time()
@@ -41,7 +40,6 @@ def application_server():
         process.terminate()
         raise RuntimeError("Server failed to start within timeout")
 
-    # Give the server a moment to initialize after binding
     time.sleep(0.5)
 
     yield
@@ -198,7 +196,6 @@ def test_promise_to_wait_for_response_with_name_arguments(browser):
     old_level = logger.getEffectiveLevel()
     logger.setLevel(logging.WARNING)
     promise = browser.promise_to("Wait For Response", "matcher=", "timeout=1s")
-    # pdb.set_trace()
     browser.go_to(url="https://www.google.com")
     logger.setLevel(old_level)
 
