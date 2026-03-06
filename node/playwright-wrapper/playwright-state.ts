@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as playwright from 'playwright';
-import { _electron as electron } from 'playwright';
 import {
     Browser,
     BrowserContext,
@@ -27,6 +26,7 @@ import {
     firefox,
     webkit,
 } from 'playwright';
+import { _electron as electron } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 
@@ -902,7 +902,6 @@ export async function newPersistentContext(
     return response;
 }
 
-
 // NOTE: The launchElectron, closeElectron, and openElectronDevTools functions below
 // were contributed by an external contributor with AI assistance and are NOT covered
 // by the Robot Framework Foundation copyright at the top of this file.
@@ -933,9 +932,7 @@ export async function launchElectron(
         }
         openBrowsers.electronApp = null;
     }
-    const electronApp: ElectronApplication = await electron.launch(
-        options as Parameters<typeof electron.launch>[0],
-    );
+    const electronApp: ElectronApplication = await electron.launch(options as Parameters<typeof electron.launch>[0]);
     openBrowsers.electronApp = electronApp;
 
     // firstWindow() may return a short-lived splash screen (no title).
@@ -947,9 +944,7 @@ export async function launchElectron(
         if (alreadyOpen) {
             page = alreadyOpen;
         } else {
-            page = await electronApp
-                .waitForEvent('window', { timeout: timeout ?? 30000 })
-                .catch(() => page);
+            page = await electronApp.waitForEvent('window', { timeout: timeout ?? 30000 }).catch(() => page);
         }
     }
     const context: BrowserContext = page.context();
