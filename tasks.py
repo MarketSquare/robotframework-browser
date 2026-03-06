@@ -291,7 +291,7 @@ def electron_test_app(c):
     Run this once before executing the Electron acceptance tests.
     The Electron binary is downloaded into node/electron-test-app/node_modules/.
     """
-    c.run("npm install --prefix node/electron-test-app")
+    c.run("npm ci --prefix node/electron-test-app")
 
 
 @task(deps, protobuf, node_build, create_test_app)

@@ -175,7 +175,7 @@ class Electron(LibraryComponent):
             options["recordVideo"] = dict(recordVideo)
         if slow_mo_ms > 0:
             options["slowMo"] = slow_mo_ms
-        if timeout_ms:
+        if timeout_ms is not None:
             options["timeout"] = timeout_ms
         if timezoneId is not None:
             options["timezoneId"] = timezoneId

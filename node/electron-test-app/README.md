@@ -42,7 +42,7 @@ Application`.
   (`playwright-state.ts`).
 - Added a minimal Electron test application in `node/electron-test-app/`
   with source code in the repository (no pre-built binaries committed).
-- Added a full acceptance-test suite (20 test cases) in
+- Added a full acceptance-test suite in
   `atest/test/01_Browser_Management/electron.robot`.
 - Added an `inv electron_test_app` invoke task for local setup.
 
@@ -265,7 +265,7 @@ drive the acceptance tests and is never distributed with the library.
 **Running the test app manually:**
 ```bash
 cd node/electron-test-app
-npm install
+npm ci
 npm start
 # or from the repo root:
 node_modules/.bin/electron node/electron-test-app/main.js
@@ -365,10 +365,11 @@ What `invoke build` does:
 
 ```bash
 invoke electron_test_app
-# equivalent to: npm install --prefix node/electron-test-app
+# equivalent to: npm ci --prefix node/electron-test-app
 ```
 
-This downloads the Electron binary (~80 MB) into
+This uses `npm ci` against the committed `package-lock.json` for a deterministic
+install and downloads the Electron binary (~80 MB) into
 `node/electron-test-app/node_modules/`.
 
 ### Step 6 — (Linux only) Start a virtual display

@@ -14,15 +14,22 @@ ${ELECTRON_BIN}         ${EMPTY}
 
 *** Keywords ***
 Setup Electron Test Suite
-    [Documentation]    Install the test-app npm dependencies and resolve the
-    ...                platform-specific Electron binary path.  Both steps are
-    ...                required before any Electron test can run.
+    [Documentation]    Install the test-app npm dependencies (via npm ci for
+    ...                reproducible installs) and resolve the platform-specific
+    ...                Electron binary path.  Both steps are required before any
+    ...                Electron test can run.  The install step is skipped when
+    ...                node_modules already exists to avoid redundant network
+    ...                round-trips on repeated local runs.
     ${platform}=    Evaluate    __import__('sys').platform
     ${npm}=    Set Variable If    '${platform}' == 'win32'    npm.cmd    npm
-    ${result}=    Run Process    ${npm}    install
-    ...    cwd=${ELECTRON_APP_DIR}    stdout=PIPE    stderr=PIPE
-    Should Be Equal As Integers    ${result.rc}    0
-    ...    msg=npm install failed in node/electron-test-app:\n${result.stderr}
+    ${node_modules}=    Set Variable    ${ELECTRON_APP_DIR}${/}node_modules
+    ${installed}=    Run Keyword And Return Status    Directory Should Exist    ${node_modules}
+    IF    not ${installed}
+        ${result}=    Run Process    ${npm}    ci
+        ...    cwd=${ELECTRON_APP_DIR}    stdout=PIPE    stderr=PIPE
+        Should Be Equal As Integers    ${result.rc}    0
+        ...    msg=npm ci failed in node/electron-test-app:\n${result.stderr}
+    END
     IF    '${platform}' == 'win32'
         Set Suite Variable    ${ELECTRON_BIN}
         ...    ${ELECTRON_APP_DIR}${/}node_modules${/}electron${/}dist${/}electron.exe

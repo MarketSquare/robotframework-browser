@@ -309,11 +309,13 @@ export class PlaywrightState {
         this.extensions = [];
         this.browserServer = [];
         this.electronApp = null;
+        this.electronBrowserStateId = null;
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
     public browserStack: BrowserState[];
     private browserServer: BrowserServer[];
     public electronApp: ElectronApplication | null;
+    public electronBrowserStateId: string | null;
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -464,6 +466,10 @@ export class PlaywrightState {
 
     public popBrowser = (): BrowserState | undefined => {
         return this.browserStack.pop();
+    };
+
+    public removeBrowserById = (id: string): void => {
+        this.browserStack = this.browserStack.filter((b) => b.id !== id);
     };
 
     public getActiveContext = (): BrowserContext | undefined => {
@@ -918,6 +924,15 @@ export async function launchElectron(
 
     const executablePath = options.executablePath as string;
 
+    // Guard against double-launch: close any already-running Electron app first.
+    if (openBrowsers.electronApp) {
+        try { await openBrowsers.electronApp.close(); } catch (_) {} // eslint-disable-line
+        if (openBrowsers.electronBrowserStateId) {
+            openBrowsers.removeBrowserById(openBrowsers.electronBrowserStateId);
+            openBrowsers.electronBrowserStateId = null;
+        }
+        openBrowsers.electronApp = null;
+    }
     const electronApp: ElectronApplication = await electron.launch(
         options as Parameters<typeof electron.launch>[0],
     );
@@ -933,18 +948,22 @@ export async function launchElectron(
             page = alreadyOpen;
         } else {
             page = await electronApp
-                .waitForEvent('window', { timeout: timeout || 30000 })
+                .waitForEvent('window', { timeout: timeout ?? 30000 })
                 .catch(() => page);
         }
     }
     const context: BrowserContext = page.context();
 
+    // Create a fresh BrowserState directly, bypassing addBrowser's
+    // dedup-by-browser-identity (which can collide when browser === null).
     const browserAndConfs: BrowserAndConfs = {
         browserType: 'chromium',
         browser: null,
         headless: true,
     };
-    const browserState = openBrowsers.addBrowser(browserAndConfs);
+    const browserState = new BrowserState(browserAndConfs);
+    openBrowsers.browserStack.push(browserState);
+    openBrowsers.electronBrowserStateId = browserState.id;
 
     const indexedContext = await _createIndexedContext(context, timeout, '');
     const iPage = indexedPage(page);
@@ -954,7 +973,7 @@ export async function launchElectron(
     const response = new Response.NewPersistentContextResponse();
     response.setId(indexedContext.id);
     response.setLog(`Electron app launched. executablePath=${executablePath}`);
-    response.setContextoptions('{}');
+    response.setContextoptions(request.getRawoptions());
     response.setNewbrowser(true);
     response.setVideo('');
     response.setPageid(iPage.id);
@@ -971,7 +990,10 @@ export async function closeElectron(openBrowsers: PlaywrightState): Promise<Resp
     try {
         await app.close();
     } catch (_) {} // eslint-disable-line
-    openBrowsers.popBrowser();
+    if (openBrowsers.electronBrowserStateId) {
+        openBrowsers.removeBrowserById(openBrowsers.electronBrowserStateId);
+        openBrowsers.electronBrowserStateId = null;
+    }
     return emptyWithLog('Closed Electron application');
 }
 
