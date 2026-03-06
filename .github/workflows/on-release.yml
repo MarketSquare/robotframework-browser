@@ -295,7 +295,7 @@ jobs:
             latest=true
 
       - name: Push tag :version_number to Docker Hub
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           tags: ${{ steps.meta.outputs.tags }}
           file: docker/Dockerfile.latest_release
@@ -323,7 +323,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push to GitHub Packages
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           platforms: linux/arm64/v8,linux/amd64
           file: docker/Dockerfile.latest_release
