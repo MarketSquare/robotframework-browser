@@ -152,6 +152,9 @@ select = [
 "bootstrap.py" = [
     "T201",
 ]
+".github/skills/parse-rf-results/scripts/parse_results.py" = [
+    "T201",
+]
 
 [tool.robocop.format]
 line_ending = "unix"
