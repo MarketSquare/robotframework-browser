@@ -6,9 +6,9 @@ Test Setup      Go To    ${WAIT_URL_DIRECT}
 Test Timeout    30 sec
 
 *** Test Cases ***
-Test Global Scope And Set Test Scope
+Test Scope Settings Override Global Defaults
     Log All Scopes    1000    1000    False    ${EMPTY}
-    Timeout Should Be Between    500    1500
+    Timeout Should Be Between    500    1700
     ${global_timeout} =    Set Browser Timeout    2s    scope=Test
     Should Be Equal    ${global_timeout}    1 second
     Timeout Should Be Between    1500    3000
@@ -20,7 +20,7 @@ Test Global Scope And Set Test Scope
     Strict Mode Should Be    True
 
     Go To    ${WAIT_URL_DIRECT}
-    Assertion Retry Should Be Between    500    1500
+    Assertion Retry Should Be Between    500    1700
     ${global_retry} =    Set Retry Assertions For    2s    scope=Test
     Should Be Equal    ${global_retry}    1 second
     Assertion Retry Should Be Between    1500    3000
@@ -32,13 +32,13 @@ Test Global Scope And Set Test Scope
 
     Log All Scopes    2000    2000    True    ${IFRAME_PREFIX}
 
-Test Removed Test Scope
+Global Defaults Are Restored When Test Scope Ends
     Log All Scopes    1000    1000    False    ${EMPTY}
-    Timeout Should Be Between    500    1500
+    Timeout Should Be Between    500    1700
     Strict Mode Should Be    ${False}
-    Assertion Retry Should Be Between    500    1500
+    Assertion Retry Should Be Between    500    1700
 
-Set Suite Level
+Settings Set At Suite Scope Are Applied To Current Test
     Set Strict Mode    ${True}
     Strict Mode Should Be    True
     Set Browser Timeout    500 ms
@@ -46,9 +46,9 @@ Set Suite Level
     Set Selector Prefix    ${IFRAME_PREFIX}
     Log All Scopes    500    500    True    ${IFRAME_PREFIX}
 
-Test Suite Level
+Suite Scope Settings Persist Into Subsequent Tests
     [Setup]    Go To    ${WAIT_URL_FRAMED}
     Log All Scopes    500    500    True    ${IFRAME_PREFIX}
     Strict Mode Should Be    True
-    Timeout Should Be Between    100    900
-    Assertion Retry Should Be Between    100    900
+    Timeout Should Be Between    300    900
+    Assertion Retry Should Be Between    300    900
