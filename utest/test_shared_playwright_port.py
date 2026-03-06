@@ -24,7 +24,6 @@ def test_shared_playwright_port():
     port: str = browser.playwright.port
 
     browser2 = Browser.Browser(playwright_process_port=int(port))
-    # assert browser.playwright.port == browser2.playwright.port
     browser2.new_context()
     assert browser.playwright.port == browser2.playwright.port
 
@@ -47,7 +46,6 @@ def test_forcibly_same_peer_id():
 
     browser2 = Browser.Browser(playwright_process_port=int(port))
     browser2.set_peer_id("new_id")
-    # assert browser.playwright.port == browser2.playwright.port
     browser2.new_page("https://google.com")
 
     assert browser.playwright.port == browser2.playwright.port
