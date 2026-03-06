@@ -671,6 +671,7 @@ def lint_python(c, fix=False):
         "tasks.py",
         "utest",
         "browser_batteries",
+        ".github/skills/",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -680,6 +681,7 @@ def lint_python(c, fix=False):
         "Browser/",
         "browser_batteries/",
         "bootstrap.py",
+        ".github/skills/",
     ]
     if fix:
         ruff_cmd_check.insert(2, "--fix")
@@ -699,6 +701,7 @@ def lint_python(c, fix=False):
         "Browser/",
         "bootstrap.py",
         "browser_batteries/",
+        ".github/skills/",
     ]
     c.run(" ".join(mypy_cmd))
 
