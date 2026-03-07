@@ -970,7 +970,7 @@ export async function launchElectron(
     response.setLog(`Electron app launched. executablePath=${executablePath}`);
     response.setContextoptions(request.getRawoptions());
     response.setNewbrowser(true);
-    response.setVideo('');
+    response.setVideo(JSON.stringify({}));
     response.setPageid(iPage.id);
     response.setBrowserid(browserState.id);
     return response;

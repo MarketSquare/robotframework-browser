@@ -1,5 +1,5 @@
 *** Settings ***
-Library             ../../../library/electron_setup.py
+Library             ../../library/electron_setup.py
 Resource            imports.resource
 
 Suite Setup         Setup Electron Test Suite

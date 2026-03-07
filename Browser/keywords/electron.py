@@ -28,6 +28,7 @@ from ..utils import (
     RecordVideo,
     ViewportDimensions,
     keyword,
+    locals_to_params,
     logger,
 )
 
@@ -133,54 +134,17 @@ class Electron(LibraryComponent):
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
+        # Capture params before any local variables are created.
+        options = locals_to_params(locals())
         timeout_ms = int(timeout.total_seconds() * 1000)
         slow_mo_ms = int(slowMo.total_seconds() * 1000)
 
-        options: dict = {
-            "executablePath": str(executable_path),
-            "acceptDownloads": acceptDownloads,
-        }
-
-        if args:
-            options["args"] = args
-        if env:
-            options["env"] = env
-        if bypassCSP:
-            options["bypassCSP"] = bypassCSP
-        if colorScheme is not None:
-            options["colorScheme"] = colorScheme.name.replace("_", "-")
-        if cwd is not None:
-            options["cwd"] = cwd
-        if extraHTTPHeaders is not None:
-            options["extraHTTPHeaders"] = extraHTTPHeaders
-        if geolocation is not None:
-            options["geolocation"] = dict(geolocation)
-        if hasTouch is not None:
-            options["hasTouch"] = hasTouch
-        if httpCredentials is not None:
-            options["httpCredentials"] = dict(httpCredentials)
-        if ignoreHTTPSErrors:
-            options["ignoreHTTPSErrors"] = ignoreHTTPSErrors
-        if isMobile is not None:
-            options["isMobile"] = isMobile
-        if not javaScriptEnabled:
-            options["javaScriptEnabled"] = javaScriptEnabled
-        if locale is not None:
-            options["locale"] = locale
-        if offline:
-            options["offline"] = offline
-        if recordHar is not None:
-            options["recordHar"] = dict(recordHar)
-        if recordVideo is not None:
-            options["recordVideo"] = dict(recordVideo)
+        # Rename snake_case param and replace timedelta values with milliseconds.
+        options["executablePath"] = str(options.pop("executable_path"))
+        options["timeout"] = timeout_ms
+        options.pop("slowMo", None)
         if slow_mo_ms > 0:
             options["slowMo"] = slow_mo_ms
-        if timeout_ms is not None:
-            options["timeout"] = timeout_ms
-        if timezoneId is not None:
-            options["timezoneId"] = timezoneId
-        if tracesDir is not None:
-            options["tracesDir"] = tracesDir
         if viewport is not None:
             options["viewport"] = copy(viewport)
 
@@ -193,12 +157,9 @@ class Electron(LibraryComponent):
             )
             logger.info(response.log)
 
-            video_path = None
             if recordVideo is not None:
-                try:
-                    video_path = response.video
-                except Exception:
-                    pass
+                self.context_cache.add(response.id, self._get_video_size(options))
+            video_path = self._embed_video(json.loads(response.video))
 
             return (
                 response.browserId,

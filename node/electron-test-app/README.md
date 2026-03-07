@@ -282,7 +282,7 @@ File: `atest/test/01_Browser_Management/electron.robot`
 2. Runs `npm install` in `node/electron-test-app/` — downloads the Electron binary.
 3. Sets `${ELECTRON_BIN}` to the platform-specific binary path.
 
-**No tests are skipped.** Every test case runs on all platforms in CI.
+**No tests are skipped when the test app is present.** The suite is skipped only if `node/electron-test-app/` is absent (e.g. in BrowserBatteries runs that remove `node/`); otherwise every test case runs on all platforms in CI.
 
 **Test cases and what they cover:**
 
