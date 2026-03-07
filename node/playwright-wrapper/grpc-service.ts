@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { sendUnaryData, ServerReadableStream, ServerUnaryCall, ServerWritableStream } from '@grpc/grpc-js';
+import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
+import { Page } from 'playwright';
+
+import { logger } from './browser_logger';
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
+import { IPlaywrightServer } from './generated/playwright_grpc_pb';
+import { Request, Response } from './generated/playwright_pb';
 import * as getters from './getters';
 import * as interaction from './interaction';
+import { class_async_logger } from './keyword-decorators';
 import * as locatorHandler from './locator-handler';
 import * as network from './network';
 import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
-import { IPlaywrightServer } from './generated/playwright_grpc_pb';
-import { Page } from 'playwright';
 import { PlaywrightState } from './playwright-state';
-import { Request, Response } from './generated/playwright_pb';
-import { ServerReadableStream, ServerUnaryCall, ServerWritableStream, sendUnaryData } from '@grpc/grpc-js';
-import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
-import { class_async_logger } from './keyword-decorators';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
-import { logger } from './browser_logger';
 
 @class_async_logger
 export class PlaywrightServer implements IPlaywrightServer {
@@ -474,27 +475,31 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): Promise<void> {
         let buffer = '';
         let lastRequest: Request.FileBySelector;
-        call.on('data', async (request: Request.FileBySelector) => {
-            try {
-                logger.info(`Reading multiplepart uploadFileBySelector`);
-                const newBuffer = request.getBuffer();
-                buffer += newBuffer;
-                lastRequest = request;
-            } catch (e) {
-                callback(errorResponse(e), null);
-            }
+        call.on('data', (request: Request.FileBySelector) => {
+            void (async () => {
+                try {
+                    logger.info(`Reading multiplepart uploadFileBySelector`);
+                    const newBuffer = request.getBuffer();
+                    buffer += newBuffer;
+                    lastRequest = request;
+                } catch (e) {
+                    callback(errorResponse(e), null);
+                }
+            })();
         });
         call.on('error', (e) => {
             callback(errorResponse(e), null);
         });
-        call.on('end', async () => {
-            try {
-                lastRequest.setBuffer(buffer);
-                const result = await interaction.uploadFileBySelector(lastRequest, this.getState(call));
-                callback(null, result);
-            } catch (e) {
-                callback(errorResponse(e), null);
-            }
+        call.on('end', () => {
+            void (async () => {
+                try {
+                    lastRequest.setBuffer(buffer);
+                    const result = await interaction.uploadFileBySelector(lastRequest, this.getState(call));
+                    callback(null, result);
+                } catch (e) {
+                    callback(errorResponse(e), null);
+                }
+            })();
         });
     }
 

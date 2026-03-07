@@ -12,23 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { ServerWritableStream } from '@grpc/grpc-js';
+import fs from 'fs';
+import { createRequire } from 'module';
+import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
+import * as path from 'path';
 import * as playwright from 'playwright';
 import {
     Browser,
     BrowserContext,
     BrowserServer,
     BrowserType,
+    chromium,
     Download,
+    firefox,
     Locator,
     Page,
-    chromium,
-    firefox,
     webkit,
 } from 'playwright';
+import strip from 'strip-comments';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
 
+import { logger } from './browser_logger';
 import { Request, Response } from './generated/playwright_pb';
+import { exists } from './playwright-invoke';
 import {
     emptyWithLog,
     getConsoleLogResponse,
@@ -38,13 +45,6 @@ import {
     pageReportResponse,
     stringResponse,
 } from './response-util';
-import { exists } from './playwright-invoke';
-
-import * as path from 'path';
-import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
-import { ServerWritableStream } from '@grpc/grpc-js';
-import { logger } from './browser_logger';
-import strip from 'strip-comments';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
@@ -243,7 +243,7 @@ async function _createIndexedContext(
     };
     if (traceFile) {
         logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
-        context.tracing.start({ screenshots: true, snapshots: true });
+        await context.tracing.start({ screenshots: true, snapshots: true });
     }
     indexedContext.c.on('page', async (page) => {
         indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
@@ -351,7 +351,7 @@ export class PlaywrightState {
         for (const browser of browsers) {
             try {
                 await browser.close();
-            } catch (e) { } // eslint-disable-line
+            } catch (e) {} // eslint-disable-line
         }
         this.browserStack = [];
     }
@@ -361,7 +361,7 @@ export class PlaywrightState {
         for (const server of servers) {
             try {
                 await server.close();
-            } catch (e) { } // eslint-disable-line
+            } catch (e) {} // eslint-disable-line
         }
         this.browserServer = [];
     }
@@ -385,10 +385,10 @@ export class PlaywrightState {
             if (includePageDetails) {
                 url = page.p.url();
                 const titlePromise = page.p.title();
-                const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(null), 350));
+                const titleTimeout = new Promise((_r, rej) => setTimeout(() => rej(new Error('title timeout')), 350));
                 try {
                     title = await Promise.race([titlePromise, titleTimeout]);
-                } catch (e) { } // eslint-disable-line
+                } catch (e) {} // eslint-disable-line
             }
             return {
                 type: 'page',
@@ -673,7 +673,7 @@ export async function closeBrowserServer(
     }
     const browserServer = openBrowsers.getBrowserServer(wsEndpoint);
     if (!browserServer) throw new Error(`BrowserServer with endpoint ${wsEndpoint} not found.`);
-    openBrowsers.closeServer(browserServer);
+    await openBrowsers.closeServer(browserServer);
     return emptyWithLog(`Closed browser server with endpoint: ${wsEndpoint}`);
 }
 
@@ -686,7 +686,7 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     try {
         await currentBrowser.close();
         return stringResponse(currentBrowser.id, 'Closed browser');
-    } catch (e) { // eslint-disable-line
+    } catch {
         return stringResponse('', `Browser ${currentBrowser.id} was already closed`);
     }
 }
@@ -710,7 +710,7 @@ export async function closeContext(request: Request.Bool, openBrowsers: Playwrig
     activeBrowser.popContext();
     // Closing Persistent Context if Context is closed.
     if (activeBrowser.contextStack.length === 0 && activeBrowser.browser === null) {
-        closeBrowser(openBrowsers);
+        void closeBrowser(openBrowsers);
     }
     return emptyWithLog('Successfully closed Context');
 }
@@ -745,7 +745,7 @@ export async function newPage(
     let videoPath: string | undefined = '';
     try {
         videoPath = await page.p.video()?.path();
-    } catch (e) { // eslint-disable-line
+    } catch {
         logger.info('Suppress video().path() error');
     }
     logger.info('Video path: ' + videoPath);
@@ -769,7 +769,7 @@ export async function newPage(
         response.setNewcontext(context.newContext);
         return response;
     } catch (e) {
-        browserState.browser.popPage()?.p.close();
+        void browserState.browser.popPage()?.p.close();
         throw e;
     }
 }
@@ -963,7 +963,7 @@ async function _switchContext(id: Uuid, browserState: BrowserState) {
     } else {
         const mapped = contexts.map((context) => context.id);
 
-        const message = `No context for id ${id}. Open contexts: ${mapped}`;
+        const message = `No context for id ${id}. Open contexts: ${mapped.join(', ')}`;
         throw new Error(message);
     }
 }
@@ -978,7 +978,7 @@ export async function switchPage(
     const id = request.getId();
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        browserState.page?.p.bringToFront();
+        void browserState.page?.p.bringToFront();
         return stringResponse(previous, 'Returned active page id');
     }
     if (id === 'NEW') {
@@ -1043,7 +1043,7 @@ export async function switchBrowser(request: Request.Index, openBrowsers: Playwr
     if (id !== 'CURRENT') {
         openBrowsers.switchTo(id);
     }
-    openBrowsers.getActivePage()?.bringToFront();
+    void openBrowsers.getActivePage()?.bringToFront();
     return stringResponse(
         previous?.id || 'NO BROWSER OPEN',
         id === 'CURRENT' ? 'Returned active browser id. ' + id : 'Successfully changed active browser: ' + id,
@@ -1139,7 +1139,7 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     let mergedOptions: CoverageReportOptions;
     if (fs.existsSync(configFile)) {
         logger.info({ 'Config file exists: ': configFile });
-        const configFileModule = require(configFile);  // eslint-disable-line
+        const configFileModule = require(configFile); // eslint-disable-line
         mergedOptions = { ...configFileModule, ...options };
         console.log({ 'Merged options: ': mergedOptions });
     } else {
@@ -1158,7 +1158,6 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     return stringResponse(outputDir, message);
 }
 
-// eslint-disable-next-line
 export async function mergeCoverage(request: Request.CoverageMerge, state: PlaywrightState): Promise<Response.Empty> {
     state.getActivePage(); // just to check if a browser is open
     const inputFolder = request.getInputFolder();
@@ -1177,7 +1176,7 @@ export async function mergeCoverage(request: Request.CoverageMerge, state: Playw
         inputDir: inputFolder,
         outputDir: outputFolder,
     };
-    logger.info(`Reports to generate: ${reports}`);
+    logger.info(`Reports to generate: ${reports.join(', ')}`);
     if (reports && reports.length > 0) {
         options.reports = reports.map((r) => [r]);
     }
@@ -1185,7 +1184,7 @@ export async function mergeCoverage(request: Request.CoverageMerge, state: Playw
     let mergedOptions: CoverageReportOptions;
     if (fs.existsSync(configFile)) {
         logger.info(`Config file exists:  ${configFile}`);
-        const configFileModule = await eval('require')(configFile);
+        const configFileModule = createRequire(__filename)(configFile);
         logger.info(`configFileModule options: ${JSON.stringify(configFileModule)}`);
         mergedOptions = { ...configFileModule, ...options };
         if (reports && reports.length === 1 && reports[0] === 'v8') {

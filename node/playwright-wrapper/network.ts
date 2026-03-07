@@ -13,14 +13,13 @@
 // limitations under the License.
 
 import * as path from 'path';
-import * as pb from './generated/playwright_pb';
+import { pino } from 'pino';
 import { Page } from 'playwright';
-import { PlaywrightState } from './playwright-state';
 import { v4 as uuidv4 } from 'uuid';
 
+import * as pb from './generated/playwright_pb';
+import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
-
-import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
@@ -61,6 +60,7 @@ export function deserializeUrlOrPredicate(
         /^function.*{.*}$/.test(urlOrPredicate) ||
         /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)
     ) {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval
         const fn = new Function(`return (${urlOrPredicate})`)();
         if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {
             return fn;
@@ -78,7 +78,7 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
     try {
         body = await data.text();
     } catch (e) {
-        logger.info(`Error reading response ${e}`);
+        logger.info(`Error reading response ${String(e)}`);
     }
     const jsonData = JSON.stringify({
         status: data.status(),
@@ -158,7 +158,7 @@ export async function _waitForDownload(
     waitForFinished: boolean,
 ): Promise<pb.Response.Json> {
     const downloadObject = await page.waitForEvent('download');
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     const downloadsPath = state.activeBrowser.browser?._options?.downloadsPath;
     if (downloadsPath && saveAs) {
@@ -196,7 +196,7 @@ export async function _waitForDownload(
             new Promise((resolve) => setTimeout(resolve, downloadTimeout)),
         ]);
         if (!readStream) {
-            downloadObject.cancel();
+            await downloadObject.cancel();
             throw new Error('Download failed, Timeout exceeded.');
         }
     }
@@ -285,7 +285,7 @@ export async function cancelDownload(
         throw new Error('No download object found for id: ' + downloadID);
     }
     const downloadObject = downloadInfo.downloadObject;
-    downloadObject.cancel();
+    await downloadObject.cancel();
     const failure = await downloadObject.failure();
     if (failure == 'canceled') {
         return emptyWithLog('Download canceled successfully.');

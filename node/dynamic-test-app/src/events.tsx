@@ -150,7 +150,9 @@ function EventLogger() {
         const handler = (e: Event) => {
             const data = buildEventSummary(e);
             // Show both wall-clock and monotonic in the visual log
-            pushVisual(`[${data.time} | ${Math.round(data.mono as number)}ms] ${data.type} on #${data.targetId}`);
+            pushVisual(
+                `[${String(data.time)} | ${Math.round(data.mono as number)}ms] ${String(data.type)} on #${String(data.targetId)}`,
+            );
             // Persist full JSON line
             pushText(data);
         };
