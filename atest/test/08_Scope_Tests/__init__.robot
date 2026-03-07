@@ -16,6 +16,7 @@ Close All And Open New Browser
     Set New Global Settings
 
 Set New Global Settings
+    Register Keyword To Run On Failure    NONE    scope=Suite
     ${org_timeout} =    Set Browser Timeout    1000 ms    scope=global
     Set Global Variable    $org_timeout
     ${org_retry} =    Set Retry Assertions For    1000 ms    scope=global

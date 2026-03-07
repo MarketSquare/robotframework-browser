@@ -46,13 +46,20 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
     timeout = instance.timeout / 1000
     retry_assertions_until = instance.retry_assertions_for / 1000
     retries_start: float | None = None
+    last_error: AssertionError | None = None
     tries = 1
     try:
         logger.stash_this_thread()
         while True:
+            if retries_start is not None:
+                elapsed = time.time() - start
+                elapsed_retries = time.time() - retries_start
+                if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
+                    raise last_error  # type: ignore[misc]
             try:
                 return wrapped(*args, **kwargs)
             except AssertionError as e:
+                last_error = e
                 if retries_start is None:
                     retries_start = time.time()
                 elapsed = time.time() - start
