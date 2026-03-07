@@ -1807,6 +1807,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "SiongWaiVidispine",
+      "name": "SiongWaiVidispine",
+      "avatar_url": "https://avatars.githubusercontent.com/u/235022557?v=4",
+      "profile": "https://github.com/SiongWaiVidispine",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
