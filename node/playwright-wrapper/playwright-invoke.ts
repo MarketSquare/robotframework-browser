@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { pino } from 'pino';
 import { Locator, Page } from 'playwright';
 
 import { PlaywrightState } from './playwright-state';
-
-import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /**

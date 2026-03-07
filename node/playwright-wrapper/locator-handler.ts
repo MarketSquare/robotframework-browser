@@ -11,13 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { PlaywrightState, locatorCache } from './playwright-state';
+import pino from 'pino';
+
 import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
 import { exists } from './playwright-invoke';
 import { findLocator } from './playwright-invoke';
-
-import pino from 'pino';
+import { locatorCache, PlaywrightState } from './playwright-state';
+import { emptyWithLog } from './response-util';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function addLocatorHandlerCustom(
@@ -72,7 +72,7 @@ export async function addLocatorHandlerCustom(
                         await actionLocator.uncheck({ ...options });
                     }
                 } catch (error) {
-                    logger.error(`Error in custom locator handler: ${error}`);
+                    logger.error(`Error in custom locator handler: ${String(error)}`);
                 }
             }
         },

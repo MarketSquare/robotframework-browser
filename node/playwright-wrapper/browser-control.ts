@@ -14,11 +14,11 @@
 
 import { BrowserContext, Page } from 'playwright';
 
-import { PlaywrightState } from './playwright-state';
-import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog, stringResponse } from './response-util';
-import { exists, findLocator } from './playwright-invoke';
 import { logger } from './browser_logger';
+import { Request, Response } from './generated/playwright_pb';
+import { exists, findLocator } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
+import { emptyWithLog, stringResponse } from './response-util';
 
 const { program: pwProgram } = require('playwright-core/lib/cli/program') as { program: import('commander').Command }; // eslint-disable-line
 
@@ -108,7 +108,7 @@ export async function setTimeout(request: Request.Timeout, context?: BrowserCont
 export async function setViewportSize(request: Request.Viewport, page: Page): Promise<Response.Empty> {
     const size = { width: request.getWidth(), height: request.getHeight() };
     await page.setViewportSize(size);
-    return emptyWithLog(`Set viewport size to: ${size}`);
+    return emptyWithLog(`Set viewport size to: ${JSON.stringify(size)}`);
 }
 
 export async function setOffline(request: Request.Bool, context?: BrowserContext): Promise<Response.Empty> {
