@@ -43,7 +43,7 @@ Failing When Attribute Is Not Found When Get Attribute
     New Page    ${CLOCK_URL}
     TRY
         Get Attribute    selector=#current-time    attribute=nonexisting-attribute
-    EXCEPT    	AttributeError: Attribute 'nonexisting-attribute' not found!    type=GLOB    AS    ${error}
+    EXCEPT    AttributeError: Attribute 'nonexisting-attribute' not found!    type=GLOB    AS    ${error}
         Log    ${error}
     END
 
@@ -58,7 +58,6 @@ Check Screenshots
 *** Keywords ***
 Check Screenshots Before
     Set Browser Timeout    3s    scope=Suite
-
     FOR    ${index}    IN RANGE    1    7
         Remove File    ${OUTPUT DIR}/browser/screenshot/fail-screenshot-${index}.png
     END
