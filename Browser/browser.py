@@ -1261,7 +1261,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             ):
                 self._playwright_state.open_trace_group(**(self.keyword_call_stack[-1]))
             return DynamicCore.run_keyword(self, name, args, kwargs)
-        except AssertionError as e:
+        except (AssertionError, AttributeError) as e:
             selector = self._get_selector_value_from_keyword_call(name, args, kwargs)
             self.keyword_error(selector)
             e.args = self._alter_keyword_error(name, e.args)
