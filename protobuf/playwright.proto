@@ -492,7 +492,7 @@ service  Playwright {
   /* Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String);
   /* Gets pages HTML code */
-  rpc GetPageSource(Request.Empty) returns (Response.String);
+  rpc GetPageSource(Request.Empty) returns (stream Response.Json);
   /* Inputs a list of keypresses to element specified by selector */
   rpc Press(Request.PressKeys) returns (Response.Empty);
   /* Gets the Select element specified by selector and returns the contents */
