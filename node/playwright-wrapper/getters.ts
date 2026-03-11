@@ -303,10 +303,24 @@ export async function getBoundingBox(request: Request.ElementSelector, state: Pl
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
 
-export async function getPageSource(page: Page): Promise<Response.String> {
+export async function getPageSource(page: Page): Promise<Response.Json[]> {
     const result = await page.content();
     logger.info(result);
-    return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
+    const body = JSON.stringify(result);
+    const chunkSize = 3500000;
+    const responseChunks = [];
+    if (body.length > chunkSize) {
+        logger.info(`Page source length: ${body.length}`);
+        for (let i = 0; i < body.length; i += chunkSize) {
+            const chunk = body.substring(i, i + chunkSize);
+            const response = jsonResponse('{}', `Page source obtained, chunk ${i}`, chunk);
+            responseChunks.push(response);
+        }
+    } else {
+        const response = jsonResponse('{}', 'Page source obtained successfully.', body);
+        responseChunks.push(response);
+    }
+    return responseChunks;
 }
 
 export async function getTableCellIndex(
