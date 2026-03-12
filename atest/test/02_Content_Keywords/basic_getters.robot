@@ -211,6 +211,22 @@ Get Element Width And Height
 Get Page Source
     Get Page Source    contains    <title>Login Page</title>
 
+Get Page Source Large Content
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => {
+    ...        const marker = document.createElement('div');
+    ...        marker.id = 'chunked-page-source-marker';
+    ...        marker.textContent = 'chunk-prefix-' + 'A'.repeat(1100000) + '-chunk-suffix';
+    ...        document.body.appendChild(marker);
+    ...    }
+    ${source} =    Get Page Source
+    ${source_length} =    Get Length    ${source}
+    Should Be True    ${source_length} > 1100000
+    Should Contain    ${source}    id="chunked-page-source-marker"
+    Should Contain    ${source}    chunk-prefix-
+    Should Contain    ${source}    -chunk-suffix
+
 Get Client Size
     ${size} =    Get Client Size
     Should Be True    ${size}[width] > 0

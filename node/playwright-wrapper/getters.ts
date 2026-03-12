@@ -20,6 +20,7 @@ import { Request, Response, Types } from './generated/playwright_pb';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 import { logger } from './browser_logger';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 
 export async function getAriaSnapshot(request: Request.AriaSnapShot, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getLocator();
@@ -305,12 +306,13 @@ export async function getPageSource(page: Page): Promise<Response.Json[]> {
     const result = await page.content();
     logger.info(result);
     const body = JSON.stringify(result);
-    const chunkSize = 3500000;
     const responseChunks = [];
-    if (body.length > chunkSize) {
-        logger.info(`Page source length: ${body.length}`);
-        for (let i = 0; i < body.length; i += chunkSize) {
-            const chunk = body.substring(i, i + chunkSize);
+    const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+    if (bodyChunks.length > 1) {
+        const payloadBytes = Buffer.byteLength(body, 'utf8');
+        logger.info(`Page source serialized payload bytes: ${payloadBytes}, chunks: ${bodyChunks.length}`);
+        for (let i = 0; i < bodyChunks.length; i++) {
+            const chunk = bodyChunks[i];
             const response = jsonResponse('{}', `Page source obtained, chunk ${i}`, chunk);
             responseChunks.push(response);
         }

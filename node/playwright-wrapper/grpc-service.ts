@@ -139,8 +139,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
-            call.write(result);
+            const results = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
+            for (const result of results) {
+                call.write(result);
+            }
         } catch (e) {
             call.emit('error', errorResponse(e));
         }
