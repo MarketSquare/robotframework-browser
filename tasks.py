@@ -284,16 +284,6 @@ def create_test_app(c):
     c.run("npm run build-test-app")
 
 
-@task
-def electron_test_app(c):
-    """Install dependencies for the Electron acceptance-test app.
-
-    Run this once before executing the Electron acceptance tests.
-    The Electron binary is downloaded into node/electron-test-app/node_modules/.
-    """
-    c.run("npm ci --prefix node/electron-test-app")
-
-
 @task(deps, protobuf, node_build, create_test_app)
 def build(c: Context):
     _gen_stub(c)

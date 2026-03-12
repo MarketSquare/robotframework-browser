@@ -134,12 +134,10 @@ class Electron(LibraryComponent):
 
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
-        # Capture params before any local variables are created.
         options = locals_to_params(locals())
         timeout_ms = int(timeout.total_seconds() * 1000)
         slow_mo_ms = int(slowMo.total_seconds() * 1000)
 
-        # Rename snake_case param and replace timedelta values with milliseconds.
         options["executablePath"] = str(options.pop("executable_path"))
         options["timeout"] = timeout_ms
         options.pop("slowMo", None)

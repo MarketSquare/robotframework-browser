@@ -175,7 +175,7 @@ Open Electron Dev Tools Does Not Raise
 
 *** Keywords ***
 Setup Electron Test Suite
-    ${ELECTRON_BIN} =    Install Electron Test App    ${ELECTRON_APP_DIR}
+    ${ELECTRON_BIN} =    Get Electron Binary Path    ${ELECTRON_APP_DIR}
     Set Suite Variable    ${ELECTRON_BIN}
 
 Launch Test App

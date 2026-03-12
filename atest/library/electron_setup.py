@@ -1,16 +1,17 @@
-import subprocess
 import sys
 from pathlib import Path
 
 from robot.api.exceptions import SkipExecution
 
 
-def install_electron_test_app(app_dir: str) -> str:
-    """Install npm dependencies and return the platform-specific Electron binary path.
+def get_electron_binary_path(app_dir: str) -> str:
+    """Return the platform-specific Electron binary path for the test suite.
 
     Raises SkipExecution when app_dir does not exist so the caller suite is
     gracefully skipped (e.g. BrowserBatteries runs that remove node/).
-    Skips the npm ci step when node_modules is already present.
+
+    The Electron binary is resolved from the project root node_modules/,
+    which is populated by npm ci at project level before tests run.
     """
     app_path = Path(app_dir)
     if not app_path.exists():
@@ -18,30 +19,10 @@ def install_electron_test_app(app_dir: str) -> str:
             f"Electron test app not present ({app_dir} missing) — skipping suite."
         )
 
-    node_modules = app_path / "node_modules"
-    if not node_modules.exists():
-        npm = "npm.cmd" if sys.platform == "win32" else "npm"
-        result = subprocess.run(
-            [npm, "ci"],
-            cwd=str(app_path),
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"npm ci failed in {app_dir}:\n{result.stderr}")
+    electron_dist = app_path.parent.parent / "node_modules" / "electron" / "dist"
 
     if sys.platform == "win32":
-        return str(app_path / "node_modules" / "electron" / "dist" / "electron.exe")
+        return str(electron_dist / "electron.exe")
     if sys.platform == "darwin":
-        return str(
-            app_path
-            / "node_modules"
-            / "electron"
-            / "dist"
-            / "Electron.app"
-            / "Contents"
-            / "MacOS"
-            / "Electron"
-        )
-    return str(app_path / "node_modules" / "electron" / "dist" / "electron")
+        return str(electron_dist / "Electron.app" / "Contents" / "MacOS" / "Electron")
+    return str(electron_dist / "electron")
