@@ -901,7 +901,6 @@ export async function newPersistentContext(
     return response;
 }
 
-
 // NOTE: The launchElectron, closeElectron, and openElectronDevTools functions below
 // were contributed by an external contributor with AI assistance and are NOT covered
 // by the Robot Framework Foundation copyright at the top of this file.
@@ -925,7 +924,9 @@ export async function launchElectron(
 
     // Guard against double-launch: close any already-running Electron app first.
     if (openBrowsers.electronApp) {
-        try { await openBrowsers.electronApp.close(); } catch (_) {} // eslint-disable-line
+        try {
+            await openBrowsers.electronApp.close();
+        } catch (_) {} // eslint-disable-line
         if (openBrowsers.electronBrowserStateId) {
             openBrowsers.removeBrowserById(openBrowsers.electronBrowserStateId);
             openBrowsers.electronBrowserStateId = null;

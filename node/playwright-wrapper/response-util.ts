@@ -136,7 +136,7 @@ export function parseRegExpOrKeepString(str: string): RegExp | string {
             return new RegExp(matcher, flags);
         }
         return str;
-    } catch (e) { // eslint-disable-line
+    } catch {
         return str;
     }
 }
