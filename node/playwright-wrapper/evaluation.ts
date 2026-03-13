@@ -165,7 +165,7 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
             document = document.first();
         }
     }
-    let locator: Locator | null = null;
+    let locator: Locator;
     switch (strategy) {
         case 'AltText': {
             locator = document.getByAltText(text, options);
@@ -355,8 +355,9 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
             path: path.join(__dirname, '/static/selector-finder.js'),
         });
     } catch (e) {
-        throw Error(
-            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${String(e)}`,
+        throw new Error(
+            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.`,
+            { cause: e },
         );
     }
     await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
