@@ -60,3 +60,6 @@ results
 
 # linting
 .ruff_cache
+
+# Chromium IPC pipe socket created by the Electron process at runtime
+node/electron-test-app/PIPE

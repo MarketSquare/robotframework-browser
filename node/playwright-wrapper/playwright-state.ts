@@ -25,11 +25,13 @@ import {
     BrowserType,
     chromium,
     Download,
+    ElectronApplication,
     firefox,
     Locator,
     Page,
     webkit,
 } from 'playwright';
+import { _electron as electron } from 'playwright';
 import strip from 'strip-comments';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -306,10 +308,17 @@ export class PlaywrightState {
         this.browserStack = [];
         this.extensions = [];
         this.browserServer = [];
+        this.electronApp = null;
+        this.electronBrowserStateId = null;
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
     public browserStack: BrowserState[];
     private browserServer: BrowserServer[];
+    public electronApp: ElectronApplication | null;
+    public electronBrowserStateId: string | null;
+    public removeBrowserById = (id: string): void => {
+        this.browserStack = this.browserStack.filter((b) => b.id !== id);
+    };
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -891,6 +900,110 @@ export async function newPersistentContext(
     response.setBrowserid(currentBrowser?.id || '');
     return response;
 }
+
+// NOTE: The launchElectron, closeElectron, and openElectronDevTools functions below
+// were contributed by an external contributor with AI assistance and are NOT covered
+// by the Robot Framework Foundation copyright at the top of this file.
+// SPDX-SnippetBegin
+// SPDX-SnippetCopyrightText: Contributors to the robotframework-browser project
+// SPDX-License-Identifier: Apache-2.0
+export async function launchElectron(
+    request: Request.ElectronLaunch,
+    openBrowsers: PlaywrightState,
+): Promise<Response.NewPersistentContextResponse> {
+    const options = JSON.parse(request.getRawoptions()) as Record<string, unknown>;
+    const timeout = request.getDefaulttimeout() || undefined;
+
+    // Merge caller-supplied env on top of process.env so the child inherits
+    // the full environment (PATH etc.) and the caller can override individual vars.
+    if (options.env && typeof options.env === 'object') {
+        options.env = { ...process.env, ...(options.env as Record<string, string>) };
+    }
+
+    const executablePath = options.executablePath as string;
+
+    // Guard against double-launch: close any already-running Electron app first.
+    if (openBrowsers.electronApp) {
+        try {
+            await openBrowsers.electronApp.close();
+        } catch (_) {} // eslint-disable-line
+        if (openBrowsers.electronBrowserStateId) {
+            openBrowsers.removeBrowserById(openBrowsers.electronBrowserStateId);
+            openBrowsers.electronBrowserStateId = null;
+        }
+        openBrowsers.electronApp = null;
+    }
+    const electronApp: ElectronApplication = await electron.launch(options as Parameters<typeof electron.launch>[0]);
+    openBrowsers.electronApp = electronApp;
+
+    // firstWindow() may return a short-lived splash screen (no title).
+    // If so, wait for the real main window to appear instead.
+    let page: Page = await electronApp.firstWindow();
+    const firstTitle = await page.title().catch(() => '');
+    if (!firstTitle) {
+        const alreadyOpen = electronApp.windows().find((w) => w !== page);
+        if (alreadyOpen) {
+            page = alreadyOpen;
+        } else {
+            page = await electronApp.waitForEvent('window', { timeout: timeout ?? 30000 }).catch(() => page);
+        }
+    }
+    const context: BrowserContext = page.context();
+
+    // Create a fresh BrowserState directly, bypassing addBrowser's
+    // dedup-by-browser-identity (which can collide when browser === null).
+    const browserAndConfs: BrowserAndConfs = {
+        browserType: 'chromium',
+        browser: null,
+        headless: true,
+    };
+    const browserState = new BrowserState(browserAndConfs);
+    openBrowsers.browserStack.push(browserState);
+    openBrowsers.electronBrowserStateId = browserState.id;
+
+    const indexedContext = await _createIndexedContext(context, timeout, '');
+    const iPage = indexedPage(page);
+    indexedContext.pageStack.push(iPage);
+    browserState.pushContext(indexedContext);
+
+    const response = new Response.NewPersistentContextResponse();
+    response.setId(indexedContext.id);
+    response.setLog(`Electron app launched. executablePath=${executablePath}`);
+    response.setContextoptions(request.getRawoptions());
+    response.setNewbrowser(true);
+    response.setVideo(JSON.stringify({}));
+    response.setPageid(iPage.id);
+    response.setBrowserid(browserState.id);
+    return response;
+}
+
+export async function closeElectron(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const app = openBrowsers.electronApp;
+    if (!app) {
+        return emptyWithLog('No Electron app is open, doing nothing');
+    }
+    openBrowsers.electronApp = null;
+    try {
+        await app.close();
+    } catch (_) {} // eslint-disable-line
+    if (openBrowsers.electronBrowserStateId) {
+        openBrowsers.removeBrowserById(openBrowsers.electronBrowserStateId);
+        openBrowsers.electronBrowserStateId = null;
+    }
+    return emptyWithLog('Closed Electron application');
+}
+
+export async function openElectronDevTools(openBrowsers: PlaywrightState): Promise<Response.Empty> {
+    const app = openBrowsers.electronApp;
+    if (!app) {
+        return emptyWithLog('No Electron app is open, doing nothing');
+    }
+    await app.evaluate(async ({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows().forEach((w) => w.webContents.openDevTools());
+    });
+    return emptyWithLog('Opened DevTools for all Electron windows');
+}
+// SPDX-SnippetEnd
 
 export async function connectToBrowser(
     request: Request.ConnectBrowser,

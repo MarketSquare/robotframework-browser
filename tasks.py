@@ -656,6 +656,12 @@ def _add_skips(default_args, include_mac=False):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
     default_args.extend(["--exclude", "tidy-transformer"])
+    electron_app_dir = ROOT_DIR / "node" / "electron-test-app"
+    if not electron_app_dir.exists():
+        print(
+            f"Electron test app not found ({electron_app_dir}), excluding requires-electron-app tests"
+        )
+        default_args.extend(["--exclude", "requires-electron-app"])
     return default_args
 
 

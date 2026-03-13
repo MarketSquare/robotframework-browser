@@ -183,6 +183,11 @@ message Request {
     string traceFile = 4;
   }
 
+  message ElectronLaunch {
+    string rawOptions = 1;
+    int32 defaultTimeout = 2;
+  }
+
   message Permissions {
     repeated string permissions = 1;
     string origin = 2;
@@ -592,6 +597,9 @@ service  Playwright {
   rpc LaunchBrowserServer(Request.Browser) returns (Response.String);
   rpc CloseBrowserServer(Request.ConnectBrowser) returns (Response.Empty);
   rpc NewPersistentContext(Request.PersistentContext) returns (Response.NewPersistentContextResponse);
+  rpc LaunchElectron(Request.ElectronLaunch) returns (Response.NewPersistentContextResponse);
+  rpc CloseElectron(Request.Empty) returns (Response.Empty);
+  rpc OpenElectronDevTools(Request.Empty) returns (Response.Empty);
   rpc ConnectToBrowser(Request.ConnectBrowser) returns (Response.String);
   rpc CloseBrowser(Request.Empty) returns (Response.String);
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
