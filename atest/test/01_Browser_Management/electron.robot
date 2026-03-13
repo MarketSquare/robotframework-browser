@@ -4,6 +4,7 @@ Resource            imports.resource
 
 Suite Setup         Setup Electron Test Suite
 Suite Teardown      Close Electron Application
+Test Tags           requires-electron-app
 
 *** Variables ***
 ${ELECTRON_APP_DIR} =       ${CURDIR}${/}..${/}..${/}..${/}node${/}electron-test-app
