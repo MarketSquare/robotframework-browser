@@ -140,8 +140,10 @@ export class PlaywrightServer implements IPlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
-            call.write(result);
+            const results = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
+            for (const result of results) {
+                call.write(result);
+            }
         } catch (e) {
             call.emit('error', errorResponse(e));
         }
@@ -287,16 +289,16 @@ export class PlaywrightServer implements IPlaywrightServer {
     getBoundingBox = this.wrapping(getters.getBoundingBox);
     ariaSnapShot = this.wrappingStatePage(getters.getAriaSnapshot);
 
-    async getPageSource(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
+    async getPageSource(call: ServerWritableStream<Request.Empty, Response.Json>): Promise<void> {
         try {
-            const response = await getters.getPageSource(this.getActivePage(call));
-            callback(null, response);
+            const results = await getters.getPageSource(this.getActivePage(call));
+            for (const result of results) {
+                call.write(result);
+            }
         } catch (e) {
-            callback(errorResponse(e), null);
+            call.emit('error', errorResponse(e));
         }
+        call.end();
     }
 
     async setTimeout(

@@ -45,6 +45,14 @@ import {
     pageReportResponse,
     stringResponse,
 } from './response-util';
+import { exists } from './playwright-invoke';
+
+import * as path from 'path';
+import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
+import { ServerWritableStream } from '@grpc/grpc-js';
+import { logger } from './browser_logger';
+import strip from 'strip-comments';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
@@ -120,7 +128,7 @@ export async function extensionKeywordCall(
     request: Request.KeywordCall,
     call: ServerWritableStream<Request.KeywordCall, Response.Json>,
     state: PlaywrightState,
-): Promise<Response.Json> {
+): Promise<Response.Json[]> {
     const keywordName = request.getName();
     const args = JSON.parse(request.getArguments()) as { arguments: [string, unknown][] };
     const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
@@ -131,13 +139,23 @@ export async function extensionKeywordCall(
     apiArguments.set('page', state.getActivePage());
     apiArguments.set('context', state.getActiveContext());
     apiArguments.set('browser', state.getActiveBrowser()?.browser);
-    apiArguments.set('logger', (msg: string) => call.write(jsonResponse(JSON.stringify(''), msg)));
+    apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
     const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
         (argName) => apiArguments.get(argName) || namedArguments[argName],
     );
     const result = await keyword(...functionArguments);
-    return jsonResponse(JSON.stringify(result), 'ok');
+    if (result === undefined) {
+        return [jsonResponse('', 'ok')];
+    }
+    const body = JSON.stringify(result);
+    const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+    if (bodyChunks.length === 0) {
+        return [jsonResponse('', 'ok')];
+    }
+    return bodyChunks.map((chunk, index) =>
+        jsonResponse('', index === bodyChunks.length - 1 ? 'ok' : `ok chunk ${index}`, chunk),
+    );
 }
 
 interface BrowserAndConfs {

@@ -18,6 +18,8 @@ import { errors } from 'playwright';
 import { logger } from './browser_logger';
 import { Request, Response, Types } from './generated/playwright_pb';
 import { exists, findLocator } from './playwright-invoke';
+import { logger } from './browser_logger';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import { PlaywrightState } from './playwright-state';
 import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 
@@ -303,10 +305,24 @@ export async function getBoundingBox(request: Request.ElementSelector, state: Pl
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
 
-export async function getPageSource(page: Page): Promise<Response.String> {
+export async function getPageSource(page: Page): Promise<Response.Json[]> {
     const result = await page.content();
     logger.info(result);
-    return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
+    const body = JSON.stringify(result);
+    const responseChunks = [];
+    const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+    if (bodyChunks.length > 1) {
+        const payloadBytes = Buffer.byteLength(body, 'utf8');
+        for (let i = 0; i < bodyChunks.length; i++) {
+            const chunk = bodyChunks[i];
+            const response = jsonResponse('{}', `Page source obtained, chunk ${i}`, chunk);
+            responseChunks.push(response);
+        }
+    } else {
+        const response = jsonResponse('{}', 'Page source obtained successfully.', body);
+        responseChunks.push(response);
+    }
+    return responseChunks;
 }
 
 export async function getTableCellIndex(

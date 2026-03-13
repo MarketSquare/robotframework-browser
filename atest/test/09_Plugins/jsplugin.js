@@ -5,5 +5,14 @@ async function mouseWheel(x, y, logger, page) {
     return await page.evaluate("document.scrollingElement.scrollTop");
 }
 
+async function getLargePayload() {
+    return {
+        prefix: "chunk-prefix",
+        payload: "\u20AC".repeat(350000),
+        suffix: "chunk-suffix",
+    };
+}
+
 exports.__esModule = true;
 exports.mouseWheel = mouseWheel;
+exports.getLargePayload = getLargePayload;
