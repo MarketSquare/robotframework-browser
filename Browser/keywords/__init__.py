@@ -18,6 +18,7 @@ from .clock import Clock
 from .cookie import Cookie
 from .coverage import Coverage
 from .device_descriptors import Devices
+from .electron import Electron
 from .evaluation import Evaluation
 from .getters import Getters
 from .interaction import Interaction
@@ -37,6 +38,7 @@ __all__ = [
     "Cookie",
     "Coverage",
     "Devices",
+    "Electron",
     "Evaluation",
     "Formatter",
     "Getters",
