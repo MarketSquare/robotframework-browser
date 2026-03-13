@@ -148,9 +148,7 @@ class PlaywrightState(LibraryComponent):
             if browser != SelectionType.CURRENT:
                 self.switch_browser(browser)
 
-            response = stub.CloseBrowser(
-                Request.Empty(), timeout=self.timeout * 2
-            )
+            response = stub.CloseBrowser(Request.Empty(), timeout=self.timeout * 2)
             closed_browser_id = response.body
             self.delete_browser_id_from_arg_mapping(closed_browser_id)
             self._update_tracing_contexts()
