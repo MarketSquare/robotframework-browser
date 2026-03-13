@@ -1817,6 +1817,15 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "JanDubcak",
+      "name": "Jan Dubcak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65766592?v=4",
+      "profile": "https://github.com/JanDubcak",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
