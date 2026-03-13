@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { PlaywrightServer } from './grpc-service';
 import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementation } from '@grpc/grpc-js';
 
-import { PlaywrightService } from './generated/playwright_grpc_pb';
 import { logger } from './browser_logger';
+import { PlaywrightService } from './generated/playwright_grpc_pb';
+import { PlaywrightServer } from './grpc-service';
 
 const args = process.argv.slice(2);
 

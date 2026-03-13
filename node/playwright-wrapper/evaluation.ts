@@ -13,22 +13,21 @@
 // limitations under the License.
 
 import * as path from 'path';
+import { pino } from 'pino';
 import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
-import { PlaywrightState } from './playwright-state';
 import { Request, Response } from './generated/playwright_pb';
 import { _waitForDownload } from './network';
+import { exists, findLocator } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
 import {
     emptyWithLog,
     intResponse,
-    jsResponse,
     jsonResponse,
+    jsResponse,
     parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
-import { exists, findLocator } from './playwright-invoke';
-
-import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /** Resolve an Locator, create global UUID for it, and store the reference
@@ -40,7 +39,7 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
     const selector = request.getSelector();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     return stringResponse(locator._selector, 'Locator found successfully.');
 }
@@ -56,14 +55,14 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     try {
         await locator.first().waitFor({ state: 'attached' });
     } catch (e) {
-        logger.debug(`Attached state not reached, suppress error: ${e}.`);
+        logger.debug(`Attached state not reached, suppress error: ${String(e)}.`);
     }
     const allLocators = await locator.all();
     logger.info(`Found ${allLocators.length} elements.`);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     const allSelectors = allLocators.map((locator) => locator._selector);
-    return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators} Locators successfully.`);
+    return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators.length} Locators successfully.`);
 }
 
 type AriaRole =
@@ -208,27 +207,28 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
             locator = locator.first();
         }
         await locator.waitFor({ state: 'attached' });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         return jsonResponse(JSON.stringify(locator._selector), 'Locator found successfully.');
     }
     let allSelectors: string[] = [];
     try {
         await locator.first().waitFor({ state: 'attached' });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
     } catch (e) {
-        logger.debug(`Attached state not reached, suppress error: ${e}.`);
+        logger.debug(`Attached state not reached, suppress error: ${String(e)}.`);
     }
     return jsonResponse(JSON.stringify(allSelectors), `${allSelectors.length} locators found successfully.`);
 }
 
 const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval
         return new Function('return ' + str)();
     } catch (ignored) {
-        logger.debug(`Failed to transform string to function: ${ignored}`);
+        logger.debug(`Failed to transform string to function: ${String(ignored)}`);
         return str;
     }
 };
@@ -294,7 +294,7 @@ export async function waitForFunction(
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await page.waitForFunction(script, elem, options);
-    return jsonResponse(JSON.stringify(result.jsonValue), 'Wait For Function completed successfully.');
+    return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
 }
 
 export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
@@ -336,7 +336,7 @@ export async function recordSelector(
             return myselectors;
         });
         await page.exposeFunction('highlightPWSelector', (selector: string) => {
-            highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
+            void highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
         });
     }
 
@@ -356,7 +356,7 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
         });
     } catch (e) {
         throw Error(
-            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${e}`,
+            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.\nOriginal error:${String(e)}`,
         );
     }
     await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
@@ -475,10 +475,10 @@ async function highlightAll(
     }
     logger.info(`Locator count is ${count}`);
     if (['playwright', 'both'].includes(mode)) {
-        locator.highlight();
+        void locator.highlight();
         if (duration !== 0) {
             setTimeout(() => {
-                state.getActivePage()?.locator('none.highlight-no-element').highlight();
+                void state.getActivePage()?.locator('none.highlight-no-element').highlight();
             }, duration);
         }
         if (mode === 'playwright') {

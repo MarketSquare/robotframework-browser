@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { PlaywrightState } from './playwright-state';
-import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
-import { exists } from './playwright-invoke';
-
 import pino from 'pino';
+
+import { Request, Response } from './generated/playwright_pb';
+import { exists } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
+import { emptyWithLog } from './response-util';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function setTime(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
@@ -28,13 +28,13 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
     const setTime = new Date(time).toISOString();
     if (clockType === 'fixed') {
         logger.info(`Setting time to ${time} ${setTime} as fixed`);
-        activePage.clock.setFixedTime(time);
+        await activePage.clock.setFixedTime(time);
     } else if (clockType === 'system') {
         logger.info(`Setting time to ${time} ${setTime} as system`);
-        activePage.clock.setSystemTime(time);
+        await activePage.clock.setSystemTime(time);
     } else if (clockType === 'install') {
         logger.info(`Setting time to ${time} ${setTime} as install`);
-        activePage.clock.install({ time: time });
+        await activePage.clock.install({ time: time });
     } else {
         logger.info(`Invalid clock type ${clockType}`);
         return emptyWithLog('Invalid clock type');
@@ -45,7 +45,7 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
 export async function clockResume(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    activePage.clock.resume();
+    await activePage.clock.resume();
     return emptyWithLog('Clock resumed');
 }
 

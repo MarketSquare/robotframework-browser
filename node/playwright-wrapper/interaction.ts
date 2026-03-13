@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import { Dialog, Page } from 'playwright';
-import { exists } from './playwright-invoke';
 
-import { PlaywrightState } from './playwright-state';
-import { Request, Response } from './generated/playwright_pb';
-import { emptyWithLog } from './response-util';
-import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
-import { getSelections } from './getters';
 import { logger } from './browser_logger';
+import { Request, Response } from './generated/playwright_pb';
+import { getSelections } from './getters';
+import { exists } from './playwright-invoke';
+import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
+import { emptyWithLog } from './response-util';
 
 export async function selectOption(
     request: Request.SelectElementSelector,
@@ -94,7 +94,7 @@ export async function press(request: Request.PressKeys, state: PlaywrightState):
             await new Promise((r) => setTimeout(r, keyDelay));
         }
     }
-    return emptyWithLog(`Pressed keys: "${keyList}" on ${selector} `);
+    return emptyWithLog(`Pressed keys: "${keyList.join(', ')}" on ${selector} `);
 }
 
 export async function click(
@@ -206,7 +206,7 @@ export async function uploadFileBySelector(
         await locator.setInputFiles({ name: name, mimeType: mimeType, buffer: Buffer.from(buffer) });
         return emptyWithLog('Successfully uploaded buffer as file');
     } else {
-        logger.info(`Uploading file(s) ${path} to ${selector}`);
+        logger.info(`Uploading file(s) ${path.join(', ')} to ${selector}`);
         await locator.setInputFiles(path);
         return emptyWithLog('Successfully uploaded file(s)');
     }
@@ -245,11 +245,11 @@ export async function waitForAlerts(request: Request.AlertActions, page: Page): 
         const dialogObject = await page.waitForEvent('dialog', { timeout: timeout });
         alertMessages.push(dialogObject.message());
         if (action === 'accept' && promptInput) {
-            dialogObject.accept(promptInput);
+            void dialogObject.accept(promptInput);
         } else if (alertAction.getAlertaction() === 'accept') {
-            dialogObject.accept();
+            void dialogObject.accept();
         } else {
-            dialogObject.dismiss();
+            void dialogObject.dismiss();
         }
     }
     response.setItemsList(alertMessages);

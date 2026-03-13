@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BrowserContext, Cookie } from 'playwright';
+import { pino } from 'pino';
+import { BrowserContext } from 'playwright';
 
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse } from './response-util';
-
-import { pino } from 'pino';
 const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 interface CookieData {
@@ -36,7 +35,7 @@ export async function getCookies(context: BrowserContext): Promise<Response.Json
     const allCookies = await context.cookies();
     logger.info({ 'Cookies: ': allCookies });
     const cookieName = [];
-    for (const cookie of allCookies as Array<Cookie>) {
+    for (const cookie of allCookies) {
         cookieName.push(cookie.name);
     }
     return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
