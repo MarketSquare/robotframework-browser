@@ -13,7 +13,6 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
     "@yao-pkg/pkg": "github:yao-pkg/pkg",
-    "electron": "^35.0.0",
     "esbuild": "^0.27.3",
     "esbuild-node-externals": "^1.20.1",
     "eslint": "^10.0.3",
@@ -33,7 +32,8 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+    "electron": "^35.0.0"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",

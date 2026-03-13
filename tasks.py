@@ -711,13 +711,19 @@ def lint_node(c, force=False):
     """Lint node files
 
     Args:
-        force: When set, lints node files even there is not changes.
+        force: When set, lints node files even there is no changes.
     """
-    if _sources_changed(node_dir.glob("**/*.ts"), node_lint_timestamp_file) or force:
-        c.run("npm run lint")
+    source_files = [*node_dir.glob("**/*.ts"), *node_dir.glob("**/*.js")]
+    if _sources_changed(source_files, node_lint_timestamp_file) or force:
+        if IN_CI:
+            c.run("npm run format:check")
+            c.run("npm run lint:check")
+        else:
+            c.run("npm run format")
+            c.run("npm run lint")
         node_lint_timestamp_file.touch()
     else:
-        print("no changes in .ts files, skipping node lint")
+        print("no changes in node files, skipping node lint")
 
 
 @task
