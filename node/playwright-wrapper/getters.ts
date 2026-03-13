@@ -312,7 +312,6 @@ export async function getPageSource(page: Page): Promise<Response.Json[]> {
     const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
     if (bodyChunks.length > 1) {
         const payloadBytes = Buffer.byteLength(body, 'utf8');
-        logger.info(`Page source serialized payload bytes: ${payloadBytes}, chunks: ${bodyChunks.length}`);
         for (let i = 0; i < bodyChunks.length; i++) {
             const chunk = bodyChunks[i];
             const response = jsonResponse('{}', `Page source obtained, chunk ${i}`, chunk);
