@@ -6,20 +6,18 @@
   "license": "Apache-2.0",
   "bin": "Browser/wrapper/index.js",
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@types/express": "^5.0.6",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.57.0",
-    "@typescript-eslint/parser": "^8.41.0",
     "@yao-pkg/pkg": "github:yao-pkg/pkg",
-    "esbuild": "^0.27.3",
+    "esbuild": "^0.27.4",
     "esbuild-node-externals": "^1.20.1",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-sort-imports-es6-autofix": "^0.6.0",
+    "eslint": "^10.0.3",
+    "eslint-plugin-simple-import-sort": "^12.0.0",
+    "globals": "^17.4.0",
     "express": "^5.2.1",
     "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.13.1",
@@ -33,7 +31,8 @@
     "react-router-dom": "^7.13.1",
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
@@ -48,7 +47,10 @@
   "scripts": {
     "build-test-app": "node ./node/build.testapp.js",
     "build": "node ./node/build.wrapper.js",
-    "lint": "eslint \"node/**/*.{ts,tsx}\" --quiet --fix --config ./node/eslint.config.mjs",
+    "lint": "eslint \"node/**/*.{js,ts,tsx}\" --fix --config ./node/eslint.config.mjs",
+    "lint:check": "eslint \"node/**/*.{js,ts,tsx}\" --config ./node/eslint.config.mjs",
+    "format": "prettier --write \"node/**/*.{js,ts,tsx}\"",
+    "format:check": "prettier --check \"node/**/*.{js,ts,tsx}\"",
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   },
   "pkg": {

@@ -76,16 +76,16 @@ function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: 
                 fileNames = files[i].name;
             }
         }
-        uploadResultElement.current!.innerHTML = fileNames;
+        uploadResultElement.current.innerHTML = fileNames;
     } else {
-        uploadResultElement.current!.innerHTML = 'no uploaded file';
+        uploadResultElement.current.innerHTML = 'no uploaded file';
     }
 }
 
 function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
     const input = prompt('Enter a value');
-    if (input) promptResultElement.current!.innerHTML = input;
-    else promptResultElement.current!.innerHTML = 'prompt_not_filled';
+    if (input) promptResultElement.current.innerHTML = input;
+    else promptResultElement.current.innerHTML = 'prompt_not_filled';
 }
 
 export default function Site() {
@@ -117,7 +117,9 @@ export default function Site() {
         mouseButton.current!.innerHTML = '';
         const mouseButtons = ['left', 'middle', 'right'];
         mouseButton.current!.innerHTML = mouseButtons[e.button];
-        console.log(`Mouse button: ${mouseButtons[e.button]}, X: ${e.pageX}, Y: ${e.pageY}, Time: ${new Date()}`);
+        console.log(
+            `Mouse button: ${mouseButtons[e.button]}, X: ${e.pageX}, Y: ${e.pageY}, Time: ${new Date().toISOString()}`,
+        );
         altKey.current!.innerHTML = e.altKey.toString();
         shiftKey.current!.innerHTML = e.shiftKey.toString();
         ctrlKey.current!.innerHTML = e.ctrlKey.toString();
@@ -217,10 +219,10 @@ export default function Site() {
                 <button id="pops_up" onClick={popup}>
                     Pops up a window
                 </button>
-                <button id="delayed_request" onClick={delayedRequest}>
+                <button id="delayed_request" onClick={() => void delayedRequest()}>
                     Fires a request in 200ms
                 </button>
-                <button id="delayed_request_big" onClick={delayedRequestBig}>
+                <button id="delayed_request_big" onClick={() => void delayedRequestBig()}>
                     Fires a big request in 250ms
                 </button>
                 <button id="alerts" onClick={() => alert('Am an alert')}>

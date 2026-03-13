@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IndexedPage } from './playwright-state';
-import { Response } from './generated/playwright_pb';
-import { errors } from 'playwright';
 import { status } from '@grpc/grpc-js';
+import { errors } from 'playwright';
+
+import { Response } from './generated/playwright_pb';
+import { IndexedPage } from './playwright-state';
 
 export function emptyWithLog(text: string): Response.Empty {
     const response = new Response.Empty();
@@ -135,7 +136,7 @@ export function parseRegExpOrKeepString(str: string): RegExp | string {
             return new RegExp(matcher, flags);
         }
         return str;
-    } catch (e) { // eslint-disable-line
+    } catch {
         return str;
     }
 }

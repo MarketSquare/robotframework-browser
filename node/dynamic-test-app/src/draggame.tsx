@@ -1,8 +1,8 @@
 // Created by Copilot
 // This code is a simple drag-and-drop game using React and react-dnd.
+import React, { useCallback, useEffect, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import React, { useCallback, useEffect, useState } from 'react';
 
 const ItemTypes = {
     CIRCLE: 'circle',

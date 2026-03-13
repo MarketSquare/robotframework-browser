@@ -15,12 +15,13 @@
 import { ElementHandle, Locator, Page } from 'playwright';
 import { errors } from 'playwright';
 
-import { PlaywrightState } from './playwright-state';
+import { logger } from './browser_logger';
 import { Request, Response, Types } from './generated/playwright_pb';
-import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 import { exists, findLocator } from './playwright-invoke';
 import { logger } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
+import { PlaywrightState } from './playwright-state';
+import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
 
 export async function getAriaSnapshot(request: Request.AriaSnapShot, state: PlaywrightState): Promise<Response.String> {
     const selector = request.getLocator();
@@ -239,7 +240,7 @@ export async function getElementStates(
                 states += stateEnum.readonly;
             }
         } catch (error) {
-            logger.info(`Element ${selector} is not editable: ${error}`);
+            logger.info(`Element ${selector} is not editable: ${String(error)}`);
             if (disabled !== null) {
                 logger.info(`Element ${selector} is disabled: ${disabled} and therefore readonly`);
                 states += stateEnum.readonly;
@@ -254,7 +255,9 @@ export async function getElementStates(
             states += (await element.evaluate((e) => document.activeElement === e))
                 ? stateEnum.focused
                 : stateEnum.defocused;
-        } catch {}
+        } catch {
+            // no-op: element state not available for this element type
+        }
     } catch (e) {
         if (e instanceof errors.TimeoutError) {
             states = stateEnum.detached;
@@ -374,7 +377,8 @@ export async function getTableRowIndex(
             throw Error(
                 `Table rows could not be found. ChildNodes are: ${Array.prototype.slice
                     .call(element.childNodes)
-                    .map((e) => `${e.nodeName}.${e.className}`)}`,
+                    .map((e) => `${String(e.nodeName)}.${String(e.className)}`)
+                    .join(', ')}`,
             );
         }
         return Array.prototype.indexOf.call(rows, table_row);
