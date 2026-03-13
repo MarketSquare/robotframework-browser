@@ -156,8 +156,8 @@ class Electron(LibraryComponent):
             logger.info(response.log)
 
             if recordVideo is not None:
-                self.context_cache.add(response.id, self._get_video_size(options))
-            video_path = self._embed_video(json.loads(response.video))
+                self.context_cache.add(response.id, self.library._playwright_state._get_video_size(options))
+            video_path = self.library._playwright_state._embed_video(json.loads(response.video))
 
             return (
                 response.browserId,
