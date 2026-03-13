@@ -138,7 +138,9 @@ class PlaywrightState(LibraryComponent):
         browser = SelectionType.create(browser)
         with self.playwright.grpc_channel() as stub:
             if browser == SelectionType.ALL:
-                response = stub.CloseAllBrowsers(Request().Empty())
+                response = stub.CloseAllBrowsers(
+                    Request().Empty(), timeout=self.timeout * 2
+                )
                 self.library.pause_on_failure.clear()
                 logger.info(response.log)
                 self.browser_arg_mapping.clear()
@@ -146,7 +148,7 @@ class PlaywrightState(LibraryComponent):
             if browser != SelectionType.CURRENT:
                 self.switch_browser(browser)
 
-            response = stub.CloseBrowser(Request.Empty())
+            response = stub.CloseBrowser(Request.Empty(), timeout=self.timeout * 2)
             closed_browser_id = response.body
             self.delete_browser_id_from_arg_mapping(closed_browser_id)
             self._update_tracing_contexts()
@@ -215,7 +217,9 @@ class PlaywrightState(LibraryComponent):
             for context in contexts:
                 self.context_cache.remove(context["id"])
                 self.switch_context(context["id"])
-                response = stub.CloseContext(Request().Bool(value=save_trace))
+                response = stub.CloseContext(
+                    Request().Bool(value=save_trace), timeout=self.timeout * 2
+                )
                 logger.info(response.log)
 
     def _get_context(self, context, contexts):
