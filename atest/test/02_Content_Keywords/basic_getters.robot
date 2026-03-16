@@ -212,7 +212,7 @@ Get Page Source
     Get Page Source    contains    <title>Login Page</title>
 
 Get Page Source Large Content
-    Evaluate JavaScript
+    Evaluate JavaScript  # robocop: off=SPC15
     ...    ${None}
     ...    () => {
     ...    const marker = document.createElement('div');
