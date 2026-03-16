@@ -12,7 +12,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
-    "@yao-pkg/pkg": "github:yao-pkg/pkg",
+    "@yao-pkg/pkg": "^6.14.1",
     "esbuild": "^0.27.4",
     "esbuild-node-externals": "^1.20.1",
     "eslint": "^10.0.3",
