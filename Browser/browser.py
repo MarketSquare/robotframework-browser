@@ -1073,9 +1073,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 body = body + response.bodyPart
             if response.json:
                 last_json = response.json
-        if body != "":
+        if body:
             return json.loads(body)
-        if last_json == "":
+        if not last_json:
             return
         return json.loads(last_json)
 """
@@ -1116,12 +1116,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             for response in responses:
                 logger.info(response.log)
                 if response.bodyPart:
-                    body = body + response.bodyPart
+                    body = f"{body}{response.bodyPart}"
                 if response.json:
                     last_json = response.json
-            if body != "":
+            if body:
                 return json.loads(body)
-            if last_json == "":
+            if not last_json:
                 return None
             return json.loads(last_json)
 
