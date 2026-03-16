@@ -34,6 +34,7 @@ import strip from 'strip-comments';
 import { v4 as uuidv4 } from 'uuid';
 
 import { logger } from './browser_logger';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import { Request, Response } from './generated/playwright_pb';
 import { exists } from './playwright-invoke';
 import {
@@ -45,14 +46,6 @@ import {
     pageReportResponse,
     stringResponse,
 } from './response-util';
-import { exists } from './playwright-invoke';
-
-import * as path from 'path';
-import { CoverageReport, CoverageReportOptions } from 'monocart-coverage-reports';
-import { ServerWritableStream } from '@grpc/grpc-js';
-import { logger } from './browser_logger';
-import strip from 'strip-comments';
-import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
