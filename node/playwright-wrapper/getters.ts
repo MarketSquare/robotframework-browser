@@ -219,7 +219,7 @@ export async function getElementStates(
     const selector = request.getSelector();
     const strictMode = request.getStrict();
     const locator = await findLocator(state, selector, strictMode, undefined, true);
-    let states = 0;
+    let states: number;
     try {
         await locator.waitFor({ state: 'attached', timeout: 250 });
         states = stateEnum.attached;

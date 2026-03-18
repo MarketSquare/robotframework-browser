@@ -1145,7 +1145,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/20930315?v=4",
       "profile": "https://github.com/DirkRichter",
       "contributions": [
-        "ideas"
+        "ideas",
+        "bug",
+        "code"
       ]
     },
     {
@@ -1815,6 +1817,15 @@
       "profile": "https://github.com/SiongWaiVidispine",
       "contributions": [
         "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "JanDubcak",
+      "name": "Jan Dubcak",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65766592?v=4",
+      "profile": "https://github.com/JanDubcak",
+      "contributions": [
         "code"
       ]
     }
