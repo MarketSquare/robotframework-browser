@@ -14,7 +14,7 @@ Test Teardown       Close Context    ALL
 Set Message On Suite Level
     Set Last Log Message    Suite Level Message    scope=Suite
 
-Pluging Keyword Example
+Plugin Keyword Example
     [Setup]    New Page    ${FORM_URL}
     ${url} =    Get Url
     Add Cookie
@@ -46,7 +46,7 @@ Test Js Plugin Called From Python Plugin
     Get Scroll Position    ${None}    top    ==    50
     Get Scroll Position    ${None}    left    ==    30
 
-Pluging Keyword Large Payload
+Plugin Keyword Large Payload
     [Setup]    New Page    ${FORM_URL}
     ${euro} =    Evaluate    chr(0x20AC)
     ${payload} =    Get Large Payload
@@ -57,7 +57,7 @@ Pluging Keyword Large Payload
     Should Start With    ${payload}[payload]    ${euro}
     Should End With    ${payload}[payload]    ${euro}
 
-Pluging Keyword Example Location
+Plugin Keyword Example Location
     [Tags]    no-docker-pr
     [Setup]    New Page    ${FORM_URL}
     ${location} =    Get Location Object
