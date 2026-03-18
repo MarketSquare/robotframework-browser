@@ -1070,7 +1070,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         for response in responses:
             logger.info(response.log)
             if response.bodyPart:
-                body = body + response.bodyPart
+                body = f"{{body}}{{response.bodyPart}}"
             if response.json:
                 last_json = response.json
         if body:

@@ -170,7 +170,8 @@ class Getters(LibraryComponent):
         body = ""
         with self.playwright.grpc_channel() as stub:
             for response in stub.GetPageSource(Request().Empty()):
-                body = body + response.bodyPart
+                body = f"{body}{response.bodyPart}"
+                logger.debug(response.log)
             value = json.loads(body)
             formatter = self.get_assertion_formatter("Get Page Source")
             return verify_assertion(
