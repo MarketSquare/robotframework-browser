@@ -17,6 +17,7 @@ import { pino } from 'pino';
 import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import * as pb from './generated/playwright_pb';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
@@ -92,26 +93,23 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
             postData: data.request().postData(),
         },
     });
-    const chunkSize = 3500000;
     const responseChunks = [];
-    if (body && body.length > chunkSize) {
-        logger.info(`body.length: ${body.length}`);
-        for (let i = 0; i < body.length; i += chunkSize) {
-            const chunk = body.substring(i, i + chunkSize);
-            const response = jsonResponse(jsonData, `Response received, chunk ${i}`, chunk);
-            logger.info(`chunked response: ${i}`);
-            responseChunks.push(response);
+    if (body !== null) {
+        const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+        if (bodyChunks.length > 1) {
+            logger.info(`body.length: ${body.length}`);
+            for (let i = 0; i < bodyChunks.length; i++) {
+                const response = jsonResponse(jsonData, `Response received, chunk ${i}`, bodyChunks[i]);
+                logger.info(`chunked response: ${i}`);
+                responseChunks.push(response);
+            }
+        } else {
+            responseChunks.push(jsonResponse(jsonData, 'Response received', body));
         }
     } else {
-        if (body !== null) {
-            const response = jsonResponse(jsonData, 'Response received', body);
-            responseChunks.push(response);
-        } else {
-            const jsonDataMap = JSON.parse(jsonData);
-            jsonDataMap.body = null;
-            const response = jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', '');
-            responseChunks.push(response);
-        }
+        const jsonDataMap = JSON.parse(jsonData);
+        jsonDataMap.body = null;
+        responseChunks.push(jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', ''));
     }
     logger.info(`responseChunks.length: ${responseChunks.length}`);
     return responseChunks;
