@@ -1065,15 +1065,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         responses = stub.CallExtensionKeyword(
             Request().KeywordCall(name="{name}", arguments=json.dumps(_args_browser_internal))
         )
-        body = ""
+        body_parts: list[str] = []
         last_json = ""
         for response in responses:
             logger.info(response.log)
             if response.bodyPart:
-                body = f"{{body}}{{response.bodyPart}}"
+                body_parts.append(response.bodyPart)
             if response.json:
                 last_json = response.json
-        if body:
+        if body_parts:
+            body = "".join(body_parts)
             return json.loads(body)
         if not last_json:
             return
@@ -1111,15 +1112,16 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     name=keyword_name, arguments=json.dumps(_args_browser_internal)
                 )
             )
-            body = ""
+            body_parts: list[str] = []
             last_json = ""
             for response in responses:
                 logger.info(response.log)
                 if response.bodyPart:
-                    body = f"{body}{response.bodyPart}"
+                    body_parts.append(response.bodyPart)
                 if response.json:
                     last_json = response.json
-            if body:
+            if body_parts:
+                body = "".join(body_parts)
                 return json.loads(body)
             if not last_json:
                 return None
