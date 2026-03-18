@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser"
-version = "19.12.5"
+version = "19.12.6"
 dependencies = [
     "grpcio == 1.78.1",
     "grpcio-tools == 1.78.1",
