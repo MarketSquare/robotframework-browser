@@ -789,8 +789,8 @@ class Browser(DynamicCore):
 
     = Experimental: Provide parameters to node process =
 
-    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
-    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
+    Browser library is integrated with Node.js and Python. Browser library starts a node process, to communicate
+    Playwright API on the Node.js side. It is possible to provide parameters for the started node process by defining
     ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
     ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
     There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
