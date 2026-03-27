@@ -173,7 +173,7 @@ if (tls || mutualTls) {
     };
 
     https
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
         .createServer(serverOptions, app)
         .listen(port, () => console.log(`Successfully started server on https://localhost:${port}`));
 } else {
