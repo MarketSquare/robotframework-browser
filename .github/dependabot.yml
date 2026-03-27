@@ -15,9 +15,7 @@ updates:
       interval: "daily"
     ignore:
       - dependency-name: "protobuf"
-        versions: ["7.34.1"]
-      - dependency-name: "grpcio-tools"
-        versions: [">=7"]
+        versions: [">7"]
     groups:
       grpc:
         patterns:
