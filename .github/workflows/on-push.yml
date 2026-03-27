@@ -130,9 +130,18 @@ jobs:
     - name: Run Node.js unit tests with coverage
       if: matrix.shard == 1
       run: |
-        npm run test:coverage 2>&1 | tee node-coverage-summary.txt
-        echo "## Node.js Coverage" >> $GITHUB_STEP_SUMMARY
-        cat node-coverage-summary.txt >> $GITHUB_STEP_SUMMARY
+        npm run test:coverage
+        echo "## Node.js Unit Test Coverage" >> $GITHUB_STEP_SUMMARY
+        node -e "
+          const s = require('./node/coverage/coverage-summary.json').total;
+          const fmt = (m) => \`\${m.covered}/\${m.total} (\${m.pct}%)\`;
+          console.log('| Metric | Coverage |');
+          console.log('|---|---|');
+          console.log('| Statements | ' + fmt(s.statements) + ' |');
+          console.log('| Branches   | ' + fmt(s.branches)   + ' |');
+          console.log('| Functions  | ' + fmt(s.functions)  + ' |');
+          console.log('| Lines      | ' + fmt(s.lines)      + ' |');
+        " >> $GITHUB_STEP_SUMMARY
     - uses: actions/upload-artifact@v7
       if: matrix.shard == 1
       with:

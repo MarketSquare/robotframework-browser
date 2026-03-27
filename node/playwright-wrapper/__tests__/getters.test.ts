@@ -72,18 +72,13 @@ function makeElementHandle(overrides: Partial<{ evaluate: jest.Mock }> = {}) {
 
 function makeNonOptionElementHandle(focused = false) {
     return makeElementHandle({
-        evaluate: jest.fn()
-            .mockResolvedValueOnce(false)
-            .mockResolvedValueOnce(focused),
+        evaluate: jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(focused),
     });
 }
 
 function makeOptionElementHandle(selected: boolean) {
     return makeElementHandle({
-        evaluate: jest.fn()
-            .mockResolvedValueOnce(true)
-            .mockResolvedValueOnce(selected)
-            .mockResolvedValueOnce(false),
+        evaluate: jest.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(selected).mockResolvedValueOnce(false),
     });
 }
 
