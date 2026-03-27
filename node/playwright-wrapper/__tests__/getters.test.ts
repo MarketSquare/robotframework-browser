@@ -25,8 +25,9 @@ jest.mock('../browser_logger', () => ({
     logger: { info: jest.fn(), error: jest.fn() },
 }));
 
-import { findLocator } from '../playwright-invoke';
 import { errors } from 'playwright';
+
+import { findLocator } from '../playwright-invoke';
 
 const mockFindLocator = findLocator as jest.MockedFunction<typeof findLocator>;
 
@@ -61,8 +62,7 @@ function makeMockState() {
 
 function makeElementHandle(overrides: Partial<{ evaluate: jest.Mock }> = {}) {
     return {
-        evaluate: jest.fn().mockImplementation(async (fn: Function) => {
-            // Default: not a select element, not focused
+        evaluate: jest.fn().mockImplementation(async (fn: (el: unknown) => unknown) => {
             const fakeEl = { selected: undefined };
             return fn(fakeEl);
         }),
@@ -70,15 +70,17 @@ function makeElementHandle(overrides: Partial<{ evaluate: jest.Mock }> = {}) {
     };
 }
 
-function makeMockLocator(overrides: Partial<{
-    waitFor: jest.Mock;
-    isVisible: jest.Mock;
-    isEnabled: jest.Mock;
-    getAttribute: jest.Mock;
-    isEditable: jest.Mock;
-    isChecked: jest.Mock;
-    elementHandle: jest.Mock;
-}> = {}) {
+function makeMockLocator(
+    overrides: Partial<{
+        waitFor: jest.Mock;
+        isVisible: jest.Mock;
+        isEnabled: jest.Mock;
+        getAttribute: jest.Mock;
+        isEditable: jest.Mock;
+        isChecked: jest.Mock;
+        elementHandle: jest.Mock;
+    }> = {},
+) {
     return {
         waitFor: jest.fn().mockResolvedValue(undefined),
         isVisible: jest.fn().mockResolvedValue(true),
@@ -113,9 +115,10 @@ describe('getElementStates', () => {
 
     it('returns attached + visible + enabled + editable + unchecked + defocused for a standard interactive element', async () => {
         const elementHandle = makeElementHandle({
-            evaluate: jest.fn()
-                .mockResolvedValueOnce(false)  // 'selected' in e → false (not a select)
-                .mockResolvedValueOnce(false),  // document.activeElement === e → false
+            evaluate: jest
+                .fn()
+                .mockResolvedValueOnce(false) // 'selected' in e → false (not a select)
+                .mockResolvedValueOnce(false), // document.activeElement === e → false
         });
         const locator = makeMockLocator({
             elementHandle: jest.fn().mockResolvedValue(elementHandle),
@@ -154,7 +157,7 @@ describe('getElementStates', () => {
     it('returns disabled + readonly state when element has disabled attribute', async () => {
         const locator = makeMockLocator({
             isEnabled: jest.fn().mockResolvedValue(false),
-            getAttribute: jest.fn().mockResolvedValue(''),  // disabled attribute present
+            getAttribute: jest.fn().mockResolvedValue(''), // disabled attribute present
             isEditable: jest.fn().mockResolvedValue(false),
         });
         mockFindLocator.mockResolvedValue(locator);
@@ -171,7 +174,7 @@ describe('getElementStates', () => {
     it('returns readonly state when element is not editable without disabled attribute', async () => {
         const locator = makeMockLocator({
             isEnabled: jest.fn().mockResolvedValue(true),
-            getAttribute: jest.fn().mockResolvedValue(null),  // no disabled attribute
+            getAttribute: jest.fn().mockResolvedValue(null), // no disabled attribute
             isEditable: jest.fn().mockResolvedValue(false),
         });
         mockFindLocator.mockResolvedValue(locator);
@@ -198,9 +201,10 @@ describe('getElementStates', () => {
 
     it('returns focused state when element is the active element', async () => {
         const elementHandle = makeElementHandle({
-            evaluate: jest.fn()
-                .mockResolvedValueOnce(false)   // 'selected' in e → false
-                .mockResolvedValueOnce(true),   // document.activeElement === e → true
+            evaluate: jest
+                .fn()
+                .mockResolvedValueOnce(false) // 'selected' in e → false
+                .mockResolvedValueOnce(true), // document.activeElement === e → true
         });
         const locator = makeMockLocator({
             elementHandle: jest.fn().mockResolvedValue(elementHandle),
@@ -216,10 +220,11 @@ describe('getElementStates', () => {
 
     it('returns selected state for a selected <option> element', async () => {
         const elementHandle = makeElementHandle({
-            evaluate: jest.fn()
-                .mockResolvedValueOnce(true)    // 'selected' in e → true (is an option)
-                .mockResolvedValueOnce(true)    // e.selected → true
-                .mockResolvedValueOnce(false),  // document.activeElement === e → false
+            evaluate: jest
+                .fn()
+                .mockResolvedValueOnce(true) // 'selected' in e → true (is an option)
+                .mockResolvedValueOnce(true) // e.selected → true
+                .mockResolvedValueOnce(false), // document.activeElement === e → false
         });
         const locator = makeMockLocator({
             elementHandle: jest.fn().mockResolvedValue(elementHandle),
@@ -235,10 +240,11 @@ describe('getElementStates', () => {
 
     it('returns deselected state for an unselected <option> element', async () => {
         const elementHandle = makeElementHandle({
-            evaluate: jest.fn()
-                .mockResolvedValueOnce(true)    // 'selected' in e → true
-                .mockResolvedValueOnce(false)   // e.selected → false
-                .mockResolvedValueOnce(false),  // document.activeElement === e → false
+            evaluate: jest
+                .fn()
+                .mockResolvedValueOnce(true) // 'selected' in e → true
+                .mockResolvedValueOnce(false) // e.selected → false
+                .mockResolvedValueOnce(false), // document.activeElement === e → false
         });
         const locator = makeMockLocator({
             elementHandle: jest.fn().mockResolvedValue(elementHandle),
@@ -277,8 +283,6 @@ describe('getElementStates', () => {
         });
         mockFindLocator.mockResolvedValue(locator);
 
-        await expect(getElementStates(makeRequest(), makeMockState())).rejects.toThrow(
-            'unexpected network error',
-        );
+        await expect(getElementStates(makeRequest(), makeMockState())).rejects.toThrow('unexpected network error');
     });
 });
