@@ -35,7 +35,7 @@ jest.mock('../playwright-invoke', () => ({
 }));
 
 import { findLocator } from '../playwright-invoke';
-const mockFindLocator = findLocator as jest.MockedFunction<typeof findLocator>;
+const mockFindLocator = jest.mocked(findLocator);
 ```
 
 ### Mocking the logger
@@ -75,7 +75,7 @@ function makeMockLocator(overrides: Partial<{
         isChecked: jest.fn().mockResolvedValue(false),
         elementHandle: jest.fn().mockResolvedValue(makeElementHandle()),
         ...overrides,
-    } as any;
+    } as unknown as Locator;
 }
 ```
 
@@ -90,6 +90,45 @@ function makeRequest(selector = '#el', strict = false) {
         getStrict: () => strict,
     } as any;
 }
+```
+
+## Asserting on mock interactions
+
+Use `toHaveBeenCalledWith` and `toHaveBeenCalledTimes` to verify how mocks were called — this is often the primary assertion in the wrapper layer:
+
+```typescript
+expect(mockFindLocator).toHaveBeenCalledWith(callOptions, '#el', false);
+expect(mockFindLocator).toHaveBeenCalledTimes(1);
+```
+
+Use `toBe` for primitives and reference identity checks; use `toEqual` for deep object comparison.
+
+## Async error tests
+
+When testing rejected promises, call `expect.assertions(n)` at the top of the test. This ensures the test fails if the error path is never reached:
+
+```typescript
+it('throws when element is not found', async () => {
+    expect.assertions(1);
+    mockFindLocator.mockRejectedValue(new Error('not found'));
+    await expect(getElementStates(makeRequest(), {} as any)).rejects.toThrow('not found');
+});
+```
+
+## Organising tests with nested describe
+
+Group related cases under inner `describe` blocks to make large test files navigable:
+
+```typescript
+describe('getElementStates', () => {
+    describe('when element is visible', () => {
+        it('returns visible state', async () => { ... });
+    });
+
+    describe('when element times out', () => {
+        it('returns detached state', async () => { ... });
+    });
+});
 ```
 
 ## Sequencing multiple `evaluate` calls
@@ -128,6 +167,6 @@ describe('functionName', () => {
 ## Things to avoid
 
 - Do not add comments or docstrings explaining what the test does — the test name and code should be self-explanatory.
-- Do not mock modules that are not needed for the test being written.
+- Mock at the boundary closest to your unit. Prefer spying over full module replacement when only one method needs controlling; don't mock modules that aren't exercised by the test.
 - Do not assert on log messages — they are implementation details.
 - Do not share mutable mock state between tests; always call `jest.clearAllMocks()` in `beforeEach`.
