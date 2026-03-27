@@ -16,6 +16,8 @@ import atexit
 import contextlib
 import os
 import platform
+import signal
+import sys
 import time
 from functools import cached_property
 from pathlib import Path
@@ -181,6 +183,14 @@ class Playwright(LibraryComponent):
         node_args.append(port)
         if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
             os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
+        if (
+            os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+            and sys.platform != "win32"
+        ):
+            v8_coverage_dir = self.browser_output / "node-v8-coverage"
+            v8_coverage_dir.mkdir(parents=True, exist_ok=True)
+            os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+            logger.info(f"V8 coverage enabled, writing to {v8_coverage_dir}")
         logger.trace(f"Node startup parameters: {node_args}")
         return Popen(
             node_args,
@@ -263,6 +273,20 @@ class Playwright(LibraryComponent):
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
             logger.trace("Closing Playwright process tree")
+            if (
+                os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+                and sys.platform != "win32"
+            ):
+                logger.info("Coverage mode: sending SIGTERM for graceful shutdown")
+                try:
+                    playwright_process.send_signal(signal.SIGTERM)
+                    playwright_process.wait(timeout=10)
+                    logger.info("Playwright process exited gracefully")
+                    return
+                except Exception as exc:
+                    logger.debug(
+                        f"Graceful shutdown failed, falling back to kill: {exc}"
+                    )
             close_process_tree(playwright_process)
         else:
             logger.trace("Disconnected from external Playwright process")

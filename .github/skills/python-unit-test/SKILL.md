@@ -1,6 +1,7 @@
 ---
 name: write-python-unit-tests
 description: 'Write Python unit tests for Python code. Use when: creating new tests, improving test coverage, testing functions or classes in isolation, writing test cases for edge cases, or following TDD practices.'
+applyTo: 'utest/**'
 ---
 # Write Python Unit Tests
 Python unit tests must always be written in the `utest` folder and using pytest.

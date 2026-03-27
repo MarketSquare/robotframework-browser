@@ -53,12 +53,28 @@ Run `inv -l` to get list of current build commands.
 
 ## Testing
 
-There are both unit tests written with pytest and acceptance tests written with
-Robot Framework. These can be run manually with `inv utest` and `inv atest`.
-To run continuously pytests in a watch mode `inv utest-watch`.
-To rerun failed tests you can use `inv atest-failed` The tests are also executed in a pre-push hook.
+### Python unit tests
+Written with pytest, run with `inv utest`. To run continuously in watch mode use `inv utest-watch`.
 
-If there changes inv TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
+### Node.js unit tests
+Written with Jest, located in `node/playwright-wrapper/__tests__/`. Run with:
+```
+inv utest-node                 # run all tests
+inv utest-node --coverage      # run with HTML + LCOV coverage report (output: node/coverage/)
+```
+
+### Acceptance tests
+Written with Robot Framework, run with `inv atest`. To rerun failed tests use `inv atest-failed`.
+
+To collect Node.js V8 coverage during acceptance tests (Linux and macOS only):
+```
+inv atest-coverage-node [--suite <suite>]
+```
+This builds the wrapper with source maps, runs the tests, and generates an HTML + LCOV coverage report at `atest/output/node-coverage-report/`.
+
+Tests are also executed in a pre-push hook.
+
+If there are changes on the TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
 
 ## Running tests in docker container
 

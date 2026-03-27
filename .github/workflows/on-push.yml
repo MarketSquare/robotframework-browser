@@ -127,6 +127,17 @@ jobs:
       if: matrix.shard == 1
       run: |
         invoke utest
+    - name: Run Node.js unit tests with coverage
+      if: matrix.shard == 1
+      run: |
+        npm run test:coverage 2>&1 | tee node-coverage-summary.txt
+        echo "## Node.js Coverage" >> $GITHUB_STEP_SUMMARY
+        cat node-coverage-summary.txt >> $GITHUB_STEP_SUMMARY
+    - uses: actions/upload-artifact@v7
+      if: matrix.shard == 1
+      with:
+        name: node-coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        path: node/coverage/
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |

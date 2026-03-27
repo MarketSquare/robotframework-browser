@@ -57,6 +57,7 @@ tmp
 .coverage
 htmlcov
 results
+node/coverage/
 
 # linting
 .ruff_cache
