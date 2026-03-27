@@ -641,14 +641,6 @@ class Browser(DynamicCore):
     ``PORT`` is the port you want to use for the node process.
     To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
-    = Experimental: Provide parameters to node process =
-
-    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
-    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
-    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
-    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
-    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
-
     = Scope Setting =
 
     Some keywords which manipulates library settings have a scope argument.
@@ -782,6 +774,26 @@ class Browser(DynamicCore):
     Example project for translation can be found from
     [https://github.com/MarketSquare/robotframework-browser-translation-fi | robotframework-browser-translation-fi]
     repository.
+
+    = ENVIRONMENT VARIABLES =
+
+    There are some environment variables that can be used to modify the behavior of the library. Some of
+    these environment variables are for experimental/development features and must not be used in production environments.
+    They are listed here to prevent users using them by accident without knowing the possible consequences.
+
+    These are:
+    | =Environment variable=                         | =Description= |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``          | Port number for connecting to an existing node process. This is an alternative to ``playwright_process_port`` import argument. |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``True``, will collect code coverage for the node process. This must not be used in production environments. |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` | Debug options for the node process. This is a comma-separated list of arguments, for example ``--inspect``. This must not be used in production environments. |
+
+    = Experimental: Provide parameters to node process =
+
+    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
+    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
+    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
+    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
     """
 
     ROBOT_LIBRARY_VERSION = VERSION

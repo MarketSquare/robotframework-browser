@@ -2,6 +2,8 @@
 const esbuild = require('esbuild');
 const { nodeExternalsPlugin } = require('esbuild-node-externals');
 
+const withCoverage = process.env.ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE === '1';
+
 esbuild
     .build({
         logLevel: 'info',
@@ -9,6 +11,7 @@ esbuild
         bundle: true,
         platform: 'node',
         outfile: './Browser/wrapper/index.js',
+        sourcemap: withCoverage ? 'external' : false,
         plugins: [
             nodeExternalsPlugin({
                 // Allow UUID to be bundled instead of external

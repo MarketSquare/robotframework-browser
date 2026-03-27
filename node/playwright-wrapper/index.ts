@@ -40,3 +40,10 @@ server.addService(
 server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${host}:${port}`);
 });
+
+process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM, shutting down gracefully');
+    server.tryShutdown(() => {
+        process.exit(0);
+    });
+});

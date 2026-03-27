@@ -1,6 +1,7 @@
 {
   "include": [
     "./playwright-wrapper/*.ts",
+    "./playwright-wrapper/__tests__/**/*.ts",
     "./dynamic-test-app/src/*"
   ],
   "compilerOptions": {

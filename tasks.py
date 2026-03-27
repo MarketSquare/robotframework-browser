@@ -378,6 +378,20 @@ def utest_watch(c):
 
 
 @task
+def utest_node(c, coverage=False):
+    """Run Node.js unit tests with Jest.
+
+    Args:
+        coverage: When set, runs with Istanbul coverage report (output: node/coverage/).
+    """
+    script = "test:coverage" if coverage else "test"
+    c.run(f"npm run {script}")
+    if coverage:
+        report = ROOT_DIR / "node" / "coverage" / "index.html"
+        print(f"\nCoverage report: {report}")
+
+
+@task
 def clean_atest(c):
     if ATEST_OUTPUT.exists():
         shutil.rmtree(ATEST_OUTPUT)
@@ -548,6 +562,80 @@ def atest_global_pythonpath(c):
 @task()
 def atest_failed(c):
     sys.exit(_run_pabot(["--rerunfailed", "atest/output/output.xml"]))
+
+
+@task()
+def atest_coverage_node(
+    c,
+    suite=None,
+    test=None,
+    include=None,
+    shard=None,
+    debug=False,
+    exclude=None,
+    loglevel=None,
+):
+    """Run acceptance tests with Node.js V8 coverage (Linux and macOS only).
+
+    Builds the Node.js wrapper with source maps, runs acceptance tests with
+    V8 coverage collection enabled, then post-processes the coverage data into
+    an HTML + LCOV report at atest/output/node-coverage-report/.
+
+    Args:
+        suite:    Select which suite to run.
+        test:     Select which test to run.
+        include:  Select tests by tag.
+        shard:    Shard tests.
+        debug:    Use robotframework-debugger as test listener.
+        exclude:  Exclude tests by tag.
+        loglevel: Set log level for robot framework.
+    """
+    import signal
+
+    from Browser.utils import spawn_node_process
+
+    if sys.platform == "win32":
+        print("Node.js V8 coverage is not supported on Windows.")
+        sys.exit(1)
+
+    os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE"] = "1"
+    node_build(c)
+    clean_atest(c)
+    create_test_app(c)
+
+    # Create V8 coverage dir before spawning Node so the env var is valid
+    v8_coverage_dir = ATEST_OUTPUT / "browser" / "node-v8-coverage"
+    v8_coverage_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+
+    args = ["--pythonpath", "."]
+    if suite:
+        args.extend(["--suite", suite])
+    if test:
+        args.extend(["--test", test])
+    if include:
+        args.extend(["--include", include])
+    if debug:
+        args.extend(["--listener", "Debugger"])
+    if exclude:
+        args.extend(["--exclude", exclude])
+    args.extend(["--exclude", "tidy-transformer"])
+
+    background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
+    try:
+        os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
+        rc = _run_pabot(args, shard, loglevel=loglevel or "DEBUG")
+    finally:
+        # SIGTERM allows Node.js to flush V8 coverage before exiting
+        try:
+            background_process.send_signal(signal.SIGTERM)
+            background_process.wait(timeout=10)
+            print("Node process exited gracefully, V8 coverage flushed")
+        except Exception:
+            background_process.kill()
+
+    c.run("node node/process-coverage.mjs", warn=True)
+    sys.exit(rc)
 
 
 @task()
