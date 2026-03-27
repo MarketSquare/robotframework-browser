@@ -784,7 +784,7 @@ class Browser(DynamicCore):
     These are:
     | =Environment variable=                         | =Description= |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``          | Port number for connecting to an existing node process. This is an alternative to ``playwright_process_port`` import argument. |
-    | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``True``, will collect code coverage for the node process. This must not be used in production environments. |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``1``, will collect code coverage for the node process. This must not be used in production environments and is not supported on Windows. |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` | Debug options for the node process. This is a comma-separated list of arguments, for example ``--inspect``. This must not be used in production environments. |
 
     = Experimental: Provide parameters to node process =
