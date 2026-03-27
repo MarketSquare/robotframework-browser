@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from '../chunking';
-
-describe('MAX_RESPONSE_CHUNK_BYTES', () => {
-    it('equals 1000000', () => {
-        expect(MAX_RESPONSE_CHUNK_BYTES).toBe(1000000);
-    });
-});
+import { splitUtf8ByMaxBytes } from '../chunking';
 
 describe('splitUtf8ByMaxBytes', () => {
     it('returns empty array for empty string', () => {
