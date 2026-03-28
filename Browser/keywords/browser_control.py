@@ -640,7 +640,9 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def enable_presenter_mode(self, enable: HighLightElement | bool) -> HighLightElement | bool:
+    def enable_presenter_mode(
+        self, enable: HighLightElement | bool
+    ) -> HighLightElement | bool:
         """Enables or disables presenter mode for element highlighting during test execution.
 
         Presenter mode highlights elements found by keywords, which is useful for test debugging and demonstration.
