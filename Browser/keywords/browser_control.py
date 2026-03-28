@@ -656,10 +656,11 @@ class Control(LibraryComponent):
         | Click    //button                            # Element will be highlighted
         | Enable Presenter Mode    ${old_mode}         # Restore previous mode
         |
-        | # With custom highlighting configuration
+        | # With custom highlighting configuration (all fields required)
         | VAR    &{config}
         | ...    duration=5 seconds
         | ...    width=3px
+        | ...    style=dotted
         | ...    color=red
         | Enable Presenter Mode    ${config}
         | Get Text    //input                          # Will use custom highlight settings
