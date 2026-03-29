@@ -17,9 +17,9 @@ Get Text
 
 Get Text Disabled
     [Setup]    Go To    ${ELEMENT_STATE_URL}
-    Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
+    presenter_mode.Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
     ${text} =    Get Text    //input[@name="readonly_with_equals_only"]
-    [Teardown]    Set Presenter Mode    False
+    [Teardown]    presenter_mode.Set Presenter Mode    False
 
 Get Text And Assert ==
     Get Text    ${UserNameLabel}    ==    User Name:
