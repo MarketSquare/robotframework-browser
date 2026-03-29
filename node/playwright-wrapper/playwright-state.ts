@@ -80,7 +80,7 @@ export interface TimedConsoleMessage {
     time: Date;
 }
 
-const extractArgumentsStringFromJavascript = (javascript: string): string => {
+export const extractArgumentsStringFromJavascript = (javascript: string): string => {
     const regex = /\((.*?)\)/;
     const match = regex.exec(strip(javascript).replace(/\r?\n/g, ''));
     if (match) {
