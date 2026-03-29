@@ -478,7 +478,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JanDubcak"><img src="https://avatars.githubusercontent.com/u/65766592?v=4?s=100" width="100px;" alt="Jan Dubcak"/><br /><sub><b>Jan Dubcak</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=JanDubcak" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/rauttiz"><img src="https://avatars.githubusercontent.com/u/15322977?v=4?s=100" width="100px;" alt="Marko Rautiainen"/><br /><sub><b>Marko Rautiainen</b></sub></a><br /><a href="#ideas-rauttiz" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/rauttiz"><img src="https://avatars.githubusercontent.com/u/15322977?v=4?s=100" width="100px;" alt="Marko Rautiainen"/><br /><sub><b>Marko Rautiainen</b></sub></a><br /><a href="#ideas-rauttiz" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=rauttiz" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
