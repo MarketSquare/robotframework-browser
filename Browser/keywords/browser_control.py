@@ -640,23 +640,25 @@ class Control(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def enable_presenter_mode(
-        self, enable: HighLightElement | bool
+    def set_presenter_mode(
+        self, mode: HighLightElement | bool
     ) -> HighLightElement | bool:
-        """Enables or disables presenter mode for element highlighting during test execution.
+        """Sets presenter mode for element highlighting during test execution.
 
         Presenter mode highlights elements found by keywords, which is useful for test debugging and demonstration.
         When enabled, elements are highlighted with a border for a duration to visually show what the keyword found.
 
         | =Arguments= | =Description= |
-        | ``enable`` | When set to ``True``, enables presenter mode with default settings. When set to ``False``, disables presenter mode. Can also be a dictionary containing highlighting configuration options as defined in ``HighLightElement``. |
+        | ``mode`` | When set to ``True``, enables presenter mode with default settings. When set to ``False``, disables presenter mode.
+          Can also be a dictionary containing all highlighting configuration options as defined in ``HighLightElement``.
+          **All fields in the dictionary are required.**
 
         The keyword returns the previous presenter mode value, allowing you to restore it later.
 
         Example:
-        | ${old_mode}=    Enable Presenter Mode    True
+        | ${old_mode}=    Set Presenter Mode    True
         | Click    //button                            # Element will be highlighted
-        | Enable Presenter Mode    ${old_mode}         # Restore previous mode
+        | Set Presenter Mode    ${old_mode}            # Restore previous mode
         |
         | # With custom highlighting configuration (all fields required)
         | VAR    &{config}
@@ -664,12 +666,12 @@ class Control(LibraryComponent):
         | ...    width=3px
         | ...    style=dotted
         | ...    color=red
-        | Enable Presenter Mode    ${config}
+        | Set Presenter Mode    ${config}
         | Get Text    //input                          # Will use custom highlight settings
-        | Enable Presenter Mode    False               # Turn off highlighting
+        | Set Presenter Mode    False                  # Turn off highlighting
         """
         old_mode = self.library.presenter_mode
-        self.library.presenter_mode = enable
+        self.library.presenter_mode = mode
         logger.debug(f"Previous presenter mode was: {old_mode}")
         return old_mode
 
