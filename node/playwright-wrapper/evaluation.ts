@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { pino } from 'pino';
 import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
+import { logger } from './browser_logger';
 import { Request, Response } from './generated/playwright_pb';
 import { _waitForDownload } from './network';
 import { exists, findLocator } from './playwright-invoke';
@@ -28,7 +28,6 @@ import {
     parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /** Resolve an Locator, create global UUID for it, and store the reference
  * in global state. Enables using special selector syntax `element=<uuid>` in
