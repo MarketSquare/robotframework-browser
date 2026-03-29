@@ -11,13 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { pino } from 'pino';
-
+import { logger } from './browser_logger';
 import { Request, Response } from './generated/playwright_pb';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { stringResponse } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState): Promise<Response.String> {
     const activePage = state.getActivePage();

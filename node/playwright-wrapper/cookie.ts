@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { pino } from 'pino';
 import { BrowserContext } from 'playwright';
 
+import { logger } from './browser_logger';
 import { Request, Response } from './generated/playwright_pb';
 import { emptyWithLog, jsonResponse } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 interface CookieData {
     name: string;

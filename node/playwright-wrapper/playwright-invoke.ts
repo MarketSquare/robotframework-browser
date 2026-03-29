@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { pino } from 'pino';
 import { Locator, Page } from 'playwright';
 
+import { logger } from './browser_logger';
 import { PlaywrightState } from './playwright-state';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
