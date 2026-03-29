@@ -13,15 +13,14 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { pino } from 'pino';
 import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
+import { logger } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import * as pb from './generated/playwright_pb';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
     const opts: { [k: string]: any } = {
