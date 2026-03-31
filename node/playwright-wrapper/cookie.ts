@@ -15,7 +15,7 @@
 import { BrowserContext } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 interface CookieData {
@@ -30,7 +30,7 @@ interface CookieData {
     sameSite?: 'Strict' | 'Lax' | 'None';
 }
 
-export async function getCookies(context: BrowserContext): Promise<Response.Json> {
+export async function getCookies(context: BrowserContext): Promise<pb.Response_Json> {
     const allCookies = await context.cookies();
     logger.info({ 'Cookies: ': allCookies });
     const cookieName = [];
@@ -40,14 +40,15 @@ export async function getCookies(context: BrowserContext): Promise<Response.Json
     return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
 }
 
-export async function addCookie(request: Request.Json, context: BrowserContext): Promise<Response.Empty> {
-    const cookie: CookieData = JSON.parse(request.getBody());
-    logger.info({ 'Cookie data: ': request.getBody() });
+export async function addCookie(request: pb.Request_Json, context: BrowserContext): Promise<pb.Response_Empty> {
+    const req: pb.Request_Json = request;
+    const cookie: CookieData = JSON.parse(req.body ?? '{}');
+    logger.info({ 'Cookie data: ': req.body });
     await context.addCookies([cookie]);
-    return emptyWithLog('Cookie "' + cookie.name + '" added.');
+    return emptyWithLog('Cookie "' + cookie.name + '" added.') as unknown as pb.Response_Empty;
 }
 
-export async function deleteAllCookies(context: BrowserContext): Promise<Response.Empty> {
+export async function deleteAllCookies(context: BrowserContext): Promise<pb.Response_Empty> {
     await context.clearCookies();
-    return emptyWithLog('All cookies deleted.');
+    return emptyWithLog('All cookies deleted.') as unknown as pb.Response_Empty;
 }

@@ -13,17 +13,18 @@
 // limitations under the License.
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog } from './response-util';
 
-export async function setTime(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
+export async function setTime(request: pb.Request_ClockSetTime, state: PlaywrightState): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    let time = request.getTime();
+    const req: pb.Request_ClockSetTime = request;
+    let time = req.time;
     time = time * 1000;
-    const clockType = request.getSettype();
+    const clockType = req.setType;
     const setTime = new Date(time).toISOString();
     if (clockType === 'fixed') {
         logger.info(`Setting time to ${time} ${setTime} as fixed`);
@@ -38,38 +39,46 @@ export async function setTime(request: Request.ClockSetTime, state: PlaywrightSt
         logger.info(`Invalid clock type ${clockType}`);
         return emptyWithLog('Invalid clock type');
     }
-    return emptyWithLog(`Time set to ${setTime} as ${clockType}`);
+    return emptyWithLog(`Time set to ${setTime} as ${clockType}`) as unknown as pb.Response_Empty;
 }
 
-export async function clockResume(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
+export async function clockResume(request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     await activePage.clock.resume();
-    return emptyWithLog('Clock resumed');
+    return emptyWithLog('Clock resumed') as unknown as pb.Response_Empty;
 }
 
-export async function clockPauseAt(request: Request.ClockSetTime, state: PlaywrightState): Promise<Response.Empty> {
+export async function clockPauseAt(
+    request: pb.Request_ClockSetTime,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    let time = request.getTime();
+    const req: pb.Request_ClockSetTime = request;
+    let time = req.time;
     time = time * 1000;
     const setTime = new Date(time).toISOString();
     logger.info(`Pausing clock at ${time} ${setTime}`);
     await activePage.clock.pauseAt(time);
-    return emptyWithLog(`Clock paused at ${setTime}`);
+    return emptyWithLog(`Clock paused at ${setTime}`) as unknown as pb.Response_Empty;
 }
 
-export async function advanceClock(request: Request.ClockAdvance, state: PlaywrightState): Promise<Response.Empty> {
+export async function advanceClock(
+    request: pb.Request_ClockAdvance,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    const time = request.getTime();
+    const req: pb.Request_ClockAdvance = request;
+    const time = req.time;
     const timeMs = time * 1000;
-    const advanceType = request.getAdvancetype();
+    const advanceType = req.advanceType;
     logger.info(`Advancing clock by ${timeMs} ${advanceType}`);
     if (advanceType === 'fast_forward') {
         await activePage.clock.fastForward(timeMs);
     } else if (advanceType === 'run_for') {
         await activePage.clock.runFor(timeMs);
     }
-    return emptyWithLog(`Clock advanced by ${timeMs} seconds by ${advanceType}`);
+    return emptyWithLog(`Clock advanced by ${timeMs} seconds by ${advanceType}`) as unknown as pb.Response_Empty;
 }

@@ -15,7 +15,7 @@
 import { Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { PlaywrightState } from './playwright-state';
+import { locatorCache, PlaywrightState } from './playwright-state';
 
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
@@ -37,6 +37,66 @@ export async function findLocator(
 ): Promise<Locator> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+    const selTrim = selector.trim();
+    const activePageId = state.getActivePageId();
+    // Special handling for element references produced by Get Element / Get Elements
+    // NOTE: Do NOT use the "id=" prefix here. Playwright itself supports an
+    // "id=..." selector engine (selects by attribute), so using "id=<uuid>"
+    // to represent a cached element-handle reference will collide: if the
+    // locator cache misses, Playwright will interpret the token as an id-attribute
+    // selector instead of an element-handle reference. To avoid this class of
+    // accidental fall-through, we only accept the explicit "element=" prefix
+    // (legacy) for cached element references. If you need a different, clearly
+    // non-Playwright prefix, use something that cannot be a valid Playwright
+    // engine string (for example `rfid=` or `element=`). The runtime check and
+    // regex below therefore accept only the `element=` form.
+    if (/^\s*element=/.test(selTrim)) {
+        // support both 'element=uuid >> rest' and 'element=uuid>>rest' spacing
+        const m = selector.match(/^\s*element=([^\s>]+)(?:\s*>>\s*(.*))?$/);
+        if (m) {
+            const id = m[1];
+            const remainder = m[2] ?? '';
+            const cacheKey = `${activePageId}-${id}`;
+            const cached = locatorCache.get(cacheKey);
+            if (cached) {
+                if (remainder) {
+                    const composed = cached.locator(remainder);
+                    if (nthLocator !== undefined) return composed.nth(nthLocator);
+                    if (strictMode) return composed;
+                    if (firstOnly) return composed.first();
+                    return composed;
+                }
+                if (nthLocator !== undefined) return cached.nth(nthLocator);
+                if (strictMode) return cached;
+                if (firstOnly) return cached.first();
+                return cached;
+            }
+            // If not cached, fall through and let Playwright handle unknown 'element' engine
+        }
+    }
+    // Fail-fast: detect accidental forwarding of Locator.toString() or getBy... expressions
+    // These are human-readable Locator chains (e.g. "locator('body').contentFrame().locator('body')")
+    // and are NOT valid Playwright selector engine strings. Reject them early with a clear message.
+    const badSigns = [
+        'locator(',
+        'getBy',
+        '.contentFrame(',
+        '.first()',
+        '.nth(',
+        'getByRole(',
+        'getByAltText(',
+        'getByLabel(',
+        'getByPlaceholder(',
+        'getByTitle(',
+    ];
+    for (const sign of badSigns) {
+        if (selTrim.includes(sign)) {
+            throw new Error(
+                `Invalid selector forwarded to Playwright: looks like a Locator.toString() or getBy(...) expression ('${selector}'). ` +
+                    `Do not pass Locator.toString() across RPC. Use server-side element operations or pass canonical selector strings instead.`,
+            );
+        }
+    }
     if (strictMode) {
         selector = selector.replaceAll(' >>> ', ' >> internal:control=enter-frame >> ');
     } else {

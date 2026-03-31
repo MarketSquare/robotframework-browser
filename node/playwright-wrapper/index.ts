@@ -15,7 +15,7 @@
 import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementation } from '@grpc/grpc-js';
 
 import { logger } from './browser_logger';
-import { PlaywrightService } from './generated/playwright_grpc_pb';
+import { PlaywrightService } from './generated/playwright';
 import { PlaywrightServer } from './grpc-service';
 
 const args = process.argv.slice(2);

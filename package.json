@@ -20,7 +20,8 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "express": "^5.2.1",
     "globals": "^17.4.0",
-    "grpc_tools_node_protoc_ts": "^5.3.3",
+
+    "ts-proto": "^1.128.0",
     "grpc-tools": "^1.13.1",
     "husky": "^9.1.7",
     "jest": "^30.3.0",
@@ -56,7 +57,8 @@
     "lint:check": "eslint \"node/**/*.{js,ts,tsx}\" --config ./node/eslint.config.mjs",
     "format": "prettier --write \"node/**/*.{js,ts,tsx}\"",
     "format:check": "prettier --check \"node/**/*.{js,ts,tsx}\"",
-    "grpc_tools_node_protoc": "grpc_tools_node_protoc"
+    "grpc_tools_node_protoc": "grpc_tools_node_protoc",
+    "gen:proto:ts": "protoc --plugin=protoc-gen-ts_proto=$(npm bin)/protoc-gen-ts_proto --ts_proto_out=node/playwright-wrapper/generated -I protobuf protobuf/*.proto --ts_proto_opt=outputServices=grpc-js,env=node"
   },
   "pkg": {
     "scripts": "Browser/wrapper/*.js",

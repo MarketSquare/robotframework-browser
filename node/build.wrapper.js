@@ -7,10 +7,15 @@ const withCoverage = process.env.ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE === '1';
 esbuild
     .build({
         logLevel: 'info',
-        entryPoints: ['./node/playwright-wrapper/index.ts'],
+        entryPoints: [
+            './node/playwright-wrapper/index.ts',
+            // Ensure generated protobuf outputs are bundled even if imported indirectly
+            './node/playwright-wrapper/generated/playwright.ts',
+        ],
         bundle: true,
         platform: 'node',
-        outfile: './Browser/wrapper/index.js',
+        // When providing multiple entryPoints esbuild requires `outdir` instead of `outfile`.
+        outdir: './Browser/wrapper',
         sourcemap: withCoverage ? 'external' : false,
         plugins: [
             nodeExternalsPlugin({

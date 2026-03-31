@@ -247,6 +247,30 @@ def _node_protobuf_gen(c):
         NODE_MODULES / ".bin" / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
     )
     protoc_ts_plugin = NODE_MODULES / ".bin" / f"protoc-gen-ts{plugin_suffix}"
+    # ts-proto plugin (provides protoc-gen-ts_proto) if installed
+    protoc_ts_proto_plugin = (
+        NODE_MODULES / ".bin" / f"protoc-gen-ts_proto{plugin_suffix}"
+    )
+    # If ts-proto is available, use protoc + ts-proto for modern TypeScript generation
+    if protoc_ts_proto_plugin.exists():
+        # Prefer system `protoc` if available; otherwise use the npm wrapper `grpc_tools_node_protoc`
+        if shutil.which("protoc"):
+            cmd = (
+                f"protoc --plugin=protoc-gen-ts_proto={protoc_ts_proto_plugin} "
+                f"--ts_proto_out={node_protobuf_dir} -I ./protobuf protobuf/*.proto "
+                "--ts_proto_opt=outputServices=grpc-js,env=node"
+            )
+        else:
+            grpc_tools_wrapper = (
+                NODE_MODULES / ".bin" / f"grpc_tools_node_protoc{plugin_suffix}"
+            )
+            cmd = (
+                f"{grpc_tools_wrapper} --plugin=protoc-gen-ts_proto={protoc_ts_proto_plugin} "
+                f"--ts_proto_out={node_protobuf_dir} -I ./protobuf protobuf/*.proto "
+                "--ts_proto_opt=outputServices=grpc-js,env=node"
+            )
+        c.run(cmd)
+        return
     cmd = (
         "npm run grpc_tools_node_protoc -- "
         f"--js_out=import_style=commonjs,binary:{node_protobuf_dir} "

@@ -16,7 +16,7 @@ import * as path from 'path';
 import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { _waitForDownload } from './network';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
@@ -33,22 +33,30 @@ import {
  * in global state. Enables using special selector syntax `element=<uuid>` in
  * RF keywords.
  */
-export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    const strictMode = request.getStrict();
-    const selector = request.getSelector();
+export async function getElement(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_String> {
+    const req: pb.Request_ElementSelector = request;
+    const strictMode = req.strict ?? false;
+    const selector = req.selector;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
-
-    // @ts-ignore
-    return stringResponse(locator._selector, 'Locator found successfully.');
+    // Return the Locator's internal canonical selector directly.
+    // @ts-ignore - access internal Playwright Locator property
+    return stringResponse((locator as any)._selector, 'Locator found successfully.') as unknown as pb.Response_String;
 }
 
 /** Resolve a list of Locator, create global UUIDs for them, and store the
  * references in global state. Enables using special selector syntax `element=<uuid>`
  * in RF keywords.
  */
-export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    const selector = request.getSelector();
+export async function getElements(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Json> {
+    const req: pb.Request_ElementSelector = request;
+    const selector = req.selector;
     const locator = await findLocator(state, selector, false, undefined, false);
     logger.info(`Wait element to reach attached state.`);
     try {
@@ -58,10 +66,13 @@ export async function getElements(request: Request.ElementSelector, state: Playw
     }
     const allLocators = await locator.all();
     logger.info(`Found ${allLocators.length} elements.`);
-
-    // @ts-ignore
-    const allSelectors = allLocators.map((locator) => locator._selector);
-    return jsonResponse(JSON.stringify(allSelectors), `Found ${allLocators.length} Locators successfully.`);
+    // Return the Locator's internal selector for each matched element.
+    // @ts-ignore - access internal Playwright Locator property
+    const allSelectors = allLocators.map((l) => (l as any)._selector);
+    return jsonResponse(
+        JSON.stringify(allSelectors),
+        `Found ${allLocators.length} Locators successfully.`,
+    ) as unknown as pb.Response_Json;
 }
 
 type AriaRole =
@@ -148,13 +159,14 @@ type AriaRole =
     | 'treegrid'
     | 'treeitem';
 
-export async function getByX(request: Request.GetByOptions, state: PlaywrightState): Promise<Response.Json> {
-    const strategy = request.getStrategy();
-    const text = parseRegExpOrKeepString(request.getText());
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    const allElements = request.getAll();
-    const frameSelector = request.getFrameselector();
+export async function getByX(request: pb.Request_GetByOptions, state: PlaywrightState): Promise<pb.Response_Json> {
+    const req: pb.Request_GetByOptions = request;
+    const strategy = req.strategy;
+    const text = parseRegExpOrKeepString(req.text ?? '');
+    const options = JSON.parse(req.options ?? '{}');
+    const strictMode = req.strict ?? false;
+    const allElements = req.all ?? false;
+    const frameSelector = req.frameSelector ?? '';
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let document: Page | FrameLocator = activePage;
@@ -207,19 +219,27 @@ export async function getByX(request: Request.GetByOptions, state: PlaywrightSta
         }
         await locator.waitFor({ state: 'attached' });
 
-        // @ts-ignore
-        return jsonResponse(JSON.stringify(locator._selector), 'Locator found successfully.');
+        // Return the Locator's internal canonical selector directly.
+        // @ts-ignore - access internal Playwright Locator property
+        const canonicalSingle = (locator as any)._selector;
+        return jsonResponse(
+            JSON.stringify(canonicalSingle),
+            'Locator found successfully.',
+        ) as unknown as pb.Response_Json;
     }
     let allSelectors: string[] = [];
     try {
         await locator.first().waitFor({ state: 'attached' });
 
-        // @ts-ignore
-        allSelectors = await locator.all().then((locators) => locators.map((loc) => loc._selector));
+        // @ts-ignore - access internal Playwright Locator property
+        allSelectors = await locator.all().then((locators) => locators.map((l) => (l as any)._selector));
     } catch (e) {
         logger.debug(`Attached state not reached, suppress error: ${String(e)}.`);
     }
-    return jsonResponse(JSON.stringify(allSelectors), `${allSelectors.length} locators found successfully.`);
+    return jsonResponse(
+        JSON.stringify(allSelectors),
+        `${allSelectors.length} locators found successfully.`,
+    ) as unknown as pb.Response_Json;
 }
 
 const tryToTransformStringToFunction = (str: string): string | (() => unknown) => {
@@ -233,15 +253,16 @@ const tryToTransformStringToFunction = (str: string): string | (() => unknown) =
 };
 
 export async function evaluateJavascript(
-    request: Request.EvaluateAll,
+    request: pb.Request_EvaluateAll,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.JavascriptExecutionResult> {
-    const selector = request.getSelector();
-    const script = tryToTransformStringToFunction(request.getScript());
-    const strictMode = request.getStrict();
-    const arg = JSON.parse(request.getArg());
-    const allElements = request.getAllelements();
+): Promise<pb.Response_JavascriptExecutionResult> {
+    const req: pb.Request_EvaluateAll = request;
+    const selector = req.selector ?? '';
+    const script = tryToTransformStringToFunction(req.script ?? '');
+    const strictMode = req.strict ?? false;
+    const arg = JSON.parse(req.arg ?? 'null');
+    const allElements = req.allElements ?? false;
 
     async function getJSResult() {
         if (selector !== '') {
@@ -254,16 +275,20 @@ export async function evaluateJavascript(
         return await page.evaluate(script, arg);
     }
 
-    return jsResponse((await getJSResult()) as string, 'JavaScript executed successfully.');
+    return jsResponse(
+        (await getJSResult()) as string,
+        'JavaScript executed successfully.',
+    ) as unknown as pb.Response_JavascriptExecutionResult;
 }
 
 export async function waitForElementState(
-    request: Request.ElementSelectorWithOptions,
+    request: pb.Request_ElementSelectorWithOptions,
     pwState: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const { state, timeout } = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const req: pb.Request_ElementSelectorWithOptions = request;
+    const selector = req.selector;
+    const { state, timeout } = JSON.parse(req.options ?? '{}');
+    const strictMode = req.strict ?? false;
     const locator = await findLocator(pwState, selector, strictMode, undefined, true);
     if (state === 'detached' || state === 'attached' || state === 'hidden' || state === 'visible') {
         await locator.waitFor({ state: state, timeout: timeout });
@@ -271,19 +296,22 @@ export async function waitForElementState(
         const element = await locator.elementHandle({ timeout: timeout });
         await element?.waitForElementState(state, { timeout: timeout });
     }
-    return emptyWithLog(`Waited for Element with selector ${selector} at state ${state}`);
+    return emptyWithLog(
+        `Waited for Element with selector ${selector} at state ${state}`,
+    ) as unknown as pb.Response_Empty;
 }
 
 export async function waitForFunction(
-    request: Request.WaitForFunctionOptions,
+    request: pb.Request_WaitForFunctionOptions,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.Json> {
-    const script = tryToTransformStringToFunction(request.getScript());
-    const selector = request.getSelector();
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    logger.info(`unparsed args: ${request.getScript()}, ${request.getSelector()}, ${request.getOptions()}`);
+): Promise<pb.Response_Json> {
+    const req: pb.Request_WaitForFunctionOptions = request;
+    const script = tryToTransformStringToFunction(req.script ?? '');
+    const selector = req.selector ?? '';
+    const options = JSON.parse(req.options ?? '{}');
+    const strictMode = req.strict ?? false;
+    logger.info(`unparsed args: ${req.script ?? ''}, ${req.selector ?? ''}, ${req.options ?? ''}`);
 
     let elem;
     if (selector) {
@@ -293,21 +321,26 @@ export async function waitForFunction(
 
     // TODO: This might behave weirdly if element selector points to a different page
     const result = await page.waitForFunction(script, elem, options);
-    return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
+    return jsonResponse(
+        JSON.stringify(await result.jsonValue()),
+        'Wait For Function completed successfully.',
+    ) as unknown as pb.Response_Json;
 }
 
-export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
-    const content = request.getContent();
+export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Promise<pb.Response_Empty> {
+    const req: pb.Request_StyleTag = request;
+    const content = req.content;
     await page.addStyleTag({ content });
-    return emptyWithLog('added Style: ' + content);
+    return emptyWithLog('added Style: ' + content) as unknown as pb.Response_Empty;
 }
 
 const selectorsForPage: { [key: string]: unknown[] } = {};
 
 export async function recordSelector(
-    request: Request.Label,
+    request: pb.Request_Label,
     state: PlaywrightState,
-): Promise<Response.JavascriptExecutionResult> {
+): Promise<pb.Response_JavascriptExecutionResult> {
+    const req: pb.Request_Label = request;
     if (state.getActiveBrowser().headless) {
         throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
     }
@@ -339,12 +372,12 @@ export async function recordSelector(
         });
     }
 
-    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    const result = await recordSelectorIterator(req.label ?? '', page.mainFrame());
     // clean old recording array for the next run on the page
     while (selectorsForPage[indexedPage.id].length) {
         selectorsForPage[indexedPage.id].pop();
     }
-    return jsResponse(result, 'Selector recorded.');
+    return jsResponse(result, 'Selector recorded.') as unknown as pb.Response_JavascriptExecutionResult;
 }
 
 async function attachSelectorFinderScript(frame: Frame): Promise<void> {
@@ -354,10 +387,12 @@ async function attachSelectorFinderScript(frame: Frame): Promise<void> {
             path: path.join(__dirname, '/static/selector-finder.js'),
         });
     } catch (e) {
-        throw new Error(
+        const err = new Error(
             `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.`,
-            { cause: e },
         );
+        const errObj = err as Error & { cause?: unknown };
+        errObj.cause = e;
+        throw err;
     }
     await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
 }
@@ -424,16 +459,17 @@ async function recordSelectorIterator(label: string, frame: Frame): Promise<stri
 }
 
 export async function highlightElements(
-    request: Request.ElementSelectorWithDuration,
+    request: pb.Request_ElementSelectorWithDuration,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const duration = request.getDuration();
-    const width = request.getWidth();
-    const style = request.getStyle();
-    const color = request.getColor();
-    const strictMode = request.getStrict();
-    const mode = request.getMode();
+): Promise<pb.Response_Empty> {
+    const req: pb.Request_ElementSelectorWithDuration = request;
+    const selector = req.selector;
+    const duration = req.duration ?? 0;
+    const width = req.width ?? '';
+    const style = req.style ?? '';
+    const color = req.color ?? '';
+    const strictMode = req.strict ?? false;
+    const mode = req.mode ?? '';
     const count = await highlightAll(
         selector,
         duration,
@@ -513,7 +549,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.DownloadOptions, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: pb.Request_DownloadOptions, state: PlaywrightState): Promise<pb.Response_Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -529,10 +565,11 @@ export async function download(request: Request.DownloadOptions, state: Playwrig
     if (page === undefined) {
         throw new Error('Download requires an active page');
     }
-    const urlString = request.getUrl();
-    const saveAs = request.getPath();
-    const downloadTimeout = request.getDownloadtimeout();
-    const waitForFinish = request.getWaitforfinish();
+    const req = request;
+    const urlString = req.url;
+    const saveAs = req.path;
+    const downloadTimeout = req.downloadTimeout ?? 0;
+    const waitForFinish = req.waitForFinish ?? false;
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');

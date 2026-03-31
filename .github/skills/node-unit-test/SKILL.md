@@ -159,7 +159,7 @@ describe('functionName', () => {
 
         const result = await getElementStates(makeRequest(), {} as any);
 
-        expect(JSON.parse(result.getJson())).toBe(2); // detached
+        expect(JSON.parse(result.json)).toBe(2); // detached
     });
 });
 ```
