@@ -549,8 +549,8 @@ export class PlaywrightServer {
     ): Promise<void> {
         try {
             const request = call.request;
-            const body = request.body;
             if (request === null) throw Error('No request');
+            const body = request.body;
             const result = await browserControl.reload(this.getActivePage(call), body);
             callback(null, result);
         } catch (e) {
