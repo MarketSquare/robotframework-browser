@@ -16,7 +16,7 @@ import * as path from 'path';
 import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { _waitForDownload } from './network';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
@@ -33,9 +33,12 @@ import {
  * in global state. Enables using special selector syntax `element=<uuid>` in
  * RF keywords.
  */
-export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    const strictMode = request.getStrict();
-    const selector = request.getSelector();
+export async function getElement(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_String> {
+    const strictMode = request.strict;
+    const selector = request.selector;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
 
@@ -47,8 +50,11 @@ export async function getElement(request: Request.ElementSelector, state: Playwr
  * references in global state. Enables using special selector syntax `element=<uuid>`
  * in RF keywords.
  */
-export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    const selector = request.getSelector();
+export async function getElements(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Json> {
+    const selector = request.selector;
     const locator = await findLocator(state, selector, false, undefined, false);
     logger.info(`Wait element to reach attached state.`);
     try {
@@ -148,13 +154,13 @@ type AriaRole =
     | 'treegrid'
     | 'treeitem';
 
-export async function getByX(request: Request.GetByOptions, state: PlaywrightState): Promise<Response.Json> {
-    const strategy = request.getStrategy();
-    const text = parseRegExpOrKeepString(request.getText());
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    const allElements = request.getAll();
-    const frameSelector = request.getFrameselector();
+export async function getByX(request: pb.Request_GetByOptions, state: PlaywrightState): Promise<pb.Response_Json> {
+    const strategy = request.strategy;
+    const text = parseRegExpOrKeepString(request.text);
+    const options = JSON.parse(request.options);
+    const strictMode = request.strict;
+    const allElements = request.all;
+    const frameSelector = request.frameSelector;
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let document: Page | FrameLocator = activePage;
@@ -233,15 +239,15 @@ const tryToTransformStringToFunction = (str: string): string | (() => unknown) =
 };
 
 export async function evaluateJavascript(
-    request: Request.EvaluateAll,
+    request: pb.Request_EvaluateAll,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.JavascriptExecutionResult> {
-    const selector = request.getSelector();
-    const script = tryToTransformStringToFunction(request.getScript());
-    const strictMode = request.getStrict();
-    const arg = JSON.parse(request.getArg());
-    const allElements = request.getAllelements();
+): Promise<pb.Response_JavascriptExecutionResult> {
+    const selector = request.selector;
+    const script = tryToTransformStringToFunction(request.script);
+    const strictMode = request.strict;
+    const arg = JSON.parse(request.arg);
+    const allElements = request.allElements;
 
     async function getJSResult() {
         if (selector !== '') {
@@ -258,32 +264,37 @@ export async function evaluateJavascript(
 }
 
 export async function waitForElementState(
-    request: Request.ElementSelectorWithOptions,
-    pwState: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const { state, timeout } = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    const locator = await findLocator(pwState, selector, strictMode, undefined, true);
-    if (state === 'detached' || state === 'attached' || state === 'hidden' || state === 'visible') {
-        await locator.waitFor({ state: state, timeout: timeout });
+    request: pb.Request_ElementSelectorWithOptions,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const { state: elementState, timeout } = JSON.parse(request.options);
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    if (
+        elementState === 'detached' ||
+        elementState === 'attached' ||
+        elementState === 'hidden' ||
+        elementState === 'visible'
+    ) {
+        await locator.waitFor({ state: elementState, timeout: timeout });
     } else {
         const element = await locator.elementHandle({ timeout: timeout });
-        await element?.waitForElementState(state, { timeout: timeout });
+        await element?.waitForElementState(elementState, { timeout: timeout });
     }
-    return emptyWithLog(`Waited for Element with selector ${selector} at state ${state}`);
+    return emptyWithLog(`Waited for Element with selector ${selector} at state ${elementState}`);
 }
 
 export async function waitForFunction(
-    request: Request.WaitForFunctionOptions,
+    request: pb.Request_WaitForFunctionOptions,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.Json> {
-    const script = tryToTransformStringToFunction(request.getScript());
-    const selector = request.getSelector();
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    logger.info(`unparsed args: ${request.getScript()}, ${request.getSelector()}, ${request.getOptions()}`);
+): Promise<pb.Response_Json> {
+    const script = tryToTransformStringToFunction(request.script);
+    const selector = request.selector;
+    const options = JSON.parse(request.options);
+    const strictMode = request.strict;
+    logger.info(`unparsed args: ${request.script}, ${request.selector}, ${request.options}`);
 
     let elem;
     if (selector) {
@@ -296,8 +307,8 @@ export async function waitForFunction(
     return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
 }
 
-export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
-    const content = request.getContent();
+export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Promise<pb.Response_Empty> {
+    const content = request.content;
     await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
 }
@@ -305,9 +316,9 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 const selectorsForPage: { [key: string]: unknown[] } = {};
 
 export async function recordSelector(
-    request: Request.Label,
+    request: pb.Request_Label,
     state: PlaywrightState,
-): Promise<Response.JavascriptExecutionResult> {
+): Promise<pb.Response_JavascriptExecutionResult> {
     if (state.getActiveBrowser().headless) {
         throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
     }
@@ -339,7 +350,7 @@ export async function recordSelector(
         });
     }
 
-    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    const result = await recordSelectorIterator(request.label, page.mainFrame());
     // clean old recording array for the next run on the page
     while (selectorsForPage[indexedPage.id].length) {
         selectorsForPage[indexedPage.id].pop();
@@ -424,16 +435,16 @@ async function recordSelectorIterator(label: string, frame: Frame): Promise<stri
 }
 
 export async function highlightElements(
-    request: Request.ElementSelectorWithDuration,
+    request: pb.Request_ElementSelectorWithDuration,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const duration = request.getDuration();
-    const width = request.getWidth();
-    const style = request.getStyle();
-    const color = request.getColor();
-    const strictMode = request.getStrict();
-    const mode = request.getMode();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const duration = request.duration;
+    const width = request.width;
+    const style = request.style;
+    const color = request.color;
+    const strictMode = request.strict;
+    const mode = request.mode;
     const count = await highlightAll(
         selector,
         duration,
@@ -513,7 +524,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.DownloadOptions, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: pb.Request_DownloadOptions, state: PlaywrightState): Promise<pb.Response_Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -529,10 +540,10 @@ export async function download(request: Request.DownloadOptions, state: Playwrig
     if (page === undefined) {
         throw new Error('Download requires an active page');
     }
-    const urlString = request.getUrl();
-    const saveAs = request.getPath();
-    const downloadTimeout = request.getDownloadtimeout();
-    const waitForFinish = request.getWaitforfinish();
+    const urlString = request.url;
+    const saveAs = request.path;
+    const downloadTimeout = request.downloadTimeout;
+    const waitForFinish = request.waitForFinish;
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');

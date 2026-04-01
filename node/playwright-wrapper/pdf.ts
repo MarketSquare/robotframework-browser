@@ -12,30 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { stringResponse } from './response-util';
 
-export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState): Promise<Response.String> {
+export async function savePageAsPdf(request: pb.Request_Pdf, state: PlaywrightState): Promise<pb.Response_String> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    const pdfPath = request.getPath();
-    const displayheaderfooter = request.getDisplayheaderfooter();
-    const footertemplate = request.getFootertemplate();
-    const format = request.getFormat();
-    const headerTemplate = request.getHeadertemplate();
-    const height = request.getHeight();
-    const landscape = request.getLandscape();
-    const marginString = request.getMargin();
+    const pdfPath = request.path;
+    const displayheaderfooter = request.displayHeaderFooter;
+    const footertemplate = request.footerTemplate;
+    const format = request.format;
+    const headerTemplate = request.headerTemplate;
+    const height = request.height;
+    const landscape = request.landscape;
+    const marginString = request.margin;
     const marging = JSON.parse(marginString);
-    const outline = request.getOutline();
-    const pageRanges = request.getPageranges();
-    const preferCSSPageSize = request.getPrefercsspagesize();
-    const printBackground = request.getPrintbackground();
-    const scale = request.getScale();
-    const tagged = request.getTagged();
-    const width = request.getWidth();
+    const outline = request.outline;
+    const pageRanges = request.pageRanges;
+    const preferCSSPageSize = request.preferCSSPageSize;
+    const printBackground = request.printBackground;
+    const scale = request.scale;
+    const tagged = request.tagged;
+    const width = request.width;
     logger.info(`Saving pdf to ${pdfPath}`);
     const message =
         `Using options: displayHeaderFooter: ${displayheaderfooter}, ` +
@@ -73,11 +73,14 @@ export async function savePageAsPdf(request: Request.Pdf, state: PlaywrightState
     return stringResponse(pdfPath, `Pdf is saved to ${pdfPath}`);
 }
 
-export async function emulateMedia(request: Request.EmulateMedia, state: PlaywrightState): Promise<Response.Empty> {
+export async function emulateMedia(
+    request: pb.Request_EmulateMedia,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const options: { [key: string]: string | null } = {};
-    const colorScheme = request.getColorscheme();
+    const colorScheme = request.colorScheme;
     if (colorScheme === 'not_set') {
         logger.info(`Emulating colorScheme not set`);
     } else if (colorScheme === 'null') {
@@ -87,7 +90,7 @@ export async function emulateMedia(request: Request.EmulateMedia, state: Playwri
         logger.info(`Emulating colorScheme ${colorScheme}`);
         options.colorScheme = colorScheme;
     }
-    const forcedColors = request.getForcedcolors();
+    const forcedColors = request.forcedColors;
     if (forcedColors === 'not_set') {
         logger.info(`Emulating forcedColors not set`);
     } else if (forcedColors === 'null') {
@@ -97,7 +100,7 @@ export async function emulateMedia(request: Request.EmulateMedia, state: Playwri
         logger.info(`Emulating forcedColors ${forcedColors}`);
         options.forcedColors = forcedColors;
     }
-    const media = request.getMedia();
+    const media = request.media;
     if (media === 'not_set') {
         logger.info(`Emulating media not set`);
     } else if (media === 'null') {
@@ -107,7 +110,7 @@ export async function emulateMedia(request: Request.EmulateMedia, state: Playwri
         logger.info(`Emulating media ${media}`);
         options.media = media;
     }
-    const reducedMotion = request.getReducedmotion();
+    const reducedMotion = request.reducedMotion;
     if (reducedMotion === 'not_set') {
         logger.info(`Emulating reducedMotion not set`);
     } else if (reducedMotion === 'null') {

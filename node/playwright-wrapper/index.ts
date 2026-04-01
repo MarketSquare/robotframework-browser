@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { Server, ServerCredentials, ServiceDefinition, UntypedServiceImplementation } from '@grpc/grpc-js';
+import { Server, ServerCredentials, UntypedServiceImplementation } from '@grpc/grpc-js';
 
 import { logger } from './browser_logger';
-import { PlaywrightService } from './generated/playwright_grpc_pb';
+import { PlaywrightService } from './generated/playwright';
 import { PlaywrightServer } from './grpc-service';
 
 const args = process.argv.slice(2);
@@ -32,10 +32,7 @@ if (!port) {
 }
 
 const server = new Server();
-server.addService(
-    PlaywrightService as unknown as ServiceDefinition<UntypedServiceImplementation>,
-    new PlaywrightServer() as unknown as UntypedServiceImplementation,
-);
+server.addService(PlaywrightService, new PlaywrightServer() as unknown as UntypedServiceImplementation);
 
 server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${host}:${port}`);

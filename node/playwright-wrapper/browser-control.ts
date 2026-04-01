@@ -15,35 +15,38 @@
 import { BrowserContext, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, stringResponse } from './response-util';
 
 const { program: pwProgram } = require('playwright-core/lib/cli/program') as { program: import('commander').Command }; // eslint-disable-line
 
-export async function executePlaywright(request: Request.Json): Promise<Response.Empty> {
-    const args = JSON.parse(request.getBody());
+export async function executePlaywright(request: pb.Request_Json): Promise<pb.Response_Empty> {
+    const args = JSON.parse(request.body);
     pwProgram.exitOverride();
     await pwProgram.parseAsync(args, { from: 'user' });
     return emptyWithLog('Executed Playwright command: ' + args.join(' '));
 }
 
-export async function grantPermissions(request: Request.Permissions, state: PlaywrightState): Promise<Response.Empty> {
+export async function grantPermissions(
+    request: pb.Request_Permissions,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
     const browserContext = state.getActiveContext();
     if (!browserContext) {
         return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
     }
-    await browserContext.grantPermissions(request.getPermissionsList(), {
-        ...(request.getOrigin().length > 0 && { origin: request.getOrigin() }),
+    await browserContext.grantPermissions(request.permissions, {
+        ...(request.origin.length > 0 && { origin: request.origin }),
     });
     return emptyWithLog(
-        `Granted permissions "${request.getPermissionsList().join(', ')}"` +
-            (request.getOrigin().length > 0 ? ` for origin "${request.getOrigin()}"` : ''),
+        `Granted permissions "${request.permissions.join(', ')}"` +
+            (request.origin.length > 0 ? ` for origin "${request.origin}"` : ''),
     );
 }
 
-export async function clearPermissions(request: Request.Empty, state: PlaywrightState): Promise<Response.Empty> {
+export async function clearPermissions(request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
     const browserContext = state.getActiveContext();
     if (!browserContext) {
         return emptyWithLog(`No browser context is active. Use 'Open Browser' to open a new one.`);
@@ -52,14 +55,14 @@ export async function clearPermissions(request: Request.Empty, state: Playwright
     return emptyWithLog('Cleared all permissions');
 }
 
-export async function goTo(request: Request.UrlOptions, page: Page): Promise<Response.Empty> {
-    const url = request.getUrl()?.getUrl() || 'about:blank';
-    const timeout = request.getUrl()?.getDefaulttimeout();
+export async function goTo(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
+    const url = request.url?.url || 'about:blank';
+    const timeout = request.url?.defaultTimeout;
     const goToOptions: {
         timeout?: number;
         waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit';
     } = { timeout: timeout };
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.getWaituntil();
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.waitUntil;
     if (waitUntil) {
         goToOptions.waitUntil = waitUntil;
     }
@@ -68,13 +71,13 @@ export async function goTo(request: Request.UrlOptions, page: Page): Promise<Res
 }
 
 export async function takeScreenshot(
-    request: Request.ScreenshotOptions,
+    request: pb.Request_ScreenshotOptions,
     state: PlaywrightState,
-): Promise<Response.String> {
-    const selector = request.getSelector();
-    const options = JSON.parse(request.getOptions());
-    const mask = JSON.parse(request.getMask());
-    const strictMode = request.getStrict();
+): Promise<pb.Response_String> {
+    const selector = request.selector;
+    const options = JSON.parse(request.options);
+    const mask = JSON.parse(request.mask);
+    const strictMode = request.strict;
     const page = state.getActivePage();
     exists(page, 'Tried to take screenshot, but no page was open.');
     if (mask) {
@@ -96,37 +99,37 @@ export async function takeScreenshot(
     return stringResponse(options.path, message);
 }
 
-export async function setTimeout(request: Request.Timeout, context?: BrowserContext): Promise<Response.Empty> {
+export async function setTimeout(request: pb.Request_Timeout, context?: BrowserContext): Promise<pb.Response_Empty> {
     if (!context) {
         return emptyWithLog(`No context open.`);
     }
-    const timeout = request.getTimeout();
+    const timeout = request.timeout;
     context.setDefaultTimeout(timeout);
     return emptyWithLog(`Set timeout to: ${timeout}`);
 }
 
-export async function setViewportSize(request: Request.Viewport, page: Page): Promise<Response.Empty> {
-    const size = { width: request.getWidth(), height: request.getHeight() };
+export async function setViewportSize(request: pb.Request_Viewport, page: Page): Promise<pb.Response_Empty> {
+    const size = { width: request.width, height: request.height };
     await page.setViewportSize(size);
     return emptyWithLog(`Set viewport size to: ${JSON.stringify(size)}`);
 }
 
-export async function setOffline(request: Request.Bool, context?: BrowserContext): Promise<Response.Empty> {
+export async function setOffline(request: pb.Request_Bool, context?: BrowserContext): Promise<pb.Response_Empty> {
     exists(context, 'Tried to toggle context to offline, no open context');
-    const offline = request.getValue();
+    const offline = request.value;
     await context.setOffline(offline);
     return emptyWithLog(`Set context to ${offline}`);
 }
 
-export async function reload(page: Page, body: string): Promise<Response.Empty> {
+export async function reload(page: Page, body: string): Promise<pb.Response_Empty> {
     const options = JSON.parse(body);
     logger.info(`Reload page with options: ${body}`);
     await page.reload(options);
     return emptyWithLog(`Reloaded page with options: ${body}`);
 }
 
-export async function setGeolocation(request: Request.Json, context?: BrowserContext): Promise<Response.Empty> {
-    const geolocation = JSON.parse(request.getBody());
+export async function setGeolocation(request: pb.Request_Json, context?: BrowserContext): Promise<pb.Response_Empty> {
+    const geolocation = JSON.parse(request.body);
     await context?.setGeolocation(geolocation);
     return emptyWithLog('Geolocation set to: ' + JSON.stringify(geolocation));
 }

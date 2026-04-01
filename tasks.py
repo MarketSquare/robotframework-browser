@@ -243,22 +243,14 @@ def _python_protobuf_gen(c):
 
 def _node_protobuf_gen(c):
     plugin_suffix = ".cmd" if platform.platform().startswith("Windows") else ""
-    protoc_plugin = (
-        NODE_MODULES / ".bin" / f"grpc_tools_node_protoc_plugin{plugin_suffix}"
+    protoc_ts_proto_plugin = (
+        NODE_MODULES / ".bin" / f"protoc-gen-ts_proto{plugin_suffix}"
     )
-    protoc_ts_plugin = NODE_MODULES / ".bin" / f"protoc-gen-ts{plugin_suffix}"
     cmd = (
         "npm run grpc_tools_node_protoc -- "
-        f"--js_out=import_style=commonjs,binary:{node_protobuf_dir} "
-        f"--grpc_out=grpc_js:{node_protobuf_dir} "
-        f"--plugin=protoc-gen-grpc={protoc_plugin} "
-        "-I ./protobuf protobuf/*.proto"
-    )
-    c.run(cmd)
-    cmd = (
-        "npm run grpc_tools_node_protoc -- "
-        f"--plugin=protoc-gen-ts={protoc_ts_plugin} "
-        f"--ts_out={node_protobuf_dir} "
+        f"--plugin=protoc-gen-ts_proto={protoc_ts_proto_plugin} "
+        f"--ts_proto_out={node_protobuf_dir} "
+        "--ts_proto_opt=outputServices=grpc-js,env=node "
         "-I ./protobuf protobuf/*.proto"
     )
     c.run(cmd)
