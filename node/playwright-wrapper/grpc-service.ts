@@ -473,7 +473,7 @@ export class PlaywrightServer {
         callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         let buffer = '';
-        let lastRequest: pb.Request_FileBySelector;
+        let lastRequest: pb.Request_FileBySelector | undefined;
         call.on('data', (request: pb.Request_FileBySelector) => {
             void (async () => {
                 try {
@@ -492,6 +492,10 @@ export class PlaywrightServer {
         call.on('end', () => {
             void (async () => {
                 try {
+                    if (!lastRequest) {
+                        callback(errorResponse(new Error('No data received for uploadFileBySelector')), null);
+                        return;
+                    }
                     const finalRequest = { ...lastRequest, buffer };
                     const result = await interaction.uploadFileBySelector(finalRequest, this.getState(call));
                     callback(null, result);
