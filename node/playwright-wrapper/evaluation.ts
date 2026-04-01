@@ -437,7 +437,7 @@ async function recordSelectorIterator(label: string, frame: Frame): Promise<stri
 export async function highlightElements(
     request: pb.Request_ElementSelectorWithDuration,
     state: PlaywrightState,
-): Promise<pb.Response_Empty> {
+): Promise<pb.Response_Int> {
     const selector = request.selector;
     const duration = request.duration;
     const width = request.width;

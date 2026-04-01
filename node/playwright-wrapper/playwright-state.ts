@@ -1084,7 +1084,7 @@ export async function switchBrowser(request: Request_Index, openBrowsers: Playwr
 }
 
 export async function getBrowserCatalog(request: Request_Bool, openBrowsers: PlaywrightState): Promise<Response_Json> {
-    const includePageDetails = request.value || true;
+    const includePageDetails = request.value ?? true;
     return jsonResponse(JSON.stringify(await openBrowsers.getCatalog(includePageDetails)), 'Catalog received');
 }
 

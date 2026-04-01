@@ -55,7 +55,7 @@ export async function clearPermissions(request: pb.Request_Empty, state: Playwri
     return emptyWithLog('Cleared all permissions');
 }
 
-export async function goTo(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
+export async function goTo(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_String> {
     const url = request.url?.url || 'about:blank';
     const timeout = request.url?.defaultTimeout;
     const goToOptions: {
