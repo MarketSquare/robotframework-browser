@@ -157,7 +157,6 @@ jobs:
     - name: Github Job Summary
       if: ${{ always() }}
       run: |
-        python -m GHAReports --robotlog atest/output/output.xml
         python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
         cat fail.md
 
@@ -307,7 +306,6 @@ jobs:
       - name: Github Job Summary
         if: ${{ always() }}
         run: |
-          python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
 
@@ -447,7 +445,6 @@ jobs:
       - name: Github Job Summary
         if: ${{ always() }}
         run: |
-          python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
       - name: Uninstall
@@ -513,6 +510,5 @@ jobs:
       - name: Github Job Summary
         if: ${{ always() }}
         run: |
-          python -m GHAReports --robotlog output_docker/output.xml
           python -m GHAReports --robotlog output_docker/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
