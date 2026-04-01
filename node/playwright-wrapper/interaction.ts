@@ -15,7 +15,7 @@
 import { Dialog, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { getSelections } from './getters';
 import { exists } from './playwright-invoke';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
@@ -23,12 +23,12 @@ import { PlaywrightState } from './playwright-state';
 import { emptyWithLog } from './response-util';
 
 export async function selectOption(
-    request: Request.SelectElementSelector,
+    request: pb.Request_SelectElementSelector,
     state: PlaywrightState,
-): Promise<Response.Select> {
-    const selector = request.getSelector();
-    const matcher = JSON.parse(request.getMatcherjson());
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Select> {
+    const selector = request.selector;
+    const matcher = JSON.parse(request.matcherJson);
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     const result = await locator.selectOption(matcher);
     if (result.length == 0) {
@@ -39,22 +39,22 @@ export async function selectOption(
 }
 
 export async function deSelectOption(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
     const locator = findLocator(state, selector, strictMode, undefined, true);
     await (await locator).selectOption([]);
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
 
-export async function typeText(request: Request.TypeText, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const text = request.getText();
-    const delayValue = request.getDelay();
-    const clear = request.getClear();
-    const strictMode = request.getStrict();
+export async function typeText(request: pb.Request_TypeText, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const text = request.text;
+    const delayValue = request.delay;
+    const clear = request.clear;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     if (clear) {
         await locator.fill('');
@@ -63,30 +63,30 @@ export async function typeText(request: Request.TypeText, state: PlaywrightState
     return emptyWithLog(`Typed text "${text}" on "${selector}"`);
 }
 
-export async function fillText(request: Request.FillText, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const text = request.getText();
-    const strictMode = request.getStrict();
-    const force = request.getForce();
+export async function fillText(request: pb.Request_FillText, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const text = request.text;
+    const strictMode = request.strict;
+    const force = request.force;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.fill(text, { force: force });
     return emptyWithLog(`Fill text ${text} on ${selector} with force: ${force}`);
 }
 
-export async function clearText(request: Request.ClearText, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
+export async function clearText(request: pb.Request_ClearText, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.fill('');
     return emptyWithLog(`Text ${selector} field cleared.`);
 }
 
-export async function press(request: Request.PressKeys, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const keyList = request.getKeyList();
-    const strictMode = request.getStrict();
-    const pressDelay = request.getPressdelay();
-    const keyDelay = request.getKeydelay();
+export async function press(request: pb.Request_PressKeys, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const keyList = request.key;
+    const strictMode = request.strict;
+    const pressDelay = request.pressDelay;
+    const keyDelay = request.keyDelay;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     for (const i of keyList) {
         await locator.press(i, { delay: pressDelay });
@@ -98,12 +98,12 @@ export async function press(request: Request.PressKeys, state: PlaywrightState):
 }
 
 export async function click(
-    request: Request.ElementSelectorWithOptions,
+    request: pb.Request_ElementSelectorWithOptions,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const options = request.getOptions();
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const options = request.options;
+    const strictMode = request.strict;
     const result = await internalClick(selector, strictMode, options, state);
     if (result) {
         return emptyWithLog(`Clicked element: '${selector}' with options: '${options}' successfully.`);
@@ -114,12 +114,12 @@ export async function click(
 }
 
 export async function tap(
-    request: Request.ElementSelectorWithOptions,
+    request: pb.Request_ElementSelectorWithOptions,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const options = request.getOptions();
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const options = request.options;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.tap(JSON.parse(options));
     return emptyWithLog(`Tab element: '${selector}' with options: '${options}'`);
@@ -148,29 +148,32 @@ export async function internalClick(
 }
 
 export async function hover(
-    request: Request.ElementSelectorWithOptions,
+    request: pb.Request_ElementSelectorWithOptions,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const options = request.getOptions();
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const options = request.options;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.hover(JSON.parse(options));
     return emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`);
 }
 
-export async function focus(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
+export async function focus(request: pb.Request_ElementSelector, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.focus();
     return emptyWithLog(`Focused element: ${selector}`);
 }
 
-export async function checkCheckbox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const force = request.getForce();
+export async function checkCheckbox(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const force = request.force;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
     await locator.check({ force: force });
@@ -178,12 +181,12 @@ export async function checkCheckbox(request: Request.ElementSelector, state: Pla
 }
 
 export async function uncheckCheckbox(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const force = request.getForce();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const force = request.force;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.waitFor({ state: 'attached' });
     await locator.uncheck({ force: force });
@@ -191,17 +194,17 @@ export async function uncheckCheckbox(
 }
 
 export async function uploadFileBySelector(
-    request: Request.FileBySelector,
+    request: pb.Request_FileBySelector,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const path = request.getPathList();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const path = request.path;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     if (path.length === 0) {
-        const name = request.getName();
-        const mimeType = request.getMimetype();
-        const buffer = request.getBuffer();
+        const name = request.name;
+        const mimeType = request.mimeType;
+        const buffer = request.buffer;
         logger.info(`Uploading file ${name} as buffer to ${selector}`);
         await locator.setInputFiles({ name: name, mimeType: mimeType, buffer: Buffer.from(buffer) });
         return emptyWithLog('Successfully uploaded buffer as file');
@@ -212,16 +215,16 @@ export async function uploadFileBySelector(
     }
 }
 
-export async function uploadFile(request: Request.FilePath, page: Page): Promise<Response.Empty> {
-    const path = request.getPath();
+export async function uploadFile(request: pb.Request_FilePath, page: Page): Promise<pb.Response_Empty> {
+    const path = request.path;
     const fileChooser = await page.waitForEvent('filechooser');
     await fileChooser.setFiles(path);
     return emptyWithLog('Successfully uploaded file');
 }
 
-export async function handleAlert(request: Request.AlertAction, page: Page): Promise<Response.Empty> {
-    const alertAction = request.getAlertaction() as 'accept' | 'dismiss';
-    const promptInput = request.getPromptinput();
+export async function handleAlert(request: pb.Request_AlertAction, page: Page): Promise<pb.Response_Empty> {
+    const alertAction = request.alertAction as 'accept' | 'dismiss';
+    const promptInput = request.promptInput;
     const fn = async (dialog: Dialog) => {
         const dialogueText = dialog.message();
         if (promptInput) await dialog[alertAction](promptInput);
@@ -232,73 +235,71 @@ export async function handleAlert(request: Request.AlertAction, page: Page): Pro
     return emptyWithLog('Set event handler for next alert');
 }
 
-export async function waitForAlerts(request: Request.AlertActions, page: Page): Promise<Response.ListString> {
-    const response = new Response.ListString();
-    const alertActions = request.getItemsList();
+export async function waitForAlerts(request: pb.Request_AlertActions, page: Page): Promise<pb.Response_ListString> {
+    const alertActions = request.items;
     const alertMessages = [];
     for (let index = 0; index < alertActions.length; index++) {
         const alertAction = alertActions[index];
-        const promptInput = alertAction.getPromptinput();
-        const timeout = alertAction.getTimeout();
-        const action = alertAction.getAlertaction();
+        const promptInput = alertAction.promptInput;
+        const timeout = alertAction.timeout;
+        const action = alertAction.alertAction;
         logger.info(`Waiting for alert with action: ${action}, promptInput: "${promptInput}" and timeout: ${timeout}`);
         const dialogObject = await page.waitForEvent('dialog', { timeout: timeout });
         alertMessages.push(dialogObject.message());
         if (action === 'accept' && promptInput) {
             void dialogObject.accept(promptInput);
-        } else if (alertAction.getAlertaction() === 'accept') {
+        } else if (alertAction.alertAction === 'accept') {
             void dialogObject.accept();
         } else {
             void dialogObject.dismiss();
         }
     }
-    response.setItemsList(alertMessages);
-    return response;
+    return { items: alertMessages };
 }
 
-export async function mouseButton(request: Request.MouseButtonOptions, page?: Page): Promise<Response.Empty> {
-    const action = request.getAction() as 'click' | 'up' | 'down';
-    const params = JSON.parse(request.getJson());
+export async function mouseButton(request: pb.Request_MouseButtonOptions, page?: Page): Promise<pb.Response_Empty> {
+    const action = request.action as 'click' | 'up' | 'down';
+    const params = JSON.parse(request.json);
     await invokeOnMouse(page, action, params);
     return emptyWithLog(`Successfully executed ${action}`);
 }
 
-export async function mouseMove(request: Request.Json, page?: Page): Promise<Response.Empty> {
-    const params = JSON.parse(request.getBody());
+export async function mouseMove(request: pb.Request_Json, page?: Page): Promise<pb.Response_Empty> {
+    const params = JSON.parse(request.body);
     await invokeOnMouse(page, 'move', params);
     return emptyWithLog(`Successfully moved mouse to ${params.x}, ${params.y}`);
 }
 
-export async function mouseWheel(request: Request.MouseWheel, page?: Page): Promise<Response.Empty> {
-    const deltaX = request.getDeltax();
-    const deltaY = request.getDeltay();
+export async function mouseWheel(request: pb.Request_MouseWheel, page?: Page): Promise<pb.Response_Empty> {
+    const deltaX = request.deltaX;
+    const deltaY = request.deltaY;
     exists(page, `but no open page`);
     await page?.mouse.wheel(deltaX, deltaY);
     return emptyWithLog(`Successfully scrolled mouse wheel with ${deltaX}, ${deltaY}`);
 }
 
-export async function keyboardKey(request: Request.KeyboardKeypress, page: Page): Promise<Response.Empty> {
-    const action = request.getAction() as 'down' | 'up' | 'press';
-    const key = request.getKey();
+export async function keyboardKey(request: pb.Request_KeyboardKeypress, page: Page): Promise<pb.Response_Empty> {
+    const action = request.action as 'down' | 'up' | 'press';
+    const key = request.key;
     await invokeOnKeyboard(page, action, key);
     return emptyWithLog(`Successfully did ${action} for ${key}`);
 }
 
-export async function keyboardInput(request: Request.KeyboardInputOptions, page: Page): Promise<Response.Empty> {
-    const action = request.getAction() as 'insertText' | 'type';
-    const delay = request.getDelay();
-    const input = request.getInput();
+export async function keyboardInput(request: pb.Request_KeyboardInputOptions, page: Page): Promise<pb.Response_Empty> {
+    const action = request.action as 'insertText' | 'type';
+    const delay = request.delay;
+    const input = request.input;
 
     await invokeOnKeyboard(page, action, input, { delay: delay });
     return emptyWithLog(`Successfully did virtual keyboard action ${action} with input ${input}`);
 }
 
 export async function scrollToElement(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.scrollIntoViewIfNeeded();
     return emptyWithLog(`Scrolled to ${selector} field if needed.`);

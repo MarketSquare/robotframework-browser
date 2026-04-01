@@ -14,16 +14,16 @@
 
 import { devices } from 'playwright';
 
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import { jsonResponse } from './response-util';
 
-export function getDevice(request: Request.Device): Response.Json {
-    const name = request.getName();
+export function getDevice(request: pb.Request_Device): pb.Response_Json {
+    const name = request.name;
     const device = devices[name];
     if (!device) throw new Error(`No device named ${name}`);
     return jsonResponse(JSON.stringify(device), '');
 }
 
-export function getDevices(): Response.Json {
+export function getDevices(): pb.Response_Json {
     return jsonResponse(JSON.stringify(devices), '');
 }

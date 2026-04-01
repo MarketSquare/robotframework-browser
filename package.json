@@ -20,8 +20,8 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "express": "^5.2.1",
     "globals": "^17.4.0",
-    "grpc_tools_node_protoc_ts": "^5.3.3",
     "grpc-tools": "^1.13.1",
+    "ts-proto": "^2.7.0",
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "lint-staged": "^16.4.0",
@@ -40,7 +40,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.14.3",
     "@medv/finder": "^4.0.2",
-    "google-protobuf": "4.0.2",
+    "@bufbuild/protobuf": "^2.4.0",
     "monocart-coverage-reports": "^2.12.9",
     "pino": "^10.3.1",
     "playwright": "^1.59.0",

@@ -106,7 +106,7 @@ function makeMockLocator(
 }
 
 function parsedStates(response: any): number {
-    return JSON.parse(response.getJson());
+    return JSON.parse(response.json);
 }
 
 describe('getElementStates', () => {

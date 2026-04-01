@@ -15,20 +15,26 @@
 import { status } from '@grpc/grpc-js';
 import { errors } from 'playwright';
 
-import { Response } from './generated/playwright_pb';
+import {
+    Response_Bool,
+    Response_Empty,
+    Response_Int,
+    Response_JavascriptExecutionResult,
+    Response_Json,
+    Response_Keywords,
+    Response_PageReportResponse,
+    Response_String,
+} from './generated/playwright';
 import { IndexedPage } from './playwright-state';
 
-export function emptyWithLog(text: string): Response.Empty {
-    const response = new Response.Empty();
-    response.setLog(text);
-    return response;
+export function emptyWithLog(text: string): Response_Empty {
+    return { log: text };
 }
 
-export function pageReportResponse(log: string, page: IndexedPage): Response.PageReportResponse {
-    const response = new Response.PageReportResponse();
-    response.setLog(log);
-    response.setConsole(
-        JSON.stringify(
+export function pageReportResponse(log: string, page: IndexedPage): Response_PageReportResponse {
+    return {
+        log,
+        console: JSON.stringify(
             page.consoleMessages.map((m) => ({
                 time: m.time,
                 type: m.type,
@@ -36,68 +42,45 @@ export function pageReportResponse(log: string, page: IndexedPage): Response.Pag
                 location: m.location,
             })),
         ),
-    );
-    response.setErrors(
-        JSON.stringify(page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error'))),
-    );
-    response.setPageid(page.id);
-    return response;
+        errors: JSON.stringify(
+            page.pageErrors.map((e) => (e ? `${e.name}: ${e.message}\n${e.stack}` : 'unknown error')),
+        ),
+        pageId: page.id,
+    };
 }
 
-export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
-    const response = new Response.Json();
+export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const consoleMessages = page.consoleMessages;
     const reponseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
     page.consoleIndex = consoleMessages.length;
-    response.setLog(message);
-    response.setJson(JSON.stringify(reponseMessages));
-    return response;
+    return { log: message, json: JSON.stringify(reponseMessages), bodyPart: '' };
 }
 
-export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response.Json {
-    const response = new Response.Json();
+export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const pageErrors = page.pageErrors;
     const reponseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
     page.errorIndex = pageErrors.length;
-    response.setLog(message);
-    response.setJson(JSON.stringify(reponseErrors));
-    return response;
+    return { log: message, json: JSON.stringify(reponseErrors), bodyPart: '' };
 }
 
-export function stringResponse(body: string, logMessage: string): Response.String {
-    const response = new Response.String();
-    response.setBody(body);
-    response.setLog(logMessage);
-    return response;
+export function stringResponse(body: string, logMessage: string): Response_String {
+    return { body, log: logMessage };
 }
 
-export function jsonResponse(body: string, logMessage: string, bodyPart: string = '') {
-    const response = new Response.Json();
-    response.setJson(body);
-    response.setLog(logMessage);
-    response.setBodypart(bodyPart);
-    return response;
+export function jsonResponse(body: string, logMessage: string, bodyPart: string = ''): Response_Json {
+    return { json: body, log: logMessage, bodyPart };
 }
 
-export function intResponse(body: number, logMessage: string) {
-    const response = new Response.Int();
-    response.setBody(body);
-    response.setLog(logMessage);
-    return response;
+export function intResponse(body: number, logMessage: string): Response_Int {
+    return { body, log: logMessage };
 }
 
-export function boolResponse(value: boolean, logMessage: string) {
-    const response = new Response.Bool();
-    response.setBody(value);
-    response.setLog(logMessage);
-    return response;
+export function boolResponse(value: boolean, logMessage: string): Response_Bool {
+    return { body: value, log: logMessage };
 }
 
-export function jsResponse(result: string, logMessage: string) {
-    const response = new Response.JavascriptExecutionResult();
-    response.setResult(JSON.stringify(result));
-    response.setLog(logMessage);
-    return response;
+export function jsResponse(result: string, logMessage: string): Response_JavascriptExecutionResult {
+    return { result: JSON.stringify(result), log: logMessage };
 }
 
 export function errorResponse(e: unknown) {
@@ -119,12 +102,12 @@ export function keywordsResponse(
     keywordDocs: string[],
     logMessage: string,
 ) {
-    const response = new Response.Keywords();
-    response.setKeywordsList(keywords);
-    response.setKeyworddocumentationsList(keywordDocs);
-    response.setKeywordargumentsList(keywordArguments);
-    response.setLog(logMessage);
-    return response;
+    return {
+        keywords,
+        keywordDocumentations: keywordDocs,
+        keywordArguments,
+        log: logMessage,
+    } satisfies Response_Keywords;
 }
 
 export function parseRegExpOrKeepString(str: string): RegExp | string {
