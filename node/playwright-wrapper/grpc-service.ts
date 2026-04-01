@@ -559,8 +559,8 @@ export class PlaywrightServer {
     }
 
     async setPeerId(
-        call: ServerUnaryCall<pb.Request_Index, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
+        call: ServerUnaryCall<pb.Request_Index, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const request = call.request;
