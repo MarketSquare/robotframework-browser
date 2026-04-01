@@ -34,14 +34,14 @@ export async function addLocatorHandlerCustom(
     }
     logger.info(`Adding locator handler for ${overlaySelector} as times: ${times}`);
     const noWaitAfter = request.noWaitAfter;
-    const hadlerSpecs = request.handlerSpecs;
+    const handlerSpecs = request.handlerSpecs;
     const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
     locatorCache.add(`${state.getActivePageId()}-${overlaySelector}`, overlayLocator);
     await activePage.addLocatorHandler(
         overlayLocator,
         async () => {
             logger.info(`Overlay locator ${overlaySelector} is found`);
-            for (const handlerSpec of hadlerSpecs) {
+            for (const handlerSpec of handlerSpecs) {
                 const action = handlerSpec.action;
                 const actionSelector = handlerSpec.selector;
                 const actionLocator = await findLocator(state, actionSelector, false, undefined, true);

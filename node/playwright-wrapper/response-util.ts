@@ -51,16 +51,16 @@ export function pageReportResponse(log: string, page: IndexedPage): Response_Pag
 
 export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const consoleMessages = page.consoleMessages;
-    const reponseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
+    const responseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
     page.consoleIndex = consoleMessages.length;
-    return { log: message, json: JSON.stringify(reponseMessages), bodyPart: '' };
+    return { log: message, json: JSON.stringify(responseMessages), bodyPart: '' };
 }
 
 export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const pageErrors = page.pageErrors;
-    const reponseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
+    const responseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
     page.errorIndex = pageErrors.length;
-    return { log: message, json: JSON.stringify(reponseErrors), bodyPart: '' };
+    return { log: message, json: JSON.stringify(responseErrors), bodyPart: '' };
 }
 
 export function stringResponse(body: string, logMessage: string): Response_String {

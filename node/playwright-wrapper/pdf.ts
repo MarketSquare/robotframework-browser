@@ -76,7 +76,7 @@ export async function savePageAsPdf(request: pb.Request_Pdf, state: PlaywrightSt
 export async function emulateMedia(
     request: pb.Request_EmulateMedia,
     state: PlaywrightState,
-): Promise<pb.Response_Empty> {
+): Promise<pb.Response_String> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const options: { [key: string]: string | null } = {};
