@@ -32,7 +32,7 @@ Install Python and nodejs.
 - https://www.python.org/downloads/
 - https://nodejs.org/
 
-N.B. The minimum Python version is 3.8.
+N.B. The minimum Python version is 3.10.
 
 Run `python bootstrap.py` to create a virtual environment with correct dependencies.
 After that, make sure to activate the virtual env before running other development commands.
@@ -168,7 +168,7 @@ pre-commit hook, but can also be invoked manually with `inv lint-python`.
 
 JS / TS code style is enforced with eslint. Lints are run in pre-commit hooks, but can be run manually with `inv lint-node`.
 
-Acceptance tests style is enforced with RoboTidy: `int lint-robot`.
+Acceptance tests style is enforced with RoboTidy: `inv lint-robot`.
 
 To run all linters by one command, use `inv lint`
 
