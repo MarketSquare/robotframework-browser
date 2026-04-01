@@ -300,7 +300,7 @@ export async function getStyle(request: pb.Request_ElementStyle, state: Playwrig
 
 export async function getViewportSize(page: Page): Promise<pb.Response_Json> {
     const result = page.viewportSize();
-    return jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.');
+    return jsonResponse(JSON.stringify(result), 'View port size received successfully from page.');
 }
 
 export async function getBoundingBox(
