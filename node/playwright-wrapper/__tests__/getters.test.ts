@@ -50,10 +50,7 @@ const state = {
 };
 
 function makeRequest(selector = '#el', strict = false) {
-    return {
-        getSelector: () => selector,
-        getStrict: () => strict,
-    } as any;
+    return { selector, strict } as any;
 }
 
 function makeMockState() {

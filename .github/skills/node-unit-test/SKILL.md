@@ -81,14 +81,11 @@ function makeMockLocator(overrides: Partial<{
 
 ## Creating mock gRPC request objects
 
-The generated protobuf `Request.*` classes have getter methods. Mock them with a plain object cast to `any`:
+After the ts-proto migration, generated protobuf types are plain interfaces with direct property access — no getter methods. Mock them with a plain object cast to `any`:
 
 ```typescript
 function makeRequest(selector = '#el', strict = false) {
-    return {
-        getSelector: () => selector,
-        getStrict: () => strict,
-    } as any;
+    return { selector, strict } as any;
 }
 ```
 
@@ -159,7 +156,7 @@ describe('functionName', () => {
 
         const result = await getElementStates(makeRequest(), {} as any);
 
-        expect(JSON.parse(result.getJson())).toBe(2); // detached
+        expect(JSON.parse(result.json)).toBe(2); // detached
     });
 });
 ```
