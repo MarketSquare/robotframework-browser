@@ -122,7 +122,7 @@ export async function tap(
     const strictMode = request.strict;
     const locator = await findLocator(state, selector, strictMode, undefined, true);
     await locator.tap(JSON.parse(options));
-    return emptyWithLog(`Tab element: '${selector}' with options: '${options}'`);
+    return emptyWithLog(`Tap element: '${selector}' with options: '${options}'`);
 }
 
 export async function internalClick(
