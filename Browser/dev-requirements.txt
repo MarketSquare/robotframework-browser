@@ -10,7 +10,7 @@ robotstatuschecker >= 4.1.1
 rellu >= 2.0.0
 approvaltests == 17.4.1
 pytest-mock==3.15.1
-Pillow==12.1.1
+Pillow==12.2.0
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.14.3
 coverage >= 7.13.5
