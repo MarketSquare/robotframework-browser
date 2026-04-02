@@ -43,7 +43,7 @@
     "@bufbuild/protobuf": "^2.4.0",
     "monocart-coverage-reports": "^2.12.9",
     "pino": "^10.3.1",
-    "playwright": "^1.59.0",
+    "playwright": "^1.59.1",
     "strip-comments": "^2.0.1",
     "uuid": "^13.0.0"
   },
