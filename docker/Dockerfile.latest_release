@@ -3,8 +3,9 @@ FROM mcr.microsoft.com/playwright:v1.59.0-noble
 # Update apt-get
 USER root
 RUN apt-get update
-RUN python3 --version
-RUN apt install -y python3-pip python3.12-venv
+RUN apt install -y software-properties-common
+RUN add-apt-repository -y ppa:deadsnakes/ppa
+RUN apt install -y python3.14 python3.14-venv
 
 # Clean up
 USER root
@@ -24,14 +25,14 @@ RUN chmod a+rwx -R /home/pwuser/.cache || true
 USER pwuser
 
 # Create venv and active it
-RUN python3 -m venv /home/pwuser/.venv
+RUN python3.14 -m venv /home/pwuser/.venv
 ENV PATH="/home/pwuser/.venv/bin:$PATH"
 
 # Upgrade pip and wheel for the user
-RUN pip3 install --no-cache-dir --upgrade pip wheel uv
+RUN pip3.14 install --no-cache-dir --upgrade pip wheel uv
 
 # Install RobotFramework and Browser library
 RUN uv pip install --no-cache-dir --upgrade robotframework robotframework-browser==19.13.0
 
 # Initialize Browser library without browsers binaries
-RUN python3 -m Browser.entry init --skip-browsers
+RUN python3.14 -m Browser.entry init --skip-browsers
