@@ -33,6 +33,7 @@ from ..utils.data_types import (
     DelayedKeyword,
     HighLightElement,
 )
+from ..utils.types import Secret
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -297,6 +298,8 @@ class LibraryComponent:
         return self._replace_placeholder_variable(placeholder)
 
     def _replace_placeholder_variable(self, placeholder):
+        if isinstance(placeholder, Secret):
+            return placeholder.value
         if isinstance(placeholder, str) and len(placeholder) == 0:
             return placeholder
         if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
