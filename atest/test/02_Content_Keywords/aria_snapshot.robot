@@ -11,8 +11,9 @@ Aria Snapshot YAML
     ${snapshot} =    Get Aria Snapshot    id=username_field    yaml    contains    User Name
 
 Aria Snapshot Dict
+    VAR    @{expected} =    heading "Login Page" [level=1]
     ${snapshot} =    Get Aria Snapshot    h1    dict
-    Should Be Equal    ${snapshot}    ['heading "Login Page" [level=1]']    type=list
+    Should Be Equal    ${snapshot}    ${expected}    # Use type=list when RF 7.4 is minimum requirement
     VAR    @{expected} =    textbox "User Name:"
     ${snapshot} =    Get Aria Snapshot    id=username_field    dict    ==    ${expected}
 
