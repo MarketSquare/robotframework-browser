@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from robot import version  # type: ignore
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
@@ -139,6 +140,10 @@ def is_python_314() -> bool:
     return sys.version_info >= (3, 14) and sys.version_info < (3, 15)
 
 
+def get_robot_version() -> str:
+    return str(version.VERSION)
+
+
 def _parse_fi_date(date: str) -> datetime:
     if not date:
         # 2000-01-01 because of Windos raising OsError
@@ -223,3 +228,7 @@ def relative_to(path1: Path, path2: Path) -> Path:
 def get_file_name(path: str) -> str:
     """Return file name from path."""
     return Path(path).name
+
+
+if __name__ == "__main__":
+    print(f"Robot Framework Version: {get_robot_version()}")
