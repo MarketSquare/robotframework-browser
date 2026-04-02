@@ -234,5 +234,12 @@ def get_file_name(path: str) -> str:
     return Path(path).name
 
 
+def convert_to_path(path: str) -> Path:
+    """Convert string path to Path object."""
+    path_path = Path(path)
+    logger.info(f"Converted {path} to {path_path} {type(path_path)}")
+    return path_path
+
+
 if __name__ == "__main__":
     print(f"Robot Framework Version: {get_robot_version()}")
