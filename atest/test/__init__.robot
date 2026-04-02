@@ -15,6 +15,9 @@ Start Test Application
     Set Global Variable    $SERVER_PORT    ${port}
     ${python_version} =    Is Python 314
     Set Global Variable    $PYTHON_314    ${python_version}
+    ${rf_version} =    Get Robot Version
+    Set Suite Metadata    Robot Framework Version    ${rf_version}
+    Log To Console    RF Version: ${rf_version}
 
 Suite Teardown
     Stop Test Server    ${SERVER_PORT}
