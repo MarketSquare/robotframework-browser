@@ -14,9 +14,12 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, TypedDict, Union  # noqa: UP035
+from types import UnionType
+from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
 from robot.running.arguments.typeconverters import TypeConverter
+
+from .types import Secret
 
 
 class RobotTypeConverter(TypeConverter):
@@ -38,39 +41,109 @@ class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noqa: C901
+def _is_typed_dict_type(type_hint: Any) -> bool:
+    return (
+        isinstance(type_hint, type)
+        and hasattr(type_hint, "__required_keys__")
+        and hasattr(type_hint, "__optional_keys__")
+        and hasattr(type_hint, "__annotations__")
+    )
+
+
+def _convert_nested_typed_dict(value: Any, struct_type):
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"Value '{value}' cannot be converted to {struct_type.__name__}. Expected dictionary like object."
+        )
+    converted = convert_typed_dict({"value": struct_type}, {"value": value})
+    return converted["value"]
+
+
+def _require_conversion(value: Any, struct_type):
+    if isinstance(struct_type, UnionType):
+        for union_type in struct_type.__args__:
+            if _is_typed_dict_type(union_type):
+                if isinstance(value, dict):
+                    return True
+                continue
+            if isinstance(value, union_type):
+                return False
+        return True
+    if _is_typed_dict_type(struct_type):
+        return True
+    return not isinstance(value, struct_type)
+
+
+def _do_conversion(value: Any, struct_type):
+    if isinstance(struct_type, UnionType):
+        for union_type in struct_type.__args__:
+            try:
+                if _is_typed_dict_type(union_type):
+                    return _convert_nested_typed_dict(value, union_type)
+                return union_type(value)
+            except (ValueError, TypeError):
+                continue
+        raise TypeError(
+            f"Cannot convert value '{value}' to any of the types in {struct_type}."
+        )
+    if _is_typed_dict_type(struct_type):
+        return _convert_nested_typed_dict(value, struct_type)
+    return struct_type(value)
+
+
+def _handel_conversion(
+    typed_dict, lower_case_dict, struct, req_key, arg_name, arg_type, raise_error=True
+):
+    if req_key.lower() not in lower_case_dict:
+        if raise_error:
+            raise RuntimeError(
+                f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
+                f"\nThe required key '{req_key}' in not set in given value."
+                f"\nExpected types: {arg_type.__annotations__}"
+            )
+        return typed_dict
+    struct_type = struct.get(req_key)
+    value = lower_case_dict[req_key.lower()]
+    if _require_conversion(value, struct_type):
+        typed_dict[req_key] = _do_conversion(value, struct_type)
+    else:
+        typed_dict[req_key] = value
+    return typed_dict
+
+
+def convert_typed_dict(function_annotations: dict, params: dict) -> dict:
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
         arg_value = params[arg_name]
         if getattr(arg_type, "__origin__", None) is Union:
             for union_type in arg_type.__args__:
-                if arg_value is None or not isinstance(
-                    union_type, type(TypedDictDummy)
-                ):
+                if arg_value is None or not _is_typed_dict_type(union_type):
                     continue
                 arg_type = union_type  # noqa: PLW2901
                 break
-        if isinstance(arg_type, type(TypedDictDummy)):
+        if _is_typed_dict_type(arg_type):
             if not isinstance(arg_value, dict):
                 raise TypeError(
                     f"Argument '{arg_name}' expects a dictionary like object but did get '{type(arg_value)} instead.'"
                 )
             lower_case_dict = {k.lower(): v for k, v in arg_value.items()}
             struct = arg_type.__annotations__
-            typed_dict = arg_type()
+            typed_dict: dict[str, Any] = {}
             for req_key in arg_type.__required_keys__:
-                if req_key.lower() not in lower_case_dict:
-                    raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
-                        f"\nThe required key '{req_key}' in not set in given value."
-                        f"\nExpected types: {arg_type.__annotations__}"
-                    )
-                typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])  # type: ignore
+                typed_dict = _handel_conversion(
+                    typed_dict, lower_case_dict, struct, req_key, arg_name, arg_type
+                )
             for opt_key in arg_type.__optional_keys__:
-                if opt_key.lower() not in lower_case_dict:
-                    continue
-                typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
+                typed_dict = _handel_conversion(
+                    typed_dict,
+                    lower_case_dict,
+                    struct,
+                    opt_key,
+                    arg_name,
+                    arg_type,
+                    raise_error=False,
+                )
             params[arg_name] = typed_dict
     return params
 
@@ -416,8 +489,8 @@ class RecordHar(TypedDict, total=False):
 
 
 class _HttpCredentials(TypedDict):
-    username: str
-    password: str
+    username: str | Secret
+    password: str | Secret
 
 
 class HttpCredentials(_HttpCredentials, total=False):
@@ -559,8 +632,8 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    username: str
-    password: str
+    username: str | Secret
+    password: str | Secret
 
 
 class DownloadInfo(TypedDict):

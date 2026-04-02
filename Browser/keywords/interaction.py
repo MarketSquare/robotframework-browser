@@ -43,6 +43,7 @@ from ..utils.data_types import (
     ScrollBehavior,
     SelectAttribute,
 )
+from ..utils.types import Secret
 
 
 class Interaction(LibraryComponent):
@@ -136,7 +137,7 @@ class Interaction(LibraryComponent):
     def type_secret(
         self,
         selector: str,
-        secret: str,
+        secret: str | Secret,
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
@@ -150,19 +151,31 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
-        | ``secret`` | Environment variable name with % prefix or a local variable with $ prefix that has the secret text value. Variable names can be used with and without curly braces. |
+        | ``secret`` | Supports Robot Framework 7.4 Secret type as normal variable (with curly braces). Also environment variable name with % prefix or a local variable with $ prefix that has the secret text value (without curly braces). |
         | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
         | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
 
-        This keyword does not log secret in Robot Framework logs, when
-        keyword resolves the ``secret`` variable internally.
-        When ``secret`` variable is prefixed with `$`, without the curly braces,
-        library will resolve the corresponding Robot Framework variable.
+        This keyword does not log secret in Robot Framework logs, but
+        if PLaywright debug logs are enabled, secret will be visible as
+        plain text in the Playwright debug logs, regardless of the Robot
+        Framework log level or how ``secret`` is resolved.
+
+        This keyword supports Robot Framework 7.4
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables|Secret]
+        variable type, which is the recommended way if you are using Robot
+        Framework 7.4 or newer.
+
+        For older Robot Framework versions keyword support resolving secrets from
+        environment variables and Robot Framework variables in the following ways.
+        Keyword resolves the ``secret`` from Robot Framework variable internally,
+        when ``secret`` variable is prefixed with `$`, without the curly braces.
+        Example `$Password`` will resolve to ``${Password}`` Robot Framework
+        variable.
 
         If ``secret`` variable is prefixed with `%`, library will resolve
-        corresponding environment variable. Example `$Password`` will
-        resolve to ``${Password}`` Robot Framework variable.
-        Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
+        corresponding environment variable. Example ``%ENV_PWD`` will
+        resolve to ``%{ENV_PWD}`` environment variable.
+
 
         *Using normal Robot Framework variables like ``${password}`` will not work!*
 
@@ -178,9 +191,9 @@ class Interaction(LibraryComponent):
         See `Type Text` for details.
 
         Example
+        | `Type Secret`    input#username_field    ${username}    # Keyword resolves ${username} variable value from Robot Framework Secret type variable
         | `Type Secret`    input#username_field    $username      # Keyword resolves ${username} variable value from Robot Framework variables
         | `Type Secret`    input#username_field    %username      # Keyword resolves $USERNAME/%USERNAME% variable value from environment variables
-        | `Type Secret`    input#username_field    ${username}    # Robot Framework resolves the variable value, but secrect can leak to Robot framework output files.
 
         [https://forum.robotframework.org/t//4338|Comment >>]
         """
@@ -198,7 +211,7 @@ class Interaction(LibraryComponent):
             raise Exception(str(e).replace(secret, "***"))
 
     @keyword(tags=("Setter", "PageContent"))
-    def fill_secret(self, selector: str, secret: str, force: bool = False):
+    def fill_secret(self, selector: str, secret: str | Secret, force: bool = False):
         """Fills the given secret from ``variable_name`` into the
         text field found by ``selector``.
 
@@ -209,15 +222,26 @@ class Interaction(LibraryComponent):
         | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
 
-        This keyword does not log secret in Robot Framework logs, when
-        keyword resolves the ``secret`` variable internally.
-        When ``secret`` variable is prefixed with `$`, without the curly braces,
-        library will resolve the corresponding Robot Framework variable.
+        This keyword does not log secret in Robot Framework logs, but
+        if PLaywright debug logs are enabled, secret will be visible as
+        plain text in the Playwright debug logs, regardless of the Robot
+        Framework log level or how ``secret`` is resolved.
+
+        This keyword supports Robot Framework 7.4
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables|Secret]
+        variable type, which is the recommended way if you are using Robot
+        Framework 7.4 or newer.
+
+        For older Robot Framework versions keyword support resolving secrets from
+        environment variables and Robot Framework variables in the following ways.
+        Keyword resolves the ``secret`` from Robot Framework variable internally,
+        when ``secret`` variable is prefixed with `$`, without the curly braces.
+        Example `$Password`` will resolve to ``${Password}`` Robot Framework
+        variable.
 
         If ``secret`` variable is prefixed with `%`, library will resolve
-        corresponding environment variable. Example `$Password`` will
-        resolve to ``${Password}`` Robot Framework variable.
-        Also ``%ENV_PWD`` will resolve to ``%{ENV_PWD}`` environment variable.
+        corresponding environment variable. Example ``%ENV_PWD`` will
+        resolve to ``%{ENV_PWD}`` environment variable.
 
         *Using normal Robot Framework variables like ``${password}`` will not work!*
 
@@ -237,8 +261,9 @@ class Interaction(LibraryComponent):
         See `Fill Text` for other details.
 
         Example:
-        | `Fill Secret`    input#username_field    $username    # Keyword resolves variable value from Robot Framework variables
-        | `Fill Secret`    input#username_field    %username    # Keyword resolves variable value from environment variables
+        | `Fill Secret`    input#username_field    ${username}    # Keyword resolves variable value from Robot Framework Secret type variables
+        | `Fill Secret`    input#username_field    $username      # Keyword resolves variable value from Robot Framework variables
+        | `Fill Secret`    input#username_field    %username      # Keyword resolves variable value from environment variables
 
         [https://forum.robotframework.org/t//4253|Comment >>]
         """

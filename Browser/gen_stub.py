@@ -71,6 +71,7 @@ from Browser.utils .data_types import (
     SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole, AriaSnapshotReturnType,
     KeyboardInputAction, KeyAction
 )
+from Browser.utils.types import Secret
 """
 with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     stub_file.write(pyi_boilerplate)
