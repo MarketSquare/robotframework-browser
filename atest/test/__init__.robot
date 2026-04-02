@@ -18,6 +18,8 @@ Start Test Application
     ${rf_version} =    Get Robot Version
     Set Suite Metadata    Robot Framework Version    ${rf_version}
     Log To Console    RF Version: ${rf_version}
+    ${python_version} =    Get Python Version
+    Set Suite Metadata    Python Version    ${python_version}
 
 Suite Teardown
     Stop Test Server    ${SERVER_PORT}

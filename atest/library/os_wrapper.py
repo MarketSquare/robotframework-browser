@@ -140,6 +140,10 @@ def is_python_314() -> bool:
     return sys.version_info >= (3, 14) and sys.version_info < (3, 15)
 
 
+def get_python_version() -> str:
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+
 def get_robot_version() -> str:
     return str(version.VERSION)
 
