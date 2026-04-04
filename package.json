@@ -14,7 +14,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/strip-comments": "^2.0.4",
     "@yao-pkg/pkg": "^6.14.2",
-    "esbuild": "^0.27.7",
+    "esbuild": "^0.28.0",
     "esbuild-node-externals": "^1.21.0",
     "eslint": "^10.2.0",
     "eslint-plugin-simple-import-sort": "^12.1.1",
