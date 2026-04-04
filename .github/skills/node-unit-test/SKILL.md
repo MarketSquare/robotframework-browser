@@ -20,6 +20,19 @@ inv utest-node --coverage   # generates HTML report at node/coverage/index.html
 
 Name test files after the source module they test: `getters.ts` → `getters.test.ts`.
 
+## IDE typing for Jest
+
+If the editor reports `Cannot find name 'jest'`, `describe`, `it`, or `expect` even though the tests run, make the test file explicit about Jest types:
+
+```typescript
+/// <reference types="jest" />
+
+import { beforeEach, describe, expect, it } from '@jest/globals';
+```
+
+Keep using the global `jest` object for `jest.mock()`, `jest.fn()`, and `jest.mocked(...)`.
+Avoid importing `jest` from `@jest/globals` in these tests, because it can lead to worse mock typing in this repo.
+
 ## Mocking external module dependencies
 
 Use `jest.mock()` at the top of the file (before imports) to replace modules with controlled fakes.
