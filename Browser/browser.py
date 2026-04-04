@@ -32,6 +32,7 @@ from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
 from robot.utils import secs_to_timestr, timestr_to_secs
+from robot.utils.robottypes import is_falsy
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -64,7 +65,6 @@ from .utils import (
     Scope,
     SettingsStack,
     get_normalized_keyword,
-    is_falsy,
     keyword,
     logger,
     suppress_logging,

@@ -24,10 +24,10 @@ from uuid import uuid4
 from assertionengine import AssertionOperator, list_verify_assertion, verify_assertion
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
+from robot.utils.robottypes import is_truthy
 
 from Browser.utils.data_types import BrowserInfo, TracingGroupMode
 from Browser.utils.misc import get_download_id
-from Browser.utils.robot_booleans import is_truthy
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
