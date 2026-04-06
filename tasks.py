@@ -9,6 +9,8 @@ import sysconfig
 import time
 import traceback
 import zipfile
+import signal
+
 from collections.abc import Iterable
 from pathlib import Path, PurePath
 
@@ -548,50 +550,57 @@ def atest_failed(c):
 
 
 @task()
-def atest_coverage_node(
+def atest_coverage(
     c,
     suite=None,
     test=None,
     include=None,
-    shard=None,
     debug=False,
     exclude=None,
     loglevel=None,
 ):
-    """Run acceptance tests with Node.js V8 coverage (Linux and macOS only).
+    """Run acceptance tests with both Python and Node.js coverage.
 
-    Builds the Node.js wrapper with source maps, runs acceptance tests with
-    V8 coverage collection enabled, then post-processes the coverage data into
-    an HTML + LCOV report at atest/output/node-coverage-report/.
+    Builds the Node.js wrapper, runs acceptance tests with coverage
+    collection enabled for both Python and Node.js, then generates
+    coverage reports.
 
     Args:
         suite:    Select which suite to run.
         test:     Select which test to run.
         include:  Select tests by tag.
-        shard:    Shard tests.
         debug:    Use robotframework-debugger as test listener.
         exclude:  Exclude tests by tag.
         loglevel: Set log level for robot framework.
+
+    To use with coverage.py tracking:
+        coverage run -m invoke utest
+        coverage run --append -m invoke atest-coverage
+        coverage combine (if needed)
+        coverage report
+        coverage html
+
+    Node.js coverage output: atest/output/node-coverage-report/
+    Python coverage output: htmlcov/
+
+    NodeJS coverage is not supported in Windows.
     """
-    import signal
-
     from Browser.utils import spawn_node_process
-
-    if sys.platform == "win32":
-        print("Node.js V8 coverage is not supported on Windows.")
-        sys.exit(1)
 
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE"] = "1"
     node_build(c)
     clean_atest(c)
     create_test_app(c)
+    ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
 
-    # Create V8 coverage dir before spawning Node so the env var is valid
-    v8_coverage_dir = ATEST_OUTPUT / "browser" / "node-v8-coverage"
-    v8_coverage_dir.mkdir(parents=True, exist_ok=True)
-    os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+    if sys.platform == "win32":
+        print("Node.js V8 coverage is not supported on Windows.")
+    else:
+        v8_coverage_dir = ATEST_OUTPUT / "browser" / "node-v8-coverage"
+        v8_coverage_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
 
-    args = ["--pythonpath", "."]
+    args = []
     if suite:
         args.extend(["--suite", suite])
     if test:
@@ -602,12 +611,12 @@ def atest_coverage_node(
         args.extend(["--listener", "Debugger"])
     if exclude:
         args.extend(["--exclude", exclude])
-    args.extend(["--exclude", "tidy-transformer"])
 
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_pabot(args, shard, loglevel=loglevel or "DEBUG")
+        rc = _run_robot_with_coverage(args, loglevel or "DEBUG")
+
     finally:
         # SIGTERM allows Node.js to flush V8 coverage before exiting
         try:
@@ -618,7 +627,49 @@ def atest_coverage_node(
             background_process.kill()
 
     c.run("node node/process-coverage.mjs", warn=True)
+    print(
+        f"\nNode.js coverage report: {ATEST_OUTPUT / 'node-coverage-report' / 'index.html'}"
+    )
+    print(f"\nPython coverage: Run 'coverage html' to generate htmlcov/index.html")
     sys.exit(rc)
+
+
+def _run_robot_with_coverage(extra_args=None, loglevel="DEBUG"):
+    """Run robot with Python coverage collection."""
+    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
+    robot_args = [
+        "-m",
+        "robot",
+        "--xunit",
+        "robot_xunit.xml",
+        "--exclude",
+        "not-implemented",
+        "--loglevel",
+        loglevel,
+        "--report",
+        "NONE",
+        "--log",
+        "NONE",
+        "--outputdir",
+        str(ATEST_OUTPUT),
+    ]
+    robot_args = _add_skips_list(robot_args, False)
+
+    cmd = (
+        [sys.executable, "-m", "coverage", "run"]
+        + robot_args
+        + (extra_args or [])
+        + ["atest/test"]
+    )
+    process = subprocess.Popen(cmd, env=os.environ)
+    process.wait(ATEST_TIMEOUT)
+
+    output_xml = str(ATEST_OUTPUT / "output.xml")
+    print(f"Process {output_xml}")
+    robotstatuschecker.process_output(output_xml)
+    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
+    print(f"DONE rc=({rc})")
+    return rc
 
 
 @task()
@@ -649,27 +700,6 @@ def run_tests(c, tests, batteries=False):
         env=env,
     )
     return process.wait(ATEST_TIMEOUT)
-
-
-@task()
-def atest_coverage(c):
-    """Run atest with robot.run
-
-    To run coverage use:
-    coverage run -m invoke utest
-    coverage run --append -m invoke atest-coverage
-    coverage report
-    coverage html
-    """
-    import robot
-
-    robot_args = {
-        "xunit": "robot_xunit.xml",
-        "exclude": "not-implementedORtidy-transformer",
-        "loglevel": "DEBUG",
-        "outputdir": str(ATEST_OUTPUT),
-    }
-    robot.run("atest/test", **robot_args)
 
 
 def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
@@ -717,6 +747,27 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG")
 
 
 def _add_skips(default_args, include_mac=False):
+    if platform.platform().lower().startswith("windows"):
+        print("Running in Windows exclude no-windows-support tags")
+        default_args.extend(["--exclude", "no-windows-support"])
+    if not include_mac and (
+        platform.platform().lower().startswith("mac")
+        or platform.platform().lower().startswith("darwin")
+    ):
+        print("Running in Mac exclude no-mac-support tags")
+        default_args.extend(["--exclude", "no-mac-support"])
+    default_args.extend(["--exclude", "tidy-transformer"])
+    rf_version = tuple(map(int, robot_version_module.get_version().split(".")))
+    if rf_version < (7, 4):
+        print(
+            "Running with Robot Framework version < 7.4, exclude require-rf-7.4+ tags"
+        )
+        default_args.extend(["--exclude", "require-rf-7.4+"])
+    return default_args
+
+
+def _add_skips_list(default_args, include_mac=False):
+    """Add skip/exclude arguments to a list for robot command."""
     if platform.platform().lower().startswith("windows"):
         print("Running in Windows exclude no-windows-support tags")
         default_args.extend(["--exclude", "no-windows-support"])
