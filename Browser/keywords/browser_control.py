@@ -649,14 +649,12 @@ class Control(LibraryComponent):
         When enabled, elements are highlighted with a border for a duration to visually show what the keyword found.
 
         | =Arguments= | =Description= |
-        | ``mode`` | When set to ``True``, enables presenter mode with default settings. When set to ``False``, disables presenter mode.
-          Can also be a dictionary containing all highlighting configuration options as defined in ``HighLightElement``.
-          **All fields in the dictionary are required.**
+        | ``mode`` | When set to ``True``, enables presenter mode with default settings. When set to ``False``, disables presenter mode. Can also be a dictionary containing all highlighting configuration options as defined in ``HighLightElement``. All fields in the dictionary are required. |
 
         The keyword returns the previous presenter mode value, allowing you to restore it later.
 
         Example:
-        | ${old_mode}=    Set Presenter Mode    True
+        | ${old_mode} =    Set Presenter Mode    True
         | Click    //button                            # Element will be highlighted
         | Set Presenter Mode    ${old_mode}            # Restore previous mode
         |
