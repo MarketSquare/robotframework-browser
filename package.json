@@ -24,7 +24,7 @@
     "husky": "^9.1.7",
     "jest": "^30.3.0",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "react": "^19.2.4",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
