@@ -45,7 +45,7 @@
     "pino": "^10.3.1",
     "playwright": "^1.59.1",
     "strip-comments": "^2.0.1",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "scripts": {
     "build-test-app": "node ./node/build.testapp.js",
