@@ -47,6 +47,11 @@
     "strip-comments": "^2.0.1",
     "uuid": "^14.0.0"
   },
+  "overrides": {
+    "babel-plugin-istanbul": {
+      "test-exclude": "^7.0.2"
+    }
+  },
   "scripts": {
     "build-test-app": "node ./node/build.testapp.js",
     "build": "node ./node/build.wrapper.js",
