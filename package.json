@@ -50,7 +50,8 @@
   "overrides": {
     "babel-plugin-istanbul": {
       "test-exclude": "^7.0.2"
-    }
+    },
+    "glob": "^13.0.0"
   },
   "scripts": {
     "build-test-app": "node ./node/build.testapp.js",
