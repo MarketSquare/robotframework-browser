@@ -19,6 +19,6 @@ robotframework-robocop >= 8.2.4
 robotframework-crypto >= 0.4.2
 robotframework-archivelibrary >= 0.4.3
 uv >= 0.11.7
-build >= 1.4.3
+build >= 1.4.4
 robotframework-ghareports >= 0.9.1
 types-PyYAML >= 6.0.12.20260408
