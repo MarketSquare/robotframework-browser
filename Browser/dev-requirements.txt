@@ -14,7 +14,7 @@ Pillow==12.2.0
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.14.3
 coverage >= 7.13.5
-python-dateutil >= 2.9.0
+python-dateutil >= 2.9.0.post0
 robotframework-robocop >= 8.2.4
 robotframework-crypto >= 0.4.2
 robotframework-archivelibrary >= 0.4.3
