@@ -7,7 +7,9 @@ import * as path from 'path';
 
 const app = express.default();
 
-app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms'));
+// Configure morgan to write to a log file to avoid stdout blocking in Docker
+const logStream = fs.createWriteStream(path.join(__dirname, '..', 'test-app.log'), { flags: 'a' });
+app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms', { stream: logStream }));
 app.use(express.json());
 
 const program = new Command();
