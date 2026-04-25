@@ -33,9 +33,7 @@ const mutualTls: boolean = options.mutualTls;
 
 app.set('etag', false);
 
-// @ts-expect-error
 app.get('/favicon.ico', (req, res) => res.status(204).send());
-// @ts-expect-error
 app.get('/dist/favicon.ico', (req, res) => res.status(204).send());
 
 app.head('/api/get/json', (req, res) => {
