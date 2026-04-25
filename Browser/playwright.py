@@ -55,6 +55,7 @@ class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwright process."""
 
     port: str | None
+    _node_dependencies_checked = False
 
     def __init__(
         self,
@@ -66,19 +67,38 @@ class Playwright(LibraryComponent):
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
-        self.ensure_node_dependencies()
         self.host = str(host) if host else None
         self.port = str(port) if port else None
+        self.ensure_node_dependencies()
         self.playwright_log = playwright_log
 
     @cached_property
     def _playwright_process(self) -> Popen | None:
-        process = self.start_playwright()
-        atexit.register(self.close)
-        self.wait_until_server_up()
-        if platform.system() == "Darwin":
-            time.sleep(1)  # To overcome problem with macOS Sonoma and hanging process
-        return process
+        max_attempts = 2 if platform.system() == "Darwin" else 1
+        last_error: RuntimeError | None = None
+        for attempt in range(1, max_attempts + 1):
+            process = self.start_playwright()
+            try:
+                self.wait_until_server_up()
+                atexit.register(self.close)
+                if platform.system() == "Darwin":
+                    time.sleep(
+                        1
+                    )  # To overcome problem with macOS Sonoma and hanging process
+                return process
+            except RuntimeError as err:
+                last_error = err
+                if process:
+                    close_process_tree(process)
+                # Reset host/port so next attempt starts a fresh process on a fresh port.
+                self.host = None
+                self.port = None
+                if attempt < max_attempts:
+                    logger.info(
+                        "Retrying Playwright startup on macOS after initial startup failure"
+                    )
+                    time.sleep(0.25)
+        raise last_error if last_error else RuntimeError("Failed to start Playwright")
 
     @cached_property
     def _rfbrowser_dir(self) -> Path:
@@ -93,18 +113,43 @@ class Playwright(LibraryComponent):
 
         If BrowserBatteries is installed, does nothing.
         """
+        if self.__class__._node_dependencies_checked:
+            return
         if start_grpc_server is not None:
             logger.trace(
                 "Running gRPC server from BrowserBatteries, no need to check node"
             )
+            self.__class__._node_dependencies_checked = True
             return
-        try:
-            run(["node", "-v"], stdout=DEVNULL, check=True)
-        except (CalledProcessError, FileNotFoundError, PermissionError) as err:
+
+        # If an external Playwright process is configured, this Python process
+        # acts only as a gRPC client and does not need to execute local `node`.
+        configured_port = getattr(self, "port", None)
+        if configured_port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT"):
+            logger.trace(
+                "Using external Playwright process, skipping local node dependency check"
+            )
+            return
+
+        node_check_error: (
+            CalledProcessError | FileNotFoundError | PermissionError | None
+        ) = None
+        node_check_attempts = 3 if platform.system() == "Darwin" else 1
+        for attempt in range(node_check_attempts):
+            try:
+                run(["node", "-v"], stdout=DEVNULL, check=True)
+                node_check_error = None
+                break
+            except (CalledProcessError, FileNotFoundError, PermissionError) as err:
+                node_check_error = err
+                if attempt < node_check_attempts - 1:
+                    time.sleep(0.2)
+
+        if node_check_error is not None:
             raise RuntimeError(
                 "Couldn't execute node. Please ensure you have node.js installed and in PATH. "
                 "See https://nodejs.org/ for instructions. "
-                f"Original error is {err}"
+                f"Original error is {node_check_error}"
             )
 
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
@@ -115,6 +160,7 @@ class Playwright(LibraryComponent):
                 (self._browser_wrapper_dir / "node_modules").is_dir(),
             ]
         ):
+            self.__class__._node_dependencies_checked = True
             return
 
         raise RuntimeError(

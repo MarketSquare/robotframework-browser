@@ -102,6 +102,30 @@ def test_playwright_lazy_initialization(browser):
     assert isinstance(browser.playwright, Browser.playwright.Playwright)
 
 
+def test_playwright_constructor_port_skips_local_node_check(monkeypatch):
+    monkeypatch.setattr(
+        Browser.playwright.Playwright, "_node_dependencies_checked", False
+    )
+    monkeypatch.setattr(Browser.playwright, "start_grpc_server", None)
+    monkeypatch.delenv("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", raising=False)
+
+    def _fail_if_node_check_called(*args, **kwargs):
+        raise AssertionError(
+            "Local node check should be skipped when external port is configured"
+        )
+
+    monkeypatch.setattr(Browser.playwright, "run", _fail_if_node_check_called)
+
+    pw = Browser.playwright.Playwright(
+        library=Mock(),
+        enable_playwright_debug=False,
+        host=None,
+        port=12345,
+    )
+
+    assert pw.port == "12345"
+
+
 def test_open_page_get_text(application_server, browser):
     browser.new_page("localhost:7272/dist/")
     text = browser.get_text("h1", AssertionOperator["=="], "Login Page")
