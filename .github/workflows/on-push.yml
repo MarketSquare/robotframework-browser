@@ -523,7 +523,11 @@ jobs:
           docker run -v ./atest/:/home/pwuser/test -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
           docker_status=$?
           inv docker-copy-output
-          exit $docker_status
+          copy_status=$?
+          if [ "$docker_status" -ne 0 ]; then
+            exit "$docker_status"
+          fi
+          exit "$copy_status"
 
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}

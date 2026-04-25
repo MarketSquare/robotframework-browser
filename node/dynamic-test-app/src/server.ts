@@ -2,12 +2,12 @@ import { Command } from 'commander';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as https from 'https';
-import * as morgan from 'morgan';
+import morgan from 'morgan';
 import * as path from 'path';
 
 const app = express.default();
 
-app.use(morgan.default(':date[iso] :method :url :status :res[content-length] - :response-time ms'));
+app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms'));
 app.use(express.json());
 
 const program = new Command();

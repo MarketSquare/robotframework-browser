@@ -32,12 +32,16 @@ def start_test_server():
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
     print(test_app_path)
     log_file = _open_test_app_log(root_dir, port)
-    process = Popen(
-        ["node", test_app_path, "-p", port],
-        stdout=log_file,
-        stderr=STDOUT,
-        cwd=str(root_dir),
-    )
+    try:
+        process = Popen(
+            ["node", test_app_path, "-p", port],
+            stdout=log_file,
+            stderr=STDOUT,
+            cwd=str(root_dir),
+        )
+    except Exception:
+        log_file.close()
+        raise
     SERVERS[port] = process
     LOG_FILES[port] = log_file
     return port
@@ -69,24 +73,28 @@ def start_test_https_server(
 
     print(test_app_path)
     log_file = _open_test_app_log(root_dir, port)
-    process = Popen(
-        [
-            "node",
-            test_app_path,
-            "-p",
-            port,
-            "-c",
-            server_cert_path,
-            "-k",
-            server_key_path,
-            "-C",
-            ca_cert_path,
-            "-M" if mutual_tls else "-T",
-        ],
-        stdout=log_file,
-        stderr=STDOUT,
-        cwd=str(root_dir),
-    )
+    try:
+        process = Popen(
+            [
+                "node",
+                test_app_path,
+                "-p",
+                port,
+                "-c",
+                server_cert_path,
+                "-k",
+                server_key_path,
+                "-C",
+                ca_cert_path,
+                "-M" if mutual_tls else "-T",
+            ],
+            stdout=log_file,
+            stderr=STDOUT,
+            cwd=str(root_dir),
+        )
+    except Exception:
+        log_file.close()
+        raise
     SERVERS[port] = process
     LOG_FILES[port] = log_file
     return port
