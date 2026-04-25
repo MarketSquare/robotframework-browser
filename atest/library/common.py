@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from subprocess import PIPE, STDOUT, Popen
-from typing import Dict, NamedTuple
+from subprocess import STDOUT, Popen
+from typing import IO, Dict, NamedTuple
 from urllib.parse import urlparse
 
 from robot.api import logger
@@ -10,6 +10,13 @@ from robot.libraries.BuiltIn import BuiltIn
 from Browser.utils import FormatterKeywords, close_process_tree, find_free_port
 
 SERVERS: Dict = {}
+LOG_FILES: Dict[str, IO] = {}
+
+
+def _open_test_app_log(root_dir: Path, port: str) -> IO:
+    log_dir = root_dir / "atest" / "output" / "test-app"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return open(log_dir / f"test-app-{port}.log", "w", encoding="utf-8")
 
 
 def parse_url(url: str) -> NamedTuple:
@@ -17,20 +24,22 @@ def parse_url(url: str) -> NamedTuple:
 
 
 def start_test_server():
-    global SERVERS
+    global SERVERS, LOG_FILES
     port = str(find_free_port())
     # For some reason, we need to have cwd at project root for the server to run properly.
     root_dir = Path(os.path.dirname(__file__)) / ".." / ".."
     root_dir = root_dir.resolve()
     test_app_path = root_dir / "node" / "dynamic-test-app" / "dist" / "server.js"
     print(test_app_path)
+    log_file = _open_test_app_log(root_dir, port)
     process = Popen(
         ["node", test_app_path, "-p", port],
-        stdout=PIPE,
+        stdout=log_file,
         stderr=STDOUT,
         cwd=str(root_dir),
     )
     SERVERS[port] = process
+    LOG_FILES[port] = log_file
     return port
 
 
@@ -59,6 +68,7 @@ def start_test_https_server(
     ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start=test_app_dir)
 
     print(test_app_path)
+    log_file = _open_test_app_log(root_dir, port)
     process = Popen(
         [
             "node",
@@ -73,21 +83,27 @@ def start_test_https_server(
             ca_cert_path,
             "-M" if mutual_tls else "-T",
         ],
-        text=True,
+        stdout=log_file,
+        stderr=STDOUT,
         cwd=str(root_dir),
     )
     SERVERS[port] = process
+    LOG_FILES[port] = log_file
     return port
 
 
 def stop_test_server(port: str):
-    global SERVERS
+    global SERVERS, LOG_FILES
     if port in SERVERS:
         p: Popen = SERVERS[port]
         close_process_tree(p)
         del SERVERS[port]
     else:
         logger.warn(f"Server with port {port} not found")
+    if port in LOG_FILES:
+        LOG_FILES[port].flush()
+        LOG_FILES[port].close()
+        del LOG_FILES[port]
 
 
 def get_current_scope_from_lib(keyword: FormatterKeywords) -> list:
