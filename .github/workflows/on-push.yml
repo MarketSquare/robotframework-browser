@@ -519,8 +519,17 @@ jobs:
           pip install uv
           uv pip install invoke robotframework-ghareports --python 3.14 --system
           invoke run-test-app-no-build --asynchronous
-          docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+          set +e
+          docker run -v ./atest/:/home/pwuser/test -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+          docker_status=$?
           inv docker-copy-output
+          exit $docker_status
+
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: docker_results
+          path: output_docker
       - name: Github Job Summary
         if: ${{ always() }}
         run: |
