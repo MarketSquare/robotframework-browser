@@ -33,7 +33,7 @@ import {
 import strip from 'strip-comments';
 import { v4 as uuidv4 } from 'uuid';
 
-import { logger } from './browser_logger';
+import { clearRFKeywordContext, logger, setRFKeywordContext } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import {
     Request_Bool,
@@ -956,6 +956,7 @@ export async function openTraceGroup(
             }
         }
     }
+    setRFKeywordContext({ kw_name: name, kw_file: file, kw_line: line });
     return emptyWithLog('Opened trace group');
 }
 
@@ -967,6 +968,7 @@ export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Re
             }
         }
     }
+    clearRFKeywordContext();
     return emptyWithLog('Closed trace group');
 }
 

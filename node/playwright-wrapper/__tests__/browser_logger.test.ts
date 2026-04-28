@@ -1,7 +1,9 @@
 /// <reference types="jest" />
 
-import { describe, expect, it } from '@jest/globals';
+import { afterEach, describe, expect, it } from '@jest/globals';
 import pino, { stdTimeFunctions } from 'pino';
+
+import { clearRFKeywordContext, getRFKeywordContext, setRFKeywordContext } from '../browser_logger';
 
 // Build a fresh pino instance with the same configuration as browser_logger.ts
 // but writing to a captured in-memory stream so tests are isolated and synchronous.
@@ -124,5 +126,89 @@ describe('browser_logger configuration', () => {
             log.info('hello from test');
             expect(lines[0].msg).toBe('hello from test');
         });
+    });
+});
+
+// Build a pino instance whose mixin reads from the real module-level RF context so
+// we can verify that setRFKeywordContext / clearRFKeywordContext are reflected in log lines.
+function makeRFCapture() {
+    const lines: Record<string, unknown>[] = [];
+    const stream = {
+        write(msg: string) {
+            lines.push(JSON.parse(msg));
+        },
+    };
+    let seq = 0;
+    const log = pino(
+        {
+            timestamp: stdTimeFunctions.isoTime,
+            level: 'trace',
+            base: null,
+            formatters: {
+                level(label: string) {
+                    return { level: label };
+                },
+            },
+            mixin() {
+                return {
+                    seq: ++seq,
+                    component: 'browser-library',
+                    ...getRFKeywordContext(),
+                };
+            },
+        },
+        stream,
+    );
+    return { log, lines };
+}
+
+describe('RF keyword context', () => {
+    afterEach(() => {
+        clearRFKeywordContext();
+    });
+
+    it('setRFKeywordContext sets kw_name, kw_file, kw_line', () => {
+        setRFKeywordContext({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 });
+        const ctx = getRFKeywordContext();
+        expect(ctx.kw_name).toBe('Click Button');
+        expect(ctx.kw_file).toBe('test.robot');
+        expect(ctx.kw_line).toBe(10);
+    });
+
+    it('clearRFKeywordContext removes all keyword fields', () => {
+        setRFKeywordContext({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 });
+        clearRFKeywordContext();
+        const ctx = getRFKeywordContext();
+        expect(ctx).not.toHaveProperty('kw_name');
+        expect(ctx).not.toHaveProperty('kw_file');
+        expect(ctx).not.toHaveProperty('kw_line');
+    });
+
+    it('setRFKeywordContext only updates provided fields', () => {
+        setRFKeywordContext({ kw_name: 'First Keyword', kw_file: 'suite.robot', kw_line: 5 });
+        setRFKeywordContext({ kw_name: 'Second Keyword' });
+        const ctx = getRFKeywordContext();
+        expect(ctx.kw_name).toBe('Second Keyword');
+        expect(ctx.kw_file).toBe('suite.robot');
+        expect(ctx.kw_line).toBe(5);
+    });
+
+    it('keyword fields appear in log lines after setRFKeywordContext', () => {
+        const { log, lines } = makeRFCapture();
+        setRFKeywordContext({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 });
+        log.info('inside keyword');
+        expect(lines[0].kw_name).toBe('Open Browser');
+        expect(lines[0].kw_file).toBe('browser.robot');
+        expect(lines[0].kw_line).toBe(3);
+    });
+
+    it('keyword fields are absent from log lines after clearRFKeywordContext', () => {
+        const { log, lines } = makeRFCapture();
+        setRFKeywordContext({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 });
+        clearRFKeywordContext();
+        log.info('after keyword');
+        expect(lines[0]).not.toHaveProperty('kw_name');
+        expect(lines[0]).not.toHaveProperty('kw_file');
+        expect(lines[0]).not.toHaveProperty('kw_line');
     });
 });
