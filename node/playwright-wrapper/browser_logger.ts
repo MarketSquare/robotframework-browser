@@ -28,7 +28,21 @@
 
 import { pino, stdTimeFunctions } from 'pino';
 
+let _seq = 0;
+
 export const logger = pino({
     timestamp: stdTimeFunctions.isoTime,
     level: process.env.ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL || 'info',
+    base: null,
+    formatters: {
+        level(label: string) {
+            return { level: label };
+        },
+    },
+    mixin() {
+        return {
+            seq: ++_seq,
+            component: 'browser-library',
+        };
+    },
 });
