@@ -70,12 +70,12 @@ export class PlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getState(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method  ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -86,12 +86,12 @@ export class PlaywrightServer {
     ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
         return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
             try {
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(this.getState(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -104,12 +104,12 @@ export class PlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getActivePage(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -122,12 +122,12 @@ export class PlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getState(call), this.getActivePage(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method  ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };

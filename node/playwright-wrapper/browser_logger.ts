@@ -30,6 +30,30 @@ import { pino, stdTimeFunctions } from 'pino';
 
 let _seq = 0;
 
+export interface RFKeywordContext {
+    kw_name?: string;
+    kw_file?: string;
+    kw_line?: number;
+}
+
+const currentRFContext: RFKeywordContext = {};
+
+export function setRFKeywordContext(ctx: RFKeywordContext): void {
+    if (ctx.kw_name !== undefined) currentRFContext.kw_name = ctx.kw_name;
+    if (ctx.kw_file !== undefined) currentRFContext.kw_file = ctx.kw_file;
+    if (ctx.kw_line !== undefined) currentRFContext.kw_line = ctx.kw_line;
+}
+
+export function clearRFKeywordContext(): void {
+    delete currentRFContext.kw_name;
+    delete currentRFContext.kw_file;
+    delete currentRFContext.kw_line;
+}
+
+export function getRFKeywordContext(): Readonly<RFKeywordContext> {
+    return { ...currentRFContext };
+}
+
 export const logger = pino({
     timestamp: stdTimeFunctions.isoTime,
     level: process.env.ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL || 'info',
@@ -43,6 +67,7 @@ export const logger = pino({
         return {
             seq: ++_seq,
             component: 'browser-library',
+            ...currentRFContext,
         };
     },
 });
