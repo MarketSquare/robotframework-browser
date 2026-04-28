@@ -967,7 +967,7 @@ export async function openTraceGroup(
             }
         }
     }
-    setRFKeywordContext({ kw_name: name, kw_file: file, kw_line: line });
+    setRFKeywordContext({ kw_name: name, kw_file: file || undefined, kw_line: line || undefined });
     return emptyWithLog('Opened trace group');
 }
 
