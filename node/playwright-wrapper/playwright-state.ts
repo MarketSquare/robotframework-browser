@@ -291,6 +291,10 @@ function indexedPage(newPage: Page): IndexedPage {
     const pageErrors: TimedError[] = [];
     const consoleMessages: TimedConsoleMessage[] = [];
     newPage.on('pageerror', (error) => {
+        logger.warn(
+            { event_kind: 'internal_error', status: 'failed', error_type: error.name },
+            error.stack ?? error.message,
+        );
         const timedError = {
             name: error.name,
             message: error.message,
