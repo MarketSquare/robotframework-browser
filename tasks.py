@@ -45,7 +45,6 @@ node_dir = ROOT_DIR / "node"
 NODE_MODULES = ROOT_DIR / "node_modules"
 npm_deps_timestamp_file = NODE_MODULES / ".installed"
 
-node_lint_timestamp_file = node_dir / ".linted"
 ATEST_TIMEOUT = 900
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
@@ -193,7 +192,6 @@ def clean(c):
     pyi_file = PYTHON_SRC_DIR / "__init__.pyi"
     for file in [
         npm_deps_timestamp_file,
-        node_lint_timestamp_file,
         Path("./.coverage"),
         pyi_file,
         Path("./.ruff_cache"),
@@ -835,23 +833,14 @@ def lint_python(c, fix=False):
 
 
 @task
-def lint_node(c, force=False):
-    """Lint node files
-
-    Args:
-        force: When set, lints node files even there is no changes.
-    """
-    source_files = [*node_dir.glob("**/*.ts"), *node_dir.glob("**/*.js")]
-    if _sources_changed(source_files, node_lint_timestamp_file) or force:
-        if IN_CI:
-            c.run("npm run format:check")
-            c.run("npm run lint:check")
-        else:
-            c.run("npm run format")
-            c.run("npm run lint")
-        node_lint_timestamp_file.touch()
+def lint_node(c: Context):
+    """Lint node files."""
+    if IN_CI:
+        c.run("npm run format:check")
+        c.run("npm run lint:check")
     else:
-        print("no changes in node files, skipping node lint")
+        c.run("npm run format")
+        c.run("npm run lint")
 
 
 @task
