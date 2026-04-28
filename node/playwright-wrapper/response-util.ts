@@ -15,6 +15,7 @@
 import { status } from '@grpc/grpc-js';
 import { errors } from 'playwright';
 
+import { errorType, logger } from './browser_logger';
 import {
     Response_Bool,
     Response_Empty,
@@ -84,9 +85,10 @@ export function jsResponse(result: string, logMessage: string): Response_Javascr
 }
 
 export function errorResponse(e: unknown) {
-    console.log('================= Original suppressed error =================');
-    console.log(e);
-    console.log('=============================================================');
+    logger.error(
+        { event_kind: 'grpc_error', status: 'failed', error_type: errorType(e) },
+        e instanceof Error ? (e.stack ?? e.message) : String(e),
+    );
     if (!(e instanceof Error)) return null;
     const errorMessage: string = e.toString().substring(0, 5000);
     let errorCode = status.RESOURCE_EXHAUSTED;

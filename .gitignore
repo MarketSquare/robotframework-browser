@@ -13,6 +13,7 @@ docs/index.html
 
 node/dynamic-test-app/dist/*.js
 node/dynamic-test-app/src/*.js
+node/dynamic-test-app/test-app.log
 *.js.map
 
 .idea
