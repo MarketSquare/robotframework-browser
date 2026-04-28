@@ -41,17 +41,54 @@ export interface RFKeywordContext {
 }
 
 const currentRFContext: RFKeywordContext = {};
+const _kwContextStack: Array<{ kw_name?: string; kw_file?: string; kw_line?: number }> = [];
 
 export function setRFKeywordContext(ctx: RFKeywordContext): void {
-    if (ctx.kw_name !== undefined) currentRFContext.kw_name = ctx.kw_name;
-    if (ctx.kw_file !== undefined) currentRFContext.kw_file = ctx.kw_file;
-    if (ctx.kw_line !== undefined) currentRFContext.kw_line = ctx.kw_line;
+    _kwContextStack.push({
+        kw_name: currentRFContext.kw_name,
+        kw_file: currentRFContext.kw_file,
+        kw_line: currentRFContext.kw_line,
+    });
+    if (ctx.kw_name !== undefined) {
+        currentRFContext.kw_name = ctx.kw_name;
+    } else {
+        delete currentRFContext.kw_name;
+    }
+    if (ctx.kw_file !== undefined) {
+        currentRFContext.kw_file = ctx.kw_file;
+    } else {
+        delete currentRFContext.kw_file;
+    }
+    if (ctx.kw_line !== undefined) {
+        currentRFContext.kw_line = ctx.kw_line;
+    } else {
+        delete currentRFContext.kw_line;
+    }
 }
 
 export function clearRFKeywordContext(): void {
-    delete currentRFContext.kw_name;
-    delete currentRFContext.kw_file;
-    delete currentRFContext.kw_line;
+    const prev = _kwContextStack.pop();
+    if (prev) {
+        if (prev.kw_name !== undefined) {
+            currentRFContext.kw_name = prev.kw_name;
+        } else {
+            delete currentRFContext.kw_name;
+        }
+        if (prev.kw_file !== undefined) {
+            currentRFContext.kw_file = prev.kw_file;
+        } else {
+            delete currentRFContext.kw_file;
+        }
+        if (prev.kw_line !== undefined) {
+            currentRFContext.kw_line = prev.kw_line;
+        } else {
+            delete currentRFContext.kw_line;
+        }
+    } else {
+        delete currentRFContext.kw_name;
+        delete currentRFContext.kw_file;
+        delete currentRFContext.kw_line;
+    }
 }
 
 export function setRFTestContext(testId: string, testName: string): void {
@@ -88,20 +125,27 @@ export function errorType(e: unknown): string {
     return e instanceof Error ? e.constructor.name : 'UnknownError';
 }
 
-export const logger = pino({
-    timestamp: stdTimeFunctions.isoTime,
-    level: process.env.ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL || 'info',
-    base: null,
-    formatters: {
-        level(label: string) {
-            return { level: label };
+export function createLogger(destination?: { write(msg: string): void }) {
+    return pino(
+        {
+            timestamp: stdTimeFunctions.isoTime,
+            level: process.env.ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL || 'info',
+            base: null,
+            formatters: {
+                level(label: string) {
+                    return { level: label };
+                },
+            },
+            mixin() {
+                return {
+                    seq: ++_seq,
+                    component: 'browser-library',
+                    ...currentRFContext,
+                };
+            },
         },
-    },
-    mixin() {
-        return {
-            seq: ++_seq,
-            component: 'browser-library',
-            ...currentRFContext,
-        };
-    },
-});
+        destination ?? process.stdout,
+    );
+}
+
+export const logger = createLogger();
