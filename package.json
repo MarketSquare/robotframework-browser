@@ -37,7 +37,7 @@
     "ts-node": "^10.9.2",
     "ts-proto": "^2.11.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.0"
+    "typescript-eslint": "^8.59.1"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.12.0",
