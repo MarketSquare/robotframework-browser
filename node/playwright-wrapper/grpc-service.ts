@@ -160,6 +160,7 @@ export class PlaywrightServer {
     closePage = this.wrapping(playwrightState.closePage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
+    setRfContext = this.wrapping(playwrightState.setRFContext);
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);

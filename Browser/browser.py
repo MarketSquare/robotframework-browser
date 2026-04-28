@@ -1180,6 +1180,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _start_suite(self, _name, attrs):
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
+        self._playwright_state.set_rf_context(
+            suite_id=attrs["id"],
+            suite_name=attrs.get("longname", _name),
+        )
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
             for path in [
@@ -1206,6 +1210,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self.current_test_id = attrs["id"]
         self._add_to_scope_stack(attrs["id"], Scope.Test)
         self.is_test_case_running = True
+        self._playwright_state.set_rf_context(
+            test_id=attrs["id"],
+            test_name=attrs.get("longname", _name),
+        )
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
@@ -1346,6 +1354,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self._remove_from_scope_stack(attrs["id"])
         self.current_test_id = None
         self.is_test_case_running = False
+        self._playwright_state.set_rf_context(test_id="", test_name="")
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
@@ -1358,6 +1367,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.suite_ids.pop(attrs["id"], None)
+        self._playwright_state.set_rf_context(suite_id="", suite_name="")
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
 
