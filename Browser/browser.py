@@ -1177,12 +1177,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def coverage_output(self) -> Path:
         return self.browser_output / "coverage"
 
-    def _start_suite(self, _name, attrs):
+    def _start_suite(self, name, attrs):
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
         self._playwright_state.set_rf_context(
             suite_id=attrs["id"],
-            suite_name=attrs.get("longname", _name),
+            suite_name=attrs.get("longname", name),
         )
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
@@ -1206,13 +1206,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.trace(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, _name, attrs):
+    def _start_test(self, name, attrs):
         self.current_test_id = attrs["id"]
         self._add_to_scope_stack(attrs["id"], Scope.Test)
         self.is_test_case_running = True
         self._playwright_state.set_rf_context(
             test_id=attrs["id"],
-            test_name=attrs.get("longname", _name),
+            test_name=attrs.get("longname", name),
         )
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
