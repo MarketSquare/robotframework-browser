@@ -16,7 +16,7 @@ import { sendUnaryData, ServerReadableStream, ServerUnaryCall, ServerWritableStr
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { Page } from 'playwright';
 
-import { logger } from './browser_logger';
+import { errorType, logger } from './browser_logger';
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
@@ -144,6 +144,10 @@ export class PlaywrightServer {
                 call.write(result);
             }
         } catch (e) {
+            logger.error(
+                { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
+                'Error in callExtensionKeyword',
+            );
             call.emit('error', errorResponse(e));
         }
         call.end();
@@ -487,6 +491,10 @@ export class PlaywrightServer {
             })();
         });
         call.on('error', (e) => {
+            logger.error(
+                { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
+                'Stream error in uploadFileBySelector',
+            );
             callback(errorResponse(e), null);
         });
         call.on('end', () => {
