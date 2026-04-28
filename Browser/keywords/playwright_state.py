@@ -1780,6 +1780,8 @@ class PlaywrightState(LibraryComponent):
         suite_id: str = "",
         suite_name: str = "",
     ):
+        if self.library._playwright is None:
+            return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.SetRFContext(
                 Request().RFContext(
