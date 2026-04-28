@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from '@jest/globals';
 import pino, { stdTimeFunctions } from 'pino';
 
-import { clearRFKeywordContext, getRFKeywordContext, setRFKeywordContext } from '../browser_logger';
+import { clearRFKeywordContext, errorType, getRFKeywordContext, setRFKeywordContext } from '../browser_logger';
 
 // Build a fresh pino instance with the same configuration as browser_logger.ts
 // but writing to a captured in-memory stream so tests are isolated and synchronous.
@@ -210,5 +210,28 @@ describe('RF keyword context', () => {
         expect(lines[0]).not.toHaveProperty('kw_name');
         expect(lines[0]).not.toHaveProperty('kw_file');
         expect(lines[0]).not.toHaveProperty('kw_line');
+    });
+});
+
+describe('errorType', () => {
+    it('returns the constructor name for a standard Error', () => {
+        expect(errorType(new Error('boom'))).toBe('Error');
+    });
+
+    it('returns the subclass name for Error subclasses', () => {
+        expect(errorType(new TypeError('type error'))).toBe('TypeError');
+        expect(errorType(new RangeError('range error'))).toBe('RangeError');
+    });
+
+    it('returns UnknownError for a thrown string', () => {
+        expect(errorType('some string')).toBe('UnknownError');
+    });
+
+    it('returns UnknownError for null', () => {
+        expect(errorType(null)).toBe('UnknownError');
+    });
+
+    it('returns UnknownError for a plain object', () => {
+        expect(errorType({ code: 42 })).toBe('UnknownError');
     });
 });

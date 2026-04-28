@@ -54,6 +54,10 @@ export function getRFKeywordContext(): Readonly<RFKeywordContext> {
     return { ...currentRFContext };
 }
 
+export function errorType(e: unknown): string {
+    return e instanceof Error ? e.constructor.name : 'UnknownError';
+}
+
 export const logger = pino({
     timestamp: stdTimeFunctions.isoTime,
     level: process.env.ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL || 'info',

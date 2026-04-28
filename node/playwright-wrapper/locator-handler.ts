@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import { logger } from './browser_logger';
+import { errorType, logger } from './browser_logger';
 import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { findLocator } from './playwright-invoke';
@@ -70,7 +70,10 @@ export async function addLocatorHandlerCustom(
                         await actionLocator.uncheck({ ...options });
                     }
                 } catch (error) {
-                    logger.error(`Error in custom locator handler: ${String(error)}`);
+                    logger.error(
+                        { event_kind: 'internal_error', status: 'failed', error_type: errorType(error) },
+                        `Error in custom locator handler: ${String(error)}`,
+                    );
                 }
             }
         },
