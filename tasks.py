@@ -652,6 +652,7 @@ def _run_robot_with_coverage(extra_args=None, loglevel="DEBUG"):
         str(ATEST_OUTPUT),
     ]
     robot_args = _add_skips_list(robot_args, False)
+    robot_args.extend(["--exclude", "no-coverage-support"])
 
     cmd = (
         [sys.executable, "-m", "coverage", "run"]
