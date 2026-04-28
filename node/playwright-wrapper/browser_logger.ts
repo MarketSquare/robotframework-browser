@@ -34,6 +34,10 @@ export interface RFKeywordContext {
     kw_name?: string;
     kw_file?: string;
     kw_line?: number;
+    test_id?: string;
+    test_name?: string;
+    suite_id?: string;
+    suite_name?: string;
 }
 
 const currentRFContext: RFKeywordContext = {};
@@ -48,6 +52,32 @@ export function clearRFKeywordContext(): void {
     delete currentRFContext.kw_name;
     delete currentRFContext.kw_file;
     delete currentRFContext.kw_line;
+}
+
+export function setRFTestContext(testId: string, testName: string): void {
+    if (testId) {
+        currentRFContext.test_id = testId;
+    } else {
+        delete currentRFContext.test_id;
+    }
+    if (testName) {
+        currentRFContext.test_name = testName;
+    } else {
+        delete currentRFContext.test_name;
+    }
+}
+
+export function setRFSuiteContext(suiteId: string, suiteName: string): void {
+    if (suiteId) {
+        currentRFContext.suite_id = suiteId;
+    } else {
+        delete currentRFContext.suite_id;
+    }
+    if (suiteName) {
+        currentRFContext.suite_name = suiteName;
+    } else {
+        delete currentRFContext.suite_name;
+    }
 }
 
 export function getRFKeywordContext(): Readonly<RFKeywordContext> {

@@ -61,6 +61,13 @@ message Request {
     string contextId = 5;
   }
 
+  message RFContext {
+    string test_id = 1;
+    string test_name = 2;
+    string suite_id = 3;
+    string suite_name = 4;
+  }
+
   message Label {
     string label = 1;
   }
@@ -599,6 +606,7 @@ service  Playwright {
   rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
   rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
+  rpc SetRFContext(Request.RFContext) returns (Response.Empty);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Bool) returns (Response.Json);
