@@ -137,10 +137,17 @@ export function createLogger(destination?: { write(msg: string): void }) {
                 },
             },
             mixin() {
+                const { kw_name, kw_file, kw_line, test_id, test_name, suite_id, suite_name } = currentRFContext;
                 return {
                     seq: ++_seq,
+                    ...(suite_id !== undefined && { suite_id }),
+                    ...(suite_name !== undefined && { suite_name }),
+                    ...(test_name !== undefined && { test_name }),
+                    ...(kw_name !== undefined && { kw_name }),
+                    ...(kw_file !== undefined && { kw_file }),
+                    ...(kw_line !== undefined && { kw_line }),
+                    ...(test_id !== undefined && { test_id }),
                     component: 'browser-library',
-                    ...currentRFContext,
                 };
             },
         },
