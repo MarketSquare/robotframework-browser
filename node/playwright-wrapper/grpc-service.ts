@@ -81,6 +81,24 @@ export class PlaywrightServer {
         };
     };
 
+    private wrappingDebug = <T, K>(
+        func: (request: T, state: PlaywrightState) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'started' });
+                const response = await func(request, this.getState(call));
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
+                callback(null, response);
+            } catch (e) {
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'failed' });
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
     private wrappingState = <T, K>(
         func: (state: PlaywrightState) => Promise<K>,
     ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
@@ -160,7 +178,7 @@ export class PlaywrightServer {
     closePage = this.wrapping(playwrightState.closePage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
-    setRfContext = this.wrapping(playwrightState.setRFContext);
+    setRfContext = this.wrappingDebug(playwrightState.setRFContext);
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
