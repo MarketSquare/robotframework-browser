@@ -455,6 +455,7 @@ def atest(
     _batteries(batteries)
     from Browser.utils import spawn_node_process
 
+    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
@@ -490,6 +491,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
         suite: Select which suite to run.
         batteries: If true, includes BrowserBatteries in the test run.
     """
+    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     sys_var_ci = int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))
     sys_var_cmd = (
@@ -585,6 +587,7 @@ def atest_coverage(
     """
     from Browser.utils import spawn_node_process
 
+    os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
     os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE"] = "1"
     node_build(c)
     clean_atest(c)
