@@ -1,6 +1,4 @@
-/// <reference types="jest" />
-
-import { describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 
 const mockInfo = jest.fn();
 jest.mock('../browser_logger', () => ({
