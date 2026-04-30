@@ -22,13 +22,13 @@ Name test files after the source module they test: `getters.ts` → `getters.tes
 
 ## IDE typing for Jest
 
-If the editor reports `Cannot find name 'jest'`, `describe`, `it`, or `expect` even though the tests run, make the test file explicit about Jest types:
+Every test file imports all Jest globals it uses from `@jest/globals`. If a Jest API such as `beforeEach` or `afterEach` is used without being imported, add it to the existing import line:
 
 ```typescript
-/// <reference types="jest" />
-
 import { beforeEach, describe, expect, it } from '@jest/globals';
 ```
+
+Do not add a `/// <reference types="jest" />` directive — it is redundant when importing from `@jest/globals` and inconsistent with the rest of the test suite.
 
 Keep using the global `jest` object for `jest.mock()`, `jest.fn()`, and `jest.mocked(...)`.
 Avoid importing `jest` from `@jest/globals` in these tests, because it can lead to worse mock typing in this repo.
