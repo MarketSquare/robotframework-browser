@@ -182,3 +182,18 @@ ignore = [
 configure = [
     "empty-lines-between-sections.empty_lines=1"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["utest"]
+addopts = "--cov=Browser --cov-report=term-missing"
+pythonpath = [
+  "src"
+]
+
+
+[tool.coverage.run]
+source = ["Browser"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
