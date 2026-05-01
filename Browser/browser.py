@@ -115,6 +115,40 @@ KW_CALL_BANNER_FUNCTION = """(content) => {
 }"""
 
 
+class _RFContextTracker:
+    def __init__(self) -> None:
+        self._suite_stack: list[tuple[str, str]] = []
+        self._test_id: str = ""
+        self._test_name: str = ""
+
+    def start_suite(self, suite_id: str, suite_name: str) -> None:
+        self._suite_stack.append((suite_id, suite_name))
+
+    def end_suite(self) -> None:
+        if self._suite_stack:
+            self._suite_stack.pop()
+
+    def start_test(self, test_id: str, test_name: str) -> None:
+        self._test_id = test_id
+        self._test_name = test_name
+
+    def end_test(self) -> None:
+        self._test_id = ""
+        self._test_name = ""
+
+    def context(self) -> dict:
+        if self._suite_stack:
+            suite_id, suite_name = self._suite_stack[-1]
+        else:
+            suite_id, suite_name = "", ""
+        return {
+            "suite_id": suite_id,
+            "suite_name": suite_name,
+            "test_id": self._test_id,
+            "test_name": self._test_name,
+        }
+
+
 @library(
     converters={RegExp: RegExp.from_string, LambdaFunction: LambdaFunction.from_string}
 )
@@ -855,6 +889,7 @@ class Browser(DynamicCore):
         self.scope_stack: dict = {}
         self.suite_ids: dict[str, None] = {}
         self.current_test_id: str | None = None
+        self._rf_context = _RFContextTracker()
         self._playwright_state: PlaywrightState = PlaywrightState(self)
         self._browser_control = Control(self)
         self._assertion_formatter = Formatter(self)
@@ -1180,10 +1215,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _start_suite(self, name, attrs):
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
-        self._playwright_state.set_rf_context(
-            suite_id=attrs["id"],
-            suite_name=attrs.get("longname", name),
-        )
+        self._rf_context.start_suite(attrs["id"], attrs.get("longname", name))
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
             for path in [
@@ -1210,10 +1243,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self.current_test_id = attrs["id"]
         self._add_to_scope_stack(attrs["id"], Scope.Test)
         self.is_test_case_running = True
-        self._playwright_state.set_rf_context(
-            test_id=attrs["id"],
-            test_name=attrs.get("longname", name),
-        )
+        self._rf_context.start_test(attrs["id"], attrs.get("longname", name))
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
@@ -1354,7 +1385,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self._remove_from_scope_stack(attrs["id"])
         self.current_test_id = None
         self.is_test_case_running = False
-        self._playwright_state.set_rf_context(test_id="", test_name="")
+        self._rf_context.end_test()
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
@@ -1367,7 +1399,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.suite_ids.pop(attrs["id"], None)
-        self._playwright_state.set_rf_context(suite_id="", suite_name="")
+        self._rf_context.end_suite()
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
 
