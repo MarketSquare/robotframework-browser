@@ -15,10 +15,10 @@ Wait For Fails If No Success
 
 Wait For Request Synchronous
     Click    \#delayed_request
-    Wait For Request    timeout=1s
+    Wait For Request    matcher=${ROOT_URL}api/get/json    timeout=1s
 
 Wait For Request Async
-    ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Request    matcher=${ROOT_URL}api/get/json    timeout=3s
     Click    \#delayed_request
     Wait For    ${promise}
 
@@ -38,14 +38,14 @@ Wait For Request Predicate
 
 Wait For Response Synchronous
     Click    \#delayed_request
-    ${data} =    Wait For Response    timeout=1s
+    ${data} =    Wait For Response    matcher=${ROOT_URL}api/get/json    timeout=1s
     ${body} =    Set Variable    ${data.body}
     ${expected_body} =    Create Dictionary    greeting=HELLO
     Dictionaries Should Be Equal    ${body}    ${expected_body}
 
 Wait For Request Async Big
     Click    id=delayed_request_big
-    ${data} =    Wait For Response    timeout=15s
+    ${data} =    Wait For Response    matcher=${ROOT_URL}api/get/json/big    timeout=15s
     ${body} =    Set Variable    ${data.body}
     ${keys} =    Create List
     ...    long1
@@ -74,7 +74,7 @@ Wait For Request Async Big
 
 Wait For Response Synchronous With Default Timeout
     Click    \#delayed_request
-    Wait For Response
+    Wait For Response    matcher=${ROOT_URL}api/get/json
 
 Wait For Response Synchronous With Regex Matcher
     [Tags]    no-docker-pr
@@ -86,7 +86,7 @@ Wait For Response Synchronous With Predicate
     Wait For Response    response => response.url().endsWith('json') && response.request().method() === 'GET'
 
 Wait For Response Async
-    ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Response    matcher=${ROOT_URL}api/get/json    timeout=3s
     Click    \#delayed_request
     ${body} =    Wait For    ${promise}
 

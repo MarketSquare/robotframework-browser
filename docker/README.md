@@ -62,7 +62,12 @@ to
 3. Build Docker pr container
 > docker build -t tidii --file docker/Dockerfile.dev_pr .
 
-4. Run test with command below:
+4. Start test app:
+```bash
+inv run-test-app
+```
+
+5. Run test with command below:
 ```bash
 docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:host.docker.internal:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
 ```

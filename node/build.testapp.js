@@ -10,9 +10,10 @@ if (!fs.existsSync(distPath)) {
     fs.mkdirSync(distPath);
 }
 
-const indexHtmlSource = path.resolve(__dirname, './dynamic-test-app/static/index.html');
-const indexHtmlTarget = path.resolve(distPath, './index.html');
-fs.copyFileSync(indexHtmlSource, indexHtmlTarget);
+const staticSource = path.resolve(__dirname, './dynamic-test-app/static');
+const staticTarget = path.resolve(distPath, './static');
+fs.rmSync(staticTarget, { recursive: true, force: true });
+fs.cpSync(staticSource, staticTarget, { recursive: true });
 
 /* Build testApp frontend */
 esbuild
