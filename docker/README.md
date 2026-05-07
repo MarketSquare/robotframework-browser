@@ -62,7 +62,22 @@ to
 3. Build Docker pr container
 > docker build -t tidii --file docker/Dockerfile.dev_pr .
 
-4. Run test with command below:
+4. Run test with command below (starts the test app inside the container so `localhost:7272` is reachable):
 ```bash
-docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:host.docker.internal:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+docker run \
+  -v ./atest/:/home/pwuser/test \
+  -v ./node/:/home/pwuser/node \
+  -t tidii:latest \
+  bash -lc "
+    node /home/pwuser/node/dynamic-test-app/dist/server.js > /tmp/test-app.log 2>&1 &
+    for i in \$(seq 1 30); do
+      curl --fail --silent http://localhost:7272/dist/ > /dev/null && break
+      sleep 1
+    done
+    robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug \
+      --outputdir /home/pwuser/output /home/pwuser/test
+  "
 ```
+
+> **Note:** The `node/` directory is mounted so the container can start the demo app. Make sure
+> `node/dynamic-test-app/dist/server.js` is already built (`inv create-test-app`) before running.

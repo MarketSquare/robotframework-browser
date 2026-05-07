@@ -7,9 +7,23 @@ import * as path from 'path';
 
 const app = express.default();
 
-// Configure morgan to write to a log file to avoid stdout blocking in Docker
-const logStream = fs.createWriteStream(path.join(__dirname, '..', 'test-app.log'), { flags: 'a' });
-app.use(morgan(':date[iso] :method :url :status :res[content-length] - :response-time ms', { stream: logStream }));
+const logJson = (entry: Record<string, unknown>) => {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), ...entry }));
+};
+
+app.use(
+    morgan((tokens, req, res) =>
+        JSON.stringify({
+            timestamp: tokens.date(req, res, 'iso'),
+            event: 'http',
+            method: tokens.method(req, res),
+            url: tokens.url(req, res),
+            status: Number(tokens.status(req, res)),
+            contentLength: tokens.res(req, res, 'content-length') ?? null,
+            responseTimeMs: Number(tokens['response-time'](req, res)),
+        }),
+    ),
+);
 app.use(express.json());
 
 const program = new Command();
@@ -143,6 +157,16 @@ app.get('/api/get/bad_binary', (req, res) => {
     res.end(data, 'binary');
 });
 
+app.post('/api/log/context', (req, res) => {
+    logJson(req.body);
+    res.status(204).send();
+});
+
+app.post('/api/log/event', (req, res) => {
+    logJson(req.body);
+    res.status(204).send();
+});
+
 app.use(express.static(path.join(__dirname, '..')));
 app.use(express.static(path.join(__dirname, '..', 'static')));
 
@@ -177,7 +201,7 @@ if (tls || mutualTls) {
     https
 
         .createServer(serverOptions, app)
-        .listen(port, () => console.log(`Successfully started server on https://localhost:${port}`));
+        .listen(port, () => logJson({ event: 'server_start', url: `https://localhost:${port}` }));
 } else {
-    app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
+    app.listen(port, () => logJson({ event: 'server_start', url: `http://localhost:${port}` }));
 }
