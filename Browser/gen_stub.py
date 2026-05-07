@@ -17,7 +17,7 @@ import Browser
 
 BR: Browser.Browser = Browser.Browser()
 KW_METHOD_NAMES = [kw.__name__ for kw in BR.keywords.values()]
-ADDED_KW = []
+ADDED_KW: list[str] = []
 
 
 def parse_kw_module_lines(lines: list[str]):
