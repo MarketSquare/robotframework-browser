@@ -38,14 +38,14 @@ Wait For Request Predicate
 
 Wait For Response Synchronous
     Click    \#delayed_request
-    ${data} =    Wait For Response    timeout=1s
+    ${data} =    Wait For Response    matcher=**/api/get/json    timeout=1s
     ${body} =    Set Variable    ${data.body}
     ${expected_body} =    Create Dictionary    greeting=HELLO
     Dictionaries Should Be Equal    ${body}    ${expected_body}
 
 Wait For Request Async Big
     Click    id=delayed_request_big
-    ${data} =    Wait For Response    timeout=15s
+    ${data} =    Wait For Response    matcher=**/api/get/json/big    timeout=15s
     ${body} =    Set Variable    ${data.body}
     ${keys} =    Create List
     ...    long1

@@ -518,9 +518,31 @@ jobs:
         run: |
           pip install uv
           uv pip install invoke robotframework-ghareports --python 3.14 --system
-          invoke run-test-app-no-build --asynchronous
           set +e
-          docker run -v ./atest/:/home/pwuser/test -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+          docker run \
+            -v ./atest/:/home/pwuser/test \
+            -v ./node/:/home/pwuser/node \
+            -t tidii:latest \
+            bash -lc "
+              node /home/pwuser/node/dynamic-test-app/dist/server.js > /tmp/test-app.log 2>&1 &
+              app_pid=\$!
+              for i in \$(seq 1 30); do
+                if curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if ! curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
+                echo 'Test app failed to start inside container.'
+                cat /tmp/test-app.log
+                exit 1
+              fi
+              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test
+              robot_status=\$?
+              kill \$app_pid || true
+              wait \$app_pid 2>/dev/null || true
+              exit \$robot_status
+            "
           docker_status=$?
           inv docker-copy-output
           copy_status=$?
