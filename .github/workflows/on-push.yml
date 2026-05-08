@@ -34,7 +34,7 @@ jobs:
             rf-version: "7.4.2"
           - os: windows-latest
             python-version: "3.12"
-            node-version: 20.x
+            node-version: 24.x
             shard: 2
             rf-version: "7.1.1"
           - os: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
             rf-version: "7.4.2"
           - os: ubuntu-latest
             python-version: "3.11"
-            node-version: 20.x
+            node-version: 24.x
             shard: 4
             rf-version: "7.1.1"
           - os: windows-latest
@@ -54,7 +54,7 @@ jobs:
             rf-version: "7.4.2"
           - os: ubuntu-latest
             python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
             shard: 2
             rf-version: "7.1.1"
           - os: ubuntu-latest
@@ -69,22 +69,22 @@ jobs:
             rf-version: "7.1.1"
           - os: ubuntu-latest
             python-version: "3.11"
-            node-version: 20.x
+            node-version: 22.x
             shard: 1
             rf-version: "7.4.2"
           - os: macos-latest
             python-version: "3.11"
-            node-version: 20.x
+            node-version: 24.x
             shard: 1
             rf-version: "7.4.2"
           - os: macos-latest
             python-version: "3.14"
-            node-version: 20.x
+            node-version: 24.x
             shard: 2
             rf-version: "7.1.1"
           - os: macos-latest
             python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
             shard: 3
             rf-version: "7.4.2"
     steps:
@@ -184,7 +184,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 22.x
+        node-version: 24.x
         cache: 'npm'
     - name: Install nodejs dependencies
       env:
@@ -237,14 +237,14 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         python-version: ["3.10", "3.13"]
-        node-version: [20.x, 24.x]
+        node-version: [22.x, 24.x]
         exclude:
           - python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
           - os: windows-latest
             python-version: "3.10"
           - os: windows-latest
-            node-version: 20.x
+            node-version: 22.x
     steps:
       - uses: actions/checkout@v6
       - name: Download package for install testing
@@ -339,7 +339,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
       - name: Setup Python 3.13
         uses: actions/setup-python@v6
         with:
@@ -410,7 +410,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: "22.x"
+          node-version: "24.x"
       - name: Download browser-wheel
         uses: actions/download-artifact@v8
         with:

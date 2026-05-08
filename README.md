@@ -47,7 +47,7 @@ and install NodeJS dependencies. See more detail in
   - if `rfbrowser` is not found, try `python -m Browser.entry install`
 
 ## Installation with NodeJS
-From Node side 20, 22 and 24 LTS versions are supported.
+From Node side 22 and 24 LTS versions are supported.
 
 1. Install NodeJS e.g. from https://nodejs.org/en/download/
 2. Update pip `pip install -U pip` to ensure latest version is used
