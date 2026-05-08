@@ -93,7 +93,7 @@ If you upgrading from previous release with [pip](http://pip-installer.org), run
 Alternatively you can download the source distribution from
 [PyPI](https://pypi.org/project/robotframework-browser/) and
 install it manually. Browser library {version} was released on {date}.
-Browser supports Python 3.10+, Node 20/22/24 LTS and Robot Framework 6.1+.
+Browser supports Python 3.10+, Node 22/24 LTS and Robot Framework 6.1+.
 Library was tested with Playwright REPLACE_PW_VERSION
 
 """
@@ -287,7 +287,7 @@ def _build_nodejs(c: Context, architecture: str):
         f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}' with architecture '{architecture}'."
     )
     _copy_package_files()
-    target = f"node22-{_os_platform()}-{architecture}"
+    target = f"node24-{_os_platform()}-{architecture}"
     print(f"Target: {target}")
     grpc_server_bin = "grpc_server.exe" if os.name == "nt" else "grpc_server"
     grpc_server = BROWSER_BATTERIES_BIN_DIR.joinpath(grpc_server_bin)
