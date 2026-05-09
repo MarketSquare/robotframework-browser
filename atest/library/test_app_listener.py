@@ -2,12 +2,11 @@ import json
 import os
 from urllib import request as urllib_request
 
-from robot.api.deco import library
+from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
 
-@library(scope="GLOBAL", listener="SELF")
-class TestAppListener:
+class test_app_listener:
     """Robot Framework listener that sends suite/test lifecycle events to the
     dynamic test-app log endpoint (``POST /api/log/context``).
 
@@ -15,12 +14,9 @@ class TestAppListener:
     ``Register Listener`` call needed.  Import this library in
     ``atest/test/__init__.robot`` once and it covers the whole run.
     """
-
+    ROBOT_LIBRARY_SCOPE = "GLOBAL"
+    ROBOT_LIBRARY_LISTENER = "SELF"
     ROBOT_LISTENER_API_VERSION = 3
-
-    # ------------------------------------------------------------------
-    # Listener hooks
-    # ------------------------------------------------------------------
 
     def start_suite(self, data, result):
         self._post("start_suite", data)
@@ -33,10 +29,6 @@ class TestAppListener:
 
     def end_test(self, data, result):
         self._post("end_test", data, status=result.status)
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _post(self, event: str, data, status: str | None = None) -> None:
         server = BuiltIn().get_variable_value("${SERVER}")
@@ -60,5 +52,7 @@ class TestAppListener:
             )
             with urllib_request.urlopen(req, timeout=2):
                 pass
-        except Exception:  # noqa: BLE001
+        except Exception as error:  # noqa: BLE001
+            logger.debug(f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server}")
+            logger.debug(f"Listener: Exception details: {error!r}")
             pass
