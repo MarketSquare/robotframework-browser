@@ -29,7 +29,7 @@ export async function selectOption(
     const selector = request.selector;
     const matcher = JSON.parse(request.matcherJson);
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const result = await locator.selectOption(matcher);
     if (result.length == 0) {
         logger.info("Couldn't select any options");
@@ -44,7 +44,7 @@ export async function deSelectOption(
 ): Promise<pb.Response_Empty> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = findLocator(state, selector, strictMode, undefined, true);
+    const locator = findLocator(state, selector, strictMode, true);
     await (await locator).selectOption([]);
     return emptyWithLog(`Deselected options in element ${selector}`);
 }
@@ -55,7 +55,7 @@ export async function typeText(request: pb.Request_TypeText, state: PlaywrightSt
     const delayValue = request.delay;
     const clear = request.clear;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     if (clear) {
         await locator.fill('');
     }
@@ -68,7 +68,7 @@ export async function fillText(request: pb.Request_FillText, state: PlaywrightSt
     const text = request.text;
     const strictMode = request.strict;
     const force = request.force;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.fill(text, { force: force });
     return emptyWithLog(`Fill text ${text} on ${selector} with force: ${force}`);
 }
@@ -76,7 +76,7 @@ export async function fillText(request: pb.Request_FillText, state: PlaywrightSt
 export async function clearText(request: pb.Request_ClearText, state: PlaywrightState): Promise<pb.Response_Empty> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.fill('');
     return emptyWithLog(`Text ${selector} field cleared.`);
 }
@@ -87,7 +87,7 @@ export async function press(request: pb.Request_PressKeys, state: PlaywrightStat
     const strictMode = request.strict;
     const pressDelay = request.pressDelay;
     const keyDelay = request.keyDelay;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     for (const i of keyList) {
         await locator.press(i, { delay: pressDelay });
         if (keyDelay > 0) {
@@ -120,7 +120,7 @@ export async function tap(
     const selector = request.selector;
     const options = request.options;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.tap(JSON.parse(options));
     return emptyWithLog(`Tap element: '${selector}' with options: '${options}'`);
 }
@@ -131,7 +131,7 @@ export async function internalClick(
     options: string,
     state: PlaywrightState,
 ): Promise<boolean> {
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     try {
         await locator.click(JSON.parse(options));
         return true;
@@ -154,7 +154,7 @@ export async function hover(
     const selector = request.selector;
     const options = request.options;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.hover(JSON.parse(options));
     return emptyWithLog(`Hovered element: '${selector}' With options: '${options}'`);
 }
@@ -162,7 +162,7 @@ export async function hover(
 export async function focus(request: pb.Request_ElementSelector, state: PlaywrightState): Promise<pb.Response_Empty> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.focus();
     return emptyWithLog(`Focused element: ${selector}`);
 }
@@ -174,7 +174,7 @@ export async function checkCheckbox(
     const selector = request.selector;
     const strictMode = request.strict;
     const force = request.force;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.waitFor({ state: 'attached' });
     await locator.check({ force: force });
     return emptyWithLog(`Checked checkbox: ${selector} with force: ${force}`);
@@ -187,7 +187,7 @@ export async function uncheckCheckbox(
     const selector = request.selector;
     const strictMode = request.strict;
     const force = request.force;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.waitFor({ state: 'attached' });
     await locator.uncheck({ force: force });
     return emptyWithLog(`Unchecked checkbox: ${selector} with force: ${force}`);
@@ -200,7 +200,7 @@ export async function uploadFileBySelector(
     const selector = request.selector;
     const strictMode = request.strict;
     const path = request.path;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     if (path.length === 0) {
         const name = request.name;
         const mimeType = request.mimeType;
@@ -300,7 +300,7 @@ export async function scrollToElement(
 ): Promise<pb.Response_Empty> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.scrollIntoViewIfNeeded();
     return emptyWithLog(`Scrolled to ${selector} field if needed.`);
 }

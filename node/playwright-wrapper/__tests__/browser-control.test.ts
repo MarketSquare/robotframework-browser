@@ -90,8 +90,8 @@ describe('takeScreenshot', () => {
 
         const res = await takeScreenshot(req, state);
 
-        expect(mockFindLocator).toHaveBeenCalledWith(state, '#a', false, undefined, false);
-        expect(mockFindLocator).toHaveBeenCalledWith(state, '#b', false, undefined, false);
+        expect(mockFindLocator).toHaveBeenCalledWith(state, '#a', false, false);
+        expect(mockFindLocator).toHaveBeenCalledWith(state, '#b', false, false);
         expect(mockPage.screenshot).toHaveBeenCalledWith(
             expect.objectContaining({ path: 'masked.png', mask: [locatorA, locatorB] }),
         );
