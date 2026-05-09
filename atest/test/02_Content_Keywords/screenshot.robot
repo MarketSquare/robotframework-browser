@@ -48,7 +48,7 @@ Screenshotting With Jpeg Extension And Quality
 
 Screenshotting With Jpeg Extension And Quality Borders
     [Setup]    Screenshot Timeout    ${FORM_URL}    # used form url as login page has too much active elements
-    ${difference} =    Set Variable    ${42}    # Seems usually be 28 but use 42 to be safe side
+    VAR    ${difference} =    ${42}    # Seems usually be 28 but use 42 to be safe side
     Take Screenshot    fullPage=True    fileType=jpeg    quality=0    timeout=10s
     ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s

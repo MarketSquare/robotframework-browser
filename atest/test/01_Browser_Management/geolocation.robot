@@ -109,8 +109,8 @@ Check Geolocation
     Get Text    id=longitudeValue    equal    Longitude: ${longitude}
 
 Start Context With Geolocation
-    ${location} =    Create Dictionary    latitude=42.0    longitude=-42.42    accuracy=0.3
-    ${permissions} =    Create List    geolocation
+    VAR    &{location} =    latitude=42.0    longitude=-42.42    accuracy=0.3
+    VAR    @{permissions} =    geolocation
     New Context    geolocation=${location}    permissions=${permissions}
     New Page    ${GEOLOCATION_URL}
 

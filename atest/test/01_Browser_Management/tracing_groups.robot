@@ -15,7 +15,7 @@ ${context_id} =                     ${EMPTY}
 &{Browser.New Page} =               title=Browser.New Page    class=Tracing    method=tracingGroup
 &{browserContext.newPage} =         title=Default value    class=BrowserContext    method=newPage
 &{page.goto} =                      title=Default value    class=Frame    method=goto
-&{BuiltIn.Set Suite Variable} =     title=BuiltIn.Set Suite Variable    class=Tracing    method=tracingGroup
+&{VAR_SUITE} =                      title=VAR    class=Tracing    method=tracingGroup
 &{Browser.Close Context} =          title=Browser.Close Context    class=Tracing    method=tracingGroup
 @{elements} =
 ...                                 ${Initialize Context And Page}
@@ -25,7 +25,7 @@ ${context_id} =                     ${EMPTY}
 ...                                 ${Browser.New Page}
 ...                                 ${browserContext.newPage}
 ...                                 ${page.goto}
-...                                 ${BuiltIn.Set Suite Variable}
+...                                 ${VAR_SUITE}
 ...                                 ${Browser.Close Context}
 
 *** Test Cases ***
@@ -69,4 +69,4 @@ Initialize Context And Page
     ${context_id} =    Browser.New Context    tracing=On
     Keyword Without Browser    this keyword has no browser in it
     Browser.New Page    ${FORM_URL}
-    BuiltIn.Set Suite Variable    ${context_id}
+    VAR    ${context_id} =    ${context_id}    scope=SUITE

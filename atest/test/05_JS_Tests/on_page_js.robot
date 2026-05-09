@@ -85,7 +85,7 @@ Evaluate Multiline JavaScript Strict Mode Error
 
 Evaluate Multiline JavaScript On Page
     [Tags]    no-iframe
-    ${arg} =    Create Dictionary    selector=input#login_button    text=-APPENDIX
+    VAR    &{arg} =    selector=input#login_button    text=-APPENDIX
     ${texts} =    Evaluate JavaScript    ${NONE}
     ...    (arg) => {
     ...    e = document.querySelector(arg.selector);

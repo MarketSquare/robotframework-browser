@@ -75,7 +75,7 @@ Suite Setup For Clock
 Test Setup For Clock
     New Page    ${CLOCK_URL}
     ${ASSERTION_TIMEOUT} =    Set Retry Assertions For    5s
-    Set Suite Variable    ${ASSERTION_TIMEOUT}
+    VAR    ${ASSERTION_TIMEOUT} =    ${ASSERTION_TIMEOUT}    scope=SUITE
     Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
 
 Suite Teardown For Clock

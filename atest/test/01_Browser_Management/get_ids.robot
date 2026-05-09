@@ -46,70 +46,39 @@ Create Browser Catalog State
     ${Page3.2.1} =    New Page
     ${CurrentPage} =    New Page
     # setting all variables
-    ${Active} =    Create List
-    ...    ${CurrentBrowser}
-    ${All} =    Create List
-    ...    ${Browser1}
-    ...    ${Browser2}
-    ...    ${CurrentBrowser}
-    ${Active Active} =    Create List
-    ...    ${CurrentContext}
-    ${Active All} =    Create List
-    ...    ${ActiveContext1}
-    ...    ${ActiveContext2}
-    ...    ${CurrentContext}
-    ${All Active} =    Create List
-    ...    ${Context3.1}
-    ...    ${CurrentContext}
-    ${All All} =    Create List
-    ...    ${Context1.1}
-    ...    ${Context3.1}
-    ...    @{Active All}
-    ${Active Active Active} =    Create List
-    ...    ${CurrentPage}
-    ${Active Active All} =    Create List
-    ...    ${ActivePage1.2}
-    ...    ${ActivePage2.1}
-    ...    ${CurrentPage}
-    ${Active All Active} =    Create List
-    ...    ${ActivePage3.1}
-    ...    ${CurrentPage}
-    ${Active All All} =    Create List
-    ...    ${ActivePage1.1}
-    ...    ${ActivePage3.1}
-    ...    @{Active Active All}
-    ${All Active Active} =    Create List
-    ...    ${Page3.2.1}
-    ...    ${CurrentPage}
-    ${All Active All} =    Create List
+    VAR    @{Active} =    ${CurrentBrowser}
+    VAR    @{All} =    ${Browser1}    ${Browser2}    ${CurrentBrowser}
+    VAR    @{Active Active} =    ${CurrentContext}
+    VAR    @{Active All} =    ${ActiveContext1}    ${ActiveContext2}    ${CurrentContext}
+    VAR    @{All Active} =    ${Context3.1}    ${CurrentContext}
+    VAR    @{All All} =    ${Context1.1}    ${Context3.1}    @{Active All}
+    VAR    @{Active Active Active} =    ${CurrentPage}
+    VAR    @{Active Active All} =    ${ActivePage1.2}    ${ActivePage2.1}    ${CurrentPage}
+    VAR    @{Active All Active} =    ${ActivePage3.1}    ${CurrentPage}
+    VAR    @{Active All All} =    ${ActivePage1.1}    ${ActivePage3.1}    @{Active Active All}
+    VAR    @{All Active Active} =    ${Page3.2.1}    ${CurrentPage}
+    VAR    @{All Active All} =
     ...    ${ActivePage1.2}
     ...    ${Page1.2.2}
     ...    ${ActivePage2.1}
     ...    ${Page3.2.1}
     ...    ${CurrentPage}
-    ${All All Active} =    Create List
-    ...    ${ActivePage3.1}
-    ...    ${Page3.2.1}
-    ...    ${CurrentPage}
-    ${All All All} =    Create List
-    ...    ${Page1.1.1}
-    ...    ${Page1.2.2}
-    ...    ${Page3.2.1}
-    ...    @{Active All All}
-    Set Suite Variable    ${Active}
-    Set Suite Variable    ${All}
-    Set Suite Variable    ${Active Active}
-    Set Suite Variable    ${Active All}
-    Set Suite Variable    ${All Active}
-    Set Suite Variable    ${All All}
-    Set Suite Variable    ${Active Active Active}
-    Set Suite Variable    ${Active Active All}
-    Set Suite Variable    ${Active All Active}
-    Set Suite Variable    ${Active All All}
-    Set Suite Variable    ${All Active Active}
-    Set Suite Variable    ${All Active All}
-    Set Suite Variable    ${All All Active}
-    Set Suite Variable    ${All All All}
+    VAR    @{All All Active} =    ${ActivePage3.1}    ${Page3.2.1}    ${CurrentPage}
+    VAR    @{All All All} =    ${Page1.1.1}    ${Page1.2.2}    ${Page3.2.1}    @{Active All All}
+    VAR    ${Active} =    ${Active}    scope=SUITE
+    VAR    ${All} =    ${All}    scope=SUITE
+    VAR    ${Active Active} =    ${Active Active}    scope=SUITE
+    VAR    ${Active All} =    ${Active All}    scope=SUITE
+    VAR    ${All Active} =    ${All Active}    scope=SUITE
+    VAR    ${All All} =    ${All All}    scope=SUITE
+    VAR    ${Active Active Active} =    ${Active Active Active}    scope=SUITE
+    VAR    ${Active Active All} =    ${Active Active All}    scope=SUITE
+    VAR    ${Active All Active} =    ${Active All Active}    scope=SUITE
+    VAR    ${Active All All} =    ${Active All All}    scope=SUITE
+    VAR    ${All Active Active} =    ${All Active Active}    scope=SUITE
+    VAR    ${All Active All} =    ${All Active All}    scope=SUITE
+    VAR    ${All All Active} =    ${All All Active}    scope=SUITE
+    VAR    ${All All All} =    ${All All All}    scope=SUITE
 
 Check Browser IDs
     [Arguments]    ${browser}    ${exp_ids}
@@ -124,7 +93,7 @@ Check Context IDs
 Check Page IDs
     [Arguments]    ${page}    ${context}    ${browser}    ${exp_ids}
     ${current} =    Get Page Ids    ${page}    ${context}    ${browser}
-    ${page_ids} =    Create List
+    VAR    @{page_ids} =    @{EMPTY}
     FOR    ${page}    IN    @{exp_ids}
         Append To List    ${page_ids}    ${page}[page_id]
     END

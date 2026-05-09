@@ -219,7 +219,7 @@ Restore Library Timeout
 
 Generate Test File
     [Arguments]    ${size_in_mb}
-    ${filename} =    Set Variable    ${size_in_mb}MB
+    VAR    ${filename} =    ${size_in_mb}MB
     ${size_in_bytes} =    Evaluate    1024 * ${size_in_mb}
     IF    os.sys.platform.startswith('win32')
         Run    fsutil file createNew ${CURDIR}/${filename}.file ${${size_in_bytes}*1024}
@@ -230,7 +230,7 @@ Generate Test File
 
 Generate Test Text File
     [Arguments]    ${length_of_text}
-    ${filename} =    Set Variable    ${length_of_text}.txt
+    VAR    ${filename} =    ${length_of_text}.txt
     ${length_of_text} =    Convert To Integer    ${length_of_text}
     ${full_path} =    Normalize Path    ${CURDIR}${/}${filename}
     Evaluate

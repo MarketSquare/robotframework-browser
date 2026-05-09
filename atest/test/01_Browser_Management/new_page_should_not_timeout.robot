@@ -28,7 +28,7 @@ New Page Will Timeout And Page Will Be Removed From Catalog
 Setup
     Set Browser Timeout    15s    scope=Suite
     ${original} =    Register Keyword To Run On Failure    ${None}
-    Set Suite Variable    $original
+    VAR    ${original} =    ${original}    scope=SUITE
     New Browser    headless=${HEADLESS}
 
 Teardown

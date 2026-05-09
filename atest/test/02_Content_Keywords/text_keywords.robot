@@ -161,14 +161,14 @@ Fill Secret Placeholder-robot-var
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
     [Tags]    no-iframe
-    ${var} =    Set Variable    password123
+    VAR    ${var} =    password123
     Type Secret    css=input#username_field    $var
     Get Text    css=input#username_field    ==    password123
     Fill Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password123
 
 Fill Secret Robot Var
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    ${var}
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -181,7 +181,7 @@ Fill Secret Robot Var
     END
 
 Fill Secret Robot Var Mixed
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    ${var}XXX
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -194,7 +194,7 @@ Fill Secret Robot Var Mixed
     END
 
 Fill Secret Robot Var Mixed2
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    xxx${var}XXX
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -207,8 +207,8 @@ Fill Secret Robot Var Mixed2
     END
 
 Fill Secret Placeholder In Robot Var
-    Set Global Variable    ${global}    password666
-    ${var} =    Set Variable    $global
+    VAR    ${global} =    password666    scope=GLOBAL
+    VAR    ${var} =    $global
     TRY
         Type Secret    css=input#username_field    ${var}
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -222,7 +222,7 @@ Fill Secret Placeholder In Robot Var
 
 Fill Secret Env Placeholder In Robot Var
     Set Environment Variable    pwd_TWO    ENV_password123
-    ${var} =    Set Variable    %pwd_TWO
+    VAR    ${var} =    %pwd_TWO
     Type Secret    css=input#username_field    ${var}
     Get Text    css=input#username_field    ==    ENV_password123
     Fill Secret    css=input#password_field    ${var}
@@ -264,7 +264,7 @@ Type Secret Local
     [Documentation]
     ...    LOG 2:2    NONE
     [Tags]    no-iframe
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     Type Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password321
 
@@ -297,12 +297,12 @@ Type And Fill Text With Text Selector
     Get Text    input#username_field    ==    another text
 
 Type And Fill Secret With Text Selector
-    ${var} =    Set Variable    pwfield
+    VAR    ${var} =    pwfield
     Type Secret    input#password_field    $var
-    ${var} =    Set Variable    some text
+    VAR    ${var} =    some text
     Type Secret    text=Password:    $var
     Get Text    input#password_field    ==    some text
-    ${var} =    Set Variable    another text
+    VAR    ${var} =    another text
     Fill Secret    text=Password:    $var
     Get Text    input#password_field    ==    another text
 

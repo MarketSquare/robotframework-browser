@@ -102,7 +102,7 @@ Get Element By Role
     END
     ${e} =    Get Element By Role    radio    checked=True
     Get Element States    ${e}    *=    visible
-    ${exp_list} =    Create List    Telephone    Email    Telephone    Option 1    0    DEFAULT OPTION
+    VAR    @{exp_list} =    Telephone    Email    Telephone    Option 1    0    DEFAULT OPTION
     ${element_list} =    Get Element By Role    option    selected=True    all_elements=True
     FOR    ${el}    ${exp_text}    IN ZIP    ${element_list}    ${exp_list}
         Get Text    ${el}    ==    ${exp_text}

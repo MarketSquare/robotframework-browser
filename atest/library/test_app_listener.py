@@ -7,16 +7,14 @@ from robot.libraries.BuiltIn import BuiltIn
 
 
 class test_app_listener:
-    """Robot Framework listener that sends suite/test lifecycle events to the
-    dynamic test-app log endpoint (``POST /api/log/context``).
+    """Robot Framework  library listener that sends suite/test lifecycle events.
 
-    Registered automatically via ``@library(listener='SELF')`` — no explicit
-    ``Register Listener`` call needed.  Import this library in
-    ``atest/test/__init__.robot`` once and it covers the whole run.
+    Event are sent to the dynamic test-app log endpoint (``POST /api/log/context``).
     """
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
     ROBOT_LIBRARY_LISTENER = "SELF"
     ROBOT_LISTENER_API_VERSION = 3
+    ROBOT_AUTO_KEYWORDS = False
 
     def start_suite(self, data, result):
         self._post("start_suite", data)
