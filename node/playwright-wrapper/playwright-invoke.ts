@@ -24,7 +24,6 @@ import { PlaywrightState } from './playwright-state';
  * @param selector A valid Playwright selector, Frame piercing selector "#iframe >>> //button"
  *  or selector containing Locator handle in the front. element=123-456-789 >> css=input
  * @param strictMode Used with combination on firstOnly param. When strictMode is false, firstOnly is applied.
- * @param nthLocator Find nth locator from the page, frame, locator: https://playwright.dev/docs/api/class-locator#locator-nth
  * @param firstOnly If True locator matching to first element returned else locator can point to multiple elements.
  * */
 
@@ -32,7 +31,6 @@ export async function findLocator(
     state: PlaywrightState,
     selector: string,
     strictMode: boolean,
-    nthLocator: number | undefined,
     firstOnly: boolean,
 ): Promise<Locator> {
     const activePage = state.getActivePage();
@@ -42,19 +40,12 @@ export async function findLocator(
     } else {
         selector = selector.replaceAll(' >>> ', ' >> nth=0 >> internal:control=enter-frame >> ');
     }
-    if (nthLocator !== undefined) {
-        return await findNthLocator(activePage, selector, nthLocator);
-    } else if (strictMode) {
+    if (strictMode) {
         logger.info(`Strict mode is enabled, find Locator with ${selector} in page.`);
         return activePage.locator(selector);
     } else {
         return await findLocatorNotStrict(activePage, selector, firstOnly);
     }
-}
-
-async function findNthLocator(activePage: Page, selector: string, nthLocator: number): Promise<Locator> {
-    logger.info(`Find ${nthLocator} Locator in page.`);
-    return activePage.locator(selector).nth(nthLocator);
 }
 
 async function findLocatorNotStrict(activePage: Page, selector: string, firstOnly: boolean): Promise<Locator> {

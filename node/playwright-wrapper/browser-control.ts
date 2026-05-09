@@ -83,14 +83,14 @@ export async function takeScreenshot(
     if (mask) {
         const mask_locators = [];
         for (const sel of mask) {
-            mask_locators.push(await findLocator(state, sel, false, undefined, false));
+            mask_locators.push(await findLocator(state, sel, false, false));
         }
         options.mask = mask_locators;
     }
     logger.info({ 'Take screenshot with options: ': options });
     if (selector) {
         logger.info({ 'Using selecotr: ': selector });
-        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        const locator = await findLocator(state, selector, strictMode, true);
         await locator.screenshot(options);
     } else {
         await page.screenshot(options);

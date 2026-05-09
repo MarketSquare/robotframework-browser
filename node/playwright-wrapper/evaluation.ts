@@ -39,7 +39,7 @@ export async function getElement(
 ): Promise<pb.Response_String> {
     const strictMode = request.strict;
     const selector = request.selector;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.waitFor({ state: 'attached' });
 
     // @ts-ignore
@@ -55,7 +55,7 @@ export async function getElements(
     state: PlaywrightState,
 ): Promise<pb.Response_Json> {
     const selector = request.selector;
-    const locator = await findLocator(state, selector, false, undefined, false);
+    const locator = await findLocator(state, selector, false, false);
     logger.info(`Wait element to reach attached state.`);
     try {
         await locator.first().waitFor({ state: 'attached' });
@@ -251,7 +251,7 @@ export async function evaluateJavascript(
 
     async function getJSResult() {
         if (selector !== '') {
-            const locator = await findLocator(state, selector, strictMode, undefined, !allElements);
+            const locator = await findLocator(state, selector, strictMode, !allElements);
             if (allElements) {
                 return await locator.evaluateAll(script, arg);
             }
@@ -270,7 +270,7 @@ export async function waitForElementState(
     const selector = request.selector;
     const { state: elementState, timeout } = JSON.parse(request.options);
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     if (
         elementState === 'detached' ||
         elementState === 'attached' ||
@@ -298,7 +298,7 @@ export async function waitForFunction(
 
     let elem;
     if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        const locator = await findLocator(state, selector, strictMode, true);
         elem = await locator.elementHandle();
     }
 
@@ -476,7 +476,7 @@ async function highlightAll(
     state: PlaywrightState,
     mode: 'border' | 'playwright' | 'both' = 'border',
 ): Promise<number> {
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, strictMode, false);
     let count: number;
     try {
         count = await locator.count();

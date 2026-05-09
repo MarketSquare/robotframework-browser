@@ -28,7 +28,7 @@ export async function getAriaSnapshot(
 ): Promise<pb.Response_String> {
     const selector = request.locator;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const snapshot = await locator.ariaSnapshot();
     logger.info(`Aria snapshot for ${selector}: ${snapshot}`);
     return stringResponse(snapshot, 'Aria snapshot received successfully.');
@@ -50,7 +50,7 @@ export async function getElementCount(
 ): Promise<pb.Response_Int> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, strictMode, false);
     let count = 0;
     try {
         count = await locator.count();
@@ -93,7 +93,7 @@ export async function getSelectContent(
 ): Promise<pb.Response_Select> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.elementHandle();
     return await getSelections(locator);
 }
@@ -122,7 +122,7 @@ export async function getText(
 ): Promise<pb.Response_String> {
     const selector = request.selector;
     const strict = request.strict;
-    const locator = await findLocator(state, selector, strict, undefined, true);
+    const locator = await findLocator(state, selector, strict, true);
     let content: string;
     try {
         content = await getTextContent(locator);
@@ -148,7 +148,7 @@ export async function getBoolProperty(
 async function getProperty(request: pb.Request_ElementProperty, state: PlaywrightState) {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = findLocator(state, selector, strictMode, undefined, true);
+    const locator = findLocator(state, selector, strictMode, true);
     try {
         const element = await (await locator).elementHandle();
         const propertyName = request.property;
@@ -176,7 +176,7 @@ async function getAttributeValue(request: pb.Request_ElementProperty, state: Pla
     const selector = request.selector;
     const strictMode = request.strict;
     const attributeName = request.property;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.elementHandle();
     const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
@@ -225,7 +225,7 @@ export async function getElementStates(
 ): Promise<pb.Response_Json> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     let states: number;
     try {
         await locator.waitFor({ state: 'attached', timeout: 250 });
@@ -284,7 +284,7 @@ export async function getStyle(request: pb.Request_ElementStyle, state: Playwrig
     const strictMode = request.strict;
 
     logger.info('Getting css of element on page');
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const result = await locator.evaluate((element: Element, option) => {
         const cssStyleDeclaration = window.getComputedStyle(element, option.pseudoElement);
         if (option.styleKey) {
@@ -309,7 +309,7 @@ export async function getBoundingBox(
 ): Promise<pb.Response_Json> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const boundingBox = await locator.boundingBox();
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
@@ -339,7 +339,7 @@ export async function getTableCellIndex(
 ): Promise<pb.Response_Int> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {
@@ -361,7 +361,7 @@ export async function getTableRowIndex(
 ): Promise<pb.Response_Int> {
     const selector = request.selector;
     const strictMode = request.strict;
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {
