@@ -22,7 +22,7 @@ Test New Page With Short Default Timeout
 *** Keywords ***
 Setup
     ${original} =    Register Keyword To Run On Failure    ${None}
-    Set Suite Variable    $original
+    VAR    ${original} =    ${original}    scope=SUITE
 
 Teardown
     Register Keyword To Run On Failure    ${original}

@@ -7,7 +7,7 @@ Resource    ../variables.resource
 Take Screenshot
     New Page    ${TABLES_URL}
     ${second_screenshot} =    Take Screenshot    second_screenshot    fullPage=True
-    Set Global Variable    ${second_screenshot}
+    VAR    ${second_screenshot} =    ${second_screenshot}    scope=GLOBAL
     File Should Exist    ${second_screenshot}
     File Should Exist    ${initial_screenshot}
     [Teardown]    Close Browser    ALL

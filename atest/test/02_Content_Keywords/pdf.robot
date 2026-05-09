@@ -14,7 +14,7 @@ Save As PDF With Default Options
     Should Be Equal    ${pdf3}    ${expected_pdf3}
 
 Save As PDF With All Options
-    ${marging} =    Create Dictionary    top=10px    right=20px    bottom=30px    left=40px
+    VAR    &{marging} =    top=10px    right=20px    bottom=30px    left=40px
     # footerTemplate and headerTemplate are from https://github.com/microsoft/playwright/issues/14441
     ${pdf4} =    Save Page As Pdf
     ...    welcome4.pdf
@@ -33,7 +33,7 @@ Save As PDF With All Options
     ...    tagged=True
     ...    width=20px
     Should Be Equal    ${pdf4}    ${OUTPUT_DIR}${/}welcome4.pdf
-    ${marging} =    Create Dictionary    top=10px    bottom=30px
+    VAR    &{marging} =    top=10px    bottom=30px
     # footerTemplate and headerTemplate are from https://github.com/microsoft/playwright/issues/14441
     ${pdf5} =    Save Page As Pdf
     ...    welcome5.pdf
@@ -52,24 +52,16 @@ Save PDF With Invalid Margin
 Save PDF With Emulate Media
     ${media} =    Emulate Media    dark    active    print    no-preference
     Log    ${media}
-    ${expected_media} =    Create Dictionary
-    ...    colorScheme=dark
-    ...    forcedColors=active
-    ...    media=print
-    ...    reducedMotion=no-preference
+    VAR    &{expected_media} =    colorScheme=dark    forcedColors=active    media=print    reducedMotion=no-preference
     Dictionaries Should Be Equal    ${media}    ${expected_media}
     ${media} =    Emulate Media    None    not_set    print
-    ${expected_media} =    Create Dictionary    media=print
+    VAR    &{expected_media} =    media=print
     Dictionaries Should Be Equal    ${media}    ${expected_media}
     ${pdf6} =    Save Page As Pdf
     ...    welcome6.pdf
     Should Be Equal    ${pdf6}    ${OUTPUT_DIR}${/}welcome6.pdf
     ${media} =    Emulate Media    null    None    null    null
-    ${expected_media} =    Create Dictionary
-    ...    colorScheme=${None}
-    ...    forcedColors=none
-    ...    media=${None}
-    ...    reducedMotion=${None}
+    VAR    &{expected_media} =    colorScheme=${None}    forcedColors=none    media=${None}    reducedMotion=${None}
     Dictionaries Should Be Equal    ${media}    ${expected_media}
 
 Save PDF With Firefox Should Not Work

@@ -9,7 +9,7 @@ Save Storage State
     New Page    ${LOGIN_URL}
     Add Cookies For Storage
     ${STATE_FILE} =    Save Storage State
-    Set Suite Variable    ${STATE_FILE}
+    VAR    ${STATE_FILE} =    ${STATE_FILE}    scope=SUITE
     File Should Not Be Empty    ${state_file}
 
 Restore Storage State

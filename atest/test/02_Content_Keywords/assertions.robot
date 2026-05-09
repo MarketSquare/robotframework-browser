@@ -13,28 +13,28 @@ Formatter Scopes
     ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['normalize spaces']}    Global
     Should Be Equal    ${old_scope}    ${{{'Get Text': []}}}
     ${current_scope} =    Get Current Scope From Lib    Get Text
-    ${expected_scope} =    Create List    _normalize_spaces
+    VAR    @{expected_scope} =    _normalize_spaces
     Should Be Equal    ${current_scope}    ${expected_scope}
 
     ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['strip']}    Global
-    ${scope} =    Create List    normalize spaces
+    VAR    @{scope} =    normalize spaces
     Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
-    ${expected_scope} =    Create List    _strip
+    VAR    @{expected_scope} =    _strip
     Should Be Equal    ${current_scope}    ${expected_scope}
 
     ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['normalize spaces']}    Test
-    ${scope} =    Create List    strip
+    VAR    @{scope} =    strip
     Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
-    ${expected_scope} =    Create List    _normalize_spaces
+    VAR    @{expected_scope} =    _normalize_spaces
     Should Be Equal    ${current_scope}    ${expected_scope}
 
     ${old_scope} =    Set Assertion Formatters    {'Get Text' : ['apply to expected', 'case insensitive']}    Suite
-    ${scope} =    Create List    normalize spaces
+    VAR    @{scope} =    normalize spaces
     Should Be Equal    ${old_scope}[Get Text]    ${scope}
     ${current_scope} =    Get Current Scope From Lib    Get Text
-    ${expected_scope} =    Create List    _apply_to_expected    _case_insensitive
+    VAR    @{expected_scope} =    _apply_to_expected    _case_insensitive
     Should Be Equal    ${current_scope}    ${expected_scope}
 
     Set Assertion Formatters    {'Get Text' : []}    Suite

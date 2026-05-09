@@ -17,6 +17,6 @@ Take Screenshot
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/second_screenshot.png
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/third_screenshot.png
     ${initial_screenshot} =    Take Screenshot    initial_screenshot    fullPage=True
-    Set Global Variable    ${initial_screenshot}
+    VAR    ${initial_screenshot} =    ${initial_screenshot}    scope=GLOBAL
     File Should Exist    ${initial_screenshot}
     [Teardown]    Close Browser    ALL

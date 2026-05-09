@@ -270,7 +270,7 @@ Get Element States
     Wait For Elements State    h1
     ${state} =    Get Element States    h1
     Sort List    ${state}
-    ${expected} =    Create List    attached    defocused    enabled    visible
+    VAR    @{expected} =    attached    defocused    enabled    visible
     FOR    ${state}    ${exp}    IN ZIP    ${state}    ${expected}
         Should Be Equal    ${state}    ${exp}
     END
@@ -325,7 +325,7 @@ Get Element States Then Flag Operations
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
     Wait For Elements State    [name="enabled_input"]
     ${filtered} =    Get Element States    [name="enabled_input"]    evaluate    value & (visible | attached)
-    ${exp} =    Create List    attached    visible
+    VAR    @{exp} =    attached    visible
     Lists Should Be Equal    ${filtered}    ${exp}
 
 Get Element States Validate Flag Operations
@@ -379,7 +379,7 @@ Get Console Log Test
     ${errors} =    Get Page Errors    validate    len(value) == 1
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
-    ${last_time} =    Set Variable    ${errors}[-1][time]
+    VAR    ${last_time} =    ${errors}[-1][time]
     Should Be True
     ...    datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime($last_time, '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=1)
     Get Console Log    validate    len(value) == 0
@@ -399,4 +399,4 @@ Setup
     Close Page    ALL
     Ensure Open Page    ${LOGIN_URL}
     ${assert_timeout} =    Set Retry Assertions For    2 sec
-    Set Suite Variable    $assert_timeout
+    VAR    ${assert_timeout} =    ${assert_timeout}    scope=SUITE

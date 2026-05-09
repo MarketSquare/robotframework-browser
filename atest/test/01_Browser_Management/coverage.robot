@@ -272,4 +272,4 @@ Merge Coverage Reports Invalid Config File
 *** Keywords ***
 Open Page And Store ID
     &{page_info} =    New Page
-    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}
+    VAR    ${PAGE_ID} =    ${page_info.page_id}    scope=SUITE

@@ -24,10 +24,10 @@ Create Translation File With Python Plugin
     Should Be Equal As Integers    ${process.rc}    0
     ${data} =    Verify Translation    ${OUTPUT_DIR}/translation.json
     Should Be True    ${data}[this_is_plugin_keyword]
-    ${inro} =    Set Variable    ${data}[__intro__]
+    VAR    ${inro} =    ${data}[__intro__]
     Should Start With    ${inro}[doc]    Browser library${SPACE}
     Should Be Equal    ${inro}[name]    __intro__
-    ${init} =    Set Variable    ${data}[__init__]
+    VAR    ${init} =    ${data}[__init__]
     Should Start With    ${init}[doc]    Browser library${SPACE}
     Should Be Equal    ${init}[name]    __init__
     [Teardown]    Remove File    ${OUTPUT_DIR}/translation.json
@@ -35,11 +35,13 @@ Create Translation File With Python Plugin
 Create Translation File With JS Plugin
     [Tags]    no-docker-pr
     ${entry_cmd} =    Get Enty Command
-    ${cmd} =    Catenate    ${entry_cmd}
+    VAR    ${cmd} =
+    ...    ${entry_cmd}
     ...    translation
     ...    ${OUTPUT_DIR}/translation.json
     ...    --plugings ${CURDIR}/SomePlugin.py
     ...    --jsextension ${CURDIR}/jsplugin.js
+    ...    separator=${SPACE}
     ${process} =    Run Process
     ...    ${cmd}
     ...    shell=True

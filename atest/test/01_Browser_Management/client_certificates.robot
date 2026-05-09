@@ -11,11 +11,11 @@ Test Tags           no-docker-pr
 *** Test Cases ***
 Open Browser With Client Certificate
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
-    ${cert} =    Create Dictionary
+    VAR    &{cert} =
     ...    origin=https://localhost:${https_port}
     ...    certPath=${OUTPUT_DIR}/client.crt
     ...    keyPath=${OUTPUT_DIR}/client.key
-    ${certs} =    Create List    ${cert}
+    VAR    @{certs} =    ${cert}
     New Context
     ...    ignoreHTTPSErrors=True
     ...    clientCertificates=${certs}
@@ -51,7 +51,7 @@ Setup
     ...    ${OUTPUT_DIR}/server.key
     ...    ${OUTPUT_DIR}/ca.crt
     ...    True
-    Set Global Variable    ${https_port}    ${port}
+    VAR    ${https_port} =    ${port}    scope=GLOBAL
 
 Suite Teardown
     Stop Test Server    ${https_port}
