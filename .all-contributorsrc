@@ -1866,6 +1866,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "philipp2023",
+      "name": "philipp2023",
+      "avatar_url": "https://avatars.githubusercontent.com/u/124517865?v=4",
+      "profile": "https://github.com/philipp2023",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
