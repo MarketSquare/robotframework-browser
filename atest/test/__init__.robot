@@ -2,7 +2,6 @@
 Library             pabot.SharedLibrary    Process
 Library             pabot.PabotLib
 Library             ../library/common.py
-Library             ../library/test_app_listener.py
 Resource            variables.resource
 Resource            keywords.resource
 
