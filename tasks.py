@@ -31,6 +31,7 @@ except ModuleNotFoundError:
     print('Assuming that this is for "inv deps" command and ignoring error.')
 
 ROOT_DIR = Path(os.path.dirname(__file__))
+ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
@@ -391,6 +392,13 @@ def _batteries(batteries: bool):
     return batteries_dir
 
 
+def _get_listener_args():
+    return [
+        "--listener",
+        str(ATEST_LIB_DIR / "test_app_listener.py"),
+    ]
+
+
 @task(clean_atest, create_test_app)
 def atest(
     c,
@@ -433,6 +441,7 @@ def atest(
             ".",
         ]
     )
+    args.extend(_get_listener_args())
     if suite:
         args.extend(["--suite", suite])
     if test:
@@ -517,6 +526,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
             str(ATEST_OUTPUT),
         ]
     )
+    command_args.extend(_get_listener_args())
     if suite:
         command_args.extend(["--suite", suite])
     if batteries:
@@ -538,7 +548,9 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    rc = _run_pabot(["--variable", "SYS_VAR_CI:True"])
+    args = ["--variable", "SYS_VAR_CI:True"]
+    args.extend(_get_listener_args())
+    rc = _run_pabot(args)
     _clean_pabot_results(rc)
     sys.exit(rc)
 
@@ -546,7 +558,9 @@ def atest_global_pythonpath(c):
 # Running failed tests can't clean be cause the old output.xml is required for parsing which tests failed
 @task()
 def atest_failed(c):
-    sys.exit(_run_pabot(["--rerunfailed", "atest/output/output.xml"]))
+    args = ["--rerunfailed", "atest/output/output.xml"]
+    args.extend(_get_listener_args())
+    sys.exit(_run_pabot(args))
 
 
 @task()
@@ -601,7 +615,7 @@ def atest_coverage(
         v8_coverage_dir.mkdir(parents=True, exist_ok=True)
         os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
 
-    args = []
+    args = _get_listener_args()
     if suite:
         args.extend(["--suite", suite])
     if test:

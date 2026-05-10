@@ -1,56 +1,45 @@
-import json
+import logging
 import os
-from urllib import request as urllib_request
 
+import requests
 from robot.api import logger
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 from robot.libraries.BuiltIn import BuiltIn
 
 
-class test_app_listener:
-    """Robot Framework  library listener that sends suite/test lifecycle events.
+def _post(event: str, data, status: str | None = None) -> None:
+    server = BuiltIn().get_variable_value("${SERVER}")
+    if not server:
+        return
+    entry: dict = {
+        "event": event,
+        "id": data.id,
+        "name": data.name,
+        "pid": os.getpid(),
+    }
+    if status is not None:
+        entry["status"] = status
+    try:
+        requests.post(
+            f"http://{server}/api/log/context",
+            json=entry,
+            timeout=2,
+        )
+    except Exception as error:  # noqa: BLE001
+        logger.debug(
+            f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server} - {error!r}"
+        )
 
-    Event are sent to the dynamic test-app log endpoint (``POST /api/log/context``).
-    """
-    ROBOT_LIBRARY_SCOPE = "GLOBAL"
-    ROBOT_LIBRARY_LISTENER = "SELF"
-    ROBOT_LISTENER_API_VERSION = 3
-    ROBOT_AUTO_KEYWORDS = False
+def start_suite(data, result):
+    _post("start_suite", data)
 
-    def start_suite(self, data, result):
-        self._post("start_suite", data)
+def end_suite(data, result):
+    _post("end_suite", data, status=result.status)
 
-    def end_suite(self, data, result):
-        self._post("end_suite", data, status=result.status)
+def start_test(data, result):
+    _post("start_test", data)
 
-    def start_test(self, data, result):
-        self._post("start_test", data)
-
-    def end_test(self, data, result):
-        self._post("end_test", data, status=result.status)
-
-    def _post(self, event: str, data, status: str | None = None) -> None:
-        server = BuiltIn().get_variable_value("${SERVER}")
-        if not server:
-            return
-        entry: dict = {
-            "event": event,
-            "id": data.id,
-            "name": data.name,
-            "pid": os.getpid(),
-        }
-        if status is not None:
-            entry["status"] = status
-        try:
-            payload = json.dumps(entry).encode("utf-8")
-            req = urllib_request.Request(
-                f"http://{server}/api/log/context",
-                data=payload,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib_request.urlopen(req, timeout=2):
-                pass
-        except Exception as error:  # noqa: BLE001
-            logger.debug(f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server}")
-            logger.debug(f"Listener: Exception details: {error!r}")
-            pass
+def end_test(data, result):
+    _post("end_test", data, status=result.status)
