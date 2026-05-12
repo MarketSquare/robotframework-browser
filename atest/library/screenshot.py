@@ -30,7 +30,12 @@ def compare_images(
     expect_failure: ExpectFailure = ExpectFailure.no,
     error_threshold: int = 10,
 ):
-    """Returns True if the images are the same, False otherwise"""
+    """Fails if images are not the same."""
+    logger.info(f"Comparing image img1_path '{img1_path}')")
+    if isinstance(img2_bytes_or_path, bytes):
+        logger.info("With image from bytes")
+    else:
+        logger.info(f"With image from path '{img2_bytes_or_path}'")
     im1: Image.Image = Image.open(img1_path).convert("RGB")
     im2: Image.Image = (
         Image.open(BytesIO(img2_bytes_or_path)).convert("RGB")
