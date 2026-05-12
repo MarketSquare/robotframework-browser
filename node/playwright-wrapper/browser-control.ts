@@ -20,10 +20,17 @@ import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, stringResponse } from './response-util';
 
-const { program: pwProgram } = require('playwright-core/lib/cli/program') as { program: import('commander').Command }; // eslint-disable-line
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { libCli } = require('playwright-core/lib/coreBundle') as {
+    libCli: { decorateProgram: (p: import('commander').Command) => void };
+};
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { Command: PlaywrightCommand } = require('commander') as typeof import('commander');
 
 export async function executePlaywright(request: pb.Request_Json): Promise<pb.Response_Empty> {
     const args = JSON.parse(request.body);
+    const pwProgram = new PlaywrightCommand();
+    libCli.decorateProgram(pwProgram);
     pwProgram.exitOverride();
     await pwProgram.parseAsync(args, { from: 'user' });
     return emptyWithLog('Executed Playwright command: ' + args.join(' '));

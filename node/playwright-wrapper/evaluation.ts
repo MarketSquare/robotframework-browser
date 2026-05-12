@@ -489,7 +489,7 @@ async function highlightAll(
         void locator.highlight();
         if (duration !== 0) {
             setTimeout(() => {
-                void state.getActivePage()?.locator('none.highlight-no-element').highlight();
+                void locator.hideHighlight();
             }, duration);
         }
         if (mode === 'playwright') {

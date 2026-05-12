@@ -48,6 +48,7 @@ playwright-log.txt
 lsp
 
 node_modules/
+.nvmrc
 dist
 build
 pip-wheel-metadata
