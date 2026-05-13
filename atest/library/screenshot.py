@@ -31,7 +31,7 @@ def compare_images(
     error_threshold: int = 10,
 ):
     """Fails if images are not the same."""
-    logger.info(f"Comparing image img1_path '{img1_path}')")
+    logger.info(f"Comparing image img1_path '{img1_path}'")
     if isinstance(img2_bytes_or_path, bytes):
         logger.info("With image from bytes")
     else:

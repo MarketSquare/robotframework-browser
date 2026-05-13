@@ -253,7 +253,6 @@ Screenshot On Failure
     ...    ${OUTPUT_DIR}/browser/screenshot/fail-screenshot-1.png
     ...    error_threshold=100000
     Set Highlight On Failure    False
-    Reload    # Playwright 1.60 introduced a change and highlight does not always disappear after duration, so reload page to be sure that highlight is gone
     Run Keyword And Expect Error
     ...    *
     ...    Get Text    input    ==    Hello
