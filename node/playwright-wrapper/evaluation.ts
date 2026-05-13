@@ -466,7 +466,26 @@ type EvaluationOptions = {
     clr: string;
 };
 
-async function highlightAll(
+export class HighlightDisposableCache {
+    private disposables: Array<{ dispose: () => Promise<void> }>;
+
+    constructor() {
+        this.disposables = [];
+    }
+
+    add(disposable: { dispose: () => Promise<void> }) {
+        this.disposables.push(disposable);
+    }
+
+    async disposeAll() {
+        await Promise.all(this.disposables.map((d) => d.dispose()));
+        this.disposables = [];
+    }
+}
+
+export const highlightDisposableCache = new HighlightDisposableCache();
+
+export async function highlightAll(
     selector: string,
     duration: number,
     width: string,
@@ -484,12 +503,22 @@ async function highlightAll(
         logger.info(e);
         return 0;
     }
+    if (selector === 'ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT') {
+        logger.info(`Dispose all highlights because ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT selector was used.`);
+        await highlightDisposableCache.disposeAll();
+        return 0;
+    }
     logger.info(`Locator count is ${count}`);
     if (['playwright', 'both'].includes(mode)) {
-        void locator.highlight();
+        const highlight = await locator.highlight();
+        if (duration === 0) {
+            logger.info(`Adding highlight to cache without timeout, it will be disposed later.`);
+            highlightDisposableCache.add(highlight);
+        }
         if (duration !== 0) {
             setTimeout(() => {
-                void locator.hideHighlight();
+                logger.info(`Disposing highlight after ${duration} ms.`);
+                void highlight.dispose();
             }, duration);
         }
         if (mode === 'playwright') {

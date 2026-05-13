@@ -189,7 +189,52 @@ Highlight Element With Element Selector
     Highlight Elements    ${elem}
     Get Element Count    .robotframework-browser-highlight    ==    1
 
-Page State
-    [Tags]    not-implemented
-    Log    Is that art???
-    # Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
+Disable Highlight With Empty Selector On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END
+
+Disable Multiple Highlight With Empty Selector On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    Highlight Elements    button    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END
+
+Highlight Should Disappear After Timeout On Playwright Mode
+    New Page    ${LOGIN_URL}
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    button    duration=500ms    mode=playwright
+    Sleep    800ms
+    ${screenshot2} =    Take Screenshot
+    Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+
+Disposing Highlights After Closing Page Should Work On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Close Page
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot3} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot2}    ${screenshot3}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END
