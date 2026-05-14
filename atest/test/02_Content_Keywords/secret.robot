@@ -9,15 +9,51 @@ Test Setup      Ensure Open Page    ${LOGIN_URL}
 Test Tags       require-rf-7.4+
 
 *** Test Cases ***
-Type Secret
+Type Secret And Verify
     ${secret} =    Get Secret Value
     Type Secret    input#username_field    ${secret}
     Get Text    input#username_field    ==    Joulupukki
 
-Fill Secret
+Fill Secret And Verify
     ${secret} =    Get Secret Value
     Fill Secret    input#username_field    ${secret}
     Get Text    input#username_field    ==    Joulupukki
+
+Type Secret And Fails With Curly Brackets
+    Set Browser Timeout    500ms    scope=Test
+    ${secret} =    Get Secret Value
+    TRY
+        Type Secret    notHere    ${secret}
+    EXCEPT    *    type=GLOB    AS    ${error}
+        Should Contain    ${error}    notHere
+    END
+
+Fill Secret And Fails With Curly Brackets
+    Set Browser Timeout    500ms    scope=Test
+    ${secret} =    Get Secret Value
+    TRY
+        Fill Secret    notHere    ${secret}
+    EXCEPT    *    type=GLOB    AS    ${error}
+        Should Contain    ${error}    notHere
+    END
+
+Type Secret And Fails Without Curly Brackets
+    Set Browser Timeout    500ms    scope=Test
+    ${secret} =    Get Secret Value
+    TRY
+        Type Secret    notHere    $secret
+    EXCEPT    *    type=GLOB    AS    ${error}
+        Should Contain    ${error}    notHere
+    END
+
+Fill Secret And Fails Without Curly Brackets
+    Set Browser Timeout    500ms    scope=Test
+    ${secret} =    Get Secret Value
+    TRY
+        Fill Secret    notHere    $secret
+    EXCEPT    *    type=GLOB    AS    ${error}
+        Should Contain    ${error}    notHere
+    END
 
 New Context With Secret As Literal In httpCredentials Is Not Supported
     ${secret} =    Get Secret Value
