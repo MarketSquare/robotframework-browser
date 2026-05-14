@@ -311,6 +311,8 @@ class LibraryComponent:
         if value is NOT_FOUND:
             logger.warn("Given variable placeholder could not be resolved.")
             return placeholder
+        if isinstance(value, Secret):
+            return value.value
         return value
 
     @property
