@@ -63,8 +63,10 @@ from .data_types import (
     SelectionType,
     ServiceWorkersPermissions,
     SupportedBrowsers,
+    TextType,
     ViewportDimensions,
     convert_typed_dict,
+    ROBOT_FRAMEWORK_BROWSER_NO_SET,
 )
 from .js_utilities import get_abs_scroll_coordinates, get_rel_scroll_coordinates
 from .meta_python import find_by_id, locals_to_params

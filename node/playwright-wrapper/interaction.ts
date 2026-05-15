@@ -20,7 +20,7 @@ import { getSelections } from './getters';
 import { exists } from './playwright-invoke';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog } from './response-util';
+import { emptyWithLog, listStringResponse } from './response-util';
 
 export async function selectOption(
     request: pb.Request_SelectElementSelector,
@@ -254,7 +254,7 @@ export async function waitForAlerts(request: pb.Request_AlertActions, page: Page
             void dialogObject.dismiss();
         }
     }
-    return { items: alertMessages };
+    return listStringResponse(alertMessages, 'Handled all alerts');
 }
 
 export async function mouseButton(request: pb.Request_MouseButtonOptions, page?: Page): Promise<pb.Response_Empty> {

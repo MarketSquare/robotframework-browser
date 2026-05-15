@@ -503,8 +503,8 @@ export async function highlightAll(
         logger.info(e);
         return 0;
     }
-    if (selector === 'ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT') {
-        logger.info(`Dispose all highlights because ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT selector was used.`);
+    if (selector === 'ROBOT_FRAMEWORK_BROWSER_NO_SET') {
+        logger.info(`Dispose all highlights because ROBOT_FRAMEWORK_BROWSER_NO_SET selector was used.`);
         await highlightDisposableCache.disposeAll();
         return 0;
     }

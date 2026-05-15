@@ -20,7 +20,7 @@ import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
+import { boolResponse, intResponse, jsonResponse, listStringResponse, stringResponse } from './response-util';
 
 export async function getAriaSnapshot(
     request: pb.Request_AriaSnapShot,
@@ -106,34 +106,80 @@ export async function getDomProperty(
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContent(locator: Locator): Promise<string> {
-    const element = await locator.elementHandle();
-    exists(element, 'Locator did not resolve to elementHandle.');
-    const tag = await (await element.getProperty('tagName')).jsonValue();
-    if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        return await (await element.getProperty('value')).jsonValue();
+enum TextType {
+    allInnerTexts = 'allInnerTexts',
+    allTextContents = 'allTextContents',
+    innerText = 'innerText',
+    inputValue = 'inputValue',
+    innerHTML = 'innerHTML',
+    ROBOT_FRAMEWORK_BROWSER_NO_SET = 'ROBOT_FRAMEWORK_BROWSER_NO_SET',
+}
+
+async function _getTextContentNoTextType(locator: Locator): Promise<string[]> {
+    logger.info(`Getting text content without text type`);
+    const tag = await locator.evaluate((e) => e.tagName);
+    if (tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'INPUT') {
+        logger.info(`Element is ${tag}, get inputValue`);
+        const inputValue = await locator.inputValue();
+        return [inputValue];
+    } else {
+        logger.info(`Locator was not an <input>, <textarea>, or <select> element, falling back to innerText.`);
+        const innerText = await locator.innerText();
+        return [innerText];
     }
-    return await element.innerText();
+}
+
+async function getTextContent(locator: Locator, textType: TextType): Promise<string[]> {
+    logger.info(`Getting text content with text type ${textType}`);
+    switch (textType) {
+        case TextType.ROBOT_FRAMEWORK_BROWSER_NO_SET:
+            return await _getTextContentNoTextType(locator);
+        case TextType.allInnerTexts:
+            logger.info(`Getting allInnerTexts`);
+            return await locator.allInnerTexts();
+        case TextType.allTextContents:
+            logger.info(`Getting allTextContents`);
+            return await locator.allTextContents();
+        case TextType.innerHTML:
+            logger.info(`Getting innerHTML`);
+            return [await locator.innerHTML()];
+        case TextType.inputValue:
+            logger.info(`Getting inputValue`);
+            return [await locator.inputValue()];
+        case TextType.innerText:
+            logger.info(`Getting innerText`);
+            return [await locator.innerText()];
+    }
 }
 
 export async function getText(
-    request: pb.Request_ElementSelector,
+    request: pb.Request_ElementSelectorWithTextType,
     state: PlaywrightState,
-): Promise<pb.Response_String> {
+): Promise<pb.Response_ListString> {
     const selector = request.selector;
     const strict = request.strict;
+    const textType = request.textType;
     const locator = await findLocator(state, selector, strict, true);
-    let content: string;
+    let content: string[];
+    const textTypeEnum = TextType[textType as keyof typeof TextType];
     try {
-        content = await getTextContent(locator);
-        logger.info(`Retrieved text for element ${selector} containing ${content}`);
+        content = await getTextContent(locator, textTypeEnum);
+        logger.info(
+            `Retrieved text for element ${selector} containing '${JSON.stringify(content)}' with text type ${textType}`,
+        );
     } catch (e) {
         if (e instanceof Error) {
             logger.error(e);
         }
         throw e;
     }
-    return stringResponse(content, 'Text received successfully.');
+    let textTypeString: string;
+    if (textTypeEnum !== TextType.ROBOT_FRAMEWORK_BROWSER_NO_SET) {
+        textTypeString = ` with text type ${textType}.`;
+    } else {
+        textTypeString = '.';
+    }
+    return listStringResponse(content, `Text received successfully${textTypeString}`);
 }
 
 export async function getBoolProperty(

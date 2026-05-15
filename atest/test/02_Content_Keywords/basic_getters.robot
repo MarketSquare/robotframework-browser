@@ -2,7 +2,7 @@
 Resource            imports.resource
 Library             ../../library/presenter_mode.py
 
-Suite Setup         Setup
+Suite Setup         Setup Basic Getters
 Suite Teardown      Set Retry Assertions For    ${assert_timeout}
 Test Setup          Ensure Location    ${LOGIN_URL}
 
@@ -11,33 +11,6 @@ ${UserNameLabel} =      label[for="username_field"]
 ${InputUsername} =      id=username_field
 
 *** Test Cases ***
-Get Text
-    ${h1} =    Get Text    h1
-    Should Be Equal    ${h1}    Login Page
-
-Get Text Disabled
-    [Setup]    Go To    ${ELEMENT_STATE_URL}
-    presenter_mode.Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
-    ${text} =    Get Text    //input[@name="readonly_with_equals_only"]
-    [Teardown]    presenter_mode.Set Presenter Mode    False
-
-Get Text And Assert ==
-    Get Text    ${UserNameLabel}    ==    User Name:
-
-Get Text And Assert !=
-    Get Text    ${UserNameLabel}    !=
-
-Get Text Assert Validate
-    Get Text    h1    validate    value.startswith('Login')
-
-Get Text With Nonmatching Selector
-    [Tags]    no-iframe
-    Set Browser Timeout    50ms
-    Run Keyword And Expect Error
-    ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
-    ...    Get Text    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
-
 Get Property And Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
@@ -148,7 +121,7 @@ Get Element Count
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
     ${count} =    Get Element Count    label
-    Should Be Equal    ${count}    ${13}
+    Should Be Equal    ${count}    ${14}
     ${count} =    Get Element Count    not-existing
     Should Be Equal    ${count}    ${0}
 
@@ -156,12 +129,12 @@ Get Element Count And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
     Get Element Count    h1    ==    1
     Get Element Count    h1    ==    ${1}
-    Get Element Count    label    validate    value == 13
+    Get Element Count    label    validate    value == 14
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
     ${promise} =    Promise To    Get Element Count    label
     ${count} =    Wait For    ${promise}
-    Should Be Equal    ${count}    ${13}
+    Should Be Equal    ${count}    ${14}
 
 Get Style And Assert
     Get Style    h1    ALL    *=    align-content
@@ -353,7 +326,7 @@ Get Element States Return Flags
     Should Be Equal    ${input_state}    ${pwd_state}
 
 Get Console Log Test
-    [Setup]    Setup
+    [Setup]    Setup Basic Getters
     ${first} =    Get Console Log    then    len(value)
     Click With Options    "Click with Options"    left    ALT    SHIFT
     # Sometimes test app emist React Router Future Flag Warning: React Router ...
@@ -395,7 +368,7 @@ Get Console Log Test
     ...    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
 
 *** Keywords ***
-Setup
+Setup Basic Getters
     Close Page    ALL
     Ensure Open Page    ${LOGIN_URL}
     ${assert_timeout} =    Set Retry Assertions For    2 sec

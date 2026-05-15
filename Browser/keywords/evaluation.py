@@ -20,7 +20,13 @@ from robot.utils import DotDict
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DownloadInfo, HighlightMode, keyword, logger
+from ..utils import (
+    ROBOT_FRAMEWORK_BROWSER_NO_SET,
+    DownloadInfo,
+    HighlightMode,
+    keyword,
+    logger,
+)
 
 
 class Evaluation(LibraryComponent):
@@ -117,7 +123,7 @@ class Evaluation(LibraryComponent):
                 Request().ElementSelectorWithDuration(
                     selector=self.resolve_selector(selector)
                     if selector
-                    else "ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT",
+                    else ROBOT_FRAMEWORK_BROWSER_NO_SET,
                     duration=int(self.convert_timeout(duration)),
                     width=width,
                     style=style,
