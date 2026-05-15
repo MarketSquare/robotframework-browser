@@ -348,6 +348,18 @@ export default function Site() {
                     </tbody>
                 </table>
 
+                <label id="pet-select-label">Choose a pet:</label>
+                <select name="pets" id="pet-select">
+                    <option value="">--Please choose an option--</option>
+                    <option value="dog">Dog</option>
+                    <option value="cat">Cat</option>
+                    <option value="hamster">Hamster</option>
+                    <option value="parrot">Parrot</option>
+                    <option value="spider">Spider</option>
+                    <option value="goldfish">Goldfish</option>
+                </select>
+                <br></br>
+
                 <input
                     type="file"
                     id="file_chooser"

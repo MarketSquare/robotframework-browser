@@ -69,7 +69,7 @@ from Browser.utils import (
 from Browser.utils .data_types import (
     MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction, NotSet, Dimensions,
     SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole, AriaSnapshotReturnType,
-    KeyboardInputAction, KeyAction
+    KeyboardInputAction, KeyAction, TextType
 )
 from Browser.utils.types import Secret
 """

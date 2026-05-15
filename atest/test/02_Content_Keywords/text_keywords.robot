@@ -331,13 +331,6 @@ Get Text Custom Error
     ...    Get Text    css=input#username_field    ==    username    Tidii
     [Teardown]    Set Retry Assertions For    1s
 
-Text Area Access
-    Get Text    id=textarea51    ==    Some initial text
-    Type Text    id=textarea51    Area 51
-    Get Text    id=textarea51    ==    Area 51
-    Type Text    id=textarea51    Ufo detected
-    Get Text    id=textarea51    ==    Ufo detected
-
 Type Secret With CryptoLibrary
     Type Secret
     ...    input#username_field

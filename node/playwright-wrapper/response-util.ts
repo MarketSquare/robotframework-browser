@@ -23,6 +23,7 @@ import {
     Response_JavascriptExecutionResult,
     Response_Json,
     Response_Keywords,
+    Response_ListString,
     Response_PageReportResponse,
     Response_String,
 } from './generated/playwright';
@@ -66,6 +67,10 @@ export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, me
 
 export function stringResponse(body: string, logMessage: string): Response_String {
     return { body, log: logMessage };
+}
+
+export function listStringResponse(body: string[], logMessage: string): Response_ListString {
+    return { items: body, log: logMessage };
 }
 
 export function jsonResponse(body: string, logMessage: string, bodyPart: string = ''): Response_Json {

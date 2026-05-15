@@ -1483,6 +1483,27 @@ class TracingGroupMode(Enum):
     Playwright = auto()
 
 
+class TextType(Enum):
+    """Defines which Playwright method is used to get the text of an element.
+
+    ``allInnerTexts``: Returns a list of `node.innerText` values for all matching nodes.
+
+    ``allTextContents``: Returns a list of `node.textContent` values for all matching nodes.
+
+    ``innerText``: Returns the element node.innerText value, which represents the rendered text content of a node and its descendants.
+
+    ``inputValue``: Returns the value for the matching <input> or <textarea> or <select> element.
+
+    ``innerHTML``: Returns the element node.innerHTML value, which is the HTML markup contained within the element, omitting any shadow roots.
+    """
+
+    allInnerTexts = auto()
+    allTextContents = auto()
+    innerText = auto()
+    inputValue = auto()
+    innerHTML = auto()
+
+
 InstallableBrowser = Enum(
     "InstallableBrowser",
     {
@@ -1522,3 +1543,6 @@ InstallationOptionsHelp = {
     "only-shell": "only install headless shell when installing chromium",
     "no-shell": "do not install chromium headless shell",
 }
+
+
+ROBOT_FRAMEWORK_BROWSER_NO_SET = "ROBOT_FRAMEWORK_BROWSER_NO_SET"

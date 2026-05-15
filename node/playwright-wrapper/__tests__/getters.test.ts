@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { getElementStates } from '../getters';
+import { getElementStates, getText } from '../getters';
 
 // Mock playwright-invoke so findLocator returns our controlled mock locator
 jest.mock('../playwright-invoke', () => ({
@@ -261,6 +261,155 @@ describe('getElementStates', () => {
             mockFindLocator.mockResolvedValue(locator);
 
             await expect(getElementStates(makeRequest(), makeMockState())).rejects.toThrow('unexpected network error');
+        });
+    });
+});
+
+describe('getText', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    function makeTextRequest(selector = '#el', strict = false, textType = 'ROBOT_FRAMEWORK_BROWSER_NO_SET') {
+        return { selector, strict, textType } as any;
+    }
+
+    function makeTextLocator(
+        overrides: Partial<{
+            evaluate: jest.Mock;
+            inputValue: jest.Mock;
+            innerText: jest.Mock;
+            allInnerTexts: jest.Mock;
+            allTextContents: jest.Mock;
+            innerHTML: jest.Mock;
+        }> = {},
+    ) {
+        return {
+            evaluate: jest.fn().mockResolvedValue('DIV'),
+            inputValue: jest.fn().mockResolvedValue('input text'),
+            innerText: jest.fn().mockResolvedValue('inner text'),
+            allInnerTexts: jest.fn().mockResolvedValue(['text1', 'text2']),
+            allTextContents: jest.fn().mockResolvedValue(['content1', 'content2']),
+            innerHTML: jest.fn().mockResolvedValue('<span>html</span>'),
+            ...overrides,
+        } as unknown as Locator;
+    }
+
+    describe('when textType is ROBOT_FRAMEWORK_BROWSER_NO_SET', () => {
+        it('returns inputValue for a SELECT element', async () => {
+            const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('SELECT') });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest(), {} as any);
+
+            expect(result.items).toEqual(['input text']);
+        });
+
+        it('returns inputValue for an INPUT element', async () => {
+            const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('INPUT') });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest(), {} as any);
+
+            expect(result.items).toEqual(['input text']);
+        });
+
+        it('returns inputValue for a TEXTAREA element', async () => {
+            const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('TEXTAREA') });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest(), {} as any);
+
+            expect(result.items).toEqual(['input text']);
+        });
+
+        it('falls back to innerText for a non-input element', async () => {
+            const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('DIV') });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest(), {} as any);
+
+            expect(result.items).toEqual(['inner text']);
+        });
+    });
+
+    it('returns allInnerTexts for textType allInnerTexts', async () => {
+        const locator = makeTextLocator();
+        mockFindLocator.mockResolvedValue(locator);
+
+        const result = await getText(makeTextRequest('#el', false, 'allInnerTexts'), {} as any);
+
+        expect(result.items).toEqual(['text1', 'text2']);
+    });
+
+    it('returns allTextContents for textType allTextContents', async () => {
+        const locator = makeTextLocator();
+        mockFindLocator.mockResolvedValue(locator);
+
+        const result = await getText(makeTextRequest('#el', false, 'allTextContents'), {} as any);
+
+        expect(result.items).toEqual(['content1', 'content2']);
+    });
+
+    it('returns innerHTML for textType innerHTML', async () => {
+        const locator = makeTextLocator();
+        mockFindLocator.mockResolvedValue(locator);
+
+        const result = await getText(makeTextRequest('#el', false, 'innerHTML'), {} as any);
+
+        expect(result.items).toEqual(['<span>html</span>']);
+    });
+
+    it('returns inputValue for textType inputValue', async () => {
+        const locator = makeTextLocator();
+        mockFindLocator.mockResolvedValue(locator);
+
+        const result = await getText(makeTextRequest('#el', false, 'inputValue'), {} as any);
+
+        expect(result.items).toEqual(['input text']);
+    });
+
+    it('returns innerText for textType innerText', async () => {
+        const locator = makeTextLocator();
+        mockFindLocator.mockResolvedValue(locator);
+
+        const result = await getText(makeTextRequest('#el', false, 'innerText'), {} as any);
+
+        expect(result.items).toEqual(['inner text']);
+    });
+
+    describe('response log message', () => {
+        it('includes text type in log when textType is explicit', async () => {
+            const locator = makeTextLocator();
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest('#el', false, 'innerText'), {} as any);
+
+            expect(result.log).toContain('with text type innerText');
+        });
+
+        it('omits text type in log when textType is ROBOT_FRAMEWORK_BROWSER_NO_SET', async () => {
+            const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('DIV') });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await getText(makeTextRequest(), {} as any);
+
+            expect(result.log).not.toContain('with text type');
+            expect(result.log).toMatch(/successfully\.$/);
+        });
+    });
+
+    describe('error handling', () => {
+        it('re-throws errors from locator methods', async () => {
+            expect.assertions(1);
+            const locator = makeTextLocator({
+                innerText: jest.fn().mockRejectedValue(new Error('element detached')),
+            });
+            mockFindLocator.mockResolvedValue(locator);
+
+            await expect(getText(makeTextRequest('#el', false, 'innerText'), {} as any)).rejects.toThrow(
+                'element detached',
+            );
         });
     });
 });

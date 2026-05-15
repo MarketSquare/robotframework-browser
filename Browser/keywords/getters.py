@@ -38,6 +38,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
 from ..utils.data_types import (
+    ROBOT_FRAMEWORK_BROWSER_NO_SET,
     AreaFields,
     AriaSnapshotReturnType,
     BoundingBox,
@@ -52,6 +53,7 @@ from ..utils.data_types import (
     SelectionStrategy,
     SelectOptions,
     SizeFields,
+    TextType,
     ViewportDimensions,
 )
 
@@ -228,36 +230,49 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str:
+        *,
+        text_type: TextType | None = None,
+    ) -> str | list[str]:
         """Returns text attribute of the element found by ``selector``.
 
-               Keyword can also return `input` or `textarea` value property text.
+        Keyword can also return `input` or `textarea` value property text.
         See the `Finding elements` section for details about the selectors.
 
-               | =Arguments= | =Description= |
-               | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-               | ``assertion_expected`` | Expected value for the state |
-               | ``message`` | overrides the default error message for assertion. |
+        | =Arguments= | =Description= |
+        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
+        | ``assertion_expected`` | Expected value for the state |
+        | ``message`` | overrides the default error message for assertion. |
+        | ``text_type`` | How text is returned. Possible values are ``allInnerTexts``, ``allTextContents``, ``innerText``, ``inputValue``, and ``innerHTML``. |
 
-               Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+        The ``text_type`` argument determines how text is returned. The ``allInnerTexts`` and
+        ``allTextContents`` will return a list of strings, while other types return a single
+        string.
 
-               Optionally asserts that the text matches the specified assertion. See `Assertions`
-               for further details for the assertion arguments. By default, assertion is not done.
+        Optionally asserts that the text matches the specified assertion. See `Assertions`
+        for further details for the assertion arguments. By default, assertion is not done.
 
-               Example:
-               | ${text} =    `Get Text`    id=important                            # Returns element text without assertion.
-               | ${text} =    `Get Text`    id=important    ==    Important text    # Returns element text with assertion.
-               | ${text} =    `Get Text`    //input         ==    root              # Returns input element text with assertion.
+        Example:
+        | ${text} =    `Get Text`    id=important                                # Returns element text without assertion.
+        | ${text} =    `Get Text`    id=important    ==    Important text        # Returns element text with assertion.
+        | ${text} =    `Get Text`    //input         ==    root                  # Returns input element text with assertion.
+        | ${text} =    `Get Text`    id=important    text_type=innerHTML         # Returns element inner HTML.
+        | ${text} =    `Get Text`    id=important    text_type=allInnerTexts     # Returns element inner text as list of strings.
 
-               [https://forum.robotframework.org/t//4285|Comment >>]
+        [https://forum.robotframework.org/t//4285|Comment >>]
         """
         selector = self.presenter_mode(selector, self.strict_mode)
-        response = self._get_text(selector)
+        response = self._get_text(selector, text_type)
         logger.debug(response.log)
-        logger.info(f"Text: {response.body!r}")
+        is_all_type = text_type in (TextType.allInnerTexts, TextType.allTextContents)
+        if is_all_type:
+            value = [str(item) for item in response.items]
+        else:
+            value = [str(response.items[0])]
+        logger.info(f"Text: {value!r}")
         formatter = self.get_assertion_formatter("Get Text")
         return verify_assertion(
-            response.body,
+            value[0] if not is_all_type else value,
             assertion_operator,
             assertion_expected,
             "Text",
@@ -265,10 +280,17 @@ class Getters(LibraryComponent):
             formatter,
         )
 
-    def _get_text(self, selector: str):  # To ease unit testing
+    def _get_text(
+        self, selector: str, text_type: TextType | None
+    ):  # To ease unit testing
+        text_type_value = (
+            str(text_type.name) if text_type else ROBOT_FRAMEWORK_BROWSER_NO_SET
+        )
         with self.playwright.grpc_channel() as stub:
             return stub.GetText(
-                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+                Request().ElementSelectorWithTextType(
+                    selector=selector, strict=self.strict_mode, textType=text_type_value
+                )
             )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))

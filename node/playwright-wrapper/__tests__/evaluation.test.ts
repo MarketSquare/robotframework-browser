@@ -95,7 +95,7 @@ describe('highlightAll', () => {
         });
     });
 
-    describe('ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT selector', () => {
+    describe('ROBOT_FRAMEWORK_BROWSER_NO_SET selector', () => {
         it('disposes all cached highlights and returns 0', async () => {
             const dispose = jest.fn().mockResolvedValue(undefined);
             highlightDisposableCache.add({ dispose });
@@ -103,7 +103,7 @@ describe('highlightAll', () => {
             mockFindLocator.mockResolvedValue(locator);
 
             const result = await highlightAll(
-                'ROBOT_FRAMEWORK_BROWSER_NO_ELEMENT',
+                'ROBOT_FRAMEWORK_BROWSER_NO_SET',
                 0,
                 '1px',
                 'dotted',
