@@ -32,7 +32,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.15.1",
-    "ts-jest": "^29.4.10",
+    "ts-jest": "^29.4.11",
     "ts-loader": "^9.5.7",
     "ts-node": "^10.9.2",
     "ts-proto": "^2.11.8",
