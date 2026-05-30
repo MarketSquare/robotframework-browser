@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-202-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-203-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -483,6 +483,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/laguill"><img src="https://avatars.githubusercontent.com/u/74424947?v=4?s=100" width="100px;" alt="Guillaume LAFON"/><br /><sub><b>Guillaume LAFON</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Alaguill" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tkopra"><img src="https://avatars.githubusercontent.com/u/106748650?v=4?s=100" width="100px;" alt="tkopra"/><br /><sub><b>tkopra</b></sub></a><br /><a href="#ideas-tkopra" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/philipp2023"><img src="https://avatars.githubusercontent.com/u/124517865?v=4?s=100" width="100px;" alt="philipp2023"/><br /><sub><b>philipp2023</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aphilipp2023" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/johnpp143"><img src="https://avatars.githubusercontent.com/u/35929471?v=4?s=100" width="100px;" alt="john0620"/><br /><sub><b>john0620</b></sub></a><br /><a href="#ideas-johnpp143" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>
