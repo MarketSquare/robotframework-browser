@@ -43,7 +43,7 @@
     "@bufbuild/protobuf": "^2.12.0",
     "@grpc/grpc-js": "^1.14.4",
     "@medv/finder": "^4.0.2",
-    "monocart-coverage-reports": "^2.12.11",
+    "monocart-coverage-reports": "^2.12.12",
     "pino": "^10.3.1",
     "playwright": "^1.60.0",
     "strip-comments": "^2.0.1",
