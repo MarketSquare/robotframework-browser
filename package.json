@@ -24,7 +24,7 @@
     "grpc-tools": "^1.13.1",
     "husky": "^9.1.7",
     "jest": "^30.4.2",
-    "lint-staged": "^17.0.5",
+    "lint-staged": "^17.0.7",
     "morgan": "^1.10.1",
     "prettier": "^3.8.3",
     "react": "^19.2.6",
