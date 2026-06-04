@@ -69,7 +69,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str | dict:
+    ) -> str | dict | tuple:
         """Returns the aria snapshot of the element found by ``selector``.
 
         | =Arguments= | =Description= |
@@ -121,7 +121,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str:
+    ) -> str | dict | tuple:
         """Returns the current URL.
 
         | =Arguments= | =Description= |
@@ -151,7 +151,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str:
+    ) -> str | dict | tuple:
         """Gets pages HTML source as a string.
 
         | =Arguments= | =Description= |
@@ -193,7 +193,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str:
+    ) -> str | dict | tuple:
         """Returns the title of the current page.
 
         | =Arguments= | =Description= |
@@ -232,7 +232,7 @@ class Getters(LibraryComponent):
         message: str | None = None,
         *,
         text_type: TextType | None = None,
-    ) -> str | list[str]:
+    ) -> str | list[str] | dict | tuple:
         """Returns text attribute of the element found by ``selector``.
 
         Keyword can also return `input` or `textarea` value property text.
@@ -362,7 +362,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str | None:
+    ) -> str | tuple | dict | None:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
         | =Arguments= | =Description= |
@@ -512,7 +512,7 @@ class Getters(LibraryComponent):
             assertion_operator,
             expected,
             f"Classes of {self.resolve_selector(selector)}",
-            message,
+            message or "",
         )
 
     @keyword(tags=("Getter", "Assertion", "PageContent"))
@@ -734,7 +734,7 @@ class Getters(LibraryComponent):
         key: SizeFields = SizeFields.ALL,
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
-        message: str | None = None,
+        message: str | tuple | dict | None = None,
     ) -> ViewportDimensions | None:
         """Returns the current viewport dimensions.
 
@@ -1147,7 +1147,7 @@ class Getters(LibraryComponent):
         assertion_expected: Any | None = None,
         message: str | None = None,
         pseudo_element: str | None = None,
-    ) -> dict[str, str] | str:
+    ) -> dict[str, str] | str | tuple | dict:
         """Gets the computed style properties of the element selected by ``selector``.
 
         Optionally matches with any sequence assertion operator.

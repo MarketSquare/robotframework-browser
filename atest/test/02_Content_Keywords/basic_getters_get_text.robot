@@ -90,6 +90,30 @@ Text Area Access And No Text Type
     Type Text    id=textarea51    Ufo detected
     Get Text    id=textarea51    ==    Ufo detected    text_type=inputValue
 
+Get Text With RegEx Match
+    ${text} =    Get Text    h1    matches    Login Page
+    Should Be Equal    ${text}    Login Page
+    ${text} =    Get Text    h1    matches    \\w+ (\\w+)
+    Length Should Be    ${text}    1
+    Should Be Equal    ${text[0]}    Page
+    ${text} =    Get Text    h1    matches    (\\w+) (\\w+)
+    Length Should Be    ${text}    2
+    Should Be Equal    ${text[0]}    Login
+    Should Be Equal    ${text[1]}    Page
+    ${text} =    Get Text    h1    matches    (?P<name1>\\w+) (?P<name2>\\w+)
+    Length Should Be    ${text}    2
+    Should Be Equal    ${text['name1']}    Login
+    Should Be Equal    ${text['name2']}    Page
+    ${text} =    Get Text    h1    matches    (\\w+) (?P<name2>\\w+)
+    Length Should Be    ${text}    2
+    Should Be Equal    ${text[0]}    Login
+    Should Be Equal    ${text[1]}    Page
+
+Get Text With RegEx Match And text_type
+    Run Keyword And Expect Error
+    ...    TypeError:*expected string or bytes-like object*
+    ...    Get Text    //option    matches    Some initial text    text_type=allTextContents
+
 *** Keywords ***
 Setup Get Text
     Close Page    ALL

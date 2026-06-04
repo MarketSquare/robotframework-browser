@@ -35,7 +35,7 @@ class Crawling(LibraryComponent):
             self.library.new_page(url)
         return list(
             self._crawl(
-                self.library.get_url() or "",
+                str(self.library.get_url()) or "",
                 page_crawl_keyword,
                 max_number_of_page_to_crawl,
                 max_depth_to_crawl,
