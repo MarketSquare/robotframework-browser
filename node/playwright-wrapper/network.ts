@@ -20,7 +20,7 @@ import { logger } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
 export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json> {
     const opts: { [k: string]: any } = {
@@ -113,11 +113,26 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
     logger.info(`responseChunks.length: ${responseChunks.length}`);
     return responseChunks;
 }
-export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_String> {
+export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json> {
     const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
     const timeout = request.timeout;
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
-    return stringResponse(result.url(), 'Request completed within timeout.');
+    let postData;
+    try {
+        postData = JSON.parse(result.postData() || 'null');
+    } catch (e) {
+        logger.info(`Failed to parse postData as JSON: ${String(e)}, using raw postData`);
+        postData = result.postData();
+    }
+    const jsonData = JSON.stringify({
+        url: result.url(),
+        method: result.method(),
+        headers: result.headers(),
+        postData: postData,
+    });
+    logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);
+    const matcherStr = typeof urlOrPredicate === 'string' ? urlOrPredicate : urlOrPredicate.toString();
+    return jsonResponse(jsonData, `Request completed within timeout ${timeout}ms by using matcher: ${matcherStr}`);
 }
 
 export async function waitForNavigation(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
