@@ -561,7 +561,7 @@ service  Playwright {
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
-  rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
+  rpc WaitForRequest(Request.HttpCapture) returns (Response.Json);
   rpc WaitForResponse(Request.HttpCapture) returns (stream Response.Json);
   rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);

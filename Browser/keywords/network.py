@@ -116,9 +116,14 @@ class Network(LibraryComponent):
                     timeout=self.get_timeout(timeout),
                 )
             )
-            logger.debug(response.log)
-            # Add format response back here
-            return response.body
+            logger.info(response.log)
+            try:
+                data = json.loads(response.json)
+            except json.decoder.JSONDecodeError:
+                logger.info(f"Failed to decode JSON: {response.json}")
+                data = response.json
+            logger.debug(f"Received request: {data}")
+            return data
 
     def _wait_for_http_response(self, matcher, timeout):
         body = ""
@@ -142,8 +147,11 @@ class Network(LibraryComponent):
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
         self, matcher: str | RegExp = "", timeout: timedelta | None = None
-    ) -> Any:
+    ) -> DotDict | Any:
         """Waits for request matching matcher to be made.
+
+        The returned object is a dictionary with keys: ``url``, ``method``, ``headers`` and ``postData``.
+        ``headers`` is a dictionary of request headers. ``postData`` is ``None`` if body is empty or the request body.
 
         | =Arguments= | =Description= |
         | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), JavaScript RegExp (encapsulated in / with following flags) or JavaScript arrow-function that receives the [https://playwright.dev/docs/api/class-request|Request] object and returns a boolean. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest] documentation. |
