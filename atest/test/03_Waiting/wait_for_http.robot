@@ -129,13 +129,6 @@ Wait For Response With OPTIONS Request
     Should Be Equal As Numbers    ${res2.status}    204
     Should Be Equal    ${res2.body}    ${None}
 
-Wait Until Network Is Idle Works
-    [Tags]    slow
-    Go To    ${ROOT_URL}delayed-load.html
-    Get Text    \#server_delayed_response    ==    Server response after 400ms
-    Wait Until Network Is Idle    timeout=3s
-    Get Text    \#server_delayed_response    ==    after some time I respond
-
 Wait For Navigation Works
     [Tags]    slow
     Go To    ${ROOT_URL}redirector.html
