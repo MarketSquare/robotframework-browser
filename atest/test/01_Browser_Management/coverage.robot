@@ -269,6 +269,14 @@ Merge Coverage Reports Invalid Config File
         Log    Caught expected error ${error}
     END
 
+Only Stop Coverage
+    [Documentation]    ...
+    ...    LOG 1:2    INFO    Stopping coverage
+    ...    LOG 1:3    INFO    Coverage not started
+    ...    LOG 1:4    INFO    Coverage was not started, no report generated.
+    ${result} =    Stop Coverage
+    Should Be Equal    ${result}    ${None}
+
 *** Keywords ***
 Open Page And Store ID
     &{page_info} =    New Page

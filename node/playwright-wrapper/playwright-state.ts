@@ -1166,7 +1166,7 @@ async function _saveCoverageReport(activeIndexedPage: IndexedPage): Promise<Resp
     const { coverage: coverageOptions, p: activePage, id: pageId } = activeIndexedPage;
     activeIndexedPage.coverage = undefined;
     if (!coverageOptions) {
-        return stringResponse('', 'Coverage not started');
+        return stringResponse('ROBOT_FRAMEWORK_BROWSER_NO_SET', 'Coverage not started');
     }
     const { directory: coverageDir = '', configFile = '', type: coverageType, raw = false } = coverageOptions;
 
