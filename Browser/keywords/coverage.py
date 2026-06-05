@@ -20,7 +20,7 @@ from pathlib import Path
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import CoverageType, keyword, logger
+from ..utils import ROBOT_FRAMEWORK_BROWSER_NO_SET, CoverageType, keyword, logger
 
 
 class Coverage(LibraryComponent):
@@ -89,7 +89,7 @@ class Coverage(LibraryComponent):
     @keyword(tags=("Getter", "Coverage"))
     def stop_coverage(
         self,
-    ) -> Path:
+    ) -> Path | None:
         """Stops the coverage for the current page.
 
         Creates a coverage report by using
@@ -97,12 +97,15 @@ class Coverage(LibraryComponent):
         To see the default and all possible options, see
         [https://github.com/cenfun/monocart-coverage-reports/blob/HEAD/lib/default/options.js|options.js]
         file for more details. Returns the path to the folder where
-        coverage reported.
+        coverage reported if coverage was started, otherwise returns `None`.
         """
         logger.info("Stopping coverage")
         with self.playwright.grpc_channel() as stub:
             response = stub.StopCoverage(Request.Empty())
-            logger.info(response.log)
+        logger.info(response.log)
+        if response.body == ROBOT_FRAMEWORK_BROWSER_NO_SET:
+            logger.info("Coverage was not started, no report generated.")
+            return None
         coverage_dir = Path(response.body)
         coverage_index_html = list(coverage_dir.glob("*.html"))
         if not coverage_index_html:
