@@ -128,6 +128,15 @@ assert 'Playwright' in browser.get_text("h1")
 browser.close_browser()
 ```
 
+But please note that not all features all available from Python. Example automatic closing,
+run on failure and some others features depends with the library interacting with Robot
+Framework. Either by using the Robot Framework
+[listener](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#listener-interface)
+or by using the Robot Framework
+[dynamic library API](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#dynamic-library-api).
+If there is need to use these features from Python, then Python code must mimic the the required
+Robot Framework interfaces that the library requires.
+
 ### and extending with JavaScript
 
 ```JavaScript
