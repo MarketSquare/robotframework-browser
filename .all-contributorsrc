@@ -1884,6 +1884,15 @@
       "contributions": [
         "ideas"
       ]
+    },
+    {
+      "login": "OkuRobot",
+      "name": "OkuRobot",
+      "avatar_url": "https://avatars.githubusercontent.com/u/115615336?v=4",
+      "profile": "https://github.com/OkuRobot",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
