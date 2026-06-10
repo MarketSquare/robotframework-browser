@@ -1893,6 +1893,15 @@
       "contributions": [
         "bug"
       ]
+    },
+    {
+      "login": "ElionSylwin",
+      "name": "Jakub Wolf",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75618976?v=4",
+      "profile": "https://github.com/ElionSylwin",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
