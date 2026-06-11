@@ -68,7 +68,7 @@ jobs:
             shard: 4
             rf-version: "7.1.1"
           - os: ubuntu-latest
-            python-version: "3.11"
+            python-version: "3.14"
             node-version: 22.x
             shard: 1
             rf-version: "7.4.2"
