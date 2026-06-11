@@ -109,6 +109,15 @@ Get Text With RegEx Match
     Should Be Equal    ${text[0]}    Login
     Should Be Equal    ${text[1]}    Page
 
+Get Text With Select Element
+    Select Options By    id=pet-select    value    dog
+    ${text} =    Get Text    id=pet-select
+    Should Be Equal    ${text}    dog
+    ${text} =    Get Text    id=pet-select    text_type=innerText
+    FOR    ${item}    IN    Please choose an option    Dog    Cat    Hamster    Parrot    Spider    Goldfish
+        Should Match    ${text}    *${item}*
+    END
+
 Get Text With RegEx Match And text_type
     Run Keyword And Expect Error
     ...    TypeError:*expected string or bytes-like object*
