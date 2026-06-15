@@ -16,7 +16,7 @@
     "@types/strip-comments": "^2.0.4",
     "@yao-pkg/pkg": "^6.20.0",
     "esbuild": "^0.28.1",
-    "esbuild-node-externals": "^1.22.0",
+    "esbuild-node-externals": "^1.23.1",
     "eslint": "^10.4.1",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "express": "^5.2.1",
