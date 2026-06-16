@@ -50,6 +50,9 @@
     "uuid": "^14.0.0"
   },
   "overrides": {
+    "@yao-pkg/pkg": {
+      "esbuild": "0.28.1"
+    },
     "babel-plugin-istanbul": {
       "test-exclude": "^7.0.2"
     },
