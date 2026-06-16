@@ -27,7 +27,7 @@
     "lint-staged": "^17.0.7",
     "morgan": "^1.11.0",
     "prettier": "^3.8.4",
-    "react": "^19.2.6",
+    "react": "^19.2.7",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^19.2.7",
