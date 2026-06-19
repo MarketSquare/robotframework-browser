@@ -88,7 +88,7 @@ jobs:
             shard: 3
             rf-version: "7.4.2"
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:
@@ -180,7 +180,7 @@ jobs:
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Use Node.js
       uses: actions/setup-node@v6
       with:
@@ -246,7 +246,7 @@ jobs:
           - os: windows-latest
             node-version: 22.x
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Download package for install testing
         uses: actions/download-artifact@v8
         with:
@@ -335,7 +335,7 @@ jobs:
             arch: arm64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -402,7 +402,7 @@ jobs:
             arch: arm64
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python 3.14
         uses: actions/setup-python@v6
         with:
@@ -472,7 +472,7 @@ jobs:
     needs: build_browser_batteries_wheels
     permissions: write-all
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
