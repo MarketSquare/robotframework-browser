@@ -47,7 +47,7 @@
     "pino": "^10.3.1",
     "playwright": "^1.61.0",
     "strip-comments": "^2.0.1",
-    "uuid": "^14.0.0"
+    "uuid": "^14.0.1"
   },
   "overrides": {
     "@yao-pkg/pkg": {
