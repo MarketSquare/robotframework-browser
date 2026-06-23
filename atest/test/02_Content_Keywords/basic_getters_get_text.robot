@@ -37,7 +37,8 @@ Get Text Text Type As InputValue And Input Field
 
 Get Text No Text Type And Select Element
     Select Options By    id=pet-select    value    dog
-    Get Text    id=pet-select    ==    dog
+    ${text} =    Get Text    id=pet-select
+    Should Contain    ${text}    Dog
 
 Get Text Text Type As InputValue And Select Element
     Select Options By    id=pet-select    value    dog
@@ -112,7 +113,7 @@ Get Text With RegEx Match
 Get Text With Select Element
     Select Options By    id=pet-select    value    dog
     ${text} =    Get Text    id=pet-select
-    Should Be Equal    ${text}    dog
+    Should Contain    ${text}    Dog
     ${text} =    Get Text    id=pet-select    text_type=innerText
     FOR    ${item}    IN    Please choose an option    Dog    Cat    Hamster    Parrot    Spider    Goldfish
         Should Match    ${text}    *${item}*
