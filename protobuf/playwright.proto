@@ -378,6 +378,19 @@ message Request {
     string styleKey = 3;
     bool strict = 4;
   }
+
+  message CreateCredential {
+    string rpId = 1;
+    string id = 2;
+    string privateKey = 3;
+    string publicKey = 4;
+    string userHandle = 5;
+  }
+
+  message CredentialIdAndRpId {
+    string id = 1;
+    string rpId = 2;
+  }
 }
 
 message Types {
@@ -466,6 +479,15 @@ message Response {
     string errors = 2;
     string console = 3;
     string pageId = 4;
+  }
+
+  message GetCredential {
+    string id = 1;
+    string rpId = 2;
+    string userHandle = 3;
+    string privateKey = 4;
+    string publicKey = 5;
+    string log = 6;
   }
 }
 
@@ -645,4 +667,10 @@ service  Playwright {
   rpc StartCoverage(Request.CoverageStart) returns (Response.Empty);
   rpc StopCoverage(Request.Empty) returns (Response.String);
   rpc MergeCoverage(Request.CoverageMerge) returns (Response.Empty);
+
+  /* Credential */
+  rpc CreateCredential(Request.CreateCredential) returns (Response.Empty);
+  rpc InstallCredential(Request.Empty) returns (Response.Empty);
+  rpc GetCredential(Request.CredentialIdAndRpId) returns (Response.GetCredential);
+  rpc DeleteCredential(Request.CredentialIdAndRpId) returns (Response.Empty);
 }

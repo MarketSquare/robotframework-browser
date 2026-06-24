@@ -17,6 +17,7 @@ from .browser_control import Control
 from .clock import Clock
 from .cookie import Cookie
 from .coverage import Coverage
+from .credential import Credential
 from .device_descriptors import Devices
 from .evaluation import Evaluation
 from .getters import Getters
@@ -36,6 +37,7 @@ __all__ = [
     "Control",
     "Cookie",
     "Coverage",
+    "Credential",
     "Devices",
     "Evaluation",
     "Formatter",

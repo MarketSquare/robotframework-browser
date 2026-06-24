@@ -18,6 +18,7 @@ from .data_types import (
     AutoClosingLevel,
     BrowserInfo,
     BoundingBox,
+    ClientCredential,
     ColorScheme,
     ConditionInputs,
     CookieSameSite,

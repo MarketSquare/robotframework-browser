@@ -1465,6 +1465,24 @@ class ClientCertificate(TypedDict, total=False):
     passphrase: str
 
 
+class ClientCredential(TypedDict):
+    """Returned client credential.
+
+    - ``id`` Base64url-encoded credential id.
+    - ``rpId`` Relying party id (typically the site's effective domain).
+    - ``userHandle`` Base64url-encoded user handle.
+    - ``privateKey`` Base64url-encoded PKCS#8 (DER) private key.
+    - ``publicKey`` Base64url-encoded SPKI (DER) public key.
+    Example usage: ``{'id': 'localhost', 'rpId': 'localhost', 'userHandle': 'localhost', 'privateKey': 'localhost', 'publicKey': 'localhost'}``
+    """
+
+    id: str
+    rpId: str
+    userHandle: str
+    privateKey: Secret
+    publicKey: Secret
+
+
 class TracingGroupMode(Enum):
     """Defines in what detail level keywords are written to Playwright trace.
 
@@ -1543,6 +1561,5 @@ InstallationOptionsHelp = {
     "only-shell": "only install headless shell when installing chromium",
     "no-shell": "do not install chromium headless shell",
 }
-
 
 ROBOT_FRAMEWORK_BROWSER_NO_SET = "ROBOT_FRAMEWORK_BROWSER_NO_SET"

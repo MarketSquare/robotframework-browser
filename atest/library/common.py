@@ -1,3 +1,4 @@
+import base64
 import os
 from pathlib import Path
 from subprocess import STDOUT, Popen
@@ -21,6 +22,11 @@ def _open_test_app_log(root_dir: Path, port: str) -> IO:
 
 def parse_url(url: str) -> NamedTuple:
     return urlparse(url)
+
+
+def parse_url_netloc(url: str) -> str:
+    """Returns netloc from url"""
+    return urlparse(url).netloc
 
 
 def start_test_server():
@@ -129,3 +135,7 @@ def numbers_are_close(number1: int, number2: int, difference: int) -> bool:
     raise ValueError(
         f"Numbers difference is {size_difference} {type(size_difference)}, but it should have been {difference} {type(difference)}"
     )
+
+def base64url_encode(data: str) -> str:
+    """Encodes string to base64url string"""
+    return base64.urlsafe_b64encode(data.encode("utf-8")).rstrip(b"=").decode("utf-8")
