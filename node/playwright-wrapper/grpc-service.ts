@@ -20,6 +20,7 @@ import { errorType, logger } from './browser_logger';
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
+import * as credential from './credential';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as pb from './generated/playwright';
@@ -595,6 +596,62 @@ export class PlaywrightServer {
             const oldPeer = this.peerMap[call.getPeer()];
             this.peerMap[call.getPeer()] = request.index;
             callback(null, stringResponse(oldPeer, 'Successfully overrode peer id'));
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async createCredential(
+        call: ServerUnaryCall<pb.Request_CreateCredential, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.createCredential(request, this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async installCredential(
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.installCredential(this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async getCredential(
+        call: ServerUnaryCall<pb.Request_CredentialIdAndRpId, pb.Response_GetCredential>,
+        callback: sendUnaryData<pb.Response_GetCredential>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.getCredential(request, this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async deleteCredential(
+        call: ServerUnaryCall<pb.Request_CredentialIdAndRpId, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.deleteCredential(request, this.getActiveContext(call));
+            callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
         }

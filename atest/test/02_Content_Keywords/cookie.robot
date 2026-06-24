@@ -5,7 +5,7 @@ Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
 Test Setup          Open New Context To Form Page
 Test Teardown       Close Context    ALL
 
-Force Tags          no-iframe
+Test Tags           no-iframe
 
 *** Test Cases ***
 Get Cookies Should Return Empty List When No Cookies Are Available

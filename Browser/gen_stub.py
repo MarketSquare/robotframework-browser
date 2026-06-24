@@ -67,9 +67,9 @@ from Browser.utils import (
     SelectAttribute, SelectOptions, ConditionInputs, FileUploadBuffer, SelectAttribute
 )
 from Browser.utils .data_types import (
-    MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction, NotSet, Dimensions,
-    SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole, AriaSnapshotReturnType,
-    KeyboardInputAction, KeyAction, TextType
+    ClientCredential, MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction,
+    NotSet, Dimensions, SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole,
+     AriaSnapshotReturnType, KeyboardInputAction, KeyAction, TextType
 )
 from Browser.utils.types import Secret
 """

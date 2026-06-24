@@ -127,6 +127,48 @@ app.delete('/api/delete', (req, res) => {
     res.send();
 });
 
+// In-memory store for users and credentials
+const users = new Map();
+users.set('testuser', { id: 'testuser', name: 'Test User', credentials: [] });
+const credentials = new Map();
+
+// Helper to generate a random buffer
+const generateRandomBuffer = (length = 32) => {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return array.buffer;
+};
+
+// Helper to convert buffer to Base64URL
+const bufferToBase64URL = (buffer: ArrayBuffer) => {
+    return Buffer.from(buffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+app.post('/login-challenge', (req, res) => {
+    const { username, domain } = req.body;
+    const challenge = bufferToBase64URL(generateRandomBuffer());
+    logJson({ event: 'webauthn_login_challenge', username, challenge });
+
+    const userCredentials = Array.from(credentials.values()).map((cred) => ({
+        type: 'public-key',
+        id: cred.id,
+    }));
+
+    if (username && !users.has(username)) {
+        logJson({ event: 'webauthn_error', message: `Login challenge for unknown user: ${username}` });
+        return res.status(404).send('User not found.');
+    }
+    const challengeResponse = {
+        challenge,
+        rpId: domain || req.hostname,
+        allowCredentials: userCredentials,
+        userVerification: 'discouraged',
+        timeout: 60000,
+    };
+    logJson({ event: 'webauthn_login_challenge_response', username, challengeResponse });
+    res.json(challengeResponse);
+});
+
 app.get('/slowpage.html', (req, res) => {
     setTimeout(() => {
         res.send('<html lang="en"><head><title>Slow page</title></head><body>HELLO</body></html>');
