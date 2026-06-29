@@ -17,7 +17,7 @@
     "@yao-pkg/pkg": "^6.20.0",
     "esbuild": "^0.28.1",
     "esbuild-node-externals": "^1.23.1",
-    "eslint": "^10.5.0",
+    "eslint": "^10.6.0",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "express": "^5.2.1",
     "globals": "^17.7.0",
