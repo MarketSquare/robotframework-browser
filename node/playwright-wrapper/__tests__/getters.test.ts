@@ -296,13 +296,13 @@ describe('getText', () => {
     }
 
     describe('when textType is ROBOT_FRAMEWORK_BROWSER_NO_SET', () => {
-        it('returns inputValue for a SELECT element', async () => {
+        it('returns innerText for a SELECT element', async () => {
             const locator = makeTextLocator({ evaluate: jest.fn().mockResolvedValue('SELECT') });
             mockFindLocator.mockResolvedValue(locator);
 
             const result = await getText(makeTextRequest(), {} as any);
 
-            expect(result.items).toEqual(['input text']);
+            expect(result.items).toEqual(['inner text']);
         });
 
         it('returns inputValue for an INPUT element', async () => {
