@@ -57,12 +57,13 @@ class Credential(LibraryComponent):
         resolve to ``%{PUBLICKEY}`` environment variable.
 
         Example:
+        | `New Context`
         | ${credentials} =    Get Credentials   # This is a helper keyword that returns a dictionary with the required credential parameters.
         | `Create Credential`
-        | ...    rpId=localhost
+        | ...    rpId=${DOMAIN_NAME}
         | ...    id_=${credentials["id"]}
-        | ...    privateKey=${credentials["privateKey"]}
-        | ...    publicKey=${credentials["publicKey"]}
+        | ...    privateKey=${credentials["privateKey"]}    # This should be a Secret type or a string start with $ which resolves to a Robot Framework variable.
+        | ...    publicKey=${credentials["publicKey"]}    # This should be a Secret type or a string start with $ which resolves to a Robot Framework variable.
         | ...    userHandle=${credentials["userHandle"]}
         | `New Page`    ${SUT_URL}
         | `Click`    id=login
@@ -105,6 +106,23 @@ class Credential(LibraryComponent):
         and the page sees the platform's native (or absent) WebAuthn behavior. Seeding
         credentials with `credentials.create()` without installing populates the
         authenticator, but the page will never see those credentials.
+
+        Example:
+        | `New Context`
+        | `Install Credential`
+        | `New Page`    ${SUT_URL}
+        | # Do something on the page that is causing page to call `navigator.credentials.create()`
+        | ${credential_id} =    Get Credential Id   # This is build by a user keyword that returns the credential id from somewhere. Talk to your application team to find out how to get the credential id.
+        | ${credential} =    Get Credential    id=${credential_id}    # This will return the credential that was created by the application and installed into the context.
+        | `New Context`
+        | `Create Credential`
+        | ...    rpId=${DOMAIN_NAME}
+        | ...    id_=${credential1["id"]}
+        | ...    privateKey=${credential1["privateKey"]}
+        | ...    publicKey=${credential1["publicKey"]}
+        | ...    userHandle=${credential1["userHandle"]}
+        | `New Page`    ${SUT_URL}
+        | # User should be able to interact with the page using the installed credential.
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.InstallCredential(Request.Empty())
@@ -131,10 +149,13 @@ class Credential(LibraryComponent):
         [Secret|https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables]
         type, to prevent accidental logging of sensitive information.
 
+        See `Install Credential` for more information about how to use
+        this keyword.
+
         Example:
-        | ${credential} =    Get Credential    id=localhost
-        | Should Be Equal    ${credential["id"]}    localhost
-        | Should Be Equal    ${credential["rpId"]}    localhost
+        | ${credential} =    Get Credential    id=${DOMAIN_NAME}
+        | Should Be Equal    ${credential["id"]}    ${DOMAIN_NAME}
+        | Should Be Equal    ${credential["rpId"]}    ${DOMAIN_NAME}
         | Should Be Equal    ${credential["userHandle"]}    userhandleCreatedByTheApp
         | Should Be Equal    ${credential["privateKey"].value}    privateKeyCreatedByTheApp
         | Should Be Equal    ${credential["publicKey"].value}    publicKeyCreatedByTheApp
@@ -167,7 +188,7 @@ class Credential(LibraryComponent):
         | id_ | Base64url-encoded credential id. |
 
         Example:
-        | `Delete Credential`    id=localhost
+        | `Delete Credential`    id=${DOMAIN_NAME}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeleteCredential(
