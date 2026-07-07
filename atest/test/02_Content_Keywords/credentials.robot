@@ -73,6 +73,16 @@ Get Credential Preinstalled
     Should Not Be Empty    ${credential1["publicKey"].value}
     ${credential2} =    Get Credential    rpId=localhost
     Compare Credentials    ${credential1}    ${credential2}
+    New Context
+    Create Credential
+    ...    rpId=localhost
+    ...    id_=${credential1["id"]}
+    ...    privateKey=${credential1["privateKey"]}
+    ...    publicKey=${credential1["publicKey"]}
+    ...    userHandle=${credential1["userHandle"]}
+    New Page    ${CREDENTIAL_URL}
+    Click    id=login
+    Get Text    id=status    contains    Success
 
 Delete Credential
     ${credentials} =    Get Credentials
