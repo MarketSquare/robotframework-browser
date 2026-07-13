@@ -69,6 +69,26 @@ Or use the
 . Documented at
 [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
 
+### NodeJS 26 and npm 12 support
+If you are installing Browser library with NodeJS 26 and are using `npm` 12.x, then there are
+few additional steps on the install process. This is because `npm` 12.x dropped support for
+post install scripts: https://installsafe.dev/ At this writing Browser library uses many
+dependencies which do use post install scripts. If you are using NodeJS 26 and npm 12.x,
+then users need to approve the post install scripts for the Browser library NodeJS
+dependencies. Because this is moving target, easiest way to do this to install Browser
+library, run `rfbrowser init`. Then un the following npm commands:
+1. npm approve-scripts --allow-scripts-pending
+2. npm approve-scripts <package-a> <package-b>
+
+Where `<package-a>`, `<package-b>` are replaced with the packages which are listed in
+step 1. Review the packages, because if you several NodeJS projects, the pending list
+may contain packages out of the Browser library ecosystem.
+
+After user has allowed required packages, rerun the `rfbrowser init` commend.
+The installation without NodeJS does not need these extra steps, because
+it has NodeJS dependencies build as binary.
+
+
 ## Install with transformer
 
 Starting from release 19.11.0 Browser library has optional dependency with

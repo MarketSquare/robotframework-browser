@@ -101,9 +101,8 @@ Library was tested with Playwright REPLACE_PW_VERSION
 
 
 def _node_deps(context: Context):
-    arch = " --target_arch=x64" if platform.processor() == "arm" else ""
     context.run(
-        f"npm install{arch} --parseable true --progress false",
+        "npm install --parseable true --progress false",
         env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
     )
     context.run(
