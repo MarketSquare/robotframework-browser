@@ -142,8 +142,8 @@ class Credential(LibraryComponent):
         | =Key= | =Description= |
         | id | Base64url-encoded credential id. |
         | rpId | Relying party id (typically the site's effective domain). |
-        | privateKey | Base64url-encoded PKCS#8 (DER) private key
-        | publicKey | Base64url-encoded SPKI (DER) public key |
+        | privateKey | Base64url-encoded PKCS#8 (DER) private key as Secret. |
+        | publicKey | Base64url-encoded SPKI (DER) public key as a Secret. |
 
         The privateKey and publicKey are wrapped in the
         [Secret|https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables]
