@@ -101,7 +101,7 @@ jobs:
         npm ci
         npx playwright install --with-deps
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -193,7 +193,7 @@ jobs:
         npm ci
         npx playwright install --with-deps
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: 3.12
         cache: 'pip'
@@ -272,7 +272,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -341,7 +341,7 @@ jobs:
         with:
           node-version: "24.x"
       - name: Setup Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -404,7 +404,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.14
       - name: Setup Node.js
@@ -473,7 +473,7 @@ jobs:
     permissions: write-all
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
           cache: 'pip'
