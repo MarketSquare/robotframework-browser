@@ -44,7 +44,7 @@ jobs:
             rf-version: "7.4.2"
           - os: ubuntu-latest
             python-version: "3.11"
-            node-version: 24.x
+            node-version: 26.x
             shard: 4
             rf-version: "7.1.1"
           - os: windows-latest
