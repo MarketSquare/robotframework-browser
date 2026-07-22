@@ -761,6 +761,16 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG")
     return rc
 
 
+def _get_rf_version() -> tuple:
+    def integer(s) -> int:
+        try:
+            return int(s)
+        except ValueError:
+            return 0
+
+    return tuple(map(integer, robot_version_module.get_version().split(".")))
+
+
 def _add_skips(default_args, include_mac=False):
     if platform.platform().lower().startswith("windows"):
         print("Running in Windows exclude no-windows-support tags")
@@ -772,7 +782,8 @@ def _add_skips(default_args, include_mac=False):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
     default_args.extend(["--exclude", "tidy-transformer"])
-    rf_version = tuple(map(int, robot_version_module.get_version().split(".")))
+
+    rf_version = _get_rf_version()
     if rf_version < (7, 4):
         print(
             "Running with Robot Framework version < 7.4, exclude require-rf-7.4+ tags"
@@ -793,7 +804,7 @@ def _add_skips_list(default_args, include_mac=False):
         print("Running in Mac exclude no-mac-support tags")
         default_args.extend(["--exclude", "no-mac-support"])
     default_args.extend(["--exclude", "tidy-transformer"])
-    rf_version = tuple(map(int, robot_version_module.get_version().split(".")))
+    rf_version = _get_rf_version()
     if rf_version < (7, 4):
         print(
             "Running with Robot Framework version < 7.4, exclude require-rf-7.4+ tags"
