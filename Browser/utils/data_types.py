@@ -91,7 +91,7 @@ def _do_conversion(value: Any, struct_type):
     return struct_type(value)
 
 
-def _handel_conversion(
+def _handel_conversion(  # ruff: ignore[PLR0917]
     typed_dict, lower_case_dict, struct, req_key, arg_name, arg_type, raise_error=True
 ):
     if req_key.lower() not in lower_case_dict:
