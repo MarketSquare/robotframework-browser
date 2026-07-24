@@ -87,7 +87,7 @@ class Cookie(LibraryComponent):
         return dot_dict
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def add_cookie(
+    def add_cookie(  # ruff: ignore[PLR0917]
         self,
         name: str,
         value: str,

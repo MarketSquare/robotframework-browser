@@ -852,7 +852,7 @@ class PlaywrightState(LibraryComponent):
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
 
-    def _resolve_trace_file(self, tracing: bool | None | Path) -> str:
+    def _resolve_trace_file(self, tracing: bool | Path | None) -> str:
         if isinstance(tracing, str):
             tracing = Path(tracing)
         tracing_by_var = (

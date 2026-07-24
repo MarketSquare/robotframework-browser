@@ -845,7 +845,7 @@ class Interaction(LibraryComponent):
             if log_response:
                 logger.debug(response.log)
 
-    def _type_text(
+    def _type_text(  # ruff: ignore[PLR0917]
         self,
         selector: str,
         txt: str,
@@ -952,8 +952,8 @@ class Interaction(LibraryComponent):
     def wait_for_alerts(
         self,
         actions: list[DialogAction],
-        prompt_inputs: list[None | str],
-        texts: list[None | str],
+        prompt_inputs: list[str | None],
+        texts: list[str | None],
         timeout: timedelta | None = None,
     ) -> list[str]:
         """Returns a promise to wait for multiple dialog on a page.
@@ -1025,7 +1025,7 @@ class Interaction(LibraryComponent):
         return response.items
 
     @keyword(tags=("Setter", "PageContent"))
-    def mouse_button(
+    def mouse_button(  # ruff: ignore[PLR0917]
         self,
         action: MouseButtonAction,
         x: float | None = None,
@@ -1478,7 +1478,7 @@ class Interaction(LibraryComponent):
         return result_paths
 
 
-def _get_file_by_selectors(
+def _get_file_by_selectors(  # ruff: ignore[PLR0917]
     path: list, selector: str, strict: bool, name: str, mimeType: str, buffer: str
 ) -> Generator[Request.FileBySelector, None, None]:
     grpc_max_zize = 4000000

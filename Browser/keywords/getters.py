@@ -1139,7 +1139,7 @@ class Getters(LibraryComponent):
     @keyword(tags=("Getter", "Assertion", "PageContent"))
     @with_assertion_polling
     @assertion_formatter_used
-    def get_style(
+    def get_style(  # ruff: ignore[PLR0917]
         self,
         selector: str,
         key: str | None = "ALL",

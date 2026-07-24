@@ -273,7 +273,7 @@ class Control(LibraryComponent):
                     mode=HighlightMode.playwright,
                 )
 
-    def _create_screenshot_options(
+    def _create_screenshot_options(  # ruff: ignore[PLR0917]
         self,
         crop,
         disableAnimations,
@@ -482,7 +482,7 @@ class Control(LibraryComponent):
     @keyword(tags=("Setter", "Config"))
     def show_keyword_banner(
         self, show: bool = True, style: str = "", scope: Scope = Scope.Suite
-    ) -> dict[str, None | bool | str]:
+    ) -> dict[str, bool | str | None]:
         """Controls if the keyword banner is shown on page or not.
 
         Keyword call banner is a css overlay that shows the currently executed keyword directly on page.

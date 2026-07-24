@@ -65,7 +65,9 @@ Login User
 Python keywords in `atest/library/` and `Browser/keywords/` can and should have docstrings. These are discoverable via libdoc and IDE tooling.
 
 ```python
-def assert_passed_duration(start_time: datetime, max_duration_ms: int, delta_ms: int = 300) -> None:
+def assert_passed_duration(
+    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
+) -> None:
     """Assert that the time elapsed since start_time does not exceed max_duration_ms + delta_ms."""
     ...
 ```
@@ -104,20 +106,20 @@ All Python keyword functions in `atest/library/` must have type annotations on p
 
 **Good**
 ```python
-def start_test_server() -> str:
-    ...
+def start_test_server() -> str: ...
 
-def assert_passed_duration(start_time: datetime, max_duration_ms: int, delta_ms: int = 300) -> None:
-    ...
+
+def assert_passed_duration(
+    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
+) -> None: ...
 ```
 
 **Bad**
 ```python
-def start_test_server():
-    ...
+def start_test_server(): ...
 
-def assert_passed_duration(start_time, max_duration_ms, delta_ms=300):
-    ...
+
+def assert_passed_duration(start_time, max_duration_ms, delta_ms=300): ...
 ```
 
 ### Avoid deeply nested user keywords
