@@ -16,10 +16,10 @@ Pillow==12.3.0
 beautifulsoup4 >= 4.15.0
 coverage >= 7.15.2
 python-dateutil >= 2.9.0.post0
-robotframework-robocop >= 8.2.4
+robotframework-robocop >= 8.3.2
 robotframework-crypto >= 0.4.2
 robotframework-archivelibrary >= 0.4.3
-uv >= 0.11.31
+uv >= 0.11.32
 build >= 1.5.0
 robotframework-ghareports >= 1.0.0
 types-PyYAML >= 6.0.12.20260518
