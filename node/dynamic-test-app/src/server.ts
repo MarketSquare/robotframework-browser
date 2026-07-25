@@ -34,7 +34,12 @@ program
     .option('-k, --private-key <path>', 'path to private key in PEM format')
     .option('-P, --passphrase <passphrase>', 'passphrase for the private key')
     .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
-    .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false);
+    .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false)
+    .option(
+        '-i, --instance-id <id>',
+        'unique id echoed by /health, used by the test harness to verify server identity',
+        '',
+    );
 
 program.parse(process.argv);
 const options = program.opts();
@@ -46,8 +51,12 @@ const privateKey = options.privateKey;
 const passphrase = options.passphrase;
 const certificateAuthority = options.certificateAuthority;
 const mutualTls: boolean = options.mutualTls;
+const instanceId: string = options.instanceId;
 
 app.set('etag', false);
+
+// Readiness endpoint echoing the instance id, so the test harness can confirm it reached its own server.
+app.get('/health', (req, res) => res.status(200).type('text/plain').send(instanceId));
 
 app.get('/favicon.ico', (req, res) => res.status(204).send());
 app.get('/dist/favicon.ico', (req, res) => res.status(204).send());
@@ -243,7 +252,7 @@ if (tls || mutualTls) {
     https
 
         .createServer(serverOptions, app)
-        .listen(port, () => logJson({ event: 'server_start', url: `https://localhost:${port}` }));
+        .listen(port, () => logJson({ event: 'server_start', url: `https://localhost:${port}`, instanceId }));
 } else {
-    app.listen(port, () => logJson({ event: 'server_start', url: `http://localhost:${port}` }));
+    app.listen(port, () => logJson({ event: 'server_start', url: `http://localhost:${port}`, instanceId }));
 }
