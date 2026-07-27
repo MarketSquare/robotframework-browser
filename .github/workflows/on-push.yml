@@ -326,13 +326,30 @@ jobs:
   build_browser_batteries_wheels:
     name: Build wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
+    # Well above a normal run. Only there so a hung download or npm ci fails in
+    # minutes instead of holding a runner for GitHub's six hour default.
+    timeout-minutes: 45
+    env:
+      # This job only builds wheels, no step here starts a browser, and the
+      # binaries never end up in a wheel anyway. Downloading them cost more
+      # than everything else in the job put together.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
-            arch: arm64
+        # Every target that gets published, the same list on-release.yml uses,
+        # on every run. Each target produces its own wheel tag from its own
+        # NodeJS build, and no leg here takes longer than a few minutes, so
+        # there is nothing to gain from packaging a subset.
+        #
+        # test_browser_batteries_wheels below runs a shorter list outside the
+        # nightly, so it downloads only some of the artifacts this job uploads.
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
       - uses: actions/checkout@v7
@@ -340,10 +357,16 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24.x"
+          # `inv deps` below runs a full npm install, and in CI it removes
+          # node_modules first so it always does. Without this the tarballs are
+          # downloaded again on every run, which is most of what the install step
+          # spends its time on outside Linux.
+          cache: 'npm'
       - name: Setup Python 3.13
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+          cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -387,19 +410,28 @@ jobs:
           name: browser-batteries-wheels-bb-test-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
+      - name: Check the NodeJS version we ship
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv node-version-check
 
   test_browser_batteries_wheels:
     needs:
       - build_browser_batteries_wheels
     name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
-            arch: arm64
+        # Installing the wheel and running the suite costs a lot more than
+        # building it, so this list is a subset outside the nightly run, which
+        # tests every published target. macos-15-intel is the one left out: it
+        # is by far the slowest leg, and it shares its OS branch, archive
+        # format and wheel-tag branch with macos-latest, differing only in the
+        # architecture string. Every name here must also appear in
+        # build_browser_batteries_wheels, whose artifacts this job downloads.
+        os: ${{ fromJSON(github.event_name == 'schedule' && '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-15-intel", "macos-latest"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest"]') }}
 
     steps:
       - uses: actions/checkout@v7
@@ -407,6 +439,11 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: 3.14
+          # This job installs its test dependencies with plain pip, so unlike the
+          # build job above it really does hit this cache. No npm cache next to
+          # it: nothing here runs npm install, NodeJS is only needed to serve the
+          # test app.
+          cache: 'pip'
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
@@ -427,28 +464,46 @@ jobs:
           name: demoapp-bb-test-${{ matrix.os }}
           path: demoapp
       - name: Install Browser and BrowserBatteries
+        if: matrix.os != 'windows-latest'
         run: |
           python -m pip install --upgrade pip
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
           rfbrowser install --with-deps
+      - name: Install Browser and BrowserBatteries On Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m pip install --upgrade pip
+          pip install (Resolve-Path rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl)
+          pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
+          rfbrowser --version
+          rfbrowser install
       - name: Install test dependencies
         run: |
           pip install -r Browser/dev-requirements.txt
       - name: Unzip demoapp *nix
+        if: matrix.os != 'windows-latest'
         run: |
           rm -rf Browser
           rm -rf node
           rm -rf browser_batteries
           ls -l demoapp
           unzip demoapp/demo-app*.zip -d .
-      - name: Run tests on Linux with packed demoapp
+      - name: Unzip demoapp Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\node -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
+          dir demoapp
+          Expand-Archive -Path (Resolve-Path demoapp/demo-app*.zip) -DestinationPath .
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Run tests on MacOS with packed demoapp
-        if: matrix.os == 'macos-latest'
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
           inv atest-robot
       - uses: actions/upload-artifact@v7

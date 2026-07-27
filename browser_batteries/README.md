@@ -1,9 +1,9 @@
 # Robot Framework BrowserBatteries
 Robot Framework
 [BrowserBatteries](https://pypi.org/project/robotframework-browser-batteries/)
-is Python package which contains all the required NodeJS and NodeJS dependencies
-prebuilt as executable and distributed inside of the Python wheel. The only thing
-user needs to do, is to install the Playwright browser binaries and then run tests.
+is Python package which contains the NodeJS runtime and all the required NodeJS
+dependencies, distributed inside of the Python wheel. The only thing user needs to
+do, is to install the Playwright browser binaries and then run tests.
 
 ## Installation
 1. Update pip `pip install -U pip` to ensure latest version is used
@@ -28,21 +28,28 @@ of these packages is not supported.
 
 # Purpose
 When using BrowserBatteries package, user can skip NodeJS installation and does not
-need to install the NodeJS dependencies, like Playwright and GRPC. All those are
-packed inside of a prebuilt binary which project build for following OS and
-architectures:
+need to install the NodeJS dependencies, like Playwright and GRPC. The wheel contains
+a NodeJS 24 runtime together with those dependencies, and a wheel is published for
+each of these platforms:
 
-| Node | Platform | Architecture |
-| ---- | -------- | -------------|
-| 22   | Linux    | x64          |
-| 22   | Linux    | arm64        |
-| 22   | Windows  | x64          |
-| 22   | MacOs    | arm64        |
-| 22   | MacOs    | x64          |
+| Platform | Architecture | Minimum version                        |
+| -------- | -------------| ---------------------------------------|
+| Linux    | x64          | glibc 2.28 (Debian 10, RHEL 8, Ubuntu 20.04) |
+| Linux    | arm64        | glibc 2.28 (Debian 10, RHEL 8, Ubuntu 20.04) |
+| Windows  | x64          | Windows 10 / Windows Server 2016       |
+| MacOs    | arm64        | macOS 13.5                             |
+| MacOs    | x64          | macOS 13.5                             |
 
-Build process relies on [yao-pkg](https://github.com/yao-pkg/pkg) and
-[pkg-fetch](https://github.com/yao-pkg/pkg-fetch) for NodeJS binary
-building. Binary is build with NodeJS 22.
+The minimum versions are the ones the official NodeJS 24 builds require, and the
+wheels are tagged accordingly, so `pip` will not install BrowserBatteries on a
+platform where the shipped NodeJS cannot start. On an older platform, install
+plain `robotframework-browser` and provide NodeJS yourself.
+
+The NodeJS runtime is the official build from [nodejs.org](https://nodejs.org/dist),
+verified against its published checksums at build time and shipped unmodified next to
+the library's own NodeJS sources. This is the same arrangement Playwright uses for its
+Python, Java and .NET packages, which means Playwright runs on the NodeJS it is
+developed and tested against.
 
 ## Browser Batteries purpose
 BrowserBatteries does not provide extra keywords or functionally on

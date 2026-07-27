@@ -219,7 +219,7 @@ def rfbrowser_init(
         os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
 
     process = subprocess.Popen(
-        "npm ci --production --parseable true --progress false",
+        "npm ci --omit=dev --parseable true --progress false",
         shell=True,
         cwd=INSTALLATION_DIR,
         stdout=subprocess.PIPE,

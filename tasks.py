@@ -1,13 +1,18 @@
+import hashlib
 import json
 import os
 import platform
 import re
 import shutil
+import struct
 import subprocess
 import sys
 import sysconfig
+import tarfile
+import tempfile
 import time
 import traceback
+import urllib.request
 import zipfile
 import signal
 
@@ -38,6 +43,63 @@ DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
 BROWSER_BATTERIES_BIN_DIR = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
+# NodeJS shipped inside the BrowserBatteries wheel. This is the runtime that
+# ends up on the user's machine, not the NodeJS that builds the library, so
+# bumping it is a deliberate act: run `inv node-version-check` to see whether a
+# newer release is out. Nothing watches this pin automatically, dependabot only
+# sees npm, pip and github-actions.
+NODE_VERSION = "24.18.1"
+# sha256 of the SHASUMS256.txt nodejs.org publishes for NODE_VERSION, the file
+# listing a digest for every archive of that release. Pinning this one file pins
+# all of them, and it has to move together with NODE_VERSION above: there is a
+# separate SHASUMS256.txt per version and a published one never changes. `inv
+# node-version-check` prints the value to use when it reports a newer release.
+#
+# Without it, that manifest arrives from the same host over the same connection
+# as the archive it vouches for, so anything able to serve a substituted archive
+# could serve a manifest that agrees with it and the checksum would still pass.
+# The NodeJS binary is the one input of this build that is a third party binary
+# rather than something we compile, and it is executed on every user's machine,
+# so it gets a pin somebody approved in a diff instead of one fetched at the same
+# moment as the thing it checks.
+NODE_SHASUMS_SHA256 = "963b6fefe0c1b0f0d731da926ae12d4c552c3898090e94f3db1549b62e7bbb93"
+NODE_DIST_BASE = "https://nodejs.org/dist"
+NODE_DIST_INDEX = f"{NODE_DIST_BASE}/index.json"
+# Oldest platforms the official NodeJS builds above run on, from
+# https://github.com/nodejs/node/blob/main/BUILDING.md. These decide the wheel
+# tags, so bumping NODE_VERSION means checking them again: tagging a wheel as
+# more portable than the NodeJS inside it turns "no compatible wheel" into a
+# loader error after a successful install. NODE_MIN_MACOS has to stay on a .0
+# boundary even though NodeJS itself targets 13.5, because pip only ever
+# generates macosx_<major>_0_* tags for macOS 11 and newer.
+NODE_MIN_GLIBC = "2_28"
+NODE_MIN_MACOS = "13_0"
+# Changing any of the three constants above is visible to whoever installs the
+# wheel, so it has to reach the release notes. Those are generated from the issues
+# on the release milestone, see CONTRIBUTING.md, which makes the issue the only
+# way a user ever hears about the change. Every failure below repeats this,
+# because whoever is reading one of those is the person about to make the change,
+# and they are not reading CONTRIBUTING.md at that moment.
+RELEASE_PROCESS = (
+    "Raise an issue and add it to the release milestone so this reaches the "
+    "release notes, then close it once the PR is merged."
+)
+# Every target a BrowserBatteries wheel is published for, named the way
+# nodejs.org names it. `inv node-floor-check` walks the list from one machine to
+# check the two constants above against the binaries themselves. win-x64 is
+# missing on purpose: a win_amd64 wheel tag carries no OS version, so there is
+# nothing about it to get wrong.
+NODE_FLOOR_TARGETS = ("linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64")
+# Read out of the NodeJS binaries to check those constants. A versioned glibc
+# symbol looks like GLIBC_2.28 in the ELF dynamic string table, and a Mach-O
+# states its oldest macOS in one of two load commands.
+GLIBC_SYMBOL = re.compile(rb"GLIBC_(\d+)\.(\d+)")
+MACHO_MAGIC_64 = 0xFEEDFACF
+LC_VERSION_MIN_MACOSX = 0x24
+LC_BUILD_VERSION = 0x32
+# Playwright's own switch for leaving the browser binaries alone. Honoured by
+# `inv deps` so a job that only builds wheels does not pay for them.
+SKIP_BROWSER_DOWNLOAD = "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD"
 PYTHON_SRC_DIR = ROOT_DIR / "Browser"
 python_protobuf_dir = PYTHON_SRC_DIR / "generated"
 WRAPPER_DIR = PYTHON_SRC_DIR / "wrapper"
@@ -105,10 +167,15 @@ def _node_deps(context: Context):
         "npm install --parseable true --progress false",
         env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
     )
-    context.run(
-        "npx --quiet playwright install  --with-deps",
-        env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
-    )
+    if os.environ.get(SKIP_BROWSER_DOWNLOAD):
+        # Jobs that only build wheels never launch a browser, and the binaries
+        # are several hundred megabytes to download and unpack.
+        print(f"{SKIP_BROWSER_DOWNLOAD} is set, skipping browser binaries.")
+    else:
+        context.run(
+            "npx --quiet playwright install  --with-deps",
+            env={"PLAYWRIGHT_BROWSERS_PATH": "0"},
+        )
     npm_deps_timestamp_file.touch()
 
 
@@ -186,6 +253,7 @@ def clean(c):
         Path("./htmlcov"),
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
+        BROWSER_BATTERIES_DIR / "build",
     ]:
         if target.exists():
             shutil.rmtree(target)
@@ -281,38 +349,467 @@ def _os_platform() -> str:
     return "linux"
 
 
-def _build_nodejs(c: Context, architecture: str):
-    """Build NodeJS binary for GRPC server."""
-    print(
-        f"Build NodeJS binary to '{BROWSER_BATTERIES_BIN_DIR}' with architecture '{architecture}'."
+def _node_dist_infix() -> str:
+    """Name nodejs.org uses for this machine, as in node-v<version>-<infix>.
+
+    Always the machine running the build. NodeJS is downloaded prebuilt and the
+    wheel is tagged from `sysconfig.get_platform()`, so building for anything
+    but the host would produce a wheel whose own tag says it fits where its
+    NodeJS cannot run. Every published target has its own CI runner.
+
+    `platform.machine()` reports the machine name, which is not what nodejs.org
+    calls the same architecture.
+    """
+    machine = platform.machine().lower()
+    arch = {"x86_64": "x64", "amd64": "x64", "aarch64": "arm64"}.get(machine, machine)
+    os_platform = _os_platform()
+    if os_platform == "macos":
+        return f"darwin-{arch}"
+    if os_platform == "win":
+        return f"win-{arch}"
+    return f"linux-{arch}"
+
+
+DOWNLOAD_ATTEMPTS = 5
+# Seconds a single read is allowed to make no progress. Without it the socket
+# blocks forever, so a connection that stalls instead of failing never raises,
+# the retry loop below never sees an error, and the job sits there until CI
+# kills it. Not a deadline for the whole transfer: a slow but progressing
+# download is left alone.
+DOWNLOAD_TIMEOUT = 60
+
+
+def _download(url: str, destination: Path):
+    """Download url to destination, retrying a few times before giving up.
+
+    Every build fetches the NodeJS archive and its checksums from nodejs.org,
+    on each platform in the matrix, so a single hiccup there would otherwise
+    fail a build for reasons that have nothing to do with the change.
+    """
+    last_error: Exception = RuntimeError("no attempt made")
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            print(f"Downloading {url}")
+            with (
+                urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT) as response,
+                destination.open("wb") as out,
+            ):
+                shutil.copyfileobj(response, out)
+        except Exception as error:
+            last_error = error
+            print(f"  attempt {attempt} of {DOWNLOAD_ATTEMPTS} failed: {error}")
+            if attempt < DOWNLOAD_ATTEMPTS:
+                time.sleep(attempt)
+        else:
+            return
+    raise Exit(f"Failed to download {url}: {last_error}")
+
+
+def _shasums_digest(version: str) -> str:
+    """sha256 of the SHASUMS256.txt nodejs.org publishes for a release."""
+    with tempfile.TemporaryDirectory() as tmp:
+        checksums = Path(tmp) / "SHASUMS256.txt"
+        _download(f"{NODE_DIST_BASE}/v{version}/SHASUMS256.txt", checksums)
+        return hashlib.sha256(checksums.read_bytes()).hexdigest()
+
+
+def _verify_shasums(checksums: Path):
+    """Check SHASUMS256.txt itself against the digest pinned in this file.
+
+    Has to happen before anything trusts the manifest, because on its own the
+    manifest only proves the archive arrived intact from whoever served it.
+    """
+    digest = hashlib.sha256(checksums.read_bytes()).hexdigest()
+    if digest == NODE_SHASUMS_SHA256:
+        print(f"SHASUMS256.txt matches the pin for NodeJS {NODE_VERSION}")
+        return
+    # Deliberately not the release process boilerplate. Either NODE_VERSION moved
+    # without its digest, which is a mistake to correct, or nodejs.org served
+    # something other than what was published, which is not a milestone issue.
+    raise Exit(
+        f"SHASUMS256.txt for NodeJS {NODE_VERSION} hashes to {digest}, but "
+        f"NODE_SHASUMS_SHA256 pins {NODE_SHASUMS_SHA256}.\n"
+        f"If NODE_VERSION was just changed, set NODE_SHASUMS_SHA256 to {digest} "
+        "in tasks.py.\n"
+        "If it was not, stop: the manifest is not the one nodejs.org published "
+        "for this version, and the archive it vouches for must not be shipped "
+        "until that is explained."
     )
-    _copy_package_files()
-    target = f"node24-{_os_platform()}-{architecture}"
-    print(f"Target: {target}")
-    grpc_server_bin = "grpc_server.exe" if os.name == "nt" else "grpc_server"
-    grpc_server = BROWSER_BATTERIES_BIN_DIR.joinpath(grpc_server_bin)
-    cmd = [
-        "node",
-        "node_modules/@yao-pkg/pkg/lib-es5/bin.js",
-        "--public",
-        "--targets",
-        target,
-        "--output",
-        str(grpc_server),
-        ".",
+
+
+def _verify_checksum(archive: Path, checksums: str):
+    """Check the archive against nodejs.org's SHASUMS256.txt."""
+    expected = None
+    for line in checksums.splitlines():
+        digest, _, name = line.partition("  ")
+        if name.strip() == archive.name:
+            expected = digest
+            break
+    if not expected:
+        raise Exit(f"{archive.name} is not listed in SHASUMS256.txt")
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    if digest != expected:
+        raise Exit(f"Checksum mismatch for {archive.name}: {digest} != {expected}")
+    print(f"Checksum verified for {archive.name}")
+
+
+def _extract_member(source, destination: Path):
+    if source is None:
+        raise Exit(f"Could not read {destination.name} from the NodeJS archive")
+    with source, destination.open("wb") as out:
+        shutil.copyfileobj(source, out)
+
+
+def _elf_section(data: bytes, wanted: str) -> bytes:
+    """Contents of a named section of an ELF64 file."""
+    sh_offset, sh_entry_size, sh_count, sh_str_index = struct.unpack_from(
+        "<Q10xHHH", data, 0x28
+    )
+    headers = [
+        struct.unpack_from("<IIQQQQ", data, sh_offset + index * sh_entry_size)
+        for index in range(sh_count)
     ]
-    c.run(" ".join(cmd))
-    if grpc_server.exists():
-        print(f"GRPC server binary created at '{grpc_server}'.")
-    else:
-        print(f"Failed to create GRPC server binary at '{grpc_server}'.")
-        sys.exit(1)
+    names_offset = headers[sh_str_index][4]
+    for name_offset, _type, _flags, _addr, offset, size in headers:
+        start = names_offset + name_offset
+        if data[start : data.index(b"\0", start)].decode() == wanted:
+            return data[offset : offset + size]
+    raise Exit(f"Found no {wanted} section in the ELF file")
+
+
+def _glibc_floor(binary: Path) -> tuple:
+    """Oldest glibc an ELF binary can load against, from its symbol versions."""
+    # The dynamic string table only, never the whole file. NodeJS carries a copy
+    # of its own JavaScript inside the executable, and a stray "GLIBC_2.99" in
+    # there would fail a build over nothing.
+    table = _elf_section(binary.read_bytes(), ".dynstr")
+    versions = {
+        (int(major), int(minor)) for major, minor in GLIBC_SYMBOL.findall(table)
+    }
+    if not versions:
+        raise Exit(f"{binary.name} references no versioned glibc symbols")
+    return max(versions)
+
+
+def _macos_floor(binary: Path) -> tuple:
+    """Oldest macOS a Mach-O binary declares it runs on, as (major, minor)."""
+    data = binary.read_bytes()
+    (magic,) = struct.unpack_from("<I", data, 0)
+    if magic != MACHO_MAGIC_64:
+        raise Exit(f"{binary.name} is not a thin 64 bit Mach-O file")
+    (command_count,) = struct.unpack_from("<I", data, 16)
+    offset = 32
+    for _ in range(command_count):
+        command, size = struct.unpack_from("<II", data, offset)
+        # Both commands carry the same packed xxxx.yy.zz version, the newer one
+        # behind a platform field.
+        if command in (LC_BUILD_VERSION, LC_VERSION_MIN_MACOSX):
+            version_at = offset + (12 if command == LC_BUILD_VERSION else 8)
+            (version,) = struct.unpack_from("<I", data, version_at)
+            return (version >> 16, (version >> 8) & 0xFF)
+        offset += size
+    raise Exit(f"{binary.name} declares no minimum macOS version")
+
+
+def _check_node_floor(binary: Path, infix: str) -> tuple:
+    """Check a NodeJS binary against the floor its wheel tag will promise.
+
+    That tag is all that stands between a user on too old a platform and a
+    loader error after an install that looked fine, and nothing else in the
+    build reads what the binary actually needs. Returns a line for the report
+    and a problem, the problem being empty when the declared floor is right.
+    """
+    if infix.startswith("win-"):
+        # A win_amd64 tag carries no Windows version, so there is no promise here
+        # that could be wrong.
+        return f"* {infix}: wheel tag makes no OS version claim, nothing to check", ""
+    if infix.startswith("linux-"):
+        actual = _glibc_floor(binary)
+        declared = tuple(int(part) for part in NODE_MIN_GLIBC.split("_"))
+        if actual > declared:
+            return "", (
+                f"{infix}: NodeJS needs glibc {_as_version_string(actual)} but "
+                f"NODE_MIN_GLIBC promises {_as_version_string(declared)}. Everyone "
+                "in between installs the wheel and then cannot start it. Raise "
+                "NODE_MIN_GLIBC and fix the platform table in "
+                "browser_batteries/README.md to match."
+            )
+        if actual < declared:
+            return "", (
+                f"{infix}: NodeJS needs no more than glibc "
+                f"{_as_version_string(actual)}, but NODE_MIN_GLIBC promises "
+                f"{_as_version_string(declared)}, so pip refuses the wheel on "
+                "platforms it would have run on. Lower NODE_MIN_GLIBC and fix the "
+                "platform table in browser_batteries/README.md to match."
+            )
+        return f"* {infix}: needs glibc {_as_version_string(actual)}, matches", ""
+    actual = _macos_floor(binary)
+    declared = tuple(int(part) for part in NODE_MIN_MACOS.split("_"))
+    # Only the major has to agree. pip generates macosx_<major>_0_* tags for
+    # macOS 11 and newer, so NODE_MIN_MACOS cannot express NodeJS's own .5, which
+    # leaves a wheel tagged 13_0 installable on 13.0 to 13.4 where NodeJS says it
+    # will not run. Living with that half version is deliberate. Being a whole
+    # major out of step is not.
+    if actual[0] != declared[0] or declared[1] != 0:
+        return "", (
+            f"{infix}: NodeJS declares macOS {_as_version_string(actual)} but "
+            f"NODE_MIN_MACOS says {_as_version_string(declared)}. Set it to "
+            f"{actual[0]}_0 and fix the platform table in "
+            "browser_batteries/README.md to match."
+        )
+    covers = f"NODE_MIN_MACOS {NODE_MIN_MACOS} covers it"
+    return f"* {infix}: needs macOS {_as_version_string(actual)}, {covers}", ""
+
+
+def _fetch_node(destination: Path, infix: str | None = None) -> Path:
+    """Put the official NodeJS binary and its licence into destination.
+
+    Defaults to the machine this runs on. `inv node-floor-check` passes an infix
+    explicitly, because reading a binary works from any platform even though
+    running one does not.
+    """
+    infix = infix or _node_dist_infix()
+    windows = infix.startswith("win-")
+    suffix = "zip" if windows else "tar.xz"
+    archive_name = f"node-v{NODE_VERSION}-{infix}.{suffix}"
+    base_url = f"{NODE_DIST_BASE}/v{NODE_VERSION}"
+    node_name = "node.exe" if windows else "node"
+
+    with tempfile.TemporaryDirectory() as tmp:
+        archive = Path(tmp) / archive_name
+        _download(f"{base_url}/{archive_name}", archive)
+        checksums = Path(tmp) / "SHASUMS256.txt"
+        _download(f"{base_url}/SHASUMS256.txt", checksums)
+        _verify_shasums(checksums)
+        _verify_checksum(archive, checksums.read_text(encoding="utf-8"))
+        root = f"node-v{NODE_VERSION}-{infix}"
+        node_member = f"{root}/{node_name}" if windows else f"{root}/bin/{node_name}"
+        node_binary = destination / node_name
+        if windows:
+            with zipfile.ZipFile(archive) as zip_file:
+                _extract_member(zip_file.open(node_member), node_binary)
+                _extract_member(
+                    zip_file.open(f"{root}/LICENSE"), destination / "NODE_LICENSE"
+                )
+        else:
+            with tarfile.open(archive) as tar:
+                _extract_member(tar.extractfile(node_member), node_binary)
+                _extract_member(
+                    tar.extractfile(f"{root}/LICENSE"), destination / "NODE_LICENSE"
+                )
+    # The archive mode is not preserved by the copy above, and the binary has to
+    # stay runnable all the way into the installed wheel.
+    node_binary.chmod(0o755)
+    return node_binary
+
+
+def _assemble_wrapper(c: Context, destination: Path):
+    """Stage the JS the GRPC server runs, with its production dependencies."""
+    destination.mkdir(parents=True, exist_ok=True)
+    # Named explicitly: WRAPPER_DIR is also where a development checkout runs
+    # `rfbrowser init`, so it can hold node_modules, downloaded browsers and log
+    # files that must not be shipped.
+    shutil.copy(WRAPPER_DIR / "index.js", destination)
+    shutil.copytree(WRAPPER_DIR / "static", destination / "static", dirs_exist_ok=True)
+    shutil.copy(ROOT_DIR / "package.json", destination)
+    shutil.copy(ROOT_DIR / "package-lock.json", destination)
+    print(f"Installing production node dependencies to {destination}")
+    with c.cd(str(destination)):
+        # The browsers are installed by `rfbrowser install` on the user's
+        # machine, they must not end up in the wheel.
+        c.run(
+            "npm ci --omit=dev --no-audit --no-fund",
+            env={SKIP_BROWSER_DOWNLOAD: "1"},
+        )
+    # npm leaves behind CLI shims and its own lock file that nothing needs at
+    # runtime, and setuptools does not pick up dot-directories anyway.
+    for leftover in [
+        destination / "node_modules" / ".bin",
+        destination / "node_modules" / ".package-lock.json",
+    ]:
+        if leftover.is_dir():
+            shutil.rmtree(leftover, ignore_errors=True)
+        elif leftover.exists():
+            leftover.unlink()
+
+
+def _directory_size(path: Path) -> int:
+    return sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+
+
+def _as_version(version: str) -> tuple:
+    return tuple(int(part) for part in version.lstrip("v").split("."))
+
+
+def _as_version_string(version: tuple) -> str:
+    return ".".join(str(part) for part in version)
+
+
+def _report(lines: list, heading: str):
+    """Print, and on GitHub Actions also show on the run's summary page."""
+    report = "\n".join(lines)
+    print(report)
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a", encoding="utf-8") as handle:
+            handle.write(f"### {heading}\n{report}\n")
+
+
+@task
+def node_version_check(c):
+    """Fail when the NodeJS we ship is no longer the one we should ship.
+
+    Two things make the pin stale. A newer release in the line we already ship
+    is a plain NODE_VERSION bump. A new LTS line is the moment to move over,
+    and that is not a bump: the platforms the official builds run on change
+    with the line, so NODE_MIN_GLIBC, NODE_MIN_MACOS and the wheel tags they
+    produce all have to be worked out again. Both fail, because both are work
+    we want to hear about on the day it appears rather than the next time
+    somebody happens to look.
+
+    Always exits non-zero on a stale pin, on every run and everywhere. CI runs
+    this as the last step of the BrowserBatteries wheel job, so the wheels are
+    built and uploaded before it can fire.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        index = Path(tmp) / "index.json"
+        _download(NODE_DIST_INDEX, index)
+        releases = json.loads(index.read_text(encoding="utf-8"))
+    pinned = _as_version(NODE_VERSION)
+    same_line = [r for r in releases if _as_version(r["version"])[0] == pinned[0]]
+    if not same_line:
+        raise Exit(f"nodejs.org lists no releases for NodeJS {pinned[0]}.x")
+    newest = max(_as_version(r["version"]) for r in same_line)
+    # `lts` is false on a release that is not on an LTS line, and the codename
+    # of the line on one that is. Taking the max rather than the first entry
+    # keeps this working whatever order nodejs.org lists them in.
+    lts_releases = [_as_version(r["version"]) for r in releases if r["lts"]]
+    newest_lts = max(lts_releases) if lts_releases else None
+    lts_report = _as_version_string(newest_lts) if newest_lts else "none listed"
+    lines = [
+        f"* shipped in BrowserBatteries: {NODE_VERSION}",
+        f"* newest NodeJS {pinned[0]}.x: {_as_version_string(newest)}",
+        f"* newest LTS on nodejs.org: {lts_report}",
+    ]
+    stale = []
+    # Whichever release we are being told to move to, its manifest digest is the
+    # other half of the change. Fetched only when there is something to move to,
+    # so that an up to date pin costs one request as before.
+    move_to = newest if newest > pinned else None
+    if newest_lts and newest_lts[0] > pinned[0]:
+        move_to = max(move_to or newest_lts, newest_lts)
+    if newest > pinned:
+        behind = _as_version_string(newest)
+        lines.append(
+            f"* NODE_VERSION in tasks.py is behind, update it to {behind} "
+            "and let CI rebuild the wheels."
+        )
+        stale.append(f"NodeJS {NODE_VERSION} is behind {behind}.")
+    if newest_lts and newest_lts[0] > pinned[0]:
+        lines.append(
+            f"* NodeJS {newest_lts[0]}.x is the new LTS line and BrowserBatteries "
+            f"still ships {pinned[0]}.x. Moving over is more than a NODE_VERSION "
+            f"bump: check which platforms the official {newest_lts[0]}.x builds "
+            "still run on, then update NODE_MIN_GLIBC, NODE_MIN_MACOS and the "
+            "table in browser_batteries/README.md to match, because those decide "
+            "who gets a wheel."
+        )
+        stale.append(f"NodeJS {newest_lts[0]}.x is the new LTS line.")
+    if move_to:
+        target = _as_version_string(move_to)
+        lines.append(
+            f"* NODE_SHASUMS_SHA256 for {target} is {_shasums_digest(target)}, set "
+            "that in tasks.py in the same commit as NODE_VERSION."
+        )
+    if stale:
+        lines.append(f"* {RELEASE_PROCESS}")
+        _report(lines, "NodeJS version check")
+        raise Exit(f"{' '.join(stale)} {RELEASE_PROCESS}")
+    lines.append("* up to date, nothing to do.")
+    _report(lines, "NodeJS version check")
+
+
+@task
+def node_floor_check(c):
+    """Check NODE_MIN_GLIBC and NODE_MIN_MACOS against every NodeJS we ship.
+
+    Runs anywhere, Linux or macOS, because it reads the downloaded binaries
+    rather than running them. Meant for the release checklist: a platform's own
+    build only ever checks its own binary, so a constant that is wrong for some
+    other platform would otherwise surface as a broken install for whoever is on
+    it. Windows is not in the list, its wheel tag promises no OS version.
+    """
+    lines = [f"* NodeJS {NODE_VERSION}"]
+    problems = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for infix in NODE_FLOOR_TARGETS:
+            target = Path(tmp) / infix
+            target.mkdir()
+            line, problem = _check_node_floor(_fetch_node(target, infix), infix)
+            lines.append(line or f"* {infix}: WRONG, see below")
+            if problem:
+                problems.append(problem)
+    lines.extend(f"* {problem}" for problem in problems)
+    if problems:
+        lines.append(f"* {RELEASE_PROCESS}")
+    _report(lines, "NodeJS platform floor check")
+    if problems:
+        raise Exit(
+            f"{len(problems)} of {len(NODE_FLOOR_TARGETS)} targets disagree. "
+            f"{RELEASE_PROCESS}"
+        )
+
+
+def _build_nodejs(c: Context):
+    """Put the official NodeJS binary next to the wrapper sources.
+
+    This is the layout Playwright itself uses for its Python, Java and .NET
+    drivers. Playwright is written against ordinary NodeJS, so anything it does
+    at run time - loading builtins, resolving paths, forking helper processes -
+    works the way its own tests expect.
+    """
+    print(f"Assemble NodeJS side to '{BROWSER_BATTERIES_BIN_DIR}'.")
+    _copy_package_files()
+    BROWSER_BATTERIES_BIN_DIR.mkdir(parents=True, exist_ok=True)
+    node_binary = _fetch_node(BROWSER_BATTERIES_BIN_DIR)
+    # Nothing else in the build runs what we ship, so without this a wheel whose
+    # NodeJS cannot start - a truncated extraction, a lost executable bit - is
+    # packaged and published as if it were fine.
+    c.run(f'"{node_binary}" --version')
+    # Running it proves nothing about the platforms it will be installed on: this
+    # machine is newer than anything NODE_MIN_GLIBC or NODE_MIN_MACOS claim, so
+    # the binary starts here whatever those two say. Read the floor out of the
+    # binary instead, and only for the target being built. `inv
+    # node-floor-check` covers all of them at once.
+    line, problem = _check_node_floor(node_binary, _node_dist_infix())
+    print(line or problem)
+    if problem:
+        raise Exit(f"{problem} {RELEASE_PROCESS}")
+    wrapper = BROWSER_BATTERIES_BIN_DIR / "wrapper"
+    _assemble_wrapper(c, wrapper)
+    with c.cd(str(wrapper)):
+        c.run(f'"{node_binary}" --check index.js')
+        # The relative path is deliberate: `require.resolve("playwright-core")`
+        # walks up and finds the repository's own node_modules, so it would
+        # pass even if `npm ci` had shipped nothing here.
+        c.run(
+            f'"{node_binary}" -e "require.resolve(\'./node_modules/playwright-core\')"'
+        )
+    print(
+        f"NodeJS binary at '{node_binary}' ({node_binary.stat().st_size / 1e6:.1f} MB)"
+    )
+    print(f"Wrapper payload at '{wrapper}' ({_directory_size(wrapper) / 1e6:.1f} MB)")
 
 
 @task(clean, build)
-def build_nodejs(c: Context, architecture: str):
-    """Build GRPC server binary from NodeJS side."""
-    _build_nodejs(c, architecture)
+def build_nodejs(c: Context):
+    """Assemble the NodeJS side of BrowserBatteries.
+
+    Downloads the NodeJS binary for the machine this runs on and stages it with
+    the wrapper sources and their production dependencies. Run `inv
+    package-nodejs` to turn the result into a wheel.
+    """
+    _build_nodejs(c)
 
 
 def _sources_changed(source_files: Iterable[Path], timestamp_file: Path):
@@ -425,7 +922,8 @@ def atest(
         smoke: If true, runs only tests that take less than 500ms.
         include_mac: Does not exclude no-mac-support tags. Should be only used in local testing
         loglevel: Set log level for robot framework
-        batteries: Run test with BrowserBatteries. Assumes that GRPC server is build.
+        batteries: Run test with BrowserBatteries. Assumes the NodeJS side is
+            already assembled, see `inv build-nodejs`.
     """
     if IS_GITPOD and (not processes or int(processes) > 6):
         processes = "6"
@@ -1054,35 +1552,28 @@ def package(c: Context):
     """Build python wheel for Browser release."""
 
 
-def _get_architectures() -> str:
-    if sysconfig.get_platform() == "win-amd64":
-        return "x64"
-    machine = platform.machine().lower()
-    if machine == "aarch64":
-        return "arm64"
-    return machine
-
-
 @task(clean_mini, build)
-def package_nodejs(c: Context, architecture=None):
+def package_nodejs(c: Context):
     """Build Python wheel from BrowserBattiers release."""
-    pw_browser_bin = NODE_MODULES / "playwright-core" / ".local-browsers"
-    print(f"Removing existing Playwright browsers in {pw_browser_bin}")
-    shutil.rmtree(pw_browser_bin, ignore_errors=True)
-    architecture = architecture or _get_architectures()
-    _build_nodejs(c, architecture)
+    _build_nodejs(c)
     with c.cd(BROWSER_BATTERIES_DIR):
         print(f"Building Browser Batteries package in {BROWSER_BATTERIES_DIR}")
-        c.run("python -m build")
+        # Without --wheel, `build` makes an sdist first and then unpacks it to
+        # build the wheel out of. That tars, gzips and extracts the whole NodeJS
+        # payload, a few hundred megabytes of it, to produce an artifact nothing
+        # publishes.
+        c.run("python -m build --wheel")
     _os_platform = sysconfig.get_platform()
     print(f"Current os platform: {_os_platform}")
     _os_platform = _os_platform.replace("-", "_").replace(".", "_").replace(" ", "_")
-    if _os_platform.startswith("macosx") and platform.machine().lower() == "x86_64":
-        _os_platform = _os_platform.replace("universal2", platform.machine().lower())
+    if _os_platform.startswith("macosx"):
+        # sysconfig reports the deployment target of the Python running the
+        # build, which says nothing about the NodeJS we ship next to it.
+        _os_platform = f"macosx_{NODE_MIN_MACOS}_{platform.machine().lower()}"
     elif sysconfig.get_platform().lower() == "linux-x86_64":
-        _os_platform = f"manylinux_2_17_{architecture}"
+        _os_platform = f"manylinux_{NODE_MIN_GLIBC}_x86_64"
     elif sysconfig.get_platform().lower() == "linux-aarch64":
-        _os_platform = "manylinux_2_17_aarch64.manylinux2014_aarch64"
+        _os_platform = f"manylinux_{NODE_MIN_GLIBC}_aarch64"
     dist_dir = BROWSER_BATTERIES_DIR.joinpath("dist")
     wheel_pkg = dist_dir.glob("*.whl")
     wheel_pkg = list(wheel_pkg)[0]
@@ -1090,10 +1581,6 @@ def package_nodejs(c: Context, architecture=None):
     wheel_pkg_os_platform = dist_dir / wheel_pkg_os_platform
     print(f"Renaming {wheel_pkg} to have platform tag {wheel_pkg_os_platform}")
     wheel_pkg.rename(wheel_pkg_os_platform)
-    tar_gz_pkg = dist_dir.glob("*.tar.gz")
-    tar_gz_pkg = list(tar_gz_pkg)[0]
-    print(f"Deleting tar.gz package {tar_gz_pkg}")
-    tar_gz_pkg.unlink()
 
 
 @task

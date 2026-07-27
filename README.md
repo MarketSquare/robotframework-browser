@@ -30,7 +30,7 @@ Node-side dependencies by them self.
 Limitations:
 - BrowserBatteries may not be available for every operating system or processor architecture.
 - If you develop plugins that require third-party NodeJS modules, those modules are not
-  compiled into the BrowserBatteries package.
+  included in the BrowserBatteries package.
 
 See [Installation without NodeJS](#installation-without-nodejs) for more details.
 
