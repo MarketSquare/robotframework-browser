@@ -30,20 +30,21 @@ def start_grpc_server(
     port: str,
     enable_playwright_debug: "PlaywrightLogTypes | bool",
 ) -> Popen:
-    """Run the prebuilt gRPC server."""
+    """Run the gRPC server on the NodeJS shipped inside this package."""
     current_dir = Path(__file__).parent
-    grpc_server = "grpc_server.exe" if os.name == "nt" else "grpc_server"
-    playwright_script = current_dir / "bin" / grpc_server
+    node = "node.exe" if os.name == "nt" else "node"
+    node_binary = current_dir / "bin" / node
+    playwright_script = current_dir / "bin" / "wrapper" / "index.js"
     logger.info(f"Starting GRPC process {playwright_script} using at {host}:{port}")
-    args = [str(playwright_script), host, port]
-    workdir = current_dir / "bin"
+    args = [str(node_binary)]
+    workdir = current_dir / "bin" / "wrapper"
     if enable_playwright_debug == PlaywrightLogTypes.playwright:
         logger.trace("Enabling Playwright debug logging")
         os.environ["DEBUG"] = "pw:api"
-    if os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"):
-        logger.trace(
-            "it is not possible to define ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS for BrowserBatteries"
-        )
+    node_debug_options = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS")
+    if node_debug_options:
+        args.extend(node_debug_options.split(","))
+    args.extend([str(playwright_script), host, port])
     if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
         logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
         os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"

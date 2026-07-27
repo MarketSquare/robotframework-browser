@@ -41,6 +41,11 @@ jobs:
   build_browser_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    env:
+      # This job only builds wheels, no step here starts a browser, and the
+      # binaries never end up in a wheel anyway. test_browser_wheels below does
+      # need them and must not set this.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
