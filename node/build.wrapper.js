@@ -4,21 +4,35 @@ const { nodeExternalsPlugin } = require('esbuild-node-externals');
 
 const withCoverage = process.env.ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE === '1';
 
-esbuild
-    .build({
-        logLevel: 'info',
+const shared = {
+    logLevel: 'info',
+    bundle: true,
+    platform: 'node',
+    sourcemap: withCoverage ? 'external' : false,
+    // Runs before every other module in the bundle, which it must: it has to
+    // patch require() before Playwright is loaded. See inspector-shim.ts.
+    inject: ['./node/playwright-wrapper/inspector-shim.ts'],
+    plugins: [
+        nodeExternalsPlugin({
+            // Allow UUID to be bundled instead of external
+            // Needed when building with pkg
+            allowList: ['uuid'],
+        }),
+    ],
+    external: ['playwright-core/*'],
+};
+
+Promise.all([
+    esbuild.build({
+        ...shared,
         entryPoints: ['./node/playwright-wrapper/index.ts'],
-        bundle: true,
-        platform: 'node',
         outfile: './Browser/wrapper/index.js',
-        sourcemap: withCoverage ? 'external' : false,
-        plugins: [
-            nodeExternalsPlugin({
-                // Allow UUID to be bundled instead of external
-                // Needed when building with pkg
-                allowList: ['uuid'],
-            }),
-        ],
-        external: ['playwright-core/*'],
-    })
-    .catch(() => process.exit(1));
+    }),
+    // Entry point for the children Playwright forks. Picked up by pkg through
+    // the "Browser/wrapper/*.js" scripts glob in package.json.
+    esbuild.build({
+        ...shared,
+        entryPoints: ['./node/playwright-wrapper/fork-bootstrap.ts'],
+        outfile: './Browser/wrapper/fork-bootstrap.js',
+    }),
+]).catch(() => process.exit(1));
