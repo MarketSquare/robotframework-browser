@@ -59,14 +59,18 @@ def _walk_install_dir():
             return True
         return "monocart-coverage-reports" in x.parts
 
-    return seedir.seedir(
-        INSTALLATION_DIR,
-        indent=4,
-        mask=mask,
-        beyond="content",
-        depthlimit=4,
-        itemlimit=(None, 5),
-    )
+    try:
+        return seedir.seedir(
+            INSTALLATION_DIR,
+            indent=4,
+            mask=mask,
+            beyond="content",
+            depthlimit=4,
+            itemlimit=(None, 5),
+        )
+    except UnicodeEncodeError as error:
+        log(f"Could not print install dir contents, suppress error {error}")
+        return ""
 
 
 def log_install_dir(error_msg=True):
