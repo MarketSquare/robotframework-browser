@@ -51,6 +51,60 @@ if TYPE_CHECKING:
     from .browser import Browser
 
 
+def spawn_wrapper_process(  # noqa: PLR0917
+    node_executable: "str | Path",
+    script: Path,
+    cwd: Path,
+    logfile: TextIO,
+    host: str,
+    port: str,
+    enable_playwright_debug: "PlaywrightLogTypes | bool",
+    coverage_output: Path | None = None,
+) -> Popen:
+    """Start the NodeJS side of the library and return the running process.
+
+    The only difference between the two distributions is which NodeJS runs the
+    wrapper and where the wrapper lives: the Browser library uses whatever
+    `node` is on PATH, BrowserBatteries the one inside its own wheel. Everything
+    else - debug options, coverage, the browsers path - has to behave the same,
+    so it lives here rather than in two copies that drift. It already had:
+    BrowserBatteries refused to honour
+    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS until the NodeJS bundled in it
+    stopped being a pkg binary, and NODE_V8_COVERAGE was silently ignored there
+    for as long as the two were separate.
+    """
+    logger.info(f"Starting Browser process {script} using at {host}:{port}")
+    if enable_playwright_debug == PlaywrightLogTypes.playwright:
+        logger.trace("Enabling Playwright debug logging")
+        os.environ["DEBUG"] = "pw:api"
+    node_args = [str(node_executable)]
+    node_debug_options = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS")
+    if node_debug_options:
+        node_args.extend(node_debug_options.split(","))
+    node_args.extend([str(script), host, port])
+    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
+    if (
+        coverage_output is not None
+        and os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+        and sys.platform != "win32"
+    ):
+        v8_coverage_dir = coverage_output / "node-v8-coverage"
+        v8_coverage_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+        logger.info(f"V8 coverage enabled, writing to {v8_coverage_dir}")
+    logger.trace(f"Node startup parameters: {node_args}")
+    return Popen(
+        node_args,
+        shell=False,
+        cwd=cwd,
+        env=os.environ,
+        stdout=logfile,
+        stderr=STDOUT,
+    )
+
+
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwright process."""
 
@@ -205,46 +259,26 @@ class Playwright(LibraryComponent):
         ensure_playwright_browsers_path()
 
         return start_grpc_server(
-            self._get_logfile(), host, port, self.enable_playwright_debug
+            self._get_logfile(),
+            host,
+            port,
+            self.enable_playwright_debug,
+            coverage_output=self.browser_output,
         )
 
     def _start_playwright_from_node(
         self, logfile: TextIO, host: str, port: str
     ) -> Popen:
-        """Start Playwright from nodejs wrapper."""
-        playwright_script = self._browser_wrapper_dir / "index.js"
-        if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
-            os.environ["DEBUG"] = "pw:api"
-        logger.info(
-            f"Starting Browser process {playwright_script} using at {host}:{port}"
-        )
-        node_args = ["node"]
-        node_debug_options = os.environ.get(
-            "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"
-        )
-        if node_debug_options:
-            node_args.extend(node_debug_options.split(","))
-        node_args.append(str(playwright_script))
-        node_args.append(host)
-        node_args.append(port)
-        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
-            os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
-        if (
-            os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
-            and sys.platform != "win32"
-        ):
-            v8_coverage_dir = self.browser_output / "node-v8-coverage"
-            v8_coverage_dir.mkdir(parents=True, exist_ok=True)
-            os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
-            logger.info(f"V8 coverage enabled, writing to {v8_coverage_dir}")
-        logger.trace(f"Node startup parameters: {node_args}")
-        return Popen(
-            node_args,
-            shell=False,
+        """Start Playwright from nodejs wrapper, on the user's own NodeJS."""
+        return spawn_wrapper_process(
+            node_executable="node",
+            script=self._browser_wrapper_dir / "index.js",
             cwd=self._browser_wrapper_dir,
-            env=os.environ,
-            stdout=logfile,
-            stderr=STDOUT,
+            logfile=logfile,
+            host=host,
+            port=port,
+            enable_playwright_debug=self.enable_playwright_debug,
+            coverage_output=self.browser_output,
         )
 
     def wait_until_server_up(self):

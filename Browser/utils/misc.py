@@ -18,7 +18,6 @@ import os
 import socket
 import string
 import subprocess
-from io import TextIOWrapper
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +25,6 @@ import psutil  # type: ignore[import-untyped]
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
-from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH
 from Browser.utils.data_types import DownloadInfo
 
 try:
@@ -60,28 +58,30 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 
 
     """
+    # Imported here rather than at module level because Browser.playwright
+    # imports this module through Browser.utils, and at module level the two
+    # would be a cycle.
+    from Browser.playwright import spawn_wrapper_process  # noqa: PLC0415
+
     logfile = output_dir.open("w", encoding="utf-8")
     os.environ["DEBUG"] = "pw:api"
-    if start_grpc_server is None:
-        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
     host = "127.0.0.1"
     port = str(find_free_port())
-    if start_grpc_server is None:
-        return _spawn_node_process(logfile, host, port)
-    process = start_grpc_server(logfile, host, port, True)
-    return process, port
-
-
-def _spawn_node_process(logfile: TextIOWrapper, host: str, port: str):
-    process = subprocess.Popen(
-        [
-            "node",
-            "Browser/wrapper/index.js",
-            host,
-            port,
-        ],
-        stdout=logfile,
-        stderr=subprocess.STDOUT,
+    if start_grpc_server is not None:
+        return start_grpc_server(logfile, host, port, True), port
+    # Resolved from this package rather than the working directory. The caller
+    # of this helper is not necessarily standing in a checkout of this project,
+    # and for anyone who was not, `node` used to be handed a path that does not
+    # exist and the process died before it could serve anything.
+    wrapper_dir = Path(__file__).parent.parent / "wrapper"
+    process = spawn_wrapper_process(
+        node_executable="node",
+        script=wrapper_dir / "index.js",
+        cwd=wrapper_dir,
+        logfile=logfile,
+        host=host,
+        port=port,
+        enable_playwright_debug=True,
     )
     return process, port
 

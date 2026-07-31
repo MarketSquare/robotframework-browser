@@ -15,12 +15,9 @@
 
 import os
 from pathlib import Path
-from subprocess import STDOUT, Popen
+from subprocess import Popen
 from typing import TextIO
 
-from robot.api import logger
-
-from Browser.entry.constant import PLAYWRIGHT_BROWSERS_PATH
 from Browser.utils.data_types import PlaywrightLogTypes
 
 
@@ -29,30 +26,28 @@ def start_grpc_server(
     host: str,
     port: str,
     enable_playwright_debug: "PlaywrightLogTypes | bool",
+    coverage_output: "Path | None" = None,
 ) -> Popen:
-    """Run the gRPC server on the NodeJS shipped inside this package."""
-    current_dir = Path(__file__).parent
+    """Run the gRPC server on the NodeJS shipped inside this package.
+
+    All this package contributes is the two paths below. Starting the process is
+    the same work whichever NodeJS runs it, so it is done by the Browser library
+    for both, and this package no longer has its own copy to keep in step.
+    """
+    # Imported here rather than at module level because Browser.playwright
+    # imports this module, and at module level the two would be a cycle.
+    from Browser.playwright import spawn_wrapper_process  # noqa: PLC0415
+
+    bin_dir = Path(__file__).parent / "bin"
     node = "node.exe" if os.name == "nt" else "node"
-    node_binary = current_dir / "bin" / node
-    playwright_script = current_dir / "bin" / "wrapper" / "index.js"
-    logger.info(f"Starting GRPC process {playwright_script} using at {host}:{port}")
-    args = [str(node_binary)]
-    workdir = current_dir / "bin" / "wrapper"
-    if enable_playwright_debug == PlaywrightLogTypes.playwright:
-        logger.trace("Enabling Playwright debug logging")
-        os.environ["DEBUG"] = "pw:api"
-    node_debug_options = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS")
-    if node_debug_options:
-        args.extend(node_debug_options.split(","))
-    args.extend([str(playwright_script), host, port])
-    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
-        logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
-        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
-    logger.trace(f"GRPC startup parameters: {args}")
-    return Popen(
-        args,
-        cwd=workdir,
-        env=os.environ,
-        stdout=logfile,
-        stderr=STDOUT,
+    wrapper_dir = bin_dir / "wrapper"
+    return spawn_wrapper_process(
+        node_executable=bin_dir / node,
+        script=wrapper_dir / "index.js",
+        cwd=wrapper_dir,
+        logfile=logfile,
+        host=host,
+        port=port,
+        enable_playwright_debug=enable_playwright_debug,
+        coverage_output=coverage_output,
     )

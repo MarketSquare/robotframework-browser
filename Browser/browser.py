@@ -822,6 +822,14 @@ class Browser(DynamicCore):
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``1``, will collect code coverage for the node process. This must not be used in production environments and is not supported on Windows. |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` | Debug options for the node process. This is a comma-separated list of arguments, for example ``--inspect``. This must not be used in production environments. |
 
+    These variables behave the same way whether the node process is started from a NodeJS
+    you installed yourself or from the one inside the
+    [https://pypi.org/project/robotframework-browser-batteries/|robotframework-browser-batteries]
+    package. In releases 20.1.0 or earlier ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``
+    and ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` were silently ignored when
+    BrowserBatteries was installed, because the node process was then a prebuilt binary
+    that could not be given node arguments.
+
     = Experimental: Provide parameters to node process =
 
     Browser library is integrated with Node.js and Python. Browser library starts a node process, to communicate
