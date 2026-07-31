@@ -344,6 +344,19 @@ def show_trace(
     if not _is_url(normalized_trace):
         log(f"Opening file: {normalized_trace}")
     ensure_playwright_browsers_path()
+    if HAS_BROWSER_BATTERIES:
+        # Straight to GRPC rather than trying npx and falling back when it
+        # fails. There is nothing for npx to run: the NodeJS in this case lives
+        # inside the BrowserBatteries wheel instead of on PATH, and the
+        # directory npx would be started from ships no node_modules, so npx
+        # would fetch a Playwright of its own from the registry, of whatever
+        # version the range in package.json resolves to that day, in the one
+        # installation built for people who do not install NodeJS packages. On
+        # Windows it would not even get that far: `shell=True` there turns a
+        # missing npx into a return code instead of an exception, which the
+        # fallback below never sees, and the command quietly does nothing.
+        _show_trace_via_grpc(browser, normalized_trace)
+        return
     try:
         _show_trace_via_npx(browser, host, port, stdin, normalized_trace)
     except Exception:
