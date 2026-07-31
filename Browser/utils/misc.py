@@ -58,9 +58,6 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 
 
     """
-    # Imported here rather than at module level because Browser.playwright
-    # imports this module through Browser.utils, and at module level the two
-    # would be a cycle.
     from Browser.playwright import spawn_wrapper_process  # noqa: PLC0415
 
     logfile = output_dir.open("w", encoding="utf-8")
@@ -69,10 +66,6 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
     port = str(find_free_port())
     if start_grpc_server is not None:
         return start_grpc_server(logfile, host, port, True), port
-    # Resolved from this package rather than the working directory. The caller
-    # of this helper is not necessarily standing in a checkout of this project,
-    # and for anyone who was not, `node` used to be handed a path that does not
-    # exist and the process died before it could serve anything.
     wrapper_dir = Path(__file__).parent.parent / "wrapper"
     process = spawn_wrapper_process(
         node_executable="node",

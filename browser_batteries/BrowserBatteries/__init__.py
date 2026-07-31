@@ -18,6 +18,7 @@ from pathlib import Path
 from subprocess import Popen
 from typing import TextIO
 
+from Browser.playwright import spawn_wrapper_process
 from Browser.utils.data_types import PlaywrightLogTypes
 
 
@@ -34,10 +35,6 @@ def start_grpc_server(
     the same work whichever NodeJS runs it, so it is done by the Browser library
     for both, and this package no longer has its own copy to keep in step.
     """
-    # Imported here rather than at module level because Browser.playwright
-    # imports this module, and at module level the two would be a cycle.
-    from Browser.playwright import spawn_wrapper_process  # noqa: PLC0415
-
     bin_dir = Path(__file__).parent / "bin"
     node = "node.exe" if os.name == "nt" else "node"
     wrapper_dir = bin_dir / "wrapper"
