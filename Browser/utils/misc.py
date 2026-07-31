@@ -27,11 +27,6 @@ from robot.libraries.BuiltIn import BuiltIn
 
 from Browser.utils.data_types import DownloadInfo
 
-try:
-    from BrowserBatteries import start_grpc_server
-except ImportError:
-    start_grpc_server = None  # type: ignore[assignment]
-
 get_variable_value = BuiltIn().get_variable_value
 
 
@@ -58,12 +53,16 @@ def spawn_node_process(output_dir: Path) -> tuple[subprocess.Popen, str]:
 
 
     """
-    from Browser.playwright import spawn_wrapper_process  # noqa: PLC0415
+    from Browser.playwright import (  # noqa: PLC0415
+        batteries_grpc_server,
+        spawn_wrapper_process,
+    )
 
     logfile = output_dir.open("w", encoding="utf-8")
     os.environ["DEBUG"] = "pw:api"
     host = "127.0.0.1"
     port = str(find_free_port())
+    start_grpc_server = batteries_grpc_server()
     if start_grpc_server is not None:
         return start_grpc_server(logfile, host, port, True), port
     wrapper_dir = Path(__file__).parent.parent / "wrapper"

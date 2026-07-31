@@ -106,7 +106,7 @@ def test_playwright_constructor_port_skips_local_node_check(monkeypatch):
     monkeypatch.setattr(
         Browser.playwright.Playwright, "_node_dependencies_checked", False
     )
-    monkeypatch.setattr(Browser.playwright, "start_grpc_server", None)
+    monkeypatch.setattr(Browser.playwright, "batteries_grpc_server", lambda: None)
     monkeypatch.delenv("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", raising=False)
 
     def _fail_if_node_check_called(*args, **kwargs):

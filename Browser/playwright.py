@@ -26,11 +26,6 @@ from typing import TYPE_CHECKING, TextIO
 
 import grpc  # type: ignore
 
-try:
-    from BrowserBatteries import start_grpc_server
-except ImportError:
-    start_grpc_server = None  # type: ignore[assignment]
-
 from Browser.entry.constant import (
     PLAYWRIGHT_BROWSERS_PATH,
     ensure_playwright_browsers_path,
@@ -49,6 +44,14 @@ from .utils import (
 
 if TYPE_CHECKING:
     from .browser import Browser
+
+
+def batteries_grpc_server():
+    try:
+        from BrowserBatteries import start_grpc_server  # noqa: PLC0415
+    except ImportError:
+        return None
+    return start_grpc_server
 
 
 def spawn_wrapper_process(  # noqa: PLR0917
@@ -169,7 +172,7 @@ class Playwright(LibraryComponent):
         """
         if self.__class__._node_dependencies_checked:
             return
-        if start_grpc_server is not None:
+        if batteries_grpc_server() is not None:
             logger.trace(
                 "Running gRPC server from BrowserBatteries, no need to check node"
             )
@@ -254,6 +257,7 @@ class Playwright(LibraryComponent):
         port = str(find_free_port())
         self.host = host
         self.port = port
+        start_grpc_server = batteries_grpc_server()
         if start_grpc_server is None:
             return self._start_playwright_from_node(self._get_logfile(), host, port)
         ensure_playwright_browsers_path()
