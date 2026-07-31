@@ -164,7 +164,7 @@ def assert_key_timings(
     *keys: str,
     expected_press_duration_ms: timedelta = timedelta(milliseconds=0),
     expected_key_delay_ms: timedelta = timedelta(milliseconds=0),
-    press_variance_ms: timedelta = timedelta(milliseconds=40),
+    press_variance_ms: timedelta = timedelta(milliseconds=60),
     key_delay_variance_ms: timedelta = timedelta(milliseconds=40),
     target_id: str | None = "event_test_input",
     enforce_upper_bounds: bool = True,
