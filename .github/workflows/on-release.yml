@@ -41,6 +41,7 @@ jobs:
   build_browser_wheels:
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     env:
       # This job only builds wheels, no step here starts a browser, and the
       # binaries never end up in a wheel anyway. test_browser_wheels below does
@@ -63,10 +64,12 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24.x"
+          cache: 'npm'
       - name: Setup Python 3.13
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+          cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -110,12 +113,17 @@ jobs:
           name: browser-batteries-wheels-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
+      - name: Check the NodeJS version we ship
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv node-version-check
 
   test_browser_wheels:
     needs:
       - build_browser_wheels
     name: Test wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -133,6 +141,7 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: 3.14
+          cache: 'pip'
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
