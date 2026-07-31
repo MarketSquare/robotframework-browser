@@ -10,6 +10,7 @@ esbuild
         entryPoints: ['./node/playwright-wrapper/index.ts'],
         bundle: true,
         platform: 'node',
+        target: 'node22',
         outfile: './Browser/wrapper/index.js',
         sourcemap: withCoverage ? 'external' : false,
         plugins: [

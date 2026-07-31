@@ -326,24 +326,13 @@ jobs:
   build_browser_batteries_wheels:
     name: Build wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
-    # Well above a normal run. Only there so a hung download or npm ci fails in
-    # minutes instead of holding a runner for GitHub's six hour default.
     timeout-minutes: 45
     env:
-      # This job only builds wheels, no step here starts a browser, and the
-      # binaries never end up in a wheel anyway. Downloading them cost more
-      # than everything else in the job put together.
+      # This job only builds wheels, no need to download Playwright browsers
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
-        # Every target that gets published, the same list on-release.yml uses,
-        # on every run. Each target produces its own wheel tag from its own
-        # NodeJS build, and no leg here takes longer than a few minutes, so
-        # there is nothing to gain from packaging a subset.
-        #
-        # test_browser_batteries_wheels below runs a shorter list outside the
-        # nightly, so it downloads only some of the artifacts this job uploads.
         os:
           - ubuntu-latest
           - ubuntu-24.04-arm
@@ -357,10 +346,6 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: "24.x"
-          # `inv deps` below runs a full npm install, and in CI it removes
-          # node_modules first so it always does. Without this the tarballs are
-          # downloaded again on every run, which is most of what the install step
-          # spends its time on outside Linux.
           cache: 'npm'
       - name: Setup Python 3.13
         uses: actions/setup-python@v7
@@ -424,13 +409,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Installing the wheel and running the suite costs a lot more than
-        # building it, so this list is a subset outside the nightly run, which
-        # tests every published target. macos-15-intel is the one left out: it
-        # is by far the slowest leg, and it shares its OS branch, archive
-        # format and wheel-tag branch with macos-latest, differing only in the
-        # architecture string. Every name here must also appear in
-        # build_browser_batteries_wheels, whose artifacts this job downloads.
         os: ${{ fromJSON(github.event_name == 'schedule' && '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-15-intel", "macos-latest"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest"]') }}
 
     steps:
@@ -439,10 +417,6 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: 3.14
-          # This job installs its test dependencies with plain pip, so unlike the
-          # build job above it really does hit this cache. No npm cache next to
-          # it: nothing here runs npm install, NodeJS is only needed to serve the
-          # test app.
           cache: 'pip'
       - name: Setup Node.js
         uses: actions/setup-node@v7

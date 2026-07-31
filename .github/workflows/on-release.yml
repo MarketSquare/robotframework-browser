@@ -43,20 +43,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
-      # This job only builds wheels, no step here starts a browser, and the
-      # binaries never end up in a wheel anyway. test_browser_wheels below does
-      # need them and must not set this.
+      # This job only builds wheels, no need to download Playwright browsers.
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: ubuntu-24.04-arm
-          - os: windows-latest
-          - os: macos-15-intel
-          - os: macos-latest
-            arch: arm64
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
       - uses: actions/checkout@v7
@@ -127,13 +124,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: ubuntu-24.04-arm
-          - os: windows-latest
-          - os: macos-15-intel
-          - os: macos-latest
-            arch: arm64
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
       - uses: actions/checkout@v7
