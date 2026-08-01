@@ -279,8 +279,34 @@ jobs:
       - name: Publish BrowserBatteries distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  docker-image:
+  wait-for-pypi:
     needs: publish-browser-to-pypi
+    name: Wait for Browser to appear on PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for robotframework-browser on PyPI
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -eu
+          version="${RELEASE_TAG#v}"
+          url="https://pypi.org/pypi/robotframework-browser/${version}/json"
+          echo "Polling ${url}"
+          for attempt in $(seq 1 120); do
+            status=$(curl -sS -H 'Cache-Control: no-cache' -o /dev/null -w '%{http_code}' "$url" || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "robotframework-browser ${version} is available on PyPI (attempt ${attempt})."
+              exit 0
+            fi
+            echo "Attempt ${attempt}/120: HTTP ${status}, sleeping 10s..."
+            sleep 10
+          done
+          echo "::error::robotframework-browser ${version} did not appear on PyPI within 20 minutes."
+          exit 1
+
+  docker-image:
+    needs: wait-for-pypi
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
