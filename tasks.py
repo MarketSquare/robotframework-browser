@@ -47,11 +47,11 @@ BROWSER_BATTERIES_BIN_DIR = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
 # ends up on the user's machine, not the NodeJS that builds the library, so
 # bumping it is a deliberate act: run `inv node-version-check` to see whether a
 # newer release is out.
-NODE_VERSION = "24.18.1"
+NODE_VERSION = "24.19.0"
 # sha256 of the SHASUMS256.txt nodejs.org publishes for NODE_VERSION, the file
 # `inv node-version-check` prints the value to use when it reports a newer
 # release.
-NODE_SHASUMS_SHA256 = "963b6fefe0c1b0f0d731da926ae12d4c552c3898090e94f3db1549b62e7bbb93"
+NODE_SHASUMS_SHA256 = "be0629ee2bcd8e40bb856abdd3407f0762101b76bd60a36b8867f637733631c0"
 NODE_DIST_BASE = "https://nodejs.org/dist"
 NODE_DIST_INDEX = f"{NODE_DIST_BASE}/index.json"
 # Oldest platforms the official NodeJS builds above run on, from
