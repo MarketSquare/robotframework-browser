@@ -95,8 +95,8 @@ Ensure generated code and types are up to date with `inv build`
 
 ### Check NodeJS version and platform floors
 1. Check the NodeJS version we ship is still current by running: `inv node-version-check`
-CI runs this same check on every push and pull request, so a failure here should
-already be known rather than a surprise. If it does fail, raise an issue and add it
+CI runs this same check once a day, so a failure here should already be known rather
+than a surprise. If it does fail, raise an issue and add it
 to the milestone, update `NODE_VERSION` in
 [tasks.py](https://github.com/MarketSquare/robotframework-browser/blob/main/tasks.py),
 then close the issue once the PR is merged.
@@ -112,8 +112,11 @@ claiming too little refuses the wheel on platforms that would have worked.
 It runs on Linux or macOS and needs no NodeJS installed, because it reads the
 binaries instead of running them. Windows is skipped: a `win_amd64` wheel tag
 makes no claim about the Windows version. The per-platform CI builds run the same
-check, but each one only sees its own binary, so this is the only place where all
-targets are checked together.
+check, but each one only sees its own binary. All four targets are checked
+together by the daily
+[scheduled workflow](https://github.com/MarketSquare/robotframework-browser/blob/main/.github/workflows/on-schedule.yml),
+so running it here confirms what CI already knows rather than being the only
+place it is ever looked at.
 
 If it fails, raise an issue and add it to the milestone so the change becomes
 visible in the release notes, update the constant it names and the platform table

@@ -395,10 +395,6 @@ jobs:
           name: browser-batteries-wheels-bb-test-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
-      - name: Check the NodeJS version we ship
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          inv node-version-check
 
   test_browser_batteries_wheels:
     needs:

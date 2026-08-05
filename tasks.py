@@ -631,8 +631,10 @@ def node_version_check(c):
     somebody happens to look.
 
     Always exits non-zero on a stale pin, on every run and everywhere. CI runs
-    this as the last step of the BrowserBatteries wheel job, so the wheels are
-    built and uploaded before it can fire.
+    this once a day from its own workflow, where it builds nothing and so has
+    nothing to hold up, and again in the release wheel build. There it is the
+    last step of the job on purpose, so the wheels are built and uploaded
+    before it can fire.
     """
     with tempfile.TemporaryDirectory() as tmp:
         index = Path(tmp) / "index.json"
