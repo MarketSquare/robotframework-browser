@@ -97,14 +97,30 @@ Ensure generated code and types are up to date with `inv build`
 1. Check the NodeJS version we ship is still current by running: `inv node-version-check`
 CI runs this same check once a day, so a failure here should already be known rather
 than a surprise. If it does fail, raise an issue and add it
-to the milestone, update `NODE_VERSION` in
-[tasks.py](https://github.com/MarketSquare/robotframework-browser/blob/main/tasks.py),
+to the milestone, update `version` in
+[nodejs_pin.toml](https://github.com/MarketSquare/robotframework-browser/blob/main/nodejs_pin.toml),
 then close the issue once the PR is merged.
 1. Check the NodeJS shipped inside BrowserBatteries with `inv node-floor-check`
 
+The values both checks read live in `nodejs_pin.toml`, not in `tasks.py`, so that
+the daily
+[scheduled workflow](https://github.com/MarketSquare/robotframework-browser/blob/main/.github/workflows/on-schedule.yml)
+can rewrite them. That workflow runs `inv node-pin-bump`, which derives the whole
+pin for the newest release in the line we already ship - version, checksum and
+both platform floors, every one of them read off the official binaries rather
+than typed in - and opens a pull request with the result. So a routine bump
+usually arrives as a PR to review rather than as work to do, and the check above
+is a confirmation.
+
+Moving to a new **LTS line** is deliberately not automated. It changes which
+platforms get a wheel at all, so `inv node-version-check` fails and leaves it to
+a person. Run `inv node-pin-bump` by hand to see the derived values, and expect
+to update the platform table in `browser_batteries/README.md` too: the distro
+names in it cannot be read out of a binary.
+
 `inv node-floor-check` reads every NodeJS binary that goes into a BrowserBatteries
-wheel and checks it against `NODE_MIN_GLIBC` and `NODE_MIN_MACOS` in `tasks.py`.
-Those two constants decide the wheel platform tags, and the tags are all that stop
+wheel and checks it against `min_glibc` and `min_macos` in `nodejs_pin.toml`.
+Those two values decide the wheel platform tags, and the tags are all that stop
 `pip` from installing BrowserBatteries somewhere the bundled NodeJS cannot start.
 Claiming too much turns "no compatible wheel" into a loader error on first use;
 claiming too little refuses the wheel on platforms that would have worked.
@@ -119,9 +135,9 @@ so running it here confirms what CI already knows rather than being the only
 place it is ever looked at.
 
 If it fails, raise an issue and add it to the milestone so the change becomes
-visible in the release notes, update the constant it names and the platform table
-in `browser_batteries/README.md` to match, then close the issue once the PR is
-merged.
+visible in the release notes, update the value it names in `nodejs_pin.toml` and
+the platform table in `browser_batteries/README.md` to match, then close the
+issue once the PR is merged.
 
 ### Set version number
 Run `inv version $VERSION` to update the version information to both Python

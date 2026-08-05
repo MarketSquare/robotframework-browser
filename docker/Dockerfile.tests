@@ -9,3 +9,4 @@ RUN touch requirements.txt
 RUN pip3 install --no-cache-dir --upgrade pip wheel
 RUN pip3 install --no-cache-dir -r ./dev-requirements.txt
 COPY tasks.py tasks.py
+COPY nodejs_pin.toml nodejs_pin.toml
