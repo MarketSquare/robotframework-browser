@@ -23,6 +23,12 @@ from invoke import Exit, task
 from invoke.context import Context
 
 try:
+    import tomllib
+except ModuleNotFoundError:
+    # Python 3.10, which the on-push.yml testing matrix still runs tasks.py on.
+    import tomli as tomllib
+
+try:
     import bs4
     import pytest
     import robotstatuschecker
@@ -43,35 +49,28 @@ DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
 BROWSER_BATTERIES_BIN_DIR = BROWSER_BATTERIES_DIR / "BrowserBatteries" / "bin"
-# NodeJS shipped inside the BrowserBatteries wheel. This is the runtime that
-# ends up on the user's machine, not the NodeJS that builds the library, so
-# bumping it is a deliberate act: run `inv node-version-check` to see whether a
-# newer release is out.
-NODE_VERSION = "24.19.0"
-# sha256 of the SHASUMS256.txt nodejs.org publishes for NODE_VERSION, the file
-# `inv node-version-check` prints the value to use when it reports a newer
-# release.
-NODE_SHASUMS_SHA256 = "be0629ee2bcd8e40bb856abdd3407f0762101b76bd60a36b8867f637733631c0"
+# The NodeJS we ship and the platform floors its wheel tags promise. They live
+# in a file of their own so the bot in .github/workflows/on-schedule.yml can
+# rewrite them without touching code, and nodejs_pin.toml is where each of them
+# is explained.
+NODE_PIN_FILE = ROOT_DIR / "nodejs_pin.toml"
+NODE_PIN = tomllib.loads(NODE_PIN_FILE.read_text(encoding="utf-8"))
+NODE_VERSION = NODE_PIN["version"]
+NODE_SHASUMS_SHA256 = NODE_PIN["shasums_sha256"]
+NODE_MIN_GLIBC = NODE_PIN["min_glibc"]
+NODE_MIN_MACOS = NODE_PIN["min_macos"]
 NODE_DIST_BASE = "https://nodejs.org/dist"
 NODE_DIST_INDEX = f"{NODE_DIST_BASE}/index.json"
-# Oldest platforms the official NodeJS builds above run on, from
-# https://github.com/nodejs/node/blob/main/BUILDING.md. These decide the wheel
-# tags, so bumping NODE_VERSION means checking them again: tagging a wheel as
-# more portable than the NodeJS inside it turns "no compatible wheel" into a
-# loader error after a successful install. NODE_MIN_MACOS has to stay on a .0
-# boundary even though NodeJS itself targets 13.5, because pip only ever
-# generates macosx_<major>_0_* tags for macOS 11 and newer.
-NODE_MIN_GLIBC = "2_28"
-NODE_MIN_MACOS = "13_0"
 RELEASE_PROCESS = (
     "Raise an issue and add it to the release milestone so this reaches the "
     "release notes, then close it once the PR is merged."
 )
 # Every target a BrowserBatteries wheel is published for, named the way
 # nodejs.org names it. `inv node-floor-check` walks the list from one machine to
-# check the two constants above against the binaries themselves. win-x64 is
-# missing on purpose: a win_amd64 wheel tag carries no OS version, so there is
-# nothing about it to get wrong.
+# check min_glibc and min_macos against the binaries themselves, and
+# `inv node-pin-bump` walks the same list to work out what they should be.
+# win-x64 is missing on purpose: a win_amd64 wheel tag carries no OS version, so
+# there is nothing about it to get wrong.
 NODE_FLOOR_TARGETS = ("linux-x64", "linux-arm64", "darwin-x64", "darwin-arm64")
 # Read out of the NodeJS binaries to check those constants. A versioned glibc
 # symbol looks like GLIBC_2.28 in the ELF dynamic string table, and a Mach-O
@@ -388,21 +387,24 @@ def _shasums_digest(version: str) -> str:
         return hashlib.sha256(checksums.read_bytes()).hexdigest()
 
 
-def _verify_shasums(checksums: Path):
-    """Check SHASUMS256.txt itself against the digest pinned in this file.
+def _verify_shasums(checksums: Path, version: str, expected: str):
+    """Check SHASUMS256.txt itself against the digest we expect for a release.
 
     Has to happen before anything trusts the manifest, because on its own the
     manifest only proves the archive arrived intact from whoever served it.
+    Everything but `inv node-pin-bump` passes the pinned version and digest;
+    the bump passes the candidate it is about to propose, so a release it has
+    never shipped is held to the same standard.
     """
     digest = hashlib.sha256(checksums.read_bytes()).hexdigest()
-    if digest == NODE_SHASUMS_SHA256:
-        print(f"SHASUMS256.txt matches the pin for NodeJS {NODE_VERSION}")
+    if digest == expected:
+        print(f"SHASUMS256.txt matches the expected digest for NodeJS {version}")
         return
     raise Exit(
-        f"SHASUMS256.txt for NodeJS {NODE_VERSION} hashes to {digest}, but "
-        f"NODE_SHASUMS_SHA256 pins {NODE_SHASUMS_SHA256}.\n"
-        f"If NODE_VERSION was just changed, set NODE_SHASUMS_SHA256 to {digest} "
-        "in tasks.py.\n"
+        f"SHASUMS256.txt for NodeJS {version} hashes to {digest}, but "
+        f"{expected} was expected.\n"
+        f"If the version in {NODE_PIN_FILE.name} was just changed, set "
+        f"shasums_sha256 to {digest} there.\n"
         "If it was not, stop: the manifest is not the one nodejs.org published "
         "for this version, and the archive it vouches for must not be shipped "
         "until that is explained."
@@ -499,18 +501,19 @@ def _check_node_floor(binary: Path, infix: str) -> tuple:
         if actual > declared:
             return "", (
                 f"{infix}: NodeJS needs glibc {_as_version_string(actual)} but "
-                f"NODE_MIN_GLIBC promises {_as_version_string(declared)}. Everyone "
+                f"min_glibc promises {_as_version_string(declared)}. Everyone "
                 "in between installs the wheel and then cannot start it. Raise "
-                "NODE_MIN_GLIBC and fix the platform table in "
-                "browser_batteries/README.md to match."
+                f"min_glibc in {NODE_PIN_FILE.name} and fix the platform table "
+                "in browser_batteries/README.md to match."
             )
         if actual < declared:
             return "", (
                 f"{infix}: NodeJS needs no more than glibc "
-                f"{_as_version_string(actual)}, but NODE_MIN_GLIBC promises "
+                f"{_as_version_string(actual)}, but min_glibc promises "
                 f"{_as_version_string(declared)}, so pip refuses the wheel on "
-                "platforms it would have run on. Lower NODE_MIN_GLIBC and fix the "
-                "platform table in browser_batteries/README.md to match."
+                f"platforms it would have run on. Lower min_glibc in "
+                f"{NODE_PIN_FILE.name} and fix the platform table in "
+                "browser_batteries/README.md to match."
             )
         return f"* {infix}: needs glibc {_as_version_string(actual)}, matches", ""
     actual = _macos_floor(binary)
@@ -518,26 +521,34 @@ def _check_node_floor(binary: Path, infix: str) -> tuple:
     if actual[0] != declared[0] or declared[1] != 0:
         return "", (
             f"{infix}: NodeJS declares macOS {_as_version_string(actual)} but "
-            f"NODE_MIN_MACOS says {_as_version_string(declared)}. Set it to "
-            f"{actual[0]}_0 and fix the platform table in "
-            "browser_batteries/README.md to match."
+            f"min_macos says {_as_version_string(declared)}. Set it to "
+            f"{actual[0]}_0 in {NODE_PIN_FILE.name} and fix the platform table "
+            "in browser_batteries/README.md to match."
         )
-    covers = f"NODE_MIN_MACOS {NODE_MIN_MACOS} covers it"
+    covers = f"min_macos {NODE_MIN_MACOS} covers it"
     return f"* {infix}: needs macOS {_as_version_string(actual)}, {covers}", ""
 
 
-def _fetch_node(destination: Path, infix: str | None = None) -> Path:
+def _fetch_node(
+    destination: Path,
+    infix: str | None = None,
+    version: str | None = None,
+    shasums_sha256: str | None = None,
+) -> Path:
     """Put the official NodeJS binary and its licence into destination.
 
-    Defaults to the machine this runs on. `inv node-floor-check` passes an infix
-    explicitly, because reading a binary works from any platform even though
-    running one does not.
+    Defaults to the machine this runs on and to the pinned release. `inv
+    node-floor-check` passes an infix explicitly, because reading a binary works
+    from any platform even though running one does not, and `inv node-pin-bump`
+    also passes a version, because it reads releases we do not ship yet.
     """
     infix = infix or _node_dist_infix()
+    version = version or NODE_VERSION
+    shasums_sha256 = shasums_sha256 or NODE_SHASUMS_SHA256
     windows = infix.startswith("win-")
     suffix = "zip" if windows else "tar.xz"
-    archive_name = f"node-v{NODE_VERSION}-{infix}.{suffix}"
-    base_url = f"{NODE_DIST_BASE}/v{NODE_VERSION}"
+    archive_name = f"node-v{version}-{infix}.{suffix}"
+    base_url = f"{NODE_DIST_BASE}/v{version}"
     node_name = "node.exe" if windows else "node"
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -545,9 +556,9 @@ def _fetch_node(destination: Path, infix: str | None = None) -> Path:
         _download(f"{base_url}/{archive_name}", archive)
         checksums = Path(tmp) / "SHASUMS256.txt"
         _download(f"{base_url}/SHASUMS256.txt", checksums)
-        _verify_shasums(checksums)
+        _verify_shasums(checksums, version, shasums_sha256)
         _verify_checksum(archive, checksums.read_text(encoding="utf-8"))
-        root = f"node-v{NODE_VERSION}-{infix}"
+        root = f"node-v{version}-{infix}"
         node_member = f"{root}/{node_name}" if windows else f"{root}/bin/{node_name}"
         node_binary = destination / node_name
         if windows:
@@ -618,23 +629,21 @@ def _report(lines: list, heading: str):
             handle.write(f"### {heading}\n{report}\n")
 
 
-@task
-def node_version_check(c):
-    """Fail when the NodeJS we ship is no longer the one we should ship.
+def _step_output(key: str, value: str):
+    """Hand a value to later steps of the same GitHub Actions job."""
+    output = os.environ.get("GITHUB_OUTPUT")
+    if output:
+        with open(output, "a", encoding="utf-8") as handle:
+            handle.write(f"{key}={value}\n")
 
-    Two things make the pin stale. A newer release in the line we already ship
-    is a plain NODE_VERSION bump. A new LTS line is the moment to move over,
-    and that is not a bump: the platforms the official builds run on change
-    with the line, so NODE_MIN_GLIBC, NODE_MIN_MACOS and the wheel tags they
-    produce all have to be worked out again. Both fail, because both are work
-    we want to hear about on the day it appears rather than the next time
-    somebody happens to look.
 
-    Always exits non-zero on a stale pin, on every run and everywhere. CI runs
-    this once a day from its own workflow, where it builds nothing and so has
-    nothing to hold up, and again in the release wheel build. There it is the
-    last step of the job on purpose, so the wheels are built and uploaded
-    before it can fire.
+def _node_release_state() -> tuple:
+    """What nodejs.org offers now, next to what we pin.
+
+    Returns the pinned version, the newest release in the line we ship and the
+    newest LTS line, all as comparable tuples. `inv node-version-check` and
+    `inv node-pin-bump` both work from this, so they cannot come to different
+    conclusions about the same day's releases.
     """
     with tempfile.TemporaryDirectory() as tmp:
         index = Path(tmp) / "index.json"
@@ -646,7 +655,30 @@ def node_version_check(c):
         raise Exit(f"nodejs.org lists no releases for NodeJS {pinned[0]}.x")
     newest = max(_as_version(r["version"]) for r in same_line)
     lts_releases = [_as_version(r["version"]) for r in releases if r["lts"]]
-    newest_lts = max(lts_releases) if lts_releases else None
+    return pinned, newest, max(lts_releases) if lts_releases else None
+
+
+@task
+def node_version_check(c):
+    """Fail when the NodeJS we ship is no longer the one we should ship.
+
+    Two things make the pin stale. A newer release in the line we already ship
+    is a plain version bump, and the daily `inv node-pin-bump` proposes those as
+    a pull request rather than leaving them to be noticed. A new LTS line is the
+    moment to move over, and that is not a bump: the platforms the official
+    builds run on change with the line, so min_glibc, min_macos and the wheel
+    tags they produce all have to be worked out again. Both fail here, because
+    both are work we want to hear about on the day it appears rather than the
+    next time somebody happens to look.
+
+    Always exits non-zero on a stale pin, on every run and everywhere. That
+    makes it the right check for the release wheel build, where it is the last
+    step of the job on purpose, so the wheels are built and uploaded before it
+    can fire. The daily workflow runs `inv node-pin-bump` instead, which is the
+    same reasoning without the part that would keep a nightly permanently red
+    while a bump waits to be merged.
+    """
+    pinned, newest, newest_lts = _node_release_state()
     lts_report = _as_version_string(newest_lts) if newest_lts else "none listed"
     lines = [
         f"* shipped in BrowserBatteries: {NODE_VERSION}",
@@ -660,25 +692,25 @@ def node_version_check(c):
     if newest > pinned:
         behind = _as_version_string(newest)
         lines.append(
-            f"* NODE_VERSION in tasks.py is behind, update it to {behind} "
+            f"* version in {NODE_PIN_FILE.name} is behind, update it to {behind} "
             "and let CI rebuild the wheels."
         )
         stale.append(f"NodeJS {NODE_VERSION} is behind {behind}.")
     if newest_lts and newest_lts[0] > pinned[0]:
         lines.append(
             f"* NodeJS {newest_lts[0]}.x is the new LTS line and BrowserBatteries "
-            f"still ships {pinned[0]}.x. Moving over is more than a NODE_VERSION "
+            f"still ships {pinned[0]}.x. Moving over is more than a version "
             f"bump: check which platforms the official {newest_lts[0]}.x builds "
-            "still run on, then update NODE_MIN_GLIBC, NODE_MIN_MACOS and the "
-            "table in browser_batteries/README.md to match, because those decide "
-            "who gets a wheel."
+            "still run on, then update min_glibc, min_macos and the table in "
+            "browser_batteries/README.md to match, because those decide who "
+            "gets a wheel. `inv node-pin-bump` deliberately leaves this alone."
         )
         stale.append(f"NodeJS {newest_lts[0]}.x is the new LTS line.")
     if move_to:
         target = _as_version_string(move_to)
         lines.append(
-            f"* NODE_SHASUMS_SHA256 for {target} is {_shasums_digest(target)}, set "
-            "that in tasks.py in the same commit as NODE_VERSION."
+            f"* shasums_sha256 for {target} is {_shasums_digest(target)}, set "
+            f"that in {NODE_PIN_FILE.name} in the same commit as version."
         )
     if stale:
         lines.append(f"* {RELEASE_PROCESS}")
@@ -688,15 +720,140 @@ def node_version_check(c):
     _report(lines, "NodeJS version check")
 
 
+def _derive_pin(version: str) -> dict:
+    """Work out the whole pin for a NodeJS release nobody has shipped yet.
+
+    Downloads every target a wheel is published for and reads the floors out of
+    the binaries, which is the same thing `inv node-floor-check` does to the
+    release we already ship. The digest comes first because every download is
+    checked against it, so a proposed bump is held to the standard the pinned
+    version is held to rather than trusting whatever nodejs.org served today.
+    """
+    digest = _shasums_digest(version)
+    floors = {}
+    with tempfile.TemporaryDirectory() as tmp:
+        for infix in NODE_FLOOR_TARGETS:
+            target = Path(tmp) / infix
+            target.mkdir()
+            binary = _fetch_node(target, infix, version, digest)
+            floors[infix] = (
+                _glibc_floor(binary)
+                if infix.startswith("linux-")
+                else _macos_floor(binary)
+            )
+    # One value has to cover every architecture, because that is all the wheel
+    # tags can say. They agree today, and _check_node_floor demands each target
+    # match exactly, so a release that split them could not be expressed at all.
+    # Saying so is better than picking one and shipping a tag that is wrong for
+    # somebody: fixing it properly means per-architecture values here and in
+    # package-nodejs, which is not work to do speculatively.
+    linux = {i: f for i, f in floors.items() if i.startswith("linux-")}
+    darwin = {i: f[0] for i, f in floors.items() if i.startswith("darwin-")}
+    for name, derived in (("min_glibc", linux), ("min_macos", darwin)):
+        if len(set(derived.values())) > 1:
+            spread = ", ".join(f"{i} needs {f}" for i, f in sorted(derived.items()))
+            raise Exit(
+                f"NodeJS {version} does not have one {name} across its targets: "
+                f"{spread}. A single wheel-tag value cannot describe that, so "
+                f"this bump needs {NODE_PIN_FILE.name} and package_nodejs to "
+                f"carry a value per architecture first. {RELEASE_PROCESS}"
+            )
+    return {
+        "version": version,
+        "shasums_sha256": digest,
+        "min_glibc": "_".join(str(part) for part in next(iter(linux.values()))),
+        # NodeJS targets 13.5, pip only generates macosx_<major>_0_* tags.
+        "min_macos": f"{next(iter(darwin.values()))}_0",
+    }
+
+
+def _write_pin(pin: dict) -> list:
+    """Set the derived values in the pin file, leaving everything else alone.
+
+    Substitutes the assignments line by line rather than re-serialising the
+    parsed document, because the comments in that file are the only explanation
+    of what the values mean and no stdlib writer preserves them.
+    """
+    text = NODE_PIN_FILE.read_text(encoding="utf-8")
+    changed = []
+    for key, value in pin.items():
+        if NODE_PIN[key] == value:
+            continue
+        text, count = re.subn(
+            rf'^{key} = ".*"$',
+            lambda _match, k=key, v=value: f'{k} = "{v}"',
+            text,
+            flags=re.MULTILINE,
+        )
+        if count != 1:
+            raise Exit(
+                f"Expected exactly one '{key} = ...' line in "
+                f"{NODE_PIN_FILE.name}, found {count}. Not writing anything."
+            )
+        changed.append(f"* {key}: {NODE_PIN[key]} -> {value}")
+    if changed:
+        NODE_PIN_FILE.write_text(text, encoding="utf-8")
+    return changed
+
+
+@task
+def node_pin_bump(c, write=False, report=None):
+    """Propose the newest NodeJS in the line we already ship.
+
+    The daily workflow runs this with --write and turns the result into a pull
+    request, so a bump arrives already carrying its digest and platform floors,
+    all of them read off the official binaries rather than typed in. Without
+    --write it only reports, which is what the release checklist wants.
+
+    A stale pin is not a failure here, because the pull request is the signal
+    and a nightly that stays red until somebody merges it teaches people to
+    ignore red. A new LTS line still fails: that changes which platforms get a
+    wheel at all, and it is not a thing to rubber-stamp.
+
+    Args:
+        write:  Write the derived values to nodejs_pin.toml.
+        report: Also write the report as markdown to this path, for a PR body.
+    """
+    pinned, newest, newest_lts = _node_release_state()
+    lines = [
+        f"* shipped in BrowserBatteries: {NODE_VERSION}",
+        f"* newest NodeJS {pinned[0]}.x: {_as_version_string(newest)}",
+    ]
+    changed = []
+    if newest > pinned:
+        candidate = _as_version_string(newest)
+        lines.append(f"* deriving the pin for NodeJS {candidate}")
+        changed = _write_pin(_derive_pin(candidate)) if write else []
+        lines.extend(changed or [f"* run with --write to update {NODE_PIN_FILE.name}"])
+        _step_output("version", candidate)
+    else:
+        lines.append("* up to date, nothing to bump.")
+    lts_stale = newest_lts and newest_lts[0] > pinned[0]
+    if lts_stale:
+        lines.append(
+            f"* NodeJS {newest_lts[0]}.x is the new LTS line and BrowserBatteries "
+            f"still ships {pinned[0]}.x. That is left to a human: it changes the "
+            "wheel tags, so min_glibc, min_macos and the platform table in "
+            "browser_batteries/README.md all have to be worked out again."
+        )
+        lines.append(f"* {RELEASE_PROCESS}")
+    _report(lines, "NodeJS pin bump")
+    if report:
+        Path(report).write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if lts_stale:
+        raise Exit(f"NodeJS {newest_lts[0]}.x is the new LTS line. {RELEASE_PROCESS}")
+
+
 @task
 def node_floor_check(c):
-    """Check NODE_MIN_GLIBC and NODE_MIN_MACOS against every NodeJS we ship.
+    """Check min_glibc and min_macos against every NodeJS we ship.
 
     Runs anywhere, Linux or macOS, because it reads the downloaded binaries
-    rather than running them. Meant for the release checklist: a platform's own
-    build only ever checks its own binary, so a constant that is wrong for some
-    other platform would otherwise surface as a broken install for whoever is on
-    it. Windows is not in the list, its wheel tag promises no OS version.
+    rather than running them. A platform's own build only ever checks its own
+    binary, so a value that is wrong for some other platform would otherwise
+    surface as a broken install for whoever is on it. The daily workflow runs
+    this, and so does the release checklist. Windows is not in the list, its
+    wheel tag promises no OS version.
     """
     lines = [f"* NodeJS {NODE_VERSION}"]
     problems = []
