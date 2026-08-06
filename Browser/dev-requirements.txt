@@ -15,7 +15,7 @@ pytest-mock==3.15.1
 Pillow==12.3.0
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.15.0
-coverage >= 7.15.2
+coverage >= 7.15.3
 python-dateutil >= 2.9.0.post0
 robotframework-robocop >= 8.3.2
 robotframework-crypto >= 0.4.2
