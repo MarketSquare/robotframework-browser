@@ -1,5 +1,5 @@
 invoke>=3.0.3
-tomli >= 2.0.1 ; python_version < "3.11"
+tomli >= 2.4.1 ; python_version < "3.11"
 pytest >= 9.1.1
 pytest-watch >= 4.2.0
 pytest-cov>=7.1.0
