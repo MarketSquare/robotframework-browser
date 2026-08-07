@@ -1712,9 +1712,7 @@ def release_notes(c, version=None, username=None, password=None, write=False):
     file = RELEASE_NOTES_PATH if write else sys.stdout
     release_notes_intro = RELEASE_NOTES_INTRO.replace(
         "REPLACE_PW_VERSION", _get_pw_version()
-    ).replace(
-        "REPLACE_BB_NODE_VERSION", NODE_VERSION
-    )
+    ).replace("REPLACE_BB_NODE_VERSION", NODE_VERSION)
     generator = ReleaseNotesGenerator(
         REPOSITORY,
         RELEASE_NOTES_TITLE,
