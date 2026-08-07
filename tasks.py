@@ -137,7 +137,8 @@ Alternatively you can download the source distribution from
 [PyPI](https://pypi.org/project/robotframework-browser/) and
 install it manually. Browser library {version} was released on {date}.
 Browser supports Python 3.10+, Node 22/24 LTS and Node 26, and Robot Framework 6.1+.
-Library was tested with Playwright REPLACE_PW_VERSION
+Library was tested with Playwright REPLACE_PW_VERSION. BrowserBatteries package was
+released with NodeJS REPLACE_BB_NODE_VERSION.
 
 """
 
@@ -1709,10 +1710,15 @@ def release_notes(c, version=None, username=None, password=None, write=False):
         RELEASE_NOTES_PATH.parent.mkdir(parents=True)
     version = Version(version, VERSION_PATH, pattern)
     file = RELEASE_NOTES_PATH if write else sys.stdout
+    release_notes_intro = RELEASE_NOTES_INTRO.replace(
+        "REPLACE_PW_VERSION", _get_pw_version()
+    ).replace(
+        "REPLACE_BB_NODE_VERSION", NODE_VERSION
+    )
     generator = ReleaseNotesGenerator(
         REPOSITORY,
         RELEASE_NOTES_TITLE,
-        RELEASE_NOTES_INTRO.replace("REPLACE_PW_VERSION", _get_pw_version()),
+        release_notes_intro,
     )
     generator.generate(version, username, password, file)
 
