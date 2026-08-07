@@ -4,7 +4,7 @@
 [Browser](https://github.com/MarketSquare/robotframework-browser) is a web testing
 library for [Robot Framework](http://robotframework.org) that utilizes the
 [Playwright](https://github.com/microsoft/playwright) tool internally. Browser
-library 20.3.0 is a new release with **UPDATE** enhancements and bug fixes.
+library 20.3.0 is a new release with update to BrowserBatteries NodeJS version.
 All issues targeted for Browser library v20.3.0 can be found
 from the
 [issue tracker](https://github.com/MarketSquare/robotframework-browser/issues?q=state%3Aclosed%20milestone%3Av20.3.0).
