@@ -61,6 +61,11 @@ NODE_MIN_GLIBC = NODE_PIN["min_glibc"]
 NODE_MIN_MACOS = NODE_PIN["min_macos"]
 NODE_DIST_BASE = "https://nodejs.org/dist"
 NODE_DIST_INDEX = f"{NODE_DIST_BASE}/index.json"
+GITHUB_API = "https://api.github.com/repos/MarketSquare/robotframework-browser"
+# The release the nightly wheels are downloaded from. It is created once and
+# then only ever has its assets replaced, because publishing a release is what
+# notifies everybody watching the repository and a build of main is not news.
+NIGHTLY_TAG = "nightly"
 RELEASE_PROCESS = (
     "Raise an issue and add it to the release milestone so this reaches the "
     "release notes, then close it once the PR is merged."
@@ -1772,6 +1777,85 @@ def version(c, version):
     _replace_version(
         dockerfile, docker_version_matcher, f"robotframework-browser=={version}"
     )
+
+
+def _released_version() -> str:
+    """What Browser/version.py says, read without importing the library."""
+    version_file = ROOT_DIR / "Browser" / "version.py"
+    match = re.search(
+        r'__version__ = "([^"]+)"', version_file.read_text(encoding="utf-8")
+    )
+    if not match:
+        raise Exit(f"No __version__ in {version_file}.")
+    return match.group(1)
+
+
+def _open_milestone_titles() -> list:
+    """Titles of the milestones that are still open, or [] if we cannot ask.
+
+    Only ever called to work out a nightly version, and a nightly is not worth
+    failing a build of main over, so an unreachable or unhappy API falls back to
+    the version file rather than raising.
+    """
+    request = urllib.request.Request(
+        f"{GITHUB_API}/milestones?state=open&per_page=100",
+        headers={"Accept": "application/vnd.github+json"},
+    )
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        request.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return [milestone["title"] for milestone in json.load(response)]
+    except Exception as error:
+        print(f"Could not read the open milestones ({error}), using version.py.")
+        return []
+
+
+def _next_version(milestone_titles: Iterable[str], released: str) -> str:
+    """The version main is working towards, for a nightly wheel to carry.
+
+    The lowest open milestone is the next release, so that is the number the
+    wheels built from main belong to. Milestones named something other than a
+    plain version are ignored, and with none left the next patch of the released
+    version is the honest guess.
+    """
+    planned = [
+        _as_version(match.group(1))
+        for match in (
+            re.fullmatch(r"v?(\d+\.\d+\.\d+)", title.strip())
+            for title in milestone_titles
+        )
+        if match
+    ]
+    if planned:
+        return _as_version_string(min(planned))
+    match = re.match(r"(\d+)\.(\d+)\.(\d+)", released)
+    if not match:
+        raise Exit(f"Cannot read a version number out of '{released}'.")
+    major, minor, patch = (int(part) for part in match.groups())
+    return _as_version_string((major, minor, patch + 1))
+
+
+@task
+def dev_version(c):
+    """Print the version a wheel built from main should carry.
+
+    A nightly has to sort above the release that is out and below the release it
+    is heading for, or pip has no way to tell a tester's `--pre` install from
+    the version they already have. PEP 440 spells that as a .devN of the coming
+    release, and the coming release is whatever the lowest open milestone says,
+    so nobody has to remember to bump anything here. The timestamp is UTC and
+    goes down to the second, because two pushes to main can land in one minute.
+
+    Prints the version and, on GitHub Actions, hands it to later steps as
+    `version`. Both wheels are stamped with it by `inv version`, which keeps the
+    `robotframework-browser==` pin in the BrowserBatteries wheel matching.
+    """
+    version = _next_version(_open_milestone_titles(), _released_version())
+    stamp = time.strftime("%Y%m%d%H%M%S", time.gmtime())
+    _step_output("version", f"{version}.dev{stamp}")
+    print(f"{version}.dev{stamp}")
 
 
 def _replace_version(filepath, matcher, version, count=0):
