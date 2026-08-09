@@ -230,11 +230,14 @@ class Browser(DynamicCore):
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
-    | ``text:light``   | As ``text``, but does not pierce shadow DOM. | ``text:light=Login``               |
 
-    ``id``, ``data-testid``, ``data-test-id`` and ``data-test`` each have a
-    ``:light`` counterpart too. An attribute engine is equivalent to the matching
-    css attribute selector: ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
+    An attribute engine is equivalent to the matching css attribute selector:
+    ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
+
+    ``css:light`` is the only non-piercing engine still supported. The bundled
+    Playwright has removed ``text:light``, ``id:light``, ``xpath:light`` and the
+    ``data-*:light`` engines; they raise ``"…" selector is not supported`` as soon
+    as they match an element. Use ``css:light=[id="foo"]`` instead.
 
     Two filters narrow what a clause already matched. Filter order changes the
     result.
@@ -310,8 +313,8 @@ class Browser(DynamicCore):
     shadow roots, in document order. Closed shadow roots and iframes are never
     entered.
 
-    Use the ``:light`` engines above to stop at the shadow boundary. Worked
-    examples of what each matches:
+    Use ``css:light`` to stop at the shadow boundary. Worked examples of what
+    each matches:
     https://robotframework-browser.org/docs/concepts/selectors
 
     == Element references ==
@@ -326,7 +329,8 @@ class Browser(DynamicCore):
 
     Clauses after the reference are relative to it. Because the value is a
     selector rather than a captured DOM node, it is resolved from the page again
-    on every use. Frame piercing is not possible after a reference.
+    on every use. A reference works like any other first clause, ``>>>`` included:
+    if it points at an iframe, ``${ref} >>> h1`` crosses into it.
 
     = Assertions =
 
