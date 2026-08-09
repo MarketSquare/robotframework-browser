@@ -39,15 +39,19 @@ class Promises(LibraryComponent):
     def promise_to(self, kw: str, *args) -> Future:
         """Wrap a Browser library keyword and make it a promise.
 
-        Promised keyword is executed and started on background.
+        The promised keyword is started in the background.
         Test execution continues without waiting for ``kw`` to finish.
 
-        Returns reference to the promised keyword.
+        Returns a reference to the promised keyword. Use `Wait For` or
+        `Wait For All Promises` to wait for its result. Promises that are never
+        waited for are waited for automatically at the end of the test, and a
+        warning is logged.
 
-        ``kw`` Keyword that will work async on background.
+        Only Browser library keywords can be promised, any other keyword name
+        fails the keyword.
 
         | =Arguments= | =Description= |
-        | ``kw`` | Keyword that will work async on background. |
+        | ``kw`` | Keyword that will run asynchronously in the background. |
         | ``*args`` | Keyword arguments as normally used. |
 
         Example:
@@ -143,35 +147,41 @@ class Promises(LibraryComponent):
         wait_for_finished: bool = True,
         download_timeout: timedelta | None = None,
     ) -> Future:
-        """Returns a promise that waits for next download event on page.
+        """Returns a promise that waits for the next download event on the page.
 
-        To enable downloads context's ``acceptDownloads`` needs to be true.
+        To enable downloads the context's ``acceptDownloads`` needs to be true.
 
-        With default filepath downloaded files are deleted when Context the download happened in is closed.
+        With the default file path downloaded files are deleted when the context the download happened in is closed.
 
         If browser is connected remotely with `Connect To Browser` then ``saveAs`` must be set to store it locally where the browser runs!
 
         | =Arguments= | =Description= |
         | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
         | ``wait_for_finished`` | If true, promise will wait for download to finish. If false, promise will resolve immediately after download has started. |
-        | ``download_timeout`` | Maximum time to wait for download to finish, if ``wait_for_finished`` is set to ``True``. If download is not finished during this time, keyword will be fail. |
+        | ``download_timeout`` | Maximum time to wait for the download to finish, if ``wait_for_finished`` is set to ``True``. If the download is not finished within this time, it is cancelled and the keyword fails. If not set, the keyword waits until the download is finished. |
 
         Keyword returns dictionary of type `DownloadInfo` which contains downloaded file path
         and suggested filename as well as state and downloadID.
         Example:
         | {
         |   "saveAs": "/tmp/robotframework-browser/downloads/2f1b3b7c-1b1b-4b1b-9b1b-1b1b1b1b1b1b",
-        |   "suggestedFilename": "downloaded_file.txt"
+        |   "suggestedFilename": "downloaded_file.txt",
+        |   "state": "finished",
+        |   "downloadID": None
         | }
 
+        If ``wait_for_finished`` is ``False``, ``saveAs`` is an empty string, ``state`` is
+        ``in_progress`` and ``downloadID`` contains an id which can be used with
+        `Get Download State` to check the download later.
+
         The keyword `New Browser` has a ``downloadsPath`` setting which can be used to set the default download directory.
-        If `saveAs` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
+        If ``saveAs`` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
         Playwright's working directory. If ``saveAs`` is set to an absolute path, the file will be saved to that absolute path independent of ``downloadsPath``.
 
         If the URL for the file to download shall be used, `Download` keyword may be a simpler alternative way to download the file.
 
-        Waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
-        where the file is downloaded and suggestedFilename contains the name suggested name for the download.
+        The waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
+        the location where the file is downloaded and suggestedFilename contains the suggested name for the download.
         The suggestedFilename is typically computed by the browser from the Content-Disposition response header
         or the download attribute. See the spec on [https://html.spec.whatwg.org/#downloading-resources|whatwg].
         Different browsers can use different logic for computing it.
@@ -227,8 +237,9 @@ class Promises(LibraryComponent):
     def wait_for(self, *promises: Future):
         """Waits for promises to finish and returns results from them.
 
-        Returns one result if one promise waited. Otherwise returns an array of
-        results. If one fails, then this keyword will fail.
+        Returns a single result if only one promise is waited for. Otherwise it
+        returns a list of results in the same order as the promises were given.
+        If one of the promises fails, then this keyword will fail.
 
         See `Promise To` for more information about promises.
 
@@ -253,7 +264,8 @@ class Promises(LibraryComponent):
     def wait_for_all_promises(self):
         """Waits for all promises to finish.
 
-        If one promises fails, then this keyword will fail.
+        Waits for all promises which have been created but not yet waited for
+        with `Wait For`. If one of the promises fails, then this keyword will fail.
 
         Example:
         | `Promise To`               Wait For Response     matcher=     timeout=3
@@ -266,11 +278,12 @@ class Promises(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def promise_to_upload_file(self, path: PathLike) -> Future:
-        """Returns a promise that resolves when file from ``path`` has been uploaded.
+        """Returns a promise that resolves when the file from ``path`` has been uploaded.
 
-        Fails if the upload has not happened during timeout.
+        The file from ``path`` is uploaded into the next file chooser dialog on the page.
 
-        Upload file from ``path`` into next file chooser dialog on page.
+        The keyword fails immediately if ``path`` does not point to an existing file.
+        The promise fails if no file chooser dialog is opened within the timeout.
 
         | =Arguments= | =Description= |
         | ``path`` | Path to file to be uploaded. |
@@ -281,7 +294,7 @@ class Promises(LibraryComponent):
         | `Click`          id=open_file_chooser_button
         | ${upload_result}=    `Wait For`    ${promise}
 
-        Alternatively, you can use `Upload File By Selector` keyword.
+        Alternatively, you can use the `Upload File By Selector` keyword.
 
         [https://forum.robotframework.org/t//4313|Comment >>]
         """

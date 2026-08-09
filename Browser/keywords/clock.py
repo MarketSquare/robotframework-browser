@@ -23,18 +23,18 @@ class Clock(LibraryComponent):
     def set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.
 
-        | Argument | Description |
+        | =Arguments= | =Description= |
         | time     | The time to set. Supports Robot Framework date and time format |
-        | clock_type | The clock type to set. Default is `install`. |
+        | clock_type | The clock type to set. Default is ``install``. |
 
-        The fixed makes Date.now and new Date() return fixed fake
-        time at all times, keeps all the timers running.
+        ``fixed`` makes ``Date.now`` and ``new Date()`` always return the same
+        fake time, while all timers keep running.
 
-        The system sets current system time but does not trigger any timers.
+        ``system`` sets the current system time but does not trigger any timers.
 
-        The install fake timers are used to manually control the flow of time in tests.
-        They allow you to advance time, fire timers, and control the behavior
-        of time-dependent functions.
+        ``install`` installs fake timers, which are used to manually control the
+        flow of time in tests. They allow you to advance time, fire timers, and
+        control the behavior of time-dependent functions.
 
         How to use clock related keywords, see
         [https://playwright.dev/docs/clock|Playwright clock documentation].
@@ -57,7 +57,7 @@ class Clock(LibraryComponent):
     def resume_clock(self):
         """Resumes the clock.
 
-        Once keyword method is called, time resumes flowing,
+        Once this keyword is called, time resumes flowing and
         timers are fired as usual.
         """
         logger.info("Resuming clock")
@@ -67,14 +67,14 @@ class Clock(LibraryComponent):
 
     @keyword(tags=("Setter", "Clock"))
     def pause_at(self, time: datetime):
-        """Advance the clock by jumping forward in time and pause the time.
+        """Advances the clock by jumping forward in time and pauses it.
 
-        | Argument | Description |
+        | =Arguments= | =Description= |
         | time     | The time to pause the clock at. |
 
-        Only fires due timers at most once. This is equivalent to user
+        Fires due timers at most once. This is equivalent to a user
         closing the laptop lid for a while and reopening it at the specified
-        time and pausing. Pause can not move clock backwards.
+        time and then pausing. Pause can not move the clock backwards.
 
         Example:
         | `Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
@@ -97,14 +97,15 @@ class Clock(LibraryComponent):
         time: timedelta,
         advance_type: CLockAdvanceType = CLockAdvanceType.fast_forward,
     ):
-        """Advance the clock by a specified amount of time.
+        """Advances the clock by a specified amount of time.
 
-        | Argument | Description |
-        | time     | The time to advance. |
-        | advance_type | The type of advance. Default is `fast_forward`. |
+        | =Arguments= | =Description= |
+        | time     | The time to advance. Supports Robot Framework time format |
+        | advance_type | The type of advance. Default is ``fast_forward``. |
 
-        The `run_forward` advances the clock by firing all the time-related callbacks.
-        The `fast_forward` advances the clock by jumping forward in time. Only fires
+        ``run_for`` advances the clock by firing all the time-related callbacks.
+
+        ``fast_forward`` advances the clock by jumping forward in time. It fires
         due timers at most once.
         """
         logger.info(f"Advancing clock by {time} with type {advance_type.name}")

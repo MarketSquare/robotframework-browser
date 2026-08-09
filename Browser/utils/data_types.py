@@ -594,7 +594,7 @@ class PdfMarging(TypedDict):
 class Media(Enum):
     """Changes the CSS media type of the page.
 
-    The only allowed values are 'screen', 'print' and `null`.
+    The only allowed values are 'screen', 'print' and ``null``.
     Passing null disables CSS media emulation.
     Using False will not define media argument.
     """
@@ -607,8 +607,8 @@ class Media(Enum):
 class ReducedMotion(Enum):
     """Emulates 'prefers-reduced-motion' media feature.
 
-    Supported values are 'reduce', 'no-preference' and `null`.
-    Passing `null` disables reduced motion emulation.
+    Supported values are 'reduce', 'no-preference' and ``null``.
+    Passing ``null`` disables reduced motion emulation.
     """
 
     reduce = "reduce"
@@ -972,10 +972,10 @@ class SupportedBrowsers(Enum):
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference", "null"])
-ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
-        Supported values are 'light', 'dark', 'no-preference' and `null`.
-        Passing `null` disables color scheme emulation.
-        `no-preference` is deprecated.
+ColorScheme.__doc__ = """Emulates 'prefers-color-scheme' media feature.
+        Supported values are 'light', 'dark', 'no-preference' and ``null``.
+        Passing ``null`` disables color scheme emulation.
+        ``no-preference`` is deprecated.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
@@ -1088,17 +1088,17 @@ class BoundingBoxFields(Enum):
 class AutoClosingLevel(Enum):
     """Controls when contexts and pages are closed during the test execution.
 
-    If automatic closing level is `TEST`, contexts and pages that are created during a single test are
+    If automatic closing level is ``TEST``, contexts and pages that are created during a single test are
     automatically closed when the test ends. Contexts and pages that are created during suite setup are
     closed when the suite teardown ends.
 
-    If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
+    If automatic closing level is ``SUITE``, all contexts and pages that are created during the test suite
     are closed when the suite teardown ends.
 
-    If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
+    If automatic closing level is ``MANUAL``, nothing is closed automatically while the test execution
     is ongoing. All browsers, context and pages are automatically closed when test execution ends.
 
-    If automatic closing level is `KEEP`, nothing is closed automatically while the test execution
+    If automatic closing level is ``KEEP``, nothing is closed automatically while the test execution
     is ongoing. Also, nothing is closed when test execution ends, including the node process. Therefore,
     it is users responsibility to close all browsers, context and pages and ensure that all process
     that are left running after the test execution end are closed. This level is only intended for
@@ -1195,8 +1195,8 @@ class ReduceMotion(Enum):
 class ForcedColors(Enum):
     """Emulates 'forced-colors' media feature.
 
-    Supported values are 'active', 'none' and `null`.
-    Passing `null` disables forced colors emulation.
+    Supported values are 'active', 'none' and ``null``.
+    Passing ``null`` disables forced colors emulation.
     """
 
     active = auto()
@@ -1346,28 +1346,28 @@ class BrowserInfo(TypedDict):
 
     Structure:
     | {
-    |   'type': `str`,
-    |   'id': `str`,
+    |   'type': ``str``,
+    |   'id': ``str``,
     |   'contexts': [
     |       {
-    |           'type': `str`,
-    |           'id': `str`,
-    |           'activePage': `str`,
+    |           'type': ``str``,
+    |           'id': ``str``,
+    |           'activePage': ``str``,
     |           'pages': [
     |               {
-    |                   'type': `str`,
-    |                   'title': `str`,
-    |                   'url': `str`,
-    |                   'id': `str`,
-    |                   'timestamp': `float`
+    |                   'type': ``str``,
+    |                   'title': ``str``,
+    |                   'url': ``str``,
+    |                   'id': ``str``,
+    |                   'timestamp': ``float``
     |               },
     |               ...
     |           ]
     |       },
     |       ...
     |   ],
-    |   'activeContext': `str`,
-    |   'activeBrowser': `bool`
+    |   'activeContext': ``str``,
+    |   'activeBrowser': ``bool``
     | }
     """
 
@@ -1388,9 +1388,9 @@ class FileUploadBuffer(TypedDict):
 
     Structure:
     | {
-    |   'name': `str`,
-    |   'mimeType': `str`,
-    |   'buffer': `str`
+    |   'name': ``str``,
+    |   'mimeType': ``str``,
+    |   'buffer': ``str``
     | }
     """
 

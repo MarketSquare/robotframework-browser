@@ -20,14 +20,16 @@ class Crawling(LibraryComponent):
         """
         Web crawler is a tool to go through all the pages on a specific URL domain.
         This happens by finding all links going to the same site and opening those.
+        Links pointing to another scheme or host are ignored, as are download links.
 
-        returns list of crawled urls.
+        Returns the list of crawled urls. The order of the returned urls is not
+        guaranteed to be the order in which the pages were crawled.
 
         | =Arguments= | =Description= |
-        | ``url`` | is the page to start crawling from. |
-        | ``page_crawl_keyword`` | is the keyword that will be executed on every page.  By default it will take a screenshot on every page. |
-        | ``max_number_of_page_to_crawl`` | is the upper limit of pages to crawl. Crawling will stop if the number of crawled pages goes over this. |
-        | ``max_depth_to_crawl`` | is the upper limit of consecutive links followed from the start page. Crawling will stop if there are no more links under this depth. |
+        | ``url`` | is the page to start crawling from. If it is given, a `New Page` is opened with that url. If it is not given, crawling starts from the url of the current page. |
+        | ``page_crawl_keyword`` | is the keyword that will be executed on every page. It is run without arguments. By default it will take a screenshot on every page. |
+        | ``max_number_of_page_to_crawl`` | is the upper limit of pages to crawl. Crawling will stop when this number of pages has been crawled. |
+        | ``max_depth_to_crawl`` | is the upper limit of consecutive links followed from the start page. The start page has depth ``0`` and links deeper than this limit are not followed. |
 
         [https://forum.robotframework.org/t//4243|Comment >>]
         """

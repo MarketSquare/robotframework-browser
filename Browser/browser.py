@@ -156,9 +156,9 @@ class _RFContextTracker:
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 
-    This is the keyword documentation for Browser library. For information
-    about installation, support, and more please visit the
-    [https://github.com/MarketSquare/robotframework-playwright|project pages].
+    This is the keyword documentation for Browser library. For installation,
+    guides and everything else, see
+    [https://robotframework-browser.org|robotframework-browser.org].
     For more information about Robot Framework itself, see [https://robotframework.org|robotframework.org].
 
     Browser library uses
@@ -258,25 +258,47 @@ class Browser(DynamicCore):
     All keywords in the library that need to interact with an element
     on a web page take an argument typically named ``selector`` that specifies
     how to find the element. Keywords can find elements with strict mode. If
-    strict mode is true and locator finds multiple elements from the page, keyword
-    will fail. If keyword finds one element, keyword does not fail because of
-    strict mode. If strict mode is false, keyword does not fail if selector points
-    many elements. Strict mode is enabled by default, but can be changed in library
-    `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
-    uses strict mode. If keyword does not state that strict mode is used, then strict
-    mode is not applied for the keyword. For more details, see Playwright
+    strict mode is enabled and the selector matches more than one element, the
+    keyword fails. If it matches exactly one element, the keyword does not fail
+    because of strict mode. If strict mode is disabled, a selector matching several
+    elements does not fail the keyword. Strict mode is enabled by default, but can
+    be changed in the library `importing` or with the `Set Strict Mode` keyword.
+    Keyword documentation states if a keyword uses strict mode; if it does not say
+    so, strict mode is not applied to that keyword. For more details, see the
+    Playwright
     [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
 
     Selector strategies that are supported by default are listed in the table
     below.
 
-    | = Strategy = |     = Match based on =     |         = Example =                |
-    | ``css``      | CSS selector.              | ``css=.class > \\#login_btn``      |
-    | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
-    | ``text``     | Browser text engine.       | ``text=Login``                     |
-    | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
+    | = Strategy =     |     = Match based on =                       |         = Example =                |
+    | ``css``          | CSS selector.                                | ``css=.class > \\#login_btn``      |
+    | ``xpath``        | XPath expression.                            | ``xpath=//input[@id="login_btn"]`` |
+    | ``text``         | Browser text engine.                         | ``text=Login``                     |
+    | ``id``           | Element ID attribute.                        | ``id=login_btn``                   |
+    | ``role``         | ARIA role, plus its accessible name.         | ``role=button[name="Login"]``      |
+    | ``data-testid``  | ``data-testid`` attribute.                   | ``data-testid=login``              |
+    | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
+    | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
+    | ``css:light``    | CSS selector that does not pierce shadow DOM.| ``css:light=.class``               |
+    | ``text:light``   | Text engine that does not pierce shadow DOM. | ``text:light=Login``               |
+    | ``element``      | An element handle returned by a keyword.     | ``element=${ref}``                 |
+
+    Two filters narrow down what a selector already matched. They are chained with
+    ``>>`` like any other engine, and the order they are applied in changes the
+    result.
+
+    | = Filter =    |     = Selects =                                        |     = Example =              |
+    | ``nth``       | The nth match, zero based. ``0`` first, ``-1`` last.   | ``css=button >> nth=1``      |
+    | ``visible``   | Only visible or only hidden matches.                   | ``css=button >> visible=true`` |
 
     CSS Selectors can also be recorded with `Record selector` keyword.
+
+    Every strategy, filter and chaining rule below is usable offline from this
+    document. A longer guide — which strategy to prefer and why, Playwright's CSS
+    pseudo-classes such as ``:has-text()`` and the layout selectors such as
+    ``:right-of()`` — is at
+    https://robotframework-browser.org/docs/concepts/selectors
 
     == Explicit Selector Strategy ==
 
@@ -334,8 +356,7 @@ class Browser(DynamicCore):
     Example: ``xpath=//html/body//span[text()="Hello World"]``.
 
     Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
-    For example, ``//html/body`` is converted to ``xpath=//html/body``. More
-    examples are displayed in `Examples`.
+    For example, ``//html/body`` is converted to ``xpath=//html/body``.
 
     Note that xpath does not pierce [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|shadow_roots].
 
@@ -351,8 +372,7 @@ class Browser(DynamicCore):
 
     Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
     to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
-    Be aware that these leads to exact matches only!
-    More examples are displayed in `Examples`.
+    Be aware that this leads to exact matches only!
 
 
     === Insensitive match ===
@@ -385,10 +405,6 @@ class Browser(DynamicCore):
 
     == Cascaded selector syntax ==
 
-    Browser library supports the same selector strategies as the underlying
-    Playwright node module: xpath, css, id and text. The strategy can either
-    be explicitly specified with a prefix or the strategy can be implicit.
-
     A major advantage of Browser is that multiple selector engines can be used
     within one selector. It is possible to mix XPath, CSS and Text selectors while
     selecting a single element.
@@ -420,35 +436,6 @@ class Browser(DynamicCore):
 
     For convenience, selectors in the wrong format are heuristically converted
     to the right format. See `Implicit Selector Strategy`
-
-    == Examples ==
-    | # queries 'div' css selector
-    | Get Element    css=div
-    |
-    | # queries '//html/body/div' xpath selector
-    | Get Element    //html/body/div
-    |
-    | # queries '"foo"' text selector
-    | Get Element    text=foo
-    |
-    | # queries 'span' css selector inside the result of '//html/body/div' xpath selector
-    | Get Element    xpath=//html/body/div >> css=span
-    |
-    | # converted to 'css=div'
-    | Get Element    div
-    |
-    | # converted to 'xpath=//html/body/div'
-    | Get Element    //html/body/div
-    |
-    | # converted to 'text="foo"'
-    | Get Element    "foo"
-    |
-    | # queries the div element of every 2nd span element inside an element with the id foo
-    | Get Element    \\#foo >> css=span:nth-child(2n+1) >> div
-    | Get Element    id=foo >> css=span:nth-child(2n+1) >> div
-
-    Be aware that using ``#`` as a starting character in Robot Framework would be interpreted as comment.
-    Due to that fact a ``#id`` must be escaped as ``\\#id``.
 
     == iFrames ==
 
@@ -486,15 +473,9 @@ class Browser(DynamicCore):
 
     == WebComponents and Shadow DOM ==
 
-    Playwright and so also Browser are able to do automatic piercing of Shadow DOMs
-    and therefore are the best automation technology when working with WebComponents.
-
-    Also other technologies claim that they can handle
-    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM and Web Components].
-    However, none of them do pierce shadow roots automatically,
-    which may be inconvenient when working with Shadow DOM and Web Components.
-
-    For that reason, the css engine pierces shadow roots. More specifically, every
+    Browser pierces
+    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM]
+    automatically. The css engine pierces shadow roots. More specifically, every
     [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
     pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
     at the start of the selector.
@@ -512,35 +493,8 @@ class Browser(DynamicCore):
     and then recursively inside open shadow roots in the iteration order. It does not
     search inside closed shadow roots or iframes.
 
-    Examples:
-
-    | <article>
-    |   <div>In the light dom</div>
-    |   <div slot='myslot'>In the light dom, but goes into the shadow slot</div>
-    |   <open mode shadow root>
-    |       <div class='in-the-shadow'>
-    |           <span class='content'>
-    |               In the shadow dom
-    |               <open mode shadow root>
-    |                   <li id='target'>Deep in the shadow</li>
-    |               </open mode shadow root>
-    |           </span>
-    |       </div>
-    |       <slot name='myslot'></slot>
-    |   </open mode shadow root>
-    | </article>
-
-    Note that ``<open mode shadow root>`` is not an html element, but rather a shadow root
-    created with ``element.attachShadow({mode: 'open'})``.
-
-    - Both ``"css=article div"`` and ``"css:light=article div"`` match the first ``<div>In the light dom</div>``.
-    - Both ``"css=article > div"`` and ``"css:light=article > div"`` match two ``div`` elements that are direct children of the ``article``.
-    - ``"css=article .in-the-shadow"`` matches the ``<div class='in-the-shadow'>``, piercing the shadow root, while ``"css:light=article .in-the-shadow"`` does not match anything.
-    - ``"css:light=article div > span"`` does not match anything, because both light-dom ``div`` elements do not contain a ``span``.
-    - ``"css=article div > span"`` matches the ``<span class='content'>``, piercing the shadow root.
-    - ``"css=article > .in-the-shadow"`` does not match anything, because ``<div class='in-the-shadow'>`` is not a direct child of ``article``
-    - ``"css:light=article > .in-the-shadow"`` does not match anything.
-    - ``"css=article li#target"`` matches the ``<li id='target'>Deep in the shadow</li>``, piercing two shadow roots.
+    Worked examples of what ``css`` matches and ``css:light`` does not are at
+    https://robotframework-browser.org/docs/concepts/selectors
 
     === text:light ===
 
@@ -585,13 +539,13 @@ class Browser(DynamicCore):
 
     By default, keywords will provide an error message if an assertion fails.
     Default error messages can be overwritten with a ``message`` argument.
-    The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
+    The ``message`` argument accepts ``{value}``, ``{value_type}``, ``{expected}`` and
     `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
     options.
-    The `{value}` is the value returned by the keyword and the `{expected}`
+    The ``{value}`` is the value returned by the keyword and the ``{expected}``
     is the expected value defined by the user, usually the value in the
-    ``assertion_expected`` argument. The `{value_type}` and
-    `{expected_type}` are the type definitions from `{value}` and `{expected}`
+    ``assertion_expected`` argument. The ``{value_type}`` and
+    `{expected_type}` are the type definitions from ``{value}`` and ``{expected}``
     arguments. In similar fashion as Python
     [https://docs.python.org/3/library/functions.html#type|type] returns type definition.
     Assertions will retry until ``timeout`` has expired if they do not pass.
@@ -605,14 +559,14 @@ class Browser(DynamicCore):
 
     Other Keywords have other specific types they return.
     `Get Element Count` always returns an integer.
-    `Get Bounding Box` and `Get Viewport Size` can be filtered.
+    `Get BoundingBox` and `Get Viewport Size` can be filtered.
     They return a dictionary without a filter and a number when filtered.
     These Keywords do automatic conversion for the expected value if a number is returned.
 
     * < less or greater > With Strings*
     Comparisons of strings with ``greater than`` or ``less than`` compares each character,
     starting from 0 regarding where it stands in the code page.
-    Example: ``A < Z``, ``Z < a``, ``ac < dc`
+    Example: ``A < Z``, ``Z < a``, ``ac < dc``
     It does never compare the length of elements. Neither lists nor strings.
     The comparison stops at the first character that is different.
     Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
@@ -667,176 +621,105 @@ class Browser(DynamicCore):
 
     = Experimental: Re-using same node process =
 
-    Browser library integrated nodejs and python. The NodeJS side can be also executed as a standalone process.
-    Browser libraries running on the same machine can talk to that instead of starting new node processes.
-    This can speed execution when running tests parallel.
-    To start node side run on the directory when the Browser package is
-    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``.
+    The Node.js side can be started as a standalone process and shared by every
+    Browser library running on the same machine, instead of each one starting its
+    own. This can speed up parallel runs. Start it from the directory where the
+    Browser package is installed with
+    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``, where
+    ``PORT`` is the port you want the node process to listen on. Point runs at it
+    with the ``playwright_process_port`` import parameter or the
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT`` environment variable, for example
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
-    ``PORT`` is the port you want to use for the node process.
-    To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
+    What this costs, how to run it under Pabot, and how to pass Node flags such as
+    ``--inspect``:
+    https://robotframework-browser.org/docs/operations/node-process
 
     = Scope Setting =
 
     Some keywords which manipulates library settings have a scope argument.
     With that scope argument one can set the "live time" of that setting.
-    Available Scopes are: `Global`, `Suite` and `Test`/`Task`
+    Available Scopes are: ``Global``, ``Suite`` and ``Test``/`Task`
     See `Scope`.
     Is a scope finished, this scoped setting, like timeout, will no longer be used.
 
     Live Times:
-    - A `Global` scope will live forever until it is overwritten by another `Global` scope. Or locally temporarily overridden by a more narrow scope.
-    - A `Suite` scope will locally override the `Global` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with `Global` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local `Suite` setting that then will be inherited to its children suites.
-    - A `Test` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+    - A ``Global`` scope will live forever until it is overwritten by another ``Global`` scope. Or locally temporarily overridden by a more narrow scope.
+    - A ``Suite`` scope will locally override the ``Global`` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with ``Global`` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local ``Suite`` setting that then will be inherited to its children suites.
+    - A ``Test`` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
 
     A new set higher order scope will always remove the lower order scope which may be in charge.
-    So the setting of a `Suite` scope from a test, will set that scope to the robot file suite where that test is and removes the `Test` scope that may have been in place.
+    So the setting of a ``Suite`` scope from a test, will set that scope to the robot file suite where that test is and removes the ``Test`` scope that may have been in place.
 
     = Extending Browser library with a JavaScript module =
 
-    Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
-    You can translate your ES6 module to Node.js CommonJS style with Babel. Many other languages
-    can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
-    ClojureScript just to mention few.
+    Browser can be given extra keywords written in JavaScript, running on the Node
+    side with the Playwright ``page`` object in hand. The module must be in the
+    CommonJS format that Node.js uses; exported functions become keywords, and an
+    ``fn.rfdoc`` string becomes that keyword's documentation. Load a module with the
+    ``jsextension`` import parameter. Functions can take any number of arguments, and
+    the arguments may have default values.
 
-    | async function myGoToKeyword(url, args, page, logger, playwright) {
-    |   logger(args.toString())
-    |   playwright.coolNewFeature()
-    |   return await page.goto(url);
-    | }
+    Five argument names are reserved: they are filled in by the library instead of
+    being taken from the keyword call, and they are matched by name, so they can
+    appear anywhere in the signature.
 
-    Functions can contain any number of arguments and arguments may have default values.
+    | = Argument =   | = Receives =                                              |
+    | ``page``       | [https://playwright.dev/docs/api/class-page|Page]                   |
+    | ``context``    | [https://playwright.dev/docs/api/class-browsercontext|BrowserContext] |
+    | ``browser``    | [https://playwright.dev/docs/api/class-browser|Browser]             |
+    | ``logger``     | Callback that writes its argument to the Robot Framework log.       |
+    | ``playwright`` | [https://playwright.dev/docs/api/class-playwright|The playwright module] |
 
-    There are some reserved arguments that are not accessible from Robot Framework side.
-    They are injected to the function if they are in the arguments:
+    An argument named ``args`` is special in the opposite direction: it makes the
+    keyword variadic and receives the remaining values from the Robot Framework
+    keyword call. The name ``self`` cannot be used.
 
-    ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
+    A module can also register a custom selector engine with
+    ``playwright.selectors.register``, which is then usable anywhere a selector is
+    accepted.
 
-    ``context``: [https://playwright.dev/docs/api/class-browsercontext|the playwright BrowserContext object].
-
-    ``browser``: [https://playwright.dev/docs/api/class-browser|the playwright Browser object].
-
-    ``args``: the rest of values from Robot Framework keyword call ``*args``.
-
-    ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
-
-    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
-
-    also argument name ``self`` can not be used.
-
-    == Example module.js ==
-
-    | async function myGoToKeyword(pageUrl, page) {
-    |   await page.goto(pageUrl);
-    |   return await page.title();
-    | }
-    | exports.__esModule = true;
-    | exports.myGoToKeyword = myGoToKeyword;
-
-    == Example Robot Framework side ==
-
-    | *** Settings ***
-    | Library   Browser  jsextension=${CURDIR}/module.js
-    |
-    | *** Test Cases ***
-    | Hello
-    |   New Page
-    |   ${title}=  myGoToKeyword  https://playwright.dev
-    |   Should be equal  ${title}  Playwright
-
-    Also selector syntax can be extended with a custom selector using a js module
-
-    == Example module keyword for custom selector registering ==
-
-    | async function registerMySelector(playwright) {
-    | playwright.selectors.register("myselector", () => ({
-    |    // Returns the first element matching given selector in the root's subtree.
-    |    query(root, selector) {
-    |       return root.querySelector(`a[data-title="${selector}"]`);
-    |     },
-    |
-    |     // Returns all elements matching given selector in the root's subtree.
-    |     queryAll(root, selector) {
-    |       return Array.from(root.querySelectorAll(`a[data-title="${selector}"]`));
-    |     }
-    | }));
-    | return 1;
-    | }
-    | exports.__esModule = true;
-    | exports.registerMySelector = registerMySelector;
+    Worked modules, the Robot Framework side, custom selector engines and how to
+    attach a Node debugger:
+    https://robotframework-browser.org/docs/extending/javascript-extensions
 
     = Plugins =
 
-    Browser library offers plugins as a way to modify and add library keywords and modify some of the internal
-    functionality without creating a new library or hacking the source code. See plugin API
-    [https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md | documentation] for
-    further details.
+    Browser library offers plugins as a way to modify and add library keywords and
+    modify some of the internal functionality without creating a new library or
+    hacking the source code. Plugins are Python classes loaded with the ``plugins``
+    import parameter. See
+    https://robotframework-browser.org/docs/extending/python-plugins
 
     = Language =
 
-    Browser library offers possibility to translate keyword names and documentation to new language. If language
-    is defined, Browser library will search from
-    [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#module-search-path | module search path]
-    Python packages starting with `robotframework_browser_translation` by using
-    [https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/ | Python pluging API]. Library
-    is using naming convention to find Python plugins.
+    Keyword names and their documentation can be translated. Install a Python
+    package whose name starts with ``robotframework_browser_translation`` and set
+    the ``language`` import parameter to the language that the package declares;
+    Browser discovers it on the module search path through the Python plugin API.
 
-    The package must implement single API call, ``get_language`` without any arguments. Method must return a
-    dictionary containing two keys: ``language`` and ``path``. The language key value defines which language
-    the package contains. Also value should match (case insensitive) the library ``language`` import parameter.
-    The path parameter value should be full path to the translation file.
+    A template for a new translation, containing every keyword in the correct
+    format, is produced by ``rfbrowser translation /path/to/translation.json``.
+    Keywords coming from library plugins and JavaScript extensions can be included
+    with the ``--plugings`` and ``--jsextension`` arguments.
 
-    == Translation file ==
-
-    The file name or extension is not important, but data must be in [https://www.json.org/json-en.html | json]
-    format. The keys of json are the methods names, not the keyword names, which implements keywords. Value of
-    key is json object which contains two keys: ``name`` and ``doc``. The ``name`` key contains the keyword
-    translated name and `doc` contains translated documentation. Providing doc and name are optional, example
-    translation json file can only provide translations to keyword names or only to documentation. But it is
-    always recommended to provide translation to both name and doc. Special key ``__intro__`` is for class level
-    documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
-    translated, instead ``name`` should be kept the same.
-
-    == Generating template translation file ==
-
-    Template translation file, with English language can be created by running:
-    `rfbrowser translation /path/to/translation.json` command. Command does not provide translations to other
-    languages, it only provides easy way to create full list keywords and their documentation in correct
-    format. It is also possible to add keywords from library plugins and js extensions by providing
-    `--plugings` and `--jsextension` arguments to command. Example:
-    `rfbrowser translation --plugings myplugin.SomePlugin --jsextension /path/ot/jsplugin.js /path/to/translation.json`
-
-    Example project for translation can be found from
-    [https://github.com/MarketSquare/robotframework-browser-translation-fi | robotframework-browser-translation-fi]
-    repository.
+    Writing and packaging a translation:
+    https://robotframework-browser.org/docs/extending/translations
 
     = ENVIRONMENT VARIABLES =
 
-    There are some environment variables that can be used to modify the behavior of the library. Some of
-    these environment variables are for experimental/development features and must not be used in production environments.
-    They are listed here to prevent users using them by accident without knowing the possible consequences.
+    These environment variables modify the behaviour of the library. Two of them are
+    development features and must not be set in production; they are listed here so
+    that nobody uses them by accident.
 
-    These are:
     | =Environment variable=                         | =Description= |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``          | Port number for connecting to an existing node process. This is an alternative to ``playwright_process_port`` import argument. |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``1``, will collect code coverage for the node process. This must not be used in production environments and is not supported on Windows. |
     | ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` | Debug options for the node process. This is a comma-separated list of arguments, for example ``--inspect``. This must not be used in production environments. |
 
-    These variables behave the same way whether the node process is started from a NodeJS
-    you installed yourself or from the one inside the
-    [https://pypi.org/project/robotframework-browser-batteries/|robotframework-browser-batteries]
-    package. In releases 20.1.0 or earlier ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``
-    and ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` were silently ignored when
-    BrowserBatteries was installed, because the node process was then a prebuilt binary
-    that could not be given node arguments.
-
-    = Experimental: Provide parameters to node process =
-
-    Browser library is integrated with Node.js and Python. Browser library starts a node process, to communicate
-    Playwright API on the Node.js side. It is possible to provide parameters for the started node process by defining
-    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
-    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect,--trace-warnings robot path/to/tests``.
-    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
+    Which of these to prefer over an import parameter, and how they behave with
+    BrowserBatteries:
+    https://robotframework-browser.org/docs/operations/environment-variables
     """
 
     ROBOT_LIBRARY_VERSION = VERSION

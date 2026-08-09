@@ -64,11 +64,11 @@ class Interaction(LibraryComponent):
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``txt`` | Text for the text field. |
         | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
-        | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
+        | ``clear`` | Set to ``False`` if the field should not be cleared before typing. Defaults to ``True``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        See `Fill Text` for direct filling of the full text at once.
+        See `Fill Text` for filling the full text at once.
 
         Example
         | `Type Text`    input#username_field    user
@@ -89,19 +89,19 @@ class Interaction(LibraryComponent):
     def fill_text(self, selector: str, txt: str, force: bool = False):
         """Clears and fills the given ``txt`` into the text field found by ``selector``.
 
-        This method waits for an element matching the ``selector`` to appear,
+        This keyword waits for an element matching the ``selector`` to appear,
         waits for actionability checks, focuses the element, fills it and
         triggers an input event after filling.
 
-        If the element matching selector is not an <input>, <textarea> or
-        [contenteditable] element, this method throws an error. Note that
+        If the element matching the selector is not an <input>, <textarea> or
+        [contenteditable] element, this keyword fails. Note that
         you can pass an empty string as ``txt`` to clear the input field.
 
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``txt`` | Text for the text field. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -141,22 +141,16 @@ class Interaction(LibraryComponent):
         delay: timedelta = timedelta(seconds=0),
         clear: bool = True,
     ):
-        """Types the given secret from ``variable_name`` into the text field
-        found by ``selector``.
-
-        This keyword does not log secret in Robot Framework logs, if keyword resolves
-        the variable value internally. If ``enable_playwright_debug`` is enabled in
-        the library import, secret will be always visible as plain text in the playwright
-        debug logs, regardless of the Robot Framework log level.
+        """Types the given ``secret`` into the text field found by ``selector``.
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``secret`` | Supports Robot Framework 7.4 Secret type as normal variable (with curly braces). Also environment variable name with % prefix or a local variable with $ prefix that has the secret text value (without curly braces). |
         | ``delay`` | Delay between the single key strokes. It may be either a number or a Robot Framework time string. Time strings are fully explained in an appendix of Robot Framework User Guide. Defaults to ``0 ms``. Example: ``50 ms`` |
-        | ``clear`` | Set to false, if the field shall not be cleared before typing. Defaults to true. |
+        | ``clear`` | Set to ``False`` if the field should not be cleared before typing. Defaults to ``True``. |
 
-        This keyword does not log secret in Robot Framework logs, but
-        if PLaywright debug logs are enabled, secret will be visible as
+        This keyword does not log the secret in Robot Framework logs, but
+        if Playwright debug logs are enabled, the secret will be visible as
         plain text in the Playwright debug logs, regardless of the Robot
         Framework log level or how ``secret`` is resolved.
 
@@ -165,26 +159,27 @@ class Interaction(LibraryComponent):
         variable type, which is the recommended way if you are using Robot
         Framework 7.4 or newer.
 
-        For older Robot Framework versions keyword support resolving secrets from
+        For older Robot Framework versions the keyword supports resolving secrets from
         environment variables and Robot Framework variables in the following ways.
-        Keyword resolves the ``secret`` from Robot Framework variable internally,
-        when ``secret`` variable is prefixed with `$`, without the curly braces.
-        Example `$Password`` will resolve to ``${Password}`` Robot Framework
+        The keyword resolves the ``secret`` from a Robot Framework variable internally,
+        when the ``secret`` variable is prefixed with ``$``, without the curly braces.
+        Example: ``$Password`` will resolve to the ``${Password}`` Robot Framework
         variable.
 
-        If ``secret`` variable is prefixed with `%`, library will resolve
-        corresponding environment variable. Example ``%ENV_PWD`` will
-        resolve to ``%{ENV_PWD}`` environment variable.
+        If the ``secret`` variable is prefixed with ``%``, the library will resolve the
+        corresponding environment variable. Example: ``%ENV_PWD`` will
+        resolve to the ``%{ENV_PWD}`` environment variable.
 
 
-        *Using normal Robot Framework variables like ``${password}`` will not work!*
+        *Using normal Robot Framework variables like ``${password}``, which are not
+        Secret type variables, will not work!*
 
         *Normal plain text will not work.*
-        If you want to use plain text, use `Type Text` keyword instead.
+        If you want to use plain text, use the `Type Text` keyword instead.
 
-        This keyword will also work with a give cryptographic cipher text, that has been
-        encrypted by Crypto library.
-        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
+        This keyword also works with a cryptographic cipher text that has been
+        encrypted by CryptoLibrary.
+        See [https://github.com/Snooz82/robotframework-crypto | CryptoLibrary] for more details.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -212,18 +207,17 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def fill_secret(self, selector: str, secret: str | Secret, force: bool = False):
-        """Fills the given secret from ``variable_name`` into the
-        text field found by ``selector``.
+        """Fills the given ``secret`` into the text field found by ``selector``.
 
 
         | =Arguments= | =Description= |
-        | ``secret`` | The secret string that should be filled into the text field. |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``secret`` | The secret string that should be filled into the text field. Supports Robot Framework 7.4 Secret type as normal variable (with curly braces). Also environment variable name with % prefix or a local variable with $ prefix that has the secret text value (without curly braces). |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
 
-        This keyword does not log secret in Robot Framework logs, but
-        if PLaywright debug logs are enabled, secret will be visible as
+        This keyword does not log the secret in Robot Framework logs, but
+        if Playwright debug logs are enabled, the secret will be visible as
         plain text in the Playwright debug logs, regardless of the Robot
         Framework log level or how ``secret`` is resolved.
 
@@ -232,29 +226,26 @@ class Interaction(LibraryComponent):
         variable type, which is the recommended way if you are using Robot
         Framework 7.4 or newer.
 
-        For older Robot Framework versions keyword support resolving secrets from
+        For older Robot Framework versions the keyword supports resolving secrets from
         environment variables and Robot Framework variables in the following ways.
-        Keyword resolves the ``secret`` from Robot Framework variable internally,
-        when ``secret`` variable is prefixed with `$`, without the curly braces.
-        Example `$Password`` will resolve to ``${Password}`` Robot Framework
+        The keyword resolves the ``secret`` from a Robot Framework variable internally,
+        when the ``secret`` variable is prefixed with ``$``, without the curly braces.
+        Example: ``$Password`` will resolve to the ``${Password}`` Robot Framework
         variable.
 
-        If ``secret`` variable is prefixed with `%`, library will resolve
-        corresponding environment variable. Example ``%ENV_PWD`` will
-        resolve to ``%{ENV_PWD}`` environment variable.
+        If the ``secret`` variable is prefixed with ``%``, the library will resolve the
+        corresponding environment variable. Example: ``%ENV_PWD`` will
+        resolve to the ``%{ENV_PWD}`` environment variable.
 
-        *Using normal Robot Framework variables like ``${password}`` will not work!*
+        *Using normal Robot Framework variables like ``${password}``, which are not
+        Secret type variables, will not work!*
 
         *Normal plain text will not work.*
-        If you want to use plain text, use `Fill Text` keyword instead.
+        If you want to use plain text, use the `Fill Text` keyword instead.
 
-        This keyword will also work with a give cryptographic cipher text, that has been
-        encrypted by Crypto library.
-        See [https://github.com/Snooz82/robotframework-crypto | Crypto Library] for more details.
-
-        If ``enable_playwright_debug`` is enabled in the library import,
-        secret will be always visible as plain text in the playwright debug
-        logs, regardless of the Robot Framework log level.
+        This keyword also works with a cryptographic cipher text that has been
+        encrypted by CryptoLibrary.
+        See [https://github.com/Snooz82/robotframework-crypto | CryptoLibrary] for more details.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -292,18 +283,18 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
-        | ``*keys`` | Keys to be press after each other. Using + to chain combine modifiers with a single keypress ``Control+Shift+T`` is supported. |
+        | ``*keys`` | Keys to be pressed one after the other. Combining modifiers with a single key press by chaining them with ``+``, like ``Control+Shift+T``, is supported. |
         | ``press_duration`` | Delay between keydown and keyup of each key. Can be given as seconds (float) or as Robot Framework time string. Defaults to ``0 ms``. Example: ``50 ms`` |
         | ``key_delay`` | Delay between key presses. Can be given as seconds (float) or as Robot Framework time string. Defaults to ``0 ms``. Example: ``50 ms`` |
 
 
-        Supports values like "a, b" which will be automatically typed.
+        Supports values like ``a`` or ``b`` which will be automatically typed.
 
         Also supports identifiers for keys like ``ArrowLeft`` or ``Backspace``.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        See playwright's documentation for a more comprehensive list of
+        See Playwright's documentation for a more comprehensive list of
         supported input keys.
         [https://playwright.dev/docs/api/class-page#page-press | Playwright docs for press.]
 
@@ -331,19 +322,22 @@ class Interaction(LibraryComponent):
         """Simulates mouse click on the element found by ``selector``.
 
         This keyword clicks an element matching ``selector`` by performing the following steps:
-        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
-        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+        - Find an element matching the selector. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element.
           If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
-        - Use `Mouse Button` to click in the center of the element, or the specified position.
+        - Use `Mouse Button` to click in the center of the element.
         - Wait for initiated navigation to either succeed or fail.
 
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
-        | ``button`` | Defaults to ``left`` if invalid. |
+        | ``button`` | Mouse button to click with. One of ``left``, ``middle`` or ``right``. Defaults to ``left``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        See `Click With Options` if you need modifiers, a click count, a click
+        position or want to skip the actionability checks.
 
         Example:
         | `Click`    id=button_location
@@ -371,26 +365,26 @@ class Interaction(LibraryComponent):
         """Simulates mouse click on the element found by ``selector``.
 
         This keyword clicks an element matching ``selector`` by performing the following steps:
-        - Find an element matches selector. If there is none, wait until a matching element is attached to the DOM.
-        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+        - Find an element matching the selector. If there is none, wait until a matching element is attached to the DOM.
+        - Wait for actionability checks on the matched element, unless the ``force`` option is set.
           If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Button` to click in the center of the element, or the specified position.
-        - Wait for initiated navigation to either succeed or fail, unless ``noWaitAfter`` option is set.
+        - Wait for initiated navigation to either succeed or fail, unless the ``noWaitAfter`` option is set.
 
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
-        | ``button`` | Defaults to ``left`` if invalid. |
-        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``. Due to the fact that the argument `*modifiers` is a positional only argument, all preceding keyword arguments have to be specified as positional arguments before `*modifiers`. |
-        | ``clickCount`` | Defaults to 1. |
-        | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to 0. |
-        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
-        | ``force`` | Set to True to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). |
+        | ``button`` | Mouse button to click with. One of ``left``, ``middle`` or ``right``. Defaults to ``left``. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Alt``, ``Control``, ``ControlOrMeta``, ``Meta`` and ``Shift``. Due to the fact that the argument ``*modifiers`` is a positional only argument, all preceding keyword arguments have to be specified as positional arguments before ``*modifiers``. |
+        | ``clickCount`` | How many times the button is clicked. Defaults to 1. |
+        | ``delay`` | Time to wait between mouse-down and mouse-up. Defaults to no delay. |
+        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. Both values must be given, otherwise the position is ignored. If not specified, clicks to some visible point of the element. |
+        | ``force`` | Set to ``True`` to skip Playwright's Actionability checks (https://playwright.dev/docs/actionability). Defaults to ``False``. |
         | ``noWaitAfter`` | Deprecated. This option will default to true in the future. Actions that initiate navigation, are waiting for these navigation to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
-        | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to false. Useful to wait until the element is ready for the action without performing it. |
+        | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to ``False``. Useful to wait until the element is ready for the action without performing it. |
 
-        Arguments ``clickCount``, ``delay``, ``position_x``, ``position_y``, ``force``, ``noWaitAfter`` and ``trial`` are named-only arguments and must be specified using their names..
+        Arguments ``clickCount``, ``delay``, ``position_x``, ``position_y``, ``force``, ``noWaitAfter`` and ``trial`` are named-only arguments and must be specified using their names.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -443,23 +437,25 @@ class Interaction(LibraryComponent):
     ):
         """Simulates tap on the element found by ``selector``.
 
-        Requires that the ``hasTouch`` option of the `New Context` be set to true.
+        Requires that the ``hasTouch`` option of `New Context` is set to true.
         This method taps the element by performing the following steps:
-        - Wait for actionability checks on the element, unless force option is set.
+        - Wait for actionability checks on the element, unless the ``force`` option is set.
         - Scroll the element into view if needed.
         - Use page.touchscreen to tap the center of the element, or the specified position.
-        - Wait for initiated navigations to either succeed or fail, unless noWaitAfter option is set.
+        - Wait for initiated navigations to either succeed or fail.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Selector element to click. See the `Finding elements` section for details about the selectors. |
-        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the click, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Control``, ``Alt``, ``Shift`` and ``Meta``. |
-        | ``force`` | Whether to bypass the actionability checks. Defaults to false. |
-        | ``noWaitAfter`` | Deprecated. This option has no effect. Actions that initiate navigations are waiting for these navigations to happen and for pages to start loading. You can opt out of waiting via setting this flag. You would only need this option in the exceptional cases such as navigating to inaccessible pages. Defaults to ``False``. |
-        | ``position_x`` ``position_y`` | A point to click relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. If not specified, clicks to some visible point of the element. |
+        | ``selector`` | Selector element to tap. See the `Finding elements` section for details about the selectors. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the tap, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Modifiers can be specified in any order, and multiple modifiers can be specified. Valid modifier keys are ``Alt``, ``Control``, ``ControlOrMeta``, ``Meta`` and ``Shift``. |
+        | ``force`` | Whether to bypass the actionability checks. Defaults to ``False``. |
+        | ``noWaitAfter`` | Deprecated. This option has no effect. Defaults to ``False``. |
+        | ``position_x`` ``position_y`` | A point to tap relative to the top-left corner of element bounding-box. Only positive values within the bounding-box are allowed. Both values must be given, otherwise the position is ignored. If not specified, taps some visible point of the element. |
         | ``trial`` | When set, this method only performs the actionability checks and skips the action. Defaults to ``False``.  |
 
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
         Example:
-        | New Context    hasTouch=${False}
+        | New Context    hasTouch=${True}
         | New Page    ${URL}
         | Tap    css=input#login_button
 
@@ -495,9 +491,9 @@ class Interaction(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``label`` | text to show when on the box in the page while recording. |
+        | ``label`` | Text to show in the box on the page while recording. |
 
-        Focus on the page and move mouse over the element you want to select.
+        Focus on the page and move the mouse over the element you want to select.
 
         Example:
         | ${selector} =    `Record Selector`   Button
@@ -528,9 +524,9 @@ class Interaction(LibraryComponent):
         """Moves the virtual mouse and scrolls to the element found by ``selector``.
 
         This method hovers over an element matching ``selector`` by performing the following steps:
-        - Find an element match matching ``selector``. If there is none,
+        - Find an element matching ``selector``. If there is none,
           wait until a matching element is attached to the DOM.
-        - Wait for actionability checks on the matched element, unless ``force`` option is set.
+        - Wait for actionability checks on the matched element, unless the ``force`` option is set.
           If the element is detached during the checks, the whole action is retried.
         - Scroll the element into view if needed.
         - Use `Mouse Move` to hover over the center of the element, or the specified ``position``.
@@ -538,9 +534,9 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to hover. See the `Finding elements` section for details about the selectors. |
-        | ``position_x`` & ``position_y`` | A point to hover relative to the top-left corner of element bounding box. If not specified, hovers over some visible point of the element. Only positive values within the bounding-box are allowed. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
-        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the hover, and then restores current modifiers back. If not specified, currently pressed modifiers are used. |
+        | ``position_x`` & ``position_y`` | A point to hover relative to the top-left corner of element bounding box. If not specified, hovers over some visible point of the element. Only positive values within the bounding-box are allowed. Both values must be given, otherwise the position is ignored. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. Defaults to ``False``. |
+        | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the hover, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Valid modifier keys are ``Alt``, ``Control``, ``ControlOrMeta``, ``Meta`` and ``Shift``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -576,8 +572,10 @@ class Interaction(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        If there's no element matching selector, the method waits until a
-        matching element appears in the DOM. Timeouts after 10 seconds.
+        If there is no element matching the selector, the keyword waits until a
+        matching element appears in the DOM. It fails if the element does not
+        appear within the library timeout, which is 10 seconds by default and
+        can be changed with `Set Browser Timeout`.
 
         [https://forum.robotframework.org/t//4255|Comment >>]
         """
@@ -600,9 +598,9 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the element. If the selector is ``${None}`` or ``${Empty}`` the page itself is scrolled. To ensure an element is in view use `Hover` instead. See the `Finding elements` section for details about the selectors. |
-        | ``vertical`` | defines where to scroll vertically. It can be a positive number, like ``300``. It can be a percentage value of the absolute scrollable size, like ``50%``. It can be a string defining that top or the bottom of the scroll area. < ``top`` | ``bottom`` > _Be aware that some pages do lazy loading and load more content once you scroll down._ Bottom defines the current known bottom coordinate. |
-        | ``horizontal`` | defines where to scroll horizontally. Works same as vertical but defines < ``left`` | ``right`` > as start and end. |
-        | ``behavior`` | defines whether the scroll happens directly or it scrolls smoothly. |
+        | ``vertical`` | Defines where to scroll vertically. It can be a positive number, like ``300``. It can be a percentage value of the absolute scrollable size, like ``50%``. It can be a string defining the top or the bottom of the scroll area. < ``top`` | ``bottom`` > _Be aware that some pages do lazy loading and load more content once you scroll down._ Bottom defines the currently known bottom coordinate. Defaults to ``top``. |
+        | ``horizontal`` | Defines where to scroll horizontally. Works the same way as ``vertical``, but defines < ``left`` | ``right`` > as start and end. Defaults to ``left``. |
+        | ``behavior`` | Defines whether the scroll happens instantly or smoothly. Defaults to ``auto``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -640,9 +638,9 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the element. If the selector is ``${None}`` or ``${Empty}`` the page itself is scrolled. To ensure an element is in view use `Hover` instead. See the `Finding elements` section for details about the selectors. |
-        | ``vertical`` | defines how far and in which direction to scroll vertically. It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``. It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``. It can be the string ``height`` to defining to scroll exactly one visible height down or up with ``-height``. _Be aware that some pages do lazy loading and load more content once you scroll down._ The percentage of the current scrollable height is used and may change. |
-        | ``horizontal`` | defines where to scroll horizontally. Works same as vertical but defines positive values for right and negative values for left. ``width`` defines to scroll exactly one visible range to the right. |
-        | ``behavior`` | defines whether the scroll happens directly or it scrolls smoothly. |
+        | ``vertical`` | Defines how far and in which direction to scroll vertically. It can be a positive or negative number. Positive scrolls down, like ``50``, negative scrolls up, like ``-50``. It can be a percentage value of the absolute scrollable size, like ``9.95%`` or negative like ``-10%``. It can be the string ``height`` to scroll exactly one visible height down, or ``-height`` to scroll one visible height up. _Be aware that some pages do lazy loading and load more content once you scroll down._ The percentage of the current scrollable height is used and may change. Defaults to ``height``. |
+        | ``horizontal`` | Defines how far and in which direction to scroll horizontally. Works the same way as ``vertical``, but positive values scroll to the right and negative values to the left. ``width`` scrolls exactly one visible range to the right. Defaults to ``0``. |
+        | ``behavior`` | Defines whether the scroll happens instantly or smoothly. Defaults to ``auto``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -674,11 +672,11 @@ class Interaction(LibraryComponent):
         unless it is completely visible.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Selector of the element. See the `Finding elements` section for details about the selectors. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        Does nothing if the element is already visible.
+        Does nothing if the element is already completely visible.
 
         [https://forum.robotframework.org/t//4321|Comment >>]
         """
@@ -695,7 +693,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -718,7 +716,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
-        | ``force`` | Set to True to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -750,14 +748,15 @@ class Interaction(LibraryComponent):
         | ``*values`` | Values to select. |
 
 
-        Returns list of options which keyword was able to select. The type of
-        list item matches to ``attribute`` definition. Example if ``attribute``
-        equals to `label` returned list contains label values. Or in case of
-        `index` it contains list of selected indexes.
+        Returns a list of the options which the keyword was able to select. The type of
+        the list items matches the ``attribute`` definition. For example, if ``attribute``
+        equals ``label``, the returned list contains label values. Or in case of
+        ``index``, it contains the selected indexes.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        If no values to select are passed will deselect options in element.
+        If no values to select are passed, all options of the element are deselected.
+        The keyword fails if none of the given values matches an option.
 
         Example:
         | ${selected} =    `Select Options By`    select[name=preferred_channel]    label    Direct mail
@@ -873,15 +872,18 @@ class Interaction(LibraryComponent):
     def handle_future_dialogs(self, action: DialogAction, prompt_input: str = ""):
         """Handle next dialog on page with ``action``.
 
-        Dialog can be any of alert, beforeunload, confirm or prompt. Handling dialogue
-        must be called before the action, like example click, that triggers the
-        dialogue.
+        The dialog can be an alert, beforeunload, confirm or prompt dialog. This
+        keyword must be called before the action, for example a click, which
+        triggers the dialog.
 
-        If a handler is not set dialogs are dismissed by default.
+        The handler is registered on the current page and stays in effect for all
+        following dialogs on that page.
+
+        If a handler is not set, dialogs are dismissed by default.
 
         | =Arguments= | =Description= |
         | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
-        | ``prompt_input`` | The value to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. |
+        | ``prompt_input`` | The value to enter into the prompt. Only valid if the ``action`` argument equals ``accept``. Defaults to an empty string. |
 
         Example:
         | `Handle Future Dialogs`    action=accept
@@ -912,16 +914,16 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
-        | ``prompt_input`` | The value to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. |
-        | ``text`` | Optional text to verify the dialogs text. |
-        | ``timeout`` | Optional timeout in Robot Framework time format. |
+        | ``prompt_input`` | The value to enter into the prompt. Only valid if the ``action`` argument equals ``accept``. Defaults to an empty string. |
+        | ``text`` | Optional text to verify the dialog text with. |
+        | ``timeout`` | Optional timeout in Robot Framework time format. Defaults to the library timeout. |
 
 
         The main difference between this keyword and `Handle Future Dialogs`
-        is that `Handle Future Dialogs` keyword is automatically set as promise.
-        But this keyword must be called as argument to `Promise To` keyword. Also this
-        keyword can optionally verify the dialogue text and return it. If ``text`` is
-        argument ``None`` or is not set, dialogue text is not verified.
+        is that the `Handle Future Dialogs` keyword is automatically set as a promise,
+        but this keyword must be called as an argument to the `Promise To` keyword. Also this
+        keyword can optionally verify the dialog text and returns it. If the ``text``
+        argument is ``None`` or is not set, the dialog text is not verified.
 
         Example with returning text:
 
@@ -930,7 +932,7 @@ class Interaction(LibraryComponent):
         | ${text} =            `Wait For`      ${promise}
         | Should Be Equal      ${text}         Am an alert
 
-        Example with text verify:
+        Example with text verification:
 
         | ${promise} =       `Promise To`    Wait For Alert    action=accept    text=Am an alert
         | Click              id=alerts
@@ -956,23 +958,23 @@ class Interaction(LibraryComponent):
         texts: list[str | None],
         timeout: timedelta | None = None,
     ) -> list[str]:
-        """Returns a promise to wait for multiple dialog on a page.
+        """Returns a promise to wait for multiple dialogs on a page.
 
-        Handles each alert/dialog with ``actions`` and optionally verifies the dialogs texts.
+        Handles each alert/dialog with ``actions`` and optionally verifies the dialog texts.
         Dialog/alert can be any of alert, beforeunload, confirm or prompt.
 
         | =Arguments= | =Description= |
         | ``actions`` | List of how to handle the alerts. Can be ``accept`` or ``dismiss``. |
-        | ``prompt_inputs`` | List of the values to enter into prompt. Only valid if ``action`` argument equals ``accept``. Defaults to empty string. IF input not preset, use None |
-        | ``texts`` | List of optional text to verify the dialogs text. Use None if text verification should be disabled. |
-        | ``timeout`` | Optional timeout in Robot Framework time format. |
+        | ``prompt_inputs`` | List of the values to enter into the prompts. Only valid if the corresponding action equals ``accept``. Use ``None`` if no input is needed. |
+        | ``texts`` | List of optional texts to verify the dialog texts with. Use ``None`` if text verification should be disabled. |
+        | ``timeout`` | Optional timeout in Robot Framework time format. Defaults to the library timeout. The timeout is applied to each alert separately. |
 
-        There must be equal amount of items in ``actions``, ``prompt_inputs`` and ``texts``  lists.
-        Use None if texts and/or prompt_inputs are not needed.
+        There must be an equal amount of items in the ``actions``, ``prompt_inputs`` and ``texts`` lists.
+        Use ``None`` if texts and/or prompt inputs are not needed.
 
-        This keyword works in same way as `Wait For Alert` but can handle multiple alerts
-        with one promise. Lie `Wait For Alert` keyword, this keyword must be called as
-        argument to `Promise To` keyword.
+        This keyword works in the same way as `Wait For Alert`, but it can handle multiple alerts
+        with one promise. Like the `Wait For Alert` keyword, this keyword must be called as an
+        argument to the `Promise To` keyword.
 
         Example to handle two alerts, first one is accepted and second one is dismissed:
 
@@ -1039,20 +1041,20 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``action`` | Defines if it is a mouseclick (``click``), holding down a button (``down``) or releasing it (``up``). |
-        | ``x``, ``y`` | Coordinates to move before action is executed. |
-        | ``button`` | One of ``left``, ``middle`` or ``up``. Defaults to ``left``. |
-        | ``clickCount`` | Determine how often the button shall be clicked if action is equal to ``click``. Defaults to 1. |
-        | ``delay`` | Delay in Robot Framework time format between the mousedown and mouseup event. Can only be set if the action is ``click``. |
+        | ``x``, ``y`` | Coordinates to move to before the action is executed. Both must be given, otherwise the action happens at the current mouse position. |
+        | ``button`` | One of ``left``, ``middle`` or ``right``. Defaults to ``left``. |
+        | ``clickCount`` | Determines how often the button shall be clicked if action is equal to ``click``. Defaults to 1. |
+        | ``delay`` | Delay in Robot Framework time format between the mousedown and mouseup event. Can only be set if the action is ``click``. Defaults to ``0 s``. |
 
         *Attention:*
-        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
+        Argument type ``int`` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead.
         For refactoring just add 'ms' after the delay number.
 
         Delay Example:
-        | `Mouse Button`    click    100 ms
-        | `Mouse Button`    click    ${dyn_delay} ms
+        | `Mouse Button`    click    delay=100 ms
+        | `Mouse Button`    click    delay=${dyn_delay} ms
 
-        Moving the mouse between holding down and releasing it, is possible with `Mouse Move`.
+        Moving the mouse between holding down and releasing it is possible with `Mouse Move`.
 
         Example:
         | `Hover`                     "Obstacle"           # Move mouse over the element
@@ -1070,7 +1072,7 @@ class Interaction(LibraryComponent):
             delay = timedelta(milliseconds=delay)
             # ToDo: add in 15.0.0
             # raise ValueError(
-            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            #     "Argument type ``int`` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
             # )
         with self.playwright.grpc_channel() as stub:
             if x and y:
@@ -1104,8 +1106,8 @@ class Interaction(LibraryComponent):
         to the element selected by ``selector_to``.
 
         | =Arguments= | =Description= |
-        | ``selector_from`` | Identifies the element, which center is the start-point. |
-        | ``selector_to`` | Identifies the element, which center is the end-point. |
+        | ``selector_from`` | Identifies the element whose center is the start-point. |
+        | ``selector_to`` | Identifies the element whose center is the end-point. |
         | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         See the `Finding elements` section for details about the selectors.
@@ -1115,7 +1117,7 @@ class Interaction(LibraryComponent):
         then moves to the end-point in specified number of steps,
         then releases the mouse button.
 
-        Start- and end-point are defined by the center of the elements boundingbox.
+        Start- and end-point are defined by the center of the elements' bounding box.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1157,6 +1159,7 @@ class Interaction(LibraryComponent):
         Start- and end-point are defined by ``x`` and ``y`` coordinates relative to
         the top left corner of the pages viewport.
 
+        | =Arguments= | =Description= |
         | ``from_x`` & ``from_y`` | Identify the start-point on page. |
         | ``to_x`` & ``to_y`` | Identify the end-point. |
         | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
@@ -1186,13 +1189,13 @@ class Interaction(LibraryComponent):
         This keyword can be handy to simulate swipe actions.
 
         | =Arguments= | =Description= |
-        | ``selector_from`` | identifies the element, which center is the start-point. |
-        | ``x`` & ``y`` | identifies the end-point which is relative to the start-point. |
-        | ``steps`` | defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
+        | ``selector_from`` | Identifies the element whose center is the start-point. |
+        | ``x`` & ``y`` | Identify the end-point, which is relative to the start-point. |
+        | ``steps`` | Defines how many intermediate mouse move events are sent. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         See the `Finding elements` section for details about the selectors.
 
-        First it moves the mouse to the start-point (center of boundingbox),
+        First it moves the mouse to the start-point (center of the bounding box),
         then presses the left mouse button,
         then moves to the relative position with the given intermediate steps,
         then releases the mouse button.
@@ -1200,7 +1203,7 @@ class Interaction(LibraryComponent):
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example
-        | `Drag And Drop Relative to`    "Circle"    -20    0     # Slides the element 20 pixel to the left
+        | `Drag And Drop Relative To`    "Circle"    -20    0     # Slides the element 20 pixels to the left
 
         [https://forum.robotframework.org/t//4249|Comment >>]
         """
@@ -1233,8 +1236,8 @@ class Interaction(LibraryComponent):
         """Moves the mouse cursor relative to the selected element.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Identifies the element, which center is the start-point. |
-        | ``x`` & ``y`` | Are relative coordinates to the center of the elements bounding box. |
+        | ``selector`` | Identifies the element whose center is the start-point. |
+        | ``x`` & ``y`` | Coordinates relative to the center of the element's bounding box. |
         | ``steps`` | Number of intermediate steps for the mouse event. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -1267,11 +1270,12 @@ class Interaction(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def mouse_move(self, x: float, y: float, steps: int = 1):
-        """Instead of selectors command mouse with coordinates.
-        The Click commands will leave the virtual mouse on the specified coordinates.
+        """Moves the virtual mouse to the given coordinates, instead of to an element found by a selector.
+
+        The virtual mouse is left on the specified coordinates.
 
         | =Arguments= | =Description= |
-        | ``x`` & ``y`` | Are absolute coordinates starting at the top left of the page. |
+        | ``x`` & ``y`` | Absolute coordinates starting at the top left of the page. |
         | ``steps`` | Number of intermediate steps for the mouse event. Often it is necessary to send more than one intermediate event to get the desired result. Defaults to 1. |
 
         Example:
@@ -1310,8 +1314,8 @@ class Interaction(LibraryComponent):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
         | =Arguments= | =Description= |
-        | ``action`` | Determine whether the key should be released (``up``), hold (``down``) or pressed once (``press``). ``down`` or ``up`` are useful for combinations i.e. with Shift. |
-        | ``key`` | The key to be pressed. An example of valid keys are: ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``, ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``, ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp`` , etc. |
+        | ``action`` | Determines whether the key should be released (``up``), held down (``down``) or pressed once (``press``). ``down`` and ``up`` are useful for combinations, i.e. with Shift. |
+        | ``key`` | The key to be pressed. Examples of valid keys are: ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``, ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``, ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp`` , etc. |
 
 
         Useful keys for ``down`` and ``up`` for example are:
@@ -1346,16 +1350,16 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``action`` | ``insertText``: Dispatches only input event, does not emit the keydown, keyup or keypress events. ``type``: Sends a keydown, keypress/input, and keyup event for each character in the text. |
-        | ``input`` | The inputstring to be typed. _No special keys possible._ |
-        | ``delay`` | Time to wait between key presses in Robot Framework's time format. Defaults to 0. |
+        | ``input`` | The input string to be typed. _No special keys possible._ |
+        | ``delay`` | Time to wait between key presses in Robot Framework's time format. Defaults to ``0 ms``. |
 
         *Attention:*
-        Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format with units instead.
+        Argument type ``int`` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format with units instead.
 
 
-        Note: To press a special key, like Control or ArrowDown, use keyboard.press.
-        Modifier keys DO NOT effect these methods. For testing modifier effects use single key
-        presses with ``Keyboard Key  press``
+        Note: To press a special key, like Control or ArrowDown, use `Keyboard Key`.
+        Modifier keys DO NOT affect these actions. For testing modifier effects use single key
+        presses with ``Keyboard Key    press``
 
         Example:
         | `Keyboard Input`    insertText    0123456789
@@ -1370,7 +1374,7 @@ class Interaction(LibraryComponent):
             delay = timedelta(milliseconds=delay)
             # TODO: add in 15.0.0
             # raise ValueError(
-            #     "Argument type `int` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
+            #     "Argument type ``int`` for 'delay' in milliseconds has been changed to `timedelta` in Browser 14.0.0. Use Robot Framework time format instead."
             # )
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardInput(
@@ -1391,25 +1395,27 @@ class Interaction(LibraryComponent):
     ):
         """Uploads file from ``path`` to file input element matched by selector.
 
-        Fails if upload is not done before library timeout.
-        Therefor it may be necessary to increase the timeout with `Set Browser Timeout`.
-        It is possible to upload multiple files or folder by defining additional paths
-        or folders. in `extra_paths`.
+        Fails if the upload is not done before the library timeout.
+        Therefore it may be necessary to increase the timeout with `Set Browser Timeout`.
+        It is possible to upload multiple files or folders by defining additional
+        files or folders in ``extra_paths``.
 
-        If path is a directory, it will be uploaded all files from the directory.
+        If a path is a directory, all files from the directory are uploaded.
         Subdirectories are not included. It is possible to upload files and directories
-        with the same keyword.
+        with the same keyword. The keyword fails if a given path does not exist.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         | =Arguments= | =Description= |
         | ``selector`` | Identifies the file input element. |
-        | ``path`` | Path to the file or folder to be uploaded. Path can  FileUploadBuffer dictionary |
+        | ``path`` | Path to the file or folder to be uploaded. Can also be a `FileUploadBuffer` dictionary. |
         | ``extra_paths`` | Additional paths to files or folders to be uploaded. |
 
-        if ``path`` is  `FileUploadBuffer` dictionary, then structure should be:
+        If ``path`` is a `FileUploadBuffer` dictionary, then the structure should be:
         | {
-        |   'name': `str`,
-        |   'mimeType': `str`,
-        |   'buffer': `str`
+        |   'name': ``str``,
+        |   'mimeType': ``str``,
+        |   'buffer': ``str``
         | }
 
         If ``path`` argument is `FileUploadBuffer`, then ``extra_paths`` argument is not supported and

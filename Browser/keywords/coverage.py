@@ -38,29 +38,30 @@ class Coverage(LibraryComponent):
         """Starts the coverage for the current page.
 
         | =Arguments= | =Description= |
-        | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
-        | ``coverage_type`` | Type of coverage to start. Default is `all`. |
-        | ``path`` | Absolute or relative directory path (relative to ``${OUTPUT_DIR}/browser/coverage/``) where the coverage is store in a directory with the page id name. |
-        | ``raw`` | Whether to save raw coverage data. Default is `False`. |
-        | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is `False`. Only valid for JS coverage. |
-        | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is `True`. |
+        | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file]. If the file does not exist, it is ignored. |
+        | ``coverage_type`` | Type of coverage to start. Default is ``all``. |
+        | ``path`` | Absolute or relative directory path (relative to ``${OUTPUT_DIR}/browser/coverage/``) where the coverage is stored in a directory with the page id name. |
+        | ``raw`` | Whether to save raw coverage data. Default is ``False``. |
+        | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is ``False``. Only valid for JS coverage. |
+        | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is ``True``. |
 
-        The `coverage_type` can be one of the following:
+        The ``coverage_type`` can be one of the following:
         - ``all``: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
         - ``css``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS].
         - ``js``: [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
 
-        Coverage must started when page is open and before any action is
-        performed on the page. Coverage will be stored when calling `Stop Coverage` keyword
-        or page or context is closed. This is done automatically when using the auto closing.
+        Coverage must be started when the page is open and before any action is
+        performed on the page. Coverage will be stored when calling the `Stop Coverage`
+        keyword or when the page or context is closed. This is done automatically when
+        using the auto closing.
 
-        The `raw` argument saves the raw coverage data in the coverage folder. The raw data
-        is needed to combine multiple coverage reports to single report. Singel report can
-        be created with `rfbrowser coverage /path/to/basefolder/ /path/to/outputfolder/`
-        command. Pleaee note that the `raw` argument is ignored if the `config_file`
-        is defined. In this case user is responsible to also set the raw reporter
-        in the config file. To see more details about combining coverage data, run:
-        `rfbrowser coverage --help` command.
+        The ``raw`` argument saves the raw coverage data in the coverage folder. The raw data
+        is needed to combine multiple coverage reports into a single report. A single report
+        can be created with the ``rfbrowser coverage /path/to/basefolder/ /path/to/outputfolder/``
+        command. Please note that the ``raw`` argument is ignored if the ``config_file``
+        is defined. In that case the user is responsible for also setting the raw reporter
+        in the config file. To see more details about combining coverage data, run the
+        ``rfbrowser coverage --help`` command.
 
         Example:
         | `New Page`
@@ -96,8 +97,13 @@ class Coverage(LibraryComponent):
         [https://www.npmjs.com/package/monocart-coverage-reports|monocart-coverage-reports]
         To see the default and all possible options, see
         [https://github.com/cenfun/monocart-coverage-reports/blob/HEAD/lib/default/options.js|options.js]
-        file for more details. Returns the path to the folder where
-        coverage reported if coverage was started, otherwise returns `None`.
+        file for more details.
+
+        If coverage was not started, the keyword returns ``None``. Otherwise it returns
+        the path to the generated HTML report file, or the path to the coverage folder
+        if no HTML file is found from the folder. The latter can happen when the report
+        format or output folder has been changed with the ``config_file`` argument of
+        the `Start Coverage` keyword.
         """
         logger.info("Stopping coverage")
         with self.playwright.grpc_channel() as stub:
@@ -127,41 +133,46 @@ class Coverage(LibraryComponent):
         name: str | None = None,
         reports: list[str] | None = None,
     ) -> Path:
-        """Combines multiple raw coverage reports to single report.
+        """Combines multiple raw coverage reports into a single report.
 
         | =Arguments= | =Description= |
         | ``input_folder`` | Path to the base folder where the raw coverage reports are located. |
         | ``output_folder`` | Path to the folder where the combined report is stored. |
         | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
         | ``name`` | Optional name for the combined report. |
-        | ``reports`` | Optional report format (default is "v8"). |
+        | ``reports`` | Optional list of reporters to create. Default is ``v8``. |
 
-        The input_folder argument is the base folder where the coverage reports are
-        located. Keyword will look into each subfolder and if the subfolder
-        contains "raw" folder, it will use data from the "raw" folder for
-        combined reports.
+        Returns the path to the ``output_folder``.
 
-        The output_folder argument is the folder where the combined report is saved.
-        If folder does not exist, it is created. If folder exists, it's content
-        is deleted before report is created.
-
-        The output_folder and input_folder must be full paths to the folders.
-
-        The config_file argument is optional and can be used to provide a path to a
-        monocart-coverage-reports options file. For more details see:
-        https://www.npmjs.com/package/monocart-coverage-reports#config-file
-
-        The name argument is optional and can be used to provide a name for the
+        The ``input_folder`` argument is the base folder where the coverage reports are
+        located. The keyword will look into each subfolder and if the subfolder
+        contains a "raw" folder, it will use the data from the "raw" folder for the
         combined report.
 
-        The reports argument is optional and can be used to provide a list of
-        reporters to create. Default is 'v8'.
+        The ``output_folder`` argument is the folder where the combined report is saved.
+        If the folder does not exist, it is created. If the folder exists, its content
+        is deleted before the report is created.
 
-        The keyword combines only the raw reports. To get raw reports,
-        `Start Coverage` keyword must be called with `raw=True` argument.
-        Keyword should be used when there is a need to combine multiple reports
-        to single report. For example, when tests are run in multiple pages, the
-        example in below demonstrates how to use the keyword.
+        The ``output_folder`` and ``input_folder`` must be full paths to the folders.
+
+        The ``config_file`` argument is optional and can be used to provide a path to a
+        monocart-coverage-reports options file. If the file is defined but does not
+        exist, the keyword fails. For more details see:
+        https://www.npmjs.com/package/monocart-coverage-reports#config-file
+
+        The ``name`` argument is optional and can be used to provide a name for the
+        combined report. If it is not defined, the report is named
+        "Browser library Merged Coverage Report".
+
+        The ``reports`` argument is optional and can be used to provide a list of
+        reporters to create. Default is ``v8``.
+
+        The keyword combines only the raw reports. To get raw reports, the
+        `Start Coverage` keyword must be called with the ``raw=True`` argument.
+        If no raw reports are found from the ``input_folder``, the keyword fails.
+        The keyword should be used when there is a need to combine multiple reports
+        into a single report. For example, when tests are run in multiple pages. The
+        example below demonstrates how to use the keyword.
 
         Example:
         | `New Page`

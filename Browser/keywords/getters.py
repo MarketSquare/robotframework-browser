@@ -81,7 +81,7 @@ class Getters(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        Optionally asserts that the state matches the specified assertion. See
+        Optionally asserts that the snapshot matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
@@ -152,7 +152,7 @@ class Getters(LibraryComponent):
         assertion_expected: Any | None = None,
         message: str | None = None,
     ) -> str | dict | tuple:
-        """Gets pages HTML source as a string.
+        """Gets the page's HTML source as a string.
 
         | =Arguments= | =Description= |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
@@ -162,10 +162,10 @@ class Getters(LibraryComponent):
         Optionally does a string assertion. See `Assertions` for further details for
         the assertion arguments. By default assertion is not done.
 
-        If there need to get element html, use `Get Property` instead.
+        If the HTML of a single element is needed, use `Get Property` instead.
         Example:
-        | ${html1} = [ `Get Property` | ${selector} | innerHTML |
-        | ${html2} = [ `Get Property` | ${selector} | outerHTML |
+        | ${html1} = | `Get Property` | ${selector} | innerHTML |
+        | ${html2} = | `Get Property` | ${selector} | outerHTML |
 
         [https://forum.robotframework.org/t//4275|Comment >>]
         """
@@ -235,14 +235,15 @@ class Getters(LibraryComponent):
     ) -> str | list[str] | dict | tuple:
         """Returns text attribute of the element found by ``selector``.
 
-        Keyword can also return `input` or `textarea` value property text.
+        Keyword can also return the value property text of ``input`` or ``textarea`` elements.
         See the `Finding elements` section for details about the selectors.
 
         | =Arguments= | =Description= |
+        | ``selector`` | Selector from which the text is to be retrieved. See the `Finding elements` section for details about the selectors. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the state |
         | ``message`` | overrides the default error message for assertion. |
-        | ``text_type`` | How text is returned. Possible values are ``allInnerTexts``, ``allTextContents``, ``innerText``, ``inputValue``, and ``innerHTML``. |
+        | ``text_type`` | How text is returned. Possible values are ``allInnerTexts``, ``allTextContents``, ``innerText``, ``inputValue``, and ``innerHTML``. Defaults to ``None``, which returns the value of ``input`` and ``textarea`` elements and the inner text of all other elements. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         The ``text_type`` argument determines how text is returned. The ``allInnerTexts`` and
@@ -318,8 +319,9 @@ class Getters(LibraryComponent):
         Optionally asserts that the property value matches the expected value. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
 
-        If ``assertion_operator`` is set and property is not found, ``value`` is ``None``
-        and Keyword does not fail. See `Get Attribute` for examples.
+        If ``assertion_operator`` is set and the property is not found, ``value`` is ``None``
+        and the keyword does not fail. If no ``assertion_operator`` is set and the property
+        is not found, the keyword fails. See `Get Attribute` for examples.
 
         Example:
         | `Get Property`    h1    innerText    ==    Login Page
@@ -378,10 +380,10 @@ class Getters(LibraryComponent):
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
-        When a attribute is selected that is not present and no assertion operator is set,
+        When an attribute is selected that is not present and no assertion operator is set,
         the keyword fails. If an assertion operator is set and the attribute is not present,
-        the returned value is ``None``. This can be used to assert check the presents or
-        the absents of an attribute.
+        the returned value is ``None``. This can be used to check the presence or
+        the absence of an attribute.
 
         Example Element:
         | <button class="login button active" id="enabled_button" something>Login</button>
@@ -436,13 +438,13 @@ class Getters(LibraryComponent):
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
-        Optionally asserts that attribute names do match to the expected value. See
+        Optionally asserts that the attribute names match the expected values. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
         Available assertions:
         - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
-        - ``validate`` and ``evaluate`` only accepts one single expected value
+        - ``validate`` and ``evaluate`` only accept one single expected value
 
         Other operators are not allowed.
 
@@ -495,12 +497,12 @@ class Getters(LibraryComponent):
 
         Available assertions:
         - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
-        - ``validate`` and ``evaluate`` only accepts one single expected value
+        - ``validate`` and ``evaluate`` only accept one single expected value
 
         Other operators are not allowed.
 
         Example:
-        | `Get Classes`    id=draggable    ==    react-draggable    box    # Element contains exactly this class name.
+        | `Get Classes`    id=draggable    ==    react-draggable    box    # Element has exactly these class names.
         | `Get Classes`    id=draggable    validate    "react-draggable-dragged" not in value    # Element does not contain react-draggable-dragged class.
 
         [https://forum.robotframework.org/t//4262|Comment >>]
@@ -527,7 +529,7 @@ class Getters(LibraryComponent):
     ) -> list[SelectOptions]:
         """Returns attributes of options of a ``select`` element as a list of dictionaries.
 
-        Returned dictionaries have the following keys and their values
+        Each returned dictionary has the keys
         "index", "value", "label" and "selected".
 
 
@@ -601,17 +603,17 @@ class Getters(LibraryComponent):
         is not done.
 
         - ``==`` , ``!=`` and ``contains`` / ``*=`` can work with multiple values
-        - ``validate`` and ``evaluate`` only accepts one single expected value
+        - ``validate`` and ``evaluate`` only accept one single expected value
 
         Other operators are not allowed.
 
         Example:
 
         | `Select Options By`      label                    //select[2]    Email      Mobile
-        | ${selected_list}         `Get Selected Options`   //select[2]                                         # getter
-        | `Get Selected Options`   //select[2]              label          `==`       Mobile             Mail   #assertion content
+        | ${selected_list} =       `Get Selected Options`   //select[2]                                         # getter
+        | `Get Selected Options`   //select[2]              label          ==         Mobile             Mail   #assertion content
         | `Select Options By`      label                    select#names   2          4
-        | `Get Selected Options`   select#names             index          `==`       2                  4      #assertion index
+        | `Get Selected Options`   select#names             index          ==         2                  4      #assertion index
         | `Get Selected Options`   select#names             label          *=         Mikko                     #assertion contain
         | `Get Selected Options`   select#names             label          validate   len(value) == 3           #assertion length
 
@@ -656,7 +658,7 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector which shall be examined. See the `Finding elements` section for details about the selectors. |
         | ``assertion_operator`` | ``==`` and ``!=`` and equivalent are allowed on boolean values. Other operators are not accepted. |
-        | ``assertion_expected`` | Boolean value of expected state. Strings are interpreted as booleans. All strings are ``${True}`` except of the following `FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}`` (case-insensitive). Defaults to unchecked. |
+        | ``assertion_expected`` | Boolean value of expected state. Strings are interpreted as booleans. All strings are ``${True}`` except the following: ``FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}`` (case-insensitive). Defaults to ``Unchecked``. |
         | ``message`` | overrides the default error message for assertion. |
 
         - ``checked`` => ``True``
@@ -701,10 +703,10 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector which shall be counted. See the `Finding elements` section for details about the selectors. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
-        Optionally asserts that the state matches the specified assertion. See
+        Optionally asserts that the count matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
@@ -741,12 +743,15 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the viewport size as dictionary, otherwise it will just return the single value selected by the key. Note: If a single value is retrieved, an assertion does *not* need a ``validate`` combined with a cast of ``value``. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
+
+        If the page does not have a viewport size, for example because the context was
+        created without one, ``None`` is returned and no assertion is done.
 
         Example:
         | `Get Viewport Size`    ALL    ==    {'width':1280, 'height':720}
@@ -786,12 +791,13 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``table`` | selector must select the ``<table>`` element that contains both selected elements |
         | ``column`` | selector can select any ``<th>`` or ``<td>`` element or one of their descendants. |
-        | ``row`` | selector can select any ``<tr>`` element or one of their descendant like ``<td>`` elements. |
+        | ``row`` | selector can select any ``<tr>`` element or one of their descendants like ``<td>`` elements. |
 
         ``column`` and ``row`` can also consume index numbers instead of selectors.
         Indexes are starting from ``0`` and ``-1`` is specific for the last element.
 
-        Selectors for ``column`` and ``row`` are directly appended to ``table`` selector like this: ``f"{table} >> {row}" .``
+        Selectors for ``column`` and ``row`` are directly appended to the ``table`` selector like this:
+        ``f"{table} >> {column}"`` and ``f"{table} >> {row}"``.
 
         | = GitHub = |   = Slack =      | = Real Name =   |
         | mkorpela   | @mkorpela        | Mikko Korpela   |
@@ -847,7 +853,7 @@ class Getters(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | can select any ``<th>`` or ``<td>`` element or one of their descendants. See the `Finding elements` section for details about the selectors. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Example:
@@ -889,9 +895,9 @@ class Getters(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | can select any ``<th>`` or ``<td>`` element or one of their descendants. See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | can select any ``<tr>``, ``<th>`` or ``<td>`` element or one of their descendants. See the `Finding elements` section for details about the selectors. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Example:
@@ -928,7 +934,7 @@ class Getters(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | Selector from which shall be retrieved . See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Selector from which the element shall be retrieved. See the `Finding elements` section for details about the selectors. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -954,10 +960,13 @@ class Getters(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | Selector from which shall be retrieved. See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Selector from which the elements shall be retrieved. See the `Finding elements` section for details about the selectors. |
+
+        Keyword does not use strict mode and returns an empty list if the ``selector``
+        does not match any element.
 
         Example:
-        | ${elements} =    `Get Elements`
+        | ${elements} =    `Get Elements`    //select
         | ${elem} =    Get From List    ${elements}    0
         | ${option_value} =    `Get Property`    ${elem} >> option    value
 
@@ -1014,7 +1023,7 @@ class Getters(LibraryComponent):
         | <br/>
         | <button>Submit</button>
 
-        You can locate each element by it's implicit role:
+        You can locate each element by its implicit role:
         | ${heading}    Get Element By Role    heading    name=Sign up
         | ${checkbox}   Get Element By Role    checkbox    name=Subscribe
         | ${button}     Get Element By Role    button    name=/submit/i
@@ -1090,9 +1099,9 @@ class Getters(LibraryComponent):
         See [https://playwright.dev/docs/locators|Playwright Locators] for more information.
 
         | =Arguments= | =Description= |
-        | ``locator_type`` | SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See https://playwright.dev/docs/locators |
+        | ``selection_strategy`` | SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See https://playwright.dev/docs/locators |
         | ``text`` | Text to locate the element for. |
-        | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Default to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. This has no effect if RegExp is used or if TestID is used as strategy. |
+        | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Defaults to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. This has no effect if RegExp is used or if TestID is used as strategy. |
         | ``all_elements`` | If True, returns all matched elements as a list. |
 
         This keywords implements the following Playwright functions:
@@ -1150,24 +1159,26 @@ class Getters(LibraryComponent):
     ) -> dict[str, str] | str | tuple | dict:
         """Gets the computed style properties of the element selected by ``selector``.
 
-        Optionally matches with any sequence assertion operator.
-
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the style shall be retrieved. See the `Finding elements` section for details about the selectors. |
         | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles as dictionary by default. All css settings can be used as keys even if they are not all returned in the dictionary. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
-        | ``pseudo_element`` | Pseudo element to match. Defaults to None. Pseudo elements are special css |
+        | ``pseudo_element`` | Pseudo element to match. Defaults to None. |
 
-        [ https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements | Pseudo element ] is a css fuctionality to add styles. Example `::before` or `::after`.
+        A [https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements|pseudo element] is a CSS functionality to add styles, for example ``::before`` or ``::after``.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Optionally asserts that the style matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
+
+        When ``key`` is ``ALL``, a dictionary is returned and only the sequence assertion
+        operators ``==``, ``!=``, ``contains`` / ``*=``, ``validate`` and ``evaluate`` / ``then``
+        are allowed. Assertion formatters are not applied in that case.
 
         [https://forum.robotframework.org/t//4281|Comment >>]
         """
@@ -1227,15 +1238,15 @@ class Getters(LibraryComponent):
         If an element is hidden and has no bounding box, the keyword will fail.
         Depending on the method used to make an element invisible, an element might still have a bounding box which can be retrieved.
         To allow also hidden elements without a bounding box, set ``allow_hidden`` to ``True``,
-        which results in a return value of `None` in case of no bounding box.
+        which results in a return value of ``None`` in case of no bounding box.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Selector from which shall be retrieved. See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Selector from which the bounding box shall be retrieved. See the `Finding elements` section for details about the selectors. |
         | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the BoundingBox as Dictionary, otherwise it will just return the single value selected by the key. Note: If a single value is retrieved, an assertion does *not* need a ``validate`` combined with a cast of ``value``. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
-        | ``allow_hidden`` | (named only) If True, hidden elements are not causing a failure and will return `None`. Otherwise hidden element will fail. Defaults to False. |
+        | ``allow_hidden`` | (named only) If True, hidden elements are not causing a failure and will return ``None``. Otherwise a hidden element will fail. Defaults to False. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1305,10 +1316,10 @@ class Getters(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which shall be retrieved. If no selector is given the scroll size of the page itself is used. See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Optional selector from which the scroll size shall be retrieved. If no selector is given the scroll size of the page itself is used. See the `Finding elements` section for details about the selectors. |
         | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the scroll size as dictionary, otherwise it will just return the single value selected by the key. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -1321,7 +1332,7 @@ class Getters(LibraryComponent):
 
         Example use:
         | ${height}=         `Get Scroll Size`    height                          # filtered page by height
-        | Log                Width: ${height}                                   # Height: 58425
+        | Log                Height: ${height}                                  # Height: 58425
         | ${scroll_size}=    `Get Scroll Size`    id=keyword-shortcuts-container  # unfiltered element
         | Log                ${scroll_size}                                     # {'width': 253, 'height': 3036}
 
@@ -1360,14 +1371,14 @@ class Getters(LibraryComponent):
         """Gets elements or pages current scroll position as object ``{top: float, left: float, bottom: float, right: float}``.
 
         It describes the rectangle which is visible of the scrollable content of that element.
-        all values are measured from position {top: 0, left: 0}.
+        All values are measured from position {top: 0, left: 0}.
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which shall be retrieved. If no selector is given the client size of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
+        | ``selector`` | Optional selector from which the scroll position shall be retrieved. If no selector is given the scroll position of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
         | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the scroll position as dictionary, otherwise it will just return the single value selected by the key. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -1417,10 +1428,10 @@ class Getters(LibraryComponent):
 
 
         | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which shall be retrieved. If no selector is given the client size of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the scroll size as dictionary, otherwise it will just return the single value selected by the key. |
+        | ``selector`` | Optional selector from which the client size shall be retrieved. If no selector is given the client size of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
+        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the client size as dictionary, otherwise it will just return the single value selected by the key. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the counting |
+        | ``assertion_expected`` | Expected value for the assertion |
         | ``message`` | overrides the default error message for assertion. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -1482,7 +1493,7 @@ class Getters(LibraryComponent):
         This keyword internally works with Python IntFlag.
         Flags can be processed using bitwise operators like & (bitwise AND) and | (bitwise OR).
         When using the assertion operators ``then``, ``evaluate`` or ``validate`` the ``value``
-        contain the states as `ElementState`.
+        contains the states as `ElementState`.
 
         Example:
         | `Get Element States`    h1    validate    value & visible   # Fails in case of an invisible element
@@ -1500,12 +1511,9 @@ class Getters(LibraryComponent):
         Elements do return the positive and negative values if applicable.
         As example, a checkbox does return either ``checked`` or ``unchecked`` while a text input
         element has none of those two states.
-        Select elements have also either ``selected`` or ``unselected``.
+        Options of select elements have also either ``selected`` or ``deselected``.
 
-        The state of ``animating`` will be set if an element is not considered ``stable``
-        within 300 ms.
-
-        If an element is not attached to the dom, so it can not be found within 250ms
+        If an element is not attached to the DOM, so that it can not be found within 250ms,
         it is marked as ``detached`` as the only state.
 
         ``stable`` state is not returned, because it would cause too high delay in that keyword.
