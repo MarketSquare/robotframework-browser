@@ -159,7 +159,7 @@ class Pdf(LibraryComponent):
         forcedColors: ForcedColors | NotSet = NotSet.not_set,
         media: Media | None = None,
         reducedMotion: ReducedMotion | None = None,
-    ) -> None:
+    ) -> dict:
         """Changes the CSS media type.
 
         It changes the CSS media type through the ``media`` argument, and/or the
