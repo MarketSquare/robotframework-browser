@@ -118,6 +118,26 @@ To upgrade your already installed robotframework-browser library
 2. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
 3. Install the node dependencies for the newly installed version: `rfbrowser init`
 
+## Nightly builds
+
+Wheels built from the latest green `main` are always available on the
+[nightly release](https://github.com/MarketSquare/robotframework-browser/releases/tag/nightly).
+They are meant for trying out a fix or a new keyword before it is released, and
+they are replaced on every push to `main`, so pick up the current file names
+from that page:
+
+```
+base=https://github.com/MarketSquare/robotframework-browser/releases/download/nightly
+pip install --pre ${base}/robotframework_browser-<version>-py3-none-any.whl
+rfbrowser init
+```
+
+Install the matching `robotframework_browser_batteries` wheel for your platform
+from the same page if you use BrowserBatteries instead of your own NodeJS. The
+two packages are tied together and a nightly pair only installs as a pair.
+Nightly versions are `.dev` builds of the next milestone, so `pip` only
+considers them with `--pre` and a later real release always wins.
+
 ## Uninstall instructions
 
 To completely uninstall library, including the browser binaries installed by Playwright,

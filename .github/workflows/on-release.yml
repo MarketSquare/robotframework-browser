@@ -5,7 +5,12 @@ on:
     types: [ published ]
 
 jobs:
+  # The `nightly` prerelease in on-push.yml is not a release: it must never
+  # publish docs or reach PyPI. Creating it from CI does not start a workflow
+  # anyway, since the GITHUB_TOKEN cannot trigger one, but a maintainer editing
+  # it by hand could, so the two jobs everything else hangs off say no here.
   gh-pages:
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -40,6 +45,7 @@ jobs:
 
   build_browser_wheels:
     name: Build wheels on ${{ matrix.os }}
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     env:
