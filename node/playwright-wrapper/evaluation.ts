@@ -29,9 +29,12 @@ import {
     stringResponse,
 } from './response-util';
 
-/** Resolve an Locator, create global UUID for it, and store the reference
- * in global state. Enables using special selector syntax `element=<uuid>` in
- * RF keywords.
+/** Resolve a Locator and return the selector string Playwright built for it.
+ *
+ * That string is an ordinary selector, so it can be used as the first clause of
+ * another selector in RF keywords. There is no `element=` engine: the older
+ * UUID-handle mechanism this comment used to describe was removed, and
+ * `element=<uuid>` now fails with `Unknown engine "element"`.
  */
 export async function getElement(
     request: pb.Request_ElementSelector,
@@ -46,9 +49,8 @@ export async function getElement(
     return stringResponse(locator._selector, 'Locator found successfully.');
 }
 
-/** Resolve a list of Locator, create global UUIDs for them, and store the
- * references in global state. Enables using special selector syntax `element=<uuid>`
- * in RF keywords.
+/** Resolve a list of Locators and return their selector strings. Each one can
+ * be used as the first clause of another selector in RF keywords.
  */
 export async function getElements(
     request: pb.Request_ElementSelector,

@@ -162,7 +162,10 @@ export async function extensionKeywordCall(
     const apiArguments = new Map();
     apiArguments.set('page', state.getActivePage());
     apiArguments.set('context', state.getActiveContext());
-    apiArguments.set('browser', state.getActiveBrowser()?.browser);
+    // `state.getActiveBrowser()` throws when nothing is open, so the optional
+    // chaining that used to be here never ran: every extension keyword required
+    // an open browser, including one whose only argument is `playwright`.
+    apiArguments.set('browser', state.activeBrowser?.browser);
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
     const functionArguments = getArgumentNamesFromJavascriptKeyword(keyword).map(
@@ -1242,10 +1245,8 @@ export async function mergeCoverage(request: Request_CoverageMerge, state: Playw
         if (reports && reports.length === 1 && reports[0] === 'v8') {
             mergedOptions.reports = [['v8'], configFileModule.reports || []].flat();
         }
-        if (mergedOptions.name === '' && configFileModule.name) {
-            mergedOptions.name = configFileModule.name;
-        } else {
-            mergedOptions.name = defaultName;
+        if (mergedOptions.name === '') {
+            mergedOptions.name = configFileModule.name || defaultName;
         }
         logger.info(`Merged options: ${JSON.stringify(mergedOptions)}`);
     } else {

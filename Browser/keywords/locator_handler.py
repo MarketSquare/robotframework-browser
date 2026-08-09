@@ -230,15 +230,18 @@ class LocatorHandler(LibraryComponent):
                 raise ValueError("Value must not be defined for action other than fill")
             handler_action = Request.LocatorHandlerAddCustomAction()
             handler_action.action = action
+            # Work on a copy: popping from `spec` would empty the caller's own
+            # dictionary, so a Robot `&{dict}` variable reused for a second call
+            # would fail with "Action must be defined in the handler
+            # specification" and stay broken for the rest of the suite.
+            options = dict(spec)
             if action == "fill":
-                handler_action.value = spec["value"]
-                spec.pop("value", None)
+                handler_action.value = options.pop("value")
             else:
                 handler_action.value = ""
-            spec.pop("action", None)
-            handler_action.selector = spec["selector"]
-            spec.pop("selector", None)
-            handler_action.optionsAsJson = json.dumps(spec)
+            options.pop("action", None)
+            handler_action.selector = options.pop("selector")
+            handler_action.optionsAsJson = json.dumps(options)
             handler.handlerSpecs.append(handler_action)
         with self.playwright.grpc_channel() as stub:
             response = stub.AddLocatorHandlerCustom(handler)

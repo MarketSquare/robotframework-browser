@@ -1236,7 +1236,7 @@ class PlaywrightState(LibraryComponent):
         *,
         full: bool = False,
         last: int | timedelta | None = None,
-    ) -> dict:
+    ) -> list:
         """Returns the page errors of the active page.
 
         If assertions are used and fail, this keyword will fail immediately without retrying.

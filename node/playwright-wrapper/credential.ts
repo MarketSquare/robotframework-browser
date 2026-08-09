@@ -71,7 +71,10 @@ export async function getCredential(
         options.rpId = rpId;
     }
     const [credential] = await context.credentials.get(options);
-    logger.info(`Retrieved credential with id: ${JSON.stringify(credential)}`);
+    // The whole credential includes privateKey. This log goes to
+    // playwright-log.txt, which is written by default, so stringifying it here
+    // put a private key in clear text on disk for every Get Credential call.
+    logger.info(`Retrieved credential with id: ${credential.id}`);
     return {
         id: credential.id,
         rpId: credential.rpId,
