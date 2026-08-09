@@ -174,80 +174,36 @@ class Browser(DynamicCore):
 
     = Browser, Context and Page =
 
-    Browser library works with three different layers that build on each other:
-    *Browser*, *Context* and *Page*.
+    Browser library works in three layers that build on each other.
 
+    | = Layer =     | = Is =                                                        | = Opened with =  |
+    | *Browser*     | A browser process: ``chromium``, ``firefox`` or ``webkit``.    | `New Browser`    |
+    | *Context*     | An isolated session in that process: its own cookies, storage and permissions. Contexts share nothing with each other. | `New Context` |
+    | *Page*        | A tab, with its own content and history. Selectors resolve here. | `New Page`      |
 
-    == Browsers ==
+    | = Engine =    | = Ships in =                                       |
+    | ``chromium``  | Google Chrome, Microsoft Edge, Opera               |
+    | ``firefox``   | Mozilla Firefox                                    |
+    | ``webkit``    | Safari on macOS and iOS                            |
 
-    A *browser* can be started with one of the three
-    different engines Chromium, Firefox or Webkit.
+    Playwright brings its own browser binaries, so no separate driver is needed.
+    A browser starts ``headless`` unless `New Browser` is given otherwise.
 
-    === Supported Browsers ===
+    The layers fill themselves in downwards: `New Page` with nothing open starts a
+    browser and a context first, using defaults. `Open Browser` opens all three at
+    once and is meant for experiments and debugging rather than for suites.
 
-    |   Browser     | Browser with this engine                          |
-    | ``chromium``  | Google Chrome, Microsoft Edge (since 2020), Opera |
-    | ``firefox``   | Mozilla Firefox                                   |
-    | ``webkit``    | Apple Safari, Mail, AppStore on MacOS and iOS     |
+    A context is the cheap unit of isolation — opening one is roughly a thousand
+    times cheaper than starting a browser, so a clean session per test does not
+    mean a new process. Context-level settings include ``viewport``,
+    ``geolocation``, ``locale``, ``colorScheme`` and ``httpCredentials``;
+    downloading a file requires ``acceptDownloads=True``.
 
-    Since [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
-    binaries for all browsers, no additional drivers e.g. geckodriver are needed.
+    Each browser, context and page has an id. `Get Browser Catalog` returns
+    everything currently open.
 
-    All these browsers that cover more than 85% of the world wide used browsers,
-    can be tested on Windows, Linux and MacOS.
-    There is no need for dedicated machines anymore.
-
-    A browser process is started ``headless`` (without a GUI) by default.
-    Run `New Browser` with specified arguments if a browser with a GUI is requested
-    or if a proxy has to be configured.
-    A browser process can contain several contexts.
-
-
-    == Contexts ==
-
-    A *context* corresponds to a set of independent incognito pages in a browser
-    that share cookies, sessions or profile settings. Pages in two separate
-    contexts do not share cookies, sessions or profile settings.
-    Compared to Selenium, these do *not* require their own browser process.
-    To get a clean environment a test can just open a new context.
-    Due to this new independent browser sessions can be opened with
-    Robot Framework Browser about 10 times faster than with Selenium by
-    just opening a `New Context` within the opened browser.
-
-    To make pages in the same suite share state, use the same context by opening the
-    context with `New Context` on suite setup.
-
-    The context layer is useful e.g. for testing different user sessions on the
-    same webpage without opening a whole new browser context.
-    Contexts can also have detailed configurations, such as geo-location, language settings,
-    the viewport size or color scheme.
-    Contexts do also support http credentials to be set, so that basic authentication
-    can also be tested. To be able to download files within the test,
-    the ``acceptDownloads`` argument must be set to ``True`` in `New Context` keyword.
-    A context can contain different pages.
-
-
-    == Pages ==
-
-    A *page* does contain the content of the loaded web site and has a browsing history.
-    Pages and browser tabs are the same.
-
-    Typical usage could be:
-    | *** Test Cases ***
-    | Starting a browser with a page
-    |     New Browser    chromium    headless=false
-    |     New Context    viewport={'width': 1920, 'height': 1080}
-    |     New Page       https://marketsquare.github.io/robotframework-browser/Browser.html
-    |     Get Title      ==    Browser
-
-    The `Open Browser` keyword opens a new browser, a new context and a new page.
-    This keyword is useful for quick experiments or debugging sessions.
-
-    When a `New Page` is called without an open browser, `New Browser`
-    and `New Context` are executed with default values first.
-
-    Each Browser, Context and Page has a unique ID with which they can be addressed.
-    A full catalog of what is open can be received by `Get Browser Catalog` as a dictionary.
+    Which layer to open for which job, and the cost of each:
+    https://robotframework-browser.org/docs/concepts/browser-context-page
 
     = Automatic page and context closing =
 
@@ -255,355 +211,158 @@ class Browser(DynamicCore):
 
     = Finding elements =
 
-    All keywords in the library that need to interact with an element
-    on a web page take an argument typically named ``selector`` that specifies
-    how to find the element. Keywords can find elements with strict mode. If
-    strict mode is enabled and the selector matches more than one element, the
-    keyword fails. If it matches exactly one element, the keyword does not fail
-    because of strict mode. If strict mode is disabled, a selector matching several
-    elements does not fail the keyword. Strict mode is enabled by default, but can
-    be changed in the library `importing` or with the `Set Strict Mode` keyword.
-    Keyword documentation states if a keyword uses strict mode; if it does not say
-    so, strict mode is not applied to that keyword. For more details, see the
-    Playwright
-    [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
+    Keywords that act on an element take a ``selector`` argument. A selector is
+    one or more clauses, each naming a strategy, chained with ``>>``.
 
-    Selector strategies that are supported by default are listed in the table
-    below.
+    Under strict mode a selector matching more than one element fails the keyword.
+    It is on by default, changeable in the library `importing` or with
+    `Set Strict Mode`, and each keyword's documentation states whether it applies.
 
-    | = Strategy =     |     = Match based on =                       |         = Example =                |
+    == Strategies ==
+
+    | = Strategy =     | = Matches on =                               | = Example =                        |
     | ``css``          | CSS selector.                                | ``css=.class > \\#login_btn``      |
     | ``xpath``        | XPath expression.                            | ``xpath=//input[@id="login_btn"]`` |
-    | ``text``         | Browser text engine.                         | ``text=Login``                     |
+    | ``text``         | Text content. See `Text matching`.           | ``text=Login``                     |
     | ``id``           | Element ID attribute.                        | ``id=login_btn``                   |
-    | ``role``         | ARIA role, plus its accessible name.         | ``role=button[name="Login"]``      |
+    | ``role``         | ARIA role, with optional accessible name.    | ``role=button[name="Login"]``      |
     | ``data-testid``  | ``data-testid`` attribute.                   | ``data-testid=login``              |
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
-    | ``css:light``    | CSS selector that does not pierce shadow DOM.| ``css:light=.class``               |
-    | ``text:light``   | Text engine that does not pierce shadow DOM. | ``text:light=Login``               |
-    | ``element``      | An element handle returned by a keyword.     | ``element=${ref}``                 |
+    | ``element``      | A locator from `Get Element`. See `Element references`. | ``element=${ref}``      |
+    | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
+    | ``text:light``   | As ``text``, but does not pierce shadow DOM. | ``text:light=Login``               |
 
-    Two filters narrow down what a selector already matched. They are chained with
-    ``>>`` like any other engine, and the order they are applied in changes the
+    ``id``, ``data-testid``, ``data-test-id`` and ``data-test`` each have a
+    ``:light`` counterpart too. An attribute engine is equivalent to the matching
+    css attribute selector: ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
+
+    Two filters narrow what a clause already matched. Filter order changes the
     result.
 
-    | = Filter =    |     = Selects =                                        |     = Example =              |
-    | ``nth``       | The nth match, zero based. ``0`` first, ``-1`` last.   | ``css=button >> nth=1``      |
-    | ``visible``   | Only visible or only hidden matches.                   | ``css=button >> visible=true`` |
+    | = Filter =  | = Selects =                                           | = Example =                    |
+    | ``nth``     | The nth match, zero based. ``0`` first, ``-1`` last.  | ``css=button >> nth=1``        |
+    | ``visible`` | Only visible, or only hidden, matches.                | ``css=button >> visible=true`` |
 
-    CSS Selectors can also be recorded with `Record selector` keyword.
-
-    Every strategy, filter and chaining rule below is usable offline from this
-    document. A longer guide — which strategy to prefer and why, Playwright's CSS
-    pseudo-classes such as ``:has-text()`` and the layout selectors such as
-    ``:right-of()`` — is at
+    Playwright's CSS pseudo-classes (``:has()``, ``:has-text()``,
+    ``:nth-match()``) and its layout selectors (``:right-of()``, ``:below()``)
+    are available inside a ``css`` clause. Which strategy to prefer, and the full
+    list with examples:
     https://robotframework-browser.org/docs/concepts/selectors
 
-    == Explicit Selector Strategy ==
+    == Explicit and implicit strategy ==
 
-    The explicit selector strategy is specified with a prefix using syntax
-    ``strategy=value``. Spaces around the separator are ignored, so
-    ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
+    A strategy is named with a ``strategy=value`` prefix. Spaces around the
+    separator are ignored, so ``css=foo``, ``css= foo`` and ``css = foo`` are the
+    same.
 
+    Without a prefix the strategy is inferred:
 
-    == Implicit Selector Strategy ==
+    | = Selector starts with = | = Read as = | = Example =                             |
+    | ``//`` or ``..``         | ``xpath``   | ``//span/button`` is ``xpath=//span/button`` |
+    | ``"`` or ``'``           | ``text``, exact | ``"Login"`` is ``text="Login"``     |
+    | anything else            | ``css``     | ``span > button`` is ``css=span > button``   |
 
-    *The default selector strategy is `css`.*
+    Because ``#`` starts a comment in Robot Framework data, an id selector must be
+    escaped as ``\\#id``.
 
-    If selector does not contain one of the know explicit selector strategies, it is
-    assumed to contain css selector.
+    ``css`` follows the
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors|CSS selector]
+    specification and ``xpath`` the
+    [https://developer.mozilla.org/en-US/docs/Web/XPath|XPath] specification;
+    neither is re-documented here.
 
-    Selectors that are starting with ``//`` or ``..`` are considered as xpath selectors.
+    == Text matching ==
 
-    Selectors that are in quotes are considered as text selectors.
+    The ``text`` engine matches a text node, and the value of ``button`` and
+    ``submit`` inputs. In keywords that insert text it also matches a field by its
+    label.
 
-    Examples:
+    | = Form =            | = Matches =                                                              |
+    | ``text=Login``      | Substring, case-insensitive, leading and trailing whitespace ignored.    |
+    | ``text="Login "``   | Exact: case, whitespace and all. Escape a quote as ``\\"``.              |
+    | ``text=/^Hi .*!$/i``| JavaScript-style [https://regex101.com/|regular expression]; ``i`` for case-insensitive. |
 
-    | # CSS selectors are default.
-    | `Click`  span > button.some_class         # This is equivalent
-    | `Click`  css=span > button.some_class     # to this.
-    |
-    | # // or .. leads to xpath selector strategy
-    | `Click`  //span/button[@class="some_class"]
-    | `Click`  xpath=//span/button[@class="some_class"]
-    |
-    | # "text" in quotes leads to exact text selector strategy
-    | `Click`  "Login"
-    | `Click`  text="Login"
+    == Chaining ==
 
+    Clauses are separated by ``>>`` and each searches inside the result of the
+    previous one. The chain returns what the last clause matched; prefix a clause
+    with ``*`` to return that one instead. A value containing ``>>`` must be
+    quoted, as in ``text="some >> text"``.
 
-    == CSS ==
-
-    As written before, the default selector strategy is `css`. See
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector]
-    for more information.
-
-    Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
-    with a quote is assumed to be a css selector.
-
-    Note that ``#`` is a comment character in [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#ignored-data | Robot Framework syntax] and needs to be
-    escaped like ``\\#`` to work as a [https://developer.mozilla.org/en-US/docs/Web/CSS/ID_selectors | css ID selector].
-
-    Examples:
-    | `Click`  span > button.some_class
-    | `Get Text`  \\#username_field  ==  George
-
-
-    == XPath ==
-
-    XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
-    Example: ``xpath=//html/body//span[text()="Hello World"]``.
-
-    Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
-    For example, ``//html/body`` is converted to ``xpath=//html/body``.
-
-    Note that xpath does not pierce [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|shadow_roots].
-
-
-    == Text ==
-
-    Text engine finds an element that contains a text node with the passed text.
-    For example, ``Click    text=Login`` clicks on a login button, and
-    ``Wait For Elements State   text="lazy loaded text"`` waits for the "lazy loaded text"
-    to appear in the page.
-
-    Text engine finds fields based on their labels in text inserting keywords.
-
-    Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
-    to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
-    Be aware that this leads to exact matches only!
-
-
-    === Insensitive match ===
-
-    By default, the match is case-insensitive, ignores leading/trailing whitespace and
-    searches for a substring. This means ``text= Login`` matches
-    ``<button>Button loGIN (click me)</button>``.
-
-    === Exact match ===
-
-    Text body can be escaped with single or double quotes for precise matching,
-    insisting on exact match, including specified whitespace and case.
-    This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly
-    one space after "Login". Quoted text follows the usual escaping rules, e.g.
-    use ``\\"`` to escape double quote in a double-quoted string: ``text="foo\\"bar"``.
-
-    === RegEx ===
-
-    Text body can also be a JavaScript-like regex wrapped in / symbols.
-    This means ``text=/^hello .*!$/i`` or ``text=/^Hello .*!$/`` will match ``<span>Hello Peter Parker!</span>``
-    with any name after ``Hello``, ending with ``!``.
-    The first one flagged with ``i`` for case-insensitive.
-    See [https://regex101.com/|https://regex101.com] for more information about RegEx.
-
-    === Button and Submit Values ===
-
-    Input elements of the type button and submit are rendered with their value as text,
-    and text engine finds them. For example, ``text=Login`` matches
-    ``<input type=button value="Login">``.
-
-    == Cascaded selector syntax ==
-
-    A major advantage of Browser is that multiple selector engines can be used
-    within one selector. It is possible to mix XPath, CSS and Text selectors while
-    selecting a single element.
-
-    Selectors are strings that consists of one or more clauses separated by
-    ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
-    are present, next one is queried relative to the previous one's result.
-    Browser library supports concatenation of different selectors separated by ``>>``.
-
-    For example:
-    | `Highlight Elements`    "Hello" >> ../.. >> .select_button
-    | `Highlight Elements`    text=Hello >> xpath=../.. >> css=.select_button
-
-    Each clause contains a selector engine name and selector body, e.g.
-    ``engine=body``. Here ``engine`` is one of the supported engines (e.g. css or
-    a custom one). Selector ``body`` follows the format of the particular engine,
-    e.g. for css engine it should be a [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
-    Body format is assumed to ignore leading and trailing white spaces,
-    so that extra whitespace can be added for readability. If the selector
-    engine needs to include ``>>`` in the body, it should be escaped
-    inside a string to not be confused with clause separator,
-    e.g. ``text="some >> text"``.
-
-    Selector engine name can be prefixed with ``*`` to capture an element that
-    matches the particular clause instead of the last one. For example,
-    ``css=article >> text=Hello`` captures the element with the text ``Hello``,
-    and ``*css=article >> text=Hello`` (note the *) captures the article element
-    that contains some element with the text Hello.
-
-    For convenience, selectors in the wrong format are heuristically converted
-    to the right format. See `Implicit Selector Strategy`
+    | Click    css=.checkout >> text=Confirm
+    | Get Element    *css=article >> text=Hello    # returns the article
 
     == iFrames ==
 
-    By default, selector chains do not cross frame boundaries. It means that a
-    simple CSS selector is not able to select an element located inside an iframe
-    or a frameset. For this use case, there is a special selector ``>>>`` which can
-    be used to combine a selector for the frame and a selector for an element
-    inside a frame.
+    A chain does not cross a frame boundary. ``>>>`` combines a selector for the
+    frame element with a selector inside it; the clause immediately before ``>>>``
+    must select the frame itself.
 
-    Given this simple pseudo html snippet:
-    | <iframe id="iframe" src="src.html">
-    |   #document
-    |     <!DOCTYPE html>
-    |     <html>
-    |       <head></head>
-    |       <body>
-    |         <button id="btn">Click Me</button>
-    |       </body>
-    |     </html>
-    | </iframe>
+    | Click    id=iframe >>> id=btn
 
-    Here's a keyword call that clicks the button inside the frame.
+    For several keywords inside one frame, set a prefix with `Set Selector Prefix`.
 
-    | Click   id=iframe >>> id=btn
+    == Shadow DOM ==
 
-    The selectors on the left and right side of ``>>>`` can be any valid selectors.
-    The selector clause directly before the frame opener ``>>>`` must select the frame element itself.
-    Frame selection is the only place where Browser Library modifies the selector, as explained in above.
-    In all cases, the library does not alter the selector in any way, instead it is passed as is to the
-    Playwright side.
+    The ``css`` and ``text`` engines pierce open shadow roots automatically:
+    every descendant combinator, including the implicit one at the start of a
+    selector, crosses any number of them. Light DOM is searched first, then open
+    shadow roots, in document order. Closed shadow roots and iframes are never
+    entered.
 
-    If multiple keyword shall be performed inside a frame,
-    it is possible to define a selector prefix with `Set Selector Prefix`.
-    If this prefix is set to a frame/iframe it has similar behavior as SeleniumLibrary keyword `Select Frame`.
-
-    == WebComponents and Shadow DOM ==
-
-    Browser pierces
-    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM]
-    automatically. The css engine pierces shadow roots. More specifically, every
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
-    pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
-    at the start of the selector.
-
-    That means, it is not necessary to select each shadow host, open its shadow root and
-    select the next shadow host until you reach the element that should be controlled.
-
-    === CSS:light ===
-
-    ``css:light`` engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/querySelector | Document.querySelector]
-    and behaves according to the CSS spec.
-    However, it does not pierce shadow roots.
-
-    ``css`` engine first searches for elements in the light dom in the iteration order,
-    and then recursively inside open shadow roots in the iteration order. It does not
-    search inside closed shadow roots or iframes.
-
-    Worked examples of what ``css`` matches and ``css:light`` does not are at
+    Use the ``:light`` engines above to stop at the shadow boundary. Worked
+    examples of what each matches:
     https://robotframework-browser.org/docs/concepts/selectors
 
-    === text:light ===
+    == Element references ==
 
-    ``text`` engine open pierces shadow roots similarly to ``css``, while ``text:light`` does not.
-    Text engine first searches for elements in the light dom in the iteration order, and then
-    recursively inside open shadow roots in the iteration order. It does not search inside
-    closed shadow roots or iframes.
-
-    === id, data-testid, data-test-id, data-test and their :light counterparts ===
-
-    Attribute engines are selecting based on the corresponding attribute value.
-    For example: ``data-test-id=foo`` is equivalent to ``css=[data-test-id="foo"]``,
-    and ``id:light=foo`` is equivalent to ``css:light=[id="foo"]``.
-
-    == Element reference syntax ==
-
-    It is possible to get a reference to a Locator by using `Get Element` and `Get Elements` keywords.
-    Keywords do not save reference to an element in the HTML document, instead it saves reference to a Playwright
-    [https://playwright.dev/docs/api/class-locator|Locator]. In nutshell Locator captures the logic of how to
-    retrieve that element from the page. Each time an action is performed, the locator re-searches the elements
-    in the page. This reference can be used as a *first* part of a selector by using a special selector
-    syntax `element=`. like this:
+    `Get Element` and `Get Elements` return a Playwright
+    [https://playwright.dev/docs/api/class-locator|Locator] — how to find the
+    element, not the element itself, so it re-resolves on every use. Pass it as
+    the *first* clause of a selector with ``element=``:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          ${ref} >> .some_child     # Locator searches an element from the page.
-    |            Click          ${ref} >> .other_child    # Locator searches again an element from the page.
+    |            Click          ${ref} >> .some_child
+    |            Click          ${ref} >> .other_child
 
-    The `.some_child` and `.other_child` selectors in the example are relative to the element referenced
-    by ${ref}. Please note that frame piercing is not possible with element reference.
+    Selectors after the reference are relative to it. Frame piercing is not
+    possible with an element reference.
 
     = Assertions =
 
-    Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert that a specified condition holds. Keywords will return the value even when the
-    assertion is performed by the keyword.
-
-    Assert will retry and fail only after a specified timeout.
-    See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
-
+    Keywords taking ``assertion_operator`` <`AssertionOperator`> and
+    ``assertion_expected`` can assert on the value they return, and still return
+    it. An assertion retries until it passes or ``retry_assertions_for`` expires;
+    see `Importing` for that setting, which defaults to 1 second.
 
     %ASSERTION_TABLE%
 
-    By default, keywords will provide an error message if an assertion fails.
-    Default error messages can be overwritten with a ``message`` argument.
-    The ``message`` argument accepts ``{value}``, ``{value_type}``, ``{expected}`` and
-    `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
-    options.
-    The ``{value}`` is the value returned by the keyword and the ``{expected}``
-    is the expected value defined by the user, usually the value in the
-    ``assertion_expected`` argument. The ``{value_type}`` and
-    `{expected_type}` are the type definitions from ``{value}`` and ``{expected}``
-    arguments. In similar fashion as Python
-    [https://docs.python.org/3/library/functions.html#type|type] returns type definition.
-    Assertions will retry until ``timeout`` has expired if they do not pass.
+    The expected value is used as given — the library does not convert it — so it
+    must already be the type the keyword returns. `Get Text` returns a string even
+    when it looks like a number; `Get Element Count` returns an integer. Keywords
+    returning a number do convert the expected value. `Get BoundingBox` and
+    `Get Viewport Size` return a dictionary unfiltered and a number when filtered.
 
-    The assertion ``assertion_expected`` value is not converted by the library and
-    is used as is. Therefore when assertion is made, the ``assertion_expected``
-    argument value and value returned the keyword must have the same type. If types
-    are not the same, assertion will fail. Example `Get Text` always returns a string
-    and has to be compared with a string, even the returned value might look like
-    a number.
+    Comparing strings with ``<`` or ``>`` compares code points character by
+    character and stops at the first difference; length is never considered.
+    Example: ``A < Z``, ``Z < a``, ``ac < dc``, ``'abcde' < 'abd'``.
 
-    Other Keywords have other specific types they return.
-    `Get Element Count` always returns an integer.
-    `Get BoundingBox` and `Get Viewport Size` can be filtered.
-    They return a dictionary without a filter and a number when filtered.
-    These Keywords do automatic conversion for the expected value if a number is returned.
+    ``validate`` takes a Python expression over ``value``. ``then`` and
+    ``evaluate`` do not assert: they return the result of an expression over
+    ``value``.
 
-    * < less or greater > With Strings*
-    Comparisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 regarding where it stands in the code page.
-    Example: ``A < Z``, ``Z < a``, ``ac < dc``
-    It does never compare the length of elements. Neither lists nor strings.
-    The comparison stops at the first character that is different.
-    Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
-    In Python 3 and therefore also in Browser it is not possible to compare numbers
-    with strings with a greater or less operator.
-    On keywords that return numbers, the given expected value is automatically
-    converted to a number before comparison.
+    | Get Text             h1      validate    value.startswith("Welcome")
+    | ${id}=    Get Property    a#link    href    then    value.split("/")[-1]
 
+    A failing assertion has a default message, replaceable with ``message``. It
+    accepts the
+    [https://docs.python.org/3/library/stdtypes.html#str.format|format] fields
+    ``{value}``, ``{expected}``, ``{value_type}`` and ``{expected_type}``.
 
-    The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
-    Pay attention of possible types because they are evaluated in Python. For example:
-
-    | Get Page State    validate    2020 >= value['year']                     # Comparison of numbers
-    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Comparison of strings
-
-    == The 'then' or 'evaluate' closure ==
-
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
-    can optionally also use ``then`` or ``evaluate`` closure to modify the returned value with
-    BuiltIn Evaluate. Actual value can be accessed with ``value``.
-
-    For example ``Get Title  then  'TITLE: '+value``.
-    See
-    [https://robotframework.org/robotframework/latest/libraries/BuiltIn.html#Evaluating%20expressions|
-    Builtin Evaluating expressions]
-    for more info on the syntax.
-
-    == Examples ==
-
-    | # *Keyword*    *Selector*                    *Key*        *Assertion Operator*    *Assertion Expected*
-    | Get Title                                           equal                 Page Title
-    | Get Title                                           ^=                    Page
-    | Get Style    //*[@id="div-element"]      width      >                     100
-    | Get Title                                           matches               \\\\w+\\\\s\\\\w+
-    | Get Title                                           validate              value == "Login Page"
-    | Get Title                                           evaluate              value if value == "some value" else "something else"
-
+    What each operator is for, why a type mismatch is the usual failure, and the
+    formatters that normalise a value before comparison:
+    https://robotframework-browser.org/docs/concepts/assertions
 
     = Implicit waiting =
 
@@ -654,33 +413,26 @@ class Browser(DynamicCore):
     = Extending Browser library with a JavaScript module =
 
     Browser can be given extra keywords written in JavaScript, running on the Node
-    side with the Playwright ``page`` object in hand. The module must be in the
-    CommonJS format that Node.js uses; exported functions become keywords, and an
-    ``fn.rfdoc`` string becomes that keyword's documentation. Load a module with the
-    ``jsextension`` import parameter. Functions can take any number of arguments, and
-    the arguments may have default values.
+    side. The module must be CommonJS; exported functions become keywords, an
+    ``fn.rfdoc`` string becomes a keyword's documentation, and a module is loaded
+    with the ``jsextension`` import parameter.
 
-    Five argument names are reserved: they are filled in by the library instead of
-    being taken from the keyword call, and they are matched by name, so they can
-    appear anywhere in the signature.
+    These argument names are filled in by the library rather than taken from the
+    keyword call. They are matched by name, so their position does not matter.
 
-    | = Argument =   | = Receives =                                              |
+    | = Argument =   | = Receives =                                                        |
     | ``page``       | [https://playwright.dev/docs/api/class-page|Page]                   |
     | ``context``    | [https://playwright.dev/docs/api/class-browsercontext|BrowserContext] |
     | ``browser``    | [https://playwright.dev/docs/api/class-browser|Browser]             |
-    | ``logger``     | Callback that writes its argument to the Robot Framework log.       |
+    | ``logger``     | Callback writing to the Robot Framework log.                        |
     | ``playwright`` | [https://playwright.dev/docs/api/class-playwright|The playwright module] |
 
-    An argument named ``args`` is special in the opposite direction: it makes the
-    keyword variadic and receives the remaining values from the Robot Framework
-    keyword call. The name ``self`` cannot be used.
+    An argument named ``args`` works the other way round: it makes the keyword
+    variadic and receives the remaining values from the keyword call. ``self``
+    cannot be used.
 
-    A module can also register a custom selector engine with
-    ``playwright.selectors.register``, which is then usable anywhere a selector is
-    accepted.
-
-    Worked modules, the Robot Framework side, custom selector engines and how to
-    attach a Node debugger:
+    Worked modules, registering a custom selector engine, and attaching a Node
+    debugger:
     https://robotframework-browser.org/docs/extending/javascript-extensions
 
     = Plugins =
