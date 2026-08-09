@@ -197,7 +197,7 @@ class Browser(DynamicCore):
     times cheaper than starting a browser, so a clean session per test does not
     mean a new process. Context-level settings include ``viewport``,
     ``geolocation``, ``locale``, ``colorScheme`` and ``httpCredentials``;
-    downloading a file requires ``acceptDownloads=True``.
+    downloads are accepted unless ``acceptDownloads=False`` is given.
 
     Each browser, context and page has an id. `Get Browser Catalog` returns
     everything currently open.
@@ -383,8 +383,10 @@ class Browser(DynamicCore):
     Browser library running on the same machine, instead of each one starting its
     own. This can speed up parallel runs. Start it from the directory where the
     Browser package is installed with
-    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``, where
-    ``PORT`` is the port you want the node process to listen on. Point runs at it
+    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT``, for
+    example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
+    script reads the host first and exits with ``No port defined`` if only one is
+    given. Point runs at it
     with the ``playwright_process_port`` import parameter or the
     ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT`` environment variable, for example
     ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
