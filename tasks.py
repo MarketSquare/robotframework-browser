@@ -65,6 +65,20 @@ RELEASE_PROCESS = (
     "Raise an issue and add it to the release milestone so this reaches the "
     "release notes, then close it once the PR is merged."
 )
+# The images install the library with `--skip-browsers` and use the browser
+# binaries baked into the Playwright base image, so the Playwright the wrapper
+# runs and the tag of that image are one version, spelled in two places.
+# `inv docker-version-check` is what keeps them one version.
+DOCKERFILES = (
+    ROOT_DIR / "docker" / "Dockerfile.dev_pr",
+    ROOT_DIR / "docker" / "Dockerfile.latest_release",
+)
+PLAYWRIGHT_IMAGE = re.compile(
+    r"(?P<image>FROM\s+mcr\.microsoft\.com/playwright:v)(?P<version>\d+\.\d+\.\d+)"
+)
+# Tags are listed per Playwright release and per distro, so a version we ship
+# is not automatically a tag that exists. `--write` asks before it writes.
+MCR_PLAYWRIGHT_TAGS = "https://mcr.microsoft.com/v2/playwright/tags/list"
 # Every target a BrowserBatteries wheel is published for, named the way
 # nodejs.org names it. `inv node-floor-check` walks the list from one machine to
 # check min_glibc and min_macos against the binaries themselves, and
@@ -1727,6 +1741,116 @@ def _get_pw_version() -> str:
     version = data["dependencies"]["playwright"]
     match = re.search(r"\d+\.\d+\.\d+", version)
     return match.group(0)
+
+
+def _locked_pw_version() -> str:
+    """The Playwright the wrapper is actually built with.
+
+    package.json states a range and `inv deps` runs `npm install`, so the
+    version that ends up in node_modules is the one package-lock.json resolved,
+    which can be ahead of the number in package.json. The browser binaries have
+    to match what runs, so the lock file is what the Dockerfiles are checked
+    against.
+    """
+    lock = json.loads((ROOT_DIR / "package-lock.json").read_text(encoding="utf-8"))
+    packages = lock.get("packages", {})
+    for name in ("node_modules/playwright", "node_modules/playwright-core"):
+        version = packages.get(name, {}).get("version")
+        if version:
+            return version
+    raise Exit("package-lock.json lists no playwright version.")
+
+
+def _dockerfile_pw_images() -> dict:
+    """The base image each Dockerfile asks for, as {name: (version, tag)}."""
+    images = {}
+    for dockerfile in DOCKERFILES:
+        content = dockerfile.read_text(encoding="utf-8")
+        match = PLAYWRIGHT_IMAGE.search(content)
+        if not match:
+            raise Exit(f"No Playwright base image found in {dockerfile}.")
+        tag = content[match.start("version") - 1 :].split(maxsplit=1)[0]
+        images[dockerfile.name] = (match.group("version"), tag)
+    return images
+
+
+def _stale_dockerfiles(shipped: str, images: dict) -> list:
+    """The Dockerfiles asking for a Playwright other than the one we ship."""
+    return sorted(name for name, (version, _) in images.items() if version != shipped)
+
+
+def _mcr_tag_exists(tag: str) -> bool:
+    """Whether mcr.microsoft.com/playwright publishes this tag.
+
+    Microsoft builds an image per Playwright release and distro, and not every
+    combination is there, so writing a tag without looking would trade a version
+    mismatch for an image that cannot be pulled at all. An unreachable registry
+    is not an answer either way and counts as present, because the check that
+    matters here already ran offline.
+    """
+    try:
+        with urllib.request.urlopen(MCR_PLAYWRIGHT_TAGS, timeout=30) as response:
+            return tag in set(json.load(response)["tags"])
+    except Exception as error:
+        print(f"Could not list the Playwright image tags ({error}), assuming {tag}.")
+        return True
+
+
+@task
+def docker_version_check(c, write=False):
+    """Fail when a Docker image would ship browsers Playwright cannot use.
+
+    The images install the library with `rfbrowser init --skip-browsers` and
+    then drive the browser binaries that come with the Playwright base image, so
+    a `FROM mcr.microsoft.com/playwright:vX.Y.Z` that has drifted from the
+    Playwright in package-lock.json means Playwright looks for a browser
+    revision the image does not have. Nothing else notices: the acceptance tests
+    that run inside the image would catch it, but on a release they run after
+    the package is already on PyPI, and a patch-level drift whose browser
+    revisions happen to agree passes quietly and leaves the pin rotting.
+
+    Cheap and offline, just two files read, so it belongs on every push rather
+    than in the release checklist. Run with `--write` to set the tags to the
+    Playwright we ship, which is the whole job when bumping Playwright.
+    """
+    shipped = _locked_pw_version()
+    declared = _get_pw_version()
+    images = _dockerfile_pw_images()
+    lines = [
+        f"* Playwright in package-lock.json: {shipped}",
+        f"* Playwright in package.json: {declared}",
+        *(f"* {name}: {tag}" for name, (_, tag) in images.items()),
+    ]
+    stale = _stale_dockerfiles(shipped, images)
+    if stale and write:
+        for name in stale:
+            version, tag = images[name]
+            wanted = tag.replace(f"v{version}", f"v{shipped}", 1)
+            if not _mcr_tag_exists(wanted):
+                _report(lines, "Playwright version check")
+                raise Exit(
+                    f"mcr.microsoft.com/playwright:{wanted} does not exist, so "
+                    f"{name} cannot move to Playwright {shipped} yet."
+                )
+            _replace_version(
+                ROOT_DIR / "docker" / name,
+                PLAYWRIGHT_IMAGE,
+                rf"\g<image>{shipped}",
+                1,
+            )
+            lines.append(f"* set {name} to {wanted}.")
+        _report(lines, "Playwright version check")
+        return
+    if stale:
+        lines.append(
+            f"* {', '.join(stale)} does not match the Playwright we ship. Run "
+            "`inv docker-version-check --write` and commit the change, so the "
+            "images keep using browser binaries Playwright can run."
+        )
+        _report(lines, "Playwright version check")
+        raise Exit(f"{', '.join(stale)} is not on Playwright {shipped}.")
+    lines.append("* the Docker images are on the Playwright we ship.")
+    _report(lines, "Playwright version check")
 
 
 @task(package)

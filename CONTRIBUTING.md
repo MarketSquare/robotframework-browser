@@ -115,6 +115,15 @@ to update the platform table in `browser_batteries/README.md` too: the distro
 names in it cannot be read out of a binary.
 
 
+### Check the Playwright version in the Docker images
+The Docker images install the library with `--skip-browsers` and use the browser
+binaries of the `mcr.microsoft.com/playwright` base image, so that image has to
+be tagged with the same Playwright as the one in `package-lock.json`. CI checks
+this on every push and again before the release reaches PyPI, so it should
+already hold, but when you bump Playwright the way to update both Dockerfiles is
+`inv docker-version-check --write`. It refuses to write a tag that
+mcr.microsoft.com does not publish.
+
 ### Set version number
 Run `inv version $VERSION` to update the version information to both Python
 and Node components.

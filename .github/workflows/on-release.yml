@@ -76,6 +76,13 @@ jobs:
           python -c "import sysconfig;print(sysconfig.get_platform())"
           python -c "import platform;print(platform.machine().lower())"
           inv deps
+      # Before anything reaches PyPI, because the Docker image is built from the
+      # published package and a mismatch here would only surface once the
+      # release is out.
+      - name: Check the Playwright version the Docker images use
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv docker-version-check
       - name: Build stubs
         if: matrix.os == 'ubuntu-latest'
         run: |

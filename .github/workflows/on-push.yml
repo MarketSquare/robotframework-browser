@@ -129,6 +129,13 @@ jobs:
       if: matrix.shard == 1
       run: |
         inv lint-node
+    # Offline and instant, and it has to be here rather than in the release
+    # checklist: the acceptance tests that would notice a Docker image on the
+    # wrong Playwright only run against an image we have already built.
+    - name: Check the Playwright version the Docker images use
+      if: matrix.os == 'ubuntu-latest' && matrix.shard == 1
+      run: |
+        inv docker-version-check
     - name: Build test app
       run: |
         inv create-test-app
