@@ -409,39 +409,6 @@ class Browser(DynamicCore):
     A new set higher order scope will always remove the lower order scope which may be in charge.
     So the setting of a ``Suite`` scope from a test, will set that scope to the robot file suite where that test is and removes the ``Test`` scope that may have been in place.
 
-    = Extending Browser library with a JavaScript module =
-
-    Browser can be given extra keywords written in JavaScript, running on the Node
-    side. The module must be CommonJS; exported functions become keywords, an
-    ``fn.rfdoc`` string becomes a keyword's documentation, and a module is loaded
-    with the ``jsextension`` import parameter.
-
-    These argument names are filled in by the library rather than taken from the
-    keyword call. They are matched by name, so their position does not matter.
-
-    | = Argument =   | = Receives =                                                        |
-    | ``page``       | [https://playwright.dev/docs/api/class-page|Page]                   |
-    | ``context``    | [https://playwright.dev/docs/api/class-browsercontext|BrowserContext] |
-    | ``browser``    | [https://playwright.dev/docs/api/class-browser|Browser]             |
-    | ``logger``     | Callback writing to the Robot Framework log.                        |
-    | ``playwright`` | [https://playwright.dev/docs/api/class-playwright|The playwright module] |
-
-    An argument named ``args`` works the other way round: it makes the keyword
-    variadic and receives the remaining values from the keyword call. ``self``
-    cannot be used.
-
-    Worked modules, registering a custom selector engine, and attaching a Node
-    debugger:
-    https://robotframework-browser.org/docs/extending/javascript-extensions
-
-    = Plugins =
-
-    Browser library offers plugins as a way to modify and add library keywords and
-    modify some of the internal functionality without creating a new library or
-    hacking the source code. Plugins are Python classes loaded with the ``plugins``
-    import parameter. See
-    https://robotframework-browser.org/docs/extending/python-plugins
-
     = Language =
 
     Keyword names and their documentation can be translated. Install a Python
@@ -513,11 +480,11 @@ class Browser(DynamicCore):
         | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
         | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
         | ``highlight_on_failure``          | If set to ``True``, will highlight the element in the screenshot when a keyword fails, by highlighting the selector used in the failed keyword. If set to ``False``, will not highlight the element. |
-        | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
+        | ``jsextension``                   | Path to JavaScript modules exposed as extra keywords. The modules must be in CommonJS format; exported functions become keywords and an ``fn.rfdoc`` string becomes a keyword's documentation. The argument names ``page``, ``context``, ``browser``, ``logger`` and ``playwright`` are filled in by the library rather than taken from the keyword call. Can be a single path, a comma-separated list of paths or a real list of strings. See https://robotframework-browser.org/docs/extending/javascript-extensions |
         | ``language``                      | Defines language which is used to translate keyword names and documentation. |
         | ``playwright_process_host``       | Hostname / Host address which should be used when spawning the Playwright process. Defaults to 127.0.0.1. |
         | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
-        | ``plugins``                       | Allows extending the Browser library with external Python classes. Can either be a single class/module, a comma-separated list or a real list of strings |
+        | ``plugins``                       | Allows extending the Browser library with external Python classes, which can add keywords and modify some internal behaviour without forking the library. Can be a single class/module, a comma-separated list or a real list of strings. See https://robotframework-browser.org/docs/extending/python-plugins |
         | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
         | ``run_on_failure``                | Sets the keyword to execute in case of a failing Browser keyword. It can be the name of any keyword. If the keyword has arguments those must be separated with two spaces for example ``My keyword \\ arg1 \\ arg2``. If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value. Run on failure is not applied when library methods are executed directly from Python. |
         | ``selector_prefix``               | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
