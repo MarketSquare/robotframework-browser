@@ -786,7 +786,9 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_table_cell_element(self, table: str, column: str, row: str) -> str:
-        """Returns the Web Element that has the same column index and same row index as the selected elements.
+        """Returns a selector string for the cell at the same column and row index as the selected elements.
+
+        The returned value is used like the one from `Get Element`.
 
         | =Arguments= | =Description= |
         | ``table`` | selector must select the ``<table>`` element that contains both selected elements |
@@ -928,9 +930,12 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_element(self, selector: str) -> str:
-        """Returns a reference to a Playwright [https://playwright.dev/docs/api/class-locator|Locator].
+        """Returns a selector string that points to the element found by ``selector``.
 
-        The reference can be used in subsequent selectors.
+        The returned string is the selector Playwright resolved for the element. It
+        is an ordinary selector, so it can be used as the *first* clause of another
+        selector, chained with ``>>``. Because it is a selector and not a captured
+        DOM node, it is resolved again from the page on every use.
 
 
         | =Arguments= | =Description= |
@@ -955,8 +960,10 @@ class Getters(LibraryComponent):
 
     @keyword(tags=("Getter", "PageContent"))
     def get_elements(self, selector: str) -> list[str]:
-        """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
-        for all matched elements by ``selector``.
+        """Returns a list of selector strings, one for each element matched by ``selector``.
+
+        Each string can be used as the *first* clause of another selector, chained
+        with ``>>``, exactly like the value returned by `Get Element`.
 
 
         | =Arguments= | =Description= |
@@ -1006,8 +1013,11 @@ class Getters(LibraryComponent):
         pressed: bool | None = None,
         selected: bool | None = None,
     ) -> str:
-        """Returns a reference to Playwright [https://playwright.dev/docs/api/class-locator|Locator]
-        for the matched element by ``role`` or a list of references if ``all_elements`` is set to ``True``.
+        """Returns a selector string for the element matched by ``role``, or a list of
+        selector strings if ``all_elements`` is set to ``True``.
+
+        The returned value is used like the one from `Get Element`: as the first
+        clause of another selector, chained with ``>>``.
 
         Allows locating elements by their [https://www.w3.org/TR/wai-aria-1.2/#roles|ARIA role],
         [https://www.w3.org/TR/wai-aria-1.2/#aria-attributes|ARIA attributes] and

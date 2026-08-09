@@ -229,7 +229,6 @@ class Browser(DynamicCore):
     | ``data-testid``  | ``data-testid`` attribute.                   | ``data-testid=login``              |
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
-    | ``element``      | A locator from `Get Element`. See `Element references`. | ``element=${ref}``      |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
     | ``text:light``   | As ``text``, but does not pierce shadow DOM. | ``text:light=Login``               |
 
@@ -317,17 +316,17 @@ class Browser(DynamicCore):
 
     == Element references ==
 
-    `Get Element` and `Get Elements` return a Playwright
-    [https://playwright.dev/docs/api/class-locator|Locator] — how to find the
-    element, not the element itself, so it re-resolves on every use. Pass it as
-    the *first* clause of a selector with ``element=``:
+    `Get Element` returns a *selector string* for what it matched, and
+    `Get Elements` returns a list of them. They are ordinary selectors, so they go
+    in the *first* clause of another selector, chained with ``>>``:
 
     | ${ref}=    Get Element    .some_class
     |            Click          ${ref} >> .some_child
     |            Click          ${ref} >> .other_child
 
-    Selectors after the reference are relative to it. Frame piercing is not
-    possible with an element reference.
+    Clauses after the reference are relative to it. Because the value is a
+    selector rather than a captured DOM node, it is resolved from the page again
+    on every use. Frame piercing is not possible after a reference.
 
     = Assertions =
 
