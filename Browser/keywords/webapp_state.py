@@ -67,7 +67,7 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4300|Comment >>]
         """
-        response = self.eval_js(f"window.localStorage.getItem({key!r})", frame_selector)
+        response = self.eval_js(f"window.localStorage.getItem({json.dumps(key)})", frame_selector)
         logger.info(response.log)
         formatter = self.get_assertion_formatter("Local Storage Get Item")
         return verify_assertion(
@@ -97,7 +97,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4302|Comment >>]
         """
         response = self.eval_js(
-            f"window.localStorage.setItem({key!r}, {value!r})", frame_selector
+            f"window.localStorage.setItem({json.dumps(key)}, {json.dumps(value)})", frame_selector
         )
         logger.info(response.log)
 
@@ -118,7 +118,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4301|Comment >>]
         """
         response = self.eval_js(
-            f"window.localStorage.removeItem({key!r})", frame_selector
+            f"window.localStorage.removeItem({json.dumps(key)})", frame_selector
         )
         logger.info(response.log)
 
@@ -174,7 +174,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4324|Comment >>]
         """
         response = self.eval_js(
-            f"window.sessionStorage.getItem({key!r})", frame_selector
+            f"window.sessionStorage.getItem({json.dumps(key)})", frame_selector
         )
         logger.info(response.log)
         formatter = self.get_assertion_formatter("Session Storage Get Item")
@@ -204,7 +204,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4326|Comment >>]
         """
         response = self.eval_js(
-            f"window.sessionStorage.setItem({key!r}, {value!r})", frame_selector
+            f"window.sessionStorage.setItem({json.dumps(key)}, {json.dumps(value)})", frame_selector
         )
         logger.info(response.log)
 
@@ -224,7 +224,7 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4325|Comment >>]
         """
         response = self.eval_js(
-            f"window.sessionStorage.removeItem({key!r})", frame_selector
+            f"window.sessionStorage.removeItem({json.dumps(key)})", frame_selector
         )
         logger.info(response.log)
 
