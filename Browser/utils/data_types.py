@@ -17,24 +17,24 @@ from enum import Enum, IntFlag, auto
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
+from robot.api import TypeInfo
 from robot.running.arguments.typeconverters import TypeConverter
 
 from .types import Secret
 
 
 class RobotTypeConverter(TypeConverter):
+    """Resolves a converter from a raw type hint.
+
+    The base ``TypeConverter.converter_for`` requires a ``TypeInfo``; this accepts
+    a raw type hint, such as the ones ``get_keyword_types`` returns.
+    """
+
     @classmethod
     def converter_for(cls, arg_type):
         if arg_type is None:
             return None
-        try:
-            from robot.api import TypeInfo  # noqa: PLC0415
-
-            if not isinstance(arg_type, TypeInfo):
-                type_hint = TypeInfo.from_type_hint(arg_type)
-        except ImportError:
-            type_hint = arg_type
-        return TypeConverter.converter_for(type_hint)
+        return TypeConverter.converter_for(TypeInfo.from_type_hint(arg_type))
 
 
 class TypedDictDummy(TypedDict):

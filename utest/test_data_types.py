@@ -1,8 +1,10 @@
+from datetime import timedelta
 from typing import TypedDict, Union
 
 import pytest
+from robot.api import TypeInfo
 
-from Browser.utils.data_types import convert_typed_dict
+from Browser.utils.data_types import MouseButton, RobotTypeConverter, convert_typed_dict
 from Browser.utils.types import Secret
 
 
@@ -154,3 +156,27 @@ def test_typed_dict_union_nested_dict_value_is_converted():
     params = {"data": {"name": "test", "data": {"name": "inner", "value": "42"}}}
     converted = convert_typed_dict(annotations, params)
     assert converted["data"] == {"name": "test", "data": {"name": "inner", "value": 42}}
+
+
+def test_converter_for_raw_type_hint_converts_to_str():
+    converter = RobotTypeConverter.converter_for(str)
+    assert converter.convert(name="arg", value=5) == "5"
+
+
+def test_converter_for_raw_type_hint_converts_to_enum_member():
+    converter = RobotTypeConverter.converter_for(MouseButton)
+    assert converter.convert(name="arg", value="middle") is MouseButton.middle
+
+
+def test_converter_for_raw_type_hint_converts_to_timedelta():
+    converter = RobotTypeConverter.converter_for(timedelta)
+    assert converter.convert(name="arg", value="1.5s") == timedelta(seconds=1.5)
+
+
+def test_converter_for_returns_none_for_missing_type_hint():
+    assert RobotTypeConverter.converter_for(None) is None
+
+
+def test_converter_for_accepts_an_already_resolved_type_info():
+    converter = RobotTypeConverter.converter_for(TypeInfo.from_type_hint(str))
+    assert converter.convert(name="arg", value=5) == "5"
