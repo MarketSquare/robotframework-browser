@@ -4,28 +4,63 @@
 into a `window.localStorage.getItem(...)` expression that is then evaluated in
 the page. Whatever escapes them has to produce a *JavaScript* string literal.
 
-Python's `repr()` looks like it does and does not: for any non-printable code
-point above U+FFFF it emits `\\U000e0001`, which JavaScript parses as an identity
-escape. The backslash is dropped and the literal text `U000e0001` ends up in the
-string, so the wrong key is read or removed -- silently, with no syntax error and
-no exception. `json.dumps` emits surrogate-pair `\\uXXXX` escapes, which are a
-strict subset of JavaScript string syntax.
+Two ways of doing that were wrong before, in different ways:
 
-These tests assert the generated source rather than the behaviour, so they need
-no browser and no node process.
+* Bare interpolation into a quoted literal, `f'getItem("{key}")'`, escapes
+  nothing. A key containing a double quote does not merely break the syntax, it
+  executes: `x"), (evil = 1), S.getItem("` runs `evil = 1` in the page.
+* `repr()` looks like it works and mostly does, but for any non-printable code
+  point above U+FFFF it emits `\\U000e0001`. JavaScript reads `\\U` as an
+  identity escape: the backslash is dropped and the literal text `U000e0001`
+  lands in the string, so the wrong key is read or removed -- silently, with no
+  syntax error and no exception.
+
+`json.dumps` emits `\\uXXXX` surrogate pairs, which are a strict subset of
+JavaScript string syntax, and with the default `ensure_ascii=True` its output is
+pure ASCII for every code point -- so U+2028 and U+2029 never reach the page as
+raw characters either.
+
+These tests call the keywords with `eval_js` mocked and assert the script that
+was handed to it. They fail if the escaping is reverted, which is the whole
+point: an earlier version of this file asserted `json.dumps` round-trips without
+ever importing the library, and stayed green against the broken code.
 """
 
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
-# The exact expression each keyword builds.
-GETTERS = (
-    'window.localStorage.getItem({})',
-    'window.localStorage.removeItem({})',
-    'window.sessionStorage.getItem({})',
-    'window.sessionStorage.removeItem({})',
-)
+from Browser.keywords.webapp_state import WebAppState
+
+
+def make_state() -> tuple[WebAppState, MagicMock]:
+    """A WebAppState whose `eval_js` records the script instead of running it.
+
+    The keywords are wrapped in `with_assertion_polling`, which reads `timeout`
+    and `retry_assertions_for` off the library's scope stack, so the fake library
+    has to answer those. `retry_assertions_for` is 0 to keep a failing assertion
+    from looping -- these tests assert the script, not the assertion.
+    """
+    library = MagicMock()
+    library.scope_stack = {
+        "timeout": MagicMock(get=MagicMock(return_value=10_000.0)),
+        "retry_assertions_for": MagicMock(get=MagicMock(return_value=0.0)),
+    }
+    library._get_assertion_formatter.return_value = []
+
+    state = WebAppState.__new__(WebAppState)
+    state.library = library
+    eval_js = MagicMock(return_value=MagicMock(log="", result="null"))
+    state.eval_js = eval_js  # type: ignore[method-assign]
+    return state, eval_js
+
+
+def script_of(eval_js: MagicMock) -> str:
+    """The script argument of the single recorded call."""
+    eval_js.assert_called_once()
+    return eval_js.call_args.args[0]
+
 
 AWKWARD_KEYS = [
     pytest.param("plain", id="plain"),
@@ -35,46 +70,108 @@ AWKWARD_KEYS = [
     pytest.param("line\nbreak", id="newline"),
     pytest.param("tab\there", id="tab"),
     pytest.param("null\x00byte", id="nul"),
-    pytest.param("line separator", id="u2028"),
-    pytest.param("rtl‮override", id="bidi-override"),
+    pytest.param("line\u2028separator", id="u2028"),
+    pytest.param("para\u2029separator", id="u2029"),
+    pytest.param("rtl\u202eoverride", id="bidi-override"),
     pytest.param("emoji\U0001f600", id="astral-printable"),
-    # The class that repr() gets wrong: astral and non-printable.
+    # The class repr() gets wrong: astral and non-printable.
     pytest.param("tag\U000e0001char", id="astral-tag"),
     pytest.param("private\U000f0000use", id="astral-private-use"),
+    # The class bare interpolation gets wrong: it closes the literal and runs.
+    pytest.param('x"), (evil = 1), S.getItem("y', id="injection"),
+]
+
+GETTERS = [
+    pytest.param("local_storage_get_item", "localStorage", "getItem", id="local-get"),
+    pytest.param(
+        "session_storage_get_item", "sessionStorage", "getItem", id="session-get"
+    ),
+]
+
+REMOVERS = [
+    pytest.param(
+        "local_storage_remove_item", "localStorage", "removeItem", id="local-remove"
+    ),
+    pytest.param(
+        "session_storage_remove_item",
+        "sessionStorage",
+        "removeItem",
+        id="session-remove",
+    ),
+]
+
+SETTERS = [
+    pytest.param("local_storage_set_item", "localStorage", id="local-set"),
+    pytest.param("session_storage_set_item", "sessionStorage", id="session-set"),
 ]
 
 
 @pytest.mark.parametrize("key", AWKWARD_KEYS)
-@pytest.mark.parametrize("template", GETTERS)
-def test_key_survives_the_round_trip(template: str, key: str) -> None:
-    """What we embed must parse back to exactly the key we were given."""
-    embedded = json.dumps(key)
-    # json.loads accepts the same string syntax JavaScript does for these forms,
-    # which is the property that makes json.dumps safe here.
-    assert json.loads(embedded) == key
-    assert template.format(embedded).endswith(f"({embedded})")
+@pytest.mark.parametrize(("method", "store", "op"), GETTERS + REMOVERS)
+def test_key_is_escaped(method: str, store: str, op: str, key: str) -> None:
+    state, eval_js = make_state()
+    getattr(state, method)(key)
+    assert script_of(eval_js) == f"window.{store}.{op}({json.dumps(key)})"
 
 
 @pytest.mark.parametrize("key", AWKWARD_KEYS)
-def test_repr_is_not_a_substitute(key: str) -> None:
-    """repr() is only correct by accident, and not for every input.
-
-    This pins the reason the keywords do not use it: for an astral non-printable
-    it produces a `\\U` escape that JavaScript reads as the letter U.
-    """
-    embedded = repr(key)
-    if any(ord(c) > 0xFFFF and not c.isprintable() for c in key):
-        assert "\\U" in embedded, "expected repr to emit the escape JS cannot read"
-    else:
-        # For everything else repr happens to agree, which is why this went
-        # unnoticed for so long.
-        assert json.loads(json.dumps(key)) == key
-
-
-def test_set_item_escapes_the_value_too() -> None:
+@pytest.mark.parametrize(("method", "store"), SETTERS)
+def test_key_and_value_are_escaped(method: str, store: str, key: str) -> None:
     """`Set Item` interpolates two things, and both need the same treatment."""
-    key, value = "k\U000e0001", 'v"\\\n\U000f0000'
-    script = f"window.localStorage.setItem({json.dumps(key)}, {json.dumps(value)})"
-    assert json.dumps(key) in script
-    assert json.dumps(value) in script
-    assert "\\U" not in script
+    value = 'v"\\\n\U000f0000'
+    state, eval_js = make_state()
+    getattr(state, method)(key, value)
+    expected = f"window.{store}.setItem({json.dumps(key)}, {json.dumps(value)})"
+    assert script_of(eval_js) == expected
+
+
+@pytest.mark.parametrize("key", AWKWARD_KEYS)
+@pytest.mark.parametrize(("method", "store", "op"), GETTERS + REMOVERS)
+def test_script_carries_no_escape_javascript_misreads(
+    method: str, store: str, op: str, key: str
+) -> None:
+    """`\\U` is an identity escape in JavaScript -- the backslash is dropped.
+
+    This is the property that made `repr()` wrong, and it is invisible at
+    runtime: the page reads a different key and returns null.
+    """
+    state, eval_js = make_state()
+    getattr(state, method)(key)
+    assert "\\U" not in script_of(eval_js)
+
+
+@pytest.mark.parametrize("key", AWKWARD_KEYS)
+def test_script_is_ascii(key: str) -> None:
+    """Pure ASCII, so U+2028/U+2029 cannot reach the page as raw characters.
+
+    They are legal in JSON but were illegal inside a JavaScript string literal
+    before ES2019, and the script also has to survive a protobuf hop.
+    """
+    state, eval_js = make_state()
+    state.local_storage_get_item(key)
+    script_of(eval_js).encode("ascii")
+
+
+@pytest.mark.parametrize("key", AWKWARD_KEYS)
+def test_the_embedded_literal_parses_back_to_the_key(key: str) -> None:
+    """What the page parses out of the script must be exactly the key given.
+
+    `json.loads` accepts the same string-literal syntax JavaScript does for the
+    forms `json.dumps` produces, which is what makes it safe here.
+    """
+    state, eval_js = make_state()
+    state.local_storage_get_item(key)
+    literal = (
+        script_of(eval_js)
+        .removeprefix("window.localStorage.getItem(")
+        .removesuffix(")")
+    )
+    assert json.loads(literal) == key
+
+
+def test_repr_would_not_pass_these_tests() -> None:
+    """Pins why the keywords do not use `repr()`, which is the obvious choice."""
+    key = "tag\U000e0001char"
+    assert "\\U" in repr(key)
+    assert "\\U" not in json.dumps(key)
+    assert json.loads(json.dumps(key)) == key

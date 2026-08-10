@@ -67,7 +67,9 @@ class WebAppState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4300|Comment >>]
         """
-        response = self.eval_js(f"window.localStorage.getItem({json.dumps(key)})", frame_selector)
+        response = self.eval_js(
+            f"window.localStorage.getItem({json.dumps(key)})", frame_selector
+        )
         logger.info(response.log)
         formatter = self.get_assertion_formatter("Local Storage Get Item")
         return verify_assertion(
@@ -97,7 +99,8 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4302|Comment >>]
         """
         response = self.eval_js(
-            f"window.localStorage.setItem({json.dumps(key)}, {json.dumps(value)})", frame_selector
+            f"window.localStorage.setItem({json.dumps(key)}, {json.dumps(value)})",
+            frame_selector,
         )
         logger.info(response.log)
 
@@ -204,7 +207,8 @@ class WebAppState(LibraryComponent):
         [https://forum.robotframework.org/t//4326|Comment >>]
         """
         response = self.eval_js(
-            f"window.sessionStorage.setItem({json.dumps(key)}, {json.dumps(value)})", frame_selector
+            f"window.sessionStorage.setItem({json.dumps(key)}, {json.dumps(value)})",
+            frame_selector,
         )
         logger.info(response.log)
 

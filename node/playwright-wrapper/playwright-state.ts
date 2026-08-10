@@ -161,17 +161,21 @@ export async function extensionKeywordCall(
     const namedArguments = Object.fromEntries(args['arguments']);
     const apiArguments = new Map();
     const argNames = getArgumentNamesFromJavascriptKeyword(keyword);
-    apiArguments.set('page', state.getActivePage());
-    apiArguments.set('context', state.getActiveContext());
-    // Resolved only when the keyword asks for it. `getActiveBrowser()` throws
-    // when nothing is open, so the optional chaining that used to be here never
-    // ran and every extension keyword needed an open browser -- including one
-    // whose only argument is `playwright`. Keywords that *do* take `browser`
-    // still get the clear "Browser has been closed." rather than an undefined
-    // that fails later inside their own code.
-    if (argNames.includes('browser')) {
+    // Resolve the browser only when the keyword asks for something that needs
+    // one. `getActiveBrowser()` throws with nothing open, so the optional
+    // chaining that used to be here never ran: every extension keyword required
+    // an open browser, including one whose only argument is `playwright`.
+    //
+    // It has to cover `page` and `context` too, not just `browser`. Those two
+    // are optional-chained and quietly resolve to `undefined`, so a keyword
+    // declaring `page` would otherwise fail deep in its own body with
+    // "Cannot read properties of undefined" instead of "Browser has been
+    // closed." -- and `page` is the argument extensions actually take.
+    if (argNames.some((name) => name === 'page' || name === 'context' || name === 'browser')) {
         apiArguments.set('browser', state.getActiveBrowser().browser);
     }
+    apiArguments.set('page', state.getActivePage());
+    apiArguments.set('context', state.getActiveContext());
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
     const functionArguments = argNames.map(
