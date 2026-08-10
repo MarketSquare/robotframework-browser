@@ -141,7 +141,7 @@ If you upgrading from previous release with [pip](http://pip-installer.org), run
 Alternatively you can download the source distribution from
 [PyPI](https://pypi.org/project/robotframework-browser/) and
 install it manually. Browser library {version} was released on {date}.
-Browser supports Python 3.10+, Node 22/24 LTS and Node 26, and Robot Framework 6.1+.
+Browser supports Python 3.10+, Node 22/24 LTS and Node 26, and Robot Framework 7.1.1+.
 Library was tested with Playwright REPLACE_PW_VERSION. BrowserBatteries package was
 released with NodeJS REPLACE_BB_NODE_VERSION.
 
