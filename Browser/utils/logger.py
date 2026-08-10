@@ -13,14 +13,10 @@
 # limitations under the License.
 import threading
 from collections.abc import Callable
-from typing import Any, Literal
+from typing import Any
 
 from robot.api import logger
-
-try:
-    from robot.api.logger import LOGLEVEL
-except ImportError:  # TODO: Remove when Robot Framework 7 is minimum version
-    LOGLEVEL = Literal["TRACE", "DEBUG", "INFO", "CONSOLE", "HTML", "WARN", "ERROR"]  # type: ignore
+from robot.api.logger import LOGLEVEL
 
 _THREAD_STASHES: dict[int, list[list[Callable]]] = {}
 
