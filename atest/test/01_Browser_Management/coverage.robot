@@ -251,6 +251,22 @@ Merge Coverage Reports Config File
     Get Text    .mcr-title    equal    Browser library Coverage Report MD
     Close Page
 
+Merge Coverage Reports Config File And Name
+    [Documentation]    A name given to the keyword wins over the config file's own.
+    ...    Both branches of the name resolution spread the keyword arguments last,
+    ...    but the config-file branch used to overwrite an explicit name with the
+    ...    default instead, so this combination silently lost the name.
+    ${combined_folder} =    Merge Coverage Reports
+    ...    ${OUTPUT_DIR}/browser/coverage
+    ...    ${OUTPUT_DIR}/merge_coverage_reports_keyword_8
+    ...    config_file=${CURDIR}/coverageConfigMD.js
+    ...    name=Name From The Keyword
+    Directory Should Not Be Empty    ${combined_folder}
+    ${uri} =    File As Uri    ${combined_folder}/index.html
+    New Page    ${uri}
+    Get Text    .mcr-title    equal    Name From The Keyword
+    Close Page
+
 Merge Coverage Reports Invalid Config File
     TRY
         ${combined_folder} =    Merge Coverage Reports
