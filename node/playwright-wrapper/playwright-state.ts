@@ -170,9 +170,7 @@ export async function extensionKeywordCall(
     apiArguments.set('context', state.getActiveContext());
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
-    const functionArguments = argNames.map(
-        (argName) => apiArguments.get(argName) || namedArguments[argName],
-    );
+    const functionArguments = argNames.map((argName) => apiArguments.get(argName) || namedArguments[argName]);
     const result = await keyword(...functionArguments);
     if (result === undefined) {
         return [jsonResponse('', 'ok')];
