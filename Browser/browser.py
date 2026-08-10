@@ -181,13 +181,13 @@ class Browser(DynamicCore):
     | *Context*     | An isolated session in that process: its own cookies, storage and permissions. Contexts share nothing with each other. | `New Context` |
     | *Page*        | A tab, with its own content and history. Selectors resolve here. | `New Page`      |
 
+    Playwright brings its own browser binaries, so no separate driver is needed.
+    A browser starts ``headless`` unless `New Browser` is given otherwise.
+
     | = Engine =    | = Ships in =                                       |
     | ``chromium``  | Google Chrome, Microsoft Edge, Opera               |
     | ``firefox``   | Mozilla Firefox                                    |
     | ``webkit``    | Safari on macOS and iOS                            |
-
-    Playwright brings its own browser binaries, so no separate driver is needed.
-    A browser starts ``headless`` unless `New Browser` is given otherwise.
 
     The layers fill themselves in downwards: `New Page` with nothing open starts a
     browser and a context first, using defaults. `Open Browser` opens all three at
@@ -234,10 +234,8 @@ class Browser(DynamicCore):
     An attribute engine is equivalent to the matching css attribute selector:
     ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
 
-    ``css:light`` is the only non-piercing engine still supported. The bundled
-    Playwright has removed ``text:light``, ``id:light``, ``xpath:light`` and the
-    ``data-*:light`` engines; they raise ``"…" selector is not supported`` as soon
-    as they match an element. Use ``css:light=[id="foo"]`` instead.
+    ``css:light`` is the only non-piercing engine still supported.
+    All other locator, except ``xpath``, pierce shadow DOM automatically.
 
     Two filters narrow what a clause already matched. Filter order changes the
     result.
@@ -280,10 +278,10 @@ class Browser(DynamicCore):
     ``submit`` inputs. In keywords that insert text it also matches a field by its
     label.
 
-    | = Form =            | = Matches =                                                              |
-    | ``text=Login``      | Substring, case-insensitive, leading and trailing whitespace ignored.    |
-    | ``text="Login "``   | Exact: case, whitespace and all. Escape a quote as ``\\"``.              |
-    | ``text=/^Hi .*!$/i``| JavaScript-style [https://regex101.com/|regular expression]; ``i`` for case-insensitive. |
+    | = Form =             | = Matches =                                                              |
+    | ``text=Login``       | Substring, case-insensitive, leading and trailing whitespace ignored.    |
+    | ``text="Login "``    | Exact: case, whitespace and all. Escape a quote as ``\\"``.              |
+    | ``text=/^Hi .*!$/i`` | JavaScript-style [https://regex101.com/|regular expression] with flags: e.g. ``i`` for case-insensitive. |
 
     == Chaining ==
 
@@ -307,7 +305,7 @@ class Browser(DynamicCore):
 
     == Shadow DOM ==
 
-    The ``css`` and ``text`` engines pierce open shadow roots automatically:
+    All engines, except ``css:light`` and ``xpath``, pierce open shadow roots automatically:
     every descendant combinator, including the implicit one at the start of a
     selector, crosses any number of them. Light DOM is searched first, then open
     shadow roots, in document order. Closed shadow roots and iframes are never
