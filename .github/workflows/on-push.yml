@@ -54,6 +54,8 @@ jobs:
       pull-requests: write
     strategy:
       fail-fast: false
+      # The lowest rf-version below is the supported Robot Framework floor and must
+      # match the robotframework lower bound in pyproject.toml. Change both together.
       matrix:
         include:
           - os: windows-latest
