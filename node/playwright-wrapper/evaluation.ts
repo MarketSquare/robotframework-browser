@@ -30,11 +30,6 @@ import {
 } from './response-util';
 
 /** Resolve a Locator and return the selector string Playwright built for it.
- *
- * That string is an ordinary selector, so it can be used as the first clause of
- * another selector in RF keywords. There is no `element=` engine: the older
- * UUID-handle mechanism this comment used to describe was removed, and
- * `element=<uuid>` now fails with `Unknown engine "element"`.
  */
 export async function getElement(
     request: pb.Request_ElementSelector,
