@@ -28,16 +28,16 @@ class Cookie(LibraryComponent):
     def get_cookies(
         self, return_type: CookieType = CookieType.dictionary
     ) -> list[DotDict] | str:
-        """Returns cookies from the current active browser context.
+        """Returns cookies from the currently active browser context.
 
-        If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns list of Robot Framework
-        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries]
-        The dictionary contains all possible key value pairs of the cookie. See `Get Cookie` keyword documentation
-        about the dictionary keys and values.
+        If ``return_type`` is ``dictionary`` or ``dict``, then the keyword returns a list of Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries].
+        Each dictionary contains all key value pairs of the cookie. See the `Get Cookie` keyword documentation
+        for details about the dictionary keys and values.
 
-        If ``return_type`` is ``string`` or ``str``, then keyword returns the cookie as a string in format:
+        If ``return_type`` is ``string`` or ``str``, then the keyword returns the cookies as a string in format:
         ``name1=value1; name2=value2; name3=value3``. The return value contains only ``name`` and ``value`` keys of the
-        cookie.
+        cookies. If no cookies are found, an empty list is returned.
 
         [https://forum.robotframework.org/t//4266|Comment >>]
         """
@@ -99,23 +99,23 @@ class Cookie(LibraryComponent):
         secure: bool | None = None,
         sameSite: CookieSameSite | None = None,
     ):
-        """Adds a cookie to currently active browser context.
+        """Adds a cookie to the currently active browser context.
 
 
         | =Arguments= | =Description= |
         | ``name`` | Name of the cookie. |
         | ``value`` | Given value for the cookie. |
-        | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
-        | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
-        | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or ``domain`` / ``path`` pair must be set. |
-        | ``expires`` | Given expiry for the cookie. Can be of date format or unix time or a datetime object. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. - example: 2027-09-28 16:21:35 |
+        | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
+        | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
+        | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
+        | ``expires`` | Given expiry for the cookie. Can be a date, a unix time or a datetime object. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. Example: 2027-09-28 16:21:35 |
         | ``httpOnly`` | Sets the httpOnly token. |
         | ``secure`` | Sets the secure token. |
-        | ``samesite`` | Sets the samesite mode. |
+        | ``sameSite`` | Sets the sameSite mode. Can be ``Strict``, ``Lax`` or ``None``. |
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
-        | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and url arguments.
+        | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and path arguments.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=2027-09-28 16:21:35       # Expires as timestamp.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=1822137695                # Expires as epoch seconds.
 
@@ -180,31 +180,30 @@ class Cookie(LibraryComponent):
     def get_cookie(
         self, cookie: str, return_type: CookieType = CookieType.dictionary
     ) -> DotDict | str:
-        """Returns information of cookie with ``name`` as a Robot Framework dot dictionary or a string.
+        """Returns information about the cookie named ``cookie`` as a Robot Framework dot dictionary or a string.
 
         | =Arguments= | =Description= |
         | ``cookie`` | Name of the cookie to be retrieved. |
         | ``return_type`` | Type of the return value. Can be either ``dictionary`` or ``string``. Defaults to ``dictionary``. |
 
-        If ``return_type`` is ``dictionary`` or ``dict`` then keyword returns a of Robot Framework
-        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary]
-        The dictionary contains all possible key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``,
-        then keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
-        ``name`` and ``value`` keys of the cookie.
+        If ``return_type`` is ``dictionary`` or ``dict``, then the keyword returns a Robot Framework
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary].
+        The dictionary contains all key value pairs of the cookie. If ``return_type`` is ``string`` or ``str``,
+        then the keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
+        the ``name`` and ``value`` keys of the cookie.
 
-        If no cookie is found with ``name`` keyword fails. The cookie dictionary contains
+        If no cookie is found with the given name, the keyword fails. The cookie dictionary contains
         details about the cookie. Keys available in the dictionary are documented in the table below.
 
         | *Value*  | *Explanation*                                                                              |
-        | name     | The name of a cookie, mandatory.                                                           |
-        | value    | Value of the cookie, mandatory.                                                            |
-        | url      | Define the scope of the cookie, what URLs the cookies should be sent to.                   |
+        | name     | The name of the cookie.                                                                    |
+        | value    | Value of the cookie.                                                                       |
         | domain   | Specifies which hosts are allowed to receive the cookie.                                   |
-        | path     | Indicates a URL path that must exist in the requested URL, for example `/`.                |
-        | expires  | Lifetime of a cookie. Returned as datatime object or None if not valid time received.      |
+        | path     | Indicates a URL path that must exist in the requested URL, for example ``/``.              |
+        | expires  | Lifetime of a cookie. Returned as a datetime object or None if no valid time is received.  |
         | httpOnly | When true, the cookie is not accessible via JavaScript.                                    |
         | secure   | When true, the cookie is only used with HTTPS connections.                                 |
-        | sameSite | Attribute lets servers require that a cookie shouldn't be sent with cross-origin requests. |
+        | sameSite | Attribute that lets servers require that a cookie shouldn't be sent with cross-origin requests. |
 
         See
         [https://playwright.dev/docs/api/class-browsercontext#browsercontextaddcookiescookies|playwright documentation]

@@ -34,10 +34,11 @@ class RunOnFailureKeywords(LibraryComponent):
         | =Arguments= | =Description= |
         | ``keyword`` | The name of a keyword that will be executed if a Browser keyword fails. It is possible to use any available keyword, including user keywords or keywords from other libraries. |
         | ``*args`` | The arguments to the keyword if any. |
-        | ``scope`` | Scope defines the live time of this setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Settings` for more details. |
+        | ``scope`` | Scope defines the lifetime of this setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for more details. |
 
         The initial keyword to use is set when `importing` the library, and
-        the keyword that is used by default is `Take Screenshot`.
+        the keyword that is used by default is
+        ``Take Screenshot  fail-screenshot-{index}``.
         Taking a screenshot when something failed is a very useful
         feature, but notice that it can slow down the execution.
 
@@ -45,16 +46,19 @@ class RunOnFailureKeywords(LibraryComponent):
         case-insensitively, as well as Python ``None`` to disable this
         feature altogether.
 
-        This keyword returns an object which contains the the previously
-        registered failure keyword. The return value can be always used to
-        restore the original value later. The returned object contains
-        keyword name and the possible arguments used to for the keyword.
+        This keyword returns an object which contains the previously
+        registered failure keyword. The return value can always be used to
+        restore the original value later. The returned object contains the
+        keyword name and the possible arguments used for the keyword.
 
-        If `Take Screenshot` keyword, without arguments, is register as run on failure
-        keyword, then filename argument default value is not used as screenshot file
-        name. Instead, ${TEST NAME}_FAILURE_SCREENSHOT_{index} is used as file name.
-        If there is need to use the filename argument default value, use
-        robotframework-browser-screenshot-{index} as filename argument value.
+        If the `Take Screenshot` keyword is registered as run on failure keyword
+        without positional arguments and without the ``filename`` argument, then
+        the default value of the ``filename`` argument is not used as screenshot
+        file name. Instead, ``${TEST NAME}_FAILURE_SCREENSHOT_{index}`` in the
+        output directory is used as file name. If there is a need to use the
+        default value of the ``filename`` argument, use
+        ``robotframework-browser-screenshot-{index}`` as the ``filename``
+        argument value.
 
         Example:
         | `Register Keyword To Run On Failure`    Take Screenshot    # Uses ${TEST NAME}_FAILURE_SCREENSHOT_{index} as filename

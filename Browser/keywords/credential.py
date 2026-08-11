@@ -34,8 +34,9 @@ class Credential(LibraryComponent):
         credential, even if the optional parameters are not provided. In this case Playwright will
         autogenerate the missing values.
 
-        Create credential is set to the context and will be used for all subsequent pages that
-        are created from the context.
+        The credential is created in the currently active context and it is used by all
+        pages that are created from that context. There must be an open context, otherwise
+        the keyword fails.
 
         | =Arguments= | =Description= |
         | rpId | Relying party id (typically the site's effective domain). |
@@ -44,17 +45,22 @@ class Credential(LibraryComponent):
         | publicKey | Base64url-encoded SPKI (DER) public key. Auto-generated if omitted. |
         | userHandle | Base64url-encoded user handle. Auto-generated if omitted. |
 
-        Because privateKey and publicKey are sensitive information, it recommended to privateKey
-        and publicKey wrapped in the Secret type. If you using Robot Framework 7.3 or older,
-        then keyword support resolving privateKey and publicKey from environment variables and
-        Robot Framework variables in the following ways. Keyword resolves the ``privateKey``
-        and ``publicKey`` from Robot Framework variable internally, when variable is prefixed
-        with `$`, without the curly braces. Example `$publicKey`` will resolve to
-        ``${publicKey}`` Robot Framework variable.
+        Because ``privateKey`` and ``publicKey`` are sensitive information, it is recommended
+        to wrap their values in the Secret type. The Secret type requires Robot Framework 7.4
+        or newer. If you are using Robot Framework 7.3 or older, the keyword supports resolving
+        ``privateKey`` and ``publicKey`` from Robot Framework variables and environment
+        variables in the following ways. The keyword resolves the value from a Robot Framework
+        variable internally, when the variable is prefixed with ``$``, without the curly
+        braces. Example: ``$publicKey`` will resolve to the ``${publicKey}`` Robot Framework
+        variable.
 
-        If ``privateKey`` and ``publicKey`` variable is prefixed with `%`, library will resolve
-        corresponding environment variable. Example ``%PUBLICKEY`` will
-        resolve to ``%{PUBLICKEY}`` environment variable.
+        If the ``privateKey`` or ``publicKey`` value is prefixed with ``%``, the library will
+        resolve the corresponding environment variable. Example: ``%PUBLICKEY`` will
+        resolve to the ``%{PUBLICKEY}`` environment variable.
+
+        Plain values are not accepted. If the given ``privateKey`` or ``publicKey`` is not a
+        Secret and does not resolve to another value, the keyword fails with an error stating
+        that direct assignment of values or variables is not allowed.
 
         Example:
         | `New Context`
@@ -62,8 +68,8 @@ class Credential(LibraryComponent):
         | `Create Credential`
         | ...    rpId=${DOMAIN_NAME}
         | ...    id_=${credentials["id"]}
-        | ...    privateKey=${credentials["privateKey"]}    # This should be a Secret type or a string start with $ which resolves to a Robot Framework variable.
-        | ...    publicKey=${credentials["publicKey"]}    # This should be a Secret type or a string start with $ which resolves to a Robot Framework variable.
+        | ...    privateKey=${credentials["privateKey"]}    # This should be a Secret type or a string starting with $ which resolves to a Robot Framework variable.
+        | ...    publicKey=${credentials["publicKey"]}    # This should be a Secret type or a string starting with $ which resolves to a Robot Framework variable.
         | ...    userHandle=${credentials["userHandle"]}
         | `New Page`    ${SUT_URL}
         | `Click`    id=login
@@ -98,29 +104,30 @@ class Credential(LibraryComponent):
     def install_credential(self):
         """Installs the virtual WebAuthn authenticator into the context.
 
-        Overriding `navigator.credentials.create()` and `navigator.credentials.get()`
-        in all current and future pages. Call this before the page first touches
-        `navigator.credentials`.
+        Overrides ``navigator.credentials.create()`` and ``navigator.credentials.get()``
+        in all current and future pages of the context. Call this before the page first
+        touches ``navigator.credentials``.
 
-        Required: until `credentials.install()` is called, no interception is in place
-        and the page sees the platform's native (or absent) WebAuthn behavior. Seeding
-        credentials with `credentials.create()` without installing populates the
-        authenticator, but the page will never see those credentials.
+        Until the authenticator is installed, no interception is in place and the page sees
+        the platform's native (or absent) WebAuthn behavior. `Create Credential` installs
+        the authenticator as well, so this keyword is mainly needed when the credentials are
+        created by the application itself. There must be an open context, otherwise the
+        keyword fails.
 
         Example:
         | `New Context`
         | `Install Credential`
         | `New Page`    ${SUT_URL}
-        | # Do something on the page that is causing page to call `navigator.credentials.create()`
-        | ${credential_id} =    Get Credential Id   # This is build by a user keyword that returns the credential id from somewhere. Talk to your application team to find out how to get the credential id.
-        | ${credential} =    Get Credential    id=${credential_id}    # This will return the credential that was created by the application and installed into the context.
+        | # Do something on the page that causes the page to call ``navigator.credentials.create()``
+        | ${credential_id} =    Get Credential Id   # This is a user keyword that returns the credential id from somewhere. Talk to your application team to find out how to get the credential id.
+        | ${credential} =    `Get Credential`    id_=${credential_id}    # This will return the credential that was created by the application and installed into the context.
         | `New Context`
         | `Create Credential`
         | ...    rpId=${DOMAIN_NAME}
-        | ...    id_=${credential1["id"]}
-        | ...    privateKey=${credential1["privateKey"]}
-        | ...    publicKey=${credential1["publicKey"]}
-        | ...    userHandle=${credential1["userHandle"]}
+        | ...    id_=${credential["id"]}
+        | ...    privateKey=${credential["privateKey"]}
+        | ...    publicKey=${credential["publicKey"]}
+        | ...    userHandle=${credential["userHandle"]}
         | `New Page`    ${SUT_URL}
         | # User should be able to interact with the page using the installed credential.
         """
@@ -132,7 +139,12 @@ class Credential(LibraryComponent):
     def get_credential(
         self, id_: str | None = None, rpId: str | None = None
     ) -> ClientCredential:
-        """Returns the credential with the given id.
+        """Returns the credential matching the given id and/or rpId.
+
+        At least one of ``id_`` and ``rpId`` must be given, otherwise the keyword fails.
+        If both are given, the credential must match both of them. When more than one
+        credential matches, the first match is returned. When no credential matches, the
+        keyword fails.
 
         | =Arguments= | =Description= |
         | id_ | Base64url-encoded credential id. |
@@ -142,19 +154,23 @@ class Credential(LibraryComponent):
         | =Key= | =Description= |
         | id | Base64url-encoded credential id. |
         | rpId | Relying party id (typically the site's effective domain). |
-        | privateKey | Base64url-encoded PKCS#8 (DER) private key as Secret. |
+        | userHandle | Base64url-encoded user handle. |
+        | privateKey | Base64url-encoded PKCS#8 (DER) private key as a Secret. |
         | publicKey | Base64url-encoded SPKI (DER) public key as a Secret. |
 
         The privateKey and publicKey are wrapped in the
-        [Secret|https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables]
-        type, to prevent accidental logging of sensitive information.
+        [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables|Secret]
+        type, so that their values are not shown in the Robot Framework log. The values
+        themselves are available in the ``value`` attribute. Note that the node side of the
+        library writes the whole credential, including the private key, as plain text to the
+        playwright-log.txt file. See `PlaywrightLogTypes` for how to control that file.
 
         See `Install Credential` for more information about how to use
         this keyword.
 
         Example:
-        | ${credential} =    Get Credential    id=${DOMAIN_NAME}
-        | Should Be Equal    ${credential["id"]}    ${DOMAIN_NAME}
+        | ${credential} =    `Get Credential`    id_=${CREDENTIAL_ID}
+        | Should Be Equal    ${credential["id"]}    ${CREDENTIAL_ID}
         | Should Be Equal    ${credential["rpId"]}    ${DOMAIN_NAME}
         | Should Be Equal    ${credential["userHandle"]}    userhandleCreatedByTheApp
         | Should Be Equal    ${credential["privateKey"].value}    privateKeyCreatedByTheApp
@@ -187,8 +203,11 @@ class Credential(LibraryComponent):
         | =Arguments= | =Description= |
         | id_ | Base64url-encoded credential id. |
 
+        Deleting a credential which does not exist does not fail. There must be an open
+        context, otherwise the keyword fails.
+
         Example:
-        | `Delete Credential`    id=${DOMAIN_NAME}
+        | `Delete Credential`    id_=${CREDENTIAL_ID}
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.DeleteCredential(

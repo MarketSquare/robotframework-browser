@@ -32,33 +32,35 @@ class LocatorHandler(LibraryComponent):
         click_delay: int = 0,
         click_force: bool = False,
     ):
-        """Add a handler function which will activate when `selector` is visible and click.
+        """Add a handler function which will activate when ``selector`` is visible and click.
 
-        The handler will click the element indicated by `click_selector`.
+        The handler will click the element indicated by ``click_selector``.
 
-        When testing a web page, sometimes unexpected overlays, example "Accept Cookies" dialog
-        might appear and block the interaction with the page, like `Click` keyword. These
+        When testing a web page, sometimes unexpected overlays, for example an "Accept Cookies" dialog,
+        might appear and block the interaction with the page, like the `Click` keyword. These
         overlays can be problematic to handle, because they might appear randomly in the page.
-        This keyword allows to create automatic method, which will close those overlays by
-        clicking the element indicated by ``click_selector``. Handler is activated when
+        This keyword allows to create an automatic method, which will close those overlays by
+        clicking the element indicated by ``click_selector``. The handler is activated when the
         element indicated by ``selector`` is visible. For further information, see Playwright's
         [https://playwright.dev/docs/api/class-page#page-add-locator-handler|addLocatorHandler]
         method.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Is the selector to the element which indicated that locator handler should be called. |
-        | ``noWaitAfter`` | By default, after calling the handler Playwright will wait until the overlay becomes hidden, and only then library will continue with the action/assertion that triggered the handler. This option allows to opt-out of this behavior, so that overlay can stay visible after the handler has run. |
-        | ``times`` | Is the number of times to how often locator handler is is called. None is unlimited. |
+        | ``selector`` | Is the selector to the element which indicates that the locator handler should be called. |
+        | ``noWaitAfter`` | Defaults to ``True``, which means that the overlay may stay visible after the handler has run. If set to ``False``, Playwright waits until the overlay becomes hidden, and only then the library continues with the action/assertion that triggered the handler. |
+        | ``times`` | Is how many times the locator handler is called. ``None``, the default, means unlimited. |
         | ``click_selector`` | Is the selector to the element to be clicked. |
-        | ``click_clickCount`` | Is the number of times to click the element. |
+        | ``click_clickCount`` | Is the number of times to click the element. Defaults to 1. |
         | ``click_delay`` | Time to wait between mousedown and mouseup in milliseconds. Defaults to 0. |
         | ``click_force`` | Whether to bypass checks and dispatch the event directly. Defaults to false. |
 
-        The arguments `click_selector`, `click_clickCount`, `click_delay` and `click_force` are same as
-        `Click` keyword. The `selector`, `noWaitAfter` and `times` are for the locator handler. The
-        handler is tied to the active page, if there is need to add handler to another page, this keyword
-        needs to be called separately for each page. If the `times` argument is set to positive value,
-        the locator handler is removed after the handler has been called the specified number of times.
+        The arguments ``click_selector``, ``click_clickCount``, ``click_delay`` and ``click_force``
+        correspond to the arguments of the `Click With Options` keyword, but ``click_delay`` is given
+        as a plain number of milliseconds. The ``selector``, ``noWaitAfter`` and ``times`` are for the
+        locator handler. The handler is tied to the active page, if there is need to add handler to
+        another page, this keyword needs to be called separately for each page. If the ``times``
+        argument is set to a positive value, the locator handler is removed after the handler has been
+        called the specified number of times.
 
         Example add locator handler to click button with id="ButtonInOverlay" when id=Overlay is visible:
         | `New Page`    ${URL}
@@ -66,7 +68,7 @@ class LocatorHandler(LibraryComponent):
         | `Type Text`    id:username    user    # If element with id=Overlay appears, the handler will click the button id=ButtonInOverlay
         | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
         | `Click`    id:login
-        | `Remove Locator Handler`    id:button    # Removes the locator handler from page
+        | `Remove Locator Handler`    id=Overlay    # Removes the locator handler from page
         """
         logger.info(
             f"Add locator handle: {selector} and clicking element: {click_selector}"
@@ -87,7 +89,14 @@ class LocatorHandler(LibraryComponent):
 
     @keyword(tags=("Setter", "PageContent"))
     def remove_locator_handler(self, locator: str):
-        """Remove locator handler indicated by selector."""
+        """Remove the locator handler indicated by ``locator``.
+
+        The ``locator`` must be exactly the same string that was used as the ``selector``
+        argument when the handler was added. Handlers are tied to the page in which they
+        were added, therefore this keyword removes the handler from the active page only.
+        If no handler is found, the keyword does not fail, it only logs that no handler
+        was found.
+        """
         logger.info(f"Remove locator handle: {locator}")
         with self.playwright.grpc_channel() as stub:
             response = stub.RemoveLocatorHandler(
@@ -103,46 +112,51 @@ class LocatorHandler(LibraryComponent):
         noWaitAfter: bool = True,
         times: int | None = None,
     ):
-        """Add a handler function which will activate when `selector` is visible and performs handler specification.
+        """Add a handler function which will activate when ``selector`` is visible and performs handler specification.
 
-        When element indicated by `selector` is visible, the handler will perform the actions specified
-        in the `handler_spec`.
+        When the element indicated by ``selector`` is visible, the handler will perform the actions
+        specified in the ``handler_spec``.
 
         | =Arguments= | =Description= |
-        | ``selector`` | Is the selector to the element which indicated that locator handler should be called. |
-        | ``noWaitAfter`` | By default, after calling the handler Playwright will wait until the overlay becomes hidden, and only then library will continue with the action/assertion that triggered the handler. This option allows to opt-out of this behavior, so that overlay can stay visible after the handler has run. |
-        | ``times`` | Is the number of times to how often locator handler is is called. None is unlimited. |
+        | ``selector`` | Is the selector to the element which indicates that the locator handler should be called. |
         | ``handler_spec`` | Is a list of dictionaries which defines the actions to be performed. |
+        | ``noWaitAfter`` | Defaults to ``True``, which means that the overlay may stay visible after the handler has run. If set to ``False``, Playwright waits until the overlay becomes hidden, and only then the library continues with the action/assertion that triggered the handler. |
+        | ``times`` | Is how many times the locator handler is called. ``None``, the default, means unlimited. |
 
-        The `handler_spec` is a list of dictionaries, where each dictionary defines one action.
-        The dictionary must contain the key `action` which defines the action to be
+        The ``handler_spec`` is a list of dictionaries, where each dictionary defines one action.
+        The dictionary must contain the key ``action`` which defines the action to be
         performed. The action can be one of the following:
         [https://playwright.dev/docs/api/class-locator#locator-click|click],
         [https://playwright.dev/docs/api/class-locator#locator-fill|fill],
         [https://playwright.dev/docs/api/class-locator#locator-check|check] and
         [https://playwright.dev/docs/api/class-locator#locator-uncheck|uncheck]. Action is also case
-        insensitive. The dictionary must also contain key `selector` which defines the element
-        to be interacted with. The `fill` action must also contain the key `value` which defines
-        the value to be filled in the element. Additional keys are passed to the action as
-        keyword arguments. Example for the
-        [https://playwright.dev/docs/api/class-locator#locator-click|click] action refer to the Playwright's
-        documentation which options are possible.
+        insensitive. The dictionary must also contain the key ``selector`` which defines the element
+        to be interacted with. The ``fill`` action must also contain the key ``value`` which defines
+        the value to be filled in the element. For the other actions the key ``value`` must not be
+        defined. Additional keys are passed to the action as keyword arguments. For example for the
+        [https://playwright.dev/docs/api/class-locator#locator-click|click] action refer to Playwright's
+        documentation to see which options are possible.
 
-        The `selector`, `noWaitAfter` and `times` are for the locator handler
+        The selectors in the ``handler_spec`` are not resolved in strict mode. If a selector matches
+        more than one element, the first matching element is used. If an action in the handler fails,
+        the error is only logged on the Browser library node side and the keyword which triggered the
+        handler does not fail because of it.
+
+        The ``selector``, ``noWaitAfter`` and ``times`` are for the locator handler
         [https://playwright.dev/docs/api/class-page#page-add-locator-handler|method].
         The handler is tied to the active page, if there is need to add handler to another page, this keyword
-        needs to be called separately for each page. If the `times` argument is set to positive value,
+        needs to be called separately for each page. If the ``times`` argument is set to a positive value,
         the locator handler is removed after the handler has been called the specified number of times.
 
         Running the handler will alter your page state mid-test. For example it will change the currently
         focused element and move the mouse. Make sure that keywords that run after the handler are
         self-contained and do not rely on the focus and mouse state being unchanged.
 
-        Please note that the automatic argument conversion is not done for the `handler_spec` dictionary.
+        Please note that the automatic argument conversion is not done for the ``handler_spec`` dictionary.
         This is because Robot Framework does not convert values inside the dictionary that are actually
-        arguments to a separate Playwright API call. Therefore the user is responsible to convert
-        the values to the correct type. Example if timeout is needed, the value must be converted to a number
-        in Robot Framework test data side.
+        arguments to a separate Playwright API call. Therefore the user is responsible for converting
+        the values to the correct type. For example if a timeout is needed, the value must be converted to
+        a number on the Robot Framework test data side.
 
         Example adds locator handler to fill input id=overlayInput with value "Hello" and click
         element id=OverlayCloseButton when id=Overlay is visible:
@@ -157,7 +171,7 @@ class LocatorHandler(LibraryComponent):
         | `Add Locator Handler Custom`
         | ...    id=overlay
         | ...    [${handler_spec_fill}, ${handler_spec_click}]
-        | `Type Text`    id:username    user    # If element with id=Overlay appears, the handler will click the button id=ButtonInOverlay
+        | `Type Text`    id:username    user    # If element with id=overlay appears, the handler fills id=overlayInput and clicks id=OverlayCloseButton
         | `Type Text`    id:password    password    # Or if overlay is visible here, then handler is called here
         | `Click`    id:login
 

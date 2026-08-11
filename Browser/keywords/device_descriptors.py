@@ -22,7 +22,10 @@ from ..utils import keyword, logger
 class Devices(LibraryComponent):
     @keyword(tags=("Getter", "BrowserControl"))
     def get_devices(self) -> dict:
-        """Returns a dict of all playwright device descriptors.
+        """Returns a dictionary of all Playwright device descriptors.
+
+        The keys are the device names and the values are the device descriptors
+        themselves.
 
         See Playwright's
         [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json]
@@ -37,16 +40,20 @@ class Devices(LibraryComponent):
 
     @keyword(tags=("Getter", "BrowserControl"))
     def get_device(self, name: str) -> dict:
-        """Get a single device descriptor with name exactly matching name.
+        """Returns a single device descriptor whose name matches ``name`` exactly.
 
         | =Arguments= | =Description= |
-        | ``name`` | Given name of the requested device. See Playwright's [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json] for a formatted list. |
+        | ``name`` | Name of the requested device. See Playwright's [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json] for a formatted list. |
+
+        The keyword fails if there is no device with that name. The matching is
+        case sensitive.
 
         Allows a concise syntax to set website testing values to exact matches of specific
         mobile devices.
 
-        Use by passing to a context. After creating a context with devicedescriptor,
-        before using ensure your active page is on that context.
+        Use the returned descriptor by passing it to `New Context`. After creating a
+        context with a device descriptor, make sure that your active page is in that
+        context before using it.
         Usage:
 
         | ${device}=          `Get Device`       iPhone X

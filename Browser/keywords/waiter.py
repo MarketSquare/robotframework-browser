@@ -53,9 +53,10 @@ class Waiter(LibraryComponent):
         `Wait For Elements State` uses features of Playwright to wait for element states.
         However, in some situations these features might not work as expected.
         `Wait for Condition` with `Get Element States` is more robust as it uses
-        Browser library's own waiting mechanisms that actively polls the state of an element.
+        Browser library's own waiting mechanisms that actively poll the state of an element.
 
-        State options could be either appear/disappear from dom, or become visible/hidden.
+        State options are appearing in or disappearing from the DOM, becoming visible or
+        hidden, and the other states listed in `ElementState`.
         If at the moment of calling the keyword, the selector already satisfies the condition,
         the keyword will return immediately.
 
@@ -65,13 +66,17 @@ class Waiter(LibraryComponent):
         | ``selector`` | Selector of the corresponding object. See the `Finding elements` section for details about the selectors. |
         | ``state`` | See `ElementState` for explanation. |
         | ``timeout`` | uses default timeout from library if not set. |
-        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, `{function}`, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. The `{function}` formatter is same ``state`` argument value. |
+        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, ``{function}``, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. The ``{function}`` formatter is the ``state`` argument value for the states which are waited for by Playwright, that are ``attached``, ``detached``, ``visible``, ``hidden``, ``stable``, ``enabled``, ``disabled`` and ``editable``. For all other states, it is the JavaScript expression which is evaluated for the element. |
+
+        The states ``focused`` and ``defocused`` are not supported with iframe selectors,
+        which contain ``>>>``. In that case the keyword raises an error and suggests to use
+        `Wait For Condition` with `Get Element States` instead.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
         Example:
         | `Wait For Elements State`    //h1    visible    timeout=2 s
-        | `Wait For Elements State`    //hi    focused    1s
+        | `Wait For Elements State`    //h1    focused    1s
 
         [https://forum.robotframework.org/t//4345|Comment >>]
         """
@@ -171,10 +176,10 @@ class Waiter(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``function`` | A valid javascript function or a javascript function body. For example ``() => true`` and ``true`` will behave similarly. |
-        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If given a selector a function is necessary, with an argument to capture the elementhandle. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
-        | ``polling`` | Default polling value of "raf" polls in a callback for ``requestAnimationFrame``. Any other value for polling will be parsed as a robot framework time for interval between polls. |
+        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If a selector is given, ``function`` must be a function with an argument which receives the element handle. For example ``(element) => document.activeElement === element``. See the `Finding elements` section for details about the selectors. |
+        | ``polling`` | Default polling value of ``raf`` polls in a callback for ``requestAnimationFrame``. Any other value for polling will be parsed as a Robot Framework time for the interval between polls. |
         | ``timeout`` | Uses default timeout of the library if not set. |
-        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, `{function}`, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. |
+        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, ``{function}``, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -242,13 +247,13 @@ class Waiter(LibraryComponent):
         timeout: timedelta | None = None,
         message: str | None = None,
     ) -> Any:
-        """Waits for a condition, defined with Browser getter keywords to become True.
+        """Waits for a condition, defined with Browser getter keywords, to become True.
 
-        This Keyword is basically just a wrapper around our assertion keywords, but with a timeout.
+        This keyword is basically just a wrapper around our assertion keywords, but with a timeout.
         It can be used to wait for anything that also can be asserted with our keywords.
 
-        In comparison to Robot Frameworks `Wait Until Keywords Succeeds` this keyword is more
-        readable and easier to use but is limited to Browser libraries assertion keywords.
+        In comparison to Robot Framework's ``Wait Until Keyword Succeeds`` this keyword is more
+        readable and easier to use, but is limited to Browser library's assertion keywords.
 
         | =Arguments= | =Description= |
         | ``condition`` | A condition, defined with Browser getter keywords, without the word ``Get``. |
@@ -262,7 +267,7 @@ class Waiter(LibraryComponent):
         Start:
         | `Get Text`    id=status_bar   contains    Done
 
-        Then you replace the word `Get` with `Wait For Condition    ` and if necessary add the timeout argument.
+        Then you replace the word ``Get`` with `Wait For Condition` and if necessary add the timeout argument.
 
         End:
         | `Wait For Condition`    Text    id=status_bar   contains    Done
@@ -309,22 +314,23 @@ class Waiter(LibraryComponent):
         state: PageLoadStates = PageLoadStates.load,
         timeout: timedelta | None = None,
     ):
-        """Waits that the page reaches the required load state.
+        """Waits until the page reaches the required load state.
 
         This resolves when the page reaches a required load state, load by default.
         The navigation must have been committed when this method is called. If current document has already
         reached the required state, resolves immediately.
 
         | =Arguments= | =Description= |
-        | ``state``   | State to wait for, defaults to `load`. Possible values are `load|domcontentloaded|networkidle` |
+        | ``state``   | State to wait for, defaults to ``load``. Possible values are ``load``, ``domcontentloaded``, ``networkidle`` and ``commit``. |
         | ``timeout`` | Timeout supports Robot Framework time format. Uses browser timeout if not set.                 |
 
         If the state has been already reached while loading current document, the underlying Playwright will
         resolve immediately. Can be one of:
 
-        | 'load' - wait for the load event to be fired.
-        | 'domcontentloaded' - wait for the DOMContentLoaded event to be fired.
-        | 'networkidle' - DISCOURAGED wait until there are no network connections for at least 500 ms.
+        | ``load`` - wait for the load event to be fired.
+        | ``domcontentloaded`` - wait for the DOMContentLoaded event to be fired.
+        | ``networkidle`` - DISCOURAGED wait until there are no network connections for at least 500 ms.
+        | ``commit`` - not supported by this keyword, the keyword returns immediately without waiting.
 
         Example:
         | `Go To`                         ${URL}

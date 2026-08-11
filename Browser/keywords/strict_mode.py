@@ -21,13 +21,20 @@ class StrictMode(LibraryComponent):
         """Controls library strict mode.
 
         | =Arguments= | =Description= |
-        | ``mode`` | When set to ``True``, keywords that are searching elements will use Playwright [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode]. Keyword changes library strict mode value and keyword also return the previous strict mode value. |
+        | ``mode`` | When set to ``True``, keywords that search elements will use Playwright [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode] and fail if the selector matches more than one element. When set to ``False``, such keywords do not fail but operate on the first matching element. |
         | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
 
+        The keyword returns the strict mode value which was in use before this keyword
+        was called.
+
+        Strict mode is enabled by default. The initial value can also be set with the
+        ``strict`` argument in the library `importing`. Strict mode is applied only to
+        those keywords which state in their documentation that they use strict mode,
+        see `Finding elements` for more details.
 
         Example:
         | ${old_mode} =      Set Strict Mode    False
-        | Get Text           //input            # Does not fail if selector points to one or more elements
+        | Get Text           //input            # Does not fail even if the selector matches multiple elements
         | Set Strict Mode    ${old_mode}
 
         [https://forum.robotframework.org/t//4332|Comment >>]
