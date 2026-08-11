@@ -10,7 +10,7 @@ dependencies = [
     "grpcio-tools == 1.83.0",
     "protobuf == 7.35.1",
     "robotframework >= 7.1.1, < 9.0.0",
-    "robotframework-pythonlibcore == 4.5.0",
+    "robotframework-pythonlibcore == 4.6.0",
     "robotframework-assertion-engine == 5.0.1",
     "wrapt >= 2.2.2",
     "overrides >= 7.7.0",
