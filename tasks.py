@@ -1,3 +1,4 @@
+from contextlib import suppress
 import hashlib
 import json
 import os
@@ -250,10 +251,8 @@ def clean(c):
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
     ]:
-        try:
+        with suppress(OSError):
             file.unlink()
-        except OSError:
-            pass
 
 
 @task
