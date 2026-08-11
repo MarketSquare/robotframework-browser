@@ -32,14 +32,18 @@ def _post(event: str, data, status: str | None = None) -> None:
             f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server} - {error!r}"
         )
 
+
 def start_suite(data, result):
     _post("start_suite", data)
+
 
 def end_suite(data, result):
     _post("end_suite", data, status=result.status)
 
+
 def start_test(data, result):
     _post("start_test", data)
+
 
 def end_test(data, result):
     _post("end_test", data, status=result.status)

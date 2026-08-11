@@ -252,10 +252,6 @@ Merge Coverage Reports Config File
     Close Page
 
 Merge Coverage Reports Config File And Name
-    [Documentation]    A name given to the keyword wins over the config file's own.
-    ...    Both branches of the name resolution spread the keyword arguments last,
-    ...    but the config-file branch used to overwrite an explicit name with the
-    ...    default instead, so this combination silently lost the name.
     ${combined_folder} =    Merge Coverage Reports
     ...    ${OUTPUT_DIR}/browser/coverage
     ...    ${OUTPUT_DIR}/merge_coverage_reports_keyword_8

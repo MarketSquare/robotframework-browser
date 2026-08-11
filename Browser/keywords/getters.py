@@ -1433,7 +1433,7 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> Dimensions:
+    ) -> Dimensions | float:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
 

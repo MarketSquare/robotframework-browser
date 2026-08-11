@@ -13,7 +13,11 @@ class Credentials(TypedDict):
 def get_credentials() -> Credentials:
     return {
         "id": "1mXB1BEvCEDjdteOXO-xUQ",
-        "privateKey": Secret("MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoU1hcxESzMuQ20KpmLchY7JAF5vjna6XrCMaLXvuzGKhRANCAATS8XYWc35KTNo_lueg8qxDMJFMeIi8fjSXWOtlcGdh2zJLM0n3Sv3gPSq1zhB8oOFRwugGRhffM1XrwOlDoQ4R"),
-        "publicKey": Secret("MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0vF2FnN-SkzaP5bnoPKsQzCRTHiIvH40l1jrZXBnYdsySzNJ90r94D0qtc4QfKDhUcLoBkYX3zNV68DpQ6EOEQ"),
-        "userHandle": "aGFyZGNvZGVkLXVzZXItaGFuZGxl"
+        "privateKey": Secret(
+            "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgoU1hcxESzMuQ20KpmLchY7JAF5vjna6XrCMaLXvuzGKhRANCAATS8XYWc35KTNo_lueg8qxDMJFMeIi8fjSXWOtlcGdh2zJLM0n3Sv3gPSq1zhB8oOFRwugGRhffM1XrwOlDoQ4R"
+        ),
+        "publicKey": Secret(
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE0vF2FnN-SkzaP5bnoPKsQzCRTHiIvH40l1jrZXBnYdsySzNJ90r94D0qtc4QfKDhUcLoBkYX3zNV68DpQ6EOEQ"
+        ),
+        "userHandle": "aGFyZGNvZGVkLXVzZXItaGFuZGxl",
     }

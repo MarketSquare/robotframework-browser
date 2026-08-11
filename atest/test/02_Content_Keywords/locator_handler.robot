@@ -151,11 +151,6 @@ Adding Custom Locator Handler With Wrong Order Does Not Fail
     Click    id=textHeading    # Overlay should be closed
 
 Custom Locator Handler Spec Survives Being Reused
-    [Documentation]    The spec used to be emptied in place, so a dict variable
-    ...    could only be handed to the keyword once. Every other case here uses
-    ...    the ``[${spec}]`` form, which Robot Framework re-evaluates into a fresh
-    ...    dict each time and therefore cannot catch this; a list variable passes
-    ...    the caller's own dict straight through.
     VAR    &{handler_spec_click} =
     ...    action=click
     ...    selector=id=OverlayCloseButton

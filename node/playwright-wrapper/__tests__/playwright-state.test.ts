@@ -64,7 +64,7 @@ describe('PlaywrightState', () => {
     it('throws from getActiveBrowser when browser stack is empty', () => {
         const state = new PlaywrightState();
 
-        expect(() => state.getActiveBrowser()).toThrow('Browser has been closed.');
+        expect(() => state.getActiveBrowser()).toThrow('No Browser is open but needed for this operation.');
     });
 
     it('switches active browser by id', () => {

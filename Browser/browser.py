@@ -21,6 +21,7 @@ import sys
 import time
 import types
 from concurrent.futures._base import Future
+from copy import copy
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -78,6 +79,7 @@ from .utils.data_types import (
     KeywordCallStackEntry,
     LambdaFunction,
     RegExp,
+    RobotTypeConverter,
     SelectionType,
     SupportedBrowsers,
     TracingGroupMode,
@@ -182,7 +184,7 @@ class Browser(DynamicCore):
     | *Page*        | A tab, with its own content and history. Selectors resolve here. | `New Page`      |
 
     Playwright brings its own browser binaries, so no separate driver is needed.
-    A browser starts ``headless`` unless `New Browser` is given otherwise.
+    A browser starts ``headless`` unless `New Browser`'s ``headless`` argument is set to ``False``.
 
     | = Engine =    | = Ships in =                                       |
     | ``chromium``  | Google Chrome, Microsoft Edge, Opera               |
@@ -221,12 +223,12 @@ class Browser(DynamicCore):
     == Strategies ==
 
     | = Strategy =     | = Matches on =                               | = Example =                        |
-    | ``css``          | CSS selector.                                | ``css=.class > \\#login_btn``      |
-    | ``xpath``        | XPath expression.                            | ``xpath=//input[@id="login_btn"]`` |
-    | ``text``         | Text content. See `Text matching`.           | ``text=Login``                     |
-    | ``id``           | Element ID attribute.                        | ``id=login_btn``                   |
     | ``role``         | ARIA role, with optional accessible name.    | ``role=button[name="Login"]``      |
     | ``data-testid``  | ``data-testid`` attribute.                   | ``data-testid=login``              |
+    | ``text``         | Text content. See `Text matching`.           | ``text=Login``                     |
+    | ``id``           | Element ID attribute.                        | ``id=login_btn``                   |
+    | ``css``          | CSS selector.                                | ``css=.class > \\#login_btn``      |
+    | ``xpath``        | XPath expression.                            | ``xpath=//input[@id="login_btn"]`` |
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
@@ -344,6 +346,14 @@ class Browser(DynamicCore):
     when it looks like a number; `Get Element Count` returns an integer. Keywords
     returning a number do convert the expected value. `Get BoundingBox` and
     `Get Viewport Size` return a dictionary unfiltered and a number when filtered.
+
+    Expected values are generally used as given, so they must already have the type
+    returned by the keyword. Keywords returning numbers are an exception and convert the expected value.
+
+    Examples:
+    - `Get Text` returns a string even when it looks like a number
+    - `Get Element Count` returns an integer.
+    - `Get BoundingBox` and `Get Viewport Size` return a dictionary unfiltered and a number when a key is selected.
 
     Comparing strings with ``<`` or ``>`` compares code points character by
     character and stops at the first difference; length is never considered.
@@ -560,7 +570,7 @@ class Browser(DynamicCore):
             self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
         else:
             self._plugin_keywords = []
-        self.presenter_mode: HighLightElement | bool = enable_presenter_mode
+        self.presenter_mode = enable_presenter_mode
         self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
@@ -599,6 +609,34 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
+
+    @property
+    def presenter_mode(self) -> HighLightElement:
+        return copy(self._presenter_mode)
+
+    @presenter_mode.setter
+    def presenter_mode(self, value: HighLightElement | bool):
+        if not isinstance(value, (bool, dict)):
+            raise ValueError(
+                # f"Invalid mode! Expected a boolean or HighLightElement dictionary, but got {value!r} ({type(value).__name__})."
+                f"'Presenter Mode' got value {value!r} ({type(value).__name__}) that cannot be converted to HighLightElement or boolean."
+            )
+        if isinstance(value, bool):
+            if not value:
+                self._presenter_mode = False
+                return
+            value = {}
+        duration = value.get("duration", timedelta(seconds=2))
+        width = value.get("width", "2px")
+        style = value.get("style", "dotted")
+        color = value.get("color", "blue")
+        self._presenter_mode = RobotTypeConverter.converter_for(
+            HighLightElement
+        ).convert(
+            {"duration": duration, "width": width, "style": style, "color": color},
+            name="presenter_mode",
+            kind="Field",
+        )
 
     @property
     def playwright(self) -> Playwright:

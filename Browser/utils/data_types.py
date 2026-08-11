@@ -663,7 +663,7 @@ class NewPageDetails(TypedDict):
     video_path: str
 
 
-class HighLightElement(TypedDict):
+class HighLightElement(TypedDict, total=False):
     """Presenter mode configuration options.
 
     ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
