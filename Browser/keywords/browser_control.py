@@ -393,7 +393,7 @@ class Control(LibraryComponent):
                 response = stub.SetTimeout(Request().Timeout(timeout=timeout))
                 logger.write(response.log, loglevel)
         except Exception as error:  # Suppress  all errors
-            if "Browser has been closed" in str(error):
+            if "No Browser is open" in str(error):
                 logger.trace(f"Suppress error {error} when setting timeout.")
             else:
                 raise

@@ -45,12 +45,18 @@ def log_all_scopes(
     }
 
 
-def assert_passed_duration(start_time: datetime, max_duration_ms: int, delta_ms: int = 300) -> None:
+def assert_passed_duration(
+    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
+) -> None:
     now = datetime.now()
-    logger.info(f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}, now: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}")
+    logger.info(
+        f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}, now: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}"
+    )
     elapsed_ms = int((now - start_time).total_seconds() * 1000)
-    logger.info(f"Elapsed time: {elapsed_ms}ms (max allowed: {max_duration_ms + delta_ms}ms)")
-    if elapsed_ms >  max_duration_ms + delta_ms:
+    logger.info(
+        f"Elapsed time: {elapsed_ms}ms (max allowed: {max_duration_ms + delta_ms}ms)"
+    )
+    if elapsed_ms > max_duration_ms + delta_ms:
         browser = BuiltIn().get_library_instance("Browser")
         browser.take_screenshot()
         raise AssertionError(

@@ -217,6 +217,7 @@ def numbers_are_close(number1: int, number2: int, difference: int) -> bool:
         f"Numbers difference is {size_difference} {type(size_difference)}, but it should have been {difference} {type(difference)}"
     )
 
+
 def base64url_encode(data: str) -> str:
     """Encodes string to base64url string"""
     return base64.urlsafe_b64encode(data.encode("utf-8")).rstrip(b"=").decode("utf-8")

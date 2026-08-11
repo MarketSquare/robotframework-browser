@@ -16,7 +16,7 @@ import re
 import traceback
 from collections.abc import Callable
 from concurrent.futures._base import Future
-from copy import copy, deepcopy
+from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
@@ -24,7 +24,6 @@ from time import sleep
 from typing import TYPE_CHECKING, Any
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
-from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
@@ -335,38 +334,28 @@ class LibraryComponent:
         return self.library._keyword_formatters
 
     @property
-    def get_presenter_mode(self) -> HighLightElement:
-        mode: HighLightElement | dict = {}
-        if isinstance(self.library.presenter_mode, dict):
-            mode = copy(self.library.presenter_mode)
-        duration = mode.get("duration", "2 seconds")
-        if not isinstance(duration, timedelta):
-            duration = timedelta(seconds=timestr_to_secs(duration))
-        width = mode.get("width", "2px")
-        style = mode.get("style", "dotted")
-        color = mode.get("color", "blue")
-        return HighLightElement(
-            duration=duration, width=width, style=style, color=color
-        )
+    def get_presenter_mode(self) -> HighLightElement | bool:
+        return self.library.presenter_mode
 
     def presenter_mode(self, selector, strict):
         selector = self.resolve_selector(selector)
-        if self.library.presenter_mode:
-            mode = self.get_presenter_mode
+        mode = self.library.presenter_mode
+        logger.trace(f"Presenter mode: {mode}, selector: {selector}, strict: {strict}")
+        if isinstance(mode, dict):
             try:
                 self.library.scroll_to_element(selector)
                 self.library.highlight_elements(
                     selector,
-                    duration=mode["duration"],
-                    width=mode["width"],
-                    style=mode["style"],
-                    color=mode["color"],
+                    duration=mode.get("duration", timedelta(seconds=2)),
+                    width=mode.get("width", "2px"),
+                    style=mode.get("style", "dotted"),
+                    color=mode.get("color", "blue"),
                 )
             except Exception as error:
                 selector = self.library.record_selector(f'"{selector}" failure')
                 logger.debug(f"On presenter more supress {error}")
             else:
-                sleep(mode["duration"].seconds)
+                sleep(mode.get("duration", timedelta(seconds=2)).seconds)
         return selector
 
     def exec_scroll_function(self, function: str, selector: str | None = None):

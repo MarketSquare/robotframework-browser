@@ -1,31 +1,3 @@
-"""The storage keywords build JavaScript by interpolation, so the escaping matters.
-
-`LocalStorage Get Item` and friends embed the key -- and `Set Item` the value --
-into a `window.localStorage.getItem(...)` expression that is then evaluated in
-the page. Whatever escapes them has to produce a *JavaScript* string literal.
-
-Two ways of doing that were wrong before, in different ways:
-
-* Bare interpolation into a quoted literal, `f'getItem("{key}")'`, escapes
-  nothing. A key containing a double quote does not merely break the syntax, it
-  executes: `x"), (evil = 1), S.getItem("` runs `evil = 1` in the page.
-* `repr()` looks like it works and mostly does, but for any non-printable code
-  point above U+FFFF it emits `\\U000e0001`. JavaScript reads `\\U` as an
-  identity escape: the backslash is dropped and the literal text `U000e0001`
-  lands in the string, so the wrong key is read or removed -- silently, with no
-  syntax error and no exception.
-
-`json.dumps` emits `\\uXXXX` surrogate pairs, which are a strict subset of
-JavaScript string syntax, and with the default `ensure_ascii=True` its output is
-pure ASCII for every code point -- so U+2028 and U+2029 never reach the page as
-raw characters either.
-
-These tests call the keywords with `eval_js` mocked and assert the script that
-was handed to it. They fail if the escaping is reverted, which is the whole
-point: an earlier version of this file asserted `json.dumps` round-trips without
-ever importing the library, and stayed green against the broken code.
-"""
-
 import json
 from unittest.mock import MagicMock
 
@@ -35,13 +7,6 @@ from Browser.keywords.webapp_state import WebAppState
 
 
 def make_state() -> tuple[WebAppState, MagicMock]:
-    """A WebAppState whose `eval_js` records the script instead of running it.
-
-    The keywords are wrapped in `with_assertion_polling`, which reads `timeout`
-    and `retry_assertions_for` off the library's scope stack, so the fake library
-    has to answer those. `retry_assertions_for` is 0 to keep a failing assertion
-    from looping -- these tests assert the script, not the assertion.
-    """
     library = MagicMock()
     library.scope_stack = {
         "timeout": MagicMock(get=MagicMock(return_value=10_000.0)),
@@ -117,7 +82,6 @@ def test_key_is_escaped(method: str, store: str, op: str, key: str) -> None:
 @pytest.mark.parametrize("key", AWKWARD_KEYS)
 @pytest.mark.parametrize(("method", "store"), SETTERS)
 def test_key_and_value_are_escaped(method: str, store: str, key: str) -> None:
-    """`Set Item` interpolates two things, and both need the same treatment."""
     value = 'v"\\\n\U000f0000'
     state, eval_js = make_state()
     getattr(state, method)(key, value)
@@ -130,11 +94,7 @@ def test_key_and_value_are_escaped(method: str, store: str, key: str) -> None:
 def test_script_carries_no_escape_javascript_misreads(
     method: str, store: str, op: str, key: str
 ) -> None:
-    """`\\U` is an identity escape in JavaScript -- the backslash is dropped.
-
-    This is the property that made `repr()` wrong, and it is invisible at
-    runtime: the page reads a different key and returns null.
-    """
+    "`\\U` is an identity escape in JavaScript -- the backslash is dropped."
     state, eval_js = make_state()
     getattr(state, method)(key)
     assert "\\U" not in script_of(eval_js)
@@ -154,11 +114,6 @@ def test_script_is_ascii(key: str) -> None:
 
 @pytest.mark.parametrize("key", AWKWARD_KEYS)
 def test_the_embedded_literal_parses_back_to_the_key(key: str) -> None:
-    """What the page parses out of the script must be exactly the key given.
-
-    `json.loads` accepts the same string-literal syntax JavaScript does for the
-    forms `json.dumps` produces, which is what makes it safe here.
-    """
     state, eval_js = make_state()
     state.local_storage_get_item(key)
     literal = (
