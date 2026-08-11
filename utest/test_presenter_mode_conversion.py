@@ -1,5 +1,4 @@
 from datetime import timedelta
-from unittest.mock import PropertyMock
 
 import pytest
 from approvaltests.approvals import verify  # type: ignore
@@ -10,45 +9,38 @@ from Browser.browser import Browser
 
 @pytest.fixture
 def browser():
-    return Browser.Browser()
+    return Browser()
 
 
-def test_presenter_mode_default():
-    lib = Browser()
-    lib.presenter_mode = {}
-    verify(lib.presenter_mode)
+def test_presenter_mode_default(browser: Browser):
+    browser.presenter_mode = {}
+    verify(browser.presenter_mode)
 
 
-def test_presenter_mode_duration_as_string():
-    lib = Browser()
-    lib.presenter_mode = {"color": "white", "duration": "4s"}
-    verify(lib.presenter_mode)
+def test_presenter_mode_duration_as_string(browser: Browser):
+    browser.presenter_mode = {"color": "white", "duration": "4s"}
+    verify(browser.presenter_mode)
 
 
-def test_get_presenter_mode_duration_as_string():
-    lib = Browser()
-    lib.presenter_mode = {"color": "white", "duration": "4s"}
-    ctx = LibraryComponent(lib)
+def test_get_presenter_mode_duration_as_string(browser: Browser):
+    browser.presenter_mode = {"color": "white", "duration": "4s"}
+    ctx = LibraryComponent(browser)
     verify(ctx.get_presenter_mode)
 
 
-def test_presenter_mode_duration_as_timedelta():
-    lib = Browser()
-    duration = timedelta(seconds=5)
-    lib.presenter_mode = {"color": "black", "duration": duration}
-    verify(lib.presenter_mode)
+def test_presenter_mode_duration_as_timedelta(browser: Browser):
+    browser.presenter_mode = {"color": "black", "duration": timedelta(seconds=5)}
+    verify(browser.presenter_mode)
 
 
-def test_presenter_mode_with_boolean_true():
-    lib = Browser()
-    lib.presenter_mode = True
-    verify(lib.presenter_mode)
+def test_presenter_mode_with_boolean_true(browser: Browser):
+    browser.presenter_mode = True
+    verify(browser.presenter_mode)
 
 
-def test_presenter_mode_with_boolean_false():
-    lib = Browser()
-    lib.presenter_mode = False
-    ctx = LibraryComponent(lib)
+def test_presenter_mode_with_boolean_false(browser: Browser):
+    browser.presenter_mode = False
+    ctx = LibraryComponent(browser)
     verify(ctx.get_presenter_mode)
 
 
@@ -57,15 +49,19 @@ def test_enable_presenter_mode_with_empty_dict():
     verify(lib.presenter_mode)
 
 
-def test_invalid_presenter_mode_type():
-    lib = Browser()
+def test_enable_presenter_mode_with_partial_dict():
+    lib = Browser(enable_presenter_mode={"color": "yellow", "duration": "30s"})
+    verify(lib.presenter_mode)
+
+
+def test_invalid_presenter_mode_type(browser: Browser):
     with pytest.raises(
         ValueError,
-        match="Invalid mode! Expected a boolean or HighLightElement dictionary",
+        match=r"'Presenter Mode' got value \"\{'color': 'white'\" \(str\) that cannot be converted to HighLightElement or boolean.",
     ):
-        lib.presenter_mode = "{'color': 'white'"  # type: ignore
+        browser.presenter_mode = "{'color': 'white'"  # type: ignore
     with pytest.raises(
         ValueError,
-        match="Invalid mode! Expected a boolean or HighLightElement dictionary",
+        match=r"'Presenter Mode' got value 123 \(int\) that cannot be converted to HighLightElement or boolean.",
     ):
-        lib.presenter_mode = 123  # type: ignore
+        browser.presenter_mode = 123  # type: ignore

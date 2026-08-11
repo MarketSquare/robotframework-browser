@@ -618,7 +618,6 @@ class Browser(DynamicCore):
     def presenter_mode(self, value: HighLightElement | bool):
         if not isinstance(value, (bool, dict)):
             raise ValueError(
-                # f"Invalid mode! Expected a boolean or HighLightElement dictionary, but got {value!r} ({type(value).__name__})."
                 f"'Presenter Mode' got value {value!r} ({type(value).__name__}) that cannot be converted to HighLightElement or boolean."
             )
         if isinstance(value, bool):
