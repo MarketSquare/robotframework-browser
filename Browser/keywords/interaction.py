@@ -608,11 +608,12 @@ class Interaction(LibraryComponent):
         """
         scroll_size = self.library.get_scroll_size(selector)
         if isinstance(scroll_size, (int, float)):
-            logger.debug("Scroll size is not Dimensions:")
-            return
+            raise TypeError("Internal Error: scroll_size is not Dimensions")
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
         client_size = self.library.get_client_size(selector)
+        if isinstance(client_size, (int, float)):
+            raise TypeError("Internal Error: client_size is not Dimensions")
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_abs_scroll_coordinates(
@@ -648,11 +649,12 @@ class Interaction(LibraryComponent):
         """
         scroll_size = self.library.get_scroll_size(selector)
         if isinstance(scroll_size, (int, float)):
-            logger.debug("Scroll size is not Dimensions:")
-            return
+            raise TypeError("Internal Error: scroll_size is not Dimensions")
         scroll_width = scroll_size["width"]
         scroll_height = scroll_size["height"]
         client_size = self.library.get_client_size(selector)
+        if isinstance(client_size, (int, float)):
+            raise TypeError("Internal Error: client_size is not Dimensions")
         client_width = client_size["width"]
         client_height = client_size["height"]
         vertical_px = get_rel_scroll_coordinates(
