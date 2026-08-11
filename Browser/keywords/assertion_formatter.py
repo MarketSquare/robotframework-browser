@@ -25,26 +25,6 @@ class Formatter(ASFormatter, LibraryComponent):
         *formatters: FormatingRules | LambdaFunction,
         scope: Scope = Scope.Global,
     ) -> dict[str, list[str]]:
-        """Set keyword assertion formatter with defined scope.
-
-        Returns the formatters which were in use before this keyword was called.
-        Formatters defined as lambda functions are not included in the returned value.
-
-        Calling the keyword without ``formatters`` arguments will clear all formatters from the keyword.
-        If ``keyword`` is None, then all formatters are cleared from all keywords, in the Global scope.
-
-        | =Arguments= | =Description= |
-        | ``keyword`` | The name of the keyword where the assertion formatters are applied. |
-        | ``scope`` | Defines the lifetime of the formatter, possible values are Global, Suite and Test. |
-        | ``formatters`` | List of formatters which are applied to the assertion when the keyword is called. |
-
-        Example:
-        | # Set strip assertion formatter for Get Text keyword for duration of the suite
-        | `Set Assertion Formatter` | `Get Text` | Suite | strip |
-        | # Set strip and case insensitive assertion formatter for Get Text keyword for duration of the suite
-        | `Set Assertion Formatter` | `Get Text` | Suite | strip | case insensitive |
-        | `Set Assertion Formatter` | `Get Text` | Suite | # Removes Get Text formatters from suite level.
-        """
         if keyword is None:
             return self._clear_all_formatters()
         kw = keyword.name

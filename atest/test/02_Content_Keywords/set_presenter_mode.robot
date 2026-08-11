@@ -6,41 +6,54 @@ Suite Teardown      Set Presenter Mode    ${ORIGINAL_PRESENTER_MODE}
 Test Setup          Set Presenter Mode    False
 
 *** Variables ***
-&{CUSTOM_CONFIG} =      duration=3 seconds    width=3px    style=solid    color=red
+&{CUSTOM_CONFIG} =          duration=1 sec    width=3px    style=solid    color=red
+&{EXP_CUSTOM_CONFIG} =      duration=${{datetime.timedelta(seconds=1)}}    width=3px    style=solid    color=red
 
-${DEFAULT_CONFIG} =     ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue'}}}
+${DEFAULT_CONFIG} =         ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue'}}}
 
 *** Test Cases ***
 Enable Presenter Mode With True For Default
     [Documentation]
-    ...    LOG 2:2    INFO    Stopping coverage
+    ...    LOG 2:3    INFO    Highlighted 1 elements for 2000 ms.
     Set Presenter Mode    True
     ${text} =    Get Text    h1
     Test Presenter Mode    &{DEFAULT_CONFIG}
 
 Disable Presenter Mode With False
+    [Documentation]
+    ...    LOG 2:2    DEBUG    Text received successfully.
     Set Presenter Mode    False
     ${text} =    Get Text    h1
-    ${test_set} =    Set Presenter Mode    False
+    ${test_set} =    Set Presenter Mode    No
     ${lib} =    Get Library Instance    Browser
-    Should Be Equal    ${lib.presenter_mode}    ${False}
+    Should Be True    $lib.presenter_mode == False
     ${test_set} =    Set Presenter Mode    False
-    Should Be Equal    ${test_set}    ${False}
+    Should Be True    $test_set == False
 
 Enable Presenter Mode With Custom Config
+    [Documentation]
+    ...    LOG 2:3    INFO    Highlighted 1 elements for 1000 ms.
     Set Presenter Mode    ${CUSTOM_CONFIG}
     ${text} =    Get Text    h1
-    Test Presenter Mode    &{CUSTOM_CONFIG}
+    Test Presenter Mode    &{EXP_CUSTOM_CONFIG}
 
 Enable Presenter Mode with Dict Literal
+    [Documentation]
+    ...    LOG 2:3    INFO    Highlighted 1 elements for 500 ms.
     Set Presenter Mode    {"duration": "500ms", "width": "1px", "style": "solid", "color": "yellow"}
     Get Text    h1
     Test Presenter Mode    duration=${{datetime.timedelta(seconds=0.5)}}    width=1px    style=solid    color=yellow
 
-Enable Presenter Mode with Dict Literal and Missing Keys
-    Set Presenter Mode    {"duration": "1s"}
+Enable Presenter Mode With Dict Literal And Missing Keys
+    [Documentation]
+    ...    LOG 2:3    INFO    Highlighted 1 elements for 1500 ms.
+    Set Presenter Mode    {"duration": "1500ms"}
     Get Text    h1
-    Test Presenter Mode    duration=${{datetime.timedelta(seconds=1)}}    width=2px    style=dotted    color=blue
+    Test Presenter Mode
+    ...    duration=${{datetime.timedelta(milliseconds=1500)}}
+    ...    width=2px
+    ...    style=dotted
+    ...    color=blue
 
 Invalid Config Dictionary Should Fail
     VAR    &{bad_config} =    duration=peter    width=3px
@@ -59,9 +72,9 @@ Invalid Config Dict Literal Should Fail
 Test Presenter Mode
     [Arguments]    &{expected_mode}
     ${lib} =    Get Library Instance    Browser
-    Should Be Equal    ${lib.presenter_mode}    ${expected_mode}
+    Should Be Equal    ${lib.presenter_mode}    ${expected_mode}    types=Any
     ${test_set} =    Set Presenter Mode    False
-    Should Be Equal    ${test_set}    ${expected_mode}
+    Should Be Equal    ${test_set}    ${expected_mode}    types=Any
 
 Setup
     Close Page    ALL
