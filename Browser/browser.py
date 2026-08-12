@@ -20,6 +20,7 @@ import string
 import sys
 import time
 import types
+from collections.abc import Iterator
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
@@ -61,6 +62,7 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
+from .python_arguments import add_argument_conversion
 from .utils import (
     AutoClosingLevel,
     PlaywrightLogTypes,
@@ -581,6 +583,7 @@ class Browser(DynamicCore):
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
+        add_argument_conversion(self)
 
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
@@ -1316,12 +1319,25 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return True
 
     @staticmethod
+    def _iter_module_names() -> Iterator[str]:
+        for importer in pkgutil.iter_importers():
+            # A Windows console script such as ``robot.exe`` is a zip archive on sys.path.
+            # Which may fail, therefore own wrapper.
+            try:
+                modules = list(pkgutil.iter_importer_modules(importer))
+            except KeyError as error:
+                logger.debug(f"Could not list modules of {importer}: {error}")
+                continue
+            for name, _ in modules:
+                yield name
+
+    @staticmethod
     def _get_translation(language: str | None) -> Path | None:
         if not language:
             return None
         discovered_plugins = {
             name: importlib.import_module(name)
-            for _, name, _ in pkgutil.iter_modules()
+            for name in Browser._iter_module_names()
             if name.startswith("robotframework_browser_translation")
         }
         lang = language.lower()
