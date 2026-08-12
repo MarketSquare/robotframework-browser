@@ -15,7 +15,7 @@
 try:
     from robot.api.types import Secret
 except ImportError:
-    # Robot Framework 7.4.0 and earlier do not have Secret type.
+    # Robot Framework versions earlier than 7.4.0 do not have Secret type.
     # Remove when Robot Framework 7.4.0+ is the minimum requirement.
     class Secret:  # type: ignore
         """Encapsulates secrets to avoid them being shown in Robot Framework logs.

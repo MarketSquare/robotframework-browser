@@ -97,8 +97,4 @@ Create New Persistent Context With RecordVideo.Dir As Path And Validate That Rec
 
 Verify Video File Type
     [Arguments]    ${dir_type}
-    IF    ${PYTHON_314}
-        Should Match Regexp    ${dir_type}    <class 'str'>
-    ELSE
-        Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>    # Python 3.13 need mode wired regex
-    END
+    Should Match Regexp    ${dir_type}    <class 'str'>

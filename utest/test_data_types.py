@@ -99,7 +99,8 @@ def test_convert_typed_dict_with_secret():
 
 @pytest.mark.skipif(
     hasattr(Secret, "robot_framework_browser_secret"),
-    reason="This test is only relevant for Robot Framework older than 7.4.0.",
+    reason="This test needs Robot Framework's own Secret, added in Robot Framework 7.4.0. "
+    "Below that the library's fallback Secret is used and the test does not apply.",
 )
 def test_convert_typed_dict_with_secret_legacy_secret_object():
     annotations = {"credential": Credential}
@@ -123,7 +124,8 @@ def test_convert_typed_dict_with_secret_and_optional_key():
 
 @pytest.mark.skipif(
     hasattr(Secret, "robot_framework_browser_secret"),
-    reason="This test is only relevant for Robot Framework older than 7.4.0.",
+    reason="This test needs Robot Framework's own Secret, added in Robot Framework 7.4.0. "
+    "Below that the library's fallback Secret is used and the test does not apply.",
 )
 def test_convert_typed_dict_with_secret_and_optional_key_legacy_secret_object():
     annotations = {"credential": CredentialOptional}

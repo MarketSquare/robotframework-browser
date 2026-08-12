@@ -132,6 +132,19 @@ def test_open_page_get_text(application_server, browser):
     assert text == "Login Page"
 
 
+def test_click_with_a_plain_string_button(application_server, browser):
+    browser.new_page("localhost:7272/dist/")
+    browser.click_with_options("#clickWithOptions", "middle")
+    assert browser.get_text("#mouse_button") == "middle"
+
+
+def test_get_text_with_a_plain_string_assertion_operator(application_server, browser):
+    browser.new_page("localhost:7272/dist/")
+    assert browser.get_text("h1", "==", "Login Page") == "Login Page"
+    with pytest.raises(AssertionError):
+        browser.get_text("h1", "==", "Wrong Page")
+
+
 def test_readme_example(browser):
     browser.new_page("https://playwright.dev")
     assert "Playwright" in browser.get_text("h1")
@@ -209,9 +222,10 @@ def test_playwright_double_close():
 def test_promise_handling(browser, application_server):
     file = Path(__file__)
     browser.new_page("localhost:7272/dist/")
-    browser.promise_to_upload_file(file.resolve())
+    promise = browser.promise_to_upload_file(file.resolve())
     browser.click("#file_chooser")
-    assert browser.get_text("#upload_result") == "test_python_usage.py"
+    browser.wait_for(promise)
+    browser.get_text("#upload_result", AssertionOperator["=="], "test_python_usage.py")
 
 
 def test_promise_to_wait_for_response_with_name_arguments(browser):

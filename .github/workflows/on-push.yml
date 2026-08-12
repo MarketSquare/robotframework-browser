@@ -168,8 +168,10 @@ jobs:
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+    # Shard 1 is pinned to the latest Robot Framework, so the extra condition is what runs
+    # the unit tests against the supported floor as well. Keep one entry of each rf-version.
     - name: Run pytests
-      if: matrix.shard == 1
+      if: matrix.shard == 1 || (matrix.rf-version == '7.1.1' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13')
       run: |
         invoke utest
     - name: Run Node.js unit tests with coverage
