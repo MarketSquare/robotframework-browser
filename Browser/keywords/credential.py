@@ -162,7 +162,7 @@ class Credential(LibraryComponent):
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables|Secret]
         type, so that their values are not shown in the Robot Framework log. The values
         themselves are available in the ``value`` attribute. Note that the node side of the
-        library writes the whole credential, including the private key, as plain text to the
+        library might write the whole credential, including the private key, as plain text to the
         playwright-log.txt file. See `PlaywrightLogTypes` for how to control that file.
 
         See `Install Credential` for more information about how to use
