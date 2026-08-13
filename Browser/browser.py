@@ -607,7 +607,7 @@ class Browser(DynamicCore):
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
 
     @property
-    def presenter_mode(self) -> HighLightElement:
+    def presenter_mode(self) -> HighLightElement | bool:
         return copy(self._presenter_mode)
 
     @presenter_mode.setter

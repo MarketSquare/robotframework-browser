@@ -355,7 +355,7 @@ class LibraryComponent:
                 selector = self.library.record_selector(f'"{selector}" failure')
                 logger.debug(f"On presenter more supress {error}")
             else:
-                sleep(mode.get("duration", timedelta(seconds=2)).seconds)
+                sleep(mode.get("duration", timedelta(seconds=2)).total_seconds())
         return selector
 
     def exec_scroll_function(self, function: str, selector: str | None = None):
