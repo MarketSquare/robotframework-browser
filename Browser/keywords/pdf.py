@@ -104,11 +104,11 @@ class Pdf(LibraryComponent):
         [https://playwright.dev/docs/api/class-page#page-pdf|Playwright pdf documentation].
 
         Example:
-        | `New Browser` | Chromium | headless=True |
-        | `New Page` | ${URL} |
-        | `Emulate Media` | media=screen |
-        | ${pdf_path} = | `Save Page As Pdf` | page.pdf |
-        | Should Be Equal | ${pdf_path} | ${OUTPUT_DIR}${/}page.pdf |
+        | `New Browser`        Chromium              headless=True
+        | `New Page`           ${URL}
+        | `Emulate Media`      media=screen
+        | ${pdf_path} =      `Save Page As Pdf`    page.pdf
+        | Should Be Equal    ${pdf_path}           ${OUTPUT_DIR}${/}page.pdf
         """
         if not self._is_relative_to(path):
             path = Path(self.outputdir) / str(path)

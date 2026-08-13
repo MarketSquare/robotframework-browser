@@ -77,12 +77,12 @@ class Clock(LibraryComponent):
         time and then pausing. Pause can not move the clock backwards.
 
         Example:
-        | `Set Time` | 2024-10-31 17:34:00 | # Set the clock to a specific time |
-        | Do Something | # Implement this in your keyword |
-        | `Pause At` | 2024-10-31 18:34:00 | # Pause the clock at a specific time |
-        | Check Something | # Also this is implemented in your keyword |
-        | `Resume Clock` | # Resume the clock |
-        | Do Something Else | # Do something after clock runs normally |
+        | `Set Time`         2024-10-31 17:34:00    # Set the clock to a specific time
+        | Do Something                            # Implement this in your keyword
+        | `Pause At`         2024-10-31 18:34:00    # Pause the clock at a specific time
+        | Check Something                         # Also this is implemented in your keyword
+        | `Resume Clock`                            # Resume the clock
+        | Do Something Else                       # Do something after clock runs normally
         """
         logger.info(f"Pausing clock at {time}")
         with self.playwright.grpc_channel() as stub:

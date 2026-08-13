@@ -341,12 +341,6 @@ class Browser(DynamicCore):
 
     %ASSERTION_TABLE%
 
-    The expected value is used as given — the library does not convert it — so it
-    must already be the type the keyword returns. `Get Text` returns a string even
-    when it looks like a number; `Get Element Count` returns an integer. Keywords
-    returning a number do convert the expected value. `Get BoundingBox` and
-    `Get Viewport Size` return a dictionary unfiltered and a number when filtered.
-
     Expected values are generally used as given, so they must already have the type
     returned by the keyword. Keywords returning numbers are an exception and convert the expected value.
 
@@ -395,8 +389,10 @@ class Browser(DynamicCore):
     Browser library running on the same machine, instead of each one starting its
     own. This can speed up parallel runs. Start it from the directory where the
     Browser package is installed with
-    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT``, for
-    example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
+    ```
+    PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT
+    ```
+    , for example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
     script reads the host first and exits with ``No port defined`` if only one is
     given. Point runs at it
     with the ``playwright_process_port`` import parameter or the
