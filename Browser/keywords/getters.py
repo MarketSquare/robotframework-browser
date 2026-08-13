@@ -164,8 +164,8 @@ class Getters(LibraryComponent):
 
         If the HTML of a single element is needed, use `Get Property` instead.
         Example:
-        | ${html1} = | `Get Property` | ${selector} | innerHTML |
-        | ${html2} = | `Get Property` | ${selector} | outerHTML |
+        | ${html1} =    `Get Property`    ${selector}    innerHTML
+        | ${html2} =    `Get Property`    ${selector}    outerHTML
 
         [https://forum.robotframework.org/t//4275|Comment >>]
         """
