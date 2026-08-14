@@ -257,13 +257,27 @@ export class PlaywrightServer {
     }
 
     async saveStorageState(
-        call: ServerUnaryCall<pb.Request_FilePath, pb.Response_Empty>,
+        call: ServerUnaryCall<pb.Request_StorageState, pb.Response_Empty>,
         callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             const response = await playwrightState.saveStorageState(request, this.getActiveBrowser(call));
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async setStorageState(
+        call: ServerUnaryCall<pb.Request_SetStorageState, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.setStorageState(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);

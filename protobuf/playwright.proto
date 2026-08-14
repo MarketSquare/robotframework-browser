@@ -121,6 +121,15 @@ message Request {
   message FilePath {
     string path = 1;
   }
+  message StorageState {
+    string path = 1;
+    bool indexedDB = 2;
+    bool credentials = 3;
+  }
+  message SetStorageState {
+    string path = 1;
+    int32 timeout = 2;
+  }
   message FileBySelector {
     repeated string path = 1;
     string selector = 2;
@@ -641,7 +650,8 @@ service  Playwright {
   rpc GetBrowserCatalog(Request.Bool) returns (Response.Json);
   rpc GetDownloadState(Request.DownloadID) returns (Response.Json);
   rpc CancelDownload(Request.DownloadID) returns (Response.Empty);
-  rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
+  rpc SaveStorageState(Request.StorageState) returns (Response.Empty);
+  rpc SetStorageState(Request.SetStorageState) returns (Response.Empty);
 
   rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
   rpc ExecutePlaywright(Request.Json) returns (Response.Empty);

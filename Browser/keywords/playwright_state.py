@@ -610,7 +610,7 @@ class PlaywrightState(LibraryComponent):
         screen: dict[str, int] | None = None,
         serviceWorkers: ServiceWorkersPermissions
         | None = ServiceWorkersPermissions.allow,
-        storageState: str | None = None,
+        storageState: Path | None = None,
         timezoneId: str | None = None,
         tracing: bool | Path | None = None,
         userAgent: str | None = None,
@@ -886,7 +886,7 @@ class PlaywrightState(LibraryComponent):
         reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
-        if storageState and not Path(storageState).is_file():
+        if storageState and not storageState.is_file():
             raise ValueError(
                 f"storageState argument value '{storageState}' is not file, but it should be."
             )
@@ -1677,7 +1677,13 @@ class PlaywrightState(LibraryComponent):
         return {}
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def save_storage_state(self) -> str:
+    def save_storage_state(
+        self,
+        path: Path | None = None,
+        *,
+        indexedDB: bool = False,
+        credentials: bool = False,
+    ) -> str:
         """Saves the current active context storage state to a file.
 
         Web apps use cookie-based or token-based authentication, where
@@ -1692,8 +1698,14 @@ class PlaywrightState(LibraryComponent):
         Please note that the state file may contain secrets and should not be
         shared with people outside of your organisation.
 
-        The file is created in ${OUTPUTDIR}/browser/state folder and file(s)
-        are automatically deleted when new test execution starts. File path
+        | =Arguments= | =Description= |
+        | ``path`` | Where the state file is written. Relative paths are resolved against the current working directory and missing parent directories are created. If the file already exists, it is overwritten. If not given, a file with a generated name is created in ${OUTPUTDIR}/browser/state. |
+        | ``indexedDB`` | Also save IndexedDB. Needed by applications, like Firebase, which store authentication tokens in IndexedDB. |
+        | ``credentials`` | Also save the context's virtual WebAuthn credentials, as created by `Create Credential`. This is not related to the ``httpCredentials`` argument of `New Context`, which is about HTTP authentication. |
+
+        Files in ${OUTPUTDIR}/browser/state are automatically deleted when new
+        test execution starts. To keep a state file over several executions,
+        save it with ``path`` to a location outside of that folder. File path
         is returned by the keyword.
 
         Example:
@@ -1717,16 +1729,76 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4318|Comment >>]
         """
-        file = str(self.state_file / f"{uuid4()!s}.json")
-        self.state_file.mkdir(parents=True, exist_ok=True)
-        log = self._save_storage_state(file)
+        state_file = path if path is not None else self.state_file / f"{uuid4()!s}.json"
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        log = self._save_storage_state(str(state_file), indexedDB, credentials)
         logger.info(log)
-        return file
+        return str(state_file)
 
-    def _save_storage_state(self, path: str) -> str:
+    def _save_storage_state(
+        self, path: str, indexedDB: bool = False, credentials: bool = False
+    ) -> str:
         with self.playwright.grpc_channel() as stub:
-            response = stub.SaveStorageState(Request().FilePath(path=path))
+            response = stub.SaveStorageState(
+                Request().StorageState(
+                    path=path, indexedDB=indexedDB, credentials=credentials
+                )
+            )
         return response.log
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def set_storage_state(self, path: Path, timeout: timedelta | None = None) -> None:
+        """Restores a storage state file into the current active context.
+
+        Clears the cookies, local storage, IndexedDB and virtual WebAuthn
+        credentials of the currently active context and replaces them with the
+        ones from the ``path`` file, which must have been created by
+        `Save Storage State`. Unlike creating a `New Context` with the
+        ``storageState`` argument, the context and all of its pages stay open.
+
+        Pages that are already open keep the state they have loaded into memory.
+        Reload them, with the `Reload` keyword, to make them see the restored
+        state.
+
+        | =Arguments= | =Description= |
+        | ``path`` | Path to a state file created by `Save Storage State`. Relative paths are resolved against the current working directory. The keyword fails if the file does not exist. |
+        | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. |
+
+        == Restoring IndexedDB ==
+
+        `Save Storage State` with ``indexedDB=True`` leaves an open IndexedDB
+        connection in the page, which is a
+        [https://github.com/microsoft/playwright/issues/42258|Playwright bug].
+        Restoring a state file that contains IndexedDB into a context whose
+        pages still hold such a connection never finishes, and this keyword
+        fails when ``timeout`` expires. Avoid that by either reloading the
+        pages of the context before calling this keyword, or by restoring the
+        state into a `New Context`.
+
+        Example:
+        | Test Case
+        |     `New Context`
+        |     `New Page`    https://login.page.html
+        |     #  Perform login as first user
+        |     ${user_a} =    `Save Storage State`
+        |     #  Perform login as second user
+        |     ${user_b} =    `Save Storage State`
+        |     #  Switch back to the first user without creating a new context
+        |     `Set Storage State`    ${user_a}
+        |     `Reload`
+        |     `Get Text`    id=current-user    ==    userA
+        """
+        if not path.is_file():
+            raise ValueError(
+                f"path argument value '{path}' is not file, but it should be."
+            )
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetStorageState(
+                Request().SetStorageState(
+                    path=str(path), timeout=int(self.get_timeout(timeout))
+                )
+            )
+        logger.info(response.log)
 
     def set_peer_id(self, new_id) -> str:
         """Sets the peer_id for the current GRPC connection to browser's backend.

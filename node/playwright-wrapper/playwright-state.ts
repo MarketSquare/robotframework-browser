@@ -56,6 +56,8 @@ import {
     Request_KeywordCall,
     Request_PersistentContext,
     Request_RFContext,
+    Request_SetStorageState,
+    Request_StorageState,
     Request_TraceGroup,
     Request_UrlOptions,
     Response_Empty,
@@ -1123,15 +1125,48 @@ export async function getErrorMessages(request: Request_Bool, openBrowsers: Play
 }
 
 export async function saveStorageState(
-    request: Request_FilePath,
+    request: Request_StorageState,
     browserState?: BrowserState,
 ): Promise<Response_Empty> {
     exists(browserState, "Tried to save storage state but browser wasn't open");
     const context = browserState.context;
     exists(context, 'Tried to save storage state butno context was open');
     const stateFile = request.path;
-    await context.c.storageState({ path: stateFile });
+    await context.c.storageState({
+        path: stateFile,
+        indexedDB: request.indexedDB,
+        credentials: request.credentials,
+    });
     return emptyWithLog('Current context state is saved to: ' + stateFile);
+}
+
+export async function setStorageState(
+    request: Request_SetStorageState,
+    browserState?: BrowserState,
+): Promise<Response_Empty> {
+    exists(browserState, "Tried to set storage state but browser wasn't open");
+    const context = browserState.context;
+    exists(context, 'Tried to set storage state but no context was open');
+    const stateFile = request.path;
+    const timeout = request.timeout;
+    // https://github.com/microsoft/playwright/issues/42258: setStorageState never settles
+    // while a page of the context holds an open IndexedDB connection, and it does not honor
+    // the context timeout, so it needs a timeout of its own.
+    let timer: NodeJS.Timeout | undefined;
+    const timeoutMessage =
+        `Set Storage State timed out after ${timeout} ms. If the state file contains IndexedDB, ` +
+        'reload or close the pages of the context, or set the state into a new context, before calling this keyword.';
+    try {
+        await Promise.race([
+            context.c.setStorageState(stateFile),
+            new Promise((_, reject) => {
+                timer = setTimeout(() => reject(new Error(timeoutMessage)), timeout);
+            }),
+        ]);
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
+    return emptyWithLog('Current context state is set from: ' + stateFile);
 }
 
 export async function startCoverage(request: Request_CoverageStart, state: PlaywrightState): Promise<Response_Empty> {
