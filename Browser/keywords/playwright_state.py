@@ -651,7 +651,7 @@ class PlaywrightState(LibraryComponent):
         | ``reducedMotion``        | Emulates the ``prefers-reduced-motion`` media feature, supported values are ``reduce`` and ``no-preference``. Defaults to ``no-preference``. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to ``allow``. |
-        | ``storageState``         | Restores the storage state created by the `Save Storage State` keyword. Must be a full path to an existing file, otherwise the keyword fails. |
+        | ``storageState``         | Restores the storage state created by the `Save Storage State` keyword. Must be a path to an existing file, otherwise the keyword fails. Relative paths are resolved against the current working directory. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string ``{contextid}`` will be replaced with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.zip``. Temporary trace files will be saved to ${OUTPUT_DIR}/browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. Tracing can also be enabled by setting a Robot Framework variable or environment variable ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``. |
         | ``userAgent``            | Specific user agent to use in this context. |
@@ -886,10 +886,12 @@ class PlaywrightState(LibraryComponent):
         reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
-        if storageState and not storageState.is_file():
-            raise ValueError(
-                f"storageState argument value '{storageState}' is not file, but it should be."
-            )
+        if storageState:
+            if not storageState.is_file():
+                raise ValueError(
+                    f"storageState argument value '{storageState}' is not file, but it should be."
+                )
+            params["storageState"] = storageState.resolve()
         if "httpCredentials" in params and params["httpCredentials"] is not None:
             secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret

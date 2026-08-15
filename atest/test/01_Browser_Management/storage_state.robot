@@ -46,7 +46,7 @@ Save Storage State To Given Path
     Should Be Equal    ${returned}    ${target}
     File Should Not Be Empty    ${target}
 
-Save And Set Storage State With A Relative Path
+Storage State Keywords Accept A Relative Path
     [Documentation]    The node wrapper runs in its own working directory, so relative paths
     ...    must be resolved before they are sent over grpc.
     New Context
@@ -60,6 +60,9 @@ Save And Set Storage State With A Relative Path
     Set Storage State    ${relative}
     ${cookie} =    Get Cookie    Foo
     Should Be Equal    ${cookie.value}    Bar
+    New Context    storageState=${relative}
+    ${cookie} =    Get Cookie    Key
+    Should Be Equal    ${cookie.value}    Value
     [Teardown]    Remove Directory    ${EXECDIR}/${RELATIVE_STATE_DIR}    recursive=True
 
 Save Storage State To Given Path Overwrites Existing File
@@ -134,6 +137,8 @@ Set Storage State Restores IndexedDB Into The Same Context
     ...    page, which blocks the restore, so Set Storage State never finishes here. Enable
     ...    this test, and remove the timeout from Set Storage State Times Out On IndexedDB
     ...    Held By An Open Page, once Playwright closes that connection.
+    ...
+    ...    SKIP Blocked by https://github.com/microsoft/playwright/issues/42258
     [Tags]    playwright-42258
     Skip    Blocked by https://github.com/microsoft/playwright/issues/42258
     New Context
