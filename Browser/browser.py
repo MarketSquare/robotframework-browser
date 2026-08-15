@@ -30,7 +30,7 @@ from assertionengine import AssertionOperator
 from overrides import overrides
 from robot.api.deco import library
 from robot.errors import DataError
-from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn, RobotNotRunningError
 from robot.running.arguments import PythonArgumentParser
 from robot.utils import secs_to_timestr, timestr_to_secs
 from robot.utils.robottypes import is_falsy
@@ -508,6 +508,7 @@ class Browser(DynamicCore):
         self.ROBOT_LIBRARY_LISTENER = self
         self.scope_stack: dict = {}
         self.suite_ids: dict[str, None] = {}
+        self._own_libname_cache: dict[str, bool] = {}
         self.current_test_id: str | None = None
         self._rf_context = _RFContextTracker()
         self._playwright_state: PlaywrightState = PlaywrightState(self)
@@ -860,7 +861,32 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def coverage_output(self) -> Path:
         return self.browser_output / "coverage"
 
+    def _is_own_keyword(self, libname: str) -> bool:
+        """Is ``libname`` the name *this* instance is imported under?
+
+        The listener is registered as ``self`` (``ROBOT_LIBRARY_LISTENER = self``), so the
+        listener hooks see every keyword in the suite and have to recognise their own.
+        Comparing ``libname`` against the literal ``"Browser"`` gets that wrong whenever
+        the library is imported ``AS`` another name or subclassed into a user library.
+
+        Identity is used rather than ``isinstance``: when a suite imports both ``Browser``
+        and a subclass of it, *both* instances are registered as listeners and both are
+        notified of every keyword, so an ``isinstance`` test would make each of them react
+        to the other's keywords.
+        """
+        cached = self._own_libname_cache.get(libname)
+        if cached is None:
+            try:
+                instances = BuiltIn().get_library_instance(all=True)
+            except RobotNotRunningError:
+                return False
+            cached = instances.get(libname) is self  # type: ignore[attr-defined]
+            self._own_libname_cache[libname] = cached
+        return cached
+
     def _start_suite(self, name, attrs):
+        # A name resolves to an instance within one namespace; a new suite is a new one.
+        self._own_libname_cache.clear()
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
         self._rf_context.start_suite(attrs["id"], attrs.get("longname", name))
@@ -930,11 +956,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if not (
             self.show_keyword_call_banner is False
             or (self.show_keyword_call_banner is None and not self.presenter_mode)
-            or attrs["libname"] != "Browser"
             or attrs["status"] == "NOT RUN"
+            or not self._is_own_keyword(attrs["libname"])
         ):
             self._show_keyword_call(attrs)
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+        if "secret" in attrs["kwname"].lower() and self._is_own_keyword(
+            attrs["libname"]
+        ):
             self._set_logging(False)
 
         if attrs["type"] == "Teardown":
@@ -1026,7 +1054,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self.keyword_call_stack.pop()
         if self.tracing_group_mode == TracingGroupMode.Full:
             self._playwright_state.close_trace_group()
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
+        if "secret" in attrs["kwname"].lower() and self._is_own_keyword(
+            attrs["libname"]
+        ):
             self._set_logging(True)
 
     def _end_test(self, name, attrs):
