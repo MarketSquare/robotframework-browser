@@ -422,6 +422,13 @@ def launch_browser_server(browser, options):
     to the keyword `Launch Browser Server`. Arguments must be in the form of `argument_name=value`.
     See the keyword documentation for more details on the available options.
 
+    Values are converted by Robot Framework, so quote the whole `argument_name=value` pair when
+    it contains spaces or quotes. Otherwise the shell strips them and the conversion fails.
+
+    \b
+    Example:
+      rfbrowser launch-browser-server chromium "timeout=10 sec" "proxy={'server': 'http://localhost:8888'}"
+
     == Connecting to a randomly generated websocket ==
 
     When the browser server is started, the generated wsEndpoint is printed to the console.
