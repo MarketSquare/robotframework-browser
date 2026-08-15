@@ -1912,6 +1912,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Alpha-Centauri-00",
+      "name": "M.Kherki",
+      "avatar_url": "https://avatars.githubusercontent.com/u/56655042?v=4",
+      "profile": "https://github.com/Alpha-Centauri-00",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
