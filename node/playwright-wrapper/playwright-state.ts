@@ -1149,20 +1149,31 @@ export async function setStorageState(
     exists(context, 'Tried to set storage state but no context was open');
     const stateFile = request.path;
     const timeout = request.timeout;
+    const restore = context.c.setStorageState(stateFile);
+    if (timeout <= 0) {
+        await restore;
+        return emptyWithLog('Current context state is set from: ' + stateFile);
+    }
     // https://github.com/microsoft/playwright/issues/42258: setStorageState never settles
     // while a page of the context holds an open IndexedDB connection, and it does not honor
-    // the context timeout, so it needs a timeout of its own.
+    // the context timeout, so it needs a timeout of its own. Racing does not cancel the
+    // restore, so it may still be applied once the page releases the connection.
     let timer: NodeJS.Timeout | undefined;
     const timeoutMessage =
-        `Set Storage State timed out after ${timeout} ms. If the state file contains IndexedDB, ` +
-        'reload or close the pages of the context, or set the state into a new context, before calling this keyword.';
+        `Set Storage State timed out after ${timeout} ms and the state was not restored. If the ` +
+        'state file contains IndexedDB, reload or close the pages of the context, or set the state ' +
+        'into a new context, before calling this keyword. This context may still have the state ' +
+        'applied to it later on, so it should not be used anymore.';
     try {
         await Promise.race([
-            context.c.setStorageState(stateFile),
+            restore,
             new Promise((_, reject) => {
                 timer = setTimeout(() => reject(new Error(timeoutMessage)), timeout);
             }),
         ]);
+    } catch (error) {
+        restore.catch(() => {});
+        throw error;
     } finally {
         if (timer) clearTimeout(timer);
     }

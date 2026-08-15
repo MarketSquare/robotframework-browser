@@ -1699,7 +1699,7 @@ class PlaywrightState(LibraryComponent):
         shared with people outside of your organisation.
 
         | =Arguments= | =Description= |
-        | ``path`` | Where the state file is written. Relative paths are resolved against the current working directory and missing parent directories are created. If the file already exists, it is overwritten. If not given, a file with a generated name is created in ${OUTPUTDIR}/browser/state. |
+        | ``path`` | Where the state file is written. Relative paths are resolved against the current working directory and missing parent directories are created. If the file already exists, it is overwritten. If not given, a file with a generated name is created in ${OUTPUTDIR}/browser/state. The absolute path of the written file is returned. |
         | ``indexedDB`` | Also save IndexedDB. Needed by applications, like Firebase, which store authentication tokens in IndexedDB. |
         | ``credentials`` | Also save the context's virtual WebAuthn credentials, as created by `Create Credential`. This is not related to the ``httpCredentials`` argument of `New Context`, which is about HTTP authentication. |
 
@@ -1729,7 +1729,11 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4318|Comment >>]
         """
-        state_file = path if path is not None else self.state_file / f"{uuid4()!s}.json"
+        state_file = (
+            path.resolve()
+            if path is not None
+            else (self.state_file / f"{uuid4()!s}.json").resolve()
+        )
         state_file.parent.mkdir(parents=True, exist_ok=True)
         log = self._save_storage_state(str(state_file), indexedDB, credentials)
         logger.info(log)
@@ -1795,7 +1799,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SetStorageState(
                 Request().SetStorageState(
-                    path=str(path), timeout=int(self.get_timeout(timeout))
+                    path=str(path.resolve()), timeout=int(self.get_timeout(timeout))
                 )
             )
         logger.info(response.log)

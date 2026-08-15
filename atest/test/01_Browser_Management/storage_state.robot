@@ -5,6 +5,7 @@ Suite Setup     New Browser    headless=${HEADLESS}
 
 *** Variables ***
 ${CUSTOM_STATE_DIR} =       ${OUTPUT_DIR}/custom_state
+${RELATIVE_STATE_DIR} =     relative_state_test
 ${SEED_INDEXED_DB} =        async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); db.close(); }
 ${READ_INDEXED_DB} =        async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); const value = await new Promise((res, rej) => { const tx = db.transaction('kv', 'readonly'); const get = tx.objectStore('kv').get('auth'); get.onsuccess = () => res(get.result); get.onerror = () => rej(get.error); }); db.close(); return value === undefined ? '' : value; }
 ${DELETE_INDEXED_DB} =      async () => { await new Promise((res, rej) => { const req = indexedDB.deleteDatabase('rfdb'); req.onsuccess = () => res(); req.onerror = () => rej(req.error); req.onblocked = () => rej(new Error('blocked')); }); }
@@ -44,6 +45,22 @@ Save Storage State To Given Path
     ${returned} =    Save Storage State    ${target}
     Should Be Equal    ${returned}    ${target}
     File Should Not Be Empty    ${target}
+
+Save And Set Storage State With A Relative Path
+    [Documentation]    The node wrapper runs in its own working directory, so relative paths
+    ...    must be resolved before they are sent over grpc.
+    New Context
+    New Page    ${LOGIN_URL}
+    Add Cookies For Storage
+    VAR    ${relative} =    ${RELATIVE_STATE_DIR}/relative_auth.json
+    ${returned} =    Save Storage State    ${relative}
+    Should Be Equal    ${returned}    ${EXECDIR}/${relative}
+    File Should Not Be Empty    ${EXECDIR}/${relative}
+    Delete All Cookies
+    Set Storage State    ${relative}
+    ${cookie} =    Get Cookie    Foo
+    Should Be Equal    ${cookie.value}    Bar
+    [Teardown]    Remove Directory    ${EXECDIR}/${RELATIVE_STATE_DIR}    recursive=True
 
 Save Storage State To Given Path Overwrites Existing File
     New Context
