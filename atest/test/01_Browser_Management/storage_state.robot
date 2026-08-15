@@ -28,7 +28,7 @@ Restore Storage State
 
 Restore Storage State With Invalid Path
     Run Keyword And Expect Error
-    ...    ValueError: storageState argument value '/not/here' is not file, but it should be.
+    ...    ValueError: storageState argument value '?not?here' is not file, but it should be.
     ...    New Context    storageState=/not/here
 
 Restore Storage State With Invalid File
@@ -43,7 +43,8 @@ Save Storage State To Given Path
     Add Cookies For Storage
     VAR    ${target} =    ${CUSTOM_STATE_DIR}/auth.json
     ${returned} =    Save Storage State    ${target}
-    Should Be Equal    ${returned}    ${target}
+    ${expected} =    Normalize Path    ${target}
+    Should Be Equal    ${returned}    ${expected}
     File Should Not Be Empty    ${target}
 
 Storage State Keywords Accept A Relative Path
@@ -54,7 +55,8 @@ Storage State Keywords Accept A Relative Path
     Add Cookies For Storage
     VAR    ${relative} =    ${RELATIVE_STATE_DIR}/relative_auth.json
     ${returned} =    Save Storage State    ${relative}
-    Should Be Equal    ${returned}    ${EXECDIR}/${relative}
+    ${expected} =    Normalize Path    ${EXECDIR}/${relative}
+    Should Be Equal    ${returned}    ${expected}
     File Should Not Be Empty    ${EXECDIR}/${relative}
     Delete All Cookies
     Set Storage State    ${relative}
@@ -102,7 +104,7 @@ Set Storage State Keeps The Context And Its Pages Open
 
 Set Storage State With Invalid Path
     Run Keyword And Expect Error
-    ...    ValueError: path argument value '/not/here' is not file, but it should be.
+    ...    ValueError: path argument value '?not?here' is not file, but it should be.
     ...    Set Storage State    /not/here
 
 Save Storage State With IndexedDB Restores IndexedDB
