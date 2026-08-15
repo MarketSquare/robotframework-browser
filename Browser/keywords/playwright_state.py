@@ -1701,8 +1701,8 @@ class PlaywrightState(LibraryComponent):
         |     `New context`
         |     `New Page`    https://login.page.html
         |     #  Perform login
-        |     VAR    ${username}    %{USERNAME}    # Convert environment variable to secret
-        |     VAR    ${password}    %{PASSWORD}    # Convert environment variable to secret
+        |     VAR    ${username: Secret}    %{USERNAME}    # Convert environment variable to secret
+        |     VAR    ${password: Secret}    %{PASSWORD}    # Convert environment variable to secret
         |     `Fill Secret`    id=username    ${username}
         |     `Fill Secret`    id=password    ${password}
         |     `Click`    id=button

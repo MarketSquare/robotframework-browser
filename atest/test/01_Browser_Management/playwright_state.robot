@@ -463,6 +463,8 @@ Launch Browser Server Via CLI
     ...    headless\=${HEADLESS}
     ...    port\=8273
     ...    wsPath\=server3
+    ...    timeout\=30s
+    ...    slowMo\=0s
     Wait Until Keyword Succeeds
     ...    10s
     ...    1s
@@ -481,6 +483,36 @@ Launch Browser Server Via CLI
     Get Viewport Size    width    ==    100
     Get Viewport Size    height    ==    100
     [Teardown]    Terminate All Processes
+
+Launch Browser Server Via CLI With Proxy
+    [Documentation]    The `proxy` TypedDict is converted twice: once by the CLI and once when
+    ...    the entry point calls the keyword by attribute access. Nothing listens on port 1, so
+    ...    a refused proxy connection is what proves the option survived both conversions and
+    ...    reached the browser. A proxy that was accepted but ignored would let the page load
+    ...    and this test would prove nothing.
+    [Tags]    no-docker-pr
+    ${python} =    Get Python Binary Path
+    ${process} =    Start Process
+    ...    ${python}
+    ...    -m
+    ...    Browser.entry
+    ...    launch-browser-server
+    ...    chromium
+    ...    headless\=${HEADLESS}
+    ...    port\=8274
+    ...    wsPath\=server4
+    ...    timeout\=30s
+    ...    proxy\={'server': 'http://localhost:1'}
+    Wait Until Keyword Succeeds
+    ...    10s
+    ...    1s
+    ...    Connect To Browser
+    ...    wsEndpoint=ws://localhost:8274/server4
+    ...    browser=chromium
+    Run Keyword And Expect Error
+    ...    *net::ERR_PROXY_CONNECTION_FAILED*
+    ...    New Page    ${LOGIN_URL}
+    [Teardown]    Run Keywords    Close Browser    ALL    AND    Terminate All Processes
 
 Connect To Browser With Timeout
     TRY
