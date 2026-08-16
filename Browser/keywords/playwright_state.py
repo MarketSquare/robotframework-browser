@@ -46,6 +46,7 @@ from ..utils import (
     RecordHar,
     RecordVideo,
     ReduceMotion,
+    ReloadPages,
     SelectionType,
     ServiceWorkersPermissions,
     SupportedBrowsers,
@@ -610,7 +611,7 @@ class PlaywrightState(LibraryComponent):
         screen: dict[str, int] | None = None,
         serviceWorkers: ServiceWorkersPermissions
         | None = ServiceWorkersPermissions.allow,
-        storageState: str | None = None,
+        storageState: Path | None = None,
         timezoneId: str | None = None,
         tracing: bool | Path | None = None,
         userAgent: str | None = None,
@@ -651,7 +652,7 @@ class PlaywrightState(LibraryComponent):
         | ``reducedMotion``        | Emulates the ``prefers-reduced-motion`` media feature, supported values are ``reduce`` and ``no-preference``. Defaults to ``no-preference``. |
         | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
         | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to ``allow``. |
-        | ``storageState``         | Restores the storage state created by the `Save Storage State` keyword. Must be a full path to an existing file, otherwise the keyword fails. |
+        | ``storageState``         | Restores the storage state created by the `Save Storage State` keyword. Must be a path to an existing file, otherwise the keyword fails. Relative paths are resolved against the current working directory. |
         | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
         | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string ``{contextid}`` will be replaced with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.zip``. Temporary trace files will be saved to ${OUTPUT_DIR}/browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. Tracing can also be enabled by setting a Robot Framework variable or environment variable ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``. |
         | ``userAgent``            | Specific user agent to use in this context. |
@@ -886,10 +887,12 @@ class PlaywrightState(LibraryComponent):
         reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
-        if storageState and not Path(storageState).is_file():
-            raise ValueError(
-                f"storageState argument value '{storageState}' is not file, but it should be."
-            )
+        if storageState:
+            if not storageState.is_file():
+                raise ValueError(
+                    f"storageState argument value '{storageState}' is not file, but it should be."
+                )
+            params["storageState"] = storageState.resolve()
         if "httpCredentials" in params and params["httpCredentials"] is not None:
             secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret
@@ -1677,7 +1680,13 @@ class PlaywrightState(LibraryComponent):
         return {}
 
     @keyword(tags=("Getter", "BrowserControl"))
-    def save_storage_state(self) -> str:
+    def save_storage_state(
+        self,
+        path: Path | None = None,
+        *,
+        indexedDB: bool = False,
+        credentials: bool = False,
+    ) -> str:
         """Saves the current active context storage state to a file.
 
         Web apps use cookie-based or token-based authentication, where
@@ -1692,8 +1701,14 @@ class PlaywrightState(LibraryComponent):
         Please note that the state file may contain secrets and should not be
         shared with people outside of your organisation.
 
-        The file is created in ${OUTPUTDIR}/browser/state folder and file(s)
-        are automatically deleted when new test execution starts. File path
+        | =Arguments= | =Description= |
+        | ``path`` | Where the state file is written. Relative paths are resolved against the current working directory and missing parent directories are created. If the file already exists, it is overwritten. If not given, a file with a generated name is created in ${OUTPUTDIR}/browser/state. The absolute path of the written file is returned. |
+        | ``indexedDB`` | Also save IndexedDB. Needed by applications, like Firebase, which store authentication tokens in IndexedDB. |
+        | ``credentials`` | Also save the context's virtual WebAuthn credentials, as created by `Create Credential`. This is not related to the ``httpCredentials`` argument of `New Context`, which is about HTTP authentication. |
+
+        Files in ${OUTPUTDIR}/browser/state are automatically deleted when new
+        test execution starts. To keep a state file over several executions,
+        save it with ``path`` to a location outside of that folder. File path
         is returned by the keyword.
 
         Example:
@@ -1717,16 +1732,114 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4318|Comment >>]
         """
-        file = str(self.state_file / f"{uuid4()!s}.json")
-        self.state_file.mkdir(parents=True, exist_ok=True)
-        log = self._save_storage_state(file)
+        state_file = (
+            path.resolve()
+            if path is not None
+            else (self.state_file / f"{uuid4()!s}.json").resolve()
+        )
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        log = self._save_storage_state(str(state_file), indexedDB, credentials)
         logger.info(log)
-        return file
+        return str(state_file)
 
-    def _save_storage_state(self, path: str) -> str:
+    def _save_storage_state(
+        self, path: str, indexedDB: bool = False, credentials: bool = False
+    ) -> str:
         with self.playwright.grpc_channel() as stub:
-            response = stub.SaveStorageState(Request().FilePath(path=path))
+            response = stub.SaveStorageState(
+                Request().StorageState(
+                    path=path, indexedDB=indexedDB, credentials=credentials
+                )
+            )
         return response.log
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def set_storage_state(
+        self,
+        path: Path,
+        timeout: timedelta | None = None,
+        reload_pages: ReloadPages = ReloadPages.affected,
+    ) -> None:
+        """Restores a storage state file into the current active context.
+
+        Clears the cookies, local storage, IndexedDB and virtual WebAuthn
+        credentials of the currently active context and replaces them with the
+        ones from the ``path`` file, which must have been created by
+        `Save Storage State`. Unlike creating a `New Context` with the
+        ``storageState`` argument, the context and all of its pages stay open.
+
+        Pages that are already open keep the state they have loaded into memory.
+        Reload them, with the `Reload` keyword, to make them see the restored
+        state. Cookies and local storage are readable right away, without a
+        reload, but the application has read them long ago.
+
+        Note that ``sessionStorage`` is not part of a storage state, neither
+        when saving nor when restoring. It survives this keyword unchanged, so
+        an application which keeps data of the previous user there still has it
+        after the state was replaced.
+
+        Restoring a state which was saved with ``credentials=True`` installs the
+        virtual WebAuthn authenticator into the context, the same way
+        `Install Credential` does. Real authenticators do not work in that
+        context afterwards.
+
+        | =Arguments= | =Description= |
+        | ``path`` | Path to a state file created by `Save Storage State`. Relative paths are resolved against the current working directory. The keyword fails if the file does not exist. |
+        | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. Pass 0 to disable the timeout. |
+        | ``reload_pages`` | Which pages are reloaded while the state is restored, see `ReloadPages`. Only relevant when the state file contains IndexedDB. |
+
+        == Restoring IndexedDB ==
+
+        Restoring IndexedDB deletes the databases of the origin first, and that
+        does not finish while any client of that origin holds an open
+        connection to them. An application which keeps its connection open,
+        which is the normal pattern when authentication tokens are stored in
+        IndexedDB, therefore blocks the restore indefinitely. Playwright does
+        not time out on its own, see
+        [https://github.com/microsoft/playwright/issues/42258|playwright#42258].
+
+        This keyword works around that by navigating the pages of the affected
+        origins to ``about:blank``, restoring the state, and navigating them
+        back to the url they had before. Use ``reload_pages`` to control which
+        pages that applies to. A reload is needed in any case, because deleting
+        the databases closes the connection of the application as well.
+
+        A service worker of the origin can hold a connection open too, and no
+        value of ``reload_pages`` helps against that, because a service worker
+        outlives the pages. The keyword then fails when ``timeout`` expires.
+
+        ``reload_pages=none`` detects a blocking connection up front and fails
+        immediately instead of waiting for the timeout. That detection needs
+        ``indexedDB.databases()``, which older browsers, Firefox before 126
+        among them, do not have. There the keyword cannot tell whether a
+        connection blocks and falls back to waiting for ``timeout``.
+
+        Example:
+        | `New Context`
+        | `New Page`    https://login.page.html
+        |     #  Perform login as first user
+        | ${user_a} =    `Save Storage State`    indexedDB=True
+        |     #  Perform login as second user
+        | ${user_b} =    `Save Storage State`    indexedDB=True
+        |     #  Switch back to the first user without creating a new context
+        | `Set Storage State`    ${user_a}
+        | `Reload`
+        | `Get Text`    id=current-user    ==    userA
+        """
+        if not path.is_file():
+            raise ValueError(
+                f"path argument value '{path}' is not file, but it should be."
+            )
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetStorageState(
+                Request().SetStorageState(
+                    path=str(path.resolve()),
+                    timeout=int(self.get_timeout(timeout)),
+                    reloadPages=reload_pages.name,
+                    navigationTimeout=int(self.get_timeout(None)),
+                )
+            )
+        logger.info(response.log)
 
     def set_peer_id(self, new_id) -> str:
         """Sets the peer_id for the current GRPC connection to browser's backend.

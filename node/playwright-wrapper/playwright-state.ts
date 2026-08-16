@@ -56,6 +56,8 @@ import {
     Request_KeywordCall,
     Request_PersistentContext,
     Request_RFContext,
+    Request_SetStorageState,
+    Request_StorageState,
     Request_TraceGroup,
     Request_UrlOptions,
     Response_Empty,
@@ -577,6 +579,8 @@ type IndexedContext = {
     traceFile: string;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
+    // A restore which timed out keeps running, see setStorageState.
+    storageStateRestorePending?: boolean;
 };
 
 export type DownloadInfo = {
@@ -1123,15 +1127,188 @@ export async function getErrorMessages(request: Request_Bool, openBrowsers: Play
 }
 
 export async function saveStorageState(
-    request: Request_FilePath,
+    request: Request_StorageState,
     browserState?: BrowserState,
 ): Promise<Response_Empty> {
     exists(browserState, "Tried to save storage state but browser wasn't open");
     const context = browserState.context;
     exists(context, 'Tried to save storage state butno context was open');
     const stateFile = request.path;
-    await context.c.storageState({ path: stateFile });
+    await context.c.storageState({
+        path: stateFile,
+        indexedDB: request.indexedDB,
+        credentials: request.credentials,
+    });
     return emptyWithLog('Current context state is saved to: ' + stateFile);
+}
+
+function indexedDbOrigins(stateFile: string): string[] {
+    try {
+        const state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+        return (state.origins ?? [])
+            .filter((o: { indexedDB?: unknown[] }) => (o.indexedDB?.length ?? 0) > 0)
+            .map((o: { origin: string }) => o.origin);
+    } catch {
+        // Let setStorageState report an unreadable state file itself.
+        return [];
+    }
+}
+
+function originOf(url: string): string | null {
+    try {
+        return new URL(url).origin;
+    } catch {
+        return null;
+    }
+}
+
+// Asks for a version upgrade of every database of the origin and aborts it again. Only a
+// client which holds an open connection makes that request fire 'blocked', so this reports
+// exactly what stops setStorageState from finishing. Aborting in 'upgradeneeded' keeps the
+// databases untouched. Must never run while a restore is pending: that crashes the browser.
+const OPEN_CONNECTIONS_PROBE = `async () => {
+    if (!indexedDB.databases) return null;
+    const blocked = [];
+    for (const { name, version } of await indexedDB.databases()) {
+        const isBlocked = await new Promise((resolve) => {
+            const request = indexedDB.open(name, (version || 1) + 1);
+            let settled = false;
+            const done = (value) => { if (!settled) { settled = true; resolve(value); } };
+            request.onblocked = () => done(true);
+            request.onupgradeneeded = () => { request.transaction.abort(); };
+            request.onerror = (event) => { event.preventDefault(); done(false); };
+            request.onsuccess = () => { request.result.close(); done(false); };
+        });
+        if (isBlocked) blocked.push(name);
+    }
+    return blocked;
+}`;
+
+export async function setStorageState(
+    request: Request_SetStorageState,
+    browserState?: BrowserState,
+): Promise<Response_Empty> {
+    exists(browserState, "Tried to set storage state but browser wasn't open");
+    const context = browserState.context;
+    exists(context, 'Tried to set storage state but no context was open');
+    const stateFile = request.path;
+    const timeout = request.timeout;
+    const origins = indexedDbOrigins(stateFile);
+    const pages = context.c.pages().filter((page) => !page.isClosed());
+    const affected =
+        request.reloadPages === 'all'
+            ? pages.filter((page) => originOf(page.url()) !== null)
+            : pages.filter((page) => origins.includes(originOf(page.url()) ?? ''));
+
+    if (context.storageStateRestorePending) {
+        throw new Error(
+            'A previous Set Storage State on this context timed out and is still running. Playwright does not ' +
+                'cancel it, and touching IndexedDB while it runs crashes the browser, so this context cannot ' +
+                'restore another storage state. Create a new context instead.',
+        );
+    }
+
+    if (origins.length > 0 && request.reloadPages === 'none') {
+        for (const page of affected) {
+            if (page.isClosed()) continue;
+            const blocked: string[] | null = await page.evaluate(`(${OPEN_CONNECTIONS_PROBE})()`);
+            if (blocked === null) {
+                logger.info(
+                    `This browser has no indexedDB.databases(), so reload_pages=none cannot tell whether a ` +
+                        `connection of ${originOf(page.url())} blocks the restore. Waiting for the timeout instead.`,
+                );
+            }
+            if (blocked?.length) {
+                throw new Error(
+                    `Set Storage State cannot restore the state of ${originOf(page.url())}, because a client of ` +
+                        `that origin holds an open connection to the IndexedDB database(s) ${blocked.join(', ')}. ` +
+                        'Restoring deletes those databases, which does not finish while a connection is open. ' +
+                        'Use reload_pages=affected to let this keyword navigate the pages away and back.',
+                );
+            }
+        }
+    }
+
+    const detached: { page: Page; url: string }[] = [];
+    const detachFailed: string[] = [];
+
+    // Navigation only. Anything which touches IndexedDB from the page crashes the browser
+    // while a restore is pending, so the pages are never probed on this path.
+    const reattach = async (): Promise<string[]> => {
+        const failed: string[] = [];
+        for (const { page, url } of detached) {
+            if (page.isClosed()) continue;
+            try {
+                await page.goto(url, { timeout: request.navigationTimeout });
+            } catch {
+                failed.push(url);
+            }
+        }
+        return failed;
+    };
+
+    const withPages = (message: string, failed: string[]): string => {
+        const stranded = [...detachFailed, ...failed];
+        return stranded.length ? `${message}\nThese pages were not navigated back: ${stranded.join(', ')}` : message;
+    };
+
+    try {
+        if (origins.length > 0 && request.reloadPages !== 'none') {
+            for (const page of affected) {
+                if (page.isClosed()) continue;
+                const url = page.url();
+                try {
+                    await page.goto('about:blank');
+                    detached.push({ page, url });
+                } catch {
+                    // The page is gone or refuses to navigate. It cannot be restored either,
+                    // so report it instead of leaving the caller to wonder.
+                    detachFailed.push(url);
+                }
+            }
+        }
+        const restore = context.c
+            .setStorageState(stateFile)
+            .finally(() => (context.storageStateRestorePending = false));
+        context.storageStateRestorePending = true;
+        await withTimeout(restore, timeout, stateFile);
+    } catch (error) {
+        const message = withPages((error as Error).message, await reattach());
+        if (message !== (error as Error).message) throw new Error(message, { cause: error });
+        throw error;
+    }
+    const failed = await reattach();
+    if (failed.length || detachFailed.length) {
+        throw new Error(withPages('The state was restored, but not every page is back on its url.', failed));
+    }
+    return emptyWithLog('Current context state is set from: ' + stateFile);
+}
+
+// https://github.com/microsoft/playwright/issues/42258: setStorageState never settles while a
+// client of the origin holds an open IndexedDB connection, and it does not honor the context
+// timeout. Racing does not cancel it, so it may still be applied later on.
+async function withTimeout(restore: Promise<void>, timeout: number, stateFile: string): Promise<void> {
+    if (timeout <= 0) return restore;
+    let timer: NodeJS.Timeout | undefined;
+    const message =
+        `Set Storage State timed out after ${timeout} ms and the state of ${stateFile} was not restored. ` +
+        'A client of the origin, a page or a service worker, holds an open IndexedDB connection which ' +
+        'blocks the restore. Playwright does not cancel the restore, so it is still running and applies ' +
+        'the state as soon as that connection closes, even long after this failure. Do not keep using ' +
+        'this context after catching this error, its storage state can change at any time.';
+    try {
+        await Promise.race([
+            restore,
+            new Promise<void>((_, reject) => {
+                timer = setTimeout(() => reject(new Error(message)), timeout);
+            }),
+        ]);
+    } catch (error) {
+        restore.catch(() => {});
+        throw error;
+    } finally {
+        if (timer) clearTimeout(timer);
+    }
 }
 
 export async function startCoverage(request: Request_CoverageStart, state: PlaywrightState): Promise<Response_Empty> {

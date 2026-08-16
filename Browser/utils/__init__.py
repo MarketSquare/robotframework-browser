@@ -53,6 +53,7 @@ from .data_types import (
     RecordVideo,
     ReduceMotion,
     ReducedMotion,
+    ReloadPages,
     RequestMethod,
     Scale,
     Scope,

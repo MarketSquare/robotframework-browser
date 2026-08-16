@@ -1412,6 +1412,25 @@ class CoverageType(Enum):
     all = auto()
 
 
+class ReloadPages(Enum):
+    """Defines which pages `Set Storage State` reloads while it restores the state.
+
+    Restoring a state file that contains IndexedDB does not finish while a page
+    of the context holds an open connection to a database of that origin. To get
+    around that, the pages are navigated to ``about:blank``, the state is
+    restored, and they are navigated back to the url they had before.
+
+    ``affected``: Reloads the pages whose origin has IndexedDB in the state file.
+    ``none``: Reloads nothing. The keyword fails immediately when it detects an
+    open connection which would block the restore.
+    ``all``: Reloads every page of the context.
+    """
+
+    affected = auto()
+    none = auto()
+    all = auto()
+
+
 class ClockType(Enum):
     """Defines how time is set.
 
