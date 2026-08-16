@@ -52,6 +52,7 @@ from .data_types import (
     RecordHar,
     RecordVideo,
     ReduceMotion,
+    ReloadPages,
     ReducedMotion,
     RequestMethod,
     Scale,

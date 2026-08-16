@@ -129,6 +129,8 @@ message Request {
   message SetStorageState {
     string path = 1;
     int32 timeout = 2;
+    string reloadPages = 3;
+    int32 navigationTimeout = 4;
   }
   message FileBySelector {
     repeated string path = 1;

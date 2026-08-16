@@ -46,6 +46,7 @@ from ..utils import (
     RecordHar,
     RecordVideo,
     ReduceMotion,
+    ReloadPages,
     SelectionType,
     ServiceWorkersPermissions,
     SupportedBrowsers,
@@ -1753,7 +1754,12 @@ class PlaywrightState(LibraryComponent):
         return response.log
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def set_storage_state(self, path: Path, timeout: timedelta | None = None) -> None:
+    def set_storage_state(
+        self,
+        path: Path,
+        timeout: timedelta | None = None,
+        reload_pages: ReloadPages = ReloadPages.affected,
+    ) -> None:
         """Restores a storage state file into the current active context.
 
         Clears the cookies, local storage, IndexedDB and virtual WebAuthn
@@ -1764,35 +1770,50 @@ class PlaywrightState(LibraryComponent):
 
         Pages that are already open keep the state they have loaded into memory.
         Reload them, with the `Reload` keyword, to make them see the restored
-        state.
+        state. Cookies and local storage are readable right away, without a
+        reload, but the application has read them long ago.
+
+        Note that ``sessionStorage`` is not part of a storage state, neither
+        when saving nor when restoring. It survives this keyword unchanged, so
+        an application which keeps data of the previous user there still has it
+        after the state was replaced.
 
         | =Arguments= | =Description= |
         | ``path`` | Path to a state file created by `Save Storage State`. Relative paths are resolved against the current working directory. The keyword fails if the file does not exist. |
         | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. |
+        | ``reload_pages`` | Which pages are reloaded while the state is restored, see `ReloadPages`. Only relevant when the state file contains IndexedDB. |
 
         == Restoring IndexedDB ==
 
-        `Save Storage State` with ``indexedDB=True`` leaves an open IndexedDB
-        connection in the page, which is a
-        [https://github.com/microsoft/playwright/issues/42258|Playwright bug].
-        Restoring a state file that contains IndexedDB into a context whose
-        pages still hold such a connection never finishes, and this keyword
-        fails when ``timeout`` expires. Avoid that by either reloading the
-        pages of the context before calling this keyword, or by restoring the
-        state into a `New Context`.
+        Restoring IndexedDB deletes the databases of the origin first, and that
+        does not finish while any client of that origin holds an open
+        connection to them. An application which keeps its connection open,
+        which is the normal pattern when authentication tokens are stored in
+        IndexedDB, therefore blocks the restore indefinitely. Playwright does
+        not time out on its own, see
+        [https://github.com/microsoft/playwright/issues/42258|playwright#42258].
+
+        This keyword works around that by navigating the pages of the affected
+        origins to ``about:blank``, restoring the state, and navigating them
+        back to the url they had before. Use ``reload_pages`` to control which
+        pages that applies to. A reload is needed in any case, because deleting
+        the databases closes the connection of the application as well.
+
+        A service worker of the origin can hold a connection open too, and no
+        value of ``reload_pages`` helps against that, because a service worker
+        outlives the pages. The keyword then fails when ``timeout`` expires.
 
         Example:
-        | Test Case
-        |     `New Context`
-        |     `New Page`    https://login.page.html
+        | `New Context`
+        | `New Page`    https://login.page.html
         |     #  Perform login as first user
-        |     ${user_a} =    `Save Storage State`
+        | ${user_a} =    `Save Storage State`    indexedDB=True
         |     #  Perform login as second user
-        |     ${user_b} =    `Save Storage State`
+        | ${user_b} =    `Save Storage State`    indexedDB=True
         |     #  Switch back to the first user without creating a new context
-        |     `Set Storage State`    ${user_a}
-        |     `Reload`
-        |     `Get Text`    id=current-user    ==    userA
+        | `Set Storage State`    ${user_a}
+        | `Reload`
+        | `Get Text`    id=current-user    ==    userA
         """
         if not path.is_file():
             raise ValueError(
@@ -1801,7 +1822,10 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.SetStorageState(
                 Request().SetStorageState(
-                    path=str(path.resolve()), timeout=int(self.get_timeout(timeout))
+                    path=str(path.resolve()),
+                    timeout=int(self.get_timeout(timeout)),
+                    reloadPages=reload_pages.name,
+                    navigationTimeout=int(self.get_timeout(None)),
                 )
             )
         logger.info(response.log)
