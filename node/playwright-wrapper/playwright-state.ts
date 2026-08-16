@@ -579,6 +579,8 @@ type IndexedContext = {
     traceFile: string;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
+    // A restore which timed out keeps running, see setStorageState.
+    storageStateRestorePending?: boolean;
 };
 
 export type DownloadInfo = {
@@ -1198,9 +1200,24 @@ export async function setStorageState(
             ? pages.filter((page) => originOf(page.url()) !== null)
             : pages.filter((page) => origins.includes(originOf(page.url()) ?? ''));
 
+    if (context.storageStateRestorePending) {
+        throw new Error(
+            'A previous Set Storage State on this context timed out and is still running. Playwright does not ' +
+                'cancel it, and touching IndexedDB while it runs crashes the browser, so this context cannot ' +
+                'restore another storage state. Create a new context instead.',
+        );
+    }
+
     if (origins.length > 0 && request.reloadPages === 'none') {
         for (const page of affected) {
+            if (page.isClosed()) continue;
             const blocked: string[] | null = await page.evaluate(`(${OPEN_CONNECTIONS_PROBE})()`);
+            if (blocked === null) {
+                logger.info(
+                    `This browser has no indexedDB.databases(), so reload_pages=none cannot tell whether a ` +
+                        `connection of ${originOf(page.url())} blocks the restore. Waiting for the timeout instead.`,
+                );
+            }
             if (blocked?.length) {
                 throw new Error(
                     `Set Storage State cannot restore the state of ${originOf(page.url())}, because a client of ` +
@@ -1213,13 +1230,7 @@ export async function setStorageState(
     }
 
     const detached: { page: Page; url: string }[] = [];
-    if (origins.length > 0 && request.reloadPages !== 'none') {
-        for (const page of affected) {
-            const url = page.url();
-            await page.goto('about:blank');
-            detached.push({ page, url });
-        }
-    }
+    const detachFailed: string[] = [];
 
     // Navigation only. Anything which touches IndexedDB from the page crashes the browser
     // while a restore is pending, so the pages are never probed on this path.
@@ -1236,20 +1247,39 @@ export async function setStorageState(
         return failed;
     };
 
+    const withPages = (message: string, failed: string[]): string => {
+        const stranded = [...detachFailed, ...failed];
+        return stranded.length ? `${message}\nThese pages were not navigated back: ${stranded.join(', ')}` : message;
+    };
+
     try {
-        await withTimeout(context.c.setStorageState(stateFile), timeout, stateFile);
-    } catch (error) {
-        const failed = await reattach();
-        if (failed.length) {
-            throw new Error(`${(error as Error).message}\nThese pages were not restored: ${failed.join(', ')}`, {
-                cause: error,
-            });
+        if (origins.length > 0 && request.reloadPages !== 'none') {
+            for (const page of affected) {
+                if (page.isClosed()) continue;
+                const url = page.url();
+                try {
+                    await page.goto('about:blank');
+                    detached.push({ page, url });
+                } catch {
+                    // The page is gone or refuses to navigate. It cannot be restored either,
+                    // so report it instead of leaving the caller to wonder.
+                    detachFailed.push(url);
+                }
+            }
         }
+        const restore = context.c
+            .setStorageState(stateFile)
+            .finally(() => (context.storageStateRestorePending = false));
+        context.storageStateRestorePending = true;
+        await withTimeout(restore, timeout, stateFile);
+    } catch (error) {
+        const message = withPages((error as Error).message, await reattach());
+        if (message !== (error as Error).message) throw new Error(message, { cause: error });
         throw error;
     }
     const failed = await reattach();
-    if (failed.length) {
-        throw new Error(`The state was restored, but these pages were not navigated back: ${failed.join(', ')}`);
+    if (failed.length || detachFailed.length) {
+        throw new Error(withPages('The state was restored, but not every page is back on its url.', failed));
     }
     return emptyWithLog('Current context state is set from: ' + stateFile);
 }

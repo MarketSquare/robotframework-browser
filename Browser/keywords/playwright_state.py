@@ -1778,9 +1778,14 @@ class PlaywrightState(LibraryComponent):
         an application which keeps data of the previous user there still has it
         after the state was replaced.
 
+        Restoring a state which was saved with ``credentials=True`` installs the
+        virtual WebAuthn authenticator into the context, the same way
+        `Install Credential` does. Real authenticators do not work in that
+        context afterwards.
+
         | =Arguments= | =Description= |
         | ``path`` | Path to a state file created by `Save Storage State`. Relative paths are resolved against the current working directory. The keyword fails if the file does not exist. |
-        | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. |
+        | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. Pass 0 to disable the timeout. |
         | ``reload_pages`` | Which pages are reloaded while the state is restored, see `ReloadPages`. Only relevant when the state file contains IndexedDB. |
 
         == Restoring IndexedDB ==
@@ -1802,6 +1807,12 @@ class PlaywrightState(LibraryComponent):
         A service worker of the origin can hold a connection open too, and no
         value of ``reload_pages`` helps against that, because a service worker
         outlives the pages. The keyword then fails when ``timeout`` expires.
+
+        ``reload_pages=none`` detects a blocking connection up front and fails
+        immediately instead of waiting for the timeout. That detection needs
+        ``indexedDB.databases()``, which older browsers, Firefox before 126
+        among them, do not have. There the keyword cannot tell whether a
+        connection blocks and falls back to waiting for ``timeout``.
 
         Example:
         | `New Context`

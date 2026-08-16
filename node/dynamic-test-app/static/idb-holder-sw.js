@@ -5,6 +5,11 @@ let heldConnection;
 
 self.addEventListener('install', () => self.skipWaiting());
 
+// Answers whether the connection is open yet, so that tests can wait for it instead of sleeping.
+self.addEventListener('message', (event) => {
+    if (event.ports[0]) event.ports[0].postMessage(heldConnection ? 'open' : 'pending');
+});
+
 self.addEventListener('activate', (event) =>
     event.waitUntil(
         (async () => {
