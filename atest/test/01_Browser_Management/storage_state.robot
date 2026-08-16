@@ -9,6 +9,7 @@ ${OTHER_ORIGIN_URL} =       http://127.0.0.1:${SERVER_PORT}/dist/
 ${SEED_INDEXED_DB} =        async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); db.close(); }
 ${READ_INDEXED_DB} =        async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); const value = await new Promise((res, rej) => { const tx = db.transaction('kv', 'readonly'); const get = tx.objectStore('kv').get('auth'); get.onsuccess = () => res(get.result); get.onerror = () => rej(get.error); }); db.close(); return value === undefined ? '' : value; }
 ${HOLD_INDEXED_DB} =        async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); window.__db = db; }
+${LIST_INDEXED_DB} =        async () => (await indexedDB.databases()).map(db => db.name).join(',')
 ${DELETE_INDEXED_DB} =      async () => { await new Promise((res, rej) => { const req = indexedDB.deleteDatabase('rfdb'); req.onsuccess = () => res(); req.onerror = () => rej(req.error); req.onblocked = () => rej(new Error('blocked')); }); }
 
 *** Test Cases ***
@@ -136,6 +137,26 @@ Save Storage State Without IndexedDB Omits IndexedDB
     Reload
     ${value} =    Evaluate JavaScript    ${None}    ${READ_INDEXED_DB}
     Should Be Equal    ${value}    ${EMPTY}
+
+Set Storage State Clears IndexedDB Without Reloading Any Page
+    [Documentation]    Playwright clears the databases of the context through the storage layer,
+    ...    which does not block on open connections. Only writing IndexedDB back needs a version
+    ...    change, which is why only the origins carrying IndexedDB in the state file have to be
+    ...    reloaded. If this ever starts to block, the selection of pages has to grow.
+    New Context
+    New Page    ${LOGIN_URL}
+    ${state} =    Save Storage State
+    New Context
+    New Page    ${LOGIN_URL}
+    Evaluate JavaScript    ${None}    ${HOLD_INDEXED_DB}
+    ${before} =    Evaluate JavaScript    ${None}    ${LIST_INDEXED_DB}
+    Should Be Equal    ${before}    rfdb
+    Set Storage State    ${state}
+    ${still_open} =    Evaluate JavaScript    ${None}    () => !!window.__db
+    Should Be True    ${still_open}    The page must not have been reloaded
+    Reload
+    ${after} =    Evaluate JavaScript    ${None}    ${LIST_INDEXED_DB}
+    Should Be Equal    ${after}    ${EMPTY}
 
 Set Storage State Restores IndexedDB Into The Same Context
     [Documentation]    Disabled until https://github.com/microsoft/playwright/issues/42258 is fixed.
