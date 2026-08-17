@@ -65,8 +65,12 @@ export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, me
     return { log: message, json: JSON.stringify(responseErrors), bodyPart: '' };
 }
 
+function definedString(body: string): string {
+    return body ?? '';
+}
+
 export function stringResponse(body: string, logMessage: string): Response_String {
-    return { body, log: logMessage };
+    return { body: definedString(body), log: logMessage };
 }
 
 export function listStringResponse(body: string[], logMessage: string): Response_ListString {
@@ -74,7 +78,7 @@ export function listStringResponse(body: string[], logMessage: string): Response
 }
 
 export function jsonResponse(body: string, logMessage: string, bodyPart: string = ''): Response_Json {
-    return { json: body, log: logMessage, bodyPart };
+    return { json: definedString(body), log: logMessage, bodyPart };
 }
 
 export function intResponse(body: number, logMessage: string): Response_Int {
@@ -86,7 +90,7 @@ export function boolResponse(value: boolean, logMessage: string): Response_Bool 
 }
 
 export function jsResponse(result: string, logMessage: string): Response_JavascriptExecutionResult {
-    return { result: JSON.stringify(result), log: logMessage };
+    return { result: definedString(JSON.stringify(result)), log: logMessage };
 }
 
 export function errorResponse(e: unknown) {

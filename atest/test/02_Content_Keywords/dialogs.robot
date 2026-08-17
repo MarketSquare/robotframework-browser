@@ -18,8 +18,6 @@ Promptinput Works
     Get Text    \#prompt_result    ==    Some Input String
 
 Handle Future Dialogs Can Be Called Multiple Times
-    [Documentation]    Calling the keyword twice used to stack dialog handlers, which crashed
-    ...    the Playwright process when the second handler acted on the same dialog.
     Handle Future Dialogs    action=accept    prompt_input=First Input
     Handle Future Dialogs    action=accept    prompt_input=Second Input
     Click    \#prompts
