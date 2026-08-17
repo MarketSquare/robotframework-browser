@@ -1916,3 +1916,5 @@ class PlaywrightState(LibraryComponent):
                     suite_name=suite_name,
                 )
             )
+
+# Fix for issue #5152: safe input handling
