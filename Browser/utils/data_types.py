@@ -188,10 +188,33 @@ class AriaSnapshotReturnType(Enum):
     | =Value=  | =Description= |
     | ``dict`` | returns the snapshot as a dictionary. |
     | ``yaml`` | returns the snapshot as a yaml string. |
+    | ``parsed`` | returns the snapshot as a tree of node dictionaries. |
+
+    ``dict`` loads the yaml as it is. Role, name and all annotations of an
+    element stay inside the dictionary keys, for example
+    ``{'heading "Login Page" [level=1]': None}``.
+
+    ``parsed`` splits that information into separate keys. Every node has
+    ``role``, ``name``, ``text``, ``props`` and ``children``, and its values
+    are reachable both as ``${node}[role]`` and as ``${node.role}``:
+
+    | {
+    |     "role": "textbox",
+    |     "name": "username",
+    |     "text": None,
+    |     "props": {"ref": "e10", "box": {"x": 553, "y": 76, "width": 186, "height": 18}},
+    |     "children": []
+    | }
+
+    Annotations without a value, like ``[selected]``, become ``True``.
+    ``box`` uses the same keys as `Get BoundingBox`. The ``/url`` entry of a
+    link is an annotation in Playwright, not an element, and therefore becomes
+    the ``url`` property of the link instead of one of its children.
     """
 
     dict = auto()
     yaml = auto()
+    parsed = auto()
 
 
 class KeywordCallStackEntry(TypedDict):

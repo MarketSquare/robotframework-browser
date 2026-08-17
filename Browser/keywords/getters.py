@@ -37,6 +37,7 @@ from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
+from ..utils.aria_snapshot import parse_aria_snapshot
 from ..utils.data_types import (
     ROBOT_FRAMEWORK_BROWSER_NO_SET,
     AreaFields,
@@ -74,12 +75,12 @@ class Getters(LibraryComponent):
         mode: AriaSnapshotMode = AriaSnapshotMode.default,
         depth: int | None = None,
         boxes: bool = False,
-    ) -> str | dict | tuple:
+    ) -> str | dict | list | tuple:
         """Returns the aria snapshot of the element found by ``selector``.
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default) and ``dict``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. |
+        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. If ``parsed`` is selected, the returned value is a tree of node dictionaries. See `AriaSnapshotReturnType` for more details. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the state |
         | ``message`` | overrides the default error message for assertion. |
@@ -96,7 +97,8 @@ class Getters(LibraryComponent):
 
         With ``return_type=dict`` the YAML returned by Playwright is loaded as is. The
         ``[ref=...]`` and ``[box=...]`` annotations are therefore part of the dictionary
-        keys, not separate entries.
+        keys, not separate entries. Use ``return_type=parsed`` to get them as separate
+        values of each node.
 
         Optionally asserts that the snapshot matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -107,10 +109,6 @@ class Getters(LibraryComponent):
         | Log Many    ${aria}
         | ${aria_dict} =    `Get Aria Snapshot`    id=main    dict   # returns dictionary
         | Log Many    ${aria_dict}
-        | ${aria} =    `Get Aria Snapshot`    css=nav    depth=2   # only two levels of the tree
-        | ${aria} =    `Get Aria Snapshot`    css=body    mode=ai   # with [ref=...] annotations
-        | ${aria} =    `Get Aria Snapshot`    id=main    boxes=True   # with [box=...] annotations
-        | `Get Aria Snapshot`    css=nav    depth=2    contains    link "Home"
 
         [https://forum.robotframework.org/t//4303|Comment >>]
         """
@@ -132,6 +130,8 @@ class Getters(LibraryComponent):
         logger.info(f"Aria Snapshot: {value}")
         if return_type is AriaSnapshotReturnType.dict:
             value = yaml.safe_load(value) if value else {}
+        elif return_type is AriaSnapshotReturnType.parsed:
+            value = parse_aria_snapshot(value)
         formatter = self.get_assertion_formatter("Get Aria Snapshot")
         return verify_assertion(
             value,

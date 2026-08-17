@@ -98,6 +98,44 @@ Aria Snapshot Options With Dict Return Type
     ${snapshot} =    Get Aria Snapshot    h1    dict    boxes=True
     Should Be Equal    ${snapshot}    ${expected}
 
+Aria Snapshot Parsed
+    ${nodes} =    Get Aria Snapshot    h1    parsed
+    Length Should Be    ${nodes}    1
+    Should Be Equal    ${nodes}[0][role]    heading
+    Should Be Equal    ${nodes}[0][name]    Login Page
+    Should Be Equal    ${nodes}[0][props][level]    ${1}
+    Should Be Equal    ${nodes}[0][text]    ${None}
+    Should Be Empty    ${nodes}[0][children]
+
+Aria Snapshot Parsed Nests Children
+    ${nodes} =    Get Aria Snapshot    ${MouseTable}    parsed
+    ${rowgroup} =    Set Variable    ${nodes}[0][children][0]
+    ${first_cell} =    Set Variable    ${rowgroup}[children][0][children][0]
+    Should Be Equal    ${nodes}[0][role]    table
+    Should Be Equal    ${rowgroup}[role]    rowgroup
+    Should Be Equal    ${first_cell}[role]    cell
+    Should Be Equal    ${first_cell}[name]    Upload Result:
+
+Aria Snapshot Parsed With Boxes Matches Get BoundingBox
+    ${box} =    Get BoundingBox    h1    ALL
+    ${nodes} =    Get Aria Snapshot    h1    parsed    boxes=True
+    ${rounded} =    Evaluate    {key: int(value + 0.5) for key, value in $box.items()}
+    Should Be Equal    ${nodes}[0][props][box]    ${rounded}
+
+Aria Snapshot Parsed With AI Mode Has Refs
+    ${nodes} =    Get Aria Snapshot    h1    parsed    mode=ai
+    Should Match Regexp    ${nodes}[0][props][ref]    ^\\w+$
+
+Aria Snapshot Parsed Reads Link Url As Property
+    ${nodes} =    Get Aria Snapshot    css=a >> nth=0    parsed
+    Should Be Equal    ${nodes}[0][role]    link
+    Should Be Equal    ${nodes}[0][props][url]    index.js
+    Should Be Empty    ${nodes}[0][children]
+
+Aria Snapshot Parsed Reads Valueless Annotation As True
+    ${nodes} =    Get Aria Snapshot    css=select    parsed
+    Should Be Equal    ${nodes}[0][children][0][props][selected]    ${True}
+
 *** Keywords ***
 Aria Snapshot Setup
     Ensure Open Page    ${LOGIN_URL}
