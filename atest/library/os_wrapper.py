@@ -67,6 +67,35 @@ def get_enty_command() -> str:
     return f"{sys.executable} -m Browser.entry"
 
 
+def get_robot_command() -> str:
+    """Return the command that starts a child Robot Framework run."""
+    return f"{sys.executable} -m robot"
+
+
+def get_child_robot_environment() -> dict:
+    """Return the environment for a child robot run that starts its own node process.
+
+    `inv atest` starts one shared node process for the whole run and exports
+    ROBOT_FRAMEWORK_BROWSER_NODE_PORT and DEBUG for it (tasks.py). A child run
+    that inherited those would connect to the shared process instead of
+    starting its own and would never write its own playwright-log.txt.
+    The pino log level is set rather than inherited so the child behaves the
+    same under `inv atest` and `inv atest-robot`.
+    """
+    env = os.environ.copy()
+    env.pop("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", None)
+    env.pop("DEBUG", None)
+    env["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
+    return env
+
+
+def count_files(path: str, pattern: str) -> int:
+    """Return count of files matching pattern, also when path does not exist."""
+    files = sorted(str(file) for file in Path(path).glob(pattern))
+    logger.info(f'Files matching "{pattern}" in "{path}": {files}')
+    return len(files)
+
+
 def verify_translation(filename: Path) -> dict:
     """Verifies translation file."""
     with filename.open("r") as file:
