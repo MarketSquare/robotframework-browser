@@ -222,15 +222,29 @@ export async function uploadFile(request: pb.Request_FilePath, page: Page): Prom
     return emptyWithLog('Successfully uploaded file');
 }
 
+const dialogHandlers = new WeakMap<Page, (dialog: Dialog) => Promise<void>>();
+
 export async function handleAlert(request: pb.Request_AlertAction, page: Page): Promise<pb.Response_Empty> {
     const alertAction = request.alertAction as 'accept' | 'dismiss';
     const promptInput = request.promptInput;
     const fn = async (dialog: Dialog) => {
         const dialogueText = dialog.message();
-        if (promptInput) await dialog[alertAction](promptInput);
-        else await dialog[alertAction]();
+        try {
+            if (promptInput) await dialog[alertAction](promptInput);
+            else await dialog[alertAction]();
+        } catch (error: unknown) {
+            const reason = error instanceof Error ? error.message : String(error);
+            logger.error(`Failed to ${alertAction} dialog "${dialogueText}": ${reason}`);
+            return;
+        }
         logger.info(`Alert text: ${dialogueText}`);
     };
+    const previous = dialogHandlers.get(page);
+    if (previous) {
+        logger.info('Replacing the previously set dialog handler');
+        page.off('dialog', previous);
+    }
+    dialogHandlers.set(page, fn);
     page.on('dialog', fn);
     return emptyWithLog('Set event handler for next alert');
 }

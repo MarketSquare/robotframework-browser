@@ -338,7 +338,8 @@ class Control(LibraryComponent):
         relative_path = get_link_path(file_path, self.outputdir)
         logger.info(
             '</td></tr><tr><td colspan="3">'
-            f'<a href="{relative_path}" target="_blank"><img src="{relative_path}" width="800px"/></a>',
+            f'<a href="{relative_path}" target="_blank">'
+            f'<img src="{relative_path}" style="max-width:800px;max-height:800px;"/></a>',
             html=True,
         )
 
@@ -351,7 +352,8 @@ class Control(LibraryComponent):
         logger.info(
             '</td></tr><tr><td colspan="3">'
             '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
-            f'src="data:image/png;base64,{base64_screenshot.decode()}" width="900px"/>',
+            'style="max-width:900px;max-height:900px;" '
+            f'src="data:image/png;base64,{base64_screenshot.decode()}"/>',
             html=True,
         )
         return "EMBED"

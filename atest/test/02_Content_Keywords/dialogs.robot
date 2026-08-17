@@ -17,6 +17,33 @@ Promptinput Works
     Click    \#prompts
     Get Text    \#prompt_result    ==    Some Input String
 
+Handle Future Dialogs Can Be Called Multiple Times
+    [Documentation]    Calling the keyword twice used to stack dialog handlers, which crashed
+    ...    the Playwright process when the second handler acted on the same dialog.
+    Handle Future Dialogs    action=accept    prompt_input=First Input
+    Handle Future Dialogs    action=accept    prompt_input=Second Input
+    Click    \#prompts
+    Get Text    \#prompt_result    ==    Second Input
+    Click    \#prompts
+    Get Text    \#prompt_result    ==    Second Input
+
+Handle Future Dialogs Uses The Action Of The Latest Call
+    Handle Future Dialogs    action=accept    prompt_input=Some Input String
+    Handle Future Dialogs    action=dismiss
+    Click    \#prompts
+    Get Text    \#prompt_result    ==    prompt_not_filled
+
+Handle Future Dialogs Is Set Per Page
+    ${first_page} =    New Page    ${LOGIN_URL}
+    Handle Future Dialogs    action=accept    prompt_input=Input On First Page
+    New Page    ${LOGIN_URL}
+    Handle Future Dialogs    action=dismiss
+    Click    \#prompts
+    Get Text    \#prompt_result    ==    prompt_not_filled
+    Switch Page    ${first_page}[page_id]
+    Click    \#prompts
+    Get Text    \#prompt_result    ==    Input On First Page
+
 Dismiss And Promptinput Fails
     Run Keyword And Expect Error    prompt_input is only valid if action is 'accept'    Handle Future Dialogs
     ...    action=dismiss    prompt_input=Some Prompt Input
