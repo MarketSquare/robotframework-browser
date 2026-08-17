@@ -3,6 +3,9 @@ Resource        imports.resource
 
 Suite Setup     Aria Snapshot Setup
 
+*** Variables ***
+${MouseTable} =     css=table >> nth=1
+
 *** Test Cases ***
 Aria Snapshot YAML
     ${snapshot} =    Get Aria Snapshot    h1
@@ -35,6 +38,69 @@ Aria Snapshot Non-existing Element
         Log    Caught expected PlaywrightError for non-existing element.
     END
 
+Aria Snapshot Depth
+    ${full} =    Get Aria Snapshot    ${MouseTable}
+    ${depth_1} =    Get Aria Snapshot    ${MouseTable}    depth=1
+    ${depth_2} =    Get Aria Snapshot    ${MouseTable}    depth=2
+    Should Be Equal    ${depth_1}    - table:\n${SPACE*2}- rowgroup
+    Should Contain    ${depth_2}    - row "Mouse Delay:"
+    Should Not Contain    ${depth_2}    - cell "Mouse Delay:"
+    Should Contain    ${full}    - cell "Mouse Delay:"
+
+Aria Snapshot Depth With Assertion
+    Get Aria Snapshot    ${MouseTable}    yaml    contains    - row "Mouse Delay:"    depth=2
+
+Aria Snapshot Invalid Depth
+    FOR    ${depth}    IN    ${0}    ${-1}
+        TRY
+            Get Aria Snapshot    ${MouseTable}    depth=${depth}
+        EXCEPT    ValueError: depth must be a positive integer, but got: ${depth}
+            Log    Failed as expected with depth ${depth}.
+        END
+    END
+
+Aria Snapshot Boxes
+    ${expected} =    Aria Box Annotation Of    h1
+    ${snapshot} =    Get Aria Snapshot    h1    boxes=True
+    Should Be Equal    ${snapshot}    - heading "Login Page" [level=1] ${expected}
+    ${without_boxes} =    Get Aria Snapshot    h1
+    Should Not Contain    ${without_boxes}    [box=
+
+Aria Snapshot AI Mode
+    ${snapshot} =    Get Aria Snapshot    h1    mode=ai
+    Should Match Regexp    ${snapshot}    ^- heading "Login Page" \\[level=1\\] \\[ref=\\w+\\]$
+    ${default_mode} =    Get Aria Snapshot    h1
+    Should Not Contain    ${default_mode}    [ref=
+
+Aria Snapshot AI Mode Includes Iframes
+    Ensure Location    ${FRAMES_URL}
+    ${default_mode} =    Get Aria Snapshot    css=body
+    Should Not Contain    ${default_mode}    This is LEFT side.
+    ${snapshot} =    Get Aria Snapshot    css=body    mode=ai
+    Should Contain    ${snapshot}    This is LEFT side.
+    Should Contain    ${snapshot}    This is RIGHT side.
+    [Teardown]    Ensure Location    ${LOGIN_URL}
+
+Aria Snapshot AI Mode Non-existing Element
+    TRY
+        Get Aria Snapshot    id=non_existing_element    mode=ai
+    EXCEPT    *does not match any element*    type=glob
+        Log    Caught expected PlaywrightError without waiting for a timeout.
+    END
+
+Aria Snapshot Options With Dict Return Type
+    ${expected_box} =    Aria Box Annotation Of    h1
+    VAR    @{expected} =    heading "Login Page" [level=1] ${expected_box}
+    ${snapshot} =    Get Aria Snapshot    h1    dict    boxes=True
+    Should Be Equal    ${snapshot}    ${expected}
+
 *** Keywords ***
 Aria Snapshot Setup
     Ensure Open Page    ${LOGIN_URL}
+
+Aria Box Annotation Of
+    [Arguments]    ${selector}
+    ${box} =    Get BoundingBox    ${selector}    ALL
+    ${annotation} =    Evaluate
+    ...    "[box=%d,%d,%d,%d]" % (int($box["x"] + 0.5), int($box["y"] + 0.5), int($box["width"] + 0.5), int($box["height"] + 0.5))
+    RETURN    ${annotation}

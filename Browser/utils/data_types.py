@@ -170,6 +170,18 @@ class NotSet(Enum):
     not_set = "not_set"
 
 
+class AriaSnapshotMode(Enum):
+    """Defines the mode of the AriaSnapshot.
+
+    | =Value=     | =Description= |
+    | ``default`` | Standard aria snapshot. |
+    | ``ai`` | Snapshot optimized for AI consumption. It includes element references like ``[ref=e2]``, includes snapshots of iframes inside the target and does not wait for a matching element, but fails immediately when no element matches. |
+    """
+
+    default = auto()
+    ai = auto()
+
+
 class AriaSnapshotReturnType(Enum):
     """Defines the return type of the AriaSnapshot.
 

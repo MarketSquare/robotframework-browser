@@ -22,15 +22,32 @@ import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { boolResponse, intResponse, jsonResponse, listStringResponse, stringResponse } from './response-util';
 
+type AriaSnapshotOptions = NonNullable<Parameters<Locator['ariaSnapshot']>[0]>;
+
+function ariaSnapshotOptions(request: pb.Request_AriaSnapShot): AriaSnapshotOptions {
+    const options: AriaSnapshotOptions = {};
+    if (request.mode) {
+        options.mode = request.mode as AriaSnapshotOptions['mode'];
+    }
+    if (request.depth > 0) {
+        options.depth = request.depth;
+    }
+    if (request.boxes) {
+        options.boxes = true;
+    }
+    return options;
+}
+
 export async function getAriaSnapshot(
     request: pb.Request_AriaSnapShot,
     state: PlaywrightState,
 ): Promise<pb.Response_String> {
     const selector = request.locator;
     const strictMode = request.strict;
+    const options = ariaSnapshotOptions(request);
     const locator = await findLocator(state, selector, strictMode, true);
-    const snapshot = await locator.ariaSnapshot();
-    logger.info(`Aria snapshot for ${selector}: ${snapshot}`);
+    const snapshot = await locator.ariaSnapshot(options);
+    logger.info(`Aria snapshot for ${selector} with options ${JSON.stringify(options)}: ${snapshot}`);
     return stringResponse(snapshot, 'Aria snapshot received successfully.');
 }
 
