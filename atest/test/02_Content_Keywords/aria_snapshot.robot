@@ -4,7 +4,8 @@ Resource        imports.resource
 Suite Setup     Aria Snapshot Setup
 
 *** Variables ***
-${MouseTable} =     css=table >> nth=1
+${MouseTable} =         css=table >> nth=1
+${LEFT_FRAME_URL} =     ${ROOT_URL}frames/left.html
 
 *** Test Cases ***
 Aria Snapshot YAML
@@ -107,14 +108,38 @@ Aria Snapshot Parsed
     Should Be Equal    ${nodes}[0][text]    ${None}
     Should Be Empty    ${nodes}[0][children]
 
-Aria Snapshot Parsed Nests Children
-    ${nodes} =    Get Aria Snapshot    ${MouseTable}    parsed
-    ${rowgroup} =    Set Variable    ${nodes}[0][children][0]
-    ${first_cell} =    Set Variable    ${rowgroup}[children][0][children][0]
-    Should Be Equal    ${nodes}[0][role]    table
-    Should Be Equal    ${rowgroup}[role]    rowgroup
-    Should Be Equal    ${first_cell}[role]    cell
-    Should Be Equal    ${first_cell}[name]    Upload Result:
+Aria Snapshot Parsed Complete Structure
+    [Documentation]    Covers every node key in both of its shapes: named and unnamed nodes,
+    ...    nodes with and without text, a hoisted ``/url`` property next to nodes without
+    ...    properties, and two levels of nesting with three siblings. The page renders as:
+    ...    - paragraph: "This is LEFT side. Links:"
+    ...    - list:
+    ...    ${SPACE*2}- listitem:
+    ...    ${SPACE*4}- text: Open
+    ...    ${SPACE*4}- link "foo":
+    ...    ${SPACE*6}- /url: foo.html
+    ...    ${SPACE*4}- text: on the right-hand side frame
+    ...    - paragraph: "Form:"
+    ...    - textbox
+    ...    - button "Search"
+    Ensure Location    ${LEFT_FRAME_URL}
+    ${nodes} =    Get Aria Snapshot    css=body    parsed
+    VAR    ${literal} =
+    ...    [
+    ...    {'role': 'paragraph', 'name': None, 'text': 'This is LEFT side. Links:', 'props': {}, 'children': []},
+    ...    {'role': 'list', 'name': None, 'text': None, 'props': {}, 'children': [
+    ...    {'role': 'listitem', 'name': None, 'text': None, 'props': {}, 'children': [
+    ...    {'role': 'text', 'name': None, 'text': 'Open', 'props': {}, 'children': []},
+    ...    {'role': 'link', 'name': 'foo', 'text': None, 'props': {'url': 'foo.html'}, 'children': []},
+    ...    {'role': 'text', 'name': None, 'text': 'on the right-hand side frame', 'props': {}, 'children': []},]},]},
+    ...    {'role': 'paragraph', 'name': None, 'text': 'Form:', 'props': {}, 'children': []},
+    ...    {'role': 'textbox', 'name': None, 'text': None, 'props': {}, 'children': []},
+    ...    {'role': 'button', 'name': 'Search', 'text': None, 'props': {}, 'children': []},
+    ...    ]
+    ...    separator=${SPACE}
+    ${expected} =    Evaluate    ${literal}
+    Should Be Equal    ${nodes}    ${expected}
+    [Teardown]    Ensure Location    ${LOGIN_URL}
 
 Aria Snapshot Parsed With Boxes Matches Get BoundingBox
     ${box} =    Get BoundingBox    h1    ALL
