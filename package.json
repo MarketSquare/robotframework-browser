@@ -38,7 +38,7 @@
     "typescript-eslint": "^8.67.0"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.13.0",
+    "@bufbuild/protobuf": "^2.14.0",
     "@grpc/grpc-js": "^1.14.4",
     "@medv/finder": "^4.0.2",
     "monocart-coverage-reports": "^2.12.12",
@@ -65,7 +65,7 @@
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   },
   "allowScripts": {
-    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
     "fsevents@2.3.3": true,
     "fsevents@2.3.2": true,
     "grpc-tools@1.13.1": true,

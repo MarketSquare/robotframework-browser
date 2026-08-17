@@ -49,7 +49,8 @@ def compare_images(
     logger.info(
         '</td></tr><tr><td colspan="3">'
         '<img alt="screenshot" class="robot-seleniumlibrary-screenshot" '
-        f'src="data:image/png;base64,{img_str}" width="900px">',
+        'style="max-width:900px;max-height:900px;" '
+        f'src="data:image/png;base64,{img_str}">',
         html=True,
     )
     box = diff.getbbox()

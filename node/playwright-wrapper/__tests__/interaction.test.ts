@@ -118,7 +118,7 @@ describe('handleAlert', () => {
         expect(dialogTwo.dismiss).toHaveBeenCalledTimes(1);
     });
 
-    it('logs instead of rejecting when the dialog was already handled', async () => {
+    it('does not report an error when the dialog was already handled', async () => {
         const page = makeMockPage();
         const dialog = makeMockDialog({
             accept: jest.fn().mockRejectedValue(new Error('Cannot accept dialog which is already handled!')),
@@ -127,8 +127,22 @@ describe('handleAlert', () => {
         await handleAlert(makeRequest('accept'), page);
         await expect(fireDialog(page, dialog)).resolves.toBeUndefined();
 
+        expect(mockLogger.error).not.toHaveBeenCalled();
+        expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('was handled by someone else already'));
+    });
+
+    it('reports an unexpected dialog failure instead of rejecting', async () => {
+        const page = makeMockPage();
+        const dialog = makeMockDialog({
+            accept: jest.fn().mockRejectedValue(new Error('Target page has been closed')),
+        });
+
+        await handleAlert(makeRequest('accept'), page);
+        await expect(fireDialog(page, dialog)).resolves.toBeUndefined();
+
         expect(mockLogger.error).toHaveBeenCalledWith(
-            expect.stringContaining('Failed to accept dialog "Are you sure?"'),
+            expect.objectContaining({ event_kind: 'internal_error', status: 'failed' }),
+            expect.stringContaining('Failed to accept dialog "Are you sure?": Target page has been closed'),
         );
     });
 });
