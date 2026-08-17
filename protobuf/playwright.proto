@@ -20,6 +20,9 @@ message Request {
   message AriaSnapShot {
     string locator = 1;
     bool strict = 2;
+    string mode = 3;
+    int32 depth = 4;
+    bool boxes = 5;
   }
 
   message ClosePage {

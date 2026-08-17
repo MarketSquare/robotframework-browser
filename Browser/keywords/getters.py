@@ -37,9 +37,11 @@ from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import keyword, logger
+from ..utils.aria_snapshot import parse_aria_snapshot
 from ..utils.data_types import (
     ROBOT_FRAMEWORK_BROWSER_NO_SET,
     AreaFields,
+    AriaSnapshotMode,
     AriaSnapshotReturnType,
     BoundingBox,
     BoundingBoxFields,
@@ -69,17 +71,34 @@ class Getters(LibraryComponent):
         assertion_operator: AssertionOperator | None = None,
         assertion_expected: Any | None = None,
         message: str | None = None,
-    ) -> str | dict | tuple:
-        """Returns the aria snapshot of the element found by ``selector``.
+        *,
+        mode: AriaSnapshotMode = AriaSnapshotMode.default,
+        depth: int | None = None,
+        boxes: bool = False,
+    ) -> str | dict | list | tuple:
+        """Returns the aria snapshot of the element found by ``selector``. See `AriaSnapshotReturnType` for more details and examples.
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default) and ``dict``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. |
+        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. If ``parsed`` is selected, the returned value is a tree of node dictionaries. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the state |
         | ``message`` | overrides the default error message for assertion. |
+        | ``mode`` | Defines the snapshot mode. Possible values are ``default`` (default) and ``ai``. See `AriaSnapshotMode` for more details. |
+        | ``depth`` | Limits the snapshot to the given number of tree levels. Must be a positive integer. Defaults to ``None``, which does not limit the depth. |
+        | ``boxes`` | If ``True``, the bounding box of each element is appended to its line as ``[box=x,y,width,height]``. Coordinates are relative to the viewport, in CSS pixels. Defaults to ``False``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        With ``mode=ai`` the snapshot is optimized for AI consumption: it contains element
+        references like ``[ref=e2]`` and the content of iframes inside the element. It also
+        does not wait for a matching element, but fails immediately when no element matches,
+        instead of failing with a timeout like the ``default`` mode does.
+
+        With ``return_type=dict`` the YAML returned by Playwright is loaded as is. The
+        ``[ref=...]`` and ``[box=...]`` annotations are therefore part of the dictionary
+        keys, not separate entries. Use ``return_type=parsed`` to get them as separate
+        values of each node.
 
         Optionally asserts that the snapshot matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -93,16 +112,26 @@ class Getters(LibraryComponent):
 
         [https://forum.robotframework.org/t//4303|Comment >>]
         """
+        if depth is not None and depth <= 0:
+            raise ValueError(f"depth must be a positive integer, but got: {depth}")
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.AriaSnapShot(
-                Request.AriaSnapShot(locator=selector, strict=self.strict_mode)
+                Request.AriaSnapShot(
+                    locator=selector,
+                    strict=self.strict_mode,
+                    mode="ai" if mode is AriaSnapshotMode.ai else "",
+                    depth=depth or 0,
+                    boxes=boxes,
+                )
             )
         logger.info(response.log)
         value = response.body
         logger.info(f"Aria Snapshot: {value}")
         if return_type is AriaSnapshotReturnType.dict:
             value = yaml.safe_load(value) if value else {}
+        elif return_type is AriaSnapshotReturnType.parsed:
+            value = parse_aria_snapshot(value)
         formatter = self.get_assertion_formatter("Get Aria Snapshot")
         return verify_assertion(
             value,
