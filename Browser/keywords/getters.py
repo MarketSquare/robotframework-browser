@@ -76,11 +76,11 @@ class Getters(LibraryComponent):
         depth: int | None = None,
         boxes: bool = False,
     ) -> str | dict | list | tuple:
-        """Returns the aria snapshot of the element found by ``selector``.
+        """Returns the aria snapshot of the element found by ``selector``. See `AriaSnapshotReturnType` for more details and examples.
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. If ``parsed`` is selected, the returned value is a tree of node dictionaries. See `AriaSnapshotReturnType` for more details. |
+        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. If ``parsed`` is selected, the returned value is a tree of node dictionaries. |
         | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
         | ``assertion_expected`` | Expected value for the state |
         | ``message`` | overrides the default error message for assertion. |

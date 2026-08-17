@@ -196,20 +196,208 @@ class AriaSnapshotReturnType(Enum):
 
     ``parsed`` splits that information into separate keys. Every node has
     ``role``, ``name``, ``text``, ``props`` and ``children``, and its values
-    are reachable both as ``${node}[role]`` and as ``${node.role}``:
+    are reachable both as ``${node}[role]`` and as ``${node.role}``.
+    Annotations without a value, like ``[selected]``, become ``True``,
+    ``[level=2]`` becomes an integer and ``box`` uses the same keys as
+    `Get BoundingBox`. The ``/url`` entry of a link is an annotation in
+    Playwright, not an element, and therefore becomes the ``url`` property of
+    the link instead of one of its children.
 
-    | {
-    |     "role": "textbox",
-    |     "name": "username",
-    |     "text": None,
-    |     "props": {"ref": "e10", "box": {"x": 553, "y": 76, "width": 186, "height": 18}},
-    |     "children": []
-    | }
+    == Examples ==
 
-    Annotations without a value, like ``[selected]``, become ``True``.
-    ``box`` uses the same keys as `Get BoundingBox`. The ``/url`` entry of a
-    link is an annotation in Playwright, not an element, and therefore becomes
-    the ``url`` property of the link instead of one of its children.
+    All outputs below come from the same element of the same page. It offers
+    fourteen tag options; the examples stop after the fourth one:
+
+    | `New Browser`    chromium
+    | `New Page`       https://robotframework-browser.org/keywords
+    | ${snapshot} =    `Get Aria Snapshot`    .rail-top
+
+    === return_type=yaml (default) ===
+
+    | - text: Filter keywords
+    | - searchbox "Filter keywords"
+    | - group: Version 20.3.0
+    | - text: Filter by tag
+    | - combobox "Filter by tag":
+    |   - option "— Show all tags —" [selected]
+    |   - option "Setter (84)"
+    |   - option "PageContent (83)"
+    |   - option "Getter (45)"
+
+    === return_type=yaml with boxes=True ===
+
+    | - text: Filter keywords
+    | - searchbox "Filter keywords" [box=12,77,279,30]
+    | - group [box=12,116,279,34]: Version 20.3.0
+    | - text: Filter by tag
+    | - combobox "Filter by tag" [box=12,158,279,32]:
+    |   - option "— Show all tags —" [selected] [box=0,0,0,0]
+    |   - option "Setter (84)" [box=0,0,0,0]
+    |   - option "PageContent (83)" [box=0,0,0,0]
+    |   - option "Getter (45)" [box=0,0,0,0]
+
+    === return_type=yaml with boxes=True and mode=ai ===
+
+    | - generic [ref=f2e1] [box=0,65,303,137]:
+    |   - generic [ref=f2e3] [box=12,77,279,30]:
+    |     - generic [ref=f2e4] [box=12,77,1,1]: Filter keywords
+    |     - searchbox "Filter keywords" [ref=f2e5] [box=12,77,279,30]
+    |   - generic [ref=f2e6] [box=12,116,279,74]:
+    |     - group [ref=f2e7] [box=12,116,279,34]:
+    |       - generic "Version 20.3.0" [ref=f2e8] [cursor=pointer] [box=12,116,157,34]:
+    |         - generic [ref=f2e9] [box=22,124,66,18]: Version
+    |         - generic [ref=f2e10] [box=96,121,49,22]: 20.3.0
+    |     - generic [ref=f2e12] [box=12,158,279,32]:
+    |       - generic [ref=f2e13] [box=12,158,1,1]: Filter by tag
+    |       - combobox "Filter by tag" [ref=f2e14] [box=12,158,279,32]:
+    |         - option "— Show all tags —" [selected] [box=0,0,0,0]
+    |         - option "Setter (84)" [box=0,0,0,0]
+    |         - option "PageContent (83)" [box=0,0,0,0]
+    |         - option "Getter (45)" [box=0,0,0,0]
+
+    === return_type=dict with boxes=True ===
+
+    | [
+    |   {
+    |     'text': 'Filter keywords'
+    |   },
+    |   'searchbox "Filter keywords" [box=12,77,279,30]',
+    |   {
+    |     'group [box=12,116,279,34]': 'Version 20.3.0'
+    |   },
+    |   {
+    |     'text': 'Filter by tag'
+    |   },
+    |   {
+    |     'combobox "Filter by tag" [box=12,158,279,32]': [
+    |       'option "— Show all tags —" [selected] [box=0,0,0,0]',
+    |       'option "Setter (84)" [box=0,0,0,0]',
+    |       'option "PageContent (83)" [box=0,0,0,0]'
+    |       'option "Getter (45)" [box=0,0,0,0]'
+    |     ]
+    |   }
+    | ]
+
+    === return_type=parsed with boxes=True ===
+
+    Fully parsed snapshot as Robot Framework dictionary:
+
+    | [
+    |   {
+    |     'role': 'text',
+    |     'name': None,
+    |     'text': 'Filter keywords',
+    |     'props': {},
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'searchbox',
+    |     'name': 'Filter keywords',
+    |     'text': None,
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 77,
+    |         'width': 279,
+    |         'height': 30
+    |       }
+    |     },
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'group',
+    |     'name': None,
+    |     'text': 'Version 20.3.0',
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 116,
+    |         'width': 279,
+    |         'height': 34
+    |       }
+    |     },
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'text',
+    |     'name': None,
+    |     'text': 'Filter by tag',
+    |     'props': {},
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'combobox',
+    |     'name': 'Filter by tag',
+    |     'text': None,
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 158,
+    |         'width': 279,
+    |         'height': 32
+    |       }
+    |     },
+    |     'children': [
+    |       {
+    |         'role': 'option',
+    |         'name': '— Show all tags —',
+    |         'text': None,
+    |         'props': {
+    |           'selected': True,
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'Setter (84)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'PageContent (83)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'Getter (45)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       }
+    |     ]
+    |   }
+    | ]
     """
 
     dict = auto()
