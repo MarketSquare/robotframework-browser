@@ -56,6 +56,8 @@ Aria Snapshot Invalid Depth
             Get Aria Snapshot    ${MouseTable}    depth=${depth}
         EXCEPT    ValueError: depth must be a positive integer, but got: ${depth}
             Log    Failed as expected with depth ${depth}.
+        ELSE
+            Fail    Get Aria Snapshot did not reject depth ${depth}.
         END
     END
 
@@ -86,6 +88,8 @@ Aria Snapshot AI Mode Non-existing Element
         Get Aria Snapshot    id=non_existing_element    mode=ai
     EXCEPT    *does not match any element*    type=glob
         Log    Caught expected PlaywrightError without waiting for a timeout.
+    ELSE
+        Fail    Get Aria Snapshot returned a snapshot for a non-existing element in ai mode.
     END
 
 Aria Snapshot Options With Dict Return Type
