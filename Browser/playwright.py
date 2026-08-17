@@ -66,12 +66,9 @@ def is_local_host(host: str | None) -> bool:
 def grpc_channel_options(host: str | None) -> tuple[tuple[str, int], ...]:
     """Return the gRPC channel options for reaching the Playwright process.
 
-    grpc-python routes a channel through ``http_proxy``/``https_proxy`` even
-    when it points at the local machine, which breaks the connection in
-    containers that have those variables set. A proxy is never wanted for the
-    local process, so it is switched off - but only for a local host, because
-    the Playwright process can live on another machine, where the user's proxy
-    may well be the intended route.
+    grpc-python routes even a loopback channel through ``http_proxy``/``https_proxy``,
+    which breaks the connection in containers that set them. A remote Playwright
+    process keeps the proxy, where it may well be the intended route.
     """
     return NO_HTTP_PROXY_OPTIONS if is_local_host(host) else ()
 

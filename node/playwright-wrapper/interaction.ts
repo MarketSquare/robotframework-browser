@@ -237,8 +237,6 @@ export async function handleAlert(request: pb.Request_AlertAction, page: Page): 
             if (reason.includes('already handled')) {
                 logger.info(`Dialog "${dialogueText}" was handled by someone else already`);
             } else {
-                // Rethrowing would reject inside an event listener and take the whole
-                // process down, so the Playwright log is the only place left to report it.
                 logger.error(
                     { event_kind: 'internal_error', status: 'failed' },
                     `Failed to ${alertAction} dialog "${dialogueText}": ${reason}`,
