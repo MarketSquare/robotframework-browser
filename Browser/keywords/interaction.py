@@ -879,7 +879,8 @@ class Interaction(LibraryComponent):
         triggers the dialog.
 
         The handler is registered on the current page and stays in effect for all
-        following dialogs on that page.
+        following dialogs on that page. Calling this keyword again on the same page
+        replaces the handler, so the latest call decides how dialogs are handled.
 
         If a handler is not set, dialogs are dismissed by default.
 

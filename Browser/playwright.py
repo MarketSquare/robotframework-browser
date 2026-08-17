@@ -14,6 +14,7 @@
 
 import atexit
 import contextlib
+import ipaddress
 import os
 import platform
 import signal
@@ -44,6 +45,35 @@ from .utils import (
 
 if TYPE_CHECKING:
     from .browser import Browser
+
+
+NO_HTTP_PROXY_OPTIONS = (("grpc.enable_http_proxy", 0),)
+
+
+def is_local_host(host: str | None) -> bool:
+    if not host:
+        return True
+    hostname = host.strip().strip("[]").lower()
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        return True
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_unspecified
+
+
+def grpc_channel_options(host: str | None) -> tuple:
+    """Return the gRPC channel options for reaching the Playwright process.
+
+    grpc-python routes a channel through ``http_proxy``/``https_proxy`` even
+    when it points at the local machine, which breaks the connection in
+    containers that have those variables set. A proxy is never wanted for the
+    local process, so it is switched off - but only for a local host, because
+    the Playwright process can live on another machine, where the user's proxy
+    may well be the intended route.
+    """
+    return NO_HTTP_PROXY_OPTIONS if is_local_host(host) else ()
 
 
 def batteries_grpc_server():
@@ -290,7 +320,9 @@ class Playwright(LibraryComponent):
             logger.debug(
                 f"Waiting for Playwright server at {self.host}:{self.port} to start..."
             )
-            with grpc.insecure_channel(f"{self.host}:{self.port}") as channel:
+            with grpc.insecure_channel(
+                f"{self.host}:{self.port}", options=grpc_channel_options(self.host)
+            ) as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
@@ -307,7 +339,9 @@ class Playwright(LibraryComponent):
 
     @cached_property
     def _channel(self):
-        return grpc.insecure_channel(f"{self.host}:{self.port}")
+        return grpc.insecure_channel(
+            f"{self.host}:{self.port}", options=grpc_channel_options(self.host)
+        )
 
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
