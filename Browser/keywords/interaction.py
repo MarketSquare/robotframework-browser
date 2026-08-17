@@ -1318,12 +1318,15 @@ class Interaction(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
-    def keyboard_key(self, action: KeyAction, key: str):
+    def keyboard_key(
+        self, action: KeyAction, key: str, *, delay: timedelta = timedelta(0)
+    ):
         """Press a keyboard key on the virtual keyboard or set a key up or down.
 
         | =Arguments= | =Description= |
         | ``action`` | Determines whether the key should be released (``up``), held down (``down``) or pressed once (``press``). ``down`` and ``up`` are useful for combinations, i.e. with Shift. |
         | ``key`` | The key to be pressed. Examples of valid keys are: ``F1`` - ``F12``, ``Digit0`` - ``Digit9``, ``KeyA`` - ``KeyZ``, ``Backquote``, ``Minus``, ``Equal``, ``Backslash``, ``Backspace``, ``Tab``, ``Delete``, ``Escape``, ``ArrowDown``, ``End``, ``Enter``, ``Home``, ``Insert``, ``PageDown``, ``PageUp``, ``ArrowRight``, ``ArrowUp`` , etc. |
+        | ``delay`` | Time the key is held down between keydown and keyup, in Robot Framework's time format. Only valid with action ``press``, other actions raise an error. Defaults to ``0 s``. Example: ``50 ms`` |
 
 
         Useful keys for ``down`` and ``up`` for example are:
@@ -1331,6 +1334,7 @@ class Interaction(LibraryComponent):
 
         Example execution:
         | `Keyboard Key`    press    S
+        | `Keyboard Key`    press    S        delay=500 ms
         | `Keyboard Key`    down     Shift
         | `Keyboard Key`    press    ArrowLeft
         | `Keyboard Key`    press    Delete
@@ -1340,9 +1344,15 @@ class Interaction(LibraryComponent):
 
         [https://forum.robotframework.org/t//4298|Comment >>]
         """
+        if delay and action is not KeyAction.press:
+            raise ValueError("delay is only valid if action is 'press'")
         with self.playwright.grpc_channel() as stub:
             response = stub.KeyboardKey(
-                Request().KeyboardKeypress(action=action.name, key=key)
+                Request().KeyboardKeypress(
+                    action=action.name,
+                    key=key,
+                    delay=int(delay.total_seconds() * 1000),
+                )
             )
             logger.debug(response.log)
 
