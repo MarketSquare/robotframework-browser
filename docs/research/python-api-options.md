@@ -67,7 +67,7 @@ self.attributes[name] = self.attributes[kw_name] = kw    # line 54 — used by _
   No conversion happens anywhere.
 
 `Browser` defines no `@keyword` methods on the class itself — all 151 come from the
-component instances passed at `Browser/browser.py:972` — so **every** Python keyword call
+component instances passed at `Browser/browser.py:585` — so **every** Python keyword call
 goes through `__getattr__`. **[V]**
 
 That means the two paths can be given different behaviour by touching only one dict.
@@ -240,7 +240,7 @@ bad value -> ValueError: Argument 'button' got value 'nope' that cannot be conve
 | --- | --- |
 | ✅ | **One place.** ~25 lines in `browser.py` plus a helper. Zero keyword files edited. |
 | ✅ | **RF path provably untouched:** `convert_args` ran **0 times for 100 `run_keyword` calls**. **[V]** |
-| ✅ | Applies automatically to new keywords, including the ones generated at runtime (`Browser/browser.py:1116`) as long as wrapping happens after they are registered. |
+| ✅ | Applies automatically to new keywords, including the ones generated at runtime (`Browser/browser.py:695`) as long as wrapping happens after they are registered. |
 | ✅ | Reuses `get_keyword_types`, so `@keyword(types=...)` overrides are respected for free. |
 | ✅ | Same object — `browser.click(...)` keeps working; no new import or namespace for users to learn. |
 | ⚠️ | Wrapping is implicit; a reader of `interaction.py` sees no sign of it. Mitigate with a comment at the wrap site and a section in the docs. |
@@ -254,7 +254,7 @@ bad value -> ValueError: Argument 'button' got value 'nope' that cannot be conve
 > feature. Recorded here because the option was evaluated and works; it is not part of the
 > plan. **Option B ships without it.**
 
-`Browser.run_keyword` (`Browser/browser.py:1335-1360`) is not a pass-through. It opens and
+`Browser.run_keyword` (`Browser/browser.py:976-1001`) is not a pass-through. It opens and
 closes **Playwright trace groups**, takes a **failure screenshot** via `keyword_error()`,
 rewrites error messages through `_alter_keyword_error`, and implements `pause_on_failure`.
 

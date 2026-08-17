@@ -63,10 +63,10 @@ Repo-local source line numbers refer to the working tree at the time of writing.
    one-line direct call of the bound method. All conversion happens on the *Robot
    Framework* side, before `run_keyword` is invoked, driven by `get_keyword_types`.
    A Python caller therefore bypasses 100% of it. **[V]** — §3.
-4. **The pattern is already in this repo, twice.** `Browser/keywords/promises.py:128`
+4. **The pattern is already in this repo, twice.** `Browser/keywords/promises.py:133`
    and `Browser/entry/__main__.py:463` both do
    `get_keyword_types(kw)` → `RobotTypeConverter.converter_for(type)` → `.convert(value)`.
-   `RobotTypeConverter` (`Browser/utils/data_types.py:25`) is a thin wrapper over
+   `RobotTypeConverter` (`Browser/utils/data_types.py:26`) is a thin wrapper over
    `robot.api.TypeInfo.from_type_hint`. A python-friendly API is a generalisation of
    code that already ships. **[V]** — §6.4.
 5. **Scale of the problem: 123 Enum-typed parameters across 84 of 151 keywords (55.6%)**,
@@ -275,10 +275,10 @@ library for `get_keyword_types(name)`, builds an `ArgumentSpec`, and runs
 
 Note the Python path does not even go through `run_keyword`; attribute access resolves
 straight to the component's bound method via `self.attributes`. That means Browser's own
-`run_keyword` override (`Browser/browser.py:1335-1359`, which adds trace groups, failure
+`run_keyword` override (`Browser/browser.py:976-1001`, which adds trace groups, failure
 screenshots and pause-on-failure) is *also* bypassed from Python. The library's own
 `__init__` docstring already documents this consequence, for `run_on_failure`
-(`Browser/browser.py:888`): **[V]**
+(`Browser/browser.py:501`): **[V]**
 
 > Run on failure is not applied when library methods are executed directly from Python.
 
@@ -473,7 +473,7 @@ Only 10 keywords pass an explicit name to `@keyword`; the other 141 use bare `@k
 | `Literal` | **0** | **0** |
 
 `Literal` is never used in a keyword signature — only internally at
-`Browser/browser.py:1422` and `Browser/utils/logger.py:23`. **[V]**
+`Browser/browser.py:1063` and `Browser/utils/logger.py:23`. **[V]**
 
 TypedDict parameters: `Proxy` ×4; `DownloadInfo`, `NewPageDetails`, `GeoLocation`,
 `HttpCredentials`, `RecordHar`, `RecordVideo`, `ViewportDimensions` ×2 each;
@@ -594,9 +594,9 @@ coercion layer (`convert_typed_dict` and helpers) that predates / duplicates wha
 `TypedDictConverter` in RF does (`typeconverters.py:607-674`), including nested
 conversion. **[V]** (Whether it can be retired is out of scope here. **[I]**)
 
-Other conversion-ish helpers: `Browser/keywords/getters.py:1519` local `convert_str`;
+Other conversion-ish helpers: `Browser/keywords/getters.py:1537` local `convert_str`;
 `Browser/utils/misc.py` `type_converter` (display-only, tested in
-`utest/test_type_converter.py`); `Browser/browser.py:1637` and
+`utest/test_type_converter.py`); `Browser/browser.py:1278` and
 `Browser/base/librarycomponent.py:230` `convert_timeout`. **[V]**
 
 ### 6.5 `Browser/browser.py` **[V]**
@@ -615,7 +615,7 @@ Other conversion-ish helpers: `Browser/keywords/getters.py:1519` local `convert_
 | `get_keyword_types` — **not** overridden, inherited from PLC | — |
 
 `ROBOT_LIBRARY_CONVERTERS` appears **exactly once in the whole repo's Python sources**,
-and it is test-only: `atest/library/os_wrapper.py:162` (`{datetime: _parse_fi_date}`).
+and it is test-only: `atest/library/os_wrapper.py:191` (`{datetime: _parse_fi_date}`).
 (Other matches are only in `atest/output/**/syslog.txt` execution logs.)
 The Browser library itself registers **no** custom converters. **[V]**
 
