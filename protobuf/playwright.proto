@@ -178,6 +178,7 @@ message Request {
   message KeyboardKeypress {
     string action = 1;
     string key = 2;
+    int32 delay = 3;
   }
 
   message KeyboardInputOptions {

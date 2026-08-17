@@ -302,6 +302,11 @@ export async function mouseWheel(request: pb.Request_MouseWheel, page?: Page): P
 export async function keyboardKey(request: pb.Request_KeyboardKeypress, page: Page): Promise<pb.Response_Empty> {
     const action = request.action as 'down' | 'up' | 'press';
     const key = request.key;
+    const delay = request.delay;
+    if (action === 'press' && delay > 0) {
+        await invokeOnKeyboard(page, action, key, { delay: delay });
+        return emptyWithLog(`Successfully did ${action} for ${key} with delay ${delay}ms`);
+    }
     await invokeOnKeyboard(page, action, key);
     return emptyWithLog(`Successfully did ${action} for ${key}`);
 }
