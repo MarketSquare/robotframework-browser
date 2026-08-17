@@ -63,7 +63,7 @@ def is_local_host(host: str | None) -> bool:
     return address.is_loopback or address.is_unspecified
 
 
-def grpc_channel_options(host: str | None) -> tuple:
+def grpc_channel_options(host: str | None) -> tuple[tuple[str, int], ...]:
     """Return the gRPC channel options for reaching the Playwright process.
 
     grpc-python routes a channel through ``http_proxy``/``https_proxy`` even

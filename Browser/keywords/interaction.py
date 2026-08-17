@@ -884,6 +884,11 @@ class Interaction(LibraryComponent):
 
         If a handler is not set, dialogs are dismissed by default.
 
+        The handler runs when the dialog appears, not while this keyword executes, so a
+        failure to accept or dismiss the dialog can not be raised as a keyword failure.
+        Such a failure is reported in the playwright-log.txt file only, which is linked
+        into the Robot Framework log when a keyword fails.
+
         | =Arguments= | =Description= |
         | ``action`` | How to handle the alert. Can be ``accept`` or ``dismiss``. |
         | ``prompt_input`` | The value to enter into the prompt. Only valid if the ``action`` argument equals ``accept``. Defaults to an empty string. |
