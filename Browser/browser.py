@@ -20,7 +20,7 @@ import string
 import sys
 import time
 import types
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
@@ -106,6 +106,10 @@ KW_CALL_CONTENT_TEMPLATE = """body::before {{
     left: 5px;
     {additional_styles}
 }}"""
+
+SECRET_ARGUMENT = "secret"
+SECRET_MASK = "***"
+BANNER_MUTED_KEYWORDS = ("take_screenshot", "get_page_source")
 
 KW_CALL_BANNER_FUNCTION = """(content) => {
     const kwCallBanner = document.getElementById('kwCallBanner');
@@ -576,6 +580,8 @@ class Browser(DynamicCore):
         self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
         self._current_loglevel: str | None = None
+        self._logging_suppressions = 0
+        self._secret_keywords: dict[str, bool] = {}
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
@@ -926,20 +932,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             source,
             attrs["lineno"],
             attrs["type"],
+            kwname=attrs["kwname"],
         )
         self.keyword_call_stack.append(kw_call_stack_entry)
         if self.tracing_group_mode == TracingGroupMode.Full:
-            self._playwright_state.open_trace_group(**kw_call_stack_entry)
-        if not (
-            self.show_keyword_call_banner is False
-            or (self.show_keyword_call_banner is None and not self.presenter_mode)
-            or attrs["libname"] != "Browser"
-            or attrs["status"] == "NOT RUN"
-        ):
-            self._show_keyword_call(attrs)
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(False)
-
+            self._playwright_state.open_trace_group(
+                **self._trace_group_arguments(kw_call_stack_entry)
+            )
         if attrs["type"] == "Teardown":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
@@ -957,10 +956,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         source: str | Path | None,
         lineno: int,
         typ: str,
+        *,
+        kwname: str = "",
     ) -> KeywordCallStackEntry:
         if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
             args = [name] if name else []
             name = typ
+            kwname = typ
         try:
             lineno = int(lineno)
         except (ValueError, TypeError):
@@ -971,15 +973,28 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             ),
             "file": str(source),
             "line": lineno,
+            "kwname": kwname,
+            "args": list(args),
         }
 
+    @staticmethod
+    def _trace_group_arguments(entry: KeywordCallStackEntry) -> dict[str, Any]:
+        """Selects the fields a trace group accepts from a call stack entry."""
+        return {"name": entry["name"], "file": entry["file"], "line": entry["line"]}
+
     def run_keyword(self, name, args, kwargs=None):
+        is_secret_keyword = self._is_secret_keyword(name)
+        if is_secret_keyword:
+            self._set_logging(False)
         try:
+            self._show_keyword_call(name)
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
             ):
-                self._playwright_state.open_trace_group(**(self.keyword_call_stack[-1]))
+                self._playwright_state.open_trace_group(
+                    **self._trace_group_arguments(self.keyword_call_stack[-1])
+                )
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except (AssertionError, AttributeError) as e:
             selector = self._get_selector_value_from_keyword_call(name, args, kwargs)
@@ -999,6 +1014,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 and self.keyword_call_stack
             ):
                 self._playwright_state.close_trace_group()
+            if is_secret_keyword:
+                self._set_logging(True)
 
     def _get_selector_value_from_keyword_call(self, name, args, kwargs):
         selector = kwargs.get("selector")
@@ -1029,8 +1046,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self.keyword_call_stack.pop()
         if self.tracing_group_mode == TracingGroupMode.Full:
             self._playwright_state.close_trace_group()
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(True)
 
     def _end_test(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
@@ -1156,26 +1171,115 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return (clean_message, *args[1:])
 
     def _set_logging(self, status: bool):
+        """Suppresses logging while a secret keyword runs.
+
+        Secret keywords can nest, so only the outermost one may restore the
+        original log level.
+        """
         try:
             context = BuiltIn()._context.output
         except DataError:
             context = BuiltIn()
         if status:
-            if self._current_loglevel:
+            self._logging_suppressions = max(0, self._logging_suppressions - 1)
+            if self._logging_suppressions == 0 and self._current_loglevel:
                 context.set_log_level(self._current_loglevel)
                 self._current_loglevel = None
         else:
-            self._current_loglevel = context.set_log_level("NONE")
+            if self._logging_suppressions == 0:
+                self._current_loglevel = context.set_log_level("NONE")
+            self._logging_suppressions += 1
 
-    def _show_keyword_call(self, attrs):
+    def _resolve_keyword_function(self, name: str) -> Callable | None:
+        """Returns the Python function behind a keyword name, or None if it is not ours.
+
+        The name Robot Framework passes to `Run Keyword` is the registered one,
+        which a translation replaces. Every decision has to be made on the
+        function instead, so that translated keywords behave like English ones.
+        """
+        return self.keywords.get(name)
+
+    def _keyword_argument_names(self, name: str) -> list[str]:
         try:
-            if attrs["kwname"] in ["Take Screenshot", "Get Page Source"]:
+            arguments = self.get_keyword_arguments(name)
+        except Exception:
+            return []
+        names = [
+            argument[0] if isinstance(argument, tuple) else argument
+            for argument in arguments
+        ]
+        return [argument for argument in names if not argument.startswith("*")]
+
+    def _is_secret_keyword(self, name: str) -> bool:
+        """Tells if a keyword takes a secret, so that its logging is suppressed.
+
+        Asked for every single keyword call, so the answer is cached. The set of
+        keywords does not change after the library has been imported.
+        """
+        if name not in self._secret_keywords:
+            is_our_keyword = self._resolve_keyword_function(name) is not None
+            takes_secret = SECRET_ARGUMENT in self._keyword_argument_names(name)
+            self._secret_keywords[name] = is_our_keyword and takes_secret
+        return self._secret_keywords[name]
+
+    def _is_banner_muted_keyword(self, name: str) -> bool:
+        function = self._resolve_keyword_function(name)
+        return function is not None and function.__name__ in BANNER_MUTED_KEYWORDS
+
+    def _mask_secret_arguments(self, name: str, args: list[str]) -> list[str]:
+        argument_names = self._keyword_argument_names(name)
+        if SECRET_ARGUMENT not in argument_names:
+            return list(args)
+        masked = []
+        position = 0
+        for arg in args:
+            argument_name, separator, _ = arg.partition("=")
+            if separator and argument_name in argument_names:
+                masked.append(
+                    f"{SECRET_ARGUMENT}={SECRET_MASK}"
+                    if argument_name == SECRET_ARGUMENT
+                    else arg
+                )
+                continue
+            is_secret = (
+                position < len(argument_names)
+                and argument_names[position] == SECRET_ARGUMENT
+            )
+            masked.append(SECRET_MASK if is_secret else arg)
+            position += 1
+        return masked
+
+    def _keyword_call_banner_content(
+        self, name: str, kwname: str, args: list[str]
+    ) -> str:
+        """Builds the banner text from the keyword call as it was written.
+
+        Variables are deliberately left unresolved here. Resolving them is the
+        callers job, so that a secret which has already been masked can never be
+        resolved back into the banner.
+        """
+        masked = self._mask_secret_arguments(name, args)
+        return f"{kwname}{'    ' * bool(masked)}{'    '.join(masked)}"
+
+    def _keyword_call_banner_enabled(self) -> bool:
+        if self.show_keyword_call_banner is None:
+            return bool(self.presenter_mode)
+        return bool(self.show_keyword_call_banner)
+
+    def _show_keyword_call(self, name: str):
+        if not self._keyword_call_banner_enabled():
+            return
+        if not self.keyword_call_stack:
+            return
+        try:
+            if self._is_banner_muted_keyword(name):
                 self.set_keyword_call_banner()
-            else:
-                args = "    ".join(attrs["args"])
-                args = BuiltIn().replace_variables(args)
-                content = f"{attrs['kwname']}{'    ' * bool(attrs['args'])}{args}"
-                self.set_keyword_call_banner(content)
+                return
+            entry = self.keyword_call_stack[-1]
+            content = self._keyword_call_banner_content(
+                name, entry["kwname"], entry["args"]
+            )
+            self.set_keyword_call_banner(BuiltIn().replace_variables(content))
         except Exception:
             pass
 

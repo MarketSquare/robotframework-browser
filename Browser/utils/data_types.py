@@ -406,11 +406,20 @@ class AriaSnapshotReturnType(Enum):
 
 
 class KeywordCallStackEntry(TypedDict):
-    """Information about the keyword call stack."""
+    """Information about the keyword call stack.
+
+    ``name``, ``file`` and ``line`` describe the call for the Playwright trace
+    group. ``kwname`` and ``args`` keep the keyword as it was written in the
+    source, which is what the keyword call banner shows. The arguments the
+    keyword itself receives are already converted and would render enums and
+    numbers instead of the text the user wrote.
+    """
 
     name: str
     file: str
     line: int
+    kwname: str
+    args: list[str]
 
 
 class SelectOptions(TypedDict):
