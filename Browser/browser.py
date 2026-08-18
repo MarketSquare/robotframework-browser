@@ -1257,6 +1257,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         Variables are deliberately left unresolved here. Resolving them is the
         callers job, so that a secret which has already been masked can never be
         resolved back into the banner.
+
+        Masking maps the source arguments onto parameters by position and by
+        name. A collection expansion such as ``&{arguments}`` is a single source
+        cell carrying several arguments at once and cannot be mapped, which is
+        why the caller does not resolve variables for a keyword that takes a
+        secret at all.
         """
         masked = self._mask_secret_arguments(name, args)
         return f"{kwname}{'    ' * bool(masked)}{'    '.join(masked)}"
@@ -1279,7 +1285,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             content = self._keyword_call_banner_content(
                 name, entry["kwname"], entry["args"]
             )
-            self.set_keyword_call_banner(BuiltIn().replace_variables(content))
+            if not self._is_secret_keyword(name):
+                content = BuiltIn().replace_variables(content)
+            self.set_keyword_call_banner(content)
         except Exception:
             pass
 

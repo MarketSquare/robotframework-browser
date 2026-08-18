@@ -56,3 +56,13 @@ class ExamplePlugin(LibraryComponent):
     def get_large_payload(self) -> dict:
         """Returns a large payload from a custom javascript keyword."""
         return self.call_js_keyword("getLargePayload")
+
+    @keyword(name="Plugin Login With Credentials")
+    def plugin_login_with_credentials(self, selector: str, secret: str):
+        """Takes a secret, so that the keyword hooks have to treat it like Fill Secret.
+
+        Neither the Robot name nor the Python name contains the word secret, so
+        the hooks have to decide on the argument specification instead.
+        """
+        logger.info(f"Logging in at {selector}")
+        return self.resolve_secret(secret, "secret")

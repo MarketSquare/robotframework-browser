@@ -18,7 +18,7 @@ Library             Browser
 ...                     enable_presenter_mode=False
 ...                     selector_prefix=${SELECTOR_PREFIX}
 ...                 highlight_on_failure=True    AS    PW
-Library             ${CURDIR}/keyword_banner.py
+Library             ${CURDIR}/../../library/banner.py
 
 Suite Setup         Open Form Page
 Test Setup          Prepare Banner Test
@@ -38,17 +38,17 @@ Alias Import Reuses The Same Library Instance
 
 Keyword Call Banner Is Shown For An Aliased Import
     PW.Get Title
-    keyword_banner.Get Banner Style Text    ==    Get Title
+    banner.Get Banner Style Text    ==    Get Title
 
 Keyword Call Banner Shows Arguments For An Aliased Import
     PW.Set Viewport Size    width=1200    height=800
-    keyword_banner.Get Banner Style Text    ==    Set Viewport Size \ \ \ width=1200 \ \ \ height=800
+    banner.Get Banner Style Text    ==    Set Viewport Size \ \ \ width=1200 \ \ \ height=800
 
 Keyword Call Banner Is Muted For Take Screenshot Of An Aliased Import
     PW.Get Title
-    keyword_banner.Get Banner Style Text    ==    Get Title
+    banner.Get Banner Style Text    ==    Get Title
     PW.Take Screenshot    ${OUTPUTDIR}/alias_screenshot.png
-    keyword_banner.Get Banner Style Text    ==    none
+    banner.Get Banner Style Text    ==    none
 
 Keyword Call Banner Masks A Secret Argument
     [Documentation]    Fill Secret rejects a plainly resolved variable, but the banner is painted
@@ -57,13 +57,35 @@ Keyword Call Banner Masks A Secret Argument
     Run Keyword And Expect Error
     ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
     ...    Browser.Fill Secret    css=input#username    ${SECRET_VALUE}
-    keyword_banner.Get Banner Style Text    ==    Fill Secret \ \ \ css=input#username \ \ \ ***
+    banner.Get Banner Style Text    ==    Fill Secret \ \ \ css=input#username \ \ \ ***
 
 Keyword Call Banner Masks A Secret Argument Of An Aliased Import
     Run Keyword And Expect Error
     ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
     ...    PW.Fill Secret    css=input#username    ${SECRET_VALUE}
-    keyword_banner.Get Banner Style Text    ==    Fill Secret \ \ \ css=input#username \ \ \ ***
+    banner.Get Banner Style Text    ==    Fill Secret \ \ \ css=input#username \ \ \ ***
+
+Keyword Call Banner Leaves A Dictionary Expansion Of A Secret Keyword Unresolved
+    [Documentation]    Masking maps source arguments onto parameters by position and by name.
+    ...    A collection expansion is a single source cell that carries both, so it cannot be
+    ...    mapped. Resolving it would print the whole dictionary, secret included, into the page.
+    VAR    &{arguments} =    selector=css=input#username    secret=${SECRET_VALUE}
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Browser.Fill Secret    &{arguments}
+    banner.Get Banner Style Text    ==    Fill Secret \ \ \ \&{arguments}
+
+Keyword Call Banner Leaves A List Expansion Of A Secret Keyword Unresolved
+    VAR    @{arguments} =    css=input#username    ${SECRET_VALUE}
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Browser.Fill Secret    @{arguments}
+    banner.Get Banner Style Text    ==    Fill Secret \ \ \ \@{arguments}
+
+Keyword Call Banner Still Resolves Variables Of Keywords Without A Secret
+    VAR    ${selector} =    css=input#username
+    Browser.Get Element Count    ${selector}
+    banner.Get Banner Style Text    ==    Get Element Count \ \ \ css=input#username
 
 *** Keywords ***
 Open Form Page

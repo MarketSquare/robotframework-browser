@@ -9,6 +9,7 @@ the displayed keyword name.
 """
 
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -235,3 +236,57 @@ def test_nested_secret_keywords_restore_the_original_log_level(
     assert output.level == "NONE", "the outer secret keyword is still running"
     browser._set_logging(True)
     assert output.level == "TRACE"
+
+
+@pytest.fixture
+def browser_with_plugin() -> Browser:
+    plugin = str(Path(__file__).parent / "KeywordHooksPlugin.py")
+    return Browser(plugins=plugin)
+
+
+def test_plugin_keyword_resolves_to_the_plugin_function(browser_with_plugin: Browser):
+    resolve = browser_with_plugin._resolve_keyword_function
+    assert resolve("Plugin Login With Credentials").__name__ == (
+        "plugin_login_with_credentials"
+    )
+    assert resolve("plugin_without_secret").__name__ == "plugin_without_secret"
+
+
+def test_plugin_keyword_with_a_secret_argument_is_detected(
+    browser_with_plugin: Browser,
+):
+    assert browser_with_plugin._is_secret_keyword("Plugin Login With Credentials")
+    assert not browser_with_plugin._is_secret_keyword("plugin_without_secret"), (
+        "the name carries no hint either way, only the argument specification does"
+    )
+
+
+def test_banner_content_masks_the_secret_of_a_plugin_keyword(
+    browser_with_plugin: Browser,
+):
+    content = browser_with_plugin._keyword_call_banner_content(
+        "Plugin Login With Credentials",
+        "Plugin Login With Credentials",
+        ["css=input#username", "${PASSWORD}"],
+    )
+    assert content == "Plugin Login With Credentials    css=input#username    ***"
+
+
+def test_run_keyword_suppresses_logging_around_a_plugin_secret_keyword(
+    browser_with_plugin: Browser, monkeypatch
+):
+    events = []
+    monkeypatch.setattr(
+        browser_with_plugin,
+        "_set_logging",
+        lambda status: events.append(f"logging={status}"),
+    )
+    monkeypatch.setitem(
+        browser_with_plugin.keywords,
+        "Plugin Login With Credentials",
+        lambda *args: events.append("keyword"),
+    )
+    browser_with_plugin.run_keyword(
+        "Plugin Login With Credentials", ["css=input#username", "$PASSWORD"], {}
+    )
+    assert events == ["logging=False", "keyword", "logging=True"]

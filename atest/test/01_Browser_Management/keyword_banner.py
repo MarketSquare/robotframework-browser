@@ -1,4 +1,3 @@
-import re
 from typing import Optional
 
 from assertionengine.assertion_engine import AssertionOperator, verify_assertion
@@ -31,21 +30,3 @@ def get_banner_content(
         else style["content"]
     )
     return verify_assertion(content, operator, expected)
-
-
-def get_banner_style_text(
-    operator: AssertionOperator = None, expected: Optional[str] = None
-):
-    """Reads the keyword call out of the injected style element.
-
-    Unlike `Get Banner Content`, which asks for the computed style of the
-    ``body::before`` pseudo element, this works on every browser engine.
-    """
-    b: Browser = BuiltIn().get_library_instance("Browser")
-    style = b.evaluate_javascript(
-        None,
-        "() => {const e = document.getElementById('kwCallBanner');"
-        " return e ? e.textContent : '';}",
-    )
-    match = re.search(r"content: '(.*?)';", style, re.DOTALL)
-    return verify_assertion(match.group(1) if match else "none", operator, expected)
