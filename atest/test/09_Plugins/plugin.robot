@@ -100,9 +100,9 @@ Keyword Call Banner Covers Plugin Keywords
     [Setup]    New Page    ${FORM_URL}
     Show Keyword Banner    True
     Get Element Count    css=input#username
-    banner.Get Banner Style Text    ==    Get Element Count \ \ \ css=input#username
+    Get Keyword Call Banner Text    ==    Get Element Count \ \ \ css=input#username
     Run Keyword And Expect Error
     ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
     ...    Plugin Login With Credentials    css=input#username    ${PLUGIN_SECRET}
-    banner.Get Banner Style Text    ==    Plugin Login With Credentials \ \ \ css=input#username \ \ \ ***
+    Get Keyword Call Banner Text    ==    Plugin Login With Credentials \ \ \ css=input#username \ \ \ ***
     [Teardown]    Show Keyword Banner    None
