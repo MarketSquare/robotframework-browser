@@ -9,11 +9,7 @@ from Browser import Browser
 def get_banner_style_text(
     operator: AssertionOperator = None, expected: str | None = None
 ):
-    """Reads the keyword call out of the injected style element.
-
-    Unlike the computed style of the ``body::before`` pseudo element, the text
-    content of the style element can be read on every browser engine.
-    """
+    """The computed style of ``body::before`` is not readable on firefox and webkit."""
     browser: Browser = BuiltIn().get_library_instance("Browser")
     style = browser.evaluate_javascript(
         None,

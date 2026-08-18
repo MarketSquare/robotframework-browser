@@ -97,8 +97,6 @@ Check Plugin Suite Scope Setting 2
     Log    Hello
 
 Keyword Call Banner Covers Plugin Keywords
-    [Documentation]    Plugin keywords go through Run Keyword just like built-in ones, so the
-    ...    banner and the masking of a secret argument have to apply to them as well.
     [Setup]    New Page    ${FORM_URL}
     Show Keyword Banner    True
     Get Element Count    css=input#username

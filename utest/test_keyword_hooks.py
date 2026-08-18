@@ -1,13 +1,3 @@
-"""Tests for the keyword hooks that must only act on Browser library keywords.
-
-The banner and the secret log suppression used to be decided in the listener
-hooks by comparing ``attrs["libname"]`` against the literal ``"Browser"``. That
-comparison fails for an aliased import and it fails for every translated
-keyword name. Both decisions belong into ``run_keyword``, which only ever sees
-our own keywords, and they have to be made on the Python function instead of
-the displayed keyword name.
-"""
-
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -16,13 +6,6 @@ import pytest
 
 import Browser.browser as browser_module
 from Browser import Browser
-
-
-class Fake(SimpleNamespace):
-    """Stand-in for the Robot Framework execution context."""
-
-    def __init__(self, output):
-        super().__init__(output=output)
 
 
 TRANSLATION = {
@@ -227,7 +210,9 @@ def test_nested_secret_keywords_restore_the_original_log_level(
 
     output = FakeOutput()
     monkeypatch.setattr(
-        browser_module, "BuiltIn", lambda: SimpleNamespace(_context=Fake(output))
+        browser_module,
+        "BuiltIn",
+        lambda: SimpleNamespace(_context=SimpleNamespace(output=output)),
     )
     browser._set_logging(False)
     assert output.level == "NONE"
@@ -290,3 +275,43 @@ def test_run_keyword_suppresses_logging_around_a_plugin_secret_keyword(
         "Plugin Login With Credentials", ["css=input#username", "$PASSWORD"], {}
     )
     assert events == ["logging=False", "keyword", "logging=True"]
+
+
+def test_secret_arguments_are_found_by_name_and_by_annotation(browser: Browser):
+    assert browser._secret_argument_names("fill_secret") == {"secret"}
+    assert browser._secret_argument_names("type_secret") == {"secret"}
+    assert browser._secret_argument_names("create_credential") == {
+        "privateKey",
+        "publicKey",
+    }
+    assert browser._secret_argument_names("fill_text") == set()
+
+
+def test_create_credential_counts_as_a_secret_keyword(browser: Browser):
+    assert browser._is_secret_keyword("create_credential") is True
+
+
+def test_banner_content_masks_a_secret_typed_argument(browser: Browser):
+    content = browser._keyword_call_banner_content(
+        "create_credential",
+        "Create Credential",
+        ["rpId=example.com", "privateKey=${PRIVATE_KEY}"],
+    )
+    assert content == "Create Credential    rpId=example.com    privateKey=***"
+
+
+def test_banner_content_masks_every_secret_typed_argument(browser: Browser):
+    content = browser._keyword_call_banner_content(
+        "create_credential",
+        "Create Credential",
+        ["example.com", "id", "${PRIVATE_KEY}", "${PUBLIC_KEY}", "handle"],
+    )
+    assert content == "Create Credential    example.com    id    ***    ***    handle"
+
+
+def test_plugin_secret_without_a_secret_annotation_is_still_found_by_name(
+    browser_with_plugin: Browser,
+):
+    assert browser_with_plugin._secret_argument_names(
+        "Plugin Login With Credentials"
+    ) == {"secret"}

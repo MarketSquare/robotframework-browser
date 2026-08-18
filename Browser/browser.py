@@ -25,7 +25,7 @@ from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -86,6 +86,7 @@ from .utils.data_types import (
     SupportedBrowsers,
     TracingGroupMode,
 )
+from .utils.types import Secret
 from .version import __version__ as VERSION
 
 KW_CALL_CONTENT_TEMPLATE = """body::before {{
@@ -581,7 +582,7 @@ class Browser(DynamicCore):
         self._keyword_formatters: dict = {}
         self._current_loglevel: str | None = None
         self._logging_suppressions = 0
-        self._secret_keywords: dict[str, bool] = {}
+        self._secret_arguments: dict[str, set[str]] = {}
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
@@ -979,14 +980,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     @staticmethod
     def _trace_group_arguments(entry: KeywordCallStackEntry) -> dict[str, Any]:
-        """Selects the fields a trace group accepts from a call stack entry."""
         return {"name": entry["name"], "file": entry["file"], "line": entry["line"]}
 
     def run_keyword(self, name, args, kwargs=None):
         is_secret_keyword = self._is_secret_keyword(name)
-        if is_secret_keyword:
-            self._set_logging(False)
         try:
+            if is_secret_keyword:
+                self._set_logging(False)
             self._show_keyword_call(name)
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
@@ -1171,11 +1171,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return (clean_message, *args[1:])
 
     def _set_logging(self, status: bool):
-        """Suppresses logging while a secret keyword runs.
-
-        Secret keywords can nest, so only the outermost one may restore the
-        original log level.
-        """
         try:
             context = BuiltIn()._context.output
         except DataError:
@@ -1191,12 +1186,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._logging_suppressions += 1
 
     def _resolve_keyword_function(self, name: str) -> Callable | None:
-        """Returns the Python function behind a keyword name, or None if it is not ours.
-
-        The name Robot Framework passes to `Run Keyword` is the registered one,
-        which a translation replaces. Every decision has to be made on the
-        function instead, so that translated keywords behave like English ones.
-        """
+        """A translation replaces the registered name, the function stays the same."""
         return self.keywords.get(name)
 
     def _keyword_argument_names(self, name: str) -> list[str]:
@@ -1210,40 +1200,60 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ]
         return [argument for argument in names if not argument.startswith("*")]
 
-    def _is_secret_keyword(self, name: str) -> bool:
-        """Tells if a keyword takes a secret, so that its logging is suppressed.
-
-        Asked for every single keyword call, so the answer is cached. The set of
-        keywords does not change after the library has been imported.
+    def _secret_argument_names(self, name: str) -> set[str]:
+        """Both rules are needed: the annotation misses a plugin that types its
+        secret as a string, the name misses `Create Credential`, whose secrets
+        are called ``privateKey`` and ``publicKey``.
         """
-        if name not in self._secret_keywords:
-            is_our_keyword = self._resolve_keyword_function(name) is not None
-            takes_secret = SECRET_ARGUMENT in self._keyword_argument_names(name)
-            self._secret_keywords[name] = is_our_keyword and takes_secret
-        return self._secret_keywords[name]
+        if name not in self._secret_arguments:
+            self._secret_arguments[name] = self._find_secret_arguments(name)
+        return self._secret_arguments[name]
+
+    def _find_secret_arguments(self, name: str) -> set[str]:
+        if self._resolve_keyword_function(name) is None:
+            return set()
+        try:
+            argument_types = self.get_keyword_types(name) or {}
+        except Exception:
+            return set()
+        return {
+            argument
+            for argument, annotation in argument_types.items()
+            if argument == SECRET_ARGUMENT
+            or annotation is Secret
+            or Secret in get_args(annotation)
+        }
+
+    def _is_secret_keyword(self, name: str) -> bool:
+        return bool(self._secret_argument_names(name))
 
     def _is_banner_muted_keyword(self, name: str) -> bool:
         function = self._resolve_keyword_function(name)
         return function is not None and function.__name__ in BANNER_MUTED_KEYWORDS
 
     def _mask_secret_arguments(self, name: str, args: list[str]) -> list[str]:
-        argument_names = self._keyword_argument_names(name)
-        if SECRET_ARGUMENT not in argument_names:
+        """Counting positions is only correct because Robot Framework rejects a
+        positional argument that follows a named one, so every cell before the
+        first named argument fills its parameter in declaration order.
+        """
+        secret_arguments = self._secret_argument_names(name)
+        if not secret_arguments:
             return list(args)
+        argument_names = self._keyword_argument_names(name)
         masked = []
         position = 0
         for arg in args:
             argument_name, separator, _ = arg.partition("=")
             if separator and argument_name in argument_names:
                 masked.append(
-                    f"{SECRET_ARGUMENT}={SECRET_MASK}"
-                    if argument_name == SECRET_ARGUMENT
+                    f"{argument_name}={SECRET_MASK}"
+                    if argument_name in secret_arguments
                     else arg
                 )
                 continue
             is_secret = (
                 position < len(argument_names)
-                and argument_names[position] == SECRET_ARGUMENT
+                and argument_names[position] in secret_arguments
             )
             masked.append(SECRET_MASK if is_secret else arg)
             position += 1
@@ -1252,17 +1262,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _keyword_call_banner_content(
         self, name: str, kwname: str, args: list[str]
     ) -> str:
-        """Builds the banner text from the keyword call as it was written.
-
-        Variables are deliberately left unresolved here. Resolving them is the
-        callers job, so that a secret which has already been masked can never be
-        resolved back into the banner.
-
-        Masking maps the source arguments onto parameters by position and by
-        name. A collection expansion such as ``&{arguments}`` is a single source
-        cell carrying several arguments at once and cannot be mapped, which is
-        why the caller does not resolve variables for a keyword that takes a
-        secret at all.
+        """Resolving the variables is left to the caller, so that a masked secret
+        can never be resolved back into the banner.
         """
         masked = self._mask_secret_arguments(name, args)
         return f"{kwname}{'    ' * bool(masked)}{'    '.join(masked)}"
@@ -1288,8 +1289,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             if not self._is_secret_keyword(name):
                 content = BuiltIn().replace_variables(content)
             self.set_keyword_call_banner(content)
-        except Exception:
-            pass
+        except Exception as error:
+            logger.trace(f"Keyword call banner could not be painted: {error}")
 
     def set_keyword_call_banner(self, keyword_call=None):
         if keyword_call:
