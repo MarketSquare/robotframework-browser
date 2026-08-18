@@ -105,4 +105,8 @@ Keyword Call Banner Covers Plugin Keywords
     ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
     ...    Plugin Login With Credentials    css=input#username    ${PLUGIN_SECRET}
     Get Keyword Call Banner Text    ==    Plugin Login With Credentials \ \ \ css=input#username \ \ \ ***
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Plugin Login Without Type Hints    css=input#username    ${PLUGIN_SECRET}
+    Get Keyword Call Banner Text    ==    Plugin Login Without Type Hints \ \ \ css=input#username \ \ \ ***
     [Teardown]    Show Keyword Banner    None
