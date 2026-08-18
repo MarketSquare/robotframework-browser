@@ -406,11 +406,18 @@ class AriaSnapshotReturnType(Enum):
 
 
 class KeywordCallStackEntry(TypedDict):
-    """Information about the keyword call stack."""
+    """Information about the keyword call stack.
+
+    ``kwname`` and ``args`` keep the call as it was written in the source. The
+    arguments the keyword receives are already converted and would render enums
+    and numbers instead of the text the user wrote.
+    """
 
     name: str
     file: str
     line: int
+    kwname: str
+    args: list[str]
 
 
 class SelectOptions(TypedDict):

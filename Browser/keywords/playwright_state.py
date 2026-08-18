@@ -937,10 +937,16 @@ class PlaywrightState(LibraryComponent):
         self.library.tracing_contexts.append(ctx_id)
         if self.library.tracing_group_mode == TracingGroupMode.Browser:
             return self.open_trace_group(
-                **(self.library.keyword_call_stack[-1]), context_id=ctx_id
+                **self.library._trace_group_arguments(
+                    self.library.keyword_call_stack[-1]
+                ),
+                context_id=ctx_id,
             )
         for keyword_call in self.library.keyword_call_stack:
-            self.open_trace_group(**keyword_call, context_id=ctx_id)
+            self.open_trace_group(
+                **self.library._trace_group_arguments(keyword_call),
+                context_id=ctx_id,
+            )
         return None
 
     def _mask_credentials(self, data: dict):

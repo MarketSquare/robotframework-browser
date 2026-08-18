@@ -6,9 +6,13 @@ Library             Browser
 ...                     enable_presenter_mode=False
 ...                     selector_prefix=${SELECTOR_PREFIX}
 ...                     plugins=${CURDIR}/ExamplePlugin.py
+Library             ${CURDIR}/../../library/banner.py
 
 Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
 Test Teardown       Close Context    ALL
+
+*** Variables ***
+${PLUGIN_SECRET} =      plugin-secret-do-not-disclose
 
 *** Test Cases ***
 Set Message On Suite Level
@@ -91,3 +95,18 @@ Check Plugin Suite Scope Setting 2
     ...    LOG 1:3    INFO    Suite Level Message
     Log    Test
     Log    Hello
+
+Keyword Call Banner Covers Plugin Keywords
+    [Setup]    New Page    ${FORM_URL}
+    Show Keyword Banner    True
+    Get Element Count    css=input#username
+    Get Keyword Call Banner Text    ==    Get Element Count \ \ \ css=input#username
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Plugin Login With Credentials    css=input#username    ${PLUGIN_SECRET}
+    Get Keyword Call Banner Text    ==    Plugin Login With Credentials \ \ \ css=input#username \ \ \ ***
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Plugin Login Without Type Hints    css=input#username    ${PLUGIN_SECRET}
+    Get Keyword Call Banner Text    ==    Plugin Login Without Type Hints \ \ \ css=input#username \ \ \ ***
+    [Teardown]    Show Keyword Banner    None

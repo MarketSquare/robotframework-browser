@@ -515,7 +515,7 @@ class Control(LibraryComponent):
         self.show_keyword_call_banner_stack.set(show, scope)
         self.keyword_call_banner_add_style_stack.set(style, scope)
         if not show:
-            self.library.set_keyword_call_banner()
+            self.library._keyword_call.set_banner()
         return {"show": original_state, "style": original_style}
 
     @keyword(tags=("Setter", "BrowserControl"))
