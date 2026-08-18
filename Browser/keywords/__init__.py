@@ -22,6 +22,7 @@ from .device_descriptors import Devices
 from .evaluation import Evaluation
 from .getters import Getters
 from .interaction import Interaction
+from .keyword_call import KeywordCallObserver
 from .locator_handler import LocatorHandler
 from .network import Network
 from .pdf import Pdf
@@ -43,6 +44,7 @@ __all__ = [
     "Formatter",
     "Getters",
     "Interaction",
+    "KeywordCallObserver",
     "LocatorHandler",
     "Network",
     "Pdf",

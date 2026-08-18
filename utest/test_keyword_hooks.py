@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import Browser.browser as browser_module
+import Browser.keywords.keyword_call as keyword_call_module
 from Browser import Browser
 
 
@@ -37,15 +37,18 @@ def test_translated_browser_really_renames_keywords(translated_browser: Browser)
 
 
 def test_resolve_keyword_function(browser: Browser):
-    assert browser._resolve_keyword_function("fill_secret").__name__ == "fill_secret"
-    assert browser._resolve_keyword_function("Get BoundingBox").__name__ == (
-        "get_boundingbox"
+    assert (
+        browser._keyword_call._resolve_keyword_function("fill_secret").__name__
+        == "fill_secret"
     )
-    assert browser._resolve_keyword_function("Log") is None
+    assert browser._keyword_call._resolve_keyword_function(
+        "Get BoundingBox"
+    ).__name__ == ("get_boundingbox")
+    assert browser._keyword_call._resolve_keyword_function("Log") is None
 
 
 def test_resolve_keyword_function_with_translation(translated_browser: Browser):
-    resolve = translated_browser._resolve_keyword_function
+    resolve = translated_browser._keyword_call._resolve_keyword_function
     assert resolve("taeytae_salaisuus").__name__ == "fill_secret"
     assert resolve("ota_kuvakaappaus").__name__ == "take_screenshot"
     assert resolve("fill_secret") is None
@@ -61,12 +64,14 @@ def test_resolve_keyword_function_with_translation(translated_browser: Browser):
     ],
 )
 def test_is_secret_keyword(browser: Browser, keyword: str, expected: bool):
-    assert browser._is_secret_keyword(keyword) is expected
+    assert browser._keyword_call.is_secret_keyword(keyword) is expected
 
 
 def test_is_secret_keyword_with_translation(translated_browser: Browser):
-    assert translated_browser._is_secret_keyword("taeytae_salaisuus") is True
-    assert translated_browser._is_secret_keyword("hae_otsikko") is False
+    assert (
+        translated_browser._keyword_call.is_secret_keyword("taeytae_salaisuus") is True
+    )
+    assert translated_browser._keyword_call.is_secret_keyword("hae_otsikko") is False
 
 
 @pytest.mark.parametrize(
@@ -79,31 +84,31 @@ def test_is_secret_keyword_with_translation(translated_browser: Browser):
     ],
 )
 def test_is_banner_muted_keyword(browser: Browser, keyword: str, expected: bool):
-    assert browser._is_banner_muted_keyword(keyword) is expected
+    assert browser._keyword_call._is_banner_muted_keyword(keyword) is expected
 
 
 def test_is_banner_muted_keyword_with_translation(translated_browser: Browser):
-    muted = translated_browser._is_banner_muted_keyword
+    muted = translated_browser._keyword_call._is_banner_muted_keyword
     assert muted("ota_kuvakaappaus") is True
     assert muted("hae_sivun_laehdekoodi") is True
     assert muted("hae_otsikko") is False
 
 
 def test_banner_content_without_arguments(browser: Browser):
-    assert browser._keyword_call_banner_content("get_title", "Get Title", []) == (
+    assert browser._keyword_call._banner_content("get_title", "Get Title", []) == (
         "Get Title"
     )
 
 
 def test_banner_content_joins_arguments_with_four_spaces(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "fill_text", "Fill Text", ["id=name", "Hyvä päivä"]
     )
     assert content == "Fill Text    id=name    Hyvä päivä"
 
 
 def test_banner_content_keeps_variables_unresolved(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "fill_text", "Fill Text", ["id=name", "${GREETING}"]
     )
     assert content == "Fill Text    id=name    ${GREETING}", (
@@ -112,14 +117,14 @@ def test_banner_content_keeps_variables_unresolved(browser: Browser):
 
 
 def test_banner_content_masks_positional_secret(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "fill_secret", "Fill Secret", ["id=password", "${PASSWORD}"]
     )
     assert content == "Fill Secret    id=password    ***"
 
 
 def test_banner_content_masks_named_secret(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "type_secret",
         "Type Secret",
         ["id=password", "secret=${PASSWORD}", "clear=False"],
@@ -130,21 +135,21 @@ def test_banner_content_masks_named_secret(browser: Browser):
 def test_banner_content_masks_secret_of_translated_keyword(
     translated_browser: Browser,
 ):
-    content = translated_browser._keyword_call_banner_content(
+    content = translated_browser._keyword_call._banner_content(
         "taeytae_salaisuus", "Taeytae Salaisuus", ["id=password", "${PASSWORD}"]
     )
     assert content == "Taeytae Salaisuus    id=password    ***"
 
 
 def test_banner_content_does_not_mask_a_selector_called_secret(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "fill_text", "Fill Text", ["id=secret", "${PASSWORD}"]
     )
     assert content == "Fill Text    id=secret    ${PASSWORD}"
 
 
 def test_banner_content_masks_secret_given_as_embedded_variable(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "fill_secret", "Fill Secret", ["id=password", "prefix-${PASSWORD}-suffix"]
     )
     assert content == "Fill Secret    id=password    ***"
@@ -155,7 +160,9 @@ def test_run_keyword_suppresses_logging_around_secret_keywords(
 ):
     events = []
     monkeypatch.setattr(
-        browser, "_set_logging", lambda status: events.append(f"logging={status}")
+        browser._keyword_call,
+        "_set_logging",
+        lambda status: events.append(f"logging={status}"),
     )
     monkeypatch.setitem(
         browser.keywords, "fill_secret", lambda *args: events.append("keyword")
@@ -173,7 +180,9 @@ def test_run_keyword_restores_logging_when_secret_keyword_fails(
 
     events = []
     monkeypatch.setattr(
-        browser, "_set_logging", lambda status: events.append(f"logging={status}")
+        browser._keyword_call,
+        "_set_logging",
+        lambda status: events.append(f"logging={status}"),
     )
     monkeypatch.setattr(browser, "keyword_error", lambda selector: None)
     monkeypatch.setitem(browser.keywords, "fill_secret", failing)
@@ -187,7 +196,9 @@ def test_run_keyword_does_not_touch_logging_for_other_keywords(
 ):
     events = []
     monkeypatch.setattr(
-        browser, "_set_logging", lambda status: events.append(f"logging={status}")
+        browser._keyword_call,
+        "_set_logging",
+        lambda status: events.append(f"logging={status}"),
     )
     monkeypatch.setitem(
         browser.keywords, "get_title", lambda *args: events.append("keyword")
@@ -210,16 +221,16 @@ def test_nested_secret_keywords_restore_the_original_log_level(
 
     output = FakeOutput()
     monkeypatch.setattr(
-        browser_module,
+        keyword_call_module,
         "BuiltIn",
         lambda: SimpleNamespace(_context=SimpleNamespace(output=output)),
     )
-    browser._set_logging(False)
+    browser._keyword_call._set_logging(False)
     assert output.level == "NONE"
-    browser._set_logging(False)
-    browser._set_logging(True)
+    browser._keyword_call._set_logging(False)
+    browser._keyword_call._set_logging(True)
     assert output.level == "NONE", "the outer secret keyword is still running"
-    browser._set_logging(True)
+    browser._keyword_call._set_logging(True)
     assert output.level == "TRACE"
 
 
@@ -230,7 +241,7 @@ def browser_with_plugin() -> Browser:
 
 
 def test_plugin_keyword_resolves_to_the_plugin_function(browser_with_plugin: Browser):
-    resolve = browser_with_plugin._resolve_keyword_function
+    resolve = browser_with_plugin._keyword_call._resolve_keyword_function
     assert resolve("Plugin Login With Credentials").__name__ == (
         "plugin_login_with_credentials"
     )
@@ -240,16 +251,18 @@ def test_plugin_keyword_resolves_to_the_plugin_function(browser_with_plugin: Bro
 def test_plugin_keyword_with_a_secret_argument_is_detected(
     browser_with_plugin: Browser,
 ):
-    assert browser_with_plugin._is_secret_keyword("Plugin Login With Credentials")
-    assert not browser_with_plugin._is_secret_keyword("plugin_without_secret"), (
-        "the name carries no hint either way, only the argument specification does"
+    assert browser_with_plugin._keyword_call.is_secret_keyword(
+        "Plugin Login With Credentials"
     )
+    assert not browser_with_plugin._keyword_call.is_secret_keyword(
+        "plugin_without_secret"
+    ), "the name carries no hint either way, only the argument specification does"
 
 
 def test_banner_content_masks_the_secret_of_a_plugin_keyword(
     browser_with_plugin: Browser,
 ):
-    content = browser_with_plugin._keyword_call_banner_content(
+    content = browser_with_plugin._keyword_call._banner_content(
         "Plugin Login With Credentials",
         "Plugin Login With Credentials",
         ["css=input#username", "${PASSWORD}"],
@@ -262,7 +275,7 @@ def test_run_keyword_suppresses_logging_around_a_plugin_secret_keyword(
 ):
     events = []
     monkeypatch.setattr(
-        browser_with_plugin,
+        browser_with_plugin._keyword_call,
         "_set_logging",
         lambda status: events.append(f"logging={status}"),
     )
@@ -278,21 +291,21 @@ def test_run_keyword_suppresses_logging_around_a_plugin_secret_keyword(
 
 
 def test_secret_arguments_are_found_by_name_and_by_annotation(browser: Browser):
-    assert browser._secret_argument_names("fill_secret") == {"secret"}
-    assert browser._secret_argument_names("type_secret") == {"secret"}
-    assert browser._secret_argument_names("create_credential") == {
+    assert browser._keyword_call._secret_argument_names("fill_secret") == {"secret"}
+    assert browser._keyword_call._secret_argument_names("type_secret") == {"secret"}
+    assert browser._keyword_call._secret_argument_names("create_credential") == {
         "privateKey",
         "publicKey",
     }
-    assert browser._secret_argument_names("fill_text") == set()
+    assert browser._keyword_call._secret_argument_names("fill_text") == set()
 
 
 def test_create_credential_counts_as_a_secret_keyword(browser: Browser):
-    assert browser._is_secret_keyword("create_credential") is True
+    assert browser._keyword_call.is_secret_keyword("create_credential") is True
 
 
 def test_banner_content_masks_a_secret_typed_argument(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "create_credential",
         "Create Credential",
         ["rpId=example.com", "privateKey=${PRIVATE_KEY}"],
@@ -301,7 +314,7 @@ def test_banner_content_masks_a_secret_typed_argument(browser: Browser):
 
 
 def test_banner_content_masks_every_secret_typed_argument(browser: Browser):
-    content = browser._keyword_call_banner_content(
+    content = browser._keyword_call._banner_content(
         "create_credential",
         "Create Credential",
         ["example.com", "id", "${PRIVATE_KEY}", "${PUBLIC_KEY}", "handle"],
@@ -312,7 +325,7 @@ def test_banner_content_masks_every_secret_typed_argument(browser: Browser):
 def test_plugin_secret_without_a_secret_annotation_is_still_found_by_name(
     browser_with_plugin: Browser,
 ):
-    assert browser_with_plugin._secret_argument_names(
+    assert browser_with_plugin._keyword_call._secret_argument_names(
         "Plugin Login With Credentials"
     ) == {"secret"}
 
@@ -320,7 +333,9 @@ def test_plugin_secret_without_a_secret_annotation_is_still_found_by_name(
 def test_plugin_secret_without_any_type_hints_is_found_by_name(
     browser_with_plugin: Browser,
 ):
-    assert browser_with_plugin._secret_argument_names(
+    assert browser_with_plugin._keyword_call._secret_argument_names(
         "Plugin Login Without Type Hints"
     ) == {"secret"}
-    assert browser_with_plugin._is_secret_keyword("Plugin Login Without Type Hints")
+    assert browser_with_plugin._keyword_call.is_secret_keyword(
+        "Plugin Login Without Type Hints"
+    )
