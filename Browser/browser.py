@@ -1212,17 +1212,21 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _find_secret_arguments(self, name: str) -> set[str]:
         if self._resolve_keyword_function(name) is None:
             return set()
+        secret_arguments = {
+            argument
+            for argument in self._keyword_argument_names(name)
+            if argument == SECRET_ARGUMENT
+        }
         try:
             argument_types = self.get_keyword_types(name) or {}
         except Exception:
-            return set()
-        return {
+            argument_types = {}
+        secret_arguments.update(
             argument
             for argument, annotation in argument_types.items()
-            if argument == SECRET_ARGUMENT
-            or annotation is Secret
-            or Secret in get_args(annotation)
-        }
+            if annotation is Secret or Secret in get_args(annotation)
+        )
+        return secret_arguments
 
     def _is_secret_keyword(self, name: str) -> bool:
         return bool(self._secret_argument_names(name))

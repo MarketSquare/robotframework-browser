@@ -11,3 +11,7 @@ class KeywordHooksPlugin(LibraryComponent):
     @keyword
     def plugin_without_secret(self, selector: str, text: str):
         return f"{selector}{text}"
+
+    @keyword(name="Plugin Login Without Type Hints")
+    def plugin_login_without_type_hints(self, selector, secret):
+        return self.resolve_secret(secret, "secret")

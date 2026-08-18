@@ -315,3 +315,12 @@ def test_plugin_secret_without_a_secret_annotation_is_still_found_by_name(
     assert browser_with_plugin._secret_argument_names(
         "Plugin Login With Credentials"
     ) == {"secret"}
+
+
+def test_plugin_secret_without_any_type_hints_is_found_by_name(
+    browser_with_plugin: Browser,
+):
+    assert browser_with_plugin._secret_argument_names(
+        "Plugin Login Without Type Hints"
+    ) == {"secret"}
+    assert browser_with_plugin._is_secret_keyword("Plugin Login Without Type Hints")

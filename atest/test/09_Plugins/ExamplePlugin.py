@@ -60,3 +60,7 @@ class ExamplePlugin(LibraryComponent):
     @keyword(name="Plugin Login With Credentials")
     def plugin_login_with_credentials(self, selector: str, secret: str):
         return self.resolve_secret(secret, "secret")
+
+    @keyword(name="Plugin Login Without Type Hints")
+    def plugin_login_without_type_hints(self, selector, secret):
+        return self.resolve_secret(secret, "secret")
