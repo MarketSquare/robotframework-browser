@@ -101,7 +101,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``txt`` | Text for the text field. |
-        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability|Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -213,7 +213,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the text field. See the `Finding elements` section for details about the selectors. |
         | ``secret`` | The secret string that should be filled into the text field. Supports Robot Framework 7.4 Secret type as normal variable (with curly braces). Also environment variable name with % prefix or a local variable with $ prefix that has the secret text value (without curly braces). |
-        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability|Actionability checks]. |
 
 
         This keyword does not log the secret in Robot Framework logs, but
@@ -535,7 +535,7 @@ class Interaction(LibraryComponent):
         | =Arguments= | =Description= |
         | ``selector`` | Selector element to hover. See the `Finding elements` section for details about the selectors. |
         | ``position_x`` & ``position_y`` | A point to hover relative to the top-left corner of element bounding box. If not specified, hovers over some visible point of the element. Only positive values within the bounding-box are allowed. Both values must be given, otherwise the position is ignored. |
-        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. Defaults to ``False``. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability|Actionability checks]. Defaults to ``False``. |
         | ``*modifiers`` | Modifier keys to press. Ensures that only these modifiers are pressed during the hover, and then restores current modifiers back. If not specified, currently pressed modifiers are used. Valid modifier keys are ``Alt``, ``Control``, ``ControlOrMeta``, ``Meta`` and ``Shift``. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
@@ -695,7 +695,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
-        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability|Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -718,7 +718,7 @@ class Interaction(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``selector`` | Selector of the checkbox. See the `Finding elements` section for details about the selectors. |
-        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability | Actionability checks]. |
+        | ``force`` | Set to ``True`` to skip Playwright's [https://playwright.dev/docs/actionability|Actionability checks]. |
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 

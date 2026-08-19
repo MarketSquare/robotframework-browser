@@ -766,10 +766,9 @@ class PlaywrightState(LibraryComponent):
             width=1280, height=720
         ),
     ):
-        """Open a new
-        [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context].
+        """Opens a new persistent context.
 
-        `New Persistent Context` basically executes `New Browser`, `New Context` and `New Page` in one step and sets a profile at the same time.
+        `New Persistent Context` basically executes `New Browser`, `New Context` and `New Page` in one step and sets a profile at the same time. See [https://playwright.dev/docs/api/class-browsertype#browser-type-launch-persistent-context | persistent context] in Playwright docs.
 
         This keyword returns a tuple of browser id, context id and page details. (New in Browser 15.0.0)
 
