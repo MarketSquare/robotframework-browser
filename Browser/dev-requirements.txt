@@ -23,5 +23,5 @@ robotframework-archivelibrary >= 0.4.3
 uv >= 0.12.5
 build >= 1.5.0
 robotframework-ghareports >= 1.0.0
-types-PyYAML >= 6.0.12.20260724
+types-PyYAML >= 6.0.12.20260815
 requests >= 2.34.2
