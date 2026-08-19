@@ -352,6 +352,7 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           rfbrowser clean-node
+          python .github/scripts/verify_clean_node.py
           uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
@@ -535,6 +536,7 @@ jobs:
       - name: Uninstall
         run: |
           rfbrowser clean-node
+          python .github/scripts/verify_clean_node.py
           pip uninstall -y robotframework-browser-batteries
           pip uninstall -y robotframework-browser
 

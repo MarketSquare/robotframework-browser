@@ -45,17 +45,19 @@ Enable Tracing To File With Two Browsers
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_1.zip
     File Should Not Be Empty    ${OUTPUT_DIR}/trace_2.zip
 
+Check Show-Trace Command Help
+    [Timeout]    60s
+    ${help} =    Run Rfbrowser Show Trace Help
+    Should Contain    ${help}    Start the Playwright trace viewer.
+    Should Contain    ${help}    --stdin
+    Should Contain    ${help}    show-trace [OPTIONS] [FILE]
+
 Check Show-Trace Command
-    [Tags]    no-windows-support    # Is not stable in Windows
+    [Tags]    slow    no-windows-support    # slow: needs trace_1.zip from the test above
     [Timeout]    90s
-    IF    '${SYS_VAR_CI}' == 'False'
-        Log    This is only for CI when installation is done.
-    ELSE
-        ${help} =    Run Rfbrowser Help
-        Should Contain    ${help}    Possible commands are
-        ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
-        Check Trace Process    ${process}    ${procss_stdout_file}
-    END
+    ${process}    ${procss_stdout_file} =    Start Show Trace    ${OUTPUT_DIR}/trace_1.zip
+    Check Trace Process    ${process}    ${procss_stdout_file}
+    [Teardown]    Stop Show Trace
 
 Tracing And Closing All Browsers
     [Tags]    slow

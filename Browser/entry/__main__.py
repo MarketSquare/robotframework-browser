@@ -483,9 +483,12 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
             raise RuntimeError(
                 f"Invalid argument name {key}. Argument names must be one of {', '.join(keyword_types.keys())}"
             )
-        params[key] = RobotTypeConverter.converter_for(keyword_types[key]).convert(
-            name=key, value=value
-        )
+        if (converter := RobotTypeConverter.converter_for(keyword_types[key])) is None:
+            raise RuntimeError(
+                f"Invalid option {key}. Argument type {keyword_types[key]} can not be "
+                f"converted by this Robot Framework version."
+            )
+        params[key] = converter.convert(name=key, value=value)
     return params
 
 

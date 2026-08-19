@@ -153,6 +153,10 @@ select = [
 ".github/skills/parse-rf-results/scripts/parse_results.py" = [
     "T201",
 ]
+".github/scripts/verify_clean_node.py" = [
+    "T201",
+    "INP001",
+]
 
 [tool.robocop.format]
 line_ending = "unix"
