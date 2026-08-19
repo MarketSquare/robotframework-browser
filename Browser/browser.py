@@ -391,6 +391,19 @@ class Browser(DynamicCore):
     A new set higher order scope will always remove the lower order scope which may be in charge.
     So the setting of a ``Suite`` scope from a test, will set that scope to the robot file suite where that test is and removes the ``Test`` scope that may have been in place.
 
+    = Using Browser from Python =
+
+    Browser keywords can be called directly from Python, from your own Robot
+    Framework library. Arguments convert the same way Robot Framework converts
+    them, so ``browser.click("//button", "middle")`` works, and a Python
+    ``None`` is passed through unchanged. Robot Framework's own features do not
+    all follow: `Automatic page and context closing` and `Scope Setting` need
+    Browser's listener to be registered, and ``run_on_failure`` never applies
+    to a keyword your library calls from Python.
+
+    Getting started, and what your own library gets in each case:
+    https://robotframework-browser.org/docs/extending/python-libraries
+
     = Language =
 
     Keyword names and their documentation can be translated. Install a Python
