@@ -5,7 +5,7 @@
 library for [Robot Framework](http://robotframework.org) that utilizes the
 [Playwright](https://github.com/microsoft/playwright) tool internally. Browser
 library 20.4.0 is a new release with to Python usage, enhancing Set Presenter Mode
-keyword. Also this release drop support for Robot Framework 6x and not minimum
+keyword. Also this release drop support for Robot Framework 6x and minimum
 version is raised to 7.1.1. There are also several other bug fixes and smaller
 enhancements. Also would like to high light our redesigned
 https://robotframework-browser.org/ webpage and it has lots of new content.
