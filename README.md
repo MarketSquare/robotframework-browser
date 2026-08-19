@@ -252,8 +252,8 @@ You can share the node side RF Browser processes by using the `ROBOT_FRAMEWORK_B
 - If it is localstorage or cookies `Save Storage State` should work. See usage example: https://marketsquare.github.io/robotframework-browser/Browser.html#Save%20Storage%20State
 
 # Plugins
-Browser library supports plugins to extend library. See more details about
-[plugin documentation](docs/plugins/README.md)
+Browser library supports plugins to extend library. See more details in the
+[plugin documentation](https://robotframework-browser.org/docs/extending/python-plugins).
 
 # Development
 

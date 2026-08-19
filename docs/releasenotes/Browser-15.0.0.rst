@@ -33,7 +33,7 @@ Library was tested with Playwright 1.29.2
 .. _pip: http://pip-installer.org
 .. _PyPI: https://pypi.python.org/pypi/robotframework-browser
 .. _issue tracker: https://github.com/MarketSquare/robotframework-browser/milestones%3Av15.0.0
-.. _Plugin Documentation: https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md
+.. _Plugin Documentation: https://robotframework-browser.org/docs/extending/python-plugins
 
 
 .. contents::
