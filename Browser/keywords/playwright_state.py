@@ -463,12 +463,12 @@ class PlaywrightState(LibraryComponent):
         | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. Regarding file deletion, see the docs of `Download` and `Promise To Wait For Download`. |
         | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
         | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
-        | ``firefoxUserPrefs`` |Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |
+        | ``firefoxUserPrefs`` | Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |
         | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
         | ``handleSIGINT`` | Close the browser process on Ctrl-C. Defaults to True. |
         | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
         | ``ignoreDefaultArgs`` | If True, Playwright does not pass its own configuration args and only uses the ones from ``args``. If a list is given, then the given default arguments are filtered out. Dangerous option; use with care. Defaults to None, which means Playwright's own default arguments are used. |
-        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}``. Robot Framework 7.4 Secret type is supported.|
+        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}``. Robot Framework 7.4 Secret type is supported.` |
         | ``reuse_existing`` | If set to True, an existing browser instance that was created with the same arguments is reused. If no such browser exists, a new one is started. Defaults to True. |
         | ``slowMo`` | Slows down Playwright operations by the given time, in Robot Framework time format. Useful so that you can see what is going on. Defaults to no delay. |
         | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
