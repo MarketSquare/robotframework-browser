@@ -212,7 +212,7 @@ jobs:
           name: Clean_install_results_${{ matrix.os }}
           path: atest/output
       - name: Github Job Summary
-        if: ${{ always() }}
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
         run: |
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
