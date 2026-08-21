@@ -219,6 +219,7 @@ jobs:
       - name: Uninstall
         run: |
           rfbrowser clean-node
+          python .github/scripts/verify_clean_node.py
           pip uninstall -y robotframework-browser-batteries
           pip uninstall -y robotframework-browser
 

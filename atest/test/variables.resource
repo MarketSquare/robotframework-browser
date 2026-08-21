@@ -44,7 +44,6 @@ ${WEBCOMPONENT_PAGE} =                  ${ROOT_URL}webcomponent.html
 ${LINKER_URL} =                         ${ROOT_URL}links/link1.html
 ${SPACES_URL} =                         ${ROOT_URL}spaces.html
 ${TABLES_URL} =                         ${ROOT_URL}tables.html
-${SYS_VAR_CI} =                         False
 ${SYS_VAR_CLEAN} =                      ${True}
 ${NETWORK_IDLE_FILE_DATA} =             ${EMPTY}
 ${INPUT_ELEMENT_COUNT_IN_LOGIN} =       5

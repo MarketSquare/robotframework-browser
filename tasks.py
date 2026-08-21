@@ -1155,8 +1155,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
 
 @task(clean_atest)
 def atest_global_pythonpath(c):
-    args = ["--variable", "SYS_VAR_CI:True"]
-    args.extend(_get_listener_args())
+    args = _get_listener_args()
     rc = _run_pabot(args)
     _clean_pabot_results(rc)
     sys.exit(rc)
@@ -1433,6 +1432,7 @@ def lint_python(c, fix=False):
         "utest",
         "browser_batteries",
         ".github/skills/",
+        ".github/scripts/",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -1443,6 +1443,7 @@ def lint_python(c, fix=False):
         "browser_batteries/",
         "bootstrap.py",
         ".github/skills/",
+        ".github/scripts/",
     ]
     if fix:
         ruff_cmd_check.insert(2, "--fix")

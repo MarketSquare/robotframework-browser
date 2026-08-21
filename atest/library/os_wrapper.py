@@ -60,11 +60,21 @@ def glob_files_count(path: str) -> int:
     return len(glob_files(path))
 
 
+def get_enty_command_list() -> list[str]:
+    """Return correct entry point command as argv, for subprocess without a shell.
+
+    Never pass this list to subprocess with ``shell=True``: on POSIX that runs only
+    the first element and silently drops the rest. Use `Get Enty Command` for the
+    string form that `Run Process    shell=True` needs.
+    """
+    if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", "0"))):
+        return ["rfbrowser"]
+    return [sys.executable, "-m", "Browser.entry"]
+
+
 def get_enty_command() -> str:
     """Return correct entry point command."""
-    if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))):
-        return "rfbrowser"
-    return f"{sys.executable} -m Browser.entry"
+    return " ".join(get_enty_command_list())
 
 
 def get_robot_command() -> str:
