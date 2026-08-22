@@ -37,6 +37,26 @@ _MASKS: tuple[tuple[re.Pattern, str], ...] = (
 )
 _WHITESPACE = re.compile(r"\s+")
 
+# Robot Framework embeds screenshots into the log as a base64 data URI. One of
+# them is 35KB of text that decodes to a PNG: nothing can read it as it stands,
+# and three of them accounted for 77% of every log byte stored. The fact that a
+# screenshot was taken is worth keeping; the bytes are in the artifact.
+_DATA_URI = re.compile(r"data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)")
+
+
+def strip_embedded_data(message: str | None) -> str | None:
+    """Replaces embedded base64 payloads with a note of what was there."""
+    if not message:
+        return message
+
+    def replace(match: re.Match) -> str:
+        mime = match.group(1)
+        kilobytes = max(1, len(match.group(2)) * 3 // 4 // 1024)
+        return f"<{mime}, ~{kilobytes} KB, embedded in the log - see the artifact>"
+
+    return _DATA_URI.sub(replace, message)
+
+
 # `robotstatuschecker` rewrites the message of every checked test, so this prefix
 # sits in front of every failure and says nothing about any of them. The real
 # error is what follows it.
@@ -118,6 +138,12 @@ def _collect_log_messages(
 ) -> None:
     """Messages logged by the keywords on the failing branch, in order.
 
+    ``keyword`` is None until we are inside a keyword that actually failed, and
+    messages are only taken from there. Messages sitting directly under the test
+    are the test's own logging and say nothing about why it failed - when the
+    failure is in a suite teardown they are actively misleading, describing work
+    that succeeded before the thing that broke ever ran.
+
     TRACE is skipped: it is argument-level bookkeeping, and it buries the lines
     that say what happened.
     """
@@ -126,6 +152,8 @@ def _collect_log_messages(
             return
         child_type = str(getattr(child, "type", "") or "").upper()
         if child_type == "MESSAGE":
+            if keyword is None:
+                continue
             level = getattr(child, "level", None)
             if level == "TRACE":
                 continue
@@ -134,7 +162,7 @@ def _collect_log_messages(
                     seq=len(out),
                     level=level,
                     keyword=keyword,
-                    message=getattr(child, "message", None),
+                    message=strip_embedded_data(getattr(child, "message", None)),
                 )
             )
             continue
@@ -164,8 +192,25 @@ def leg_info(result: Any) -> LegInfo:
 
 
 def _collect_failing_messages(test: Any) -> list[LogMessage]:
+    """What failed inside this test, in the order it ran.
+
+    Setup and teardown are not part of ``body``, so they are walked separately.
+    A test whose own setup, body and teardown all passed contributes nothing:
+    it was failed by something outside itself, and borrowing unrelated lines to
+    fill the gap would only mislead whoever reads them.
+    """
     messages: list[LogMessage] = []
+    setup = getattr(test, "setup", None)
+    if setup and setup.status == "FAIL":
+        _collect_log_messages(setup, messages, getattr(setup, "name", None) or "Setup")
     _collect_log_messages(test, messages)
+    teardown = getattr(test, "teardown", None)
+    if teardown and teardown.status == "FAIL":
+        _collect_log_messages(
+            teardown, messages, getattr(teardown, "name", None) or "Teardown"
+        )
+    for index, message in enumerate(messages):
+        message.seq = index
     return messages
 
 

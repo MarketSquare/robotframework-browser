@@ -22,6 +22,10 @@ Failing Test
 Skipped Test
     Skip    not today
 
+Test Failed By Its Teardown
+    [Teardown]    Fail    teardown blew up
+    Log    this line is not evidence of anything
+
 *** Keywords ***
 Outer Keyword
     IF    True
@@ -105,6 +109,7 @@ class TestParse:
             "Passing Test": "PASS",
             "Failing Test": "FAIL",
             "Skipped Test": "SKIP",
+            "Test Failed By Its Teardown": "FAIL",
         }
 
     def test_a_passing_test_carries_no_message(self, output_xml):
@@ -120,6 +125,12 @@ class TestParse:
         failed = next(r for r in results if r.status == "FAIL")
 
         assert failed.failing_keyword == "Fail"
+
+    def test_a_teardown_failure_is_still_a_failure(self, output_xml):
+        _, results = parse(output_xml)
+        by_name = {r.name: r for r in results}
+
+        assert by_name["Test Failed By Its Teardown"].status == "FAIL"
 
     def test_a_control_structure_is_never_named_as_the_culprit(self, output_xml):
         _, results = parse(output_xml)
@@ -174,8 +185,8 @@ class TestIngest:
 
         assert result["runs"] == 1
         assert result["legs"] == 1
-        assert result["tests"] == 3
-        assert result["failures"] == 1
+        assert result["tests"] == 4
+        assert result["failures"] == 2
 
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
@@ -209,7 +220,7 @@ class TestIngest:
             sqlite3.connect(db)
             .execute("SELECT COUNT(*) FROM test_result")
             .fetchone()[0]
-            == 3
+            == 4
         )
 
     def test_an_expired_artifact_is_counted_rather_than_guessed_at(
@@ -237,6 +248,26 @@ class TestLogMessages:
         assert failed.log_messages[0].level == "FAIL"
         assert failed.log_messages[0].keyword == "Fail"
 
+    def test_only_the_failing_keyword_contributes_lines(self, output_xml):
+        """The test's own logging is not evidence of why it failed.
+
+        `Log this line is not evidence of anything` runs and passes before the
+        teardown breaks; borrowing it would describe work that succeeded.
+        """
+        _, results = parse(output_xml)
+        failed = next(r for r in results if r.name == "Test Failed By Its Teardown")
+
+        messages = [m.message for m in failed.log_messages]
+        assert "this line is not evidence of anything" not in messages
+        assert messages == ["teardown blew up"]
+
+    def test_a_failing_teardown_is_where_the_lines_come_from(self, output_xml):
+        _, results = parse(output_xml)
+        failed = next(r for r in results if r.name == "Test Failed By Its Teardown")
+
+        assert failed.log_messages[0].keyword == "Fail"
+        assert failed.log_messages[0].level == "FAIL"
+
     def test_a_passing_test_logs_nothing_into_the_database(self, output_xml):
         _, results = parse(output_xml)
 
@@ -262,6 +293,37 @@ class TestLogMessages:
         connect(db).close()
 
         assert log_messages(db, None) == []
+
+
+class TestEmbeddedScreenshots:
+    """An embedded screenshot is not readable text and must not be stored as it."""
+
+    def test_a_base64_payload_becomes_a_note_of_what_it_was(self):
+        from tools.ci_failures.parse import strip_embedded_data
+
+        payload = "A" * 4096
+        stripped = strip_embedded_data(f'<img src="data:image/png;base64,{payload}">')
+
+        assert "base64" not in stripped
+        assert "image/png" in stripped
+        assert "KB" in stripped
+        assert len(stripped) < 200
+
+    def test_the_rest_of_the_message_survives(self):
+        from tools.ci_failures.parse import strip_embedded_data
+
+        stripped = strip_embedded_data("before data:image/png;base64,AAAA after")
+
+        assert stripped.startswith("before ")
+        assert stripped.endswith(" after")
+
+    def test_a_message_without_one_is_untouched(self):
+        from tools.ci_failures.parse import strip_embedded_data
+
+        assert strip_embedded_data("Difference between pixles is 5046301") == (
+            "Difference between pixles is 5046301"
+        )
+        assert strip_embedded_data(None) is None
 
 
 class TestGrouping:
