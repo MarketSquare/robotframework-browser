@@ -14,7 +14,7 @@ from .report import (
 
 _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
 
-_CSS = """
+_CSS = r"""
 :root {
   color-scheme: light;
   --surface:    #fcfcfb;
@@ -221,8 +221,8 @@ details.more > summary {
   width: fit-content;
 }
 details.more > summary::-webkit-details-marker { display: none; }
-details.more > summary::before { content: "▸  "; }
-details.more[open] > summary::before { content: "▾  "; }
+details.more > summary::before { content: "\25B8  "; }
+details.more[open] > summary::before { content: "\25BE  "; }
 details.more > summary:hover { color: var(--ink-2); }
 
 .platforms { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
@@ -426,5 +426,8 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
 </div>
 """
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(page, encoding="utf-8")
+    # ASCII with the rest as numeric character references. Test names and error
+    # messages are arbitrary text, and the page cannot declare its own encoding,
+    # so anything above ASCII has to survive as an entity rather than as bytes.
+    destination.write_text(page, encoding="ascii", errors="xmlcharrefreplace")
     return destination
