@@ -226,6 +226,44 @@ class TestIngest:
         assert result["legs"] == 0
 
 
+class TestLogMessages:
+    def test_what_the_failing_keyword_logged_is_kept(self, output_xml):
+        _, results = parse(output_xml)
+        failed = next(r for r in results if r.status == "FAIL")
+
+        assert [m.message for m in failed.log_messages] == [
+            "Timeout 5000ms exceeded waiting for #id-4f2a"
+        ]
+        assert failed.log_messages[0].level == "FAIL"
+        assert failed.log_messages[0].keyword == "Fail"
+
+    def test_a_passing_test_logs_nothing_into_the_database(self, output_xml):
+        _, results = parse(output_xml)
+
+        assert next(r for r in results if r.status == "PASS").log_messages == []
+
+    def test_they_survive_the_round_trip(self, fake_ci, tmp_path):
+        from tools.ci_failures.report import log_messages
+
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        group = failure_groups(db)[0]
+        entries = log_messages(db, group.latest_result_id)
+        assert [e["message"] for e in entries] == [
+            "Timeout 5000ms exceeded waiting for #id-4f2a"
+        ]
+
+    def test_no_messages_is_not_an_error(self, tmp_path):
+        from tools.ci_failures.db import connect
+        from tools.ci_failures.report import log_messages
+
+        db = tmp_path / "ci.sqlite3"
+        connect(db).close()
+
+        assert log_messages(db, None) == []
+
+
 class TestGrouping:
     """The one behaviour this proof of concept exists to show."""
 

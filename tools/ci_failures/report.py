@@ -30,6 +30,7 @@ class FailureGroup:
     # recent occurrence. The whole reason the artifact URL is stored.
     latest_artifact_url: str | None
     latest_run_url: str | None
+    latest_result_id: int | None
 
     @property
     def failure_rate(self) -> float:
@@ -66,7 +67,14 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
                  WHERE f2.longname = f.longname
                    AND f2.status = 'FAIL'
                    AND IFNULL(f2.error_signature, '') = IFNULL(f.error_signature, '')
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_run_url
+                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_run_url,
+               (SELECT f2.id FROM test_result f2
+                  JOIN leg l2 ON l2.id = f2.leg_id
+                  JOIN run r2 ON r2.id = l2.run_id
+                 WHERE f2.longname = f.longname
+                   AND f2.status = 'FAIL'
+                   AND IFNULL(f2.error_signature, '') = IFNULL(f.error_signature, '')
+                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -80,6 +88,20 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
     ).fetchall()
     connection.close()
     return [FailureGroup(**dict(row)) for row in rows]
+
+
+def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
+    """What the failing keywords logged, for one occurrence of a failure."""
+    if result_id is None:
+        return []
+    connection = connect(db_path)
+    rows = connection.execute(
+        "SELECT seq, level, keyword, message FROM log_message "
+        "WHERE test_result_id = ? ORDER BY seq",
+        (result_id,),
+    ).fetchall()
+    connection.close()
+    return [dict(row) for row in rows]
 
 
 def platform_breakdown(db_path: Path) -> list[dict]:

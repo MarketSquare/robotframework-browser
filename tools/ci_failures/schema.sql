@@ -56,6 +56,21 @@ CREATE TABLE IF NOT EXISTS test_result (
     failing_keyword TEXT                -- innermost keyword that failed
 );
 
+-- What the keywords on the failing branch logged on their way down. Robot
+-- Framework keeps these as MESSAGE items under each keyword, and they routinely
+-- say more than the failure message does: the exception is the summary, these
+-- are the evidence. Failures only.
+CREATE TABLE IF NOT EXISTS log_message (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_result_id INTEGER NOT NULL REFERENCES test_result(id),
+    seq            INTEGER NOT NULL,   -- order the messages were logged in
+    level          TEXT,               -- TRACE | DEBUG | INFO | WARN | FAIL
+    keyword        TEXT,               -- which keyword logged it
+    message        TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_logmsg_result ON log_message(test_result_id);
+
 CREATE INDEX IF NOT EXISTS idx_leg_run       ON leg(run_id);
 CREATE INDEX IF NOT EXISTS idx_result_leg    ON test_result(leg_id);
 CREATE INDEX IF NOT EXISTS idx_result_name   ON test_result(longname);

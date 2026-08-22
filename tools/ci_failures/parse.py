@@ -5,7 +5,7 @@ keeps output.xml the single source of truth.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -69,6 +69,14 @@ class LegInfo:
 
 
 @dataclass
+class LogMessage:
+    seq: int
+    level: str | None
+    keyword: str | None
+    message: str | None
+
+
+@dataclass
 class TestResult:
     longname: str
     name: str
@@ -78,6 +86,7 @@ class TestResult:
     message: str | None
     error_signature: str | None
     failing_keyword: str | None
+    log_messages: list["LogMessage"] = field(default_factory=list)
 
 
 def _innermost_failing_keyword(item: Any) -> str | None:
@@ -99,6 +108,44 @@ def _innermost_failing_keyword(item: Any) -> str | None:
     return deepest
 
 
+# A failing keyword can log a lot - a traceback, a byte-level dump - and a
+# proof of concept does not need all of it to show what went wrong.
+MAX_LOG_MESSAGES = 60
+
+
+def _collect_log_messages(
+    item: Any, out: list[LogMessage], keyword: str | None = None
+) -> None:
+    """Messages logged by the keywords on the failing branch, in order.
+
+    TRACE is skipped: it is argument-level bookkeeping, and it buries the lines
+    that say what happened.
+    """
+    for child in getattr(item, "body", None) or []:
+        if len(out) >= MAX_LOG_MESSAGES:
+            return
+        child_type = str(getattr(child, "type", "") or "").upper()
+        if child_type == "MESSAGE":
+            level = getattr(child, "level", None)
+            if level == "TRACE":
+                continue
+            out.append(
+                LogMessage(
+                    seq=len(out),
+                    level=level,
+                    keyword=keyword,
+                    message=getattr(child, "message", None),
+                )
+            )
+            continue
+        if getattr(child, "status", None) != "FAIL":
+            continue
+        name = keyword
+        if child_type in _NAMEABLE:
+            name = getattr(child, "name", None) or keyword
+        _collect_log_messages(child, out, name)
+
+
 def leg_info(result: Any) -> LegInfo:
     """What output.xml says about the machine that produced it."""
     metadata = {
@@ -114,6 +161,12 @@ def leg_info(result: Any) -> LegInfo:
         node_version=metadata.get("node version"),
         generated_at=metadata.get("generated"),
     )
+
+
+def _collect_failing_messages(test: Any) -> list[LogMessage]:
+    messages: list[LogMessage] = []
+    _collect_log_messages(test, messages)
+    return messages
 
 
 def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
@@ -139,6 +192,7 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                     failing_keyword=_innermost_failing_keyword(test)
                     if failed
                     else None,
+                    log_messages=_collect_failing_messages(test) if failed else [],
                 )
             )
         for child in suite.suites:

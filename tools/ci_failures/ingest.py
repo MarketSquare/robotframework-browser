@@ -17,7 +17,7 @@ from pathlib import Path
 
 from . import github
 from .db import connect, ingested_artifact_ids
-from .parse import LegInfo, TestResult, parse
+from .parse import LegInfo, TestResult, error_signature, parse
 
 OUTPUT_XML = "output.xml"
 
@@ -75,26 +75,36 @@ def _insert_leg(
 def _insert_results(
     connection: sqlite3.Connection, leg_id: int, results: list[TestResult]
 ) -> tuple[int, int]:
-    connection.executemany(
-        "INSERT INTO test_result (leg_id, longname, name, suite_longname, status, "
-        "elapsed_ms, message, error_signature, failing_keyword) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [
+    failures = 0
+    for result in results:
+        cursor = connection.execute(
+            "INSERT INTO test_result (leg_id, longname, name, suite_longname, status, "
+            "elapsed_ms, message, error_signature, failing_keyword) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 leg_id,
-                r.longname,
-                r.name,
-                r.suite_longname,
-                r.status,
-                r.elapsed_ms,
-                r.message,
-                r.error_signature,
-                r.failing_keyword,
+                result.longname,
+                result.name,
+                result.suite_longname,
+                result.status,
+                result.elapsed_ms,
+                result.message,
+                result.error_signature,
+                result.failing_keyword,
+            ),
+        )
+        if result.status == "FAIL":
+            failures += 1
+        if result.log_messages:
+            connection.executemany(
+                "INSERT INTO log_message (test_result_id, seq, level, keyword, message) "
+                "VALUES (?, ?, ?, ?, ?)",
+                [
+                    (cursor.lastrowid, m.seq, m.level, m.keyword, m.message)
+                    for m in result.log_messages
+                ],
             )
-            for r in results
-        ],
-    )
-    return len(results), sum(1 for r in results if r.status == "FAIL")
+    return len(results), failures
 
 
 def ingest(
@@ -171,8 +181,6 @@ def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -
     The masking rules change as more failures are seen, and the message itself is
     in the database, so re-grouping never needs the artifacts again.
     """
-    from .parse import error_signature
-
     connection = connect(db_path)
     rows = connection.execute(
         "SELECT id, message FROM test_result WHERE status = 'FAIL' AND message IS NOT NULL"
