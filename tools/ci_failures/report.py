@@ -82,6 +82,39 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
     return [FailureGroup(**dict(row)) for row in rows]
 
 
+def platform_breakdown(db_path: Path) -> list[dict]:
+    """Failures per matrix leg, by platform.
+
+    Per leg rather than absolute, because the matrix does not run the platforms
+    an equal number of times and the raw counts would say more about the matrix
+    than about the platforms.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT l.platform,
+               COUNT(DISTINCT l.id) AS legs,
+               SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) AS failures
+        FROM leg l
+        LEFT JOIN test_result t ON t.leg_id = l.id
+        WHERE l.platform IS NOT NULL
+        GROUP BY l.platform
+        ORDER BY SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) * 1.0
+                 / COUNT(DISTINCT l.id) DESC
+        """
+    ).fetchall()
+    connection.close()
+    return [
+        {
+            "platform": row["platform"],
+            "legs": row["legs"],
+            "failures": row["failures"] or 0,
+            "per_leg": (row["failures"] or 0) / row["legs"] if row["legs"] else 0.0,
+        }
+        for row in rows
+    ]
+
+
 def totals(db_path: Path) -> dict:
     connection = connect(db_path)
     row = connection.execute(

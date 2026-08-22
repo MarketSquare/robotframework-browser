@@ -163,3 +163,25 @@ def ingest(
     connection.commit()
     connection.close()
     return totals
+
+
+def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -> int:
+    """Recomputes every error signature from the messages already stored.
+
+    The masking rules change as more failures are seen, and the message itself is
+    in the database, so re-grouping never needs the artifacts again.
+    """
+    from .parse import error_signature
+
+    connection = connect(db_path)
+    rows = connection.execute(
+        "SELECT id, message FROM test_result WHERE status = 'FAIL' AND message IS NOT NULL"
+    ).fetchall()
+    connection.executemany(
+        "UPDATE test_result SET error_signature = ? WHERE id = ?",
+        [(error_signature(row["message"]), row["id"]) for row in rows],
+    )
+    connection.commit()
+    connection.close()
+    report(f"recomputed {len(rows)} signature(s)")
+    return len(rows)

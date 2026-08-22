@@ -4,7 +4,7 @@ import html
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .report import FailureGroup, failure_groups, totals
+from .report import FailureGroup, failure_groups, platform_breakdown, totals
 
 _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
 
@@ -185,6 +185,13 @@ a.evidence { color: var(--bar); text-decoration: none; font-size: 12px; border-b
 a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 :focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
 
+.platforms { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.prow { background: var(--surface); display: grid; grid-template-columns: 92px minmax(0, 1fr) 132px; gap: 16px; align-items: center; padding: 12px 20px; }
+.pname { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; }
+.pnum { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); text-align: right; }
+.ptrack { height: 10px; background: var(--bar-soft); border-radius: 4px; overflow: hidden; }
+.pfill { height: 100%; background: var(--bar); border-radius: 4px; }
+
 .empty { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 40px 24px; text-align: center; color: var(--ink-muted); }
 
 footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 12px; color: var(--ink-muted); display: flex; flex-direction: column; gap: 4px; }
@@ -269,6 +276,30 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
         body = '<div class="empty">No failures in the ingested runs.</div>'
         note = "Nothing failed in this window."
 
+    platforms = platform_breakdown(db_path)
+    busiest = max((p["per_leg"] for p in platforms), default=0)
+    platform_rows = "".join(
+        f"""      <div class="prow">
+        <span class="pname">{_e(p["platform"])}</span>
+        <div class="ptrack"><div class="pfill" style="width: {(p["per_leg"] / busiest * 100) if busiest else 0:.1f}%"></div></div>
+        <span class="pnum">{p["failures"]} in {p["legs"]} legs</span>
+      </div>
+"""
+        for p in platforms
+    )
+    platform_section = (
+        f"""  <section>
+    <h2>Failures per matrix leg, by platform</h2>
+    <p class="section-note">Per leg, not in total: the matrix does not run the platforms an
+    equal number of times, so raw counts would describe the matrix rather than the platforms.</p>
+    <div class="platforms">
+{platform_rows}    </div>
+  </section>
+"""
+        if platforms
+        else ""
+    )
+
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     page = f"""<title>Browser CI Failures</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -294,6 +325,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     {_tile(len(groups), "test/error groups")}
   </div>
 
+{platform_section}
   <section>
     <h2>Failures, most frequent first</h2>
     <p class="section-note">{_e(note)}</p>

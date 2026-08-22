@@ -37,6 +37,13 @@ _MASKS: tuple[tuple[re.Pattern, str], ...] = (
 )
 _WHITESPACE = re.compile(r"\s+")
 
+# `robotstatuschecker` rewrites the message of every checked test, so this prefix
+# sits in front of every failure and says nothing about any of them. The real
+# error is what follows it.
+_STATUS_CHECKER = re.compile(
+    r"^Expected \w+ status, got \w+\.\s*(?:Original message:\s*)?", re.IGNORECASE
+)
+
 
 def error_signature(message: str | None, max_length: int = 300) -> str | None:
     """Masks the parts of a message that vary between runs.
@@ -46,7 +53,7 @@ def error_signature(message: str | None, max_length: int = 300) -> str | None:
     """
     if not message:
         return None
-    signature = message
+    signature = _STATUS_CHECKER.sub("", message)
     for pattern, replacement in _MASKS:
         signature = pattern.sub(replacement, signature)
     return _WHITESPACE.sub(" ", signature).strip()[:max_length]

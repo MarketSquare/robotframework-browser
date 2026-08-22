@@ -2010,3 +2010,15 @@ def ci_report(c, db=None, html=None, limit=100, open_it=False):
             webbrowser.open(written.resolve().as_uri())
         return
     print_report(db_path, limit=int(limit))
+
+
+@task
+def ci_resignature(c, db=None):
+    """Recomputes the error signatures from the messages already stored.
+
+    Use after changing the masking rules in `tools/ci_failures/parse.py`. Needs no
+    network: the messages are in the database.
+    """
+    from tools.ci_failures.ingest import recompute_signatures
+
+    recompute_signatures(Path(db) if db else CI_FAILURES_DB)
