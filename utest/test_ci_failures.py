@@ -56,6 +56,26 @@ def _run_robot(directory: Path, suite: str, metadata: tuple[str, ...] = ()) -> P
     return directory / "output.xml"
 
 
+BROKEN_TEARDOWN_SUITE = """\
+*** Settings ***
+Suite Teardown    Suite Level Cleanup
+
+*** Test Cases ***
+A Test That Passes On Its Own
+    Log    this test itself is fine
+
+*** Keywords ***
+Suite Level Cleanup
+    Log    cleaning up
+    Fail    the suite teardown broke
+"""
+
+
+@pytest.fixture(scope="module")
+def broken_teardown_xml(tmp_path_factory) -> Path:
+    return _run_robot(tmp_path_factory.mktemp("teardown"), BROKEN_TEARDOWN_SUITE)
+
+
 @pytest.fixture(scope="module")
 def output_xml(tmp_path_factory) -> Path:
     return _run_robot(
@@ -293,6 +313,56 @@ class TestLogMessages:
         connect(db).close()
 
         assert log_messages(db, None) == []
+
+
+class TestSuiteFixtureFailures:
+    """A failed suite teardown fails every test under it, and Robot Framework
+    records that only on the tests. The evidence is in the teardown."""
+
+    def test_a_test_that_passed_is_still_marked_failed(self, broken_teardown_xml):
+        _, results = parse(broken_teardown_xml)
+
+        assert results[0].name == "A Test That Passes On Its Own"
+        assert results[0].status == "FAIL"
+
+    def test_the_lines_come_from_the_teardown_that_actually_failed(
+        self, broken_teardown_xml
+    ):
+        _, results = parse(broken_teardown_xml)
+
+        messages = [m.message for m in results[0].log_messages]
+        assert "the suite teardown broke" in messages
+        assert "this test itself is fine" not in messages, (
+            "the test's own logging is not evidence of the teardown failing"
+        )
+
+    def test_they_are_labelled_as_not_belonging_to_the_test(self, broken_teardown_xml):
+        _, results = parse(broken_teardown_xml)
+
+        assert {m.origin for m in results[0].log_messages} == {
+            "suite teardown of Suite"
+        }
+
+    def test_the_keyword_that_logged_them_is_named(self, broken_teardown_xml):
+        _, results = parse(broken_teardown_xml)
+
+        assert {m.keyword for m in results[0].log_messages} == {"Fail"}
+
+    def test_only_the_failing_part_of_the_teardown_contributes(
+        self, broken_teardown_xml
+    ):
+        """`Log cleaning up` runs and passes before `Fail` breaks the teardown.
+
+        The same rule as inside a test: only the branch that failed is evidence.
+        """
+        _, results = parse(broken_teardown_xml)
+
+        assert "cleaning up" not in [m.message for m in results[0].log_messages]
+
+    def test_a_test_with_no_fixture_failure_borrows_nothing(self, output_xml):
+        _, results = parse(output_xml)
+
+        assert all(m.origin is None for r in results for m in r.log_messages)
 
 
 class TestEmbeddedScreenshots:

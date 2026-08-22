@@ -212,6 +212,12 @@ a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 .logline .lv[data-level="FAIL"] { color: var(--critical); }
 .logline .lv[data-level="WARN"] { color: var(--critical); }
 .logline .txt { overflow-wrap: anywhere; white-space: pre-wrap; }
+.origin {
+  font-size: 11px;
+  color: var(--ink-muted);
+  padding: 4px 0 2px;
+  font-style: italic;
+}
 details.more > summary {
   cursor: pointer;
   font-size: 11.5px;
@@ -267,6 +273,10 @@ def _log_line(entry: dict) -> str:
     )
 
 
+def _origin_note(origin: str) -> str:
+    return f'<div class="origin">from the {_e(origin)}, not from the test itself</div>'
+
+
 def _log_html(entries: list[dict]) -> str:
     """The first few lines, and the rest behind a disclosure.
 
@@ -276,7 +286,9 @@ def _log_html(entries: list[dict]) -> str:
     """
     if not entries:
         return ""
-    shown = "".join(_log_line(e) for e in entries[:SHOWN_LOG_LINES])
+    origins = {e.get("origin") for e in entries if e.get("origin")}
+    note = _origin_note(sorted(origins)[0]) if len(origins) == 1 else ""
+    shown = note + "".join(_log_line(e) for e in entries[:SHOWN_LOG_LINES])
     rest = entries[SHOWN_LOG_LINES:]
     if not rest:
         return f'<div class="log">{shown}</div>'

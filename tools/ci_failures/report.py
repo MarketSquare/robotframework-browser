@@ -96,7 +96,7 @@ def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
         return []
     connection = connect(db_path)
     rows = connection.execute(
-        "SELECT seq, level, keyword, message FROM log_message "
+        "SELECT seq, level, keyword, origin, message FROM log_message "
         "WHERE test_result_id = ? ORDER BY seq",
         (result_id,),
     ).fetchall()

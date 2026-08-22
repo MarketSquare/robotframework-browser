@@ -66,6 +66,10 @@ CREATE TABLE IF NOT EXISTS log_message (
     seq            INTEGER NOT NULL,   -- order the messages were logged in
     level          TEXT,               -- TRACE | DEBUG | INFO | WARN | FAIL
     keyword        TEXT,               -- which keyword logged it
+    -- Null when the line came from the test's own keywords. Otherwise it names
+    -- the setup or teardown that failed, which may belong to an enclosing suite
+    -- and may have run after the test itself had already finished.
+    origin         TEXT,
     message        TEXT
 );
 

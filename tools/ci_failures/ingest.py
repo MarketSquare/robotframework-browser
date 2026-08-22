@@ -97,10 +97,11 @@ def _insert_results(
             failures += 1
         if result.log_messages:
             connection.executemany(
-                "INSERT INTO log_message (test_result_id, seq, level, keyword, message) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO log_message "
+                "(test_result_id, seq, level, keyword, origin, message) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 [
-                    (cursor.lastrowid, m.seq, m.level, m.keyword, m.message)
+                    (cursor.lastrowid, m.seq, m.level, m.keyword, m.origin, m.message)
                     for m in result.log_messages
                 ],
             )
