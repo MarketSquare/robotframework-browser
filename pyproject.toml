@@ -81,6 +81,7 @@ exclude = [
     "docs*",
     "node*",
     "browser_batteries*",
+    "tools*",
 ]
 
 [tool.setuptools.package-data]

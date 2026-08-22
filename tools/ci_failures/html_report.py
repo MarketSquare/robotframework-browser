@@ -1,0 +1,312 @@
+"""Renders the database as a single self-contained HTML page."""
+
+import html
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .report import FailureGroup, failure_groups, totals
+
+_FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+
+_CSS = """
+:root {
+  color-scheme: light;
+  --surface:    #fcfcfb;
+  --plane:      #f9f9f7;
+  --ink:        #0b0b0b;
+  --ink-2:      #52514e;
+  --ink-muted:  #898781;
+  --rule:       #e1e0d9;
+  --baseline:   #c3c2b7;
+  --bar:        #2a78d6;
+  --bar-soft:   rgba(42, 120, 214, 0.14);
+  --critical:   #d03b3b;
+  --ring:       rgba(11, 11, 11, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface:   #1a1a19;
+    --plane:     #0d0d0d;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --ink-muted: #898781;
+    --rule:      #2c2c2a;
+    --baseline:  #383835;
+    --bar:       #3987e5;
+    --bar-soft:  rgba(57, 135, 229, 0.20);
+    --critical:  #d03b3b;
+    --ring:      rgba(255, 255, 255, 0.10);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface:   #1a1a19;
+  --plane:     #0d0d0d;
+  --ink:       #ffffff;
+  --ink-2:     #c3c2b7;
+  --ink-muted: #898781;
+  --rule:      #2c2c2a;
+  --baseline:  #383835;
+  --bar:       #3987e5;
+  --bar-soft:  rgba(57, 135, 229, 0.20);
+  --critical:  #d03b3b;
+  --ring:      rgba(255, 255, 255, 0.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 48px 24px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.window {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.lede { margin: 0; max-width: 62ch; color: var(--ink-2); }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.tile { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; }
+.tile .value {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 26px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.tile .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--ink-muted);
+}
+.tile.is-critical .value { color: var(--critical); }
+
+h2 {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-2);
+}
+.section-note { margin: 0 0 20px; font-size: 13px; color: var(--ink-muted); max-width: 68ch; }
+
+.groups { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.group {
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 20px;
+  padding: 18px 20px;
+}
+.group:hover { background: color-mix(in srgb, var(--bar) 4%, var(--surface)); }
+
+.magnitude { display: flex; flex-direction: column; gap: 6px; }
+.count {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 500;
+}
+.count .of { color: var(--ink-muted); font-size: 13px; }
+.track { height: 8px; background: var(--bar-soft); border-radius: 4px; overflow: hidden; }
+.fill { height: 100%; background: var(--bar); border-radius: 4px; }
+.rate {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.identity { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.testname {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13.5px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.suite { color: var(--ink-muted); font-weight: 400; }
+.error {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--plane);
+  border-left: 2px solid var(--critical);
+  padding: 7px 10px;
+  border-radius: 0 3px 3px 0;
+  overflow-wrap: anywhere;
+}
+.error.is-empty { border-left-color: var(--baseline); color: var(--ink-muted); font-style: italic; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip {
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border: 1px solid var(--ring);
+  border-radius: 3px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip .k { color: var(--ink-muted); }
+.chip.kw { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+a.evidence { color: var(--bar); text-decoration: none; font-size: 12px; border-bottom: 1px solid transparent; }
+a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
+:focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
+
+.empty { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 40px 24px; text-align: center; color: var(--ink-muted); }
+
+footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 12px; color: var(--ink-muted); display: flex; flex-direction: column; gap: 4px; }
+code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+@media (max-width: 640px) {
+  .group { grid-template-columns: 1fr; gap: 12px; }
+  .page { padding: 32px 16px 64px; }
+}
+"""
+
+
+def _e(value: object) -> str:
+    return html.escape(str(value)) if value is not None else ""
+
+
+def _tile(value: object, label: str, critical: bool = False) -> str:
+    return (
+        f'<div class="tile{" is-critical" if critical else ""}">'
+        f'<span class="value">{_e(value)}</span>'
+        f'<span class="label">{_e(label)}</span></div>'
+    )
+
+
+def _group_html(group: FailureGroup, widest: int) -> str:
+    width = (group.failures / widest * 100) if widest else 0
+    suite, _, leaf = group.longname.rpartition(".")
+    chips = (
+        [
+            f'<span class="chip kw"><span class="k">keyword</span> {_e(group.failing_keyword)}</span>'
+        ]
+        if group.failing_keyword
+        else []
+    )
+    if group.platforms:
+        chips.append(
+            f'<span class="chip"><span class="k">on</span> {_e(group.platforms.replace(",", ", "))}</span>'
+        )
+    chips.append(
+        f'<span class="chip"><span class="k">last</span> {_e(group.last_seen[:10])}</span>'
+    )
+    if group.latest_artifact_url:
+        chips.append(
+            f'<a class="evidence" href="{_e(group.latest_artifact_url)}">artifact &rarr;</a>'
+        )
+    signature = group.error_signature
+    error_class = "error" if signature else "error is-empty"
+    return f"""      <article class="group">
+        <div class="magnitude">
+          <span class="count">{group.failures}<span class="of"> / {group.total_runs}</span></span>
+          <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
+          <span class="rate">{group.failure_rate:.1%} of runs</span>
+        </div>
+        <div class="identity">
+          <div class="testname"><span class="suite">{_e(suite)}.</span>{_e(leaf)}</div>
+          <div class="{error_class}">{_e(signature) if signature else "no message recorded"}</div>
+          <div class="chips">{"".join(chips)}</div>
+        </div>
+      </article>
+"""
+
+
+def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
+    summary = totals(db_path)
+    groups = failure_groups(db_path, limit=limit)
+    widest = max((g.failures for g in groups), default=0)
+    window = (
+        f"{summary['since'][:10]} to {summary['until'][:10]}"
+        if summary["since"]
+        else "no runs ingested"
+    )
+    rate = (summary["failures"] / summary["results"]) if summary["results"] else 0
+
+    if groups:
+        body = f'<div class="groups">\n{"".join(_group_html(g, widest) for g in groups)}</div>'
+        note = (
+            "One row per test and error. The same test failing on two different errors is "
+            "two rows, because they are two problems. The denominator is every time that "
+            "test ran, passes included."
+        )
+    else:
+        body = '<div class="empty">No failures in the ingested runs.</div>'
+        note = "Nothing failed in this window."
+
+    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    page = f"""<title>Browser CI Failures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="{_FONTS}">
+<style>{_CSS}</style>
+<div class="page">
+  <header>
+    <h1>Browser CI Failures</h1>
+    <div class="window">{_e(window)} &middot; main branch, push and scheduled runs</div>
+  </header>
+
+  <p class="lede">What actually failed in the acceptance test matrix, grouped by the error
+  it failed with. Read from each run's <code>output.xml</code>; follow an artifact link for
+  screenshots, traces and the Playwright log.</p>
+
+  <div class="tiles">
+    {_tile(summary["runs"], "runs")}
+    {_tile(summary["legs"], "matrix legs")}
+    {_tile(f"{summary["results"]:,}", "test results")}
+    {_tile(summary["failures"], "failures", critical=summary["failures"] > 0)}
+    {_tile(f"{rate:.2%}", "failure rate")}
+    {_tile(len(groups), "test/error groups")}
+  </div>
+
+  <section>
+    <h2>Failures, most frequent first</h2>
+    <p class="section-note">{_e(note)}</p>
+    {body}
+  </section>
+
+  <footer>
+    <div>Generated {_e(generated)} by <code>inv ci-report --html</code> from {_e(summary["tests"]):} distinct tests.</div>
+    <div>Proof of concept. No flakiness verdict is implied: whether an error is a flake, a real
+    bug or a broken runner is a judgement to make while looking at these numbers.</div>
+  </footer>
+</div>
+"""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(page, encoding="utf-8")
+    return destination

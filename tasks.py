@@ -14,6 +14,7 @@ import tempfile
 import time
 import traceback
 import urllib.request
+import webbrowser
 import zipfile
 import signal
 
@@ -45,6 +46,7 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1324,6 +1326,33 @@ def run_tests(c, tests, batteries=False):
     return process.wait(ATEST_TIMEOUT)
 
 
+def _run_metadata():
+    """`--metadata` arguments describing the machine, for output.xml to carry.
+
+    Robot Framework and pabot already record the Python and Robot Framework
+    versions, and the generator attribute carries the platform. NodeJS and the
+    OS release are ours to add, and without them a result cannot say which of the
+    matrix legs produced it. Anything reading results afterwards then needs only
+    output.xml rather than a filename convention.
+    """
+    try:
+        node_version = subprocess.run(
+            ["node", "--version"], capture_output=True, text=True, check=False
+        ).stdout.strip()
+    except OSError:
+        node_version = ""
+    from Browser.version import __version__ as browser_version  # noqa: PLC0415
+
+    return [
+        "--metadata",
+        f"Node Version:{node_version or 'unknown'}",
+        "--metadata",
+        f"OS:{platform.platform()}",
+        "--metadata",
+        f"Browser Library Version:{browser_version}",
+    ]
+
+
 def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
@@ -1341,6 +1370,7 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG")
         "--artifactsinsubfolders",
     ] + (["--shard", shard] if shard else [])
     default_args = [
+        *_run_metadata(),
         "--xunit",
         "robot_xunit.xml",
         "--exclude",
@@ -1433,6 +1463,7 @@ def lint_python(c, fix=False):
         "utest",
         "browser_batteries",
         ".github/skills/",
+        "tools/",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -1443,6 +1474,7 @@ def lint_python(c, fix=False):
         "browser_batteries/",
         "bootstrap.py",
         ".github/skills/",
+        "tools/",
     ]
     if fix:
         ruff_cmd_check.insert(2, "--fix")
@@ -1918,3 +1950,63 @@ def demo_app(c):
         zip_file.write(file, arc_name)
     zip_file.close()
     return zip_path
+
+
+@task
+def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=None):
+    """Pulls CI test results into the local database.
+
+    Incremental: legs already ingested are skipped, so running this often only
+    costs what is new. See `0012_flaky_test_analysis.md`.
+
+    Args:
+        limit: How many runs to consider, newest first.
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        branch: Whose runs to take. Pull request runs are not ingested: they fail
+            because of the pull request.
+        events: Comma separated run events, "push,schedule" by default.
+        repo: owner/name, defaults to the upstream repository.
+    """
+    from tools.ci_failures.github import DEFAULT_REPO
+    from tools.ci_failures.ingest import ingest
+
+    totals = ingest(
+        db_path=Path(db) if db else CI_FAILURES_DB,
+        limit=int(limit),
+        repo=repo or DEFAULT_REPO,
+        branch=branch,
+        events=tuple(e.strip() for e in events.split(",") if e.strip()),
+    )
+    print(
+        f"\nIngested {totals['runs']} run(s), {totals['legs']} leg(s), "
+        f"{totals['tests']} results, {totals['failures']} failures. "
+        f"{totals['skipped']} run(s) already complete, "
+        f"{totals['expired']} artifact(s) expired."
+    )
+
+
+@task
+def ci_report(c, db=None, html=None, limit=100, open_it=False):
+    """Shows which tests fail and on which error.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        html: Write a self-contained HTML page here instead of printing.
+        limit: How many test/error groups to show.
+        open_it: Open the HTML page in a browser once written.
+    """
+    from tools.ci_failures.report import print_report
+
+    db_path = Path(db) if db else CI_FAILURES_DB
+    if not db_path.exists():
+        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
+        return
+    if html:
+        from tools.ci_failures.html_report import render
+
+        written = render(db_path, Path(html), limit=int(limit))
+        print(f"Wrote {written}")
+        if open_it:
+            webbrowser.open(written.resolve().as_uri())
+        return
+    print_report(db_path, limit=int(limit))
