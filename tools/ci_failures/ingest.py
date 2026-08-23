@@ -80,7 +80,9 @@ def _insert_results(
         cursor = connection.execute(
             "INSERT INTO test_result (leg_id, longname, name, suite_longname, status, "
             "elapsed_ms, message, error_signature, failing_keyword, failure_scope, "
-            "scope_owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "scope_owner, test_source, test_lineno, keyword_owner, keyword_kind, "
+            "keyword_source, keyword_lineno) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 leg_id,
                 result.longname,
@@ -93,6 +95,12 @@ def _insert_results(
                 result.failing_keyword,
                 result.failure_scope,
                 result.scope_owner,
+                result.test_source,
+                result.test_lineno,
+                result.keyword_owner,
+                result.keyword_kind,
+                result.keyword_source,
+                result.keyword_lineno,
             ),
         )
         if result.status == "FAIL":

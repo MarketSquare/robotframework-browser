@@ -187,6 +187,32 @@ h2 {
   overflow-wrap: anywhere;
 }
 .error.is-empty { border-left-color: var(--baseline); color: var(--ink-muted); font-style: italic; }
+.where {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.where .k {
+  color: var(--ink-muted);
+  display: inline-block;
+  min-width: 62px;
+}
+.kind {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--ring);
+  border-radius: 3px;
+  padding: 0 5px;
+  margin-left: 6px;
+  color: var(--ink-muted);
+}
+.kind[data-kind="library"] { color: var(--bar); border-color: var(--bar); }
+.kind[data-kind="project"] { color: var(--ink-2); }
+
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip {
   font-size: 11.5px;
@@ -331,6 +357,39 @@ def _log_html(entries: list[dict]) -> str:
     )
 
 
+def _where_html(
+    test_source: str | None,
+    test_lineno: int | None,
+    *,
+    keyword: str | None,
+    owner: str | None,
+    kind: str | None,
+    source: str | None,
+    lineno: int | None,
+) -> str:
+    """Where to start looking: the test, and the keyword that broke."""
+    rows = []
+    if test_source:
+        line = f":{test_lineno}" if test_lineno else ""
+        rows.append(
+            f'<div><span class="k">test</span>{_e(test_source)}{_e(line)}</div>'
+        )
+    if keyword:
+        badge = (
+            f'<span class="kind" data-kind="{_e(kind)}">{_e(owner or kind)}</span>'
+            if owner or kind
+            else ""
+        )
+        where = ""
+        if source:
+            line = f":{lineno}" if lineno else ""
+            where = f" &mdash; {_e(source)}{_e(line)}"
+        rows.append(
+            f'<div><span class="k">keyword</span>{_e(keyword)}{badge}{where}</div>'
+        )
+    return f'<div class="where">{"".join(rows)}</div>' if rows else ""
+
+
 def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
     width = (group.failures / widest * 100) if widest else 0
     suite, _, leaf = group.longname.rpartition(".")
@@ -356,13 +415,28 @@ def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
     error_class = "error" if signature else "error is-empty"
     return f"""      <article class="group">
         <div class="magnitude">
-          <span class="count">{group.failures}<span class="of"> / {group.total_runs}</span></span>
+          <span class="count">{group.failures}<span class="of"> / {
+        group.total_runs
+    }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{group.failure_rate:.1%} of runs</span>
         </div>
         <div class="identity">
           <div class="testname"><span class="suite">{_e(suite)}.</span>{_e(leaf)}</div>
-          <div class="{error_class}">{_e(signature) if signature else "no message recorded"}</div>
+          <div class="{error_class}">{
+        _e(signature) if signature else "no message recorded"
+    }</div>
+          {
+        _where_html(
+            group.test_source,
+            group.test_lineno,
+            keyword=group.failing_keyword,
+            owner=group.keyword_owner,
+            kind=group.keyword_kind,
+            source=group.keyword_source,
+            lineno=group.keyword_lineno,
+        )
+    }
           {_log_html(entries)}
           <div class="chips">{"".join(chips)}</div>
         </div>
@@ -385,14 +459,31 @@ def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> 
         )
     return f"""      <article class="group">
         <div class="magnitude">
-          <span class="count">{fixture.occurrences}<span class="of"> / {fixture.suite_runs}</span></span>
+          <span class="count">{fixture.occurrences}<span class="of"> / {
+        fixture.suite_runs
+    }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{fixture.failure_rate:.1%} of suite runs</span>
         </div>
         <div class="identity">
           <div><span class="scope">{_e(kind)}</span></div>
           <div class="testname">{_e(fixture.scope_owner)}</div>
-          <div class="error">{_e(fixture.error_signature) if fixture.error_signature else "no message recorded"}</div>
+          <div class="error">{
+        _e(fixture.error_signature)
+        if fixture.error_signature
+        else "no message recorded"
+    }</div>
+          {
+        _where_html(
+            fixture.test_source,
+            None,
+            keyword=fixture.keyword,
+            owner=fixture.keyword_owner,
+            kind=fixture.keyword_kind,
+            source=fixture.keyword_source,
+            lineno=fixture.keyword_lineno,
+        )
+    }
           {_log_html(entries)}
           <div class="affected">marked {fixture.tests_marked} test row(s) failed:
             {_e(", ".join(tests)) or "-"}</div>

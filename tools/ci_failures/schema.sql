@@ -62,7 +62,20 @@ CREATE TABLE IF NOT EXISTS test_result (
     failure_scope   TEXT,
     -- The suite or test owning that fixture. For a suite fixture this is the
     -- suite that broke, which may be an ancestor rather than the parent.
-    scope_owner     TEXT
+    scope_owner     TEXT,
+    -- Where to start looking. The test's file and line come from output.xml;
+    -- the keyword's owner is in there too, but its location is resolved from the
+    -- library at ingest time and so reflects the working copy then, not the
+    -- commit the run used. run.head_sha is kept for when that matters.
+    test_source     TEXT,
+    test_lineno     INTEGER,
+    keyword_owner   TEXT,
+    -- standard (a Robot Framework library) | library (Browser) | project (a
+    -- test helper in this repo) | unknown. This is the routing decision: it says
+    -- whether to look at the library, the tests, or an assertion.
+    keyword_kind    TEXT,
+    keyword_source  TEXT,
+    keyword_lineno  INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_result_scope ON test_result(failure_scope);

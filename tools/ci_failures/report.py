@@ -32,6 +32,13 @@ class FailureGroup:
     latest_run_url: str | None
     latest_result_id: int | None
 
+    test_source: str | None
+    test_lineno: int | None
+    keyword_owner: str | None
+    keyword_kind: str | None
+    keyword_source: str | None
+    keyword_lineno: int | None
+
     @property
     def failure_rate(self) -> float:
         return self.failures / self.total_runs if self.total_runs else 0.0
@@ -48,6 +55,12 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
         SELECT f.longname,
                f.error_signature,
                f.failing_keyword,
+               f.test_source,
+               f.test_lineno,
+               f.keyword_owner,
+               f.keyword_kind,
+               f.keyword_source,
+               f.keyword_lineno,
                COUNT(*)                       AS failures,
                runs_per_test.total            AS total_runs,
                MIN(f.message)                 AS example_message,
@@ -113,6 +126,13 @@ class FixtureFailure:
     latest_artifact_url: str | None
     latest_result_id: int | None
 
+    test_source: str | None
+    keyword: str | None
+    keyword_owner: str | None
+    keyword_kind: str | None
+    keyword_source: str | None
+    keyword_lineno: int | None
+
     @property
     def failure_rate(self) -> float:
         return self.occurrences / self.suite_runs if self.suite_runs else 0.0
@@ -126,6 +146,12 @@ def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
         SELECT f.scope_owner,
                f.failure_scope,
                f.error_signature,
+               MIN(f.test_source)                AS test_source,
+               f.failing_keyword                 AS keyword,
+               f.keyword_owner,
+               f.keyword_kind,
+               f.keyword_source,
+               f.keyword_lineno,
                COUNT(DISTINCT l.id)              AS occurrences,
                COUNT(*)                          AS tests_marked,
                GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,

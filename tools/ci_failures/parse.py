@@ -11,6 +11,8 @@ from typing import Any
 
 from robot.api import ExecutionResult
 
+from .locate import keyword_location, owner_kind, repo_relative
+
 # Only these can name a culprit. Everything else in a keyword body is a control
 # structure - FOR, IF/ELSE ROOT, TRY/EXCEPT ROOT - which is descended into but
 # never named, because "IF/ELSE ROOT" is not an answer to "which keyword broke".
@@ -113,6 +115,14 @@ class TestResult:
     # What actually failed. A suite fixture fails every test beneath it, so
     # "suite_teardown" means this test was marked failed by something that is
     # not in it and may have run after it finished.
+    # Where to start looking. output.xml has the test's file and line; the
+    # keyword's owner is there too, but its location has to be resolved.
+    test_source: str | None = None
+    test_lineno: int | None = None
+    keyword_owner: str | None = None
+    keyword_kind: str | None = None
+    keyword_source: str | None = None
+    keyword_lineno: int | None = None
     failure_scope: str | None = None
     # The suite or test owning that fixture. For a suite fixture this is the
     # suite that broke, which can be an ancestor rather than the parent.
@@ -120,7 +130,7 @@ class TestResult:
     log_messages: list["LogMessage"] = field(default_factory=list)
 
 
-def _innermost_failing_keyword(item: Any) -> str | None:
+def _innermost_failing_keyword(item: Any) -> Any:
     """The deepest keyword on the failing branch, which is the one that broke."""
     deepest = None
     for child in getattr(item, "body", None) or []:
@@ -132,10 +142,9 @@ def _innermost_failing_keyword(item: Any) -> str | None:
             # goes away in Robot Framework 8.
             deepest = _innermost_failing_keyword(child) or deepest
             continue
-        name = getattr(child, "name", None)
-        if not name:
+        if not getattr(child, "name", None):
             continue
-        deepest = _innermost_failing_keyword(child) or name
+        deepest = _innermost_failing_keyword(child) or child
     return deepest
 
 
@@ -206,13 +215,13 @@ def leg_info(result: Any) -> LegInfo:
     )
 
 
-def suite_fixture_failures(suite: Any) -> list[tuple[str, str, str, list[LogMessage]]]:
+def suite_fixture_failures(suite: Any) -> list[tuple]:
     """The failed setup and teardown of one suite, with their messages.
 
     Returned rather than attached here because a suite fixture fails the tests
     of every suite beneath it too, and the tests do not know about it: Robot
     Framework simply marks them failed. Each entry is
-    (kind, origin, suite name, messages).
+    (kind, origin, suite name, messages, the fixture keyword itself).
     """
     found = []
     for kind in ("setup", "teardown"):
@@ -224,7 +233,7 @@ def suite_fixture_failures(suite: Any) -> list[tuple[str, str, str, list[LogMess
         _collect_log_messages(
             fixture, messages, getattr(fixture, "name", None) or kind, origin
         )
-        found.append((kind, origin, suite.full_name, messages))
+        found.append((kind, origin, suite.full_name, messages, fixture))
     return found
 
 
@@ -283,9 +292,7 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
     result = ExecutionResult(path)
     results: list[TestResult] = []
 
-    def visit(
-        suite: Any, inherited: list[tuple[str, str, str, list[LogMessage]]]
-    ) -> None:
+    def visit(suite: Any, inherited: list[tuple]) -> None:
         # A failed suite fixture fails every test below it, in this suite and in
         # its child suites, so it travels down with the walk.
         fixtures = inherited + suite_fixture_failures(suite)
@@ -295,19 +302,36 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
         for test in suite.tests:
             failed = test.status == "FAIL"
             message = test.message or None if failed else None
-            scope = owner = None
+            scope = scope_owner_name = None
+            keyword = None
+            keyword_owner = keyword_src = keyword_line = None
             messages: list[LogMessage] = []
+
             if failed:
-                scope, owner = classify_failure(test, setups, teardowns)
+                scope, scope_owner_name = classify_failure(test, setups, teardowns)
+                if scope.startswith("suite_"):
+                    # The keyword that broke is inside the fixture. The test has
+                    # none of its own: that is what makes it a fixture failure.
+                    fixture = (setups + list(reversed(teardowns)))[0][4]
+                    keyword = _innermost_failing_keyword(fixture) or fixture
+                else:
+                    keyword = _innermost_failing_keyword(test)
+                keyword_owner = getattr(keyword, "owner", None) or getattr(
+                    keyword, "libname", None
+                )
+                keyword_src, keyword_line = keyword_location(
+                    keyword_owner, getattr(keyword, "name", None)
+                )
                 # Run order: the setups that failed above it, then the test's
                 # own, then the teardowns, innermost first as they unwind.
-                for *_, lines in setups:
+                for _, _, _, lines, _ in setups:
                     messages.extend(lines)
                 messages.extend(_collect_failing_messages(test))
-                for *_, lines in reversed(teardowns):
+                for _, _, _, lines, _ in reversed(teardowns):
                     messages.extend(lines)
                 for index, entry in enumerate(messages):
                     entry.seq = index
+
             results.append(
                 TestResult(
                     longname=test.full_name,
@@ -319,11 +343,15 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                     else None,
                     message=message,
                     error_signature=error_signature(message),
-                    failing_keyword=_innermost_failing_keyword(test)
-                    if failed
-                    else None,
+                    failing_keyword=getattr(keyword, "name", None),
+                    test_source=repo_relative(getattr(test, "source", None)),
+                    test_lineno=getattr(test, "lineno", None),
+                    keyword_owner=keyword_owner,
+                    keyword_kind=owner_kind(keyword_owner) if keyword else None,
+                    keyword_source=keyword_src,
+                    keyword_lineno=keyword_line,
                     failure_scope=scope,
-                    scope_owner=owner,
+                    scope_owner=scope_owner_name,
                     log_messages=messages,
                 )
             )

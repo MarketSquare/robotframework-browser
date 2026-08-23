@@ -444,6 +444,76 @@ class TestFailureScope:
         }
 
 
+class TestWhereToLook:
+    """The report has to say where to start, not just what broke."""
+
+    def test_the_test_file_and_line_are_recorded(self, output_xml):
+        _, results = parse(output_xml)
+        failing = next(r for r in results if r.name == "Failing Test")
+
+        assert failing.test_source.endswith("suite.robot")
+        assert failing.test_lineno
+
+    def test_a_ci_path_is_made_repo_relative(self):
+        from tools.ci_failures.locate import repo_relative
+
+        linux = "/home/runner/work/robotframework-browser/robotframework-browser/atest/test/x.robot"
+        windows = (
+            r"D:\a\robotframework-browser\robotframework-browser\atest\test\x.robot"
+        )
+
+        assert repo_relative(linux) == "atest/test/x.robot"
+        assert repo_relative(windows) == "atest/test/x.robot", (
+            "the same file must not look like two places"
+        )
+
+    def test_a_standard_library_is_told_apart_from_a_test_helper_by_case(self):
+        """This repo has atest/library/screenshot.py; Robot Framework ships
+        Screenshot. Matching case-insensitively would confuse the two."""
+        from tools.ci_failures.locate import owner_kind
+
+        assert owner_kind("screenshot") == "project"
+        assert owner_kind("Screenshot") == "standard"
+        assert owner_kind("Browser") == "library"
+        assert owner_kind("BuiltIn") == "standard"
+        assert owner_kind(None) == "unknown"
+
+    def test_a_standard_library_keyword_gets_no_location(self):
+        """It lives in site-packages, which is not somewhere to go and edit."""
+        from tools.ci_failures.locate import keyword_location
+
+        assert keyword_location("BuiltIn", "Should Be Equal") == (None, None)
+
+    def test_a_library_keyword_is_located_in_this_repo(self):
+        from tools.ci_failures.locate import keyword_location
+
+        source, lineno = keyword_location("Browser", "Close Browser")
+
+        assert source == "Browser/keywords/playwright_state.py"
+        assert lineno
+
+    def test_an_unimportable_library_costs_a_location_not_an_ingest(self):
+        from tools.ci_failures.locate import keyword_location
+
+        assert keyword_location("NoSuchLibraryAnywhere", "Whatever") == (None, None)
+
+    def test_the_owner_of_the_failing_keyword_is_recorded(self, output_xml):
+        _, results = parse(output_xml)
+        failing = next(r for r in results if r.name == "Failing Test")
+
+        assert failing.keyword_owner == "BuiltIn"
+        assert failing.keyword_kind == "standard"
+
+    def test_a_fixture_failure_names_the_keyword_inside_the_fixture(
+        self, broken_teardown_xml
+    ):
+        """The test has no failing keyword of its own; the fixture does."""
+        _, results = parse(broken_teardown_xml)
+
+        assert results[0].failing_keyword == "Fail"
+        assert results[0].keyword_owner == "BuiltIn"
+
+
 class TestFixtureFailureGrouping:
     """One broken fixture is one row, however many tests it marked."""
 
