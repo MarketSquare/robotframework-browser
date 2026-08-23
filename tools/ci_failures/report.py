@@ -80,6 +80,7 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
         JOIN run r ON r.id = l.run_id
         JOIN runs_per_test ON runs_per_test.longname = f.longname
         WHERE f.status = 'FAIL'
+          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
         GROUP BY f.longname, f.error_signature
         ORDER BY failures DESC, f.longname
         LIMIT ?
@@ -88,6 +89,78 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
     ).fetchall()
     connection.close()
     return [FailureGroup(**dict(row)) for row in rows]
+
+
+@dataclass
+class FixtureFailure:
+    """One suite setup or teardown that broke, and the tests it took with it.
+
+    The unit is the fixture failing, not the tests it marked: those are the same
+    event seen as many times as the suite has tests. Counting them as separate
+    test failures makes one broken teardown outrank everything else.
+    """
+
+    scope_owner: str
+    failure_scope: str
+    error_signature: str | None
+    occurrences: int  # distinct (run, leg) the fixture failed in
+    suite_runs: int  # distinct legs that ran any test of that suite
+    tests_marked: int  # test rows Robot Framework failed because of it
+    affected_tests: str
+    platforms: str
+    first_seen: str
+    last_seen: str
+    latest_artifact_url: str | None
+    latest_result_id: int | None
+
+    @property
+    def failure_rate(self) -> float:
+        return self.occurrences / self.suite_runs if self.suite_runs else 0.0
+
+
+def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
+    """Suite setup and teardown failures, one row per fixture and error."""
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.scope_owner,
+               f.failure_scope,
+               f.error_signature,
+               COUNT(DISTINCT l.id)              AS occurrences,
+               COUNT(*)                          AS tests_marked,
+               GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,
+               GROUP_CONCAT(DISTINCT l.platform) AS platforms,
+               MIN(r.created_at)                 AS first_seen,
+               MAX(r.created_at)                 AS last_seen,
+               (SELECT COUNT(DISTINCT l2.id) FROM test_result f2
+                  JOIN leg l2 ON l2.id = f2.leg_id
+                 WHERE f2.suite_longname = f.scope_owner
+                    OR f2.suite_longname LIKE f.scope_owner || '.%') AS suite_runs,
+               (SELECT l2.artifact_url FROM test_result f2
+                  JOIN leg l2 ON l2.id = f2.leg_id
+                  JOIN run r2 ON r2.id = l2.run_id
+                 WHERE f2.scope_owner = f.scope_owner
+                   AND f2.status = 'FAIL'
+                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
+               (SELECT f2.id FROM test_result f2
+                  JOIN leg l2 ON l2.id = f2.leg_id
+                  JOIN run r2 ON r2.id = l2.run_id
+                 WHERE f2.scope_owner = f.scope_owner
+                   AND f2.status = 'FAIL'
+                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.status = 'FAIL'
+          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        GROUP BY f.scope_owner, f.failure_scope, f.error_signature
+        ORDER BY occurrences DESC, f.scope_owner
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    connection.close()
+    return [FixtureFailure(**dict(row)) for row in rows]
 
 
 def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
@@ -166,18 +239,43 @@ def print_report(
     )
     out(f"{summary['since']} .. {summary['until']}\n")
 
+    fixtures = fixture_failures(db_path, limit=limit)
+    if fixtures:
+        out("SUITE SETUP AND TEARDOWN FAILURES")
+        out("  These failed outside any test. Robot Framework marks every test")
+        out("  under the suite as failed, so they are counted once here.\n")
+        for fixture in fixtures:
+            kind = fixture.failure_scope.replace("_", " ")
+            out(
+                f"{fixture.occurrences:>3} / {fixture.suite_runs:<4} "
+                f"({fixture.failure_rate:5.1%})  {kind} of {fixture.scope_owner}"
+            )
+            out(
+                f"                      {(fixture.error_signature or '(no message)')[:110]}"
+            )
+            out(
+                f"                      marked {fixture.tests_marked} test row(s) failed"
+                f"   on: {fixture.platforms}"
+            )
+            out(f"                      evidence: {fixture.latest_artifact_url or '-'}")
+            out("")
+
     groups = failure_groups(db_path, limit=limit)
+    out("TEST FAILURES")
     if not groups:
-        out("No failures recorded.")
+        out("  None.")
         return
+    out("")
     for group in groups:
         out(
-            f"{group.failures:>3} / {group.total_runs:<4} ({group.failure_rate:5.1%})  {group.longname}"
+            f"{group.failures:>3} / {group.total_runs:<4} ({group.failure_rate:5.1%})  "
+            f"{group.longname}"
         )
         out(
-            f"                      keyword: {group.failing_keyword or '-'}   on: {group.platforms}"
+            f"                      keyword: {group.failing_keyword or '-'}"
+            f"   on: {group.platforms}"
         )
         out(f"                      {(group.error_signature or '(no message)')[:110]}")
         out(f"                      evidence: {group.latest_artifact_url or '-'}")
         out("")
-    out(f"{len(groups)} (test, error) group(s).")
+    out(f"{len(groups)} test/error group(s), {len(fixtures)} fixture failure(s).")

@@ -110,6 +110,13 @@ class TestResult:
     message: str | None
     error_signature: str | None
     failing_keyword: str | None
+    # What actually failed. A suite fixture fails every test beneath it, so
+    # "suite_teardown" means this test was marked failed by something that is
+    # not in it and may have run after it finished.
+    failure_scope: str | None = None
+    # The suite or test owning that fixture. For a suite fixture this is the
+    # suite that broke, which can be an ancestor rather than the parent.
+    scope_owner: str | None = None
     log_messages: list["LogMessage"] = field(default_factory=list)
 
 
@@ -199,12 +206,13 @@ def leg_info(result: Any) -> LegInfo:
     )
 
 
-def suite_fixture_failures(suite: Any) -> list[tuple[str, str, list[LogMessage]]]:
+def suite_fixture_failures(suite: Any) -> list[tuple[str, str, str, list[LogMessage]]]:
     """The failed setup and teardown of one suite, with their messages.
 
     Returned rather than attached here because a suite fixture fails the tests
     of every suite beneath it too, and the tests do not know about it: Robot
-    Framework simply marks them failed. Each entry is (kind, origin, messages).
+    Framework simply marks them failed. Each entry is
+    (kind, origin, suite name, messages).
     """
     found = []
     for kind in ("setup", "teardown"):
@@ -216,8 +224,37 @@ def suite_fixture_failures(suite: Any) -> list[tuple[str, str, list[LogMessage]]
         _collect_log_messages(
             fixture, messages, getattr(fixture, "name", None) or kind, origin
         )
-        found.append((kind, origin, messages))
+        found.append((kind, origin, suite.full_name, messages))
     return found
+
+
+def classify_failure(
+    test: Any, setups: list[tuple], teardowns: list[tuple]
+) -> tuple[str, str]:
+    """What failed, and who owns it.
+
+    Ordered by what actually stopped this test. Its own body first, then its own
+    fixtures, then the suite fixtures above it: the outermost failing setup,
+    because an outer setup failing is why the inner ones never ran, and the
+    innermost failing teardown, because that is the one nearest the test.
+    """
+    if any(
+        getattr(c, "status", None) == "FAIL" for c in getattr(test, "body", None) or []
+    ):
+        return "test", test.full_name
+    own_setup = getattr(test, "setup", None)
+    if own_setup and own_setup.status == "FAIL":
+        return "test_setup", test.full_name
+    own_teardown = getattr(test, "teardown", None)
+    if own_teardown and own_teardown.status == "FAIL":
+        return "test_teardown", test.full_name
+    if setups:
+        return "suite_setup", setups[0][2]
+    if teardowns:
+        return "suite_teardown", teardowns[-1][2]
+    # Marked failed with nothing to point at. Rare, but it must not be silently
+    # relabelled as something it is not.
+    return "unknown", test.full_name
 
 
 def _collect_failing_messages(test: Any) -> list[LogMessage]:
@@ -246,7 +283,9 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
     result = ExecutionResult(path)
     results: list[TestResult] = []
 
-    def visit(suite: Any, inherited: list[tuple[str, str, list[LogMessage]]]) -> None:
+    def visit(
+        suite: Any, inherited: list[tuple[str, str, str, list[LogMessage]]]
+    ) -> None:
         # A failed suite fixture fails every test below it, in this suite and in
         # its child suites, so it travels down with the walk.
         fixtures = inherited + suite_fixture_failures(suite)
@@ -256,14 +295,16 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
         for test in suite.tests:
             failed = test.status == "FAIL"
             message = test.message or None if failed else None
+            scope = owner = None
             messages: list[LogMessage] = []
             if failed:
+                scope, owner = classify_failure(test, setups, teardowns)
                 # Run order: the setups that failed above it, then the test's
                 # own, then the teardowns, innermost first as they unwind.
-                for _, _, lines in setups:
+                for *_, lines in setups:
                     messages.extend(lines)
                 messages.extend(_collect_failing_messages(test))
-                for _, _, lines in reversed(teardowns):
+                for *_, lines in reversed(teardowns):
                     messages.extend(lines)
                 for index, entry in enumerate(messages):
                     entry.seq = index
@@ -281,6 +322,8 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                     failing_keyword=_innermost_failing_keyword(test)
                     if failed
                     else None,
+                    failure_scope=scope,
+                    scope_owner=owner,
                     log_messages=messages,
                 )
             )

@@ -9,7 +9,7 @@ from robot import run as robot_run
 
 from tools.ci_failures import github, ingest
 from tools.ci_failures.parse import error_signature, parse
-from tools.ci_failures.report import failure_groups, totals
+from tools.ci_failures.report import failure_groups, fixture_failures, totals
 
 SUITE = """\
 *** Test Cases ***
@@ -74,6 +74,42 @@ Suite Level Cleanup
 @pytest.fixture(scope="module")
 def broken_teardown_xml(tmp_path_factory) -> Path:
     return _run_robot(tmp_path_factory.mktemp("teardown"), BROKEN_TEARDOWN_SUITE)
+
+
+@pytest.fixture(scope="module")
+def ancestor_teardown_xml(tmp_path_factory) -> Path:
+    """A suite tree where the *grandparent* teardown fails.
+
+    The shape of atest/test/08_Scope_Tests, and of anything sharing a test app
+    across nested suites: the tests are two levels below the thing that breaks.
+    """
+    root = tmp_path_factory.mktemp("ancestor")
+    outer = root / "Outer"
+    (outer / "Middle").mkdir(parents=True)
+    (outer / "__init__.robot").write_text(
+        "*** Settings ***\n"
+        "Suite Teardown    Outer Cleanup\n\n"
+        "*** Keywords ***\n"
+        "Outer Cleanup\n"
+        "    Fail    the shared server did not shut down\n",
+        encoding="utf-8",
+    )
+    (outer / "Middle" / "__init__.robot").write_text(
+        "*** Settings ***\nDocumentation    Between the teardown and the tests.\n",
+        encoding="utf-8",
+    )
+    (outer / "Middle" / "inner.robot").write_text(
+        "*** Test Cases ***\nScope Test One\n    Log    fine\n", encoding="utf-8"
+    )
+    robot_run(
+        str(outer),
+        outputdir=str(root),
+        output="output.xml",
+        log=None,
+        report=None,
+        stdout=open(root / "stdout.txt", "w"),  # noqa: SIM115
+    )
+    return root / "output.xml"
 
 
 @pytest.fixture(scope="module")
@@ -363,6 +399,130 @@ class TestSuiteFixtureFailures:
         _, results = parse(output_xml)
 
         assert all(m.origin is None for r in results for m in r.log_messages)
+
+
+class TestFailureScope:
+    """What failed, as opposed to what Robot Framework marked as failed."""
+
+    def test_a_test_that_broke_itself_is_scoped_to_the_test(self, output_xml):
+        _, results = parse(output_xml)
+        failing = next(r for r in results if r.name == "Failing Test")
+
+        assert failing.failure_scope == "test"
+        assert failing.scope_owner == failing.longname
+
+    def test_a_passing_test_has_no_scope(self, output_xml):
+        _, results = parse(output_xml)
+
+        assert next(r for r in results if r.status == "PASS").failure_scope is None
+
+    def test_a_suite_teardown_is_scoped_to_the_suite_that_broke(
+        self, broken_teardown_xml
+    ):
+        _, results = parse(broken_teardown_xml)
+
+        assert results[0].failure_scope == "suite_teardown"
+        assert results[0].scope_owner == "Suite"
+
+    def test_an_ancestor_teardown_is_attributed_to_the_suite_that_broke(
+        self, ancestor_teardown_xml
+    ):
+        """Not the parent the test sits in, which did nothing wrong."""
+        _, results = parse(ancestor_teardown_xml)
+
+        assert results[0].longname == "Outer.Middle.Inner.Scope Test One"
+        assert results[0].failure_scope == "suite_teardown"
+        assert results[0].scope_owner == "Outer"
+
+    def test_an_ancestor_teardown_still_supplies_its_lines(self, ancestor_teardown_xml):
+        _, results = parse(ancestor_teardown_xml)
+
+        messages = [m.message for m in results[0].log_messages]
+        assert "the shared server did not shut down" in messages
+        assert {m.origin for m in results[0].log_messages} == {
+            "suite teardown of Outer"
+        }
+
+
+class TestFixtureFailureGrouping:
+    """One broken fixture is one row, however many tests it marked."""
+
+    def _seed(self, db: Path, rows: list[tuple]) -> None:
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        for run_id in (1, 2):
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', 'sha', 'main', ?, 'failure', 'u')",
+                (run_id, f"2026-08-2{run_id}T10:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, artifact_url, "
+                "platform, ingested_at) VALUES (?, ?, ?, 'Test results-x', 'a-url', "
+                "'linux', 'now')",
+                (run_id, run_id, run_id),
+            )
+            for name, suite, status, scope, owner in rows:
+                connection.execute(
+                    "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                    "status, message, error_signature, failure_scope, scope_owner) "
+                    "VALUES (?, ?, ?, ?, ?, 'raw', 'teardown broke', ?, ?)",
+                    (run_id, f"{suite}.{name}", name, suite, status, scope, owner),
+                )
+        connection.commit()
+        connection.close()
+
+    def test_four_marked_tests_across_two_runs_are_one_row_of_two(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("Test A", "Outer.Middle", "FAIL", "suite_teardown", "Outer"),
+                ("Test B", "Outer.Middle", "FAIL", "suite_teardown", "Outer"),
+            ],
+        )
+
+        fixtures = fixture_failures(db)
+
+        assert len(fixtures) == 1
+        assert fixtures[0].occurrences == 2, "two legs, not four test rows"
+        assert fixtures[0].tests_marked == 4
+
+    def test_the_tests_it_took_down_are_named(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("Test A", "Outer.Middle", "FAIL", "suite_teardown", "Outer"),
+                ("Test B", "Outer.Middle", "FAIL", "suite_teardown", "Outer"),
+            ],
+        )
+
+        assert sorted(fixture_failures(db)[0].affected_tests.split(",")) == [
+            "Test A",
+            "Test B",
+        ]
+
+    def test_fixture_failures_are_kept_out_of_the_test_ranking(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("Test A", "Outer.Middle", "FAIL", "suite_teardown", "Outer"),
+                ("Test C", "Outer.Middle", "FAIL", "test", "Outer.Middle.Test C"),
+            ],
+        )
+
+        assert [g.longname for g in failure_groups(db)] == ["Outer.Middle.Test C"]
+
+    def test_the_denominator_is_how_often_the_suite_ran(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [("Test A", "Outer.Middle", "FAIL", "suite_teardown", "Outer")])
+
+        fixture = fixture_failures(db)[0]
+        assert fixture.suite_runs == 2
+        assert fixture.failure_rate == pytest.approx(1.0)
 
 
 class TestEmbeddedScreenshots:

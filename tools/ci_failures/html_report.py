@@ -6,7 +6,9 @@ from pathlib import Path
 
 from .report import (
     FailureGroup,
+    FixtureFailure,
     failure_groups,
+    fixture_failures,
     log_messages,
     platform_breakdown,
     totals,
@@ -98,13 +100,22 @@ h1 {
 .tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
-  gap: 1px;
-  background: var(--rule);
+  /* Surface, not rule: when the tiles wrap, the cells left over on the last row
+     would otherwise show as a block of divider colour. */
+  background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: 4px;
   overflow: hidden;
 }
-.tile { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 2px; }
+.tile {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+}
+.tile:first-child { border-top: none; }
 .tile .value {
   font-family: "IBM Plex Mono", ui-monospace, monospace;
   font-size: 26px;
@@ -231,6 +242,24 @@ details.more > summary::before { content: "\25B8  "; }
 details.more[open] > summary::before { content: "\25BE  "; }
 details.more > summary:hover { color: var(--ink-2); }
 
+.affected {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+.scope {
+  display: inline-block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--critical);
+  border: 1px solid var(--critical);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-bottom: 6px;
+}
+
 .platforms { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
 .prow { background: var(--surface); display: grid; grid-template-columns: 92px minmax(0, 1fr) 132px; gap: 16px; align-items: center; padding: 12px 20px; }
 .pname { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; }
@@ -341,6 +370,38 @@ def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
 """
 
 
+def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> str:
+    width = (fixture.occurrences / widest * 100) if widest else 0
+    kind = fixture.failure_scope.replace("_", " ")
+    tests = [name for name in (fixture.affected_tests or "").split(",") if name]
+    where = _e((fixture.platforms or "").replace(",", ", "))
+    chips = [
+        f'<span class="chip"><span class="k">on</span> {where}</span>',
+        f'<span class="chip"><span class="k">last</span> {_e(fixture.last_seen[:10])}</span>',
+    ]
+    if fixture.latest_artifact_url:
+        chips.append(
+            f'<a class="evidence" href="{_e(fixture.latest_artifact_url)}">artifact &rarr;</a>'
+        )
+    return f"""      <article class="group">
+        <div class="magnitude">
+          <span class="count">{fixture.occurrences}<span class="of"> / {fixture.suite_runs}</span></span>
+          <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
+          <span class="rate">{fixture.failure_rate:.1%} of suite runs</span>
+        </div>
+        <div class="identity">
+          <div><span class="scope">{_e(kind)}</span></div>
+          <div class="testname">{_e(fixture.scope_owner)}</div>
+          <div class="error">{_e(fixture.error_signature) if fixture.error_signature else "no message recorded"}</div>
+          {_log_html(entries)}
+          <div class="affected">marked {fixture.tests_marked} test row(s) failed:
+            {_e(", ".join(tests)) or "-"}</div>
+          <div class="chips">{"".join(chips)}</div>
+        </div>
+      </article>
+"""
+
+
 def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     summary = totals(db_path)
     groups = failure_groups(db_path, limit=limit)
@@ -369,6 +430,23 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     else:
         body = '<div class="empty">No failures in the ingested runs.</div>'
         note = "Nothing failed in this window."
+
+    fixtures = fixture_failures(db_path, limit=limit)
+    widest_fixture = max((f.occurrences for f in fixtures), default=0)
+    fixture_section = (
+        f"""  <section>
+    <h2>Suite setup and teardown failures</h2>
+    <p class="section-note">These failed outside any test. Robot Framework marks every test in
+    the suite as failed, which is why the same broken teardown would otherwise look like as many
+    flaky tests as the suite happens to contain. Counted once here, against the number of times
+    the suite ran.</p>
+    <div class="groups">
+{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id)) for f in fixtures)}    </div>
+  </section>
+"""
+        if fixtures
+        else ""
+    )
 
     platforms = platform_breakdown(db_path)
     busiest = max((p["per_leg"] for p in platforms), default=0)
@@ -421,11 +499,13 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     {_tile(summary["failures"], "failures", critical=summary["failures"] > 0)}
     {_tile(f"{rate:.2%}", "failure rate")}
     {_tile(len(groups), "test/error groups")}
+    {_tile(len(fixtures), "fixture failures")}
   </div>
 
 {platform_section}
+{fixture_section}
   <section>
-    <h2>Failures, most frequent first</h2>
+    <h2>Test failures, most frequent first</h2>
     <p class="section-note">{_e(note)}</p>
     {body}
   </section>

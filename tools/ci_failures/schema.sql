@@ -53,8 +53,19 @@ CREATE TABLE IF NOT EXISTS test_result (
     -- bloat the database for nothing.
     message         TEXT,
     error_signature TEXT,               -- message with the varying parts masked
-    failing_keyword TEXT                -- innermost keyword that failed
+    failing_keyword TEXT,               -- innermost keyword that failed
+    -- What actually failed: test | test_setup | test_teardown | suite_setup |
+    -- suite_teardown | unknown. A suite fixture fails every test beneath it, in
+    -- that suite and in its child suites, and Robot Framework records that only
+    -- on the tests. Without this the same broken teardown looks like as many
+    -- separate flaky tests as the suite happens to contain.
+    failure_scope   TEXT,
+    -- The suite or test owning that fixture. For a suite fixture this is the
+    -- suite that broke, which may be an ancestor rather than the parent.
+    scope_owner     TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_result_scope ON test_result(failure_scope);
 
 -- What the keywords on the failing branch logged on their way down. Robot
 -- Framework keeps these as MESSAGE items under each keyword, and they routinely
