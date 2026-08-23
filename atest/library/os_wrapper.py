@@ -1,6 +1,8 @@
 import json
 import os
+import platform
 import random
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -175,6 +177,30 @@ def get_python_version() -> str:
 
 def get_robot_version() -> str:
     return str(version.VERSION)
+
+
+def get_node_version() -> str:
+    """The NodeJS actually running the library, for the result to record.
+
+    Which NodeJS ran matters when a failure only happens on one of them, and
+    output.xml is the only thing that survives a CI run long enough to be asked.
+    """
+    try:
+        completed = subprocess.run(
+            ["node", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return completed.stdout.strip() or "unknown"
+
+
+def get_os_release() -> str:
+    """More than sys.platform: "win32" does not distinguish two Windows runners."""
+    return platform.platform()
 
 
 def _parse_fi_date(date: str) -> datetime:

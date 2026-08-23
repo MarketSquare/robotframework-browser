@@ -595,6 +595,71 @@ class TestFixtureFailureGrouping:
         assert fixture.failure_rate == pytest.approx(1.0)
 
 
+class TestVersionsOnAFailure:
+    """Which versions a failure was seen on, so "is it version dependent?" is a
+    question the report answers rather than one it raises."""
+
+    def _seed(self, db: Path, legs: list[tuple]) -> None:
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        for index, (rf, python, node, platform) in enumerate(legs, start=1):
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', 'sha', 'main', ?, 'failure', 'u')",
+                (index, f"2026-08-2{index}T10:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, artifact_url, "
+                "platform, rf_version, python_version, node_version, ingested_at) "
+                "VALUES (?, ?, ?, 'Test results-x', 'u', ?, ?, ?, ?, 'now')",
+                (index, index, index, platform, rf, python, node),
+            )
+            connection.execute(
+                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                "status, message, error_signature, failure_scope) "
+                "VALUES (?, 'S.Test A', 'Test A', 'S', 'FAIL', 'raw', 'boom', 'test')",
+                (index,),
+            )
+        connection.commit()
+        connection.close()
+
+    def test_every_version_the_failure_was_seen_on_is_listed(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("7.4.2", "3.10.11", "v22.1.0", "win32"),
+                ("7.1.1", "3.14.7", "v24.15.0", "win32"),
+            ],
+        )
+
+        group = failure_groups(db)[0]
+
+        assert sorted(group.rf_versions.split(",")) == ["7.1.1", "7.4.2"]
+        assert sorted(group.python_versions.split(",")) == ["3.10.11", "3.14.7"]
+        assert sorted(group.node_versions.split(",")) == ["v22.1.0", "v24.15.0"]
+
+    def test_one_version_throughout_is_listed_once(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("7.4.2", "3.14.7", "v24.15.0", "win32"),
+                ("7.4.2", "3.14.7", "v24.15.0", "win32"),
+            ],
+        )
+
+        assert failure_groups(db)[0].rf_versions == "7.4.2"
+
+    def test_a_backfilled_run_without_a_node_version_is_not_an_error(self, tmp_path):
+        """Runs from before the metadata was added carry no NodeJS version."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [("7.4.2", "3.14.7", None, "win32")])
+
+        assert failure_groups(db)[0].node_versions is None
+
+
 class TestEmbeddedScreenshots:
     """An embedded screenshot is not readable text and must not be stored as it."""
 

@@ -39,6 +39,10 @@ class FailureGroup:
     keyword_source: str | None
     keyword_lineno: int | None
 
+    rf_versions: str | None
+    python_versions: str | None
+    node_versions: str | None
+
     @property
     def failure_rate(self) -> float:
         return self.failures / self.total_runs if self.total_runs else 0.0
@@ -65,6 +69,9 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
                runs_per_test.total            AS total_runs,
                MIN(f.message)                 AS example_message,
                GROUP_CONCAT(DISTINCT l.platform) AS platforms,
+               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
+               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
+               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
                MIN(r.created_at)              AS first_seen,
                MAX(r.created_at)              AS last_seen,
                (SELECT l2.artifact_url FROM test_result f2
@@ -133,6 +140,10 @@ class FixtureFailure:
     keyword_source: str | None
     keyword_lineno: int | None
 
+    rf_versions: str | None
+    python_versions: str | None
+    node_versions: str | None
+
     @property
     def failure_rate(self) -> float:
         return self.occurrences / self.suite_runs if self.suite_runs else 0.0
@@ -156,6 +167,9 @@ def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
                COUNT(*)                          AS tests_marked,
                GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,
                GROUP_CONCAT(DISTINCT l.platform) AS platforms,
+               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
+               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
+               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
                MIN(r.created_at)                 AS first_seen,
                MAX(r.created_at)                 AS last_seen,
                (SELECT COUNT(DISTINCT l2.id) FROM test_result f2

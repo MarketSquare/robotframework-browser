@@ -357,6 +357,29 @@ def _log_html(entries: list[dict]) -> str:
     )
 
 
+def _version_chips(
+    platforms: str | None,
+    rf_versions: str | None,
+    python_versions: str | None,
+    node_versions: str | None,
+) -> list[str]:
+    """What the failure ran on. A value spanning several legs shows all of them,
+    because that is itself the answer to "does this depend on the version?"."""
+    chips = []
+    for label, values in (
+        ("on", platforms),
+        ("rf", rf_versions),
+        ("py", python_versions),
+        ("node", node_versions),
+    ):
+        listed = ", ".join(sorted(v for v in (values or "").split(",") if v))
+        if listed:
+            chips.append(
+                f'<span class="chip"><span class="k">{_e(label)}</span> {_e(listed)}</span>'
+            )
+    return chips
+
+
 def _where_html(
     test_source: str | None,
     test_lineno: int | None,
@@ -393,17 +416,10 @@ def _where_html(
 def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
     width = (group.failures / widest * 100) if widest else 0
     suite, _, leaf = group.longname.rpartition(".")
-    chips = (
-        [
-            f'<span class="chip kw"><span class="k">keyword</span> {_e(group.failing_keyword)}</span>'
-        ]
-        if group.failing_keyword
-        else []
+    # The keyword is in the location block now, not repeated as a chip.
+    chips = _version_chips(
+        group.platforms, group.rf_versions, group.python_versions, group.node_versions
     )
-    if group.platforms:
-        chips.append(
-            f'<span class="chip"><span class="k">on</span> {_e(group.platforms.replace(",", ", "))}</span>'
-        )
     chips.append(
         f'<span class="chip"><span class="k">last</span> {_e(group.last_seen[:10])}</span>'
     )
@@ -448,11 +464,15 @@ def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> 
     width = (fixture.occurrences / widest * 100) if widest else 0
     kind = fixture.failure_scope.replace("_", " ")
     tests = [name for name in (fixture.affected_tests or "").split(",") if name]
-    where = _e((fixture.platforms or "").replace(",", ", "))
-    chips = [
-        f'<span class="chip"><span class="k">on</span> {where}</span>',
-        f'<span class="chip"><span class="k">last</span> {_e(fixture.last_seen[:10])}</span>',
-    ]
+    chips = _version_chips(
+        fixture.platforms,
+        fixture.rf_versions,
+        fixture.python_versions,
+        fixture.node_versions,
+    )
+    chips.append(
+        f'<span class="chip"><span class="k">last</span> {_e(fixture.last_seen[:10])}</span>'
+    )
     if fixture.latest_artifact_url:
         chips.append(
             f'<a class="evidence" href="{_e(fixture.latest_artifact_url)}">artifact &rarr;</a>'

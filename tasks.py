@@ -1326,33 +1326,6 @@ def run_tests(c, tests, batteries=False):
     return process.wait(ATEST_TIMEOUT)
 
 
-def _run_metadata():
-    """`--metadata` arguments describing the machine, for output.xml to carry.
-
-    Robot Framework and pabot already record the Python and Robot Framework
-    versions, and the generator attribute carries the platform. NodeJS and the
-    OS release are ours to add, and without them a result cannot say which of the
-    matrix legs produced it. Anything reading results afterwards then needs only
-    output.xml rather than a filename convention.
-    """
-    try:
-        node_version = subprocess.run(
-            ["node", "--version"], capture_output=True, text=True, check=False
-        ).stdout.strip()
-    except OSError:
-        node_version = ""
-    from Browser.version import __version__ as browser_version  # noqa: PLC0415
-
-    return [
-        "--metadata",
-        f"Node Version:{node_version or 'unknown'}",
-        "--metadata",
-        f"OS:{platform.platform()}",
-        "--metadata",
-        f"Browser Library Version:{browser_version}",
-    ]
-
-
 def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     pabot_args = [
@@ -1370,7 +1343,6 @@ def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG")
         "--artifactsinsubfolders",
     ] + (["--shard", shard] if shard else [])
     default_args = [
-        *_run_metadata(),
         "--xunit",
         "robot_xunit.xml",
         "--exclude",
