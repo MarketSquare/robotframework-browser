@@ -45,7 +45,7 @@
     "pino": "^10.3.1",
     "playwright": "^1.62.1",
     "strip-comments": "^2.0.1",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.2"
   },
   "overrides": {
     "babel-plugin-istanbul": {
