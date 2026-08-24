@@ -9,7 +9,13 @@ from robot import run as robot_run
 
 from tools.ci_failures import github, ingest
 from tools.ci_failures.parse import error_signature, parse
-from tools.ci_failures.report import failure_groups, fixture_failures, totals
+from tools.ci_failures.report import (
+    failure_groups,
+    configurations_by_fixture,
+    fixture_failures,
+    configurations_by_test,
+    totals,
+)
 
 SUITE = """\
 *** Test Cases ***
@@ -658,6 +664,77 @@ class TestVersionsOnAFailure:
         self._seed(db, [("7.4.2", "3.14.7", None, "win32")])
 
         assert failure_groups(db)[0].node_versions is None
+
+    def test_the_combinations_are_reported_not_the_dimensions(self, tmp_path):
+        """Two legs, each pairing one rf with one Python, is two combinations.
+
+        Listing the dimensions separately would read as four, and would suggest
+        the versions can be told apart when a whole leg varies at once.
+        """
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("7.1.1", "3.13.15", None, "linux"),
+                ("7.4.2", "3.14.7", None, "linux"),
+            ],
+        )
+
+        configurations = configurations_by_test(db)[("S.Test A", "boom")]
+
+        assert [(c["rf_version"], c["python_version"]) for c in configurations] == [
+            ("7.1.1", "3.13.15"),
+            ("7.4.2", "3.14.7"),
+        ]
+
+    def test_a_repeated_combination_is_counted_rather_than_repeated(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                ("7.4.2", "3.14.7", None, "win32"),
+                ("7.4.2", "3.14.7", None, "win32"),
+                ("7.1.1", "3.10.11", None, "linux"),
+            ],
+        )
+
+        configurations = configurations_by_test(db)[("S.Test A", "boom")]
+
+        assert len(configurations) == 2
+        assert configurations[0]["occurrences"] == 2, "most seen first"
+        assert configurations[1]["occurrences"] == 1
+
+    def test_a_fixture_failure_counts_legs_not_the_rows_it_marked(self, tmp_path):
+        """One broken teardown marking four tests is one occurrence, not four."""
+        from tools.ci_failures.db import connect
+
+        db = tmp_path / "ci.sqlite3"
+        connection = connect(db)
+        connection.execute(
+            "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+            "conclusion, url) VALUES (1, 'push', 'sha', 'main', '2026-08-20', 'x', 'u')"
+        )
+        connection.execute(
+            "INSERT INTO leg (id, run_id, artifact_id, artifact_name, artifact_url, "
+            "platform, rf_version, python_version, ingested_at) "
+            "VALUES (1, 1, 1, 'Test results-x', 'u', 'win32', '7.4.2', '3.14.7', 'now')"
+        )
+        for name in ("A", "B", "C", "D"):
+            connection.execute(
+                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                "status, error_signature, failure_scope, scope_owner) VALUES "
+                "(1, ?, ?, 'S', 'FAIL', 'teardown broke', 'suite_teardown', 'S')",
+                (f"S.{name}", name),
+            )
+        connection.commit()
+        connection.close()
+
+        configurations = configurations_by_fixture(db)[
+            ("S", "suite_teardown", "teardown broke")
+        ]
+
+        assert len(configurations) == 1
+        assert configurations[0]["occurrences"] == 1
 
 
 class TestEmbeddedScreenshots:

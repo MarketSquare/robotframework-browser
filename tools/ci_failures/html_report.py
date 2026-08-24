@@ -7,6 +7,8 @@ from pathlib import Path
 from .report import (
     FailureGroup,
     FixtureFailure,
+    configurations_by_fixture,
+    configurations_by_test,
     failure_groups,
     fixture_failures,
     log_messages,
@@ -213,6 +215,27 @@ h2 {
 .kind[data-kind="library"] { color: var(--bar); border-color: var(--bar); }
 .kind[data-kind="project"] { color: var(--ink-2); }
 
+.seen {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.seen .k {
+  color: var(--ink-muted);
+  display: inline-block;
+  min-width: 62px;
+}
+.seen .row { display: flex; gap: 10px; }
+.seen .cfg { flex: 1; }
+.seen .n {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .chip {
   font-size: 11.5px;
@@ -357,27 +380,36 @@ def _log_html(entries: list[dict]) -> str:
     )
 
 
-def _version_chips(
-    platforms: str | None,
-    rf_versions: str | None,
-    python_versions: str | None,
-    node_versions: str | None,
-) -> list[str]:
-    """What the failure ran on. A value spanning several legs shows all of them,
-    because that is itself the answer to "does this depend on the version?"."""
-    chips = []
-    for label, values in (
-        ("on", platforms),
-        ("rf", rf_versions),
-        ("py", python_versions),
-        ("node", node_versions),
-    ):
-        listed = ", ".join(sorted(v for v in (values or "").split(",") if v))
-        if listed:
-            chips.append(
-                f'<span class="chip"><span class="k">{_e(label)}</span> {_e(listed)}</span>'
-            )
-    return chips
+def _seen_on_html(configurations: list[dict]) -> str:
+    """The matrix legs this failure was seen on, one line per combination.
+
+    Not one list per dimension: "rf 7.1.1, 7.4.2" beside "py 3.13.15, 3.14.7"
+    reads as four combinations when only two ever ran, and when each version pair
+    is a whole matrix leg the two dimensions cannot be told apart at all.
+    """
+    if not configurations:
+        return ""
+    rows = []
+    for index, configuration in enumerate(configurations):
+        parts = [configuration.get("platform") or "?"]
+        for label, key in (
+            ("rf", "rf_version"),
+            ("py", "python_version"),
+            ("node", "node_version"),
+        ):
+            value = configuration.get(key)
+            if value:
+                parts.append(f"{label} {value}")
+        label = "seen on" if index == 0 else ""
+        occurrences = configuration.get("occurrences") or 0
+        rows.append(
+            f'<div class="row"><span class="k">{_e(label)}</span>'
+            f'<span class="cfg">{_e(" &middot; ".join(parts))}</span>'
+            f'<span class="n">&times;{occurrences}</span></div>'
+        )
+    return f'<div class="seen">{"".join(rows)}</div>'.replace(
+        "&amp;middot;", "&middot;"
+    )
 
 
 def _where_html(
@@ -413,13 +445,13 @@ def _where_html(
     return f'<div class="where">{"".join(rows)}</div>' if rows else ""
 
 
-def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
+def _group_html(
+    group: FailureGroup, widest: int, entries: list[dict], configurations: list[dict]
+) -> str:
     width = (group.failures / widest * 100) if widest else 0
     suite, _, leaf = group.longname.rpartition(".")
-    # The keyword is in the location block now, not repeated as a chip.
-    chips = _version_chips(
-        group.platforms, group.rf_versions, group.python_versions, group.node_versions
-    )
+    # The keyword is in the location block, and where it ran is its own block.
+    chips = []
     chips.append(
         f'<span class="chip"><span class="k">last</span> {_e(group.last_seen[:10])}</span>'
     )
@@ -453,6 +485,7 @@ def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
             lineno=group.keyword_lineno,
         )
     }
+          {_seen_on_html(configurations)}
           {_log_html(entries)}
           <div class="chips">{"".join(chips)}</div>
         </div>
@@ -460,16 +493,16 @@ def _group_html(group: FailureGroup, widest: int, entries: list[dict]) -> str:
 """
 
 
-def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> str:
+def _fixture_html(
+    fixture: FixtureFailure,
+    widest: int,
+    entries: list[dict],
+    configurations: list[dict],
+) -> str:
     width = (fixture.occurrences / widest * 100) if widest else 0
     kind = fixture.failure_scope.replace("_", " ")
     tests = [name for name in (fixture.affected_tests or "").split(",") if name]
-    chips = _version_chips(
-        fixture.platforms,
-        fixture.rf_versions,
-        fixture.python_versions,
-        fixture.node_versions,
-    )
+    chips = []
     chips.append(
         f'<span class="chip"><span class="k">last</span> {_e(fixture.last_seen[:10])}</span>'
     )
@@ -504,6 +537,7 @@ def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> 
             lineno=fixture.keyword_lineno,
         )
     }
+          {_seen_on_html(configurations)}
           {_log_html(entries)}
           <div class="affected">marked {fixture.tests_marked} test row(s) failed:
             {_e(", ".join(tests)) or "-"}</div>
@@ -516,6 +550,7 @@ def _fixture_html(fixture: FixtureFailure, widest: int, entries: list[dict]) -> 
 def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     summary = totals(db_path)
     groups = failure_groups(db_path, limit=limit)
+    test_configs = configurations_by_test(db_path)
     widest = max((g.failures for g in groups), default=0)
     window = (
         f"{summary['since'][:10]} to {summary['until'][:10]}"
@@ -528,7 +563,12 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
         body = (
             '<div class="groups">\n'
             + "".join(
-                _group_html(g, widest, log_messages(db_path, g.latest_result_id))
+                _group_html(
+                    g,
+                    widest,
+                    log_messages(db_path, g.latest_result_id),
+                    test_configs.get((g.longname, g.error_signature), []),
+                )
                 for g in groups
             )
             + "</div>"
@@ -543,6 +583,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
         note = "Nothing failed in this window."
 
     fixtures = fixture_failures(db_path, limit=limit)
+    fixture_configs = configurations_by_fixture(db_path)
     widest_fixture = max((f.occurrences for f in fixtures), default=0)
     fixture_section = (
         f"""  <section>
@@ -552,7 +593,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     flaky tests as the suite happens to contain. Counted once here, against the number of times
     the suite ran.</p>
     <div class="groups">
-{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id)) for f in fixtures)}    </div>
+{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id), fixture_configs.get((f.scope_owner, f.failure_scope, f.error_signature), [])) for f in fixtures)}    </div>
   </section>
 """
         if fixtures
