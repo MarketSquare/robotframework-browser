@@ -9,11 +9,17 @@ from robot import run as robot_run
 
 from tools.ci_failures import github, ingest
 from tools.ci_failures.parse import error_signature, parse
+from tools.ci_failures.json_report import build as build_json
 from tools.ci_failures.report import (
+    coverage_by_test,
     failure_groups,
+    fixture_signature_variants,
     configurations_by_fixture,
     fixture_failures,
     configurations_by_test,
+    messages_by_test,
+    occurrences_by_test,
+    signature_variants,
     totals,
 )
 
@@ -737,6 +743,80 @@ class TestVersionsOnAFailure:
         assert configurations[0]["occurrences"] == 1
 
 
+class TestScreenshotEvidence:
+    """A screenshot is often the quickest way to see what was on screen."""
+
+    def test_a_screenshot_taken_by_a_passing_keyword_is_still_found(self, tmp_path):
+        """The library photographs the page on failure, and that keyword passes.
+
+        It hangs off the failing one, so the failing-branch walk never sees it.
+        """
+        suite = """\
+*** Test Cases ***
+Failing With A Screenshot
+    Run Keyword And Ignore Error    Log Screenshot Link
+    Fail    it broke
+
+*** Keywords ***
+Log Screenshot Link
+    Log    <a href="browser/screenshot/fail-screenshot-1.png">shot</a>    html=True
+"""
+        _, results = parse(_run_robot(tmp_path, suite))
+        failing = results[0]
+
+        assert failing.screenshot_status == "file"
+        assert failing.screenshots == "browser/screenshot/fail-screenshot-1.png"
+
+    def test_the_failure_screenshot_is_listed_first(self, tmp_path):
+        suite = """\
+*** Test Cases ***
+Several Screenshots
+    Log    <a href="browser/screenshot/other.png">a</a>    html=True
+    Log    <a href="browser/screenshot/fail-screenshot-1.png">b</a>    html=True
+    Fail    it broke
+"""
+        _, results = parse(_run_robot(tmp_path, suite))
+
+        assert results[0].screenshots.split(",")[0].endswith("fail-screenshot-1.png")
+
+    def test_an_absolute_path_becomes_a_path_inside_the_artifact(self):
+        from tools.ci_failures.locate import artifact_relative
+
+        absolute = (
+            "file:///home/runner/work/robotframework-browser/robotframework-browser/"
+            "atest/output/pabot_results/4/browser/screenshot/fail-screenshot-1.png"
+        )
+
+        assert artifact_relative(absolute) == (
+            "pabot_results/4/browser/screenshot/fail-screenshot-1.png"
+        )
+
+    def test_an_already_relative_path_is_left_alone(self):
+        from tools.ci_failures.locate import artifact_relative
+
+        assert artifact_relative("browser/screenshot/fail-screenshot-1.png") == (
+            "browser/screenshot/fail-screenshot-1.png"
+        )
+
+    def test_no_screenshot_is_itself_recorded(self, tmp_path):
+        """Usually it means there was no page to photograph."""
+        suite = """\
+*** Test Cases ***
+Nothing To Photograph
+    Log    Keyword 'Take Screenshot' could not be run on failure: no page open
+    Fail    it broke
+"""
+        _, results = parse(_run_robot(tmp_path, suite))
+
+        assert results[0].screenshot_status == "unavailable"
+        assert results[0].screenshots is None
+
+    def test_a_passing_test_has_no_screenshot_evidence(self, output_xml):
+        _, results = parse(output_xml)
+
+        assert next(r for r in results if r.status == "PASS").screenshot_status is None
+
+
 class TestEmbeddedScreenshots:
     """An embedded screenshot is not readable text and must not be stored as it."""
 
@@ -940,6 +1020,288 @@ class TestGrouping:
         assert summary["results"] == 4
         assert summary["failures"] == 1
         assert summary["tests"] == 2
+
+
+class TestCaseFoldedGrouping:
+    """`Deadline Exceeded` and `Deadline exceeded` are one problem.
+
+    grpcio's C core spells it with a capital when the Python client's deadline
+    timer fires; @grpc/grpc-js spells it small when the Node server's timer wins
+    the same race. Two libraries naming one condition, not two conditions.
+    """
+
+    def _seed(self, db: Path, rows: list[dict]) -> None:
+        """One row per test result, carrying the leg and run it belongs to.
+
+        Rows sharing a (commit, platform, python) land on the same leg, which is
+        what makes a per-configuration denominator mean anything.
+        """
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        runs: dict[str, int] = {}
+        legs: dict[tuple, int] = {}
+        for row in rows:
+            sha = row.get("sha", "sha1")
+            if sha not in runs:
+                runs[sha] = len(runs) + 1
+                created = f"2026-08-{19 + runs[sha]:02d}T10:00:00Z"
+                connection.execute(
+                    "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                    "conclusion, url) VALUES (?, 'push', ?, 'main', ?, 'failure', 'u')",
+                    (runs[sha], sha, created),
+                )
+            platform = row.get("platform", "linux")
+            python = row.get("python", "3.13.15")
+            key = (sha, platform, python)
+            if key not in legs:
+                legs[key] = len(legs) + 1
+                connection.execute(
+                    "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                    "artifact_url, platform, python_version, rf_version, ingested_at) "
+                    "VALUES (?, ?, ?, ?, 'a-url', ?, ?, '7.4.2', 'now')",
+                    (legs[key], runs[sha], legs[key], "leg", platform, python),
+                )
+            connection.execute(
+                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                "status, message, error_signature, failure_scope, scope_owner) "
+                "VALUES (?, ?, ?, 'S', ?, ?, ?, ?, ?)",
+                (
+                    legs[key],
+                    row["test"],
+                    row["test"],
+                    row["status"],
+                    row.get("message"),
+                    row.get("signature"),
+                    row.get("scope", "test"),
+                    row.get("owner"),
+                ),
+            )
+        connection.commit()
+        connection.close()
+
+    def _deadlines(self) -> list[dict]:
+        return [
+            {"test": "T", "status": "FAIL", "signature": "Deadline Exceeded"},
+            {"test": "T", "status": "FAIL", "signature": "Deadline Exceeded"},
+            {"test": "T", "status": "FAIL", "signature": "Deadline exceeded"},
+        ]
+
+    def test_two_spellings_of_one_error_are_one_group(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._deadlines())
+
+        groups = failure_groups(db)
+
+        assert len(groups) == 1
+        assert groups[0].failures == 3
+
+    def test_the_merged_group_is_keyed_case_insensitively(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._deadlines())
+
+        assert failure_groups(db)[0].signature_key == "deadline exceeded"
+
+    def test_the_spellings_survive_the_merge(self, tmp_path):
+        """Which side of the boundary gave up first is evidence, not noise."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._deadlines())
+
+        variants = signature_variants(db)[("T", "deadline exceeded")]
+
+        assert variants == [
+            {"signature": "Deadline Exceeded", "occurrences": 2},
+            {"signature": "Deadline exceeded", "occurrences": 1},
+        ]
+
+    def test_a_group_with_one_spelling_reports_no_variants(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+
+        assert signature_variants(db) == {}
+
+    def test_suite_fixtures_are_merged_the_same_way(self, tmp_path):
+        """Where it actually happens: the real case is a suite teardown."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                dict(row, scope="suite_teardown", owner="Suite X", sha=f"sha{i}")
+                for i, row in enumerate(self._deadlines())
+            ],
+        )
+
+        fixtures = fixture_failures(db)
+
+        assert len(fixtures) == 1
+        assert fixtures[0].occurrences == 3
+        assert (
+            len(
+                fixture_signature_variants(db)[
+                    ("Suite X", "suite_teardown", "deadline exceeded")
+                ]
+            )
+            == 2
+        )
+
+
+class TestPayloadForALanguageModel:
+    """What the JSON document carries that the terminal report drops.
+
+    `print_report` emits 8 of `FailureGroup`'s fields and calls 3 of the 7
+    queries. These are the facts that were missing, not reformatted.
+    """
+
+    _seed = TestCaseFoldedGrouping._seed
+
+    def _entry(self, db: Path, test: str = "T") -> dict:
+        return next(t for t in build_json(db)["test_failures"] if t["test"] == test)
+
+    def test_a_configuration_that_never_failed_keeps_its_denominator(self, tmp_path):
+        """0 of 4 on darwin is evidence. A global rate cannot say it."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "boom"}] * 3
+            + [{"test": "T", "status": "PASS"}] * 5
+            + [{"test": "T", "status": "PASS", "platform": "darwin"}] * 4,
+        )
+
+        coverage = coverage_by_test(db)["T"]
+
+        assert {c["platform"]: (c["ran"], c["failed"]) for c in coverage} == {
+            "linux": (8, 3),
+            "darwin": (4, 0),
+        }
+
+    def test_a_platform_the_test_never_ran_on_is_named(self, tmp_path):
+        """Absent and clean are opposite findings. A zero cannot tell them apart."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "boom"}]
+            + [{"test": "Other", "status": "PASS", "platform": "win32"}],
+        )
+
+        assert self._entry(db)["never_ran_on"] == ["win32"]
+
+    def test_every_distinct_raw_message_is_kept(self, tmp_path):
+        """The signature masks what varies, which is exactly the evidence."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "diff <n>",
+                    "message": "diff 5046301",
+                }
+            ]
+            * 2
+            + [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "diff <n>",
+                    "message": "diff 5046304",
+                }
+            ],
+        )
+
+        assert self._entry(db)["raw_messages"] == [
+            {"message": "diff 5046301", "occurrences": 2},
+            {"message": "diff 5046304", "occurrences": 1},
+        ]
+
+    def test_the_commit_of_every_occurrence_is_carried(self, tmp_path):
+        """Three failures across two commits is not three across one."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "boom", "sha": "aaa"}] * 2
+            + [{"test": "T", "status": "FAIL", "signature": "boom", "sha": "bbb"}],
+        )
+
+        entry = self._entry(db)
+
+        assert entry["counts"]["distinct_commits"] == 2
+        assert {o["commit"] for o in entry["occurrences"]} == {"aaa", "bbb"}
+        assert len(entry["occurrences"]) == 3
+
+    def test_occurrences_carry_the_artifact_to_fetch_evidence_from(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+
+        assert self._entry(db)["occurrences"][0]["artifact_url"] == "a-url"
+
+    def test_a_broken_suite_fixture_is_not_a_test_failure(self, tmp_path):
+        """Section 3, stated in the document rather than left to be inferred."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {
+                    "test": f"T{i}",
+                    "status": "FAIL",
+                    "signature": "boom",
+                    "scope": "suite_teardown",
+                    "owner": "Suite X",
+                }
+                for i in range(4)
+            ],
+        )
+
+        document = build_json(db)
+
+        assert document["test_failures"] == []
+        assert document["fixture_failures"][0]["suite"] == "Suite X"
+        assert document["fixture_failures"][0]["counts"]["test_rows_marked_failed"] == 4
+
+    def test_the_document_states_the_rules_it_was_built_on(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+
+        assert "suite_fixtures_are_separate" in build_json(db)["about"]
+
+    def test_nothing_is_truncated(self, tmp_path):
+        """The terminal report cuts at 110 characters for a narrow terminal."""
+        db = tmp_path / "ci.sqlite3"
+        long_message = "x" * 400
+        self._seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "boom",
+                    "message": long_message,
+                }
+            ],
+        )
+
+        assert self._entry(db)["raw_messages"][0]["message"] == long_message
+
+    def test_where_to_look_survives_into_the_document(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        connection.execute(
+            "UPDATE test_result SET test_source = 'a.robot', test_lineno = 237, "
+            "keyword_source = 'b.py', keyword_lineno = 27, keyword_kind = 'project'"
+        )
+        connection.commit()
+        connection.close()
+
+        assert self._entry(db)["where_to_look"] == {
+            "test_file": "a.robot:237",
+            "keyword": None,
+            "keyword_defined": "b.py:27",
+            "keyword_owner": None,
+            "keyword_kind": "project",
+        }
 
 
 class TestHtmlReport:

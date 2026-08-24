@@ -11,7 +11,12 @@ from typing import Any
 
 from robot.api import ExecutionResult
 
-from .locate import keyword_location, owner_kind, repo_relative
+from .locate import (
+    artifact_relative,
+    keyword_location,
+    owner_kind,
+    repo_relative,
+)
 
 # Only these can name a culprit. Everything else in a keyword body is a control
 # structure - FOR, IF/ELSE ROOT, TRY/EXCEPT ROOT - which is descended into but
@@ -44,6 +49,17 @@ _WHITESPACE = re.compile(r"\s+")
 # and three of them accounted for 77% of every log byte stored. The fact that a
 # screenshot was taken is worth keeping; the bytes are in the artifact.
 _DATA_URI = re.compile(r"data:([\w/+.-]+);base64,([A-Za-z0-9+/=]+)")
+
+
+# Robot Framework logs a screenshot either as a link to a file, which is the
+# useful case because the path is where it sits inside the artifact, or as a
+# base64 blob embedded in log.html, which is not readable as text.
+_IMAGE_LINK = re.compile(r'href="([^"]+\.(?:png|jpe?g|webp|gif))"', re.IGNORECASE)
+_EMBEDDED_IMAGE = re.compile(r"data:image/[\w.+-]+;base64,")
+# The library takes a screenshot on failure by default, and says so when it
+# cannot - which is itself worth knowing, because "no screenshot" usually means
+# there was no page to photograph.
+_NO_SCREENSHOT = re.compile(r"could not be run on failure", re.IGNORECASE)
 
 
 def strip_embedded_data(message: str | None) -> str | None:
@@ -119,6 +135,10 @@ class TestResult:
     # keyword's owner is there too, but its location has to be resolved.
     test_source: str | None = None
     test_lineno: int | None = None
+    # Relative to the run's output directory, which is also where they sit
+    # inside the artifact.
+    screenshots: str | None = None
+    screenshot_status: str | None = None
     keyword_owner: str | None = None
     keyword_kind: str | None = None
     keyword_source: str | None = None
@@ -237,6 +257,48 @@ def suite_fixture_failures(suite: Any) -> list[tuple]:
     return found
 
 
+def _screenshot_evidence(item: Any, found: list[str], state: dict) -> None:
+    """Screenshot references anywhere under ``item``, whatever its status.
+
+    A separate walk from the log messages on purpose. The screenshot the library
+    takes on failure runs as a keyword that *passes*, hanging off the one that
+    failed, so the failing-branch walk never sees it - and a screenshot is often
+    the first thing worth looking at.
+    """
+    for child in getattr(item, "body", None) or []:
+        if str(getattr(child, "type", "") or "").upper() == "MESSAGE":
+            message = getattr(child, "message", None) or ""
+            for match in _IMAGE_LINK.finditer(message):
+                path = artifact_relative(match.group(1))
+                if path not in found:
+                    found.append(path)
+            if _EMBEDDED_IMAGE.search(message):
+                state["embedded"] = True
+            if _NO_SCREENSHOT.search(message):
+                state["unavailable"] = True
+            continue
+        _screenshot_evidence(child, found, state)
+
+
+def screenshots_of(test: Any, fixtures: list[tuple]) -> tuple[str | None, str | None]:
+    """Where the screenshots for this failure are, and whether there are any."""
+    found: list[str] = []
+    state: dict = {}
+    _screenshot_evidence(test, found, state)
+    for fixture in fixtures:
+        _screenshot_evidence(fixture[4], found, state)
+    if found:
+        # The one the library took because this failed leads; the rest are
+        # screenshots the test took for its own reasons.
+        found.sort(key=lambda path: "fail-screenshot" not in path)
+        return ",".join(found[:3]), "file"
+    if state.get("embedded"):
+        return None, "embedded"
+    if state.get("unavailable"):
+        return None, "unavailable"
+    return None, None
+
+
 def classify_failure(
     test: Any, setups: list[tuple], teardowns: list[tuple]
 ) -> tuple[str, str]:
@@ -305,6 +367,7 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
             scope = scope_owner_name = None
             keyword = None
             keyword_owner = keyword_src = keyword_line = None
+            shots = shot_status = None
             messages: list[LogMessage] = []
 
             if failed:
@@ -322,6 +385,7 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                 keyword_src, keyword_line = keyword_location(
                     keyword_owner, getattr(keyword, "name", None)
                 )
+                shots, shot_status = screenshots_of(test, setups + teardowns)
                 # Run order: the setups that failed above it, then the test's
                 # own, then the teardowns, innermost first as they unwind.
                 for _, _, _, lines, _ in setups:
@@ -346,6 +410,8 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                     failing_keyword=getattr(keyword, "name", None),
                     test_source=repo_relative(getattr(test, "source", None)),
                     test_lineno=getattr(test, "lineno", None),
+                    screenshots=shots,
+                    screenshot_status=shot_status,
                     keyword_owner=keyword_owner,
                     keyword_kind=owner_kind(keyword_owner) if keyword else None,
                     keyword_source=keyword_src,

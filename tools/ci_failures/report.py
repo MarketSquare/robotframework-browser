@@ -14,6 +14,21 @@ from pathlib import Path
 
 from .db import connect
 
+# Two libraries implement the same gRPC deadline and spell the expiry
+# differently: grpcio's C core says "Deadline Exceeded" when the Python client's
+# timer fires, @grpc/grpc-js says "Deadline exceeded" when the Node server's
+# timer wins the same race. Grouping on the exact string splits one problem into
+# two - it did, for the most frequent failure there is: 4 legs against 1, or 8
+# marked test rows against 2, depending on which of them you were counting.
+# So the key is case-folded. The spelling is not noise, it names which side of
+# the boundary gave up first, so it survives in `signature_variants` and in the
+# raw messages; it just does not get to be a different problem.
+#
+# In SQL that is `LOWER(IFNULL(<alias>.error_signature, ''))`, written out at
+# each use rather than interpolated: these queries are read far more often than
+# they are edited, and a format placeholder in the middle of a GROUP BY hides
+# the one thing a reader needs to see.
+
 
 @dataclass
 class FailureGroup:
@@ -43,9 +58,21 @@ class FailureGroup:
     python_versions: str | None
     node_versions: str | None
 
+    screenshots: str | None
+    screenshot_status: str | None
+
+    # How many different commits this was seen on. Four failures across four
+    # commits is a standing problem; four across one is that one commit.
+    distinct_shas: int
+
     @property
     def failure_rate(self) -> float:
         return self.failures / self.total_runs if self.total_runs else 0.0
+
+    @property
+    def signature_key(self) -> str:
+        """What this group is keyed on. See `_KEY`."""
+        return (self.error_signature or "").lower()
 
 
 def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
@@ -57,7 +84,10 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
             SELECT longname, COUNT(*) AS total FROM test_result GROUP BY longname
         )
         SELECT f.longname,
-               f.error_signature,
+               -- The group is keyed case-insensitively, so one spelling has to
+               -- stand for the row. MIN is deterministic, and capitals sort
+               -- first, which happens to be the spelling that occurs most.
+               MIN(f.error_signature)         AS error_signature,
                f.failing_keyword,
                f.test_source,
                f.test_lineno,
@@ -65,7 +95,10 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
                f.keyword_kind,
                f.keyword_source,
                f.keyword_lineno,
+               MAX(f.screenshots)             AS screenshots,
+               MAX(f.screenshot_status)       AS screenshot_status,
                COUNT(*)                       AS failures,
+               COUNT(DISTINCT r.head_sha)     AS distinct_shas,
                runs_per_test.total            AS total_runs,
                MIN(f.message)                 AS example_message,
                GROUP_CONCAT(DISTINCT l.platform) AS platforms,
@@ -79,21 +112,24 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
                   JOIN run r2 ON r2.id = l2.run_id
                  WHERE f2.longname = f.longname
                    AND f2.status = 'FAIL'
-                   AND IFNULL(f2.error_signature, '') = IFNULL(f.error_signature, '')
+                   AND LOWER(IFNULL(f2.error_signature, ''))
+                     = LOWER(IFNULL(f.error_signature, ''))
                  ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
                (SELECT r2.url FROM test_result f2
                   JOIN leg l2 ON l2.id = f2.leg_id
                   JOIN run r2 ON r2.id = l2.run_id
                  WHERE f2.longname = f.longname
                    AND f2.status = 'FAIL'
-                   AND IFNULL(f2.error_signature, '') = IFNULL(f.error_signature, '')
+                   AND LOWER(IFNULL(f2.error_signature, ''))
+                     = LOWER(IFNULL(f.error_signature, ''))
                  ORDER BY r2.created_at DESC LIMIT 1) AS latest_run_url,
                (SELECT f2.id FROM test_result f2
                   JOIN leg l2 ON l2.id = f2.leg_id
                   JOIN run r2 ON r2.id = l2.run_id
                  WHERE f2.longname = f.longname
                    AND f2.status = 'FAIL'
-                   AND IFNULL(f2.error_signature, '') = IFNULL(f.error_signature, '')
+                   AND LOWER(IFNULL(f2.error_signature, ''))
+                     = LOWER(IFNULL(f.error_signature, ''))
                  ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
@@ -101,7 +137,7 @@ def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
         JOIN runs_per_test ON runs_per_test.longname = f.longname
         WHERE f.status = 'FAIL'
           AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.longname, f.error_signature
+        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
         ORDER BY failures DESC, f.longname
         LIMIT ?
         """,
@@ -144,9 +180,19 @@ class FixtureFailure:
     python_versions: str | None
     node_versions: str | None
 
+    screenshots: str | None
+    screenshot_status: str | None
+
+    distinct_shas: int
+
     @property
     def failure_rate(self) -> float:
         return self.occurrences / self.suite_runs if self.suite_runs else 0.0
+
+    @property
+    def signature_key(self) -> str:
+        """What this group is keyed on. See `_KEY`."""
+        return (self.error_signature or "").lower()
 
 
 def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
@@ -156,13 +202,16 @@ def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
         """
         SELECT f.scope_owner,
                f.failure_scope,
-               f.error_signature,
+               MIN(f.error_signature)            AS error_signature,
+               COUNT(DISTINCT r.head_sha)        AS distinct_shas,
                MIN(f.test_source)                AS test_source,
                f.failing_keyword                 AS keyword,
                f.keyword_owner,
                f.keyword_kind,
                f.keyword_source,
                f.keyword_lineno,
+               MAX(f.screenshots)                AS screenshots,
+               MAX(f.screenshot_status)          AS screenshot_status,
                COUNT(DISTINCT l.id)              AS occurrences,
                COUNT(*)                          AS tests_marked,
                GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,
@@ -193,7 +242,8 @@ def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
         JOIN run r ON r.id = l.run_id
         WHERE f.status = 'FAIL'
           AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope, f.error_signature
+        GROUP BY f.scope_owner, f.failure_scope,
+                 LOWER(IFNULL(f.error_signature, ''))
         ORDER BY occurrences DESC, f.scope_owner
         LIMIT ?
         """,
@@ -236,14 +286,16 @@ def configurations_by_test(db_path: Path) -> dict[tuple, list[dict]]:
     return _configurations(
         db_path,
         """
-        SELECT f.longname, f.error_signature, l.platform, l.rf_version,
+        SELECT f.longname,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               l.platform, l.rf_version,
                l.python_version, l.node_version, COUNT(*) AS occurrences
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         WHERE f.status = 'FAIL'
           AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.longname, f.error_signature, l.platform, l.rf_version,
-                 l.python_version, l.node_version
+        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), l.platform,
+                 l.rf_version, l.python_version, l.node_version
         ORDER BY occurrences DESC, l.platform
         """,
         2,
@@ -256,16 +308,202 @@ def configurations_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     return _configurations(
         db_path,
         """
-        SELECT f.scope_owner, f.failure_scope, f.error_signature, l.platform,
-               l.rf_version, l.python_version, l.node_version,
+        SELECT f.scope_owner, f.failure_scope,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               l.platform, l.rf_version, l.python_version, l.node_version,
                COUNT(DISTINCT l.id) AS occurrences
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         WHERE f.status = 'FAIL'
           AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope, f.error_signature, l.platform,
+        GROUP BY f.scope_owner, f.failure_scope,
+                 LOWER(IFNULL(f.error_signature, '')), l.platform,
                  l.rf_version, l.python_version, l.node_version
         ORDER BY occurrences DESC, l.platform
+        """,
+        3,
+    )
+
+
+def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
+    """Every individual failure behind a group: which run, which commit, when.
+
+    A group's counts cannot say whether four failures are one bad commit seen
+    four times or a problem that has survived four of them. The commit and the
+    event are in the database and were simply never asked for.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.longname,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               f.id AS result_id, f.elapsed_ms,
+               r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
+               l.platform, l.python_version, l.rf_version, l.node_version,
+               l.artifact_name, l.artifact_url
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.status = 'FAIL'
+          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
+        ORDER BY r.created_at DESC
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = (row["longname"], row["signature_key"])
+        grouped.setdefault(key, []).append(
+            {
+                "result_id": row["result_id"],
+                "elapsed_ms": row["elapsed_ms"],
+                "run_id": row["run_id"],
+                "head_sha": row["head_sha"],
+                "event": row["event"],
+                "created_at": row["created_at"],
+                "run_url": row["run_url"],
+                "platform": row["platform"],
+                "python_version": row["python_version"],
+                "rf_version": row["rf_version"],
+                "node_version": row["node_version"],
+                "artifact_name": row["artifact_name"],
+                "artifact_url": row["artifact_url"],
+            }
+        )
+    return grouped
+
+
+def coverage_by_test(db_path: Path) -> dict[str, list[dict]]:
+    """Per configuration, how often a test ran and how often it failed.
+
+    One global rate hides the only thing that matters about it. Screenshot On
+    Failure is 3 of 81 overall, which says nothing; it is 3 of 55 on linux and
+    0 of 26 on darwin, which says where to look. Configurations with no failures
+    are included: 26 clean runs is evidence, and a configuration missing from
+    this list never ran the test at all, which is not the same as passing it.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.longname, l.platform, l.python_version, l.rf_version,
+               l.node_version,
+               COUNT(*) AS ran,
+               SUM(CASE WHEN f.status = 'FAIL' THEN 1 ELSE 0 END) AS failed
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        GROUP BY f.longname, l.platform, l.python_version, l.rf_version,
+                 l.node_version
+        ORDER BY failed DESC, ran DESC
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[str, list[dict]] = {}
+    for row in rows:
+        grouped.setdefault(row["longname"], []).append(
+            {
+                "platform": row["platform"],
+                "python_version": row["python_version"],
+                "rf_version": row["rf_version"],
+                "node_version": row["node_version"],
+                "ran": row["ran"],
+                "failed": row["failed"] or 0,
+            }
+        )
+    return grouped
+
+
+def messages_by_test(db_path: Path) -> dict[tuple, list[dict]]:
+    """Every distinct raw message behind a group, with how often each occurred.
+
+    The signature masks what varies, which is what makes grouping possible and
+    is also what throws away the evidence. Three failures of Compare Images
+    carry an identical box and a pixel count differing by three - deterministic,
+    not jittery - and the signature renders all of that as `<n>`. Cheap to keep:
+    16 of the 18 groups have exactly one distinct message.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.longname,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               f.message, COUNT(*) AS occurrences
+        FROM test_result f
+        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
+        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), f.message
+        ORDER BY occurrences DESC
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = (row["longname"], row["signature_key"])
+        grouped.setdefault(key, []).append(
+            {"message": row["message"], "occurrences": row["occurrences"]}
+        )
+    return grouped
+
+
+def _variants(db_path: Path, sql: str, key_length: int) -> dict[tuple, list[dict]]:
+    connection = connect(db_path)
+    rows = connection.execute(sql).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = tuple(row[index] for index in range(key_length))
+        grouped.setdefault(key, []).append(
+            {
+                "signature": row["error_signature"],
+                "occurrences": row["occurrences"],
+            }
+        )
+    # Only the groups the case-folded key actually merged. One spelling is the
+    # normal case and saying so on every entry would bury the one that matters.
+    return {key: value for key, value in grouped.items() if len(value) > 1}
+
+
+def signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
+    """The distinct spellings of one test group's signature, with counts.
+
+    Only ever more than one when two libraries name the same condition, which is
+    exactly the case the case-folded key exists to merge. See `_KEY`.
+    """
+    return _variants(
+        db_path,
+        """
+        SELECT f.longname,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               f.error_signature, COUNT(*) AS occurrences
+        FROM test_result f
+        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
+          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
+        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')),
+                 f.error_signature
+        ORDER BY occurrences DESC
+        """,
+        2,
+    )
+
+
+def fixture_signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
+    """The same, for suite fixtures - which is where it actually happens.
+
+    The `Deadline Exceeded` / `Deadline exceeded` split that motivated the
+    case-folded key is a suite teardown, so keying these per test would have
+    missed the only case in the data that has any.
+    """
+    return _variants(
+        db_path,
+        """
+        SELECT f.scope_owner, f.failure_scope,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               f.error_signature, COUNT(DISTINCT l.id) AS occurrences
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
+          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        GROUP BY f.scope_owner, f.failure_scope,
+                 LOWER(IFNULL(f.error_signature, '')), f.error_signature
+        ORDER BY occurrences DESC
         """,
         3,
     )

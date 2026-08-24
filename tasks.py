@@ -1959,12 +1959,13 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
 
 
 @task
-def ci_report(c, db=None, html=None, limit=100, open_it=False):
+def ci_report(c, db=None, html=None, json=None, limit=100, open_it=False):
     """Shows which tests fail and on which error.
 
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         html: Write a self-contained HTML page here instead of printing.
+        json: Write the report as JSON here, for a language model to read.
         limit: How many test/error groups to show.
         open_it: Open the HTML page in a browser once written.
     """
@@ -1973,6 +1974,11 @@ def ci_report(c, db=None, html=None, limit=100, open_it=False):
     db_path = Path(db) if db else CI_FAILURES_DB
     if not db_path.exists():
         print(f"No database at {db_path}. Run `inv ci-ingest` first.")
+        return
+    if json:
+        from tools.ci_failures.json_report import render as render_json
+
+        print(f"Wrote {render_json(db_path, Path(json), limit=int(limit))}")
         return
     if html:
         from tools.ci_failures.html_report import render

@@ -81,8 +81,8 @@ def _insert_results(
             "INSERT INTO test_result (leg_id, longname, name, suite_longname, status, "
             "elapsed_ms, message, error_signature, failing_keyword, failure_scope, "
             "scope_owner, test_source, test_lineno, keyword_owner, keyword_kind, "
-            "keyword_source, keyword_lineno) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "keyword_source, keyword_lineno, screenshots, screenshot_status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 leg_id,
                 result.longname,
@@ -101,6 +101,8 @@ def _insert_results(
                 result.keyword_kind,
                 result.keyword_source,
                 result.keyword_lineno,
+                result.screenshots,
+                result.screenshot_status,
             ),
         )
         if result.status == "FAIL":

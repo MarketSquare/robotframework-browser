@@ -201,6 +201,7 @@ h2 {
   color: var(--ink-muted);
   display: inline-block;
   min-width: 62px;
+  padding-right: 10px;
 }
 .kind {
   font-size: 10px;
@@ -227,6 +228,7 @@ h2 {
   color: var(--ink-muted);
   display: inline-block;
   min-width: 62px;
+  padding-right: 10px;
 }
 .seen .row { display: flex; gap: 10px; }
 .seen .cfg { flex: 1; }
@@ -272,6 +274,23 @@ a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 .logline .lv[data-level="FAIL"] { color: var(--critical); }
 .logline .lv[data-level="WARN"] { color: var(--critical); }
 .logline .txt { overflow-wrap: anywhere; white-space: pre-wrap; }
+.logline.gap .txt { color: var(--ink-muted); }
+
+.shots {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.shots .k {
+  color: var(--ink-muted);
+  display: inline-block;
+  min-width: 62px;
+  padding-right: 10px;
+}
+.shots .none { color: var(--ink-muted); font-style: italic; }
 .origin {
   font-size: 11px;
   color: var(--ink-muted);
@@ -341,12 +360,26 @@ def _tile(value: object, label: str, critical: bool = False) -> str:
 
 
 SHOWN_LOG_LINES = 3
+# Levels that must never sit behind a disclosure: they are the conclusion.
+_LOUD_LEVELS = {"FAIL", "WARN", "ERROR"}
 
 
-def _log_line(entry: dict) -> str:
+def _skipped_before(entries: list[dict], shown: list[dict], index: int) -> bool:
+    """Whether lines were passed over between this shown line and the one before."""
+    previous = entries.index(shown[index - 1])
+    current = entries.index(shown[index])
+    return current - previous > 1
+
+
+def _log_line(entry: dict, skipped: bool = False) -> str:
     level = entry.get("level") or ""
+    gap = (
+        '<div class="logline gap"><span class="lv"></span><span class="txt">...</span></div>'
+        if skipped
+        else ""
+    )
     return (
-        f'<div class="logline"><span class="lv" data-level="{_e(level)}">{_e(level)}</span>'
+        f'{gap}<div class="logline"><span class="lv" data-level="{_e(level)}">{_e(level)}</span>'
         f'<span class="txt">{_e(entry.get("message"))}</span></div>'
     )
 
@@ -356,18 +389,26 @@ def _origin_note(origin: str) -> str:
 
 
 def _log_html(entries: list[dict]) -> str:
-    """The first few lines, and the rest behind a disclosure.
+    """The opening lines and every FAIL or WARN, with the rest behind a disclosure.
 
-    Chronological, which is how they were logged. Worth knowing when reading
-    them: the line that names the failure is usually near the end, not the
-    start - the opening lines tend to be timeout bookkeeping and dumps.
+    Chronological, which is how they were logged, but the line that names the
+    failure is usually near the end rather than the start - the opening lines
+    tend to be timeout bookkeeping and dumps - so it is never behind a click.
     """
     if not entries:
         return ""
     origins = {e.get("origin") for e in entries if e.get("origin")}
     note = _origin_note(sorted(origins)[0]) if len(origins) == 1 else ""
-    shown = note + "".join(_log_line(e) for e in entries[:SHOWN_LOG_LINES])
-    rest = entries[SHOWN_LOG_LINES:]
+    visible = {id(e) for e in entries[:SHOWN_LOG_LINES]}
+    visible |= {id(e) for e in entries if (e.get("level") or "") in _LOUD_LEVELS}
+    shown_entries = [e for e in entries if id(e) in visible]
+    rest = [e for e in entries if id(e) not in visible]
+    shown = note + "".join(
+        _log_line(
+            entry, skipped=index > 0 and _skipped_before(entries, shown_entries, index)
+        )
+        for index, entry in enumerate(shown_entries)
+    )
     if not rest:
         return f'<div class="log">{shown}</div>'
     notable = sum(1 for e in rest if (e.get("level") or "") in {"FAIL", "WARN"})
@@ -378,6 +419,39 @@ def _log_html(entries: list[dict]) -> str:
         f"{'' if len(rest) == 1 else 's'}{tail}</summary>"
         f"{''.join(_log_line(e) for e in rest)}</details></div>"
     )
+
+
+def _screenshots_html(screenshots: str | None, status: str | None) -> str:
+    """Where the pictures are, or why there are none.
+
+    A screenshot is often the quickest way to see what was on screen when a
+    keyword failed. When there is none that is a clue in itself: the library
+    takes one automatically, so "could not" usually means there was no page.
+    """
+    if status == "file" and screenshots:
+        paths = [path for path in screenshots.split(",") if path]
+        rows = [
+            f'<div><span class="k">{_e("screenshot" if index == 0 else "")}</span>{_e(path)}</div>'
+            for index, path in enumerate(paths)
+        ]
+        rows.append(
+            '<div><span class="k"></span>'
+            '<span class="none">paths are inside the artifact</span></div>'
+        )
+        return f'<div class="shots">{"".join(rows)}</div>'
+    if status == "embedded":
+        return (
+            '<div class="shots"><div><span class="k">screenshot</span>'
+            '<span class="none">embedded in log.html only, not saved as a file</span>'
+            "</div></div>"
+        )
+    if status == "unavailable":
+        return (
+            '<div class="shots"><div><span class="k">screenshot</span>'
+            '<span class="none">none - the library could not take one, so there was '
+            "probably no page open</span></div></div>"
+        )
+    return ""
 
 
 def _seen_on_html(configurations: list[dict]) -> str:
@@ -485,6 +559,7 @@ def _group_html(
             lineno=group.keyword_lineno,
         )
     }
+          {_screenshots_html(group.screenshots, group.screenshot_status)}
           {_seen_on_html(configurations)}
           {_log_html(entries)}
           <div class="chips">{"".join(chips)}</div>
@@ -537,6 +612,7 @@ def _fixture_html(
             lineno=fixture.keyword_lineno,
         )
     }
+          {_screenshots_html(fixture.screenshots, fixture.screenshot_status)}
           {_seen_on_html(configurations)}
           {_log_html(entries)}
           <div class="affected">marked {fixture.tests_marked} test row(s) failed:
@@ -567,7 +643,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
                     g,
                     widest,
                     log_messages(db_path, g.latest_result_id),
-                    test_configs.get((g.longname, g.error_signature), []),
+                    test_configs.get((g.longname, g.signature_key), []),
                 )
                 for g in groups
             )
@@ -593,7 +669,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     flaky tests as the suite happens to contain. Counted once here, against the number of times
     the suite ran.</p>
     <div class="groups">
-{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id), fixture_configs.get((f.scope_owner, f.failure_scope, f.error_signature), [])) for f in fixtures)}    </div>
+{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id), fixture_configs.get((f.scope_owner, f.failure_scope, f.signature_key), [])) for f in fixtures)}    </div>
   </section>
 """
         if fixtures

@@ -75,7 +75,15 @@ CREATE TABLE IF NOT EXISTS test_result (
     -- whether to look at the library, the tests, or an assertion.
     keyword_kind    TEXT,
     keyword_source  TEXT,
-    keyword_lineno  INTEGER
+    keyword_lineno  INTEGER,
+    -- Screenshot references, relative to the run's output directory and so also
+    -- to the inside of the artifact. The library photographs the page when a
+    -- keyword fails, and that picture is often the quickest way to see what was
+    -- on screen. Comma separated, the failure screenshot first.
+    screenshots     TEXT,
+    -- file | embedded (only inside log.html as base64) | unavailable (the
+    -- library tried and could not, which usually means there was no page).
+    screenshot_status TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_result_scope ON test_result(failure_scope);

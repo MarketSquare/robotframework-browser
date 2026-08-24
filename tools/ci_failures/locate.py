@@ -43,6 +43,25 @@ def repo_relative(path: str | None) -> str | None:
     return normalised
 
 
+# The artifact is the run's output directory zipped up, so a path relative to
+# that directory is also the path inside the artifact.
+_OUTPUT_DIR = "atest/output/"
+
+
+def artifact_relative(path: str) -> str:
+    """Turns a screenshot reference into its path inside the artifact.
+
+    Robot Framework writes these either relative to the output directory already
+    or as an absolute file:// URL, depending on which logger produced them.
+    """
+    normalised = path.replace("\\", "/")
+    normalised = normalised.removeprefix("file://")
+    index = normalised.find(_OUTPUT_DIR)
+    if index != -1:
+        return normalised[index + len(_OUTPUT_DIR) :]
+    return normalised.lstrip("/")
+
+
 def owner_kind(owner: str | None) -> str:
     """Which side of the repo a keyword belongs to.
 
