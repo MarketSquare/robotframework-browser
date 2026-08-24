@@ -137,6 +137,7 @@ def ingest(
         "failures": 0,
         "expired": 0,
         "skipped": 0,
+        "unreachable": 0,
     }
 
     runs = github.list_runs(repo=repo, branch=branch, events=events, limit=limit)
@@ -158,22 +159,35 @@ def ingest(
             continue
 
         _insert_run(connection, run)
+        # Committed before its legs: a leg that fails rolls back, and that
+        # rollback must not take the run row with it and leave the next leg of
+        # the same run with nothing to point at.
+        connection.commit()
         totals["runs"] += 1
         report(f"  run {run.id} ({run.event}, {run.created_at}): {len(pending)} leg(s)")
 
         for artifact in pending:
-            with tempfile.TemporaryDirectory() as work_dir:
-                work = Path(work_dir)
-                zip_path = github.download_artifact(
-                    artifact.id, work / "artifact.zip", repo=repo
-                )
-                output_xml = _extract_output_xml(zip_path, work / "unpacked")
-                if output_xml is None:
-                    report(f"    {artifact.name}: no output.xml, skipped")
-                    continue
-                info, results = parse(output_xml)
-                leg_id = _insert_leg(connection, run, artifact, info)
-                tests, failures = _insert_results(connection, leg_id, results)
+            try:
+                with tempfile.TemporaryDirectory() as work_dir:
+                    work = Path(work_dir)
+                    zip_path = github.download_artifact(
+                        artifact.id, work / "artifact.zip", repo=repo
+                    )
+                    output_xml = _extract_output_xml(zip_path, work / "unpacked")
+                    if output_xml is None:
+                        report(f"    {artifact.name}: no output.xml, skipped")
+                        continue
+                    info, results = parse(output_xml)
+                    leg_id = _insert_leg(connection, run, artifact, info)
+                    tests, failures = _insert_results(connection, leg_id, results)
+            except github.GhError as error:
+                # One artifact that will not come down must not cost the other
+                # hundred and fifty. Ingest is incremental, so the next run picks
+                # this leg up, and nothing already committed is lost.
+                totals["unreachable"] += 1
+                report(f"    {artifact.name}: {error}")
+                connection.rollback()
+                continue
             totals["legs"] += 1
             totals["tests"] += tests
             totals["failures"] += failures

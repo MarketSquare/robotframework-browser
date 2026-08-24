@@ -691,6 +691,105 @@ class TestEmbeddedScreenshots:
         assert strip_embedded_data(None) is None
 
 
+class TestTransientDownloadFailures:
+    """A ten megabyte download over a network fails sometimes. Losing one leg is
+    ordinary; losing the other hundred and fifty because of it is not."""
+
+    def test_one_unreachable_artifact_does_not_stop_the_rest(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        good = fake_ci["artifact"]
+        bad = github.Artifact(
+            **{**good.__dict__, "id": 999, "name": "Test results-bad"}
+        )
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id, repo=None: [bad, good]
+        )
+        original = ingest.github.download_artifact
+
+        def flaky(artifact_id, destination, repo=None):
+            if artifact_id == 999:
+                raise github.GhError("connection reset by peer")
+            return original(artifact_id, destination, repo=repo)
+
+        monkeypatch.setattr(ingest.github, "download_artifact", flaky)
+
+        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
+
+        assert result["unreachable"] == 1
+        assert result["legs"] == 1, "the good artifact still went in"
+        assert result["tests"] == 4
+
+    def test_the_skipped_leg_is_picked_up_next_time(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """Ingest is incremental, so a transient failure costs a run, not a leg."""
+        good = fake_ci["artifact"]
+        bad = github.Artifact(
+            **{**good.__dict__, "id": 999, "name": "Test results-bad"}
+        )
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id, repo=None: [bad, good]
+        )
+        original = ingest.github.download_artifact
+        broken = {"still": True}
+
+        def flaky(artifact_id, destination, repo=None):
+            if artifact_id == 999 and broken["still"]:
+                raise github.GhError("connection reset by peer")
+            return original(artifact_id, destination, repo=repo)
+
+        monkeypatch.setattr(ingest.github, "download_artifact", flaky)
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        broken["still"] = False
+        second = ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert second["legs"] == 1
+        assert second["unreachable"] == 0
+
+    def test_a_download_is_retried_before_being_given_up_on(
+        self, tmp_path, monkeypatch
+    ):
+        attempts = {"n": 0}
+
+        def failing(args, **kwargs):
+            attempts["n"] += 1
+
+            class Result:
+                returncode = 1
+                stderr = b"connection reset by peer"
+
+            return Result()
+
+        monkeypatch.setattr(github.subprocess, "run", failing)
+        monkeypatch.setattr(github.time, "sleep", lambda _: None)
+
+        with pytest.raises(github.GhError, match="after 3 attempts"):
+            github.download_artifact(1, tmp_path / "a.zip")
+
+        assert attempts["n"] == github.DOWNLOAD_ATTEMPTS
+
+    def test_a_retry_that_succeeds_is_not_an_error(self, tmp_path, monkeypatch):
+        attempts = {"n": 0}
+
+        def flaky_then_fine(args, **kwargs):
+            attempts["n"] += 1
+
+            class Result:
+                returncode = 0 if attempts["n"] > 1 else 1
+                stderr = b"connection reset by peer"
+
+            return Result()
+
+        monkeypatch.setattr(github.subprocess, "run", flaky_then_fine)
+        monkeypatch.setattr(github.time, "sleep", lambda _: None)
+
+        assert github.download_artifact(1, tmp_path / "a.zip").exists()
+        assert attempts["n"] == 2
+
+
 class TestGrouping:
     """The one behaviour this proof of concept exists to show."""
 

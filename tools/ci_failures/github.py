@@ -7,6 +7,7 @@ token has to be handled here.
 import json
 import re
 import subprocess
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -101,21 +102,34 @@ def list_test_artifacts(run_id: int, repo: str = DEFAULT_REPO) -> list[Artifact]
     ]
 
 
+DOWNLOAD_ATTEMPTS = 3
+
+
 def download_artifact(
     artifact_id: int, destination: Path, repo: str = DEFAULT_REPO
 ) -> Path:
+    """Downloads one artifact, retrying the transient failures.
+
+    These are ten megabyte downloads over a network, and a connection reset
+    partway through a long ingest is ordinary rather than exceptional.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with destination.open("wb") as handle:
-        result = subprocess.run(
-            ["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"],
-            stdout=handle,
-            stderr=subprocess.PIPE,
-            check=False,
-        )
-    if result.returncode != 0:
+    last_error = ""
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        with destination.open("wb") as handle:
+            result = subprocess.run(
+                ["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"],
+                stdout=handle,
+                stderr=subprocess.PIPE,
+                check=False,
+            )
+        if result.returncode == 0:
+            return destination
         destination.unlink(missing_ok=True)
-        raise GhError(
-            f"Downloading artifact {artifact_id} failed: "
-            f"{result.stderr.decode(errors='replace').strip()}"
-        )
-    return destination
+        last_error = result.stderr.decode(errors="replace").strip()
+        if attempt < DOWNLOAD_ATTEMPTS:
+            time.sleep(2 * attempt)
+    raise GhError(
+        f"Downloading artifact {artifact_id} failed after "
+        f"{DOWNLOAD_ATTEMPTS} attempts: {last_error}"
+    )

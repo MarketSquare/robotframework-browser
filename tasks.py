@@ -1953,7 +1953,8 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
         f"\nIngested {totals['runs']} run(s), {totals['legs']} leg(s), "
         f"{totals['tests']} results, {totals['failures']} failures. "
         f"{totals['skipped']} run(s) already complete, "
-        f"{totals['expired']} artifact(s) expired."
+        f"{totals['expired']} artifact(s) expired, "
+        f"{totals['unreachable']} could not be downloaded."
     )
 
 
