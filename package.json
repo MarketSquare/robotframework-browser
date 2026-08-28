@@ -11,7 +11,7 @@
     "@types/jest": "^30.0.0",
     "@types/morgan": "^1.9.10",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
+    "@types/react-dom": "^19.2.5",
     "@types/strip-comments": "^2.0.4",
     "esbuild": "^0.28.2",
     "esbuild-node-externals": "^2.0.0",
