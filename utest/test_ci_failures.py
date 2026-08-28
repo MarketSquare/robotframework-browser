@@ -1328,8 +1328,8 @@ class TestPayloadForALanguageModel:
 class TestWhatSurroundedTheFailure:
     """A failure on its own is a symptom. These are the facts around it.
 
-    Nothing here is a flakiness verdict. Section 7 keeps that out deliberately;
-    what was missing was the evidence a reader needs to reach one, all of which
+    Nothing here is a flakiness verdict; the document states none, deliberately.
+    What was missing was the evidence a reader needs to reach one, all of which
     was already in the database and none of which was ever asked for.
     """
 
