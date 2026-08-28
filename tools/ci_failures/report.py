@@ -8,7 +8,6 @@ No flakiness verdict. Whether an error is a flake, a real bug or a broken machin
 is a judgement to make while looking at the numbers, not one to bake into them.
 """
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -1049,59 +1048,3 @@ def totals(db_path: Path) -> dict:
     ).fetchone()
     connection.close()
     return dict(row)
-
-
-def print_report(
-    db_path: Path, limit: int = 40, out: Callable[[str], None] = print
-) -> None:
-    """The same thing the HTML report shows, for a terminal."""
-    summary = totals(db_path)
-    if not summary["results"]:
-        out("Nothing ingested yet. Run `inv ci-ingest` first.")
-        return
-    out(
-        f"{summary['runs']} runs, {summary['legs']} legs, {summary['results']} results, "
-        f"{summary['failures']} failures, {summary['tests']} distinct tests"
-    )
-    out(f"{summary['since']} .. {summary['until']}\n")
-
-    fixtures = fixture_failures(db_path, limit=limit)
-    if fixtures:
-        out("SUITE SETUP AND TEARDOWN FAILURES")
-        out("  These failed outside any test. Robot Framework marks every test")
-        out("  under the suite as failed, so they are counted once here.\n")
-        for fixture in fixtures:
-            kind = fixture.failure_scope.replace("_", " ")
-            out(
-                f"{fixture.occurrences:>3} / {fixture.suite_runs:<4} "
-                f"({fixture.failure_rate:5.1%})  {kind} of {fixture.scope_owner}"
-            )
-            out(
-                f"                      {(fixture.error_signature or '(no message)')[:110]}"
-            )
-            out(
-                f"                      marked {fixture.tests_marked} test row(s) failed"
-                f"   on: {fixture.platforms}"
-            )
-            out(f"                      evidence: {fixture.latest_artifact_url or '-'}")
-            out("")
-
-    groups = failure_groups(db_path, limit=limit)
-    out("TEST FAILURES")
-    if not groups:
-        out("  None.")
-        return
-    out("")
-    for group in groups:
-        out(
-            f"{group.failures:>3} / {group.total_runs:<4} ({group.failure_rate:5.1%})  "
-            f"{group.longname}"
-        )
-        out(
-            f"                      keyword: {group.failing_keyword or '-'}"
-            f"   on: {group.platforms}"
-        )
-        out(f"                      {(group.error_signature or '(no message)')[:110]}")
-        out(f"                      evidence: {group.latest_artifact_url or '-'}")
-        out("")
-    out(f"{len(groups)} test/error group(s), {len(fixtures)} fixture failure(s).")

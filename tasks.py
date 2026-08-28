@@ -47,6 +47,7 @@ ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
+CI_REPORT_HTML = ROOT_DIR / "ci_failures" / "ci_report.html"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1962,15 +1963,21 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
 def ci_report(c, db=None, html=None, json=None, limit=100, open_it=False):
     """Shows which tests fail and on which error.
 
+    Two renderings of one report: a page to read, and a document for a language
+    model to read. There was a third, printed to the terminal, and it was the
+    worst of them - it showed 8 of the 24 fields the others show, cut every
+    message to 110 characters, and dropped the source locations, the versions,
+    the screenshots, the log lines and everything about what surrounded a
+    failure. Anyone reading it was reading less than the page for no gain.
+
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
-        html: Write a self-contained HTML page here instead of printing.
+        html: Write a self-contained HTML page here. Defaults to
+            ci_failures/ci_report.html.
         json: Write the report as JSON here, for a language model to read.
         limit: How many test/error groups to show.
         open_it: Open the HTML page in a browser once written.
     """
-    from tools.ci_failures.report import print_report
-
     db_path = Path(db) if db else CI_FAILURES_DB
     if not db_path.exists():
         print(f"No database at {db_path}. Run `inv ci-ingest` first.")
@@ -1980,15 +1987,12 @@ def ci_report(c, db=None, html=None, json=None, limit=100, open_it=False):
 
         print(f"Wrote {render_json(db_path, Path(json), limit=int(limit))}")
         return
-    if html:
-        from tools.ci_failures.html_report import render
+    from tools.ci_failures.html_report import render
 
-        written = render(db_path, Path(html), limit=int(limit))
-        print(f"Wrote {written}")
-        if open_it:
-            webbrowser.open(written.resolve().as_uri())
-        return
-    print_report(db_path, limit=int(limit))
+    written = render(db_path, Path(html) if html else CI_REPORT_HTML, limit=int(limit))
+    print(f"Wrote {written}")
+    if open_it:
+        webbrowser.open(written.resolve().as_uri())
 
 
 @task

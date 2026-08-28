@@ -1163,10 +1163,11 @@ class TestCaseFoldedGrouping:
 
 
 class TestPayloadForALanguageModel:
-    """What the JSON document carries that the terminal report drops.
+    """What the JSON document carries that the page cannot show.
 
-    `print_report` emits 8 of `FailureGroup`'s fields and calls 3 of the 7
-    queries. These are the facts that were missing, not reformatted.
+    Not the page reformatted: rates with their denominators, the
+    configurations that never ran the test, the commit behind every
+    occurrence, and every raw message the signature masked away.
     """
 
     _seed = TestCaseFoldedGrouping._seed
