@@ -11,7 +11,11 @@ from tools.ci_failures import github, ingest
 from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.json_report import build as build_json
 from tools.ci_failures.report import (
+    co_failures,
     coverage_by_test,
+    latest_run,
+    neighbouring_outcomes,
+    pass_durations_by_test,
     failure_groups,
     fixture_signature_variants,
     configurations_by_fixture,
@@ -1034,7 +1038,9 @@ class TestCaseFoldedGrouping:
         """One row per test result, carrying the leg and run it belongs to.
 
         Rows sharing a (commit, platform, python) land on the same leg, which is
-        what makes a per-configuration denominator mean anything.
+        what makes a per-configuration denominator mean anything. An `attempt`
+        puts a row on a second leg of the same name in the same run, which is
+        what a hand re-run of a failed job looks like once it is ingested.
         """
         from tools.ci_failures.db import connect
 
@@ -1053,24 +1059,32 @@ class TestCaseFoldedGrouping:
                 )
             platform = row.get("platform", "linux")
             python = row.get("python", "3.13.15")
-            key = (sha, platform, python)
+            key = (sha, platform, python, row.get("attempt", 1))
             if key not in legs:
                 legs[key] = len(legs) + 1
                 connection.execute(
                     "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
                     "artifact_url, platform, python_version, rf_version, ingested_at) "
                     "VALUES (?, ?, ?, ?, 'a-url', ?, ?, '7.4.2', 'now')",
-                    (legs[key], runs[sha], legs[key], "leg", platform, python),
+                    (
+                        legs[key],
+                        runs[sha],
+                        legs[key],
+                        f"leg-{platform}-{python}",
+                        platform,
+                        python,
+                    ),
                 )
             connection.execute(
                 "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
-                "status, message, error_signature, failure_scope, scope_owner) "
-                "VALUES (?, ?, ?, 'S', ?, ?, ?, ?, ?)",
+                "status, elapsed_ms, message, error_signature, failure_scope, "
+                "scope_owner) VALUES (?, ?, ?, 'S', ?, ?, ?, ?, ?, ?)",
                 (
                     legs[key],
                     row["test"],
                     row["test"],
                     row["status"],
+                    row.get("elapsed"),
                     row.get("message"),
                     row.get("signature"),
                     row.get("scope", "test"),
@@ -1302,6 +1316,207 @@ class TestPayloadForALanguageModel:
             "keyword_owner": None,
             "keyword_kind": "project",
         }
+
+
+class TestWhatSurroundedTheFailure:
+    """A failure on its own is a symptom. These are the facts around it.
+
+    Nothing here is a flakiness verdict. Section 7 keeps that out deliberately;
+    what was missing was the evidence a reader needs to reach one, all of which
+    was already in the database and none of which was ever asked for.
+    """
+
+    _seed = TestCaseFoldedGrouping._seed
+
+    def _occurrence(self, db: Path, test: str = "T") -> dict:
+        entry = next(t for t in build_json(db)["test_failures"] if t["test"] == test)
+        return entry["occurrences"][0]
+
+    def test_the_runs_either_side_of_a_failure_are_reported(self, tmp_path):
+        """One failure between two passes is a blip. The same failure with a
+        passing run before it and failures after is where something broke."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "PASS", "sha": "one"},
+                {"test": "T", "status": "FAIL", "signature": "boom", "sha": "two"},
+                {"test": "T", "status": "PASS", "sha": "three"},
+            ],
+        )
+
+        around = self._occurrence(db)
+
+        assert around["previous_run_on_this_leg"]["outcome"] == "pass"
+        assert around["previous_run_on_this_leg"]["commit"] == "one"
+        assert around["next_run_on_this_leg"]["outcome"] == "pass"
+        assert around["next_run_on_this_leg"]["commit"] == "three"
+
+    def test_the_neighbours_are_the_same_leg_not_the_next_run(self, tmp_path):
+        """A test that fails on win32 learns nothing from the linux run that
+        happened to come next, and reading one as the other invents a trend."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "boom",
+                    "platform": "win32",
+                    "sha": "one",
+                },
+                {"test": "T", "status": "PASS", "platform": "linux", "sha": "two"},
+            ],
+        )
+
+        assert self._occurrence(db)["next_run_on_this_leg"] is None
+
+    def test_a_failure_at_the_edge_of_the_window_has_no_neighbour(self, tmp_path):
+        """Absent is reported as absent. A missing run is not a passing one."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+
+        around = self._occurrence(db)
+
+        assert around["previous_run_on_this_leg"] is None
+        assert around["next_run_on_this_leg"] is None
+
+    def test_a_hand_rerun_that_passed_is_reported(self, tmp_path):
+        """The one comparison that holds the commit constant. A regression the
+        next commit fixed also has passing neighbours; only this separates them."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 1},
+                {"test": "T", "status": "PASS", "attempt": 2},
+            ],
+        )
+
+        assert self._occurrence(db)["retry"] == {
+            "attempts": 2,
+            "passed_on_another_attempt": True,
+        }
+
+    def test_a_leg_that_ran_once_reports_no_retry(self, tmp_path):
+        """Nothing retries automatically here, so no retry means nobody pressed
+        the button. That is a fact about queue time, not about the failure, and
+        it must not read as one."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+
+        assert self._occurrence(db)["retry"] is None
+
+    def test_what_else_broke_in_the_same_leg_is_named(self, tmp_path):
+        """Take Screenshot fails, the VAR after it never runs, and two later
+        suites fail on a variable nobody set. Three entries, one event."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "First", "status": "FAIL", "signature": "screenshot"},
+                {"test": "Second", "status": "FAIL", "signature": "no variable"},
+            ],
+        )
+
+        assert self._occurrence(db, "Second")["also_failed_in_this_leg"] == [
+            {"test": "First", "scope": "test"}
+        ]
+
+    def test_a_leg_that_broke_wholesale_says_what_it_left_out(self, tmp_path):
+        """A list that stops without saying so reads as a complete one."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "boom"}]
+            + [
+                {"test": f"Other{index}", "status": "FAIL", "signature": "boom"}
+                for index in range(30)
+            ],
+        )
+
+        occurrence = self._occurrence(db)
+
+        assert len(occurrence["also_failed_in_this_leg"]) == 25
+        assert occurrence["also_failed_in_this_leg_not_listed"] == 5
+
+    def test_how_long_the_test_takes_when_it_passes(self, tmp_path):
+        """A timeout message cannot say whether a keyword broke or a budget was
+        always too thin. The passing runs can."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "timeout", "elapsed": 2056}]
+            + [
+                {"test": "T", "status": "PASS", "elapsed": ms, "sha": f"s{ms}"}
+                for ms in (1001, 1400, 1853)
+            ],
+        )
+
+        durations = pass_durations_by_test(db)
+
+        assert durations[("T", "linux", "3.13.15", "7.4.2", None)] == {
+            "min": 1001,
+            "median": 1400,
+            "p95": 1853,
+            "max": 1853,
+        }
+
+    def test_the_passing_durations_reach_the_document(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [{"test": "T", "status": "FAIL", "signature": "timeout", "elapsed": 9}]
+            + [{"test": "T", "status": "PASS", "elapsed": 5, "sha": "two"}],
+        )
+
+        entry = next(t for t in build_json(db)["test_failures"] if t["test"] == "T")
+
+        assert entry["rates"][0]["pass_ms"]["max"] == 5
+
+    def test_a_configuration_with_no_passes_carries_no_durations(self, tmp_path):
+        """A test that has only ever failed on a leg has no margin to report."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "boom", "elapsed": 9}]
+        )
+
+        entry = next(t for t in build_json(db)["test_failures"] if t["test"] == "T")
+
+        assert entry["rates"][0]["pass_ms"] is None
+
+    def test_the_newest_run_is_reported_with_its_failure_count(self, tmp_path):
+        """The rates say how often things break, not whether the head is green."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "sha": "old"},
+                {"test": "T", "status": "PASS", "sha": "new"},
+            ],
+        )
+
+        assert latest_run(db)["commit"] == "new"
+        assert latest_run(db)["failures"] == 0
+        assert build_json(db)["window"]["latest_run"]["failures"] == 0
+
+    def test_only_tests_that_failed_are_measured(self, tmp_path):
+        """The report is asked about failures. Timing every passing test in the
+        window would price the query at the size of the database."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "elapsed": 9},
+                {"test": "T", "status": "PASS", "elapsed": 5, "sha": "two"},
+                {"test": "Healthy", "status": "PASS", "elapsed": 5},
+                {"test": "Healthy", "status": "PASS", "elapsed": 6, "sha": "two"},
+            ],
+        )
+
+        assert {key[0] for key in pass_durations_by_test(db)} == {"T"}
+        assert len(neighbouring_outcomes(db)) == 1
 
 
 class TestHtmlReport:

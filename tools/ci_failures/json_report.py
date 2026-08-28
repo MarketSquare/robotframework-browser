@@ -26,18 +26,28 @@ import json
 from pathlib import Path
 
 from .report import (
+    co_failures,
     configurations_by_fixture,
     coverage_by_test,
     failure_groups,
     fixture_failures,
     fixture_signature_variants,
+    latest_run,
     log_messages,
     messages_by_test,
+    neighbouring_outcomes,
     occurrences_by_test,
+    pass_durations_by_test,
     platform_breakdown,
     signature_variants,
     totals,
 )
+
+# A leg with more failures than this in it is itself the finding, and listing
+# them all on every one of them would bury the entry. Truncation is reported
+# rather than done quietly: a list that stops without saying so reads as a
+# complete one.
+CO_FAILURE_LIMIT = 25
 
 # Stated rather than implied. Every one of these is a rule a reader would
 # otherwise have to infer from the data, and each has already been got wrong
@@ -78,6 +88,43 @@ ABOUT = {
         "Screenshots, traces and playwright-log.txt are not in this document. "
         "Each occurrence carries the artifact URL they can be downloaded from."
     ),
+    "neighbouring_runs": (
+        "Each occurrence carries what the same test did on the same matrix leg "
+        "in the run before it and the run after it. A rate says how often a "
+        "test fails; these say whether this failure was a blip on a leg that is "
+        "otherwise healthy, or the point where something broke and stayed "
+        "broken. They span commits, so a real regression that the next commit "
+        "fixed also has passing neighbours - 'retry' is what tells those apart."
+    ),
+    "retries": (
+        "Nothing in this CI retries automatically, so a leg that ran more than "
+        "once in one run was re-run by hand. Where 'retry' is present the test "
+        "failed and then passed on one commit minutes apart, which is the "
+        "strongest evidence of a flake this data holds. Where it is absent "
+        "nobody pressed the button, and that is a fact about queue time and "
+        "about where the run sat in the day's merges, never about the failure: "
+        "absence means nothing. 'ran' still counts every attempt, so the "
+        "denominator of a leg that was re-run is larger than the number of "
+        "times CI was asked to run it."
+    ),
+    "pass_durations": (
+        "'pass_ms' on each configuration is how long the test takes on the runs "
+        "where it passes. For a timeout, whether those cluster far below the "
+        "limit or run up against it is the difference between a keyword that "
+        "broke and a budget that was always too thin."
+    ),
+    "co_failures": (
+        "'also_failed_in_this_leg' names the other tests that failed in the "
+        "same execution. It claims no causation. It is here because a test can "
+        "fail on a variable that an earlier suite never got to set, and read "
+        "alone that entry looks like an unrelated assertion failure in a file "
+        "where nothing is wrong."
+    ),
+    "latest_run": (
+        "'window.latest_run' is the newest run in the window and how many "
+        "failures it carried. The rates say how often things break, not whether "
+        "the head is green, and a merge is judged on the second question."
+    ),
 }
 
 
@@ -105,7 +152,12 @@ def _where_to_look(row) -> dict:
     }
 
 
-def _rates(coverage: list[dict], known_platforms: set[str]) -> tuple[list, list]:
+def _rates(
+    coverage: list[dict],
+    known_platforms: set[str],
+    durations: dict[tuple, dict],
+    longname: str,
+) -> tuple[list, list]:
     rates = [
         {
             "platform": entry["platform"],
@@ -114,6 +166,15 @@ def _rates(coverage: list[dict], known_platforms: set[str]) -> tuple[list, list]
             "node": entry["node_version"] or None,
             "ran": entry["ran"],
             "failed": entry["failed"] or 0,
+            "pass_ms": durations.get(
+                (
+                    longname,
+                    entry["platform"],
+                    entry["python_version"],
+                    entry["rf_version"],
+                    entry["node_version"],
+                )
+            ),
         }
         for entry in coverage
     ]
@@ -121,9 +182,20 @@ def _rates(coverage: list[dict], known_platforms: set[str]) -> tuple[list, list]
     return rates, sorted(known_platforms - seen)
 
 
-def _occurrences(entries: list[dict]) -> list[dict]:
-    return [
-        {
+def _occurrences(
+    entries: list[dict], neighbours: dict[int, dict], others: dict[int, list[dict]]
+) -> list[dict]:
+    """One failure, with what surrounded it.
+
+    The counts describe a group. These describe a single execution: which leg
+    ran it, what that leg did either side of this run, whether anyone re-ran it,
+    and what else broke alongside it.
+    """
+    occurrences = []
+    for entry in entries:
+        around = neighbours.get(entry["result_id"], {})
+        alongside = others.get(entry["result_id"], [])
+        occurrence = {
             "run": entry["run_id"],
             "run_url": entry["run_url"],
             "commit": entry["head_sha"],
@@ -136,9 +208,17 @@ def _occurrences(entries: list[dict]) -> list[dict]:
             "leg": entry["artifact_name"],
             "artifact_url": entry["artifact_url"],
             "elapsed_ms": entry["elapsed_ms"],
+            "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
+            "next_run_on_this_leg": around.get("next_run_on_this_leg"),
+            "retry": around.get("retry"),
+            "also_failed_in_this_leg": alongside[:CO_FAILURE_LIMIT],
         }
-        for entry in entries
-    ]
+        if len(alongside) > CO_FAILURE_LIMIT:
+            occurrence["also_failed_in_this_leg_not_listed"] = (
+                len(alongside) - CO_FAILURE_LIMIT
+            )
+        occurrences.append(occurrence)
+    return occurrences
 
 
 def _log(db_path: Path, result_id: int | None) -> list[dict]:
@@ -168,11 +248,16 @@ def build(db_path: Path, limit: int = 100) -> dict:
     messages = messages_by_test(db_path)
     variants = signature_variants(db_path)
     fixture_variants = fixture_signature_variants(db_path)
+    durations = pass_durations_by_test(db_path)
+    neighbours = neighbouring_outcomes(db_path)
+    alongside = co_failures(db_path)
 
     tests = []
     for group in failure_groups(db_path, limit=limit):
         key = (group.longname, group.signature_key)
-        rates, never = _rates(coverage.get(group.longname, []), platforms)
+        rates, never = _rates(
+            coverage.get(group.longname, []), platforms, durations, group.longname
+        )
         entry = {
             "test": group.longname,
             "scope": "test",
@@ -191,7 +276,9 @@ def build(db_path: Path, limit: int = 100) -> dict:
             "last_seen": group.last_seen,
             "screenshots": _split(group.screenshots),
             "screenshot_status": group.screenshot_status,
-            "occurrences": _occurrences(occurrences.get(key, [])),
+            "occurrences": _occurrences(
+                occurrences.get(key, []), neighbours, alongside
+            ),
             "log": _log(db_path, group.latest_result_id),
         }
         if key in variants:
@@ -238,6 +325,7 @@ def build(db_path: Path, limit: int = 100) -> dict:
             "distinct_tests": summary["tests"],
             "since": summary["since"],
             "until": summary["until"],
+            "latest_run": latest_run(db_path),
         },
         "fixture_failures": fixtures,
         "test_failures": tests,

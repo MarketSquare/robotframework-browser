@@ -412,6 +412,231 @@ def coverage_by_test(db_path: Path) -> dict[str, list[dict]]:
     return grouped
 
 
+def _spread(values: list[int]) -> dict:
+    """Four numbers, because the shape is what carries the argument.
+
+    A cliff between the passes and the failures is a keyword that broke. A tail
+    that reaches up into them is a margin that ran out. `min` and `max` alone
+    cannot tell those apart; the median says where the mass sits.
+    """
+    last = len(values) - 1
+    return {
+        "min": values[0],
+        "median": values[last // 2],
+        "p95": values[min(last, round(0.95 * last))],
+        "max": values[last],
+    }
+
+
+def pass_durations_by_test(db_path: Path) -> dict[tuple, dict]:
+    """How long a test takes on the runs where it passes, per configuration.
+
+    A timeout message supports two readings that want opposite fixes: something
+    broke, or the budget was always too thin. Only the passing runs separate
+    them. `Verify Removed Scope` fails on a 1500 ms click timeout waiting for a
+    button the page enables after 700 ms; its linux passes span 1001-1853 ms and
+    its win32 passes span 1033-1169 ms. The linux tail overlaps the failures and
+    the win32 one is nowhere near them. That is a margin being spent, not a
+    keyword that broke, and the message on its own says neither.
+
+    Section 1 keeps the passing rows because a failure count without a run count
+    is not a rate. This is the same argument one level down: a failure duration
+    without a pass duration is not a margin.
+
+    Keyed the same way as `coverage_by_test` groups, so the two join. Only tests
+    that failed at least once are measured - nothing else is being asked about.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.longname, l.platform, l.python_version, l.rf_version,
+               l.node_version, f.elapsed_ms
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        WHERE f.status = 'PASS' AND f.elapsed_ms IS NOT NULL
+          AND f.longname IN (SELECT longname FROM test_result WHERE status = 'FAIL')
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[int]] = {}
+    for row in rows:
+        key = (
+            row["longname"],
+            row["platform"],
+            row["python_version"],
+            row["rf_version"],
+            row["node_version"],
+        )
+        grouped.setdefault(key, []).append(row["elapsed_ms"])
+    return {key: _spread(sorted(values)) for key, values in grouped.items()}
+
+
+def _verdict(statuses: list[str]) -> str:
+    unique = set(statuses)
+    if "FAIL" in unique:
+        return "mixed" if "PASS" in unique else "fail"
+    return "pass" if "PASS" in unique else "skip"
+
+
+def neighbouring_outcomes(db_path: Path) -> dict[int, dict]:
+    """What the same test did on the same leg in the runs either side of this one.
+
+    A rate says how often a test fails. It cannot say whether a failure is a blip
+    on a leg that is otherwise healthy or the point where something broke and
+    stayed broken, and those want opposite responses. The run before and the run
+    after answer it, and both are already here: the passing rows are stored for
+    exactly this kind of question and were never asked it.
+
+    The comparison is per leg, not per run. A test that only fails on win32 has
+    nothing to learn from the linux run that happened to come next.
+
+    Retries answer the same question with the commit held constant, which is the
+    one thing the neighbouring runs cannot do - a real regression, fixed by the
+    next commit, has passing neighbours and looks like a flake. There is no
+    automatic retry in any of the three workflows, so a leg that ran more than
+    once in one run was re-run by hand; when the test passed on one of those
+    attempts it failed and passed on one commit, minutes apart. Its absence means
+    nobody pressed the button - the decision follows queue pressure and where the
+    run sat in the day's merges, not what failed - so a retry is reported when it
+    exists and nothing at all is concluded from it when it does not.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.id AS result_id, f.longname, f.status,
+               l.artifact_name, l.id AS leg_id,
+               r.id AS run_id, r.head_sha, r.created_at
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.longname IN (SELECT longname FROM test_result WHERE status = 'FAIL')
+        ORDER BY r.created_at, r.id
+        """
+    ).fetchall()
+    connection.close()
+
+    # One lane per (test, matrix leg), each holding the runs that leg made in
+    # order. A run appears once even when it holds several attempts of the leg.
+    lanes: dict[tuple, dict] = {}
+    for row in rows:
+        lane = lanes.setdefault((row["longname"], row["artifact_name"]), {})
+        run = lane.setdefault(
+            (row["created_at"], row["run_id"]),
+            {
+                "run": row["run_id"],
+                "commit": row["head_sha"],
+                "at": row["created_at"],
+                "statuses": [],
+                "legs": set(),
+            },
+        )
+        run["statuses"].append(row["status"])
+        run["legs"].add(row["leg_id"])
+
+    def seen(run: dict) -> dict:
+        return {
+            "run": run["run"],
+            "commit": run["commit"],
+            "at": run["at"],
+            "outcome": _verdict(run["statuses"]),
+        }
+
+    outcomes: dict[int, dict] = {}
+    for row in rows:
+        if row["status"] != "FAIL":
+            continue
+        lane = lanes[(row["longname"], row["artifact_name"])]
+        order = sorted(lane)
+        here = order.index((row["created_at"], row["run_id"]))
+        mine = lane[order[here]]
+        # Only claimed when the test itself ran more than once. A re-run leg that
+        # never reached this test is not evidence about this test.
+        retry = None
+        if len(mine["legs"]) > 1:
+            retry = {
+                "attempts": len(mine["legs"]),
+                "passed_on_another_attempt": "PASS" in mine["statuses"],
+            }
+        outcomes[row["result_id"]] = {
+            "previous_run_on_this_leg": seen(lane[order[here - 1]]) if here else None,
+            "next_run_on_this_leg": (
+                seen(lane[order[here + 1]]) if here + 1 < len(order) else None
+            ),
+            "retry": retry,
+        }
+    return outcomes
+
+
+def co_failures(db_path: Path) -> dict[int, list[dict]]:
+    """The other tests that failed in the same leg as this one.
+
+    Section 3 splits out the cascade Robot Framework creates structurally: a
+    suite fixture fails, and every test beneath it is marked. A data dependency
+    is a cascade too, and it is not structural, so nothing detects it.
+    `01 Initial Import.Take Screenshot` fails on a darwin screenshot error, so
+    the `VAR ... scope=GLOBAL` on the next line never runs, so the two suites
+    after it fail on a variable that was never set. Three entries, three files,
+    three rates - one event. Two of the three are labelled `standard`, which
+    routes the reader at an assertion that is not broken.
+
+    This claims no causation and cannot. It reports what else broke in the same
+    leg, which costs one query and is the only hint the data has to offer.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT a.id AS result_id, b.longname,
+               IFNULL(b.failure_scope, 'test') AS scope
+        FROM test_result a
+        JOIN test_result b
+          ON b.leg_id = a.leg_id AND b.id <> a.id AND b.status = 'FAIL'
+        WHERE a.status = 'FAIL'
+        ORDER BY a.id, b.longname
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[int, list[dict]] = {}
+    for row in rows:
+        grouped.setdefault(row["result_id"], []).append(
+            {"test": row["longname"], "scope": row["scope"]}
+        )
+    return grouped
+
+
+def latest_run(db_path: Path) -> dict:
+    """The newest run in the window, and how many failures it carried.
+
+    The rates answer "how often does this break". They do not answer "is it
+    broken now", which is the question a merge is judged on, and a window whose
+    newest run is clean is a different situation from one whose newest run is
+    not - however bad the rates in between.
+    """
+    connection = connect(db_path)
+    row = connection.execute(
+        "SELECT id, created_at, event, head_sha FROM run "
+        "ORDER BY created_at DESC, id DESC LIMIT 1"
+    ).fetchone()
+    if row is None:
+        connection.close()
+        return {}
+    failures = connection.execute(
+        """
+        SELECT COUNT(*) FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        WHERE l.run_id = ? AND f.status = 'FAIL'
+        """,
+        (row["id"],),
+    ).fetchone()[0]
+    connection.close()
+    return {
+        "run": row["id"],
+        "commit": row["head_sha"],
+        "event": row["event"],
+        "at": row["created_at"],
+        "failures": failures,
+    }
+
+
 def messages_by_test(db_path: Path) -> dict[tuple, list[dict]]:
     """Every distinct raw message behind a group, with how often each occurred.
 
