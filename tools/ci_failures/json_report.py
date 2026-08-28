@@ -30,6 +30,8 @@ from .report import (
     coverage_by_fixture,
     coverage_by_test,
     failure_groups,
+    first_attempt_counts_by_fixture,
+    first_attempt_counts_by_test,
     fixture_co_failures,
     fixture_failures,
     fixture_signature_variants,
@@ -107,9 +109,19 @@ ABOUT = {
         "strongest evidence of a flake this data holds. Where it is absent "
         "nobody pressed the button, and that is a fact about queue time and "
         "about where the run sat in the day's merges, never about the failure: "
-        "absence means nothing. 'ran' still counts every attempt, so the "
-        "denominator of a leg that was re-run is larger than the number of "
-        "times CI was asked to run it."
+        "absence means nothing."
+    ),
+    "denominators_and_attempts": (
+        "'ran' and 'rate' count every attempt, re-runs included. A leg is only "
+        "re-run because it failed, so those extra runs land exactly where the "
+        "failures are and pull the rate down. 'first_attempt' counts only legs "
+        "nobody had to re-run, which answers the question with a clean answer: "
+        "how often does a run nobody touched come back red. Counting only the "
+        "last attempt would be the other obvious choice and is wrong - the last "
+        "attempt is the one that passed, so the failure disappears. A leg whose "
+        "first attempt was cancelled before uploading is in neither count. "
+        "'window.legs_with_unknown_attempt' is how many legs could not be "
+        "placed at all; while it is above zero, read 'first_attempt' as a floor."
     ),
     "pass_durations": (
         "'pass_ms' on each configuration is how long the test takes on the runs "
@@ -227,6 +239,7 @@ def _occurrences(
             "rf": entry["rf_version"],
             "node": entry["node_version"] or None,
             "leg": entry["artifact_name"],
+            "attempt": entry["attempt"],
             "artifact_url": entry["artifact_url"],
             "elapsed_ms": entry["elapsed_ms"],
             "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
@@ -240,6 +253,15 @@ def _occurrences(
             )
         occurrences.append(occurrence)
     return occurrences
+
+
+def _first_attempt(failures: int, ran: int) -> dict:
+    """The rate over legs nobody had to re-run."""
+    return {
+        "failures": failures,
+        "ran": ran,
+        "rate": round(failures / ran, 4) if ran else 0.0,
+    }
 
 
 def _fixture_occurrences(
@@ -269,6 +291,7 @@ def _fixture_occurrences(
             "rf": entry["rf_version"],
             "node": entry["node_version"] or None,
             "leg": entry["artifact_name"],
+            "attempt": entry["attempt"],
             "artifact_url": entry["artifact_url"],
             "tests_marked": entry["tests_marked"],
             "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
@@ -314,6 +337,7 @@ def build(db_path: Path, limit: int = 100) -> dict:
     durations = pass_durations_by_test(db_path)
     neighbours = neighbouring_outcomes(db_path)
     alongside = co_failures(db_path)
+    first_runs, first_failures = first_attempt_counts_by_test(db_path)
 
     tests = []
     for group in failure_groups(db_path, limit=limit):
@@ -332,6 +356,9 @@ def build(db_path: Path, limit: int = 100) -> dict:
                 "ran": group.total_runs,
                 "rate": round(group.failure_rate, 4),
                 "distinct_commits": group.distinct_shas,
+                "first_attempt": _first_attempt(
+                    first_failures.get(key, 0), first_runs.get(group.longname, 0)
+                ),
             },
             "rates": rates,
             "never_ran_on": never,
@@ -353,6 +380,9 @@ def build(db_path: Path, limit: int = 100) -> dict:
     fixture_messages = messages_by_fixture(db_path)
     fixture_neighbours = neighbouring_fixture_outcomes(db_path)
     fixture_alongside = fixture_co_failures(db_path)
+    first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
+        db_path
+    )
 
     fixtures = []
     for fixture in fixture_failures(db_path, limit=limit):
@@ -374,6 +404,10 @@ def build(db_path: Path, limit: int = 100) -> dict:
                     "rate": round(fixture.failure_rate, 4),
                     "distinct_commits": fixture.distinct_shas,
                     "test_rows_marked_failed": fixture.tests_marked,
+                    "first_attempt": _first_attempt(
+                        first_fixture_failures.get(key, 0),
+                        first_fixture_runs.get(identity, 0),
+                    ),
                 },
                 "affected_tests": _split(fixture.affected_tests),
                 "rates": rates,
@@ -402,6 +436,7 @@ def build(db_path: Path, limit: int = 100) -> dict:
             "results": summary["results"],
             "failures": summary["failures"],
             "distinct_tests": summary["tests"],
+            "legs_with_unknown_attempt": summary["legs_without_attempt"],
             "since": summary["since"],
             "until": summary["until"],
             "latest_run": latest_run(db_path),

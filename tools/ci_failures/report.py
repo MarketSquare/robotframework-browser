@@ -340,7 +340,7 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
                f.id AS result_id, f.elapsed_ms,
                r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url
+               l.artifact_name, l.artifact_url, l.attempt
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -368,6 +368,7 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
                 "node_version": row["node_version"],
                 "artifact_name": row["artifact_name"],
                 "artifact_url": row["artifact_url"],
+                "attempt": row["attempt"],
             }
         )
     return grouped
@@ -625,7 +626,7 @@ def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
     return connection.execute(
         """
         SELECT l.id AS leg_id, l.artifact_name, l.platform, l.python_version,
-               l.rf_version, l.node_version,
+               l.rf_version, l.node_version, l.attempt,
                r.id AS run_id, r.head_sha, r.created_at,
                MAX(CASE WHEN f.status = 'FAIL' AND f.failure_scope = ?
                          AND f.scope_owner = ? THEN 1 ELSE 0 END) AS broke
@@ -658,7 +659,7 @@ def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
                r.id AS run_id, r.head_sha, r.event, r.created_at,
                r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url
+               l.artifact_name, l.artifact_url, l.attempt
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -843,6 +844,89 @@ def messages_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
             {"message": row["message"], "occurrences": row["occurrences"]}
         )
     return grouped
+
+
+def first_attempt_counts_by_test(db_path: Path) -> tuple[dict[str, int], dict]:
+    """How often a test ran and failed on runs nobody had to re-run.
+
+    A leg is only ever re-run because it failed, so re-attempts land exactly
+    where the failures are and the ordinary denominator is inflated where it
+    hurts. Which legs got re-run is not a fact about the test either: it follows
+    queue time and where the run sat in the day's merges. Counting only first
+    attempts asks the one question that has a clean answer - how often does a
+    run nobody touched come back red.
+
+    Counting only the last attempt would be the other obvious choice and is
+    wrong: the last attempt is the one that passed, so the failure disappears.
+
+    A leg whose first attempt was cancelled before it uploaded anything is in
+    neither count. There is no result to count, and inventing one either way
+    would be worse than the gap.
+
+    Returns runs by test and failures by (test, signature), separately, so that
+    a group whose every failure landed on a re-attempt still gets a denominator
+    instead of vanishing.
+    """
+    connection = connect(db_path)
+    runs = {
+        row["longname"]: row["ran"]
+        for row in connection.execute(
+            """
+            SELECT f.longname, COUNT(*) AS ran
+            FROM test_result f
+            JOIN leg l ON l.id = f.leg_id
+            WHERE l.attempt = 1
+            GROUP BY f.longname
+            """
+        )
+    }
+    failures = {
+        (row["longname"], row["signature_key"]): row["failures"]
+        for row in connection.execute(
+            """
+            SELECT f.longname,
+                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+                   COUNT(*) AS failures
+            FROM test_result f
+            JOIN leg l ON l.id = f.leg_id
+            WHERE f.status = 'FAIL' AND l.attempt = 1
+              AND IFNULL(f.failure_scope, 'test')
+                  NOT IN ('suite_setup', 'suite_teardown')
+            GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
+            """
+        )
+    }
+    connection.close()
+    return runs, failures
+
+
+def first_attempt_counts_by_fixture(db_path: Path) -> tuple[dict[tuple, int], dict]:
+    """`first_attempt_counts_by_test` for suite fixtures, counted in legs."""
+    connection = connect(db_path)
+    runs: dict[tuple, int] = {}
+    for fixture in _failing_fixtures(connection):
+        identity = (fixture["scope_owner"], fixture["failure_scope"])
+        runs[identity] = sum(
+            1 for row in _fixture_legs(connection, *identity) if row["attempt"] == 1
+        )
+    failures = {
+        (row["scope_owner"], row["failure_scope"], row["signature_key"]): row["legs"]
+        for row in connection.execute(
+            """
+            SELECT f.scope_owner, f.failure_scope,
+                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+                   COUNT(DISTINCT l.id) AS legs
+            FROM test_result f
+            JOIN leg l ON l.id = f.leg_id
+            WHERE f.status = 'FAIL' AND l.attempt = 1
+              AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+            GROUP BY f.scope_owner, f.failure_scope,
+                     LOWER(IFNULL(f.error_signature, ''))
+            """
+        )
+    }
+    connection.close()
+    return runs, failures
 
 
 def latest_run(db_path: Path) -> dict:
@@ -1031,6 +1115,7 @@ def totals(db_path: Path) -> dict:
         "(SELECT COUNT(*) FROM test_result) AS results, "
         "(SELECT COUNT(*) FROM test_result WHERE status='FAIL') AS failures, "
         "(SELECT COUNT(DISTINCT longname) FROM test_result) AS tests, "
+        "(SELECT COUNT(*) FROM leg WHERE attempt IS NULL) AS legs_without_attempt, "
         "(SELECT MIN(created_at) FROM run) AS since, "
         "(SELECT MAX(created_at) FROM run) AS until"
     ).fetchone()

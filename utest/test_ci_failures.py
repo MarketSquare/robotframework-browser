@@ -8,12 +8,14 @@ import pytest
 from robot import run as robot_run
 
 from tools.ci_failures import github, ingest
+from tools.ci_failures.db import connect as connect_db
 from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.json_report import build as build_json
 from tools.ci_failures.report import (
     co_failures,
     coverage_by_fixture,
     coverage_by_test,
+    first_attempt_counts_by_test,
     latest_run,
     neighbouring_outcomes,
     pass_durations_by_test,
@@ -1060,13 +1062,15 @@ class TestCaseFoldedGrouping:
                 )
             platform = row.get("platform", "linux")
             python = row.get("python", "3.13.15")
-            key = (sha, platform, python, row.get("attempt", 1))
+            attempt = row.get("attempt", 1)
+            key = (sha, platform, python, attempt)
             if key not in legs:
                 legs[key] = len(legs) + 1
                 connection.execute(
                     "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
-                    "artifact_url, platform, python_version, rf_version, ingested_at) "
-                    "VALUES (?, ?, ?, ?, 'a-url', ?, ?, '7.4.2', 'now')",
+                    "artifact_url, platform, python_version, rf_version, "
+                    "ingested_at, attempt) "
+                    "VALUES (?, ?, ?, ?, 'a-url', ?, ?, '7.4.2', 'now', ?)",
                     (
                         legs[key],
                         runs[sha],
@@ -1074,6 +1078,7 @@ class TestCaseFoldedGrouping:
                         f"leg-{platform}-{python}",
                         platform,
                         python,
+                        attempt,
                     ),
                 )
             connection.execute(
@@ -1655,6 +1660,319 @@ class TestFixtureEntriesAskTheSameQuestions:
         assert self._fixture(db)["raw_messages"] == [
             {"message": "Deadline Exceeded", "occurrences": 1}
         ]
+
+
+class TestWhichAttemptRanIt:
+    """GitHub will not say which attempt uploaded an artifact.
+
+    The artifact carries no attempt number, and `/runs/{id}/attempts/{n}/
+    artifacts` answers 404. What is available is time.
+    """
+
+    def _artifact(self, id_: int, created_at: str) -> github.Artifact:
+        return github.Artifact(
+            id=id_, name="Test results-x", expired=False, url="u", created_at=created_at
+        )
+
+    def test_an_artifact_belongs_to_the_last_attempt_already_started(self):
+        """Attempts of one run do not overlap, so time settles it. Checked
+        against a run re-run twice, where the three uploads of one leg fall one
+        inside each attempt's window with minutes to spare."""
+        starts = [(1, "2026-08-19T17:14:38Z"), (2, "2026-08-19T17:43:17Z")]
+        starts.append((3, "2026-08-19T17:57:03Z"))
+
+        resolved = github.with_attempts(
+            [
+                self._artifact(1, "2026-08-19T17:22:21Z"),
+                self._artifact(2, "2026-08-19T17:50:56Z"),
+                self._artifact(3, "2026-08-19T18:04:48Z"),
+            ],
+            starts,
+        )
+
+        assert [a.attempt for a in resolved] == [1, 2, 3]
+
+    def test_a_run_nobody_rebuilt_puts_everything_on_the_first_attempt(self):
+        resolved = github.with_attempts(
+            [self._artifact(1, "2026-08-19T17:22:21Z")], [(1, "2026-08-19T17:14:38Z")]
+        )
+
+        assert [a.attempt for a in resolved] == [1]
+
+    def test_an_artifact_with_no_creation_time_falls_to_the_first_attempt(self):
+        """An unknown lands on the reading that claims least."""
+        resolved = github.with_attempts(
+            [self._artifact(1, "")],
+            [(1, "2026-08-19T17:14:38Z"), (2, "2026-08-19T17:43:17Z")],
+        )
+
+        assert [a.attempt for a in resolved] == [1]
+
+    def test_a_run_nobody_rebuilt_costs_no_request(self, monkeypatch):
+        """Nearly every run. Paying a request each to learn nothing would make
+        the ingest slower for the sake of a column that is already known."""
+
+        def refuse(endpoint):
+            raise AssertionError(f"asked GitHub for {endpoint}")
+
+        monkeypatch.setattr(github, "_api", refuse)
+        run = github.Run(
+            id=1,
+            event="push",
+            head_sha="s",
+            head_branch="main",
+            created_at="2026-08-19T17:14:38Z",
+            conclusion="failure",
+            url="u",
+            run_attempt=1,
+        )
+
+        assert github.attempt_starts(run) == [(1, "2026-08-19T17:14:38Z")]
+
+    def test_a_column_added_later_is_added_to_a_database_that_predates_it(
+        self, tmp_path
+    ):
+        """The database is rebuildable, but rebuilding it is three gigabytes of
+        downloads and this column can be filled in from the API for a tenth of
+        one."""
+        db = tmp_path / "ci.sqlite3"
+        connection = sqlite3.connect(db)
+        connection.executescript(
+            "CREATE TABLE leg (id INTEGER PRIMARY KEY, run_id INTEGER, "
+            "artifact_id INTEGER, artifact_name TEXT, ingested_at TEXT);"
+        )
+        connection.commit()
+        connection.close()
+
+        connection = connect_db(db)
+        columns = {row["name"] for row in connection.execute("PRAGMA table_info(leg)")}
+        connection.close()
+
+        assert "attempt" in columns
+
+    def test_the_backfill_resolves_legs_ingested_before_it_existed(
+        self, tmp_path, monkeypatch
+    ):
+        db = tmp_path / "ci.sqlite3"
+        connection = connect_db(db)
+        connection.execute(
+            "INSERT INTO run (id, created_at) VALUES (7, '2026-08-19T17:14:38Z')"
+        )
+        for leg_id, artifact_id in ((1, 11), (2, 22)):
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                "ingested_at) VALUES (?, ?, ?, 'leg', 'now')",
+                (leg_id, 7, artifact_id),
+            )
+        connection.commit()
+        connection.close()
+
+        run = github.Run(
+            id=7,
+            event="push",
+            head_sha="s",
+            head_branch="main",
+            created_at="2026-08-19T17:14:38Z",
+            conclusion="failure",
+            url="u",
+            run_attempt=2,
+        )
+        monkeypatch.setattr(github, "get_run", lambda run_id, repo=None: run)
+        monkeypatch.setattr(
+            github,
+            "attempt_starts",
+            lambda run, repo=None: [
+                (1, "2026-08-19T17:14:38Z"),
+                (2, "2026-08-19T17:43:17Z"),
+            ],
+        )
+        monkeypatch.setattr(
+            github,
+            "list_test_artifacts",
+            lambda run_id, repo=None: [
+                github.Artifact(11, "leg", False, "u", "2026-08-19T17:22:21Z"),
+                github.Artifact(22, "leg", False, "u", "2026-08-19T17:50:56Z"),
+            ],
+        )
+
+        filled = ingest.backfill_attempts(db, report=lambda _: None)
+
+        connection = connect_db(db)
+        assert filled == 2
+        assert [
+            row["attempt"]
+            for row in connection.execute("SELECT attempt FROM leg ORDER BY id")
+        ] == [1, 2]
+        connection.close()
+
+    def test_an_ingested_rerun_lands_on_the_right_attempt(
+        self, tmp_path, monkeypatch, output_xml
+    ):
+        """End to end: the attempt is resolved while ingesting, not afterwards,
+        so only databases predating the column ever need the backfill."""
+        run = github.Run(
+            id=111,
+            event="push",
+            head_sha="abc123",
+            head_branch="main",
+            created_at="2026-08-19T17:14:38Z",
+            conclusion="failure",
+            url="u",
+            run_attempt=2,
+        )
+        artifacts = [
+            github.Artifact(1, "leg", False, "u", "2026-08-19T17:22:21Z"),
+            github.Artifact(2, "leg", False, "u", "2026-08-19T17:50:56Z"),
+        ]
+        zip_path = tmp_path / "artifact.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.write(output_xml, "output.xml")
+
+        monkeypatch.setattr(ingest.github, "list_runs", lambda **kwargs: [run])
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id, repo=None: artifacts
+        )
+        monkeypatch.setattr(
+            ingest.github,
+            "attempt_starts",
+            lambda run, repo=None: [
+                (1, "2026-08-19T17:14:38Z"),
+                (2, "2026-08-19T17:43:17Z"),
+            ],
+        )
+
+        def fake_download(artifact_id, destination, repo=None):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(zip_path.read_bytes())
+            return destination
+
+        monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
+
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        connection = connect_db(db)
+        assert [
+            row["attempt"]
+            for row in connection.execute(
+                "SELECT attempt FROM leg ORDER BY artifact_id"
+            )
+        ] == [1, 2]
+        connection.close()
+
+    def test_a_leg_the_api_cannot_place_stays_unknown(self, tmp_path, monkeypatch):
+        """Never defaulted to 1. A value invented for a leg nobody measured is
+        indistinguishable from one that was."""
+        db = tmp_path / "ci.sqlite3"
+        connection = connect_db(db)
+        connection.execute("INSERT INTO run (id, created_at) VALUES (7, 'x')")
+        connection.execute(
+            "INSERT INTO leg (id, run_id, artifact_id, artifact_name, ingested_at) "
+            "VALUES (1, 7, 11, 'leg', 'now')"
+        )
+        connection.commit()
+        connection.close()
+
+        def gone(run_id, repo=None):
+            raise github.GhError("run not found")
+
+        monkeypatch.setattr(github, "get_run", gone)
+
+        ingest.backfill_attempts(db, report=lambda _: None)
+
+        connection = connect_db(db)
+        assert connection.execute("SELECT attempt FROM leg").fetchone()[0] is None
+        assert totals(db)["legs_without_attempt"] == 1
+        connection.close()
+
+
+class TestTheDenominatorAndTheRerun:
+    """A leg is only ever re-run because it failed, so re-attempts land exactly
+    where the failures are and pull every rate down with them."""
+
+    _seed = TestCaseFoldedGrouping._seed
+
+    def _counts(self, db: Path, test: str = "T") -> dict:
+        entry = next(t for t in build_json(db)["test_failures"] if t["test"] == test)
+        return entry["counts"]
+
+    def test_a_rerun_inflates_the_ordinary_denominator(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 1},
+                {"test": "T", "status": "PASS", "attempt": 2},
+            ],
+        )
+
+        counts = self._counts(db)
+
+        assert (counts["failures"], counts["ran"]) == (1, 2)
+        assert (
+            counts["first_attempt"]["failures"],
+            counts["first_attempt"]["ran"],
+        ) == (1, 1)
+
+    def test_a_failure_on_a_rerun_is_not_a_first_attempt_failure(self, tmp_path):
+        """Counting only the last attempt is the other obvious choice and is
+        wrong - the last attempt is the one that passed."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "PASS", "attempt": 1},
+                {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 2},
+            ],
+        )
+
+        counts = self._counts(db)
+
+        assert counts["failures"] == 1
+        assert counts["first_attempt"] == {"failures": 0, "ran": 1, "rate": 0.0}
+
+    def test_a_group_whose_every_failure_was_a_rerun_keeps_its_denominator(
+        self, tmp_path
+    ):
+        """Zero of 1 is a finding. A group vanishing from the count is not."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "PASS", "attempt": 1},
+                {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 2},
+            ],
+        )
+
+        runs, failures = first_attempt_counts_by_test(db)
+
+        assert runs["T"] == 1
+        assert ("T", "boom") not in failures
+
+    def test_the_attempt_is_on_every_occurrence(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                {"test": "T", "status": "PASS", "attempt": 1},
+                {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 2},
+            ],
+        )
+
+        entry = next(t for t in build_json(db)["test_failures"] if t["test"] == "T")
+
+        assert entry["occurrences"][0]["attempt"] == 2
+
+    def test_legs_nobody_could_place_are_counted_in_the_window(self, tmp_path):
+        """While it is above zero, a first-attempt rate is a floor."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        connection = connect_db(db)
+        connection.execute("UPDATE leg SET attempt = NULL")
+        connection.commit()
+        connection.close()
+
+        assert build_json(db)["window"]["legs_with_unknown_attempt"] == 1
 
 
 class TestHtmlReport:

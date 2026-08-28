@@ -8,7 +8,7 @@ import json
 import re
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 DEFAULT_REPO = "MarketSquare/robotframework-browser"
@@ -33,6 +33,10 @@ class Run:
     created_at: str
     conclusion: str | None
     url: str
+    # How many times the run was started. Above 1 means someone re-ran a failed
+    # job by hand; nothing here retries on its own. Comes back with the run
+    # listing, so knowing it costs no extra request.
+    run_attempt: int = 1
 
 
 @dataclass(frozen=True)
@@ -41,6 +45,18 @@ class Artifact:
     name: str
     expired: bool
     url: str
+    created_at: str = ""
+    # Which attempt uploaded it. Filled by `with_attempts`; None until then.
+    attempt: int | None = None
+
+
+def _api(endpoint: str) -> dict:
+    result = subprocess.run(
+        ["gh", "api", endpoint], capture_output=True, text=True, check=False
+    )
+    if result.returncode != 0:
+        raise GhError(f"gh api {endpoint} failed: {result.stderr.strip()}")
+    return json.loads(result.stdout or "{}")
 
 
 def _paginated(endpoint: str, key: str) -> list[dict]:
@@ -55,6 +71,23 @@ def _paginated(endpoint: str, key: str) -> list[dict]:
     return [item for page in pages for item in (page.get(key) or [])]
 
 
+def _run(item: dict, event: str = "", branch: str = "main") -> Run:
+    return Run(
+        id=item["id"],
+        event=item.get("event", event),
+        head_sha=item.get("head_sha", ""),
+        head_branch=item.get("head_branch", branch),
+        created_at=item.get("created_at", ""),
+        conclusion=item.get("conclusion"),
+        url=item.get("html_url", ""),
+        run_attempt=int(item.get("run_attempt") or 1),
+    )
+
+
+def get_run(run_id: int, repo: str = DEFAULT_REPO) -> Run:
+    return _run(_api(f"repos/{repo}/actions/runs/{run_id}"))
+
+
 def list_runs(
     repo: str = DEFAULT_REPO,
     branch: str = "main",
@@ -67,15 +100,7 @@ def list_runs(
     the pull request, which would drown out what we are looking for.
     """
     runs = [
-        Run(
-            id=item["id"],
-            event=item.get("event", event),
-            head_sha=item.get("head_sha", ""),
-            head_branch=item.get("head_branch", branch),
-            created_at=item.get("created_at", ""),
-            conclusion=item.get("conclusion"),
-            url=item.get("html_url", ""),
-        )
+        _run(item, event=event, branch=branch)
         for event in events
         for item in _paginated(
             f"repos/{repo}/actions/workflows/{WORKFLOW_FILE}/runs"
@@ -94,12 +119,55 @@ def list_test_artifacts(run_id: int, repo: str = DEFAULT_REPO) -> list[Artifact]
             name=item["name"],
             expired=bool(item.get("expired")),
             url=f"https://github.com/{repo}/actions/runs/{run_id}/artifacts/{item['id']}",
+            created_at=item.get("created_at", ""),
         )
         for item in _paginated(
             f"repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts"
         )
         if _TEST_RESULTS.match(item["name"])
     ]
+
+
+def attempt_starts(run: Run, repo: str = DEFAULT_REPO) -> list[tuple[int, str]]:
+    """When each attempt of a run began, oldest first.
+
+    Attempt 1 began when the run did, so a run nobody re-ran costs no request at
+    all, which is nearly all of them. The rest are one request each and none of
+    them downloads anything.
+    """
+    starts = [(1, run.created_at)]
+    for number in range(2, max(run.run_attempt, 1) + 1):
+        attempt = _api(f"repos/{repo}/actions/runs/{run.id}/attempts/{number}")
+        starts.append(
+            (number, attempt.get("run_started_at") or attempt.get("created_at") or "")
+        )
+    return starts
+
+
+def with_attempts(
+    artifacts: list[Artifact], starts: list[tuple[int, str]]
+) -> list[Artifact]:
+    """Which attempt uploaded each artifact.
+
+    GitHub will not say directly. The artifact carries no attempt number, and
+    `/runs/{id}/attempts/{n}/artifacts` does not exist - it answers 404. What is
+    available is time: the attempts of one run do not overlap, so an artifact
+    belongs to the last attempt that had already started when it was created.
+    Checked against a run that was re-run twice, where the three uploads of one
+    leg fall one inside each attempt's window with minutes to spare.
+
+    An artifact with no creation time falls to the first attempt rather than the
+    last, so an unknown lands on the reading that claims least.
+    """
+    ordered = sorted(starts, key=lambda start: start[1])
+    resolved = []
+    for artifact in artifacts:
+        attempt = ordered[0][0] if ordered else 1
+        for number, started in ordered:
+            if artifact.created_at >= started:
+                attempt = number
+        resolved.append(replace(artifact, attempt=attempt))
+    return resolved
 
 
 DOWNLOAD_ATTEMPTS = 3

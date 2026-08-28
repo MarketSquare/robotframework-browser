@@ -38,7 +38,14 @@ CREATE TABLE IF NOT EXISTS leg (
     platform       TEXT,
     node_version   TEXT,   -- null until the metadata change reaches CI
     generated_at   TEXT,
-    ingested_at    TEXT NOT NULL
+    ingested_at    TEXT NOT NULL,
+    -- Which attempt of the job uploaded this artifact. Nothing in this CI
+    -- retries automatically, so anything above 1 was a failed job re-run by
+    -- hand. Neither output.xml nor the artifact says so and there is no
+    -- per-attempt artifact endpoint, so it is resolved from when the artifact
+    -- was created; see `github.with_attempts`. NULL means not yet resolved,
+    -- never attempt 1 - `backfill_attempts` fills those in.
+    attempt        INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS test_result (

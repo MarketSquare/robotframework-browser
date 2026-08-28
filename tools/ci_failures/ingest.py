@@ -54,8 +54,9 @@ def _insert_leg(
 ) -> int:
     cursor = connection.execute(
         "INSERT INTO leg (run_id, artifact_id, artifact_name, artifact_url, "
-        "python_version, rf_version, platform, node_version, generated_at, ingested_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "python_version, rf_version, platform, node_version, generated_at, "
+        "ingested_at, attempt) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             artifact.id,
@@ -67,6 +68,7 @@ def _insert_leg(
             info.node_version,
             info.generated_at,
             datetime.now(timezone.utc).isoformat(),
+            artifact.attempt,
         ),
     )
     return int(cursor.lastrowid)
@@ -130,6 +132,7 @@ def ingest(
     report: Callable[[str], None] = print,
 ) -> dict:
     """Ingests up to ``limit`` runs, newest first, skipping what is already in."""
+    backfill_attempts(db_path, repo=repo, report=report)
     connection = connect(db_path)
     already = ingested_artifact_ids(connection)
     totals = {
@@ -146,11 +149,14 @@ def ingest(
     report(f"{len(runs)} run(s) to consider on {branch} ({', '.join(events)})")
 
     for run in runs:
-        artifacts = [
-            a
-            for a in github.list_test_artifacts(run.id, repo=repo)
-            if a.id not in already
-        ]
+        artifacts = github.with_attempts(
+            [
+                a
+                for a in github.list_test_artifacts(run.id, repo=repo)
+                if a.id not in already
+            ],
+            github.attempt_starts(run, repo=repo),
+        )
         expired = [a for a in artifacts if a.expired]
         pending = [a for a in artifacts if not a.expired]
         totals["expired"] += len(expired)
@@ -200,6 +206,59 @@ def ingest(
     connection.commit()
     connection.close()
     return totals
+
+
+def backfill_attempts(
+    db_path: Path,
+    *,
+    repo: str = github.DEFAULT_REPO,
+    report: Callable[[str], None] = print,
+) -> int:
+    """Fills in the attempt of legs ingested before it was being recorded.
+
+    Downloads nothing. A run says how many attempts it had and the artifact
+    listing says when each artifact was created, which is all the resolution
+    needs, so this is one request per run plus one per extra attempt - seconds
+    against the hours a re-ingest of the same window would take.
+
+    Runs on every ingest. Once there is nothing left to fill it is a single
+    query that returns no rows, and a leg the API can no longer account for
+    stays NULL rather than being called attempt 1.
+    """
+    connection = connect(db_path)
+    run_ids = [
+        row["run_id"]
+        for row in connection.execute(
+            "SELECT DISTINCT run_id FROM leg WHERE attempt IS NULL ORDER BY run_id"
+        )
+    ]
+    if not run_ids:
+        connection.close()
+        return 0
+    report(f"resolving the attempt of legs in {len(run_ids)} run(s)")
+    filled = 0
+    for run_id in run_ids:
+        try:
+            run = github.get_run(run_id, repo=repo)
+            artifacts = github.with_attempts(
+                github.list_test_artifacts(run_id, repo=repo),
+                github.attempt_starts(run, repo=repo),
+            )
+        except github.GhError as error:
+            report(f"  run {run_id}: {error}")
+            continue
+        cursor = connection.executemany(
+            "UPDATE leg SET attempt = ? WHERE artifact_id = ? AND attempt IS NULL",
+            [(a.attempt, a.id) for a in artifacts],
+        )
+        filled += cursor.rowcount if cursor.rowcount > 0 else 0
+        connection.commit()
+    unresolved = connection.execute(
+        "SELECT COUNT(*) FROM leg WHERE attempt IS NULL"
+    ).fetchone()[0]
+    connection.close()
+    report(f"  filled {filled} leg(s), {unresolved} still unresolved")
+    return filled
 
 
 def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -> int:
