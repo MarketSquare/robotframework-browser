@@ -1,12 +1,12 @@
 *** Settings ***
-Resource            imports.resource
-Library             ../../library/certificate.py
+Resource          imports.resource
+Library           ../../library/certificate.py
 
-Suite Setup         Setup
-Suite Teardown      Suite Teardown
-Test Teardown       Close Browser    ALL
+Suite Setup       Setup
+Suite Teardown    Suite Teardown
+Test Teardown     Close Browser    ALL
 
-Test Tags           no-docker-pr
+Test Tags         no-docker-pr
 
 *** Test Cases ***
 Open Browser With Client Certificate

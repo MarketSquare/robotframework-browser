@@ -1,18 +1,18 @@
 *** Settings ***
-Resource            ../variables.resource
-Library             Browser
-...                     timeout=${PLAYWRIGHT_TIMEOUT}
-...                     enable_playwright_debug=${True}
-...                     enable_presenter_mode=False
-...                     selector_prefix=${SELECTOR_PREFIX}
-...                     plugins=${CURDIR}/ExamplePlugin.py
-Library             ${CURDIR}/../../library/banner.py
+Resource         ../variables.resource
+Library          Browser
+...                  timeout=${PLAYWRIGHT_TIMEOUT}
+...                  enable_playwright_debug=${True}
+...                  enable_presenter_mode=False
+...                  selector_prefix=${SELECTOR_PREFIX}
+...                  plugins=${CURDIR}/ExamplePlugin.py
+Library          ${CURDIR}/../../library/banner.py
 
-Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
-Test Teardown       Close Context    ALL
+Suite Setup      New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Teardown    Close Context    ALL
 
 *** Variables ***
-${PLUGIN_SECRET} =      plugin-secret-do-not-disclose
+${PLUGIN_SECRET} =    plugin-secret-do-not-disclose
 
 *** Test Cases ***
 Set Message On Suite Level

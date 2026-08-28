@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        ../scope_keywords.resource
+Resource       ../scope_keywords.resource
 
-Suite Setup     Set Suite Scope
+Suite Setup    Set Suite Scope
 
 *** Keywords ***
 Set Suite Scope

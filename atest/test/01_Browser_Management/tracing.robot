@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Tracing Timeout
-Suite Teardown      Set Browser Timeout    ${OLD_BROWSER_TIMEOUT}
+Suite Setup       Tracing Timeout
+Suite Teardown    Set Browser Timeout    ${OLD_BROWSER_TIMEOUT}
 
 *** Test Cases ***
 Enable Tracing To File

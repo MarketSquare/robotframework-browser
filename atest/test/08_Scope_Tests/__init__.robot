@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            scope_keywords.resource
+Resource          scope_keywords.resource
 
-Suite Setup         Set New Global Settings
-Suite Teardown      Reset Global Settings
+Suite Setup       Set New Global Settings
+Suite Teardown    Reset Global Settings
 
 *** Variables ***
 ${org_timeout} =    ${None}

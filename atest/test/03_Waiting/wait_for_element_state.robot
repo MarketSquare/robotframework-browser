@@ -1,10 +1,10 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Open Browser To No Page
-Test Setup      New Page    ${WAIT_URL}
+Suite Setup    Open Browser To No Page
+Test Setup     New Page    ${WAIT_URL}
 
-Force Tags      slow
+Force Tags     slow
 
 *** Test Cases ***
 Wait For Elements State Attached

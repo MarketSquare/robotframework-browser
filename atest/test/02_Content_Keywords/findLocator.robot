@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup Keyword
-Suite Teardown      Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
-Test Setup          Ensure Open Page    ${LOGIN_URL}
+Suite Setup       Setup Keyword
+Suite Teardown    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
+Test Setup        Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Normal Selector

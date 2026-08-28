@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        ../../scope_keywords.resource
+Resource       ../../scope_keywords.resource
 
-Suite Setup     Ensure Open Page    ${WAIT_URL_DIRECT}
-Test Setup      Go To    ${WAIT_URL_DIRECT}
+Suite Setup    Ensure Open Page    ${WAIT_URL_DIRECT}
+Test Setup     Go To    ${WAIT_URL_DIRECT}
 
 *** Test Cases ***
 Test Suite Level Removed

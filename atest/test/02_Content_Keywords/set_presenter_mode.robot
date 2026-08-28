@@ -1,15 +1,15 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup
-Suite Teardown      Set Presenter Mode    ${ORIGINAL_PRESENTER_MODE}
-Test Setup          Set Presenter Mode    False
+Suite Setup       Setup
+Suite Teardown    Set Presenter Mode    ${ORIGINAL_PRESENTER_MODE}
+Test Setup        Set Presenter Mode    False
 
 *** Variables ***
-&{CUSTOM_CONFIG} =          duration=1 sec    width=3px    style=solid    color=red
-&{EXP_CUSTOM_CONFIG} =      duration=${{datetime.timedelta(seconds=1)}}    width=3px    style=solid    color=red
+&{CUSTOM_CONFIG} =        duration=1 sec    width=3px    style=solid    color=red
+&{EXP_CUSTOM_CONFIG} =    duration=${{datetime.timedelta(seconds=1)}}    width=3px    style=solid    color=red
 
-${DEFAULT_CONFIG} =         ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue'}}}
+${DEFAULT_CONFIG} =       ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue'}}}
 
 *** Test Cases ***
 Enable Presenter Mode With True For Default

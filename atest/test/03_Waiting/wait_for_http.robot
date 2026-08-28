@@ -1,9 +1,9 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Ensure Location    ${LOGIN_URL}
+Test Setup    Ensure Location    ${LOGIN_URL}
 
-Force Tags      no-iframe
+Force Tags    no-iframe
 
 *** Test Cases ***
 Wait For Fails If No Success

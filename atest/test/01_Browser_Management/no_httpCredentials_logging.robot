@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Suite Setup         New Browser
-Test Teardown       Close Context
+Suite Setup      New Browser
+Test Teardown    Close Context
 
 *** Test Cases ***
 New Context No Mask For HttpCredentials When Not Defined

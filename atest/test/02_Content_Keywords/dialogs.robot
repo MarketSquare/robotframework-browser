@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup    New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Dismiss Alert

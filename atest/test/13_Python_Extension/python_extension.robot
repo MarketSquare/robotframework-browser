@@ -1,17 +1,17 @@
 *** Settings ***
-Documentation       Demonstrates the two ways a user's own Python library uses Browser, and pins
-...                 what each one gets from Robot Framework. The demonstrations themselves are the
-...                 suites and libraries in _child/, which run as child processes because Browser
-...                 keeps class level state that every instance in a process shares. The leading
-...                 underscore keeps _child/ out of the normal `inv atest` run.
+Documentation    Demonstrates the two ways a user's own Python library uses Browser, and pins
+...              what each one gets from Robot Framework. The demonstrations themselves are the
+...              suites and libraries in _child/, which run as child processes because Browser
+...              keeps class level state that every instance in a process shares. The leading
+...              underscore keeps _child/ out of the normal `inv atest` run.
 
-Resource            ../variables.resource
-Library             Process
-Library             ../../library/child_result.py
-Library             ../../library/os_wrapper.py
+Resource         ../variables.resource
+Library          Process
+Library          ../../library/child_result.py
+Library          ../../library/os_wrapper.py
 
 *** Variables ***
-${CHILD_DIR} =      ${CURDIR}/_child
+${CHILD_DIR} =    ${CURDIR}/_child
 
 *** Test Cases ***
 Context A Robot Framework Owns Browser

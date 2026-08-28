@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${FORM_URL}
+Test Setup    New Page    ${FORM_URL}
 
 *** Test Cases ***
 Press Keys Generate Characters

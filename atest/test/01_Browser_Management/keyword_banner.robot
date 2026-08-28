@@ -1,12 +1,12 @@
 *** Settings ***
-Documentation       Tests for Show Keyword Banner
+Documentation    Tests for Show Keyword Banner
 
-Resource            imports.resource
-Library             ${CURDIR}/../../library/banner.py
+Resource         imports.resource
+Library          ${CURDIR}/../../library/banner.py
 
-Suite Setup         Ensure Open Page
-Test Setup          Go To    ${FORM_URL}
-Test Teardown       Show Keyword Banner    None
+Suite Setup      Ensure Open Page
+Test Setup       Go To    ${FORM_URL}
+Test Teardown    Show Keyword Banner    None
 
 *** Test Cases ***
 Show Keyword Banner

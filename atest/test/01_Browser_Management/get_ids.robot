@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Create Browser Catalog State
-Suite Teardown      Close Browser    ALL
+Suite Setup       Create Browser Catalog State
+Suite Teardown    Close Browser    ALL
 
 *** Test Cases ***
 Get Browser IDs

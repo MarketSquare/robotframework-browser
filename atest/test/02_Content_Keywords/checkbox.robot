@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Ensure Open Page    ${FORM_URL}
+Suite Setup    Ensure Open Page    ${FORM_URL}
 
 *** Test Cases ***
 Get Checkbox State Checked

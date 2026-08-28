@@ -1,9 +1,9 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Prepare Suite
+Suite Setup    Prepare Suite
 
-Force Tags      no-iframe
+Force Tags     no-iframe
 
 *** Variables ***
 @{permissions} =    geolocation

@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${WAIT_URL}
+Test Setup    New Page    ${WAIT_URL}
 
 *** Test Cases ***
 Promise To With Type Conversion

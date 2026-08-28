@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Page    ${TABLES_URL}
+Suite Setup    New Page    ${TABLES_URL}
 
 *** Test Cases ***
 Get Table Cell Index By Text

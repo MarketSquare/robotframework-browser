@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
-Library             Process
+Resource         imports.resource
+Library          Process
 
-Test Teardown       Close Browser    ALL
+Test Teardown    Close Browser    ALL
 
 *** Test Cases ***
 Open Firefox

@@ -1,14 +1,14 @@
 *** Settings ***
-Resource            imports.resource
-Library             ../../library/presenter_mode.py
+Resource          imports.resource
+Library           ../../library/presenter_mode.py
 
-Suite Setup         Setup Get Text
-Suite Teardown      Set Retry Assertions For    ${assert_timeout}
-Test Setup          Ensure Location    ${LOGIN_URL}
+Suite Setup       Setup Get Text
+Suite Teardown    Set Retry Assertions For    ${assert_timeout}
+Test Setup        Ensure Location    ${LOGIN_URL}
 
 *** Variables ***
-${USERNAMELABEL} =      label[for="username_field"]
-${INPUTUSERNAME} =      id=username_field
+${USERNAMELABEL} =    label[for="username_field"]
+${INPUTUSERNAME} =    id=username_field
 
 *** Test Cases ***
 Get Text

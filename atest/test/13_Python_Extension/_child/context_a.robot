@@ -1,12 +1,12 @@
 *** Settings ***
-Documentation       Context A: Robot Framework imports Browser and MyLibraryA sits alongside it.
-...                 Started as a child process by ../python_extension.robot, which asserts the exit
-...                 code and inspects this run's output directory. Three tests are expected to fail.
-...                 Tests are ordered pairs: `Test Scoped Timeout Is Reverted` and
-...                 `Previous Page Was Auto Closed` observe what the test before them left behind.
+Documentation    Context A: Robot Framework imports Browser and MyLibraryA sits alongside it.
+...              Started as a child process by ../python_extension.robot, which asserts the exit
+...              code and inspects this run's output directory. Three tests are expected to fail.
+...              Tests are ordered pairs: `Test Scoped Timeout Is Reverted` and
+...              `Previous Page Was Auto Closed` observe what the test before them left behind.
 
-Library             Browser    enable_playwright_debug=${True}
-Library             MyLibraryA.py
+Library          Browser    enable_playwright_debug=${True}
+Library          MyLibraryA.py
 
 *** Test Cases ***
 Call Browser From Python

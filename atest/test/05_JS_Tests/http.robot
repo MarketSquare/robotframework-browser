@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Page    ${LOGIN_URL}
+Suite Setup    New Page    ${LOGIN_URL}
 
 *** Variables ***
 &{expected get json body} =     greeting=HELLO

@@ -1,13 +1,13 @@
 *** Settings ***
-Documentation       Context B: Robot Framework imports only MyLibraryB, which owns the Browser
-...                 instance and registers it as a listener. Browser is deliberately not imported
-...                 anywhere in this suite; importing it would turn this into context A.
-...                 Started as a child process by ../python_extension.robot, which asserts the exit
-...                 code and inspects this run's output directory. One test is expected to fail.
-...                 Tests are ordered pairs: `Test Scoped Timeout Is Reverted` and
-...                 `Previous Page Was Auto Closed` observe what the test before them left behind.
+Documentation    Context B: Robot Framework imports only MyLibraryB, which owns the Browser
+...              instance and registers it as a listener. Browser is deliberately not imported
+...              anywhere in this suite; importing it would turn this into context A.
+...              Started as a child process by ../python_extension.robot, which asserts the exit
+...              code and inspects this run's output directory. One test is expected to fail.
+...              Tests are ordered pairs: `Test Scoped Timeout Is Reverted` and
+...              `Previous Page Was Auto Closed` observe what the test before them left behind.
 
-Library             MyLibraryB.py
+Library          MyLibraryB.py
 
 *** Test Cases ***
 Call Browser From Python

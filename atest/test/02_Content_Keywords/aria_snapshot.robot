@@ -1,11 +1,11 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Aria Snapshot Setup
+Suite Setup    Aria Snapshot Setup
 
 *** Variables ***
-${MouseTable} =         css=table >> nth=1
-${LEFT_FRAME_URL} =     ${ROOT_URL}frames/left.html
+${MouseTable} =        css=table >> nth=1
+${LEFT_FRAME_URL} =    ${ROOT_URL}frames/left.html
 
 *** Test Cases ***
 Aria Snapshot YAML

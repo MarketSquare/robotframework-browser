@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         New Context
-Suite Teardown      Close Context
+Suite Setup       New Context
+Suite Teardown    Close Context
 
 *** Test Cases ***
 Reload

@@ -1,13 +1,13 @@
 *** Settings ***
-Documentation       Context B without the listener registration. Identical to context_b.robot
-...                 except for the library it imports and the two tests that observe the
-...                 difference: the test scoped timeout leaks and the page stays open.
-...                 Started as a child process by ../python_extension.robot, which asserts the exit
-...                 code and inspects this run's output directory. One test is expected to fail.
+Documentation     Context B without the listener registration. Identical to context_b.robot
+...               except for the library it imports and the two tests that observe the
+...               difference: the test scoped timeout leaks and the page stays open.
+...               Started as a child process by ../python_extension.robot, which asserts the exit
+...               code and inspects this run's output directory. One test is expected to fail.
 
-Library             MyLibraryB_no_listener.py
+Library           MyLibraryB_no_listener.py
 
-Suite Teardown      Close Browser Library
+Suite Teardown    Close Browser Library
 
 *** Test Cases ***
 Call Browser From Python

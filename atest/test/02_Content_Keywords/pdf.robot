@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Open Headless Chrome
+Suite Setup    Open Headless Chrome
 
 *** Test Cases ***
 Save As PDF With Default Options

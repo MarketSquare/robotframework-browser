@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource     imports.resource
 
-Test Tags       no-coverage-support    no-windows-support
+Test Tags    no-coverage-support    no-windows-support
 
 *** Test Cases ***
 This should not be logged to file playwright-log.txt
