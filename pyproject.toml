@@ -57,7 +57,7 @@ rfbrowser = "Browser.entry.__main__:cli"
 
 [project.optional-dependencies]
 robocop = [
-    "robotframework-robocop>=6.10.0",
+    "robotframework-robocop>=8.8.0",
 ]
 bb = [
     "robotframework-browser-batteries>=19.7.2",
