@@ -7,11 +7,21 @@ from pathlib import Path
 from .report import (
     FailureGroup,
     FixtureFailure,
-    configurations_by_fixture,
-    configurations_by_test,
+    co_failures,
+    coverage_by_fixture,
+    coverage_by_test,
     failure_groups,
+    first_attempt_counts_by_fixture,
+    first_attempt_counts_by_test,
+    fixture_co_failures,
     fixture_failures,
+    latest_run,
     log_messages,
+    neighbouring_fixture_outcomes,
+    neighbouring_outcomes,
+    occurrences_by_fixture,
+    occurrences_by_test,
+    pass_durations_by_test,
     platform_breakdown,
     totals,
 )
@@ -340,6 +350,25 @@ details.more > summary:hover { color: var(--ink-2); }
 footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 12px; color: var(--ink-muted); display: flex; flex-direction: column; gap: 4px; }
 code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
 
+.seen .n.is-clean { color: var(--baseline); }
+.seen .ms { color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
+.never { font-size: 12px; color: var(--ink-muted); font-style: italic; }
+.first { font-size: 11px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+
+.occ { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--rule); padding-top: 10px; }
+.occ .hd { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-muted); }
+.orow { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 12px; }
+.odate, .oleg { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; }
+.oleg { color: var(--ink-2); }
+.otag {
+  font-size: 11px; line-height: 1.7; padding: 0 6px; border-radius: 3px;
+  border: 1px solid var(--rule); color: var(--ink-muted); white-space: nowrap;
+}
+.otag.is-rerun { color: var(--bar); border-color: var(--bar); }
+.otag.is-bad { color: var(--critical); border-color: var(--critical); }
+.oalso { font-size: 11px; color: var(--ink-muted); padding-left: 2px; overflow-wrap: anywhere; }
+.omore { font-size: 11px; color: var(--ink-muted); font-style: italic; }
+
 @media (max-width: 640px) {
   .group { grid-template-columns: 1fr; gap: 12px; }
   .page { padding: 32px 16px 64px; }
@@ -454,35 +483,176 @@ def _screenshots_html(screenshots: str | None, status: str | None) -> str:
     return ""
 
 
-def _seen_on_html(configurations: list[dict]) -> str:
-    """The matrix legs this failure was seen on, one line per combination.
+SHOWN_OCCURRENCES = 5
 
-    Not one list per dimension: "rf 7.1.1, 7.4.2" beside "py 3.13.15, 3.14.7"
-    reads as four combinations when only two ever ran, and when each version pair
-    is a whole matrix leg the two dimensions cannot be told apart at all.
+
+def _configuration_label(configuration: dict) -> str:
+    parts = [configuration.get("platform") or "?"]
+    for label, key in (
+        ("rf", "rf_version"),
+        ("py", "python_version"),
+        ("node", "node_version"),
+    ):
+        value = configuration.get(key)
+        if value:
+            parts.append(f"{label} {value}")
+    return " &middot; ".join(parts)
+
+
+def _rates_html(
+    coverage: list[dict],
+    never_ran_on: list[str],
+    durations: dict[tuple, dict] | None = None,
+    longname: str | None = None,
+) -> str:
+    """Every matrix leg that ran this, with its denominator.
+
+    One line per combination, not one list per dimension: "rf 7.1.1, 7.4.2"
+    beside "py 3.13.15, 3.14.7" reads as four combinations when only two ever
+    ran, and when each version pair is a whole matrix leg the two dimensions
+    cannot be told apart at all.
+
+    Configurations that never failed are kept, greyed rather than dropped. 3 of
+    81 says nothing; 3 of 55 on linux against 0 of 26 on darwin says where to
+    look, and the clean 26 is half of that sentence. A configuration missing
+    from the list never ran this at all, which is the opposite finding to a
+    zero, so it gets its own line.
+
+    Where the passing runs have durations they follow the rate. For a timeout,
+    whether they cluster far below the limit or run up against it is the
+    difference between a keyword that broke and a budget that was too thin.
     """
-    if not configurations:
+    if not coverage and not never_ran_on:
         return ""
     rows = []
-    for index, configuration in enumerate(configurations):
-        parts = [configuration.get("platform") or "?"]
-        for label, key in (
-            ("rf", "rf_version"),
-            ("py", "python_version"),
-            ("node", "node_version"),
-        ):
-            value = configuration.get(key)
-            if value:
-                parts.append(f"{label} {value}")
-        label = "seen on" if index == 0 else ""
-        occurrences = configuration.get("occurrences") or 0
+    for index, configuration in enumerate(coverage):
+        failed = configuration.get("failed") or 0
+        ran = configuration.get("ran") or 0
+        spread = ""
+        if durations is not None and longname is not None:
+            measured = durations.get(
+                (
+                    longname,
+                    configuration.get("platform"),
+                    configuration.get("python_version"),
+                    configuration.get("rf_version"),
+                    configuration.get("node_version"),
+                )
+            )
+            if measured:
+                spread = (
+                    f'<span class="ms">passes {measured["min"]}&ndash;'
+                    f"{measured['max']} ms</span>"
+                )
         rows.append(
-            f'<div class="row"><span class="k">{_e(label)}</span>'
-            f'<span class="cfg">{_e(" &middot; ".join(parts))}</span>'
-            f'<span class="n">&times;{occurrences}</span></div>'
+            f'<div class="row"><span class="k">{"ran on" if not index else ""}</span>'
+            f'<span class="cfg">{_e(_configuration_label(configuration))}</span>'
+            f'<span class="n{"" if failed else " is-clean"}">{failed} of {ran}</span>'
+            f"{spread}</div>"
+        )
+    if never_ran_on:
+        rows.append(
+            f'<div class="row"><span class="k"></span>'
+            f'<span class="never">never ran on {_e(", ".join(never_ran_on))}</span>'
+            "</div>"
         )
     return f'<div class="seen">{"".join(rows)}</div>'.replace(
         "&amp;middot;", "&middot;"
+    ).replace("&amp;ndash;", "&ndash;")
+
+
+def _leg_label(name: str | None) -> str:
+    return (name or "?").replace("Test results-", "")
+
+
+def _occurrences_html(entries: list[dict], around_for, alongside_for) -> str:
+    """Each individual failure, and what surrounded it.
+
+    The counts describe a group. These describe one execution: which leg ran it,
+    which attempt that was, what the same leg did in the runs either side, and
+    what else broke alongside. A rate cannot say whether a failure was a blip on
+    a leg that is otherwise healthy or the point where something broke and
+    stayed broken, and those want opposite responses.
+
+    No verdict is drawn from any of it. `before` and `after` are what the same
+    leg did, and a re-run that passed is a re-run that passed; a re-run that
+    never happened says nothing at all, because nothing here retries
+    automatically and whether someone pressed the button follows queue time.
+    """
+    if not entries:
+        return ""
+    rows = []
+    for entry in entries[:SHOWN_OCCURRENCES]:
+        tags = []
+        attempt = entry.get("attempt")
+        if attempt and attempt > 1:
+            tags.append(f'<span class="otag">attempt {attempt}</span>')
+        if entry.get("tests_marked"):
+            tags.append(f'<span class="otag">marked {entry["tests_marked"]}</span>')
+        around = around_for(entry) or {}
+        for label, key in (
+            ("before", "previous_run_on_this_leg"),
+            ("after", "next_run_on_this_leg"),
+        ):
+            neighbour = around.get(key)
+            if not neighbour:
+                continue
+            outcome = neighbour["outcome"]
+            bad = " is-bad" if outcome != "pass" else ""
+            tags.append(f'<span class="otag{bad}">{label} {_e(outcome)}</span>')
+        retry = around.get("retry")
+        if retry:
+            passed = retry["passed_on_another_attempt"]
+            tags.append(
+                '<span class="otag is-rerun">re-run passed</span>'
+                if passed
+                else '<span class="otag is-bad">re-run failed again</span>'
+            )
+        if entry.get("artifact_url"):
+            tags.append(
+                f'<a class="evidence" href="{_e(entry["artifact_url"])}">'
+                "artifact &rarr;</a>"
+            )
+        alongside = alongside_for(entry) or []
+        also = ""
+        if alongside:
+            names = [item["test"] for item in alongside[:3]]
+            rest = len(alongside) - len(names)
+            tail = f" and {rest} more" if rest > 0 else ""
+            also = (
+                f'<div class="oalso">also failed here: '
+                f"{_e('; '.join(names))}{_e(tail)}</div>"
+            )
+        rows.append(
+            f'<div class="orow">'
+            f'<span class="odate">{_e((entry.get("created_at") or "")[:10])}</span>'
+            f'<span class="oleg">{_e(_leg_label(entry.get("artifact_name")))}</span>'
+            f"{''.join(tags)}</div>{also}"
+        )
+    hidden = len(entries) - SHOWN_OCCURRENCES
+    more = (
+        f'<div class="omore">and {hidden} earlier occurrence(s) not shown</div>'
+        if hidden > 0
+        else ""
+    )
+    return (
+        '<div class="occ"><div class="hd">every occurrence</div>'
+        f"{''.join(rows)}{more}</div>"
+    ).replace("&amp;rarr;", "&rarr;")
+
+
+def _first_attempt_html(failures: int, ran: int, total_runs: int) -> str:
+    """Only when a re-run actually moved the denominator.
+
+    A leg is re-run because it failed, so re-attempts land where the failures
+    are and pull the rate down. Where nothing was re-run the two numbers are the
+    same and printing both is noise.
+    """
+    if ran >= total_runs:
+        return ""
+    rate = failures / ran if ran else 0
+    return (
+        f'<span class="first">{failures} / {ran} on first attempts ({rate:.1%})</span>'
     )
 
 
@@ -520,19 +690,16 @@ def _where_html(
 
 
 def _group_html(
-    group: FailureGroup, widest: int, entries: list[dict], configurations: list[dict]
+    group: FailureGroup,
+    widest: int,
+    entries: list[dict],
+    *,
+    rates: str,
+    occurrences: str,
+    first_attempt: str,
 ) -> str:
     width = (group.failures / widest * 100) if widest else 0
     suite, _, leaf = group.longname.rpartition(".")
-    # The keyword is in the location block, and where it ran is its own block.
-    chips = []
-    chips.append(
-        f'<span class="chip"><span class="k">last</span> {_e(group.last_seen[:10])}</span>'
-    )
-    if group.latest_artifact_url:
-        chips.append(
-            f'<a class="evidence" href="{_e(group.latest_artifact_url)}">artifact &rarr;</a>'
-        )
     signature = group.error_signature
     error_class = "error" if signature else "error is-empty"
     return f"""      <article class="group">
@@ -542,6 +709,7 @@ def _group_html(
     }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{group.failure_rate:.1%} of runs</span>
+          {first_attempt}
         </div>
         <div class="identity">
           <div class="testname"><span class="suite">{_e(suite)}.</span>{_e(leaf)}</div>
@@ -560,9 +728,9 @@ def _group_html(
         )
     }
           {_screenshots_html(group.screenshots, group.screenshot_status)}
-          {_seen_on_html(configurations)}
+          {rates}
           {_log_html(entries)}
-          <div class="chips">{"".join(chips)}</div>
+          {occurrences}
         </div>
       </article>
 """
@@ -572,19 +740,14 @@ def _fixture_html(
     fixture: FixtureFailure,
     widest: int,
     entries: list[dict],
-    configurations: list[dict],
+    *,
+    rates: str,
+    occurrences: str,
+    first_attempt: str,
 ) -> str:
     width = (fixture.occurrences / widest * 100) if widest else 0
     kind = fixture.failure_scope.replace("_", " ")
     tests = [name for name in (fixture.affected_tests or "").split(",") if name]
-    chips = []
-    chips.append(
-        f'<span class="chip"><span class="k">last</span> {_e(fixture.last_seen[:10])}</span>'
-    )
-    if fixture.latest_artifact_url:
-        chips.append(
-            f'<a class="evidence" href="{_e(fixture.latest_artifact_url)}">artifact &rarr;</a>'
-        )
     return f"""      <article class="group">
         <div class="magnitude">
           <span class="count">{fixture.occurrences}<span class="of"> / {
@@ -592,6 +755,7 @@ def _fixture_html(
     }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{fixture.failure_rate:.1%} of suite runs</span>
+          {first_attempt}
         </div>
         <div class="identity">
           <div><span class="scope">{_e(kind)}</span></div>
@@ -613,20 +777,66 @@ def _fixture_html(
         )
     }
           {_screenshots_html(fixture.screenshots, fixture.screenshot_status)}
-          {_seen_on_html(configurations)}
+          {rates}
           {_log_html(entries)}
           <div class="affected">marked {fixture.tests_marked} test row(s) failed:
             {_e(", ".join(tests)) or "-"}</div>
-          <div class="chips">{"".join(chips)}</div>
+          {occurrences}
         </div>
       </article>
 """
 
 
+def _never_ran_on(coverage: list[dict], known_platforms: set[str]) -> list[str]:
+    """Absent and clean are opposite findings and a zero cannot tell them apart."""
+    return sorted(known_platforms - {c["platform"] for c in coverage if c["platform"]})
+
+
+def _fixture_section_html(
+    db_path: Path,
+    fixture: FixtureFailure,
+    widest: int,
+    *,
+    coverage: dict,
+    occurrences: dict,
+    neighbours: dict,
+    alongside: dict,
+    first_runs: dict,
+    first_failures: dict,
+    known_platforms: set[str],
+) -> str:
+    identity = (fixture.scope_owner, fixture.failure_scope)
+    key = (*identity, fixture.signature_key)
+    entries = coverage.get(identity, [])
+    return _fixture_html(
+        fixture,
+        widest,
+        log_messages(db_path, fixture.latest_result_id),
+        rates=_rates_html(entries, _never_ran_on(entries, known_platforms)),
+        occurrences=_occurrences_html(
+            occurrences.get(key, []),
+            lambda entry: neighbours.get((*identity, entry["leg_id"])),
+            lambda entry: alongside.get((*identity, entry["leg_id"])),
+        ),
+        first_attempt=_first_attempt_html(
+            first_failures.get(key, 0),
+            first_runs.get(identity, 0),
+            fixture.suite_runs,
+        ),
+    )
+
+
 def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     summary = totals(db_path)
     groups = failure_groups(db_path, limit=limit)
-    test_configs = configurations_by_test(db_path)
+    platforms = platform_breakdown(db_path)
+    known_platforms = {p["platform"] for p in platforms}
+    coverage = coverage_by_test(db_path)
+    durations = pass_durations_by_test(db_path)
+    occurrences = occurrences_by_test(db_path)
+    neighbours = neighbouring_outcomes(db_path)
+    alongside = co_failures(db_path)
+    first_runs, first_failures = first_attempt_counts_by_test(db_path)
     widest = max((g.failures for g in groups), default=0)
     window = (
         f"{summary['since'][:10]} to {summary['until'][:10]}"
@@ -643,7 +853,22 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
                     g,
                     widest,
                     log_messages(db_path, g.latest_result_id),
-                    test_configs.get((g.longname, g.signature_key), []),
+                    rates=_rates_html(
+                        coverage.get(g.longname, []),
+                        _never_ran_on(coverage.get(g.longname, []), known_platforms),
+                        durations,
+                        g.longname,
+                    ),
+                    occurrences=_occurrences_html(
+                        occurrences.get((g.longname, g.signature_key), []),
+                        lambda entry: neighbours.get(entry["result_id"]),
+                        lambda entry: alongside.get(entry["result_id"]),
+                    ),
+                    first_attempt=_first_attempt_html(
+                        first_failures.get((g.longname, g.signature_key), 0),
+                        first_runs.get(g.longname, 0),
+                        g.total_runs,
+                    ),
                 )
                 for g in groups
             )
@@ -659,7 +884,13 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
         note = "Nothing failed in this window."
 
     fixtures = fixture_failures(db_path, limit=limit)
-    fixture_configs = configurations_by_fixture(db_path)
+    fixture_coverage = coverage_by_fixture(db_path)
+    fixture_occurrences = occurrences_by_fixture(db_path)
+    fixture_neighbours = neighbouring_fixture_outcomes(db_path)
+    fixture_alongside = fixture_co_failures(db_path)
+    first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
+        db_path
+    )
     widest_fixture = max((f.occurrences for f in fixtures), default=0)
     fixture_section = (
         f"""  <section>
@@ -669,14 +900,13 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     flaky tests as the suite happens to contain. Counted once here, against the number of times
     the suite ran.</p>
     <div class="groups">
-{"".join(_fixture_html(f, widest_fixture, log_messages(db_path, f.latest_result_id), fixture_configs.get((f.scope_owner, f.failure_scope, f.signature_key), [])) for f in fixtures)}    </div>
+{"".join(_fixture_section_html(db_path, f, widest_fixture, coverage=fixture_coverage, occurrences=fixture_occurrences, neighbours=fixture_neighbours, alongside=fixture_alongside, first_runs=first_fixture_runs, first_failures=first_fixture_failures, known_platforms=known_platforms) for f in fixtures)}    </div>
   </section>
 """
         if fixtures
         else ""
     )
 
-    platforms = platform_breakdown(db_path)
     busiest = max((p["per_leg"] for p in platforms), default=0)
     platform_rows = "".join(
         f"""      <div class="prow">
@@ -705,6 +935,16 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     # rewrite it back into one if the expression sits inline.
     result_count = f"{summary['results']:,}"
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    newest = latest_run(db_path)
+    # A first-attempt rate is a floor while any leg is unplaced, and a page that
+    # does not say so is a page that reads as if it were not.
+    unknown = summary["legs_without_attempt"]
+    unknown_note = (
+        f'  <p class="section-note">{unknown} leg(s) could not be placed on an '
+        "attempt, so the first-attempt rates below are a floor.</p>"
+        if unknown
+        else ""
+    )
     page = f"""<title>Browser CI Failures</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -728,7 +968,17 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     {_tile(f"{rate:.2%}", "failure rate")}
     {_tile(len(groups), "test/error groups")}
     {_tile(len(fixtures), "fixture failures")}
+    {
+        _tile(
+            newest["failures"],
+            "failures in the newest run",
+            critical=bool(newest.get("failures")),
+        )
+        if newest
+        else ""
+    }
   </div>
+{unknown_note}
 
 {platform_section}
 {fixture_section}
@@ -739,7 +989,8 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
   </section>
 
   <footer>
-    <div>Generated {_e(generated)} by <code>inv ci-report --html</code> from {_e(summary["tests"]):} distinct tests.</div>
+    <div>Generated {_e(generated)} by <code>inv ci-report --html</code> from {
+        _e(summary["tests"]):} distinct tests.</div>
     <div>Proof of concept. No flakiness verdict is implied: whether an error is a flake, a real
     bug or a broken runner is a judgement to make while looking at these numbers.</div>
   </footer>

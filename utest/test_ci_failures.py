@@ -21,9 +21,7 @@ from tools.ci_failures.report import (
     pass_durations_by_test,
     failure_groups,
     fixture_signature_variants,
-    configurations_by_fixture,
     fixture_failures,
-    configurations_by_test,
     messages_by_test,
     occurrences_by_test,
     signature_variants,
@@ -693,12 +691,11 @@ class TestVersionsOnAFailure:
             ],
         )
 
-        configurations = configurations_by_test(db)[("S.Test A", "boom")]
+        configurations = coverage_by_test(db)["S.Test A"]
 
-        assert [(c["rf_version"], c["python_version"]) for c in configurations] == [
-            ("7.1.1", "3.13.15"),
-            ("7.4.2", "3.14.7"),
-        ]
+        assert sorted(
+            (c["rf_version"], c["python_version"]) for c in configurations
+        ) == [("7.1.1", "3.13.15"), ("7.4.2", "3.14.7")]
 
     def test_a_repeated_combination_is_counted_rather_than_repeated(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
@@ -711,11 +708,11 @@ class TestVersionsOnAFailure:
             ],
         )
 
-        configurations = configurations_by_test(db)[("S.Test A", "boom")]
+        configurations = coverage_by_test(db)["S.Test A"]
 
         assert len(configurations) == 2
-        assert configurations[0]["occurrences"] == 2, "most seen first"
-        assert configurations[1]["occurrences"] == 1
+        assert configurations[0]["failed"] == 2, "most failed first"
+        assert configurations[1]["failed"] == 1
 
     def test_a_fixture_failure_counts_legs_not_the_rows_it_marked(self, tmp_path):
         """One broken teardown marking four tests is one occurrence, not four."""
@@ -742,12 +739,11 @@ class TestVersionsOnAFailure:
         connection.commit()
         connection.close()
 
-        configurations = configurations_by_fixture(db)[
-            ("S", "suite_teardown", "teardown broke")
-        ]
+        configurations = coverage_by_fixture(db)[("S", "suite_teardown")]
 
         assert len(configurations) == 1
-        assert configurations[0]["occurrences"] == 1
+        assert configurations[0]["failed"] == 1, "one leg, not the four rows it marked"
+        assert configurations[0]["ran"] == 1
 
 
 class TestScreenshotEvidence:
