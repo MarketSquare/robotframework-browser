@@ -27,15 +27,19 @@ from pathlib import Path
 
 from .report import (
     co_failures,
-    configurations_by_fixture,
+    coverage_by_fixture,
     coverage_by_test,
     failure_groups,
+    fixture_co_failures,
     fixture_failures,
     fixture_signature_variants,
     latest_run,
     log_messages,
+    messages_by_fixture,
     messages_by_test,
+    neighbouring_fixture_outcomes,
     neighbouring_outcomes,
+    occurrences_by_fixture,
     occurrences_by_test,
     pass_durations_by_test,
     platform_breakdown,
@@ -118,7 +122,16 @@ ABOUT = {
         "same execution. It claims no causation. It is here because a test can "
         "fail on a variable that an earlier suite never got to set, and read "
         "alone that entry looks like an unrelated assertion failure in a file "
-        "where nothing is wrong."
+        "where nothing is wrong. On a fixture entry the tests that fixture "
+        "marked are left out: they are its own damage, already counted once."
+    ),
+    "fixture_occurrences": (
+        "A fixture occurrence is one leg, never one marked test row. Five "
+        "teardown failures of one suite produced ten failed tests, and listing "
+        "ten would put back the double count the fixture split exists to "
+        "remove. What each leg lost is 'tests_marked' on that occurrence. For "
+        "the same reason 'ran' on a fixture rate counts legs that ran the "
+        "suite, and the occurrence count of a raw message counts legs too."
     ),
     "latest_run": (
         "'window.latest_run' is the newest run in the window and how many "
@@ -155,18 +168,28 @@ def _where_to_look(row) -> dict:
 def _rates(
     coverage: list[dict],
     known_platforms: set[str],
-    durations: dict[tuple, dict],
+    durations: dict[tuple, dict] | None,
     longname: str,
 ) -> tuple[list, list]:
-    rates = [
-        {
+    """Per configuration, how often it ran and how often it broke.
+
+    `durations` is None for a suite fixture, which has no duration of its own in
+    the database - only the tests it marked have one. The key is then left out
+    rather than carried as null: a field that is null on every row of a whole
+    section reads as a measurement that was attempted and failed.
+    """
+    rates = []
+    for entry in coverage:
+        rate = {
             "platform": entry["platform"],
             "python": entry["python_version"],
             "rf": entry["rf_version"],
             "node": entry["node_version"] or None,
             "ran": entry["ran"],
             "failed": entry["failed"] or 0,
-            "pass_ms": durations.get(
+        }
+        if durations is not None:
+            rate["pass_ms"] = durations.get(
                 (
                     longname,
                     entry["platform"],
@@ -174,10 +197,8 @@ def _rates(
                     entry["rf_version"],
                     entry["node_version"],
                 )
-            ),
-        }
-        for entry in coverage
-    ]
+            )
+        rates.append(rate)
     seen = {entry["platform"] for entry in coverage if entry["platform"]}
     return rates, sorted(known_platforms - seen)
 
@@ -208,6 +229,48 @@ def _occurrences(
             "leg": entry["artifact_name"],
             "artifact_url": entry["artifact_url"],
             "elapsed_ms": entry["elapsed_ms"],
+            "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
+            "next_run_on_this_leg": around.get("next_run_on_this_leg"),
+            "retry": around.get("retry"),
+            "also_failed_in_this_leg": alongside[:CO_FAILURE_LIMIT],
+        }
+        if len(alongside) > CO_FAILURE_LIMIT:
+            occurrence["also_failed_in_this_leg_not_listed"] = (
+                len(alongside) - CO_FAILURE_LIMIT
+            )
+        occurrences.append(occurrence)
+    return occurrences
+
+
+def _fixture_occurrences(
+    entries: list[dict],
+    identity: tuple,
+    neighbours: dict[tuple, dict],
+    others: dict[tuple, list[dict]],
+) -> list[dict]:
+    """One leg the fixture broke in, with what surrounded it.
+
+    Same shape as a test occurrence, minus `elapsed_ms`: a suite fixture has no
+    duration of its own in the database, only the tests it marked have one.
+    """
+    occurrences = []
+    for entry in entries:
+        leg = (*identity, entry["leg_id"])
+        around = neighbours.get(leg, {})
+        alongside = others.get(leg, [])
+        occurrence = {
+            "run": entry["run_id"],
+            "run_url": entry["run_url"],
+            "commit": entry["head_sha"],
+            "event": entry["event"],
+            "at": entry["created_at"],
+            "platform": entry["platform"],
+            "python": entry["python_version"],
+            "rf": entry["rf_version"],
+            "node": entry["node_version"] or None,
+            "leg": entry["artifact_name"],
+            "artifact_url": entry["artifact_url"],
+            "tests_marked": entry["tests_marked"],
             "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
             "next_run_on_this_leg": around.get("next_run_on_this_leg"),
             "retry": around.get("retry"),
@@ -285,16 +348,26 @@ def build(db_path: Path, limit: int = 100) -> dict:
             entry["signature_variants"] = variants[key]
         tests.append(entry)
 
-    fixture_configs = configurations_by_fixture(db_path)
+    fixture_coverage = coverage_by_fixture(db_path)
+    fixture_occurrences = occurrences_by_fixture(db_path)
+    fixture_messages = messages_by_fixture(db_path)
+    fixture_neighbours = neighbouring_fixture_outcomes(db_path)
+    fixture_alongside = fixture_co_failures(db_path)
+
     fixtures = []
     for fixture in fixture_failures(db_path, limit=limit):
         key = (fixture.scope_owner, fixture.failure_scope, fixture.signature_key)
+        identity = (fixture.scope_owner, fixture.failure_scope)
+        rates, never = _rates(
+            fixture_coverage.get(identity, []), platforms, None, fixture.scope_owner
+        )
         fixtures.append(
             {
                 "suite": fixture.scope_owner,
                 "scope": fixture.failure_scope,
                 "where_to_look": _where_to_look(fixture),
                 "signature": fixture.error_signature,
+                "raw_messages": fixture_messages.get(key, []),
                 "counts": {
                     "failures": fixture.occurrences,
                     "suite_runs": fixture.suite_runs,
@@ -303,12 +376,18 @@ def build(db_path: Path, limit: int = 100) -> dict:
                     "test_rows_marked_failed": fixture.tests_marked,
                 },
                 "affected_tests": _split(fixture.affected_tests),
-                "seen_on": fixture_configs.get(key, []),
+                "rates": rates,
+                "never_ran_on": never,
                 "first_seen": fixture.first_seen,
                 "last_seen": fixture.last_seen,
                 "screenshots": _split(fixture.screenshots),
                 "screenshot_status": fixture.screenshot_status,
-                "artifact_url": fixture.latest_artifact_url,
+                "occurrences": _fixture_occurrences(
+                    fixture_occurrences.get(key, []),
+                    identity,
+                    fixture_neighbours,
+                    fixture_alongside,
+                ),
                 "log": _log(db_path, fixture.latest_result_id),
             }
         )

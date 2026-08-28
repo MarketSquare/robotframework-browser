@@ -12,6 +12,7 @@ from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.json_report import build as build_json
 from tools.ci_failures.report import (
     co_failures,
+    coverage_by_fixture,
     coverage_by_test,
     latest_run,
     neighbouring_outcomes,
@@ -1078,11 +1079,12 @@ class TestCaseFoldedGrouping:
             connection.execute(
                 "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
                 "status, elapsed_ms, message, error_signature, failure_scope, "
-                "scope_owner) VALUES (?, ?, ?, 'S', ?, ?, ?, ?, ?, ?)",
+                "scope_owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     legs[key],
                     row["test"],
                     row["test"],
+                    row.get("suite", "S"),
                     row["status"],
                     row.get("elapsed"),
                     row.get("message"),
@@ -1517,6 +1519,142 @@ class TestWhatSurroundedTheFailure:
 
         assert {key[0] for key in pass_durations_by_test(db)} == {"T"}
         assert len(neighbouring_outcomes(db)) == 1
+
+
+class TestFixtureEntriesAskTheSameQuestions:
+    """A suite fixture entry carried none of what section 6 added for tests.
+
+    It is the most frequent failure in the window and it was the one entry with
+    no denominators, no raw messages, and nothing to hang the evidence on: the
+    configurations it had been seen on, counted, with nothing to count against.
+    """
+
+    _seed = TestCaseFoldedGrouping._seed
+
+    def _fixture(self, db: Path) -> dict:
+        return build_json(db)["fixture_failures"][0]
+
+    def _broke(self, marking: int = 2, **row) -> list[dict]:
+        """One leg where the suite teardown failed, marking `marking` tests."""
+        return [
+            {
+                "test": f"T{index}",
+                "status": "FAIL",
+                "signature": "deadline",
+                "scope": "suite_teardown",
+                "owner": "Suite X",
+                "suite": "Suite X",
+                **row,
+            }
+            for index in range(marking)
+        ]
+
+    def _ran_clean(self, **row) -> list[dict]:
+        return [
+            {"test": f"T{index}", "status": "PASS", "suite": "Suite X", **row}
+            for index in range(2)
+        ]
+
+    def test_an_occurrence_is_one_leg_not_one_marked_test_row(self, tmp_path):
+        """Five teardown failures produced ten failed tests. Listing ten
+        occurrences puts back the count section 3 exists to remove."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._broke(marking=4))
+
+        fixture = self._fixture(db)
+
+        assert fixture["counts"]["test_rows_marked_failed"] == 4
+        assert len(fixture["occurrences"]) == 1
+        assert fixture["occurrences"][0]["tests_marked"] == 4
+
+    def test_the_denominator_counts_legs_that_ran_the_suite(self, tmp_path):
+        """`seen_on` said which legs it had been seen failing on and how often,
+        with nothing to divide by. 5 occurrences is not a rate."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._broke() + self._ran_clean(sha="two"))
+
+        fixture = self._fixture(db)
+
+        assert [(r["ran"], r["failed"]) for r in fixture["rates"]] == [(2, 1)]
+        assert (
+            sum(r["ran"] for r in fixture["rates"]) == fixture["counts"]["suite_runs"]
+        )
+
+    def test_a_configuration_the_fixture_never_broke_on_keeps_its_denominator(
+        self, tmp_path
+    ):
+        """win32 breaking 5 times in 59 while nothing else breaks in 55 is the
+        whole finding, and it is invisible without the clean configurations."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            self._broke(platform="win32")
+            + self._ran_clean(sha="two", platform="win32")
+            + self._ran_clean(platform="linux")
+            + self._ran_clean(sha="two", platform="linux"),
+        )
+
+        assert {
+            (c["platform"], c["ran"], c["failed"])
+            for c in coverage_by_fixture(db)[("Suite X", "suite_teardown")]
+        } == {("win32", 2, 1), ("linux", 2, 0)}
+
+    def test_a_fixture_rate_carries_no_pass_duration(self, tmp_path):
+        """A suite fixture has no duration of its own in the database. A field
+        that is null on every row reads as a measurement that failed."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._broke())
+
+        assert "pass_ms" not in self._fixture(db)["rates"][0]
+
+    def test_the_runs_either_side_of_a_broken_fixture_are_reported(self, tmp_path):
+        """A fixture has no status row of its own: the leg passed if the suite
+        ran there and the fixture is not among the failures."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            self._ran_clean(sha="one")
+            + self._broke(sha="two")
+            + self._ran_clean(sha="three"),
+        )
+
+        occurrence = self._fixture(db)["occurrences"][0]
+
+        assert occurrence["previous_run_on_this_leg"]["outcome"] == "pass"
+        assert occurrence["next_run_on_this_leg"]["outcome"] == "pass"
+
+    def test_a_hand_rerun_of_a_broken_fixture_is_reported(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._broke(attempt=1) + self._ran_clean(attempt=2))
+
+        assert self._fixture(db)["occurrences"][0]["retry"] == {
+            "attempts": 2,
+            "passed_on_another_attempt": True,
+        }
+
+    def test_the_tests_the_fixture_marked_are_not_listed_as_context(self, tmp_path):
+        """They are its own damage, already counted once. Restating them as
+        context makes one event look like a leg falling apart."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            self._broke()
+            + [{"test": "Unrelated", "status": "FAIL", "signature": "other"}],
+        )
+
+        assert self._fixture(db)["occurrences"][0]["also_failed_in_this_leg"] == [
+            {"test": "Unrelated", "scope": "test"}
+        ]
+
+    def test_a_raw_message_is_counted_in_legs_not_in_marked_rows(self, tmp_path):
+        """Robot Framework writes the fixture's message onto every test it
+        marked, so counting rows reports one teardown failure as four."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db, self._broke(marking=4, message="Deadline Exceeded"))
+
+        assert self._fixture(db)["raw_messages"] == [
+            {"message": "Deadline Exceeded", "occurrences": 1}
+        ]
 
 
 class TestHtmlReport:

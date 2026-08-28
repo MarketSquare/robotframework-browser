@@ -603,6 +603,248 @@ def co_failures(db_path: Path) -> dict[int, list[dict]]:
     return grouped
 
 
+def _failing_fixtures(connection) -> list:
+    return connection.execute(
+        """
+        SELECT DISTINCT scope_owner, failure_scope FROM test_result
+        WHERE status = 'FAIL'
+          AND failure_scope IN ('suite_setup', 'suite_teardown')
+          AND scope_owner IS NOT NULL
+        """
+    ).fetchall()
+
+
+def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
+    """Every leg that ran the suite, and whether this fixture broke in it.
+
+    The denominator for a fixture is legs that ran the suite, never test rows:
+    one broken teardown marks every test beneath it, so counting rows counts
+    the suite's size. `suite_longname LIKE owner || '.%'` is what includes the
+    child suites the fixture also fails.
+    """
+    return connection.execute(
+        """
+        SELECT l.id AS leg_id, l.artifact_name, l.platform, l.python_version,
+               l.rf_version, l.node_version,
+               r.id AS run_id, r.head_sha, r.created_at,
+               MAX(CASE WHEN f.status = 'FAIL' AND f.failure_scope = ?
+                         AND f.scope_owner = ? THEN 1 ELSE 0 END) AS broke
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.suite_longname = ? OR f.suite_longname LIKE ? || '.%'
+        GROUP BY l.id
+        ORDER BY r.created_at, r.id
+        """,
+        (failure_scope, scope_owner, scope_owner, scope_owner),
+    ).fetchall()
+
+
+def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+    """Every leg a fixture broke in: which run, which commit, which leg.
+
+    One entry per leg, not per marked test row. Five teardown failures of
+    `Hangs Setup` produced ten failed tests, and listing ten occurrences would
+    put back exactly the double count section 3 exists to remove. How many rows
+    each leg lost is carried as `tests_marked` instead, where it is a fact about
+    the leg rather than a multiplier on the count.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.scope_owner, f.failure_scope,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               l.id AS leg_id, MIN(f.id) AS result_id, COUNT(*) AS tests_marked,
+               r.id AS run_id, r.head_sha, r.event, r.created_at,
+               r.url AS run_url,
+               l.platform, l.python_version, l.rf_version, l.node_version,
+               l.artifact_name, l.artifact_url
+        FROM test_result f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.status = 'FAIL'
+          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        GROUP BY f.scope_owner, f.failure_scope,
+                 LOWER(IFNULL(f.error_signature, '')), l.id
+        ORDER BY r.created_at DESC
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
+        grouped.setdefault(key, []).append(dict(row))
+    return grouped
+
+
+def coverage_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+    """Per configuration, how often the suite ran and how often the fixture broke.
+
+    `seen_on` said which matrix legs a fixture had been seen failing on and how
+    often, with no denominator. That is the same shape section 6 rejected for
+    tests: 5 occurrences is not a rate, and 3 of 68 on win32 against 0 of 46
+    everywhere else is where to look.
+    """
+    connection = connect(db_path)
+    grouped: dict[tuple, list[dict]] = {}
+    for fixture in _failing_fixtures(connection):
+        owner = fixture["scope_owner"]
+        scope = fixture["failure_scope"]
+        counts: dict[tuple, dict] = {}
+        for row in _fixture_legs(connection, owner, scope):
+            key = (
+                row["platform"],
+                row["python_version"],
+                row["rf_version"],
+                row["node_version"],
+            )
+            entry = counts.setdefault(
+                key,
+                {
+                    "platform": row["platform"],
+                    "python_version": row["python_version"],
+                    "rf_version": row["rf_version"],
+                    "node_version": row["node_version"],
+                    "ran": 0,
+                    "failed": 0,
+                },
+            )
+            entry["ran"] += 1
+            entry["failed"] += row["broke"]
+        grouped[(owner, scope)] = sorted(
+            counts.values(), key=lambda entry: (-entry["failed"], -entry["ran"])
+        )
+    connection.close()
+    return grouped
+
+
+def neighbouring_fixture_outcomes(db_path: Path) -> dict[tuple, dict]:
+    """`neighbouring_outcomes` for suite fixtures, keyed by the leg it broke in.
+
+    The same question and the same answer, with one difference in what counts as
+    an outcome: a fixture has no status of its own in `test_result`, so the leg
+    passed if the suite ran there and the fixture is not among the failures.
+    """
+    connection = connect(db_path)
+    outcomes: dict[tuple, dict] = {}
+    for fixture in _failing_fixtures(connection):
+        owner = fixture["scope_owner"]
+        scope = fixture["failure_scope"]
+        rows = _fixture_legs(connection, owner, scope)
+        lanes: dict[str, dict] = {}
+        for row in rows:
+            lane = lanes.setdefault(row["artifact_name"], {})
+            run = lane.setdefault(
+                (row["created_at"], row["run_id"]),
+                {
+                    "run": row["run_id"],
+                    "commit": row["head_sha"],
+                    "at": row["created_at"],
+                    "statuses": [],
+                    "legs": set(),
+                },
+            )
+            run["statuses"].append("FAIL" if row["broke"] else "PASS")
+            run["legs"].add(row["leg_id"])
+
+        def seen(run: dict) -> dict:
+            return {
+                "run": run["run"],
+                "commit": run["commit"],
+                "at": run["at"],
+                "outcome": _verdict(run["statuses"]),
+            }
+
+        for row in rows:
+            if not row["broke"]:
+                continue
+            lane = lanes[row["artifact_name"]]
+            order = sorted(lane)
+            here = order.index((row["created_at"], row["run_id"]))
+            mine = lane[order[here]]
+            retry = None
+            if len(mine["legs"]) > 1:
+                retry = {
+                    "attempts": len(mine["legs"]),
+                    "passed_on_another_attempt": "PASS" in mine["statuses"],
+                }
+            outcomes[(owner, scope, row["leg_id"])] = {
+                "previous_run_on_this_leg": (
+                    seen(lane[order[here - 1]]) if here else None
+                ),
+                "next_run_on_this_leg": (
+                    seen(lane[order[here + 1]]) if here + 1 < len(order) else None
+                ),
+                "retry": retry,
+            }
+    connection.close()
+    return outcomes
+
+
+def fixture_co_failures(db_path: Path) -> dict[tuple, list[dict]]:
+    """What else broke in a leg the fixture broke in.
+
+    The tests this fixture marked are excluded. They are the same event already
+    counted once, and listing them here would restate the fixture's own damage
+    as if it were context.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT a.scope_owner, a.failure_scope, a.leg_id, b.longname,
+               IFNULL(b.failure_scope, 'test') AS scope
+        FROM (SELECT DISTINCT scope_owner, failure_scope, leg_id
+                FROM test_result
+               WHERE status = 'FAIL'
+                 AND failure_scope IN ('suite_setup', 'suite_teardown')
+                 AND scope_owner IS NOT NULL) a
+        JOIN test_result b ON b.leg_id = a.leg_id AND b.status = 'FAIL'
+        WHERE NOT (IFNULL(b.failure_scope, 'test') = a.failure_scope
+                   AND IFNULL(b.scope_owner, '') = a.scope_owner)
+        GROUP BY a.scope_owner, a.failure_scope, a.leg_id, b.longname
+        ORDER BY a.leg_id, b.longname
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = (row["scope_owner"], row["failure_scope"], row["leg_id"])
+        grouped.setdefault(key, []).append(
+            {"test": row["longname"], "scope": row["scope"]}
+        )
+    return grouped
+
+
+def messages_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+    """`messages_by_test` for suite fixtures, counted in legs.
+
+    Robot Framework writes the fixture's message onto every test it marked, so
+    counting rows would report one teardown failure as ten.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        """
+        SELECT f.scope_owner, f.failure_scope,
+               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+               f.message, COUNT(DISTINCT f.leg_id) AS occurrences
+        FROM test_result f
+        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
+          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        GROUP BY f.scope_owner, f.failure_scope,
+                 LOWER(IFNULL(f.error_signature, '')), f.message
+        ORDER BY occurrences DESC
+        """
+    ).fetchall()
+    connection.close()
+    grouped: dict[tuple, list[dict]] = {}
+    for row in rows:
+        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
+        grouped.setdefault(key, []).append(
+            {"message": row["message"], "occurrences": row["occurrences"]}
+        )
+    return grouped
+
+
 def latest_run(db_path: Path) -> dict:
     """The newest run in the window, and how many failures it carried.
 
