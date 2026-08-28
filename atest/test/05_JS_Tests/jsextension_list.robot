@@ -1,11 +1,11 @@
 *** Settings ***
-Library         Browser    jsextension=${js_plugins}
-Resource        imports.resource
+Library       Browser    jsextension=${js_plugins}
+Resource      imports.resource
 
-Force Tags      no-iframe
+Force Tags    no-iframe
 
 *** Variables ***
-@{js_plugins} =     ${CURDIR}/funky.js    ${CURDIR}/another.js
+@{js_plugins} =    ${CURDIR}/funky.js    ${CURDIR}/another.js
 
 *** Test Cases ***
 Promise To Call Custom Js Keyword

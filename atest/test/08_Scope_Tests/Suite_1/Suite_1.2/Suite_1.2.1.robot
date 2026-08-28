@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        ../../scope_keywords.resource
+Resource       ../../scope_keywords.resource
 
-Suite Setup     Ensure Open Page    ${WAIT_URL_FRAMED}
+Suite Setup    Ensure Open Page    ${WAIT_URL_FRAMED}
 
 *** Test Cases ***
 Test Suite Level Removed

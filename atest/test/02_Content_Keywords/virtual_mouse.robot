@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup    New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${Center_Func} =    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}

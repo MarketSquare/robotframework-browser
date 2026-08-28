@@ -1,11 +1,11 @@
 *** Settings ***
-Library             OperatingSystem
-Resource            imports.resource
+Library          OperatingSystem
+Resource         imports.resource
 
-Test Setup          Open Browser To No Page
-Test Teardown       Close Browser
+Test Setup       Open Browser To No Page
+Test Teardown    Close Browser
 
-Test Tags           slow
+Test Tags        slow
 
 *** Test Cases ***
 Open PDF In Another Tab And Download It

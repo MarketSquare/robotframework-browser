@@ -1,12 +1,12 @@
 *** Settings ***
-Resource            ../variables.resource
-Library             Browser    enable_presenter_mode=True
-Library             ../../library/presenter_mode.py
+Resource          ../variables.resource
+Library           Browser    enable_presenter_mode=True
+Library           ../../library/presenter_mode.py
 
-Suite Setup         New Browser    headless=False
-Suite Teardown      Close Browser
+Suite Setup       New Browser    headless=False
+Suite Teardown    Close Browser
 
-Test Tags           slow    no-iframe    no-docker-pr
+Test Tags         slow    no-iframe    no-docker-pr
 
 *** Test Cases ***
 Filling The Text With True

@@ -1,7 +1,7 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Test Teardown       Close Browser    ALL
+Test Teardown    Close Browser    ALL
 
 *** Test Cases ***
 Switch Browser

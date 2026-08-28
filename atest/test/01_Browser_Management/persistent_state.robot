@@ -1,7 +1,7 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Browser    ALL
+Suite Teardown    Close Browser    ALL
 
 *** Test Cases ***
 New Persistent Context Creates A Browser And A Context

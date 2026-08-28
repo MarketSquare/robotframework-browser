@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         New Page    ${LOGIN_URL}
-Suite Teardown      Close Browser    ALL
+Suite Setup       New Page    ${LOGIN_URL}
+Suite Teardown    Close Browser    ALL
 
 *** Test Cases ***
 Set And Get Local Storage

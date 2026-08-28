@@ -1,13 +1,13 @@
 *** Settings ***
-Library             pabot.SharedLibrary    Process
-Library             pabot.PabotLib
-Library             ../library/common.py
-Resource            variables.resource
-Resource            keywords.resource
+Library           pabot.SharedLibrary    Process
+Library           pabot.PabotLib
+Library           ../library/common.py
+Resource          variables.resource
+Resource          keywords.resource
 
-Suite Setup         Start Test Application
-Suite Teardown      Suite Teardown
-Test Timeout        ${DEFAULT_TEST_TIMEOUT}
+Suite Setup       Start Test Application
+Suite Teardown    Suite Teardown
+Test Timeout      ${DEFAULT_TEST_TIMEOUT}
 
 *** Keywords ***
 Start Test Application

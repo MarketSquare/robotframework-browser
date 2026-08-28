@@ -1,17 +1,17 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Browser    headless=${HEADLESS}
+Suite Setup    New Browser    headless=${HEADLESS}
 
 *** Variables ***
-${CUSTOM_STATE_DIR} =           ${OUTPUT_DIR}/custom_state
-${OTHER_ORIGIN_URL} =           http://127.0.0.1:${SERVER_PORT}/dist/
-${SEED_INDEXED_DB} =            async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); db.close(); }
-${READ_INDEXED_DB} =            async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); const value = await new Promise((res, rej) => { const tx = db.transaction('kv', 'readonly'); const get = tx.objectStore('kv').get('auth'); get.onsuccess = () => res(get.result); get.onerror = () => rej(get.error); }); db.close(); return value === undefined ? '' : value; }
-${HOLD_INDEXED_DB} =            async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); window.__db = db; }
-${SW_CONNECTION_STATUS} =       async () => { const reg = await navigator.serviceWorker.ready; return await new Promise((res) => { const channel = new MessageChannel(); channel.port1.onmessage = (event) => res(event.data); reg.active.postMessage('status', [channel.port2]); }); }
-${LIST_INDEXED_DB} =            async () => (await indexedDB.databases()).map(db => db.name).join(',')
-${DELETE_INDEXED_DB} =          async () => { await new Promise((res, rej) => { const req = indexedDB.deleteDatabase('rfdb'); req.onsuccess = () => res(); req.onerror = () => rej(req.error); req.onblocked = () => rej(new Error('blocked')); }); }
+${CUSTOM_STATE_DIR} =        ${OUTPUT_DIR}/custom_state
+${OTHER_ORIGIN_URL} =        http://127.0.0.1:${SERVER_PORT}/dist/
+${SEED_INDEXED_DB} =         async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); db.close(); }
+${READ_INDEXED_DB} =         async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); const value = await new Promise((res, rej) => { const tx = db.transaction('kv', 'readonly'); const get = tx.objectStore('kv').get('auth'); get.onsuccess = () => res(get.result); get.onerror = () => rej(get.error); }); db.close(); return value === undefined ? '' : value; }
+${HOLD_INDEXED_DB} =         async () => { const req = indexedDB.open('rfdb', 1); req.onupgradeneeded = () => req.result.createObjectStore('kv'); const db = await new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); }); await new Promise((res, rej) => { const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put('token-abc', 'auth'); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); window.__db = db; }
+${SW_CONNECTION_STATUS} =    async () => { const reg = await navigator.serviceWorker.ready; return await new Promise((res) => { const channel = new MessageChannel(); channel.port1.onmessage = (event) => res(event.data); reg.active.postMessage('status', [channel.port2]); }); }
+${LIST_INDEXED_DB} =         async () => (await indexedDB.databases()).map(db => db.name).join(',')
+${DELETE_INDEXED_DB} =       async () => { await new Promise((res, rej) => { const req = indexedDB.deleteDatabase('rfdb'); req.onsuccess = () => res(); req.onerror = () => rej(req.error); req.onblocked = () => rej(new Error('blocked')); }); }
 
 *** Test Cases ***
 Save Storage State

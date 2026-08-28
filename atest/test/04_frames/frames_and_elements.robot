@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Page    ${FRAMES_BUG_REPORT}
+Suite Setup    New Page    ${FRAMES_BUG_REPORT}
 
 *** Test Cases ***
 Get Text With Element

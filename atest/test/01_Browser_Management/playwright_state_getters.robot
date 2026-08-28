@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Suite Setup         Close Browser    ALL
-Test Teardown       Close Browser    ALL
-Test Timeout        60s
+Suite Setup      Close Browser    ALL
+Test Teardown    Close Browser    ALL
+Test Timeout     60s
 
 *** Test Cases ***
 Get Multiple Browsers

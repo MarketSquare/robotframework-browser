@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Close Page    ALL
+Suite Setup    Close Page    ALL
 
 *** Test Cases ***
 No Open Browser Throws

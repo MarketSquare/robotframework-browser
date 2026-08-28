@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Ensure Location    ${LOGIN_URL}
+Test Setup    Ensure Location    ${LOGIN_URL}
 
 *** Test Cases ***
 Wait For Page Load States Load

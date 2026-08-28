@@ -1,10 +1,10 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Screenshot Timeout
+Test Setup    Screenshot Timeout
 
 *** Variables ***
-${TestScreenshot} =     ${OUTPUT_DIR}${/}test_screenshot
+${TestScreenshot} =    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Screenshot By Default Filename

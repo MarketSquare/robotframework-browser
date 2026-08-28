@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Browser    ALL
+Suite Teardown    Close Browser    ALL
 
-Test Tags           no-docker-pr
+Test Tags         no-docker-pr
 
 *** Test Cases ***
 Wrong Browser With Channel

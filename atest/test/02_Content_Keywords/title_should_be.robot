@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Page    ${FORM_URL}
+Suite Setup    New Page    ${FORM_URL}
 
 *** Test Cases ***
 Test Server Title

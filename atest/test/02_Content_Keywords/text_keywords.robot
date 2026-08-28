@@ -1,10 +1,10 @@
 *** Settings ***
-Library         OperatingSystem
-Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
-Resource        imports.resource
+Library        OperatingSystem
+Library        CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
+Resource       imports.resource
 
-Suite Setup     New Page
-Test Setup      Ensure Open Page    ${LOGIN_URL}
+Suite Setup    New Page
+Test Setup     Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text With Clearing

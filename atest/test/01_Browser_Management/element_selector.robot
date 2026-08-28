@@ -1,10 +1,10 @@
 *** Settings ***
-Documentation       Tests for Get Element and `element=<ref>` selector syntax
+Documentation    Tests for Get Element and `element=<ref>` selector syntax
 
-Resource            imports.resource
+Resource         imports.resource
 
-Suite Setup         Ensure Open Page
-Test Setup          Element Selector Setup
+Suite Setup      Ensure Open Page
+Test Setup       Element Selector Setup
 
 *** Test Cases ***
 Get Element

@@ -1,14 +1,14 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Test Setup          Set Library Timeout
-Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
+Test Setup       Set Library Timeout
+Test Teardown    Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
-Test Tags           slow
+Test Tags        slow
 
 *** Variables ***
-${CUSTOM_DL_PATH} =         ${CURDIR}/download_file
-${ORIGINAL_TIMEOUT} =       1s
+${CUSTOM_DL_PATH} =      ${CURDIR}/download_file
+${ORIGINAL_TIMEOUT} =    1s
 
 *** Test Cases ***
 Upload Upload_test_file

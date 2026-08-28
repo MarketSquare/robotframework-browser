@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     Wait For Condition Suite Setup
-Test Setup      Wait For Condition Test Setup
+Suite Setup    Wait For Condition Suite Setup
+Test Setup     Wait For Condition Test Setup
 
 *** Test Cases ***
 Condition Should Succeed

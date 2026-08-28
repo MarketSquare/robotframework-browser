@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Browser    headless=${HEADLESS}
+Suite Setup    New Browser    headless=${HEADLESS}
 
 *** Test Cases ***
 Har Path Only Defined

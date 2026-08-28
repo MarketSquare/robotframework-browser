@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Suite Setup For Clock
-Suite Teardown      Suite Teardown For Clock
-Test Setup          Test Setup For Clock
+Suite Setup       Suite Setup For Clock
+Suite Teardown    Suite Teardown For Clock
+Test Setup        Test Setup For Clock
 
 *** Test Cases ***
 Set Time To Fixed

@@ -1,10 +1,10 @@
 *** Settings ***
-Library         OperatingSystem
-Resource        imports.resource
+Library        OperatingSystem
+Resource       imports.resource
 
-Suite Setup     Check Screenshots Before
+Suite Setup    Check Screenshots Before
 
-Force Tags      slow
+Force Tags     slow
 
 *** Test Cases ***
 Failing With Screenshot 1

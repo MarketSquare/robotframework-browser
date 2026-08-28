@@ -1,8 +1,8 @@
 *** Settings ***
-Library         Browser    jsextension=${CURDIR}/funky.js
-Resource        imports.resource
+Library       Browser    jsextension=${CURDIR}/funky.js
+Resource      imports.resource
 
-Force Tags      no-iframe
+Force Tags    no-iframe
 
 *** Test Cases ***
 Test Lazy Playwright Loading

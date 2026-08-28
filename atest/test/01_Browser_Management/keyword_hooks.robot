@@ -1,23 +1,23 @@
 *** Settings ***
-Documentation       Both imports below use exactly the same arguments, so Robot Framework reuses
-...                 the very same library instance and only the reported library name differs.
+Documentation    Both imports below use exactly the same arguments, so Robot Framework reuses
+...              the very same library instance and only the reported library name differs.
 
-Resource            ../variables.resource
-Library             Browser    &{BROWSER_CONFIG}
-Library             Browser    &{BROWSER_CONFIG}    AS    PW
-Library             ${CURDIR}/../../library/banner.py
+Resource         ../variables.resource
+Library          Browser    &{BROWSER_CONFIG}
+Library          Browser    &{BROWSER_CONFIG}    AS    PW
+Library          ${CURDIR}/../../library/banner.py
 
-Suite Setup         Open Form Page
-Test Setup          Prepare Banner Test
-Test Teardown       Browser.Show Keyword Banner    None
+Suite Setup      Open Form Page
+Test Setup       Prepare Banner Test
+Test Teardown    Browser.Show Keyword Banner    None
 
 *** Variables ***
-${SECRET_VALUE} =       xyzzy-do-not-disclose
-&{BROWSER_CONFIG} =     timeout=${PLAYWRIGHT_TIMEOUT}
-...                     enable_playwright_debug=${True}
-...                     enable_presenter_mode=False
-...                     selector_prefix=${SELECTOR_PREFIX}
-...                     highlight_on_failure=True
+${SECRET_VALUE} =      xyzzy-do-not-disclose
+&{BROWSER_CONFIG} =    timeout=${PLAYWRIGHT_TIMEOUT}
+...                    enable_playwright_debug=${True}
+...                    enable_presenter_mode=False
+...                    selector_prefix=${SELECTOR_PREFIX}
+...                    highlight_on_failure=True
 
 *** Test Cases ***
 Alias Import Reuses The Same Library Instance

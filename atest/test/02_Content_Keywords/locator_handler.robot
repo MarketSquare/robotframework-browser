@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Overlay Suite Setup
-Suite Teardown      Overlay Suite Teardown
-Test Setup          New Page    ${OWERLAY_URL}
+Suite Setup       Overlay Suite Setup
+Suite Teardown    Overlay Suite Teardown
+Test Setup        New Page    ${OWERLAY_URL}
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically

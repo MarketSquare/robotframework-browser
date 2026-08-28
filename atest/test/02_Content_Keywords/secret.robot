@@ -1,12 +1,12 @@
 *** Settings ***
-Library         OperatingSystem
-Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
-Resource        imports.resource
+Library        OperatingSystem
+Library        CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
+Resource       imports.resource
 
-Suite Setup     New Page
-Test Setup      Ensure Open Page    ${LOGIN_URL}
+Suite Setup    New Page
+Test Setup     Ensure Open Page    ${LOGIN_URL}
 
-Test Tags       require-rf-7.4+
+Test Tags      require-rf-7.4+
 
 *** Test Cases ***
 Type Secret And Verify

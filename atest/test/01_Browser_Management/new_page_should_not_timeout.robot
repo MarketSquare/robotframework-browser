@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup
-Suite Teardown      Teardown
+Suite Setup       Setup
+Suite Teardown    Teardown
 
 *** Test Cases ***
 New Page Will Not Timeout

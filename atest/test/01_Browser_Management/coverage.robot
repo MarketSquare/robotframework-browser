@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Open Page And Store ID
+Test Setup    Open Page And Store ID
 
 *** Variables ***
 ${PAGE_ID} =    ${EMPTY}

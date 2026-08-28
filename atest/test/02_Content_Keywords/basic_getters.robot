@@ -1,14 +1,14 @@
 *** Settings ***
-Resource            imports.resource
-Library             ../../library/presenter_mode.py
+Resource          imports.resource
+Library           ../../library/presenter_mode.py
 
-Suite Setup         Setup Basic Getters
-Suite Teardown      Set Retry Assertions For    ${assert_timeout}
-Test Setup          Ensure Location    ${LOGIN_URL}
+Suite Setup       Setup Basic Getters
+Suite Teardown    Set Retry Assertions For    ${assert_timeout}
+Test Setup        Ensure Location    ${LOGIN_URL}
 
 *** Variables ***
-${UserNameLabel} =      label[for="username_field"]
-${InputUsername} =      id=username_field
+${UserNameLabel} =    label[for="username_field"]
+${InputUsername} =    id=username_field
 
 *** Test Cases ***
 Get Property And Assert

@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup
-Suite Teardown      Set Retry Assertions For    ${assert_timeout}
+Suite Setup       Setup
+Suite Teardown    Set Retry Assertions For    ${assert_timeout}
 
 *** Test Cases ***
 Get Style Default Error

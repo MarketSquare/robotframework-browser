@@ -1,10 +1,10 @@
 *** Settings ***
-Resource            imports.resource
-Library             credentials.py
+Resource         imports.resource
+Library          credentials.py
 
-Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
-Test Setup          Credential Test Setup
-Test Teardown       Credential Test Teardown
+Suite Setup      New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Setup       Credential Test Setup
+Test Teardown    Credential Test Teardown
 
 *** Test Cases ***
 Add Valid Credential With Secret

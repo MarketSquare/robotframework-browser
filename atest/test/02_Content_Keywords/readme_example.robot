@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Page
+Suite Teardown    Close Page
 
-Test Tags           no-iframe    need-inet    no-docker-pr
+Test Tags         no-iframe    need-inet    no-docker-pr
 
 *** Test Cases ***
 Example
