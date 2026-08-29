@@ -25,6 +25,7 @@ See `0012_flaky_test_analysis.md`.
 import json
 from pathlib import Path
 
+from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
 from .report import (
     co_failures,
     coverage_by_fixture,
@@ -36,7 +37,7 @@ from .report import (
     fixture_failures,
     fixture_signature_variants,
     latest_run,
-    log_messages,
+    log_messages_by_result,
     messages_by_fixture,
     messages_by_test,
     neighbouring_fixture_outcomes,
@@ -45,8 +46,10 @@ from .report import (
     occurrences_by_test,
     pass_durations_by_test,
     platform_breakdown,
+    rank_screenshots,
     signature_variants,
     totals,
+    zero_is_inconclusive,
 )
 
 # A leg with more failures than this in it is itself the finding, and listing
@@ -150,6 +153,54 @@ ABOUT = {
         "failures it carried. The rates say how often things break, not whether "
         "the head is green, and a merge is judged on the second question."
     ),
+    "known_cause": (
+        "Where an entry carries 'known_cause', somebody has already worked this "
+        "one out and written down what they found; 'reference' says where. It "
+        "is recorded by hand in tools/ci_failures/known_causes.json rather than "
+        "in the database, because the database is derived and gets rebuilt "
+        "whenever a parsing rule changes, and a conclusion nobody can re-derive "
+        "must not be stored somewhere that deletes it. Its absence means "
+        "nothing has been recorded, never that the cause is unknown. "
+        "'fixed_by' names the change that should have fixed it and "
+        "'fix_verified' the date CI confirmed it - while 'fixed_by' is set and "
+        "'fix_verified' is null, the fix is merged but not yet proven."
+    ),
+    "since_last_report": (
+        "What changed against the last snapshot somebody took, and null when "
+        "nobody has taken one - which is a different thing from nothing having "
+        "changed. The snapshot moves only when `inv ci-report --mark-seen` is "
+        "run, never as a side effect of rendering, so running the report twice "
+        "on unchanged data answers the same both times."
+    ),
+    "log_lines": (
+        "Log lines and screenshots hang off each occurrence, not off the group. "
+        "The occurrences of one group do not have to agree: four failures of "
+        "one test on one masked signature were two different image comparisons "
+        "breaking, and a single set of lines shown against the group said so "
+        "for only half of them. An 'origin' of 'caught by ...' marks a line "
+        "from a failure that something swallowed - a `Run Keyword And Expect "
+        "Error` or a TRY/EXCEPT - which is evidence about what a keyword did "
+        "and is never itself the failure that stopped the test. 'screenshots' "
+        "is ordered, most likely to be the evidence first: the files the "
+        "failing keyword itself named, then the one the library took because "
+        "the test failed, then anything named only by a caught failure."
+    ),
+    "small_samples": (
+        "A configuration with no failures carries 'zero_is_inconclusive' when a "
+        "configuration exactly as broken as the rest would plausibly show "
+        "nothing over that many runs. 'would_look_clean_anyway' is how often it "
+        "would, and 'runs_for_a_meaningful_zero' how many runs it would take "
+        "for the zero to be worth reading. Without it a rare failure looks "
+        "platform specific on every platform that has not caught it yet."
+    ),
+    "executors": (
+        "'executors' is how many test executions ran at once on that leg and "
+        "'node_process' whether they shared one node process. A failure where "
+        "one worker's state reaches another's exists only when there is another "
+        "worker, so it looks platform specific when the platforms differ only "
+        "in how many CPUs the runner has. Null for legs ingested from before "
+        "this was recorded."
+    ),
 }
 
 
@@ -182,6 +233,7 @@ def _rates(
     known_platforms: set[str],
     durations: dict[tuple, dict] | None,
     longname: str,
+    overall_rate: float = 0.0,
 ) -> tuple[list, list]:
     """Per configuration, how often it ran and how often it broke.
 
@@ -200,6 +252,10 @@ def _rates(
             "ran": entry["ran"],
             "failed": entry["failed"] or 0,
         }
+        if not rate["failed"]:
+            inconclusive = zero_is_inconclusive(rate["ran"], overall_rate)
+            if inconclusive:
+                rate["zero_is_inconclusive"] = inconclusive
         if durations is not None:
             rate["pass_ms"] = durations.get(
                 (
@@ -216,7 +272,10 @@ def _rates(
 
 
 def _occurrences(
-    entries: list[dict], neighbours: dict[int, dict], others: dict[int, list[dict]]
+    entries: list[dict],
+    neighbours: dict[int, dict],
+    others: dict[int, list[dict]],
+    logs: dict[int, list[dict]] | None = None,
 ) -> list[dict]:
     """One failure, with what surrounded it.
 
@@ -240,6 +299,8 @@ def _occurrences(
             "node": entry["node_version"] or None,
             "leg": entry["artifact_name"],
             "attempt": entry["attempt"],
+            "executors": entry.get("executors"),
+            "node_process": entry.get("node_process"),
             "artifact_url": entry["artifact_url"],
             "elapsed_ms": entry["elapsed_ms"],
             "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
@@ -251,6 +312,16 @@ def _occurrences(
             occurrence["also_failed_in_this_leg_not_listed"] = (
                 len(alongside) - CO_FAILURE_LIMIT
             )
+        if logs is not None:
+            # Each occurrence's own lines and its own screenshots. Two failures
+            # of one test on one masked signature are routinely two different
+            # keywords failing on two different files, and a group cannot say so.
+            lines = logs.get(entry["result_id"], [])
+            occurrence["log"] = lines
+            occurrence["screenshots"] = rank_screenshots(
+                _split(entry.get("screenshots")), lines
+            )
+            occurrence["screenshot_status"] = entry.get("screenshot_status")
         occurrences.append(occurrence)
     return occurrences
 
@@ -269,6 +340,7 @@ def _fixture_occurrences(
     identity: tuple,
     neighbours: dict[tuple, dict],
     others: dict[tuple, list[dict]],
+    logs: dict[int, list[dict]] | None = None,
 ) -> list[dict]:
     """One leg the fixture broke in, with what surrounded it.
 
@@ -292,6 +364,8 @@ def _fixture_occurrences(
             "node": entry["node_version"] or None,
             "leg": entry["artifact_name"],
             "attempt": entry["attempt"],
+            "executors": entry.get("executors"),
+            "node_process": entry.get("node_process"),
             "artifact_url": entry["artifact_url"],
             "tests_marked": entry["tests_marked"],
             "previous_run_on_this_leg": around.get("previous_run_on_this_leg"),
@@ -303,26 +377,15 @@ def _fixture_occurrences(
             occurrence["also_failed_in_this_leg_not_listed"] = (
                 len(alongside) - CO_FAILURE_LIMIT
             )
+        if logs is not None:
+            lines = logs.get(entry["result_id"], [])
+            occurrence["log"] = lines
+            occurrence["screenshots"] = rank_screenshots(
+                _split(entry.get("screenshots")), lines
+            )
+            occurrence["screenshot_status"] = entry.get("screenshot_status")
         occurrences.append(occurrence)
     return occurrences
-
-
-def _log(db_path: Path, result_id: int | None) -> list[dict]:
-    """Every line, at every level.
-
-    Not filtered down to FAIL and WARN: the traceback that names the file and
-    line is logged at DEBUG, and the whole database holds 182 log lines against
-    32 failures, so there is nothing to save by dropping any of them.
-    """
-    return [
-        {
-            "level": line["level"],
-            "keyword": line["keyword"],
-            "origin": line["origin"] or None,
-            "message": line["message"],
-        }
-        for line in log_messages(db_path, result_id)
-    ]
 
 
 def build(db_path: Path, limit: int = 100) -> dict:
@@ -338,12 +401,18 @@ def build(db_path: Path, limit: int = 100) -> dict:
     neighbours = neighbouring_outcomes(db_path)
     alongside = co_failures(db_path)
     first_runs, first_failures = first_attempt_counts_by_test(db_path)
+    logs = log_messages_by_result(db_path)
+    known = load_known_causes()
 
     tests = []
     for group in failure_groups(db_path, limit=limit):
         key = (group.longname, group.signature_key)
         rates, never = _rates(
-            coverage.get(group.longname, []), platforms, durations, group.longname
+            coverage.get(group.longname, []),
+            platforms,
+            durations,
+            group.longname,
+            group.failure_rate,
         )
         entry = {
             "test": group.longname,
@@ -362,15 +431,16 @@ def build(db_path: Path, limit: int = 100) -> dict:
             },
             "rates": rates,
             "never_ran_on": never,
-            "first_seen": group.first_seen,
-            "last_seen": group.last_seen,
-            "screenshots": _split(group.screenshots),
-            "screenshot_status": group.screenshot_status,
+            # No group-level `log` or `screenshots`. Both used to be one
+            # occurrence's, unlabelled, and a group's occurrences do not have to
+            # agree: they are on the occurrences now, each with its own.
             "occurrences": _occurrences(
-                occurrences.get(key, []), neighbours, alongside
+                occurrences.get(key, []), neighbours, alongside, logs
             ),
-            "log": _log(db_path, group.latest_result_id),
         }
+        cause = known_cause_for(known, group.longname, group.error_signature)
+        if cause:
+            entry["known_cause"] = cause
         if key in variants:
             entry["signature_variants"] = variants[key]
         tests.append(entry)
@@ -389,7 +459,11 @@ def build(db_path: Path, limit: int = 100) -> dict:
         key = (fixture.scope_owner, fixture.failure_scope, fixture.signature_key)
         identity = (fixture.scope_owner, fixture.failure_scope)
         rates, never = _rates(
-            fixture_coverage.get(identity, []), platforms, None, fixture.scope_owner
+            fixture_coverage.get(identity, []),
+            platforms,
+            None,
+            fixture.scope_owner,
+            fixture.failure_rate,
         )
         fixtures.append(
             {
@@ -412,21 +486,25 @@ def build(db_path: Path, limit: int = 100) -> dict:
                 "affected_tests": _split(fixture.affected_tests),
                 "rates": rates,
                 "never_ran_on": never,
-                "first_seen": fixture.first_seen,
-                "last_seen": fixture.last_seen,
-                "screenshots": _split(fixture.screenshots),
-                "screenshot_status": fixture.screenshot_status,
                 "occurrences": _fixture_occurrences(
                     fixture_occurrences.get(key, []),
                     identity,
                     fixture_neighbours,
                     fixture_alongside,
+                    logs,
                 ),
-                "log": _log(db_path, fixture.latest_result_id),
             }
         )
+        cause = known_cause_for(known, fixture.scope_owner, fixture.error_signature)
+        if cause:
+            fixtures[-1]["known_cause"] = cause
         if key in fixture_variants:
             fixtures[-1]["signature_variants"] = fixture_variants[key]
+
+    seen = [(e["test"], e["signature"], e["counts"]["failures"]) for e in tests] + [
+        (e["suite"], e["signature"], e["counts"]["failures"]) for e in fixtures
+    ]
+    changes = compare(read_snapshot(db_path), seen)
 
     return {
         "about": ABOUT,
@@ -441,6 +519,7 @@ def build(db_path: Path, limit: int = 100) -> dict:
             "until": summary["until"],
             "latest_run": latest_run(db_path),
         },
+        "since_last_report": changes,
         "fixture_failures": fixtures,
         "test_failures": tests,
     }

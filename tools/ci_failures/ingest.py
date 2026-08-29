@@ -55,8 +55,8 @@ def _insert_leg(
     cursor = connection.execute(
         "INSERT INTO leg (run_id, artifact_id, artifact_name, artifact_url, "
         "python_version, rf_version, platform, node_version, generated_at, "
-        "ingested_at, attempt) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "ingested_at, attempt, executors, node_process) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             artifact.id,
@@ -69,6 +69,8 @@ def _insert_leg(
             info.generated_at,
             datetime.now(timezone.utc).isoformat(),
             artifact.attempt,
+            info.executors,
+            info.node_process,
         ),
     )
     return int(cursor.lastrowid)

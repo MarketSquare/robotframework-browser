@@ -1,5 +1,6 @@
 """Tests for tools/ci_failures. See 0012_flaky_test_analysis.md."""
 
+import json
 import sqlite3
 import zipfile
 from pathlib import Path
@@ -174,6 +175,50 @@ class TestParse:
         assert info.node_version is None
         assert info.platform in {"linux", "darwin", "win32"}
         assert info.python_version
+
+    def test_how_much_ran_at_once_is_read_too(self, tmp_path):
+        """The axis a cross-worker failure lives on, and nothing else records it."""
+        info, _ = parse(
+            _run_robot(tmp_path, SUITE, metadata=("Executors:3", "Node Process:shared"))
+        )
+
+        assert info.executors == 3
+        assert info.node_process == "shared"
+
+    def test_a_run_that_did_not_say_carries_no_number(self, output_xml):
+        """Never defaulted to 1: a leg nobody measured and a leg that really ran
+        one execution are different findings, and a default hides which."""
+        info, _ = parse(output_xml)
+
+        assert info.executors is None
+        assert info.node_process is None
+
+
+class TestExecutorMetadata:
+    """`atest/test/__init__.robot` records these; these are the helpers it calls."""
+
+    def test_the_pabot_process_count_is_what_is_recorded(self):
+        from atest.library.os_wrapper import get_executor_count
+
+        assert get_executor_count("3") == "3"
+
+    def test_no_pabot_means_one_execution(self):
+        from atest.library.os_wrapper import get_executor_count
+
+        assert get_executor_count("") == "1"
+        assert get_executor_count("${PABOTNUMBEROFPROCESSES}") == "1"
+
+    def test_a_shared_node_process_is_recorded_as_shared(self, monkeypatch):
+        from atest.library.os_wrapper import get_node_process_sharing
+
+        monkeypatch.setenv("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", "56789")
+        assert get_node_process_sharing() == "shared"
+
+    def test_without_the_variable_each_run_starts_its_own(self, monkeypatch):
+        from atest.library.os_wrapper import get_node_process_sharing
+
+        monkeypatch.delenv("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", raising=False)
+        assert get_node_process_sharing() == "per-process"
 
     def test_every_result_is_returned_not_only_the_failures(self, output_xml):
         _, results = parse(output_xml)
@@ -366,6 +411,80 @@ class TestLogMessages:
         connect(db).close()
 
         assert log_messages(db, None) == []
+
+
+SWALLOWED_SUITE = """\
+*** Test Cases ***
+Failure Caught By An Expected Error
+    Run Keyword And Expect Error    *    Broken Keyword
+    Fail    what actually stopped the test
+
+Failure Caught By Try Except
+    TRY
+        Broken Keyword
+    EXCEPT    caught and thrown away
+        Log    handled
+    END
+    Fail    what actually stopped the test
+
+Nothing Is Caught
+    Log    quiet
+    Fail    what actually stopped the test
+
+*** Keywords ***
+Broken Keyword
+    Log    the evidence nobody could see
+    Fail    caught and thrown away
+"""
+
+
+class TestSwallowedFailures:
+    """A failure caught by `Run Keyword And Expect Error` or TRY/EXCEPT is not on
+    the branch that stopped the test, so the failing-branch walk turns back at
+    the parent and everything it logged is lost. Those lines are the only record
+    of what the keyword did."""
+
+    @pytest.fixture
+    def results(self, tmp_path):
+        _, results = parse(_run_robot(tmp_path, SWALLOWED_SUITE))
+        return {r.name: r for r in results}
+
+    def test_an_expected_error_keeps_the_lines_it_swallowed(self, results):
+        caught = [
+            m
+            for m in results["Failure Caught By An Expected Error"].log_messages
+            if m.origin
+        ]
+
+        assert "the evidence nobody could see" in [m.message for m in caught]
+        assert caught[0].origin == "caught by Run Keyword And Expect Error"
+
+    def test_try_except_keeps_them_too(self, results):
+        caught = [
+            m for m in results["Failure Caught By Try Except"].log_messages if m.origin
+        ]
+
+        assert "the evidence nobody could see" in [m.message for m in caught]
+        assert caught[0].origin.startswith("caught by ")
+
+    def test_the_failure_that_stopped_the_test_still_leads(self, results):
+        """Caught lines are evidence, never the answer, and must not displace it."""
+        messages = results["Failure Caught By An Expected Error"].log_messages
+
+        assert messages[0].message == "what actually stopped the test"
+        assert messages[0].origin is None
+
+    def test_a_test_that_caught_nothing_gains_nothing(self, results):
+        assert [m.origin for m in results["Nothing Is Caught"].log_messages] == [None]
+
+    def test_the_real_failure_is_never_reported_twice(self, results):
+        """The failing branch is already collected; descending it again would
+        report the same line under two different origins."""
+        messages = results["Nothing Is Caught"].log_messages
+
+        assert [m.message for m in messages].count(
+            "what actually stopped the test"
+        ) == 1
 
 
 class TestSuiteFixtureFailures:
@@ -770,7 +889,10 @@ Log Screenshot Link
         assert failing.screenshot_status == "file"
         assert failing.screenshots == "browser/screenshot/fail-screenshot-1.png"
 
-    def test_the_failure_screenshot_is_listed_first(self, tmp_path):
+    def test_every_distinct_picture_is_kept(self, tmp_path):
+        """Parsing collects; it does not rank. Which one matters is a question
+        about the log lines and is answered at report time, so that changing the
+        answer does not cost a re-download."""
         suite = """\
 *** Test Cases ***
 Several Screenshots
@@ -780,7 +902,10 @@ Several Screenshots
 """
         _, results = parse(_run_robot(tmp_path, suite))
 
-        assert results[0].screenshots.split(",")[0].endswith("fail-screenshot-1.png")
+        assert set(results[0].screenshots.split(",")) == {
+            "browser/screenshot/other.png",
+            "browser/screenshot/fail-screenshot-1.png",
+        }
 
     def test_an_absolute_path_becomes_a_path_inside_the_artifact(self):
         from tools.ci_failures.locate import artifact_relative
@@ -799,6 +924,40 @@ Several Screenshots
 
         assert artifact_relative("browser/screenshot/fail-screenshot-1.png") == (
             "browser/screenshot/fail-screenshot-1.png"
+        )
+
+    def test_one_file_referenced_two_ways_takes_one_slot(self, tmp_path):
+        """A pabot leg's merged log names the same picture twice - once with the
+        worker prefix, which is where it really sits inside the artifact, and
+        once without, which does not exist there at all."""
+        suite = """\
+*** Test Cases ***
+Broken
+    Log    <a href="pabot_results/4/browser/screenshot/fail-screenshot-1.png">a</a>    html=True
+    Log    <a href="browser/screenshot/fail-screenshot-1.png">b</a>    html=True
+    Fail    it broke
+"""
+        _, results = parse(_run_robot(tmp_path, suite))
+
+        assert results[0].screenshots == (
+            "pabot_results/4/browser/screenshot/fail-screenshot-1.png"
+        )
+
+    def test_the_merge_stamp_does_not_make_it_a_different_file(self, tmp_path):
+        """Robot Framework stamps a merged artifact with the run timestamp and
+        the worker, so the file in the directory is not named what the keyword
+        that used it logged."""
+        suite = """\
+*** Test Cases ***
+Broken
+    Log    <a href="browser/screenshot/20260825_104829-4-fail-screenshot-1.png">a</a>    html=True
+    Log    <a href="browser/screenshot/fail-screenshot-1.png">b</a>    html=True
+    Fail    it broke
+"""
+        _, results = parse(_run_robot(tmp_path, suite))
+
+        assert results[0].screenshots == (
+            "browser/screenshot/20260825_104829-4-fail-screenshot-1.png"
         )
 
     def test_no_screenshot_is_itself_recorded(self, tmp_path):
@@ -1987,3 +2146,198 @@ class TestHtmlReport:
         # Google Fonts is the only external host the artifact CSP admits.
         assert "fonts.googleapis.com" in text
         assert "<script" not in text
+
+
+class TestKnownCauses:
+    """A conclusion somebody reached by reading an artifact is not derived from
+    anything, so it cannot live in a database that gets rebuilt whenever a
+    parsing rule changes."""
+
+    def _file(self, tmp_path, entries):
+        path = tmp_path / "known.json"
+        path.write_text(json.dumps(entries), encoding="utf-8")
+        return path
+
+    def test_a_cause_is_matched_on_the_same_key_a_group_uses(self, tmp_path):
+        from tools.ci_failures.annotations import known_cause_for, load_known_causes
+
+        known = load_known_causes(
+            self._file(
+                tmp_path,
+                [{"test": "Suite.Broken", "signature": "Box <n>", "cause": "a race"}],
+            )
+        )
+
+        assert known_cause_for(known, "Suite.Broken", "Box <n>")["cause"] == "a race"
+
+    def test_the_match_is_case_folded_like_the_grouping(self, tmp_path):
+        """`Deadline Exceeded` and `Deadline exceeded` are one group, so an
+        annotation on one has to reach the other."""
+        from tools.ci_failures.annotations import known_cause_for, load_known_causes
+
+        known = load_known_causes(
+            self._file(
+                tmp_path,
+                [{"suite": "S", "signature": "Deadline Exceeded", "cause": "a timer"}],
+            )
+        )
+
+        assert known_cause_for(known, "S", "Deadline exceeded")["cause"] == "a timer"
+
+    def test_a_different_error_on_the_same_test_is_not_annotated(self, tmp_path):
+        from tools.ci_failures.annotations import known_cause_for, load_known_causes
+
+        known = load_known_causes(
+            self._file(
+                tmp_path, [{"test": "S.B", "signature": "Box <n>", "cause": "a race"}]
+            )
+        )
+
+        assert known_cause_for(known, "S.B", "Timeout") is None
+
+    def test_a_broken_file_costs_the_annotations_and_never_the_report(self, tmp_path):
+        """Rendering without them beats refusing to render."""
+        from tools.ci_failures.annotations import load_known_causes
+
+        path = tmp_path / "known.json"
+        path.write_text("{not json", encoding="utf-8")
+
+        assert load_known_causes(path) == {}
+
+    def test_a_missing_file_is_the_normal_starting_state(self, tmp_path):
+        from tools.ci_failures.annotations import load_known_causes
+
+        assert load_known_causes(tmp_path / "absent.json") == {}
+
+    def test_the_shipped_file_parses(self):
+        """It is edited by hand, so it is the one most likely to be malformed -
+        and a malformed one fails silently by design."""
+        from tools.ci_failures.annotations import KNOWN_CAUSES, load_known_causes
+
+        assert load_known_causes(KNOWN_CAUSES), f"{KNOWN_CAUSES} parsed to nothing"
+
+
+class TestWhatChangedSinceLastTime:
+    def test_no_snapshot_is_not_the_same_as_no_change(self, tmp_path):
+        from tools.ci_failures.annotations import compare
+
+        assert compare(None, [("S.B", "Box <n>", 3)]) is None
+
+    def test_a_group_absent_from_the_snapshot_is_new(self, tmp_path):
+        from tools.ci_failures.annotations import compare, read_snapshot, write_snapshot
+
+        db = tmp_path / "ci.sqlite3"
+        write_snapshot(db, [("S.Old", "Box <n>", 2)])
+
+        changes = compare(read_snapshot(db), [("S.New", "Timeout", 1)])
+
+        assert [c["subject"] for c in changes["new"]] == ["S.New"]
+        assert [c["subject"] for c in changes["gone"]] == ["S.Old"]
+
+    def test_a_count_that_moved_is_reported_with_both_numbers(self, tmp_path):
+        from tools.ci_failures.annotations import compare, read_snapshot, write_snapshot
+
+        db = tmp_path / "ci.sqlite3"
+        write_snapshot(db, [("S.B", "Box <n>", 2)])
+
+        changes = compare(read_snapshot(db), [("S.B", "Box <n>", 5)])
+
+        assert changes["grew"] == [
+            {"subject": "S.B", "signature": "Box <n>", "was": 2, "now": 5}
+        ]
+
+    def test_an_unchanged_group_is_not_reported_at_all(self, tmp_path):
+        from tools.ci_failures.annotations import compare, read_snapshot, write_snapshot
+
+        db = tmp_path / "ci.sqlite3"
+        write_snapshot(db, [("S.B", "Box <n>", 2)])
+
+        changes = compare(read_snapshot(db), [("S.B", "Box <n>", 2)])
+
+        assert changes["new"] == changes["gone"] == changes["grew"] == []
+
+    def test_rendering_does_not_move_the_baseline(self, tmp_path):
+        """A report that moved its own baseline would answer differently the
+        second time it was run on unchanged data."""
+        from tools.ci_failures.annotations import snapshot_path
+        from tools.ci_failures.db import connect
+        from tools.ci_failures.json_report import build
+
+        db = tmp_path / "ci.sqlite3"
+        connect(db).close()
+
+        build(db)
+        build(db)
+
+        assert not snapshot_path(db).exists()
+
+
+class TestScreenshotRanking:
+    """Which picture is the evidence is a question about the log lines, so it is
+    answered at report time. Doing it during parsing would freeze a display
+    decision into stored data that only a full re-download can change."""
+
+    STAMPED = [
+        "p/4/browser/screenshot/20260825_104829-4-fail-screenshot-1.png",
+        "p/4/browser/screenshot/20260825_104829-4-rfb-screenshot-2.png",
+        "p/4/browser/screenshot/20260825_104829-4-rfb-screenshot-3.png",
+        "p/4/browser/screenshot/other.png",
+    ]
+    COMPARED = [
+        {
+            "message": "Comparing image img1_path '/x/rfb-screenshot-2.png'",
+            "origin": None,
+        },
+        {"message": "With image from path '/x/rfb-screenshot-3.png'", "origin": None},
+    ]
+
+    def test_the_files_the_failing_keyword_named_lead(self):
+        from tools.ci_failures.report import rank_screenshots
+
+        ranked = rank_screenshots(self.STAMPED, self.COMPARED)
+
+        assert ranked[0].endswith("rfb-screenshot-2.png")
+        assert ranked[1].endswith("rfb-screenshot-3.png")
+
+    def test_the_merge_stamp_does_not_defeat_the_match(self):
+        """The file on disk carries a run timestamp and a worker number; the
+        keyword logged the name it had before the merge."""
+        from tools.ci_failures.report import rank_screenshots
+
+        ranked = rank_screenshots(
+            ["a/20260825_104829-4-rfb-screenshot-2.png", "a/unrelated.png"],
+            self.COMPARED,
+        )
+
+        assert ranked[0].endswith("20260825_104829-4-rfb-screenshot-2.png")
+
+    def test_a_file_named_only_by_a_caught_failure_does_not_lead(self):
+        """`fail-screenshot-1.png` is named by the `Get Text` that a
+        `Run Keyword And Expect Error` swallowed, which is weaker evidence than
+        the file the keyword that actually failed named."""
+        from tools.ci_failures.report import rank_screenshots
+
+        log = [
+            *self.COMPARED,
+            {
+                "message": "Screenshot successfully captured to: /x/fail-screenshot-1.png",
+                "origin": "caught by Run Keyword And Expect Error",
+            },
+        ]
+
+        ranked = rank_screenshots(self.STAMPED, log)
+
+        assert ranked[0].endswith("rfb-screenshot-2.png")
+        assert ranked[2].endswith("fail-screenshot-1.png")
+
+    def test_with_nothing_named_the_failure_screenshot_leads(self):
+        from tools.ci_failures.report import rank_screenshots
+
+        ranked = rank_screenshots(self.STAMPED, [])
+
+        assert ranked[0].endswith("fail-screenshot-1.png")
+
+    def test_no_screenshots_ranks_to_nothing(self):
+        from tools.ci_failures.report import rank_screenshots
+
+        assert rank_screenshots([], self.COMPARED) == []

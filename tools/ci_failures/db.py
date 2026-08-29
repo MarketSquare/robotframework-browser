@@ -12,7 +12,11 @@ _SCHEMA = Path(__file__).parent / "schema.sql"
 # downloads, and a column that can be filled in from the API for a tenth of a
 # gigabyte should not cost that.
 _ADDED_COLUMNS: dict[str, dict[str, str]] = {
-    "leg": {"attempt": "INTEGER"},
+    "leg": {
+        "attempt": "INTEGER",
+        "executors": "INTEGER",
+        "node_process": "TEXT",
+    },
 }
 
 

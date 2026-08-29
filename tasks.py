@@ -1960,7 +1960,9 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
 
 
 @task
-def ci_report(c, db=None, html=None, json=None, limit=100, open_it=False):
+def ci_report(
+    c, db=None, html=None, json=None, limit=100, open_it=False, mark_seen=False
+):
     """Shows which tests fail and on which error.
 
     Two renderings of one report: a page to read, and a document for a language
@@ -1977,11 +1979,27 @@ def ci_report(c, db=None, html=None, json=None, limit=100, open_it=False):
         json: Write the report as JSON here, for a language model to read.
         limit: How many test/error groups to show.
         open_it: Open the HTML page in a browser once written.
+        mark_seen: Record what this report said, so the next one can say what
+            changed. Never done automatically: a report that moved its own
+            baseline would answer differently the second time it was run on
+            unchanged data.
     """
     db_path = Path(db) if db else CI_FAILURES_DB
     if not db_path.exists():
         print(f"No database at {db_path}. Run `inv ci-ingest` first.")
         return
+    if mark_seen:
+        from tools.ci_failures.annotations import write_snapshot
+        from tools.ci_failures.report import failure_groups, fixture_failures
+
+        seen = [
+            (g.longname, g.error_signature, g.failures)
+            for g in failure_groups(db_path, limit=int(limit))
+        ] + [
+            (f.scope_owner, f.error_signature, f.occurrences)
+            for f in fixture_failures(db_path, limit=int(limit))
+        ]
+        print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
     if json:
         from tools.ci_failures.json_report import render as render_json
 

@@ -8,6 +8,8 @@ No flakiness verdict. Whether an error is a flake, a real bug or a broken machin
 is a judgement to make while looking at the numbers, not one to bake into them.
 """
 
+import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -265,9 +267,11 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
         SELECT f.longname,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                f.id AS result_id, f.elapsed_ms,
+               f.screenshots, f.screenshot_status,
                r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt
+               l.artifact_name, l.artifact_url, l.attempt,
+               l.executors, l.node_process
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -284,6 +288,8 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
             {
                 "result_id": row["result_id"],
                 "elapsed_ms": row["elapsed_ms"],
+                "screenshots": row["screenshots"],
+                "screenshot_status": row["screenshot_status"],
                 "run_id": row["run_id"],
                 "head_sha": row["head_sha"],
                 "event": row["event"],
@@ -296,6 +302,8 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
                 "artifact_name": row["artifact_name"],
                 "artifact_url": row["artifact_url"],
                 "attempt": row["attempt"],
+                "executors": row["executors"],
+                "node_process": row["node_process"],
             }
         )
     return grouped
@@ -583,10 +591,15 @@ def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
         SELECT f.scope_owner, f.failure_scope,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                l.id AS leg_id, MIN(f.id) AS result_id, COUNT(*) AS tests_marked,
+               -- Every row this fixture marked in one leg carries the same
+               -- fixture evidence, so any of them stands for the occurrence.
+               MAX(f.screenshots) AS screenshots,
+               MAX(f.screenshot_status) AS screenshot_status,
                r.id AS run_id, r.head_sha, r.event, r.created_at,
                r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt
+               l.artifact_name, l.artifact_url, l.attempt,
+               l.executors, l.node_process
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -1001,6 +1014,34 @@ def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def log_messages_by_result(db_path: Path) -> dict[int, list[dict]]:
+    """The same lines, for every failure at once, keyed on the occurrence.
+
+    One query rather than one per occurrence, because every occurrence needs its
+    own. Reporting a single occurrence's lines against a group that has several
+    is not a saving, it is a wrong answer that looks like a right one: the four
+    `Screenshot On Failure` failures in one window split two and two across two
+    different image comparisons, and the group showed only the newer pair.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        "SELECT test_result_id, seq, level, keyword, origin, message "
+        "FROM log_message ORDER BY test_result_id, seq"
+    ).fetchall()
+    connection.close()
+    grouped: dict[int, list[dict]] = {}
+    for row in rows:
+        grouped.setdefault(row["test_result_id"], []).append(
+            {
+                "level": row["level"],
+                "keyword": row["keyword"],
+                "origin": row["origin"] or None,
+                "message": row["message"],
+            }
+        )
+    return grouped
+
+
 def platform_breakdown(db_path: Path) -> list[dict]:
     """Failures per matrix leg, by platform.
 
@@ -1048,3 +1089,77 @@ def totals(db_path: Path) -> dict:
     ).fetchone()
     connection.close()
     return dict(row)
+
+
+# How likely a genuinely-as-bad-as-everywhere-else configuration has to be to
+# have shown nothing yet before its zero stops being worth reading. At 0.05 a
+# zero is reported plainly; above it, the zero is marked as what it is.
+INCONCLUSIVE_ABOVE = 0.05
+
+
+def zero_is_inconclusive(ran: int, overall_rate: float) -> dict | None:
+    """Whether a configuration's clean sheet is evidence or just a small sample.
+
+    A rate of zero and an absence of evidence render identically, and on a rare
+    failure they are usually the same thing. `Screenshot On Failure` fails about
+    one run in twenty; darwin ran it 25 times and passed every time, which a
+    configuration exactly as broken as linux would manage more than half the
+    time. Reported next to the zero, because the reader's next move - "it is
+    linux-only, look at something linux does" - is only sound if the zero means
+    something.
+    """
+    if ran <= 0 or overall_rate <= 0:
+        return None
+    would_look_clean = (1 - overall_rate) ** ran
+    if would_look_clean <= INCONCLUSIVE_ABOVE:
+        return None
+    needed = math.ceil(math.log(INCONCLUSIVE_ABOVE) / math.log(1 - overall_rate))
+    return {
+        "would_look_clean_anyway": round(would_look_clean, 2),
+        "runs_for_a_meaningful_zero": needed,
+    }
+
+
+# A merged pabot artifact is stamped with the run timestamp and the worker, so
+# the file on disk is not named what the keyword that used it logged.
+_ARTIFACT_STAMP = re.compile(r"^\d{8}_\d{6}-\d+-")
+
+
+def _screenshot_key(path: str) -> str:
+    """One file, one key, whatever name it is referred to by."""
+    return _ARTIFACT_STAMP.sub("", path.rsplit("/", 1)[-1])
+
+
+def rank_screenshots(paths: list[str], log: list[dict]) -> list[str]:
+    """Most likely to be the evidence first.
+
+    A failing test leaves more pictures than anyone will open. The ones the
+    failing keyword itself named are the evidence - `Compare Images` says which
+    two files it compared and then fails on them - so they lead. Next comes the
+    one the library took because the test failed, then anything named by a
+    failure that was caught and thrown away, then the rest.
+
+    Deliberately done here rather than at ingest. It is a display decision, it
+    depends only on rows already in the database, and computing it during
+    parsing would freeze it into stored data that only a full re-download can
+    change.
+    """
+
+    def named_in(lines: list[dict]) -> set[str]:
+        return {
+            _screenshot_key(word.strip("'\",;:()[]<>"))
+            for line in lines
+            for word in (line.get("message") or "").replace("\\", "/").split()
+        }
+
+    failing = named_in([line for line in log if not line.get("origin")])
+    caught = named_in([line for line in log if line.get("origin")])
+    return sorted(
+        paths,
+        key=lambda path: (
+            _screenshot_key(path) not in failing,
+            "fail-screenshot" not in path,
+            _screenshot_key(path) not in caught,
+            path,
+        ),
+    )

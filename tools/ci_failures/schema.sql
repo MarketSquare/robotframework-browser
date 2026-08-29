@@ -37,6 +37,11 @@ CREATE TABLE IF NOT EXISTS leg (
     rf_version     TEXT,
     platform       TEXT,
     node_version   TEXT,   -- null until the metadata change reaches CI
+    -- How many test executions ran at once, and whether they shared one
+    -- node process. A failure that needs one worker to reach another's
+    -- state lives on this axis and no other, and nothing else records it.
+    executors      INTEGER,
+    node_process   TEXT,   -- shared | per-process
     generated_at   TEXT,
     ingested_at    TEXT NOT NULL,
     -- Which attempt of the job uploaded this artifact. Nothing in this CI

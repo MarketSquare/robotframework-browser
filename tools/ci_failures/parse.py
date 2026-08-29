@@ -104,6 +104,10 @@ class LegInfo:
     platform: str | None
     node_version: str | None
     generated_at: str | None
+    # How many test executions ran at once, and whether they shared one node
+    # process. Both null for runs ingested from before the metadata reached CI.
+    executors: int | None = None
+    node_process: str | None = None
 
 
 @dataclass
@@ -172,6 +176,12 @@ def _innermost_failing_keyword(item: Any) -> Any:
 # proof of concept does not need all of it to show what went wrong.
 MAX_LOG_MESSAGES = 60
 
+# Lines from failures that were caught and never reached the test are kept under
+# their own budget, so a suite that expects errors on purpose - this one runs
+# `Run Keyword And Expect Error` in nearly every test - cannot crowd out the
+# lines of the failure that actually stopped the test.
+MAX_SWALLOWED_MESSAGES = 40
+
 
 def _collect_log_messages(
     item: Any,
@@ -218,6 +228,107 @@ def _collect_log_messages(
         _collect_log_messages(child, out, name, origin)
 
 
+def _catcher_name(item: Any) -> str | None:
+    """A readable name for the thing that swallowed a failure.
+
+    `Run Keyword And Expect Error` is a keyword and names itself. A TRY/EXCEPT is
+    a control structure with no name, so its type is what there is to say.
+    """
+    kind = str(getattr(item, "type", "") or "").upper()
+    # .name is read only where it is meaningful: it is deprecated on If and
+    # TryBranch and goes away in Robot Framework 8, and reading it warns.
+    if kind in _NAMEABLE:
+        name = getattr(item, "name", None)
+        if name:
+            return str(name)
+    return kind.replace(" ROOT", "") or None
+
+
+def _collect_swallowed_messages(
+    item: Any,
+    out: list[LogMessage],
+    caught_by: str | None = None,
+    on_failing_branch: bool = True,
+    catcher: str | None = None,
+) -> None:
+    """Lines from failures that were caught before they reached the test.
+
+    ``_collect_log_messages`` follows the branch that is FAIL all the way up,
+    which is the branch that stopped the test. A keyword that failed inside
+    `Run Keyword And Expect Error`, or inside a TRY whose EXCEPT handled it, is
+    not on that branch: its parent passed, so the walk turns back at the parent
+    and everything the failing keyword logged is lost.
+
+    Those lines are evidence. `Screenshot On Failure` logs whether it highlighted
+    anything from inside a `Get Text` that an expected-error wrapper swallows, so
+    the one fact that says whether the highlight was ever applied is exactly the
+    fact the failing-branch rule drops.
+
+    They are not the failure, though, and must never be mistaken for it, so each
+    one is stamped with the keyword that caught it.
+    """
+    for child in getattr(item, "body", None) or []:
+        if len(out) >= MAX_SWALLOWED_MESSAGES:
+            return
+        child_type = str(getattr(child, "type", "") or "").upper()
+        if child_type == "MESSAGE":
+            if caught_by is None:
+                continue
+            level = getattr(child, "level", None)
+            if level == "TRACE":
+                continue
+            out.append(
+                LogMessage(
+                    seq=len(out),
+                    level=level,
+                    keyword=_catcher_name(item),
+                    message=strip_embedded_data(getattr(child, "message", None)),
+                    origin=f"caught by {caught_by}",
+                )
+            )
+            continue
+        failed = getattr(child, "status", None) == "FAIL"
+        # The failing branch is the chain of FAIL nodes running from the test
+        # down to the keyword that stopped it. A node is on it only if every
+        # ancestor is too - which is what makes a FAIL node under a PASS parent
+        # a swallowed failure rather than the failure.
+        child_on_branch = on_failing_branch and failed
+        caught = caught_by
+        if caught is None and failed and not child_on_branch:
+            caught = catcher or "an enclosing block"
+        _collect_swallowed_messages(
+            child,
+            out,
+            caught,
+            child_on_branch,
+            # Whatever passed most recently is what will have caught anything
+            # failing below it.
+            _catcher_name(child) if not failed else catcher,
+        )
+
+
+def _swallowed_messages(test: Any) -> list[LogMessage]:
+    """Caught failures anywhere in the test, including its own fixtures."""
+    messages: list[LogMessage] = []
+    for part in (getattr(test, "setup", None), test, getattr(test, "teardown", None)):
+        if part is None:
+            continue
+        _collect_swallowed_messages(
+            part,
+            messages,
+            on_failing_branch=getattr(part, "status", None) == "FAIL",
+            catcher=_catcher_name(part),
+        )
+    for index, entry in enumerate(messages):
+        entry.seq = index
+    return messages
+
+
+def _as_int(value: str | None) -> int | None:
+    """Left null rather than defaulted where the run did not say."""
+    return int(value) if value and value.isdigit() else None
+
+
 def leg_info(result: Any) -> LegInfo:
     """What output.xml says about the machine that produced it."""
     metadata = {
@@ -232,6 +343,8 @@ def leg_info(result: Any) -> LegInfo:
         platform=metadata.get("os") or (generator["platform"] if generator else None),
         node_version=metadata.get("node version"),
         generated_at=metadata.get("generated"),
+        executors=_as_int(metadata.get("executors")),
+        node_process=metadata.get("node process"),
     )
 
 
@@ -257,6 +370,28 @@ def suite_fixture_failures(suite: Any) -> list[tuple]:
     return found
 
 
+# Robot Framework stamps a merged artifact with the run's timestamp and the
+# pabot worker that produced it: `20260825_104829-4-fail-screenshot-1.png`. The
+# keyword that used the file logged the name it had at the time, without the
+# stamp, so the two never match on their face.
+_ARTIFACT_STAMP = re.compile(r"^\d{8}_\d{6}-\d+-")
+
+
+def _screenshot_key(path: str) -> str:
+    """One file, one key.
+
+    Two things put the same picture under two names. A pabot leg's merged log
+    references it once as `pabot_results/4/browser/screenshot/x.png`, which is
+    where it really sits inside the artifact, and once as the worker's own
+    `browser/screenshot/x.png`, which does not exist at the top of the artifact
+    at all. And the merge stamps the file itself, so the name in the directory
+    is not the name the keyword logged. Left alone they take two of the few
+    slots there are, name one file, and defeat the match against the paths the
+    failing keyword named.
+    """
+    return _ARTIFACT_STAMP.sub("", path.rsplit("/", 1)[-1])
+
+
 def _screenshot_evidence(item: Any, found: list[str], state: dict) -> None:
     """Screenshot references anywhere under ``item``, whatever its status.
 
@@ -280,18 +415,39 @@ def _screenshot_evidence(item: Any, found: list[str], state: dict) -> None:
         _screenshot_evidence(child, found, state)
 
 
+# Generous on purpose. The cap is applied here and the ranking happens at report
+# time, so anything cut here is invisible to the ranker no matter how good the
+# evidence for it: a picture that never reaches the database cannot be promoted
+# to the top of the list. Paths are short and failures are rare, so the cheap
+# answer is to keep far more than anyone will read. The earlier limit of three
+# was set when this function did the ranking, and it cut the two pictures the
+# one test that compares two pictures was actually about.
+MAX_SCREENSHOTS = 20
+
+
 def screenshots_of(test: Any, fixtures: list[tuple]) -> tuple[str | None, str | None]:
-    """Where the screenshots for this failure are, and whether there are any."""
+    """Every distinct screenshot this failure left behind, and whether there are any.
+
+    Deduplicated but deliberately **not ranked**. Which picture matters most is
+    a question about the log lines, the log lines are in the database, and
+    working it out here would bake a display decision into stored data that only
+    a full re-download can change (§1). The report ranks them; see
+    `report.rank_screenshots`.
+    """
     found: list[str] = []
     state: dict = {}
     _screenshot_evidence(test, found, state)
     for fixture in fixtures:
         _screenshot_evidence(fixture[4], found, state)
     if found:
-        # The one the library took because this failed leads; the rest are
-        # screenshots the test took for its own reasons.
-        found.sort(key=lambda path: "fail-screenshot" not in path)
-        return ",".join(found[:3]), "file"
+        by_file: dict[str, str] = {}
+        for path in found:
+            key = _screenshot_key(path)
+            # The longer path is the one carrying the pabot prefix, and so the
+            # one that resolves inside the artifact.
+            if key not in by_file or len(path) > len(by_file[key]):
+                by_file[key] = path
+        return ",".join(sorted(by_file.values())[:MAX_SCREENSHOTS]), "file"
     if state.get("embedded"):
         return None, "embedded"
     if state.get("unavailable"):
@@ -385,7 +541,6 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                 keyword_src, keyword_line = keyword_location(
                     keyword_owner, getattr(keyword, "name", None)
                 )
-                shots, shot_status = screenshots_of(test, setups + teardowns)
                 # Run order: the setups that failed above it, then the test's
                 # own, then the teardowns, innermost first as they unwind.
                 for _, _, _, lines, _ in setups:
@@ -393,8 +548,13 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
                 messages.extend(_collect_failing_messages(test))
                 for _, _, _, lines, _ in reversed(teardowns):
                     messages.extend(lines)
+                # Caught failures last: they did not stop the test and must not
+                # be read as if they had, but they are the only record of what
+                # a keyword did before something else swallowed it.
+                messages.extend(_swallowed_messages(test))
                 for index, entry in enumerate(messages):
                     entry.seq = index
+                shots, shot_status = screenshots_of(test, setups + teardowns)
 
             results.append(
                 TestResult(

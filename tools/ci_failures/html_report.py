@@ -4,6 +4,7 @@ import html
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .annotations import known_cause_for, load_known_causes
 from .report import (
     FailureGroup,
     FixtureFailure,
@@ -16,14 +17,16 @@ from .report import (
     fixture_co_failures,
     fixture_failures,
     latest_run,
-    log_messages,
+    log_messages_by_result,
     neighbouring_fixture_outcomes,
     neighbouring_outcomes,
     occurrences_by_fixture,
     occurrences_by_test,
     pass_durations_by_test,
     platform_breakdown,
+    rank_screenshots,
     totals,
+    zero_is_inconclusive,
 )
 
 _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
@@ -262,6 +265,42 @@ h2 {
 a.evidence { color: var(--bar); text-decoration: none; font-size: 12px; border-bottom: 1px solid transparent; }
 a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 :focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
+
+.thin {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-style: italic;
+  margin-left: 8px;
+  border-bottom: 1px dotted var(--baseline);
+  cursor: help;
+}
+.cause {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  background: var(--bar-soft);
+  border-left: 2px solid var(--bar);
+  padding: 7px 10px;
+  border-radius: 0 3px 3px 0;
+}
+.cause .hd {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--bar);
+  font-weight: 600;
+}
+.cause .ref { color: var(--ink-muted); font-size: 11.5px; }
+.oev { margin: 4px 0 2px; }
+.oev > summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  list-style: none;
+}
+.oev > summary::-webkit-details-marker { display: none; }
+.oev > summary::before { content: "\25B8  "; }
+.oev[open] > summary::before { content: "\25BE  "; }
+.oev > summary:hover { color: var(--bar); }
 
 .log { display: flex; flex-direction: column; gap: 0; margin-top: 2px; }
 .logline {
@@ -504,6 +543,7 @@ def _rates_html(
     never_ran_on: list[str],
     durations: dict[tuple, dict] | None = None,
     longname: str | None = None,
+    overall_rate: float = 0.0,
 ) -> str:
     """Every matrix leg that ran this, with its denominator.
 
@@ -521,6 +561,12 @@ def _rates_html(
     Where the passing runs have durations they follow the rate. For a timeout,
     whether they cluster far below the limit or run up against it is the
     difference between a keyword that broke and a budget that was too thin.
+
+    A clean configuration that has not run often enough to mean anything says
+    so. `0 of 25` against a one-in-twenty failure is what a configuration
+    exactly as broken as the rest would show more than half the time, and the
+    move it invites - "it only breaks on linux, look at what linux does" - is
+    only sound if the zero is evidence.
     """
     if not coverage and not never_ran_on:
         return ""
@@ -544,6 +590,14 @@ def _rates_html(
                     f'<span class="ms">passes {measured["min"]}&ndash;'
                     f"{measured['max']} ms</span>"
                 )
+        thin = "" if failed else zero_is_inconclusive(ran, overall_rate)
+        if thin:
+            spread += (
+                f'<span class="thin" title="A configuration failing as often as '
+                f"the rest would still show nothing here "
+                f'{thin["would_look_clean_anyway"]:.0%} of the time.">'
+                f"too few to call ({thin['runs_for_a_meaningful_zero']} needed)</span>"
+            )
         rows.append(
             f'<div class="row"><span class="k">{"ran on" if not index else ""}</span>'
             f'<span class="cfg">{_e(_configuration_label(configuration))}</span>'
@@ -565,7 +619,55 @@ def _leg_label(name: str | None) -> str:
     return (name or "?").replace("Test results-", "")
 
 
-def _occurrences_html(entries: list[dict], around_for, alongside_for) -> str:
+def _cause_html(cause: dict | None) -> str:
+    """What is already known, where a group has been worked out before.
+
+    Placed above the evidence rather than below it, because it changes what the
+    reader should do with the rest: an explained group does not want
+    re-investigating, it wants its fix verified.
+    """
+    if not cause or not cause.get("cause"):
+        return ""
+    bits = []
+    if cause.get("reference"):
+        bits.append(f"see {_e(cause['reference'])}")
+    if cause.get("recorded"):
+        bits.append(f"recorded {_e(cause['recorded'])}")
+    if cause.get("fixed_by"):
+        verified = cause.get("fix_verified")
+        bits.append(
+            f"fixed by {_e(cause['fixed_by'])}, verified {_e(verified)}"
+            if verified
+            else f"fixed by {_e(cause['fixed_by'])} - not yet verified in CI"
+        )
+    tail = f'<div class="ref">{" &middot; ".join(bits)}</div>' if bits else ""
+    return (
+        f'<div class="cause"><div class="hd">known cause</div>'
+        f"{_e(cause['cause'])}{tail}</div>"
+    )
+
+
+def _evidence_html(entry: dict, logs: dict | None) -> str:
+    """What this one occurrence logged, and which pictures it left behind."""
+    if logs is None:
+        return ""
+    lines = logs.get(entry.get("result_id")) or []
+    ranked = rank_screenshots(
+        [p for p in (entry.get("screenshots") or "").split(",") if p], lines
+    )
+    body = _log_html(lines) + _screenshots_html(
+        ",".join(ranked), entry.get("screenshot_status")
+    )
+    if not body:
+        return ""
+    return (
+        f'<details class="oev"><summary>what this one logged</summary>{body}</details>'
+    )
+
+
+def _occurrences_html(
+    entries: list[dict], around_for, alongside_for, logs: dict | None = None
+) -> str:
     """Each individual failure, and what surrounded it.
 
     The counts describe a group. These describe one execution: which leg ran it,
@@ -573,6 +675,12 @@ def _occurrences_html(entries: list[dict], around_for, alongside_for) -> str:
     what else broke alongside. A rate cannot say whether a failure was a blip on
     a leg that is otherwise healthy or the point where something broke and
     stayed broken, and those want opposite responses.
+
+    Each row carries its own log lines and its own screenshots, because the
+    occurrences of one group do not have to agree. Four failures of
+    `Screenshot On Failure` on one masked signature were two different image
+    comparisons breaking, and rendering the newest occurrence's lines against
+    the group said so only for half of them.
 
     No verdict is drawn from any of it. `before` and `after` are what the same
     leg did, and a re-run that passed is a re-run that passed; a re-run that
@@ -623,11 +731,12 @@ def _occurrences_html(entries: list[dict], around_for, alongside_for) -> str:
                 f'<div class="oalso">also failed here: '
                 f"{_e('; '.join(names))}{_e(tail)}</div>"
             )
+        evidence = _evidence_html(entry, logs)
         rows.append(
             f'<div class="orow">'
             f'<span class="odate">{_e((entry.get("created_at") or "")[:10])}</span>'
             f'<span class="oleg">{_e(_leg_label(entry.get("artifact_name")))}</span>'
-            f"{''.join(tags)}</div>{also}"
+            f"{''.join(tags)}</div>{also}{evidence}"
         )
     hidden = len(entries) - SHOWN_OCCURRENCES
     more = (
@@ -692,8 +801,8 @@ def _where_html(
 def _group_html(
     group: FailureGroup,
     widest: int,
-    entries: list[dict],
     *,
+    cause: str = "",
     rates: str,
     occurrences: str,
     first_attempt: str,
@@ -727,9 +836,8 @@ def _group_html(
             lineno=group.keyword_lineno,
         )
     }
-          {_screenshots_html(group.screenshots, group.screenshot_status)}
+          {cause}
           {rates}
-          {_log_html(entries)}
           {occurrences}
         </div>
       </article>
@@ -739,8 +847,8 @@ def _group_html(
 def _fixture_html(
     fixture: FixtureFailure,
     widest: int,
-    entries: list[dict],
     *,
+    cause: str = "",
     rates: str,
     occurrences: str,
     first_attempt: str,
@@ -776,9 +884,8 @@ def _fixture_html(
             lineno=fixture.keyword_lineno,
         )
     }
-          {_screenshots_html(fixture.screenshots, fixture.screenshot_status)}
+          {cause}
           {rates}
-          {_log_html(entries)}
           <div class="affected">marked {fixture.tests_marked} test row(s) failed:
             {_e(", ".join(tests)) or "-"}</div>
           {occurrences}
@@ -804,6 +911,8 @@ def _fixture_section_html(
     first_runs: dict,
     first_failures: dict,
     known_platforms: set[str],
+    logs: dict,
+    known: dict,
 ) -> str:
     identity = (fixture.scope_owner, fixture.failure_scope)
     key = (*identity, fixture.signature_key)
@@ -811,12 +920,19 @@ def _fixture_section_html(
     return _fixture_html(
         fixture,
         widest,
-        log_messages(db_path, fixture.latest_result_id),
-        rates=_rates_html(entries, _never_ran_on(entries, known_platforms)),
+        cause=_cause_html(
+            known_cause_for(known, fixture.scope_owner, fixture.error_signature)
+        ),
+        rates=_rates_html(
+            entries,
+            _never_ran_on(entries, known_platforms),
+            overall_rate=fixture.failure_rate,
+        ),
         occurrences=_occurrences_html(
             occurrences.get(key, []),
             lambda entry: neighbours.get((*identity, entry["leg_id"])),
             lambda entry: alongside.get((*identity, entry["leg_id"])),
+            logs,
         ),
         first_attempt=_first_attempt_html(
             first_failures.get(key, 0),
@@ -837,6 +953,8 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     neighbours = neighbouring_outcomes(db_path)
     alongside = co_failures(db_path)
     first_runs, first_failures = first_attempt_counts_by_test(db_path)
+    logs = log_messages_by_result(db_path)
+    known = load_known_causes()
     widest = max((g.failures for g in groups), default=0)
     window = (
         f"{summary['since'][:10]} to {summary['until'][:10]}"
@@ -852,17 +970,21 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
                 _group_html(
                     g,
                     widest,
-                    log_messages(db_path, g.latest_result_id),
+                    cause=_cause_html(
+                        known_cause_for(known, g.longname, g.error_signature)
+                    ),
                     rates=_rates_html(
                         coverage.get(g.longname, []),
                         _never_ran_on(coverage.get(g.longname, []), known_platforms),
                         durations,
                         g.longname,
+                        g.failure_rate,
                     ),
                     occurrences=_occurrences_html(
                         occurrences.get((g.longname, g.signature_key), []),
                         lambda entry: neighbours.get(entry["result_id"]),
                         lambda entry: alongside.get(entry["result_id"]),
+                        logs,
                     ),
                     first_attempt=_first_attempt_html(
                         first_failures.get((g.longname, g.signature_key), 0),
@@ -900,7 +1022,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     flaky tests as the suite happens to contain. Counted once here, against the number of times
     the suite ran.</p>
     <div class="groups">
-{"".join(_fixture_section_html(db_path, f, widest_fixture, coverage=fixture_coverage, occurrences=fixture_occurrences, neighbours=fixture_neighbours, alongside=fixture_alongside, first_runs=first_fixture_runs, first_failures=first_fixture_failures, known_platforms=known_platforms) for f in fixtures)}    </div>
+{"".join(_fixture_section_html(db_path, f, widest_fixture, coverage=fixture_coverage, occurrences=fixture_occurrences, neighbours=fixture_neighbours, alongside=fixture_alongside, first_runs=first_fixture_runs, first_failures=first_fixture_failures, known_platforms=known_platforms, logs=logs, known=known) for f in fixtures)}    </div>
   </section>
 """
         if fixtures
