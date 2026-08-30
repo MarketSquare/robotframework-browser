@@ -45,7 +45,7 @@ def get_library_translation(
         }
     translation["__init__"] = {
         "name": "__init__",
-        "doc": inspect.getdoc(browser),
+        "doc": inspect.getdoc(browser.__init__),
         "sha256": hashlib.sha256(inspect.getdoc(browser).encode("utf-16")).hexdigest(),  # type: ignore
     }
     translation["__intro__"] = {
