@@ -2033,7 +2033,7 @@ def ci_report(
         print(f"No database at {db_path}. Run `inv ci-ingest` first.")
         return
     if window.bounded:
-        from tools.ci_failures.report import latest_run, totals
+        from tools.ci_failures.queries import latest_run, totals
 
         if not totals(db_path, window=window)["runs"]:
             # Nothing ran is not the same fact as nothing failed, and an empty
@@ -2051,22 +2051,16 @@ def ci_report(
             )
     if mark_seen:
         from tools.ci_failures.annotations import write_snapshot
-        from tools.ci_failures.report import failure_groups, fixture_failures
+        from tools.ci_failures.report import build, snapshot_entries
 
-        seen = [
-            (g.longname, g.error_signature, g.failures)
-            for g in failure_groups(db_path, limit=int(limit))
-        ] + [
-            (f.scope_owner, f.error_signature, f.occurrences)
-            for f in fixture_failures(db_path, limit=int(limit))
-        ]
+        seen = snapshot_entries(build(db_path, limit=int(limit)))
         print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
     if json:
-        from tools.ci_failures.json_report import render as render_json
+        from tools.ci_failures.render_json import render as render_json
 
         print(f"Wrote {render_json(db_path, Path(json), limit=int(limit))}")
         return
-    from tools.ci_failures.html_report import render
+    from tools.ci_failures.render_html import render
 
     written = render(
         db_path,

@@ -1,1156 +1,487 @@
-"""Turns the database into the two questions worth asking of it so far.
+"""The Report: everything one run of the tool says about a Window.
 
-Which tests fail, and on which error. A test that fails twice on one error and
-four times on another is two problems, not one, so the pair is the unit - not the
-test, and not the error.
+Built once, out of `queries.py`, and complete. `render_html` and `render_json`
+are Renderings over it. A Rendering may show less than the Report holds; it never
+reaches past the Report to the queries for something the Report does not carry,
+because that is exactly how the page and the document grew apart the first time.
 
-No flakiness verdict. Whether an error is a flake, a real bug or a broken machine
-is a judgement to make while looking at the numbers, not one to bake into them.
+Typed rather than a plain dict for the same reason. The defect this replaced was
+silent divergence - two independent assemblies, each having quietly gained and
+lost fields the other had, with nothing anywhere that could notice. A dict makes
+a Rendering ignoring a field invisible; a type makes it something you can see.
+See `docs/adr/0001-report-is-typed-not-a-dict.md`.
+
+The judgements live here rather than in `queries.py`: what a clean configuration
+means when the sample is small, and which screenshot is the evidence. Neither is
+a question SQL can answer.
 """
 
 import math
-import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
-from .db import connect
+from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
+from .parse import screenshot_key
+from .queries import (
+    co_failures,
+    coverage_by_fixture,
+    coverage_by_test,
+    failure_groups,
+    first_attempt_counts_by_fixture,
+    first_attempt_counts_by_test,
+    fixture_co_failures,
+    fixture_failures,
+    fixture_signature_variants,
+    latest_run,
+    log_messages_by_result,
+    messages_by_fixture,
+    messages_by_test,
+    neighbouring_fixture_outcomes,
+    neighbouring_outcomes,
+    occurrences_by_fixture,
+    occurrences_by_test,
+    pass_durations_by_test,
+    platform_breakdown,
+    signature_variants,
+    totals,
+)
 from .window import ALL_HISTORY, Window
 
-# Two libraries implement the same gRPC deadline and spell the expiry
-# differently: grpcio's C core says "Deadline Exceeded" when the Python client's
-# timer fires, @grpc/grpc-js says "Deadline exceeded" when the Node server's
-# timer wins the same race. Grouping on the exact string splits one problem into
-# two - it did, for the most frequent failure there is: 4 legs against 1, or 8
-# marked test rows against 2, depending on which of them you were counting.
-# So the key is case-folded. The spelling is not noise, it names which side of
-# the boundary gave up first, so it survives in `signature_variants` and in the
-# raw messages; it just does not get to be a different problem.
-#
-# In SQL that is `LOWER(IFNULL(<alias>.error_signature, ''))`, written out at
-# each use rather than interpolated: these queries are read far more often than
-# they are edited, and a format placeholder in the middle of a GROUP BY hides
-# the one thing a reader needs to see.
-
-
-def _connect(db_path: Path, window: Window):
-    """A connection that can only see the window.
-
-    The restriction lives here rather than in the queries: `window.apply` hangs
-    shadowing views off the connection, so every statement below is windowed
-    without saying so. See `window.py`.
-    """
-    connection = connect(db_path)
-    window.apply(connection)
-    return connection
-
-
-@dataclass
-class FailureGroup:
-    longname: str
-    error_signature: str | None
-    failing_keyword: str | None
-    failures: int
-    total_runs: int  # how many times the test ran at all
-    example_message: str | None
-    platforms: str
-    first_seen: str
-    last_seen: str
-    # Where to go for the screenshots, traces and playwright-log.txt of the most
-    # recent occurrence. The whole reason the artifact URL is stored.
-    latest_artifact_url: str | None
-    latest_run_url: str | None
-    latest_result_id: int | None
-
-    test_source: str | None
-    test_lineno: int | None
-    keyword_owner: str | None
-    keyword_kind: str | None
-    keyword_source: str | None
-    keyword_lineno: int | None
-
-    rf_versions: str | None
-    python_versions: str | None
-    node_versions: str | None
-
-    screenshots: str | None
-    screenshot_status: str | None
-
-    # How many different commits this was seen on. Four failures across four
-    # commits is a standing problem; four across one is that one commit.
-    distinct_shas: int
-
-    @property
-    def failure_rate(self) -> float:
-        return self.failures / self.total_runs if self.total_runs else 0.0
-
-    @property
-    def signature_key(self) -> str:
-        """What this group is keyed on. See `_KEY`."""
-        return (self.error_signature or "").lower()
-
-
-def failure_groups(
-    db_path: Path, limit: int = 100, window: Window = ALL_HISTORY
-) -> list[FailureGroup]:
-    """Every (test, error) pair that has failed, most failures first."""
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        WITH runs_per_test AS (
-            SELECT longname, COUNT(*) AS total FROM test_result GROUP BY longname
-        )
-        SELECT f.longname,
-               -- The group is keyed case-insensitively, so one spelling has to
-               -- stand for the row. MIN is deterministic, and capitals sort
-               -- first, which happens to be the spelling that occurs most.
-               MIN(f.error_signature)         AS error_signature,
-               f.failing_keyword,
-               f.test_source,
-               f.test_lineno,
-               f.keyword_owner,
-               f.keyword_kind,
-               f.keyword_source,
-               f.keyword_lineno,
-               MAX(f.screenshots)             AS screenshots,
-               MAX(f.screenshot_status)       AS screenshot_status,
-               COUNT(*)                       AS failures,
-               COUNT(DISTINCT r.head_sha)     AS distinct_shas,
-               runs_per_test.total            AS total_runs,
-               MIN(f.message)                 AS example_message,
-               GROUP_CONCAT(DISTINCT l.platform) AS platforms,
-               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
-               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
-               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
-               MIN(r.created_at)              AS first_seen,
-               MAX(r.created_at)              AS last_seen,
-               (SELECT l2.artifact_url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
-               (SELECT r2.url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_run_url,
-               (SELECT f2.id FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        JOIN runs_per_test ON runs_per_test.longname = f.longname
-        WHERE f.status = 'FAIL'
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
-        ORDER BY failures DESC, f.longname
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-    connection.close()
-    return [FailureGroup(**dict(row)) for row in rows]
-
-
-@dataclass
-class FixtureFailure:
-    """One suite setup or teardown that broke, and the tests it took with it.
-
-    The unit is the fixture failing, not the tests it marked: those are the same
-    event seen as many times as the suite has tests. Counting them as separate
-    test failures makes one broken teardown outrank everything else.
-    """
-
-    scope_owner: str
-    failure_scope: str
-    error_signature: str | None
-    occurrences: int  # distinct (run, leg) the fixture failed in
-    suite_runs: int  # distinct legs that ran any test of that suite
-    tests_marked: int  # test rows Robot Framework failed because of it
-    affected_tests: str
-    platforms: str
-    first_seen: str
-    last_seen: str
-    latest_artifact_url: str | None
-    latest_result_id: int | None
-
-    test_source: str | None
-    keyword: str | None
-    keyword_owner: str | None
-    keyword_kind: str | None
-    keyword_source: str | None
-    keyword_lineno: int | None
-
-    rf_versions: str | None
-    python_versions: str | None
-    node_versions: str | None
-
-    screenshots: str | None
-    screenshot_status: str | None
-
-    distinct_shas: int
-
-    @property
-    def failure_rate(self) -> float:
-        return self.occurrences / self.suite_runs if self.suite_runs else 0.0
-
-    @property
-    def signature_key(self) -> str:
-        """What this group is keyed on. See `_KEY`."""
-        return (self.error_signature or "").lower()
-
-
-def fixture_failures(
-    db_path: Path, limit: int = 50, window: Window = ALL_HISTORY
-) -> list[FixtureFailure]:
-    """Suite setup and teardown failures, one row per fixture and error."""
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.scope_owner,
-               f.failure_scope,
-               MIN(f.error_signature)            AS error_signature,
-               COUNT(DISTINCT r.head_sha)        AS distinct_shas,
-               MIN(f.test_source)                AS test_source,
-               f.failing_keyword                 AS keyword,
-               f.keyword_owner,
-               f.keyword_kind,
-               f.keyword_source,
-               f.keyword_lineno,
-               MAX(f.screenshots)                AS screenshots,
-               MAX(f.screenshot_status)          AS screenshot_status,
-               COUNT(DISTINCT l.id)              AS occurrences,
-               COUNT(*)                          AS tests_marked,
-               GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,
-               GROUP_CONCAT(DISTINCT l.platform) AS platforms,
-               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
-               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
-               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
-               MIN(r.created_at)                 AS first_seen,
-               MAX(r.created_at)                 AS last_seen,
-               (SELECT COUNT(DISTINCT l2.id) FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                 WHERE f2.suite_longname = f.scope_owner
-                    OR f2.suite_longname LIKE f.scope_owner || '.%') AS suite_runs,
-               (SELECT l2.artifact_url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.scope_owner = f.scope_owner
-                   AND f2.status = 'FAIL'
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
-               (SELECT f2.id FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.scope_owner = f.scope_owner
-                   AND f2.status = 'FAIL'
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, ''))
-        ORDER BY occurrences DESC, f.scope_owner
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-    connection.close()
-    return [FixtureFailure(**dict(row)) for row in rows]
-
-
-def occurrences_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """Every individual failure behind a group: which run, which commit, when.
-
-    A group's counts cannot say whether four failures are one bad commit seen
-    four times or a problem that has survived four of them. The commit and the
-    event are in the database and were simply never asked for.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.id AS result_id, f.elapsed_ms,
-               f.screenshots, f.screenshot_status,
-               r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
-               l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt,
-               l.executors, l.node_process
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
-        ORDER BY r.created_at DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["longname"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {
-                "result_id": row["result_id"],
-                "elapsed_ms": row["elapsed_ms"],
-                "screenshots": row["screenshots"],
-                "screenshot_status": row["screenshot_status"],
-                "run_id": row["run_id"],
-                "head_sha": row["head_sha"],
-                "event": row["event"],
-                "created_at": row["created_at"],
-                "run_url": row["run_url"],
-                "platform": row["platform"],
-                "python_version": row["python_version"],
-                "rf_version": row["rf_version"],
-                "node_version": row["node_version"],
-                "artifact_name": row["artifact_name"],
-                "artifact_url": row["artifact_url"],
-                "attempt": row["attempt"],
-                "executors": row["executors"],
-                "node_process": row["node_process"],
-            }
-        )
-    return grouped
-
-
-def coverage_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[str, list[dict]]:
-    """Per configuration, how often a test ran and how often it failed.
-
-    One global rate hides the only thing that matters about it. Screenshot On
-    Failure is 3 of 81 overall, which says nothing; it is 3 of 55 on linux and
-    0 of 26 on darwin, which says where to look. Configurations with no failures
-    are included: 26 clean runs is evidence, and a configuration missing from
-    this list never ran the test at all, which is not the same as passing it.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.longname, l.platform, l.python_version, l.rf_version,
-               l.node_version,
-               COUNT(*) AS ran,
-               SUM(CASE WHEN f.status = 'FAIL' THEN 1 ELSE 0 END) AS failed
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        GROUP BY f.longname, l.platform, l.python_version, l.rf_version,
-                 l.node_version
-        ORDER BY failed DESC, ran DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[str, list[dict]] = {}
-    for row in rows:
-        grouped.setdefault(row["longname"], []).append(
-            {
-                "platform": row["platform"],
-                "python_version": row["python_version"],
-                "rf_version": row["rf_version"],
-                "node_version": row["node_version"],
-                "ran": row["ran"],
-                "failed": row["failed"] or 0,
-            }
-        )
-    return grouped
-
-
-def _spread(values: list[int]) -> dict:
-    """Four numbers, because the shape is what carries the argument.
-
-    A cliff between the passes and the failures is a keyword that broke. A tail
-    that reaches up into them is a margin that ran out. `min` and `max` alone
-    cannot tell those apart; the median says where the mass sits.
-    """
-    last = len(values) - 1
-    return {
-        "min": values[0],
-        "median": values[last // 2],
-        "p95": values[min(last, round(0.95 * last))],
-        "max": values[last],
-    }
-
-
-def pass_durations_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, dict]:
-    """How long a test takes on the runs where it passes, per configuration.
-
-    A timeout message supports two readings that want opposite fixes: something
-    broke, or the budget was always too thin. Only the passing runs separate
-    them. `Verify Removed Scope` fails on a 1500 ms click timeout waiting for a
-    button the page enables after 700 ms; its linux passes span 1001-1853 ms and
-    its win32 passes span 1033-1169 ms. The linux tail overlaps the failures and
-    the win32 one is nowhere near them. That is a margin being spent, not a
-    keyword that broke, and the message on its own says neither.
-
-    Section 1 keeps the passing rows because a failure count without a run count
-    is not a rate. This is the same argument one level down: a failure duration
-    without a pass duration is not a margin.
-
-    Keyed the same way as `coverage_by_test` groups, so the two join. Only tests
-    that failed at least once are measured - nothing else is being asked about.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.longname, l.platform, l.python_version, l.rf_version,
-               l.node_version, f.elapsed_ms
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        WHERE f.status = 'PASS' AND f.elapsed_ms IS NOT NULL
-          AND f.longname IN (SELECT longname FROM test_result WHERE status = 'FAIL')
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[int]] = {}
-    for row in rows:
-        key = (
-            row["longname"],
-            row["platform"],
-            row["python_version"],
-            row["rf_version"],
-            row["node_version"],
-        )
-        grouped.setdefault(key, []).append(row["elapsed_ms"])
-    return {key: _spread(sorted(values)) for key, values in grouped.items()}
-
-
-def _verdict(statuses: list[str]) -> str:
-    unique = set(statuses)
-    if "FAIL" in unique:
-        return "mixed" if "PASS" in unique else "fail"
-    return "pass" if "PASS" in unique else "skip"
-
-
-def neighbouring_outcomes(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[int, dict]:
-    """What the same test did on the same leg in the runs either side of this one.
-
-    A rate says how often a test fails. It cannot say whether a failure is a blip
-    on a leg that is otherwise healthy or the point where something broke and
-    stayed broken, and those want opposite responses. The run before and the run
-    after answer it, and both are already here: the passing rows are stored for
-    exactly this kind of question and were never asked it.
-
-    The comparison is per leg, not per run. A test that only fails on win32 has
-    nothing to learn from the linux run that happened to come next.
-
-    Retries answer the same question with the commit held constant, which is the
-    one thing the neighbouring runs cannot do - a real regression, fixed by the
-    next commit, has passing neighbours and looks like a flake. There is no
-    automatic retry in any of the three workflows, so a leg that ran more than
-    once in one run was re-run by hand; when the test passed on one of those
-    attempts it failed and passed on one commit, minutes apart. Its absence means
-    nobody pressed the button - the decision follows queue pressure and where the
-    run sat in the day's merges, not what failed - so a retry is reported when it
-    exists and nothing at all is concluded from it when it does not.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.id AS result_id, f.longname, f.status,
-               l.artifact_name, l.id AS leg_id,
-               r.id AS run_id, r.head_sha, r.created_at
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.longname IN (SELECT longname FROM test_result WHERE status = 'FAIL')
-        ORDER BY r.created_at, r.id
-        """
-    ).fetchall()
-    connection.close()
-
-    # One lane per (test, matrix leg), each holding the runs that leg made in
-    # order. A run appears once even when it holds several attempts of the leg.
-    lanes: dict[tuple, dict] = {}
-    for row in rows:
-        lane = lanes.setdefault((row["longname"], row["artifact_name"]), {})
-        run = lane.setdefault(
-            (row["created_at"], row["run_id"]),
-            {
-                "run": row["run_id"],
-                "commit": row["head_sha"],
-                "at": row["created_at"],
-                "statuses": [],
-                "legs": set(),
-            },
-        )
-        run["statuses"].append(row["status"])
-        run["legs"].add(row["leg_id"])
-
-    def seen(run: dict) -> dict:
-        return {
-            "run": run["run"],
-            "commit": run["commit"],
-            "at": run["at"],
-            "outcome": _verdict(run["statuses"]),
-        }
-
-    outcomes: dict[int, dict] = {}
-    for row in rows:
-        if row["status"] != "FAIL":
-            continue
-        lane = lanes[(row["longname"], row["artifact_name"])]
-        order = sorted(lane)
-        here = order.index((row["created_at"], row["run_id"]))
-        mine = lane[order[here]]
-        # Only claimed when the test itself ran more than once. A re-run leg that
-        # never reached this test is not evidence about this test.
-        retry = None
-        if len(mine["legs"]) > 1:
-            retry = {
-                "attempts": len(mine["legs"]),
-                "passed_on_another_attempt": "PASS" in mine["statuses"],
-            }
-        outcomes[row["result_id"]] = {
-            "previous_run_on_this_leg": seen(lane[order[here - 1]]) if here else None,
-            "next_run_on_this_leg": (
-                seen(lane[order[here + 1]]) if here + 1 < len(order) else None
-            ),
-            "retry": retry,
-        }
-    return outcomes
-
-
-def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[dict]]:
-    """The other tests that failed in the same leg as this one.
-
-    Section 3 splits out the cascade Robot Framework creates structurally: a
-    suite fixture fails, and every test beneath it is marked. A data dependency
-    is a cascade too, and it is not structural, so nothing detects it.
-    `01 Initial Import.Take Screenshot` fails on a darwin screenshot error, so
-    the `VAR ... scope=GLOBAL` on the next line never runs, so the two suites
-    after it fail on a variable that was never set. Three entries, three files,
-    three rates - one event. Two of the three are labelled `standard`, which
-    routes the reader at an assertion that is not broken.
-
-    This claims no causation and cannot. It reports what else broke in the same
-    leg, which costs one query and is the only hint the data has to offer.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT a.id AS result_id, b.longname,
-               IFNULL(b.failure_scope, 'test') AS scope
-        FROM test_result a
-        JOIN test_result b
-          ON b.leg_id = a.leg_id AND b.id <> a.id AND b.status = 'FAIL'
-        WHERE a.status = 'FAIL'
-        ORDER BY a.id, b.longname
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[int, list[dict]] = {}
-    for row in rows:
-        grouped.setdefault(row["result_id"], []).append(
-            {"test": row["longname"], "scope": row["scope"]}
-        )
-    return grouped
-
-
-def _failing_fixtures(connection) -> list:
-    return connection.execute(
-        """
-        SELECT DISTINCT scope_owner, failure_scope FROM test_result
-        WHERE status = 'FAIL'
-          AND failure_scope IN ('suite_setup', 'suite_teardown')
-          AND scope_owner IS NOT NULL
-        """
-    ).fetchall()
-
-
-def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
-    """Every leg that ran the suite, and whether this fixture broke in it.
-
-    The denominator for a fixture is legs that ran the suite, never test rows:
-    one broken teardown marks every test beneath it, so counting rows counts
-    the suite's size. `suite_longname LIKE owner || '.%'` is what includes the
-    child suites the fixture also fails.
-    """
-    return connection.execute(
-        """
-        SELECT l.id AS leg_id, l.artifact_name, l.platform, l.python_version,
-               l.rf_version, l.node_version, l.attempt,
-               r.id AS run_id, r.head_sha, r.created_at,
-               MAX(CASE WHEN f.status = 'FAIL' AND f.failure_scope = ?
-                         AND f.scope_owner = ? THEN 1 ELSE 0 END) AS broke
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.suite_longname = ? OR f.suite_longname LIKE ? || '.%'
-        GROUP BY l.id
-        ORDER BY r.created_at, r.id
-        """,
-        (failure_scope, scope_owner, scope_owner, scope_owner),
-    ).fetchall()
-
-
-def occurrences_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """Every leg a fixture broke in: which run, which commit, which leg.
-
-    One entry per leg, not per marked test row. Five teardown failures of
-    `Hangs Setup` produced ten failed tests, and listing ten occurrences would
-    put back exactly the double count section 3 exists to remove. How many rows
-    each leg lost is carried as `tests_marked` instead, where it is a fact about
-    the leg rather than a multiplier on the count.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               l.id AS leg_id, MIN(f.id) AS result_id, COUNT(*) AS tests_marked,
-               -- Every row this fixture marked in one leg carries the same
-               -- fixture evidence, so any of them stands for the occurrence.
-               MAX(f.screenshots) AS screenshots,
-               MAX(f.screenshot_status) AS screenshot_status,
-               r.id AS run_id, r.head_sha, r.event, r.created_at,
-               r.url AS run_url,
-               l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt,
-               l.executors, l.node_process
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), l.id
-        ORDER BY r.created_at DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(dict(row))
-    return grouped
-
-
-def coverage_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """Per configuration, how often the suite ran and how often the fixture broke.
-
-    `seen_on` said which matrix legs a fixture had been seen failing on and how
-    often, with no denominator. That is the same shape section 6 rejected for
-    tests: 5 occurrences is not a rate, and 3 of 68 on win32 against 0 of 46
-    everywhere else is where to look.
-    """
-    connection = _connect(db_path, window)
-    grouped: dict[tuple, list[dict]] = {}
-    for fixture in _failing_fixtures(connection):
-        owner = fixture["scope_owner"]
-        scope = fixture["failure_scope"]
-        counts: dict[tuple, dict] = {}
-        for row in _fixture_legs(connection, owner, scope):
-            key = (
-                row["platform"],
-                row["python_version"],
-                row["rf_version"],
-                row["node_version"],
-            )
-            entry = counts.setdefault(
-                key,
-                {
-                    "platform": row["platform"],
-                    "python_version": row["python_version"],
-                    "rf_version": row["rf_version"],
-                    "node_version": row["node_version"],
-                    "ran": 0,
-                    "failed": 0,
-                },
-            )
-            entry["ran"] += 1
-            entry["failed"] += row["broke"]
-        grouped[(owner, scope)] = sorted(
-            counts.values(), key=lambda entry: (-entry["failed"], -entry["ran"])
-        )
-    connection.close()
-    return grouped
-
-
-def neighbouring_fixture_outcomes(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, dict]:
-    """`neighbouring_outcomes` for suite fixtures, keyed by the leg it broke in.
-
-    The same question and the same answer, with one difference in what counts as
-    an outcome: a fixture has no status of its own in `test_result`, so the leg
-    passed if the suite ran there and the fixture is not among the failures.
-    """
-    connection = _connect(db_path, window)
-    outcomes: dict[tuple, dict] = {}
-    for fixture in _failing_fixtures(connection):
-        owner = fixture["scope_owner"]
-        scope = fixture["failure_scope"]
-        rows = _fixture_legs(connection, owner, scope)
-        lanes: dict[str, dict] = {}
-        for row in rows:
-            lane = lanes.setdefault(row["artifact_name"], {})
-            run = lane.setdefault(
-                (row["created_at"], row["run_id"]),
-                {
-                    "run": row["run_id"],
-                    "commit": row["head_sha"],
-                    "at": row["created_at"],
-                    "statuses": [],
-                    "legs": set(),
-                },
-            )
-            run["statuses"].append("FAIL" if row["broke"] else "PASS")
-            run["legs"].add(row["leg_id"])
-
-        def seen(run: dict) -> dict:
-            return {
-                "run": run["run"],
-                "commit": run["commit"],
-                "at": run["at"],
-                "outcome": _verdict(run["statuses"]),
-            }
-
-        for row in rows:
-            if not row["broke"]:
-                continue
-            lane = lanes[row["artifact_name"]]
-            order = sorted(lane)
-            here = order.index((row["created_at"], row["run_id"]))
-            mine = lane[order[here]]
-            retry = None
-            if len(mine["legs"]) > 1:
-                retry = {
-                    "attempts": len(mine["legs"]),
-                    "passed_on_another_attempt": "PASS" in mine["statuses"],
-                }
-            outcomes[(owner, scope, row["leg_id"])] = {
-                "previous_run_on_this_leg": (
-                    seen(lane[order[here - 1]]) if here else None
-                ),
-                "next_run_on_this_leg": (
-                    seen(lane[order[here + 1]]) if here + 1 < len(order) else None
-                ),
-                "retry": retry,
-            }
-    connection.close()
-    return outcomes
-
-
-def fixture_co_failures(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """What else broke in a leg the fixture broke in.
-
-    The tests this fixture marked are excluded. They are the same event already
-    counted once, and listing them here would restate the fixture's own damage
-    as if it were context.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT a.scope_owner, a.failure_scope, a.leg_id, b.longname,
-               IFNULL(b.failure_scope, 'test') AS scope
-        FROM (SELECT DISTINCT scope_owner, failure_scope, leg_id
-                FROM test_result
-               WHERE status = 'FAIL'
-                 AND failure_scope IN ('suite_setup', 'suite_teardown')
-                 AND scope_owner IS NOT NULL) a
-        JOIN test_result b ON b.leg_id = a.leg_id AND b.status = 'FAIL'
-        WHERE NOT (IFNULL(b.failure_scope, 'test') = a.failure_scope
-                   AND IFNULL(b.scope_owner, '') = a.scope_owner)
-        GROUP BY a.scope_owner, a.failure_scope, a.leg_id, b.longname
-        ORDER BY a.leg_id, b.longname
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["leg_id"])
-        grouped.setdefault(key, []).append(
-            {"test": row["longname"], "scope": row["scope"]}
-        )
-    return grouped
-
-
-def messages_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """`messages_by_test` for suite fixtures, counted in legs.
-
-    Robot Framework writes the fixture's message onto every test it marked, so
-    counting rows would report one teardown failure as ten.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.message, COUNT(DISTINCT f.leg_id) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), f.message
-        ORDER BY occurrences DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {"message": row["message"], "occurrences": row["occurrences"]}
-        )
-    return grouped
-
-
-def first_attempt_counts_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> tuple[dict[str, int], dict]:
-    """How often a test ran and failed on runs nobody had to re-run.
-
-    A leg is only ever re-run because it failed, so re-attempts land exactly
-    where the failures are and the ordinary denominator is inflated where it
-    hurts. Which legs got re-run is not a fact about the test either: it follows
-    queue time and where the run sat in the day's merges. Counting only first
-    attempts asks the one question that has a clean answer - how often does a
-    run nobody touched come back red.
-
-    Counting only the last attempt would be the other obvious choice and is
-    wrong: the last attempt is the one that passed, so the failure disappears.
-
-    A leg whose first attempt was cancelled before it uploaded anything is in
-    neither count. There is no result to count, and inventing one either way
-    would be worse than the gap.
-
-    Returns runs by test and failures by (test, signature), separately, so that
-    a group whose every failure landed on a re-attempt still gets a denominator
-    instead of vanishing.
-    """
-    connection = _connect(db_path, window)
-    runs = {
-        row["longname"]: row["ran"]
-        for row in connection.execute(
-            """
-            SELECT f.longname, COUNT(*) AS ran
-            FROM test_result f
-            JOIN leg l ON l.id = f.leg_id
-            WHERE l.attempt = 1
-            GROUP BY f.longname
-            """
-        )
-    }
-    failures = {
-        (row["longname"], row["signature_key"]): row["failures"]
-        for row in connection.execute(
-            """
-            SELECT f.longname,
-                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-                   COUNT(*) AS failures
-            FROM test_result f
-            JOIN leg l ON l.id = f.leg_id
-            WHERE f.status = 'FAIL' AND l.attempt = 1
-              AND IFNULL(f.failure_scope, 'test')
-                  NOT IN ('suite_setup', 'suite_teardown')
-            GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
-            """
-        )
-    }
-    connection.close()
-    return runs, failures
-
-
-def first_attempt_counts_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> tuple[dict[tuple, int], dict]:
-    """`first_attempt_counts_by_test` for suite fixtures, counted in legs."""
-    connection = _connect(db_path, window)
-    runs: dict[tuple, int] = {}
-    for fixture in _failing_fixtures(connection):
-        identity = (fixture["scope_owner"], fixture["failure_scope"])
-        runs[identity] = sum(
-            1 for row in _fixture_legs(connection, *identity) if row["attempt"] == 1
-        )
-    failures = {
-        (row["scope_owner"], row["failure_scope"], row["signature_key"]): row["legs"]
-        for row in connection.execute(
-            """
-            SELECT f.scope_owner, f.failure_scope,
-                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-                   COUNT(DISTINCT l.id) AS legs
-            FROM test_result f
-            JOIN leg l ON l.id = f.leg_id
-            WHERE f.status = 'FAIL' AND l.attempt = 1
-              AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-            GROUP BY f.scope_owner, f.failure_scope,
-                     LOWER(IFNULL(f.error_signature, ''))
-            """
-        )
-    }
-    connection.close()
-    return runs, failures
-
-
-def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
-    """The newest run in the window, and how many failures it carried.
-
-    The rates answer "how often does this break". They do not answer "is it
-    broken now", which is the question a merge is judged on, and a window whose
-    newest run is clean is a different situation from one whose newest run is
-    not - however bad the rates in between.
-    """
-    connection = _connect(db_path, window)
-    row = connection.execute(
-        "SELECT id, created_at, event, head_sha FROM run "
-        "ORDER BY created_at DESC, id DESC LIMIT 1"
-    ).fetchone()
-    if row is None:
-        connection.close()
-        return {}
-    failures = connection.execute(
-        """
-        SELECT COUNT(*) FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        WHERE l.run_id = ? AND f.status = 'FAIL'
-        """,
-        (row["id"],),
-    ).fetchone()[0]
-    connection.close()
-    return {
-        "run": row["id"],
-        "commit": row["head_sha"],
-        "event": row["event"],
-        "at": row["created_at"],
-        "failures": failures,
-    }
-
-
-def messages_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """Every distinct raw message behind a group, with how often each occurred.
-
-    The signature masks what varies, which is what makes grouping possible and
-    is also what throws away the evidence. Three failures of Compare Images
-    carry an identical box and a pixel count differing by three - deterministic,
-    not jittery - and the signature renders all of that as `<n>`. Cheap to keep:
-    16 of the 18 groups have exactly one distinct message.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.message, COUNT(*) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
-        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), f.message
-        ORDER BY occurrences DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["longname"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {"message": row["message"], "occurrences": row["occurrences"]}
-        )
-    return grouped
-
-
-def _variants(
-    db_path: Path, sql: str, key_length: int, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    connection = _connect(db_path, window)
-    rows = connection.execute(sql).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = tuple(row[index] for index in range(key_length))
-        grouped.setdefault(key, []).append(
-            {
-                "signature": row["error_signature"],
-                "occurrences": row["occurrences"],
-            }
-        )
-    # Only the groups the case-folded key actually merged. One spelling is the
-    # normal case and saying so on every entry would bury the one that matters.
-    return {key: value for key, value in grouped.items() if len(value) > 1}
-
-
-def signature_variants(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """The distinct spellings of one test group's signature, with counts.
-
-    Only ever more than one when two libraries name the same condition, which is
-    exactly the case the case-folded key exists to merge. See `_KEY`.
-    """
-    return _variants(
-        db_path,
-        """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.error_signature, COUNT(*) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')),
-                 f.error_signature
-        ORDER BY occurrences DESC
-        """,
-        2,
-        window=window,
-    )
-
-
-def fixture_signature_variants(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """The same, for suite fixtures - which is where it actually happens.
-
-    The `Deadline Exceeded` / `Deadline exceeded` split that motivated the
-    case-folded key is a suite teardown, so keying these per test would have
-    missed the only case in the data that has any.
-    """
-    return _variants(
-        db_path,
-        """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.error_signature, COUNT(DISTINCT l.id) AS occurrences
-        FROM test_result f
-        JOIN leg l ON l.id = f.leg_id
-        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), f.error_signature
-        ORDER BY occurrences DESC
-        """,
-        3,
-        window=window,
-    )
-
-
-def log_messages(
-    db_path: Path, result_id: int | None, window: Window = ALL_HISTORY
-) -> list[dict]:
-    """What the failing keywords logged, for one occurrence of a failure."""
-    if result_id is None:
-        return []
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        "SELECT seq, level, keyword, origin, message FROM log_message "
-        "WHERE test_result_id = ? ORDER BY seq",
-        (result_id,),
-    ).fetchall()
-    connection.close()
-    return [dict(row) for row in rows]
-
-
-def log_messages_by_result(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[int, list[dict]]:
-    """The same lines, for every failure at once, keyed on the occurrence.
-
-    One query rather than one per occurrence, because every occurrence needs its
-    own. Reporting a single occurrence's lines against a group that has several
-    is not a saving, it is a wrong answer that looks like a right one: the four
-    `Screenshot On Failure` failures in one window split two and two across two
-    different image comparisons, and the group showed only the newer pair.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        "SELECT test_result_id, seq, level, keyword, origin, message "
-        "FROM log_message ORDER BY test_result_id, seq"
-    ).fetchall()
-    connection.close()
-    grouped: dict[int, list[dict]] = {}
-    for row in rows:
-        grouped.setdefault(row["test_result_id"], []).append(
-            {
-                "level": row["level"],
-                "keyword": row["keyword"],
-                "origin": row["origin"] or None,
-                "message": row["message"],
-            }
-        )
-    return grouped
-
-
-def platform_breakdown(db_path: Path, window: Window = ALL_HISTORY) -> list[dict]:
-    """Failures per matrix leg, by platform.
-
-    Per leg rather than absolute, because the matrix does not run the platforms
-    an equal number of times and the raw counts would say more about the matrix
-    than about the platforms.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT l.platform,
-               COUNT(DISTINCT l.id) AS legs,
-               SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) AS failures
-        FROM leg l
-        LEFT JOIN test_result t ON t.leg_id = l.id
-        WHERE l.platform IS NOT NULL
-        GROUP BY l.platform
-        ORDER BY SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) * 1.0
-                 / COUNT(DISTINCT l.id) DESC
-        """
-    ).fetchall()
-    connection.close()
-    return [
-        {
-            "platform": row["platform"],
-            "legs": row["legs"],
-            "failures": row["failures"] or 0,
-            "per_leg": (row["failures"] or 0) / row["legs"] if row["legs"] else 0.0,
-        }
-        for row in rows
-    ]
-
-
-def totals(db_path: Path, window: Window = ALL_HISTORY) -> dict:
-    connection = _connect(db_path, window)
-    row = connection.execute(
-        "SELECT (SELECT COUNT(*) FROM run) AS runs, "
-        "(SELECT COUNT(*) FROM leg) AS legs, "
-        "(SELECT COUNT(*) FROM test_result) AS results, "
-        "(SELECT COUNT(*) FROM test_result WHERE status='FAIL') AS failures, "
-        "(SELECT COUNT(DISTINCT longname) FROM test_result) AS tests, "
-        "(SELECT COUNT(*) FROM leg WHERE attempt IS NULL) AS legs_without_attempt, "
-        "(SELECT MIN(created_at) FROM run) AS since, "
-        "(SELECT MAX(created_at) FROM run) AS until"
-    ).fetchone()
-    connection.close()
-    return dict(row)
-
+# A leg with more failures than this in it is itself the finding, and listing
+# them all on every one of them would bury the entry. A cap on what the Report
+# holds rather than on what a Rendering shows: past twenty-five names the list
+# has stopped being the hint it exists to be. Truncation is reported rather than
+# done quietly - a list that stops without saying so reads as a complete one.
+CO_FAILURE_LIMIT = 25
 
 # How likely a genuinely-as-bad-as-everywhere-else configuration has to be to
 # have shown nothing yet before its zero stops being worth reading. At 0.05 a
 # zero is reported plainly; above it, the zero is marked as what it is.
 INCONCLUSIVE_ABOVE = 0.05
 
+ABOUT = {
+    "grain": (
+        "One entry per (test, error). The same test failing on two different "
+        "errors is two entries, because they are two problems."
+    ),
+    "suite_fixtures_are_separate": (
+        "A failed suite setup or teardown fails every test beneath it, and Robot "
+        "Framework records that only on the tests. Those rows are in "
+        "'fixture_failures', counted once per fixture against how many times the "
+        "suite ran, and are excluded from 'test_failures'. Counting them as test "
+        "failures makes one broken teardown outrank everything else."
+    ),
+    "denominators": (
+        "'ran' counts every execution including passes. A failure count without "
+        "a run count is not a rate."
+    ),
+    "signature_vs_message": (
+        "'signature' is the message with the varying parts masked, and is what "
+        "entries are grouped on, case-insensitively. 'raw_messages' holds what "
+        "was actually reported. Read the signature to know what kind of failure "
+        "this is; read the raw messages to diagnose it."
+    ),
+    "keyword_kind": (
+        "Where the failing keyword comes from, and so who to suspect: 'library' "
+        "is the Browser library under test, 'project' a test helper in this "
+        "repository, 'standard' a Robot Framework library and therefore an "
+        "assertion, 'unknown' a failure above any keyword such as a test timeout."
+    ),
+    "keyword_locations": (
+        "Resolved from the working copy at ingest time, not from the commit the "
+        "run used. 'commit' on each occurrence is there for when that matters."
+    ),
+    "artifacts": (
+        "Screenshots, traces and playwright-log.txt are not in this document. "
+        "Each occurrence carries the artifact URL they can be downloaded from."
+    ),
+    "neighbouring_runs": (
+        "Each occurrence carries what the same test did on the same matrix leg "
+        "in the run before it and the run after it. A rate says how often a "
+        "test fails; these say whether this failure was a blip on a leg that is "
+        "otherwise healthy, or the point where something broke and stayed "
+        "broken. They span commits, so a real regression that the next commit "
+        "fixed also has passing neighbours - 'retry' is what tells those apart."
+    ),
+    "retries": (
+        "Nothing in this CI retries automatically, so a leg that ran more than "
+        "once in one run was re-run by hand. Where 'retry' is present the test "
+        "failed and then passed on one commit minutes apart, which is the "
+        "strongest evidence of a flake this data holds. Where it is absent "
+        "nobody pressed the button, and that is a fact about queue time and "
+        "about where the run sat in the day's merges, never about the failure: "
+        "absence means nothing."
+    ),
+    "denominators_and_attempts": (
+        "'ran' and 'rate' count every attempt, re-runs included. A leg is only "
+        "re-run because it failed, so those extra runs land exactly where the "
+        "failures are and pull the rate down. 'first_attempt' counts only legs "
+        "nobody had to re-run, which answers the question with a clean answer: "
+        "how often does a run nobody touched come back red. Counting only the "
+        "last attempt would be the other obvious choice and is wrong - the last "
+        "attempt is the one that passed, so the failure disappears. A leg whose "
+        "first attempt was cancelled before uploading is in neither count. "
+        "'window.legs_with_unknown_attempt' is how many legs could not be "
+        "placed at all; while it is above zero, read 'first_attempt' as a floor."
+    ),
+    "pass_durations": (
+        "'pass_ms' on each configuration is how long the test takes on the runs "
+        "where it passes. For a timeout, whether those cluster far below the "
+        "limit or run up against it is the difference between a keyword that "
+        "broke and a budget that was always too thin."
+    ),
+    "co_failures": (
+        "'also_failed_in_this_leg' names the other tests that failed in the "
+        "same execution. It claims no causation. It is here because a test can "
+        "fail on a variable that an earlier suite never got to set, and read "
+        "alone that entry looks like an unrelated assertion failure in a file "
+        "where nothing is wrong. On a fixture entry the tests that fixture "
+        "marked are left out: they are its own damage, already counted once."
+    ),
+    "fixture_occurrences": (
+        "A fixture occurrence is one leg, never one marked test row. Five "
+        "teardown failures of one suite produced ten failed tests, and listing "
+        "ten would put back the double count the fixture split exists to "
+        "remove. What each leg lost is 'tests_marked' on that occurrence. For "
+        "the same reason 'ran' on a fixture rate counts legs that ran the "
+        "suite, and the occurrence count of a raw message counts legs too."
+    ),
+    "latest_run": (
+        "'window.latest_run' is the newest run in the window and how many "
+        "failures it carried. The rates say how often things break, not whether "
+        "the head is green, and a merge is judged on the second question."
+    ),
+    "known_cause": (
+        "Where an entry carries 'known_cause', somebody has already worked this "
+        "one out and written down what they found; 'reference' says where. It "
+        "is recorded by hand in tools/ci_failures/known_causes.json rather than "
+        "in the database, because the database is derived and gets rebuilt "
+        "whenever a parsing rule changes, and a conclusion nobody can re-derive "
+        "must not be stored somewhere that deletes it. Its absence means "
+        "nothing has been recorded, never that the cause is unknown. "
+        "'fixed_by' names the change that should have fixed it and "
+        "'fix_verified' the date CI confirmed it - while 'fixed_by' is set and "
+        "'fix_verified' is null, the fix is merged but not yet proven."
+    ),
+    "since_last_report": (
+        "What changed against the last snapshot somebody took, and null when "
+        "nobody has taken one - which is a different thing from nothing having "
+        "changed. The snapshot moves only when `inv ci-report --mark-seen` is "
+        "run, never as a side effect of rendering, so running the report twice "
+        "on unchanged data answers the same both times."
+    ),
+    "log_lines": (
+        "Log lines and screenshots hang off each occurrence, not off the group. "
+        "The occurrences of one group do not have to agree: four failures of "
+        "one test on one masked signature were two different image comparisons "
+        "breaking, and a single set of lines shown against the group said so "
+        "for only half of them. An 'origin' of 'caught by ...' marks a line "
+        "from a failure that something swallowed - a `Run Keyword And Expect "
+        "Error` or a TRY/EXCEPT - which is evidence about what a keyword did "
+        "and is never itself the failure that stopped the test. 'screenshots' "
+        "is ordered, most likely to be the evidence first: the files the "
+        "failing keyword itself named, then the one the library took because "
+        "the test failed, then anything named only by a caught failure."
+    ),
+    "small_samples": (
+        "A configuration with no failures carries 'zero_is_inconclusive' when a "
+        "configuration exactly as broken as the rest would plausibly show "
+        "nothing over that many runs. 'would_look_clean_anyway' is how often it "
+        "would, and 'runs_for_a_meaningful_zero' how many runs it would take "
+        "for the zero to be worth reading. Without it a rare failure looks "
+        "platform specific on every platform that has not caught it yet."
+    ),
+    "executors": (
+        "'executors' is how many test executions ran at once on that leg and "
+        "'node_process' whether they shared one node process. A failure where "
+        "one worker's state reaches another's exists only when there is another "
+        "worker, so it looks platform specific when the platforms differ only "
+        "in how many CPUs the runner has. Null for legs ingested from before "
+        "this was recorded."
+    ),
+}
 
-def zero_is_inconclusive(ran: int, overall_rate: float) -> dict | None:
+
+@dataclass(frozen=True)
+class PassMs:
+    """How long the test takes on the runs where it passes, per configuration.
+
+    Four numbers because the shape carries the argument: a cliff between the
+    passes and the failures is a keyword that broke, a tail reaching up into
+    them is a margin that ran out.
+    """
+
+    min: int
+    median: int
+    p95: int
+    max: int
+
+
+@dataclass(frozen=True)
+class InconclusiveZero:
+    """What a configuration that has failed nothing yet is worth."""
+
+    would_look_clean_anyway: float
+    runs_for_a_meaningful_zero: int
+
+
+@dataclass(frozen=True)
+class Rate:
+    """One configuration, how often it ran it and how often it broke."""
+
+    platform: str | None
+    python: str | None
+    rf: str | None
+    node: str | None
+    ran: int
+    failed: int
+    zero_is_inconclusive: InconclusiveZero | None = None
+    # None means measured and nothing to measure; a Fixture Failure has no
+    # duration of its own at all, and its Renderings leave the field out rather
+    # than carrying a null on every row of a whole section.
+    pass_ms: PassMs | None = None
+
+
+@dataclass(frozen=True)
+class Neighbour:
+    """What the same Leg did in the Run either side of this one."""
+
+    run: int
+    commit: str | None
+    at: str | None
+    outcome: str
+
+
+@dataclass(frozen=True)
+class Retry:
+    """A Leg someone re-ran by hand. Nothing in this CI retries on its own."""
+
+    attempts: int
+    passed_on_another_attempt: bool
+
+
+@dataclass(frozen=True)
+class CoFailure:
+    """Something else that broke in the same Leg. No causation is claimed."""
+
+    test: str
+    scope: str | None
+
+
+@dataclass(frozen=True)
+class LogLine:
+    level: str | None
+    keyword: str | None
+    origin: str | None
+    message: str | None
+
+
+@dataclass(frozen=True)
+class Occurrence:
+    """One individual failure, and what surrounded it.
+
+    The counts describe a Group. These describe one execution: which Leg ran it,
+    which Attempt that was, what that Leg did either side, and what else broke
+    alongside. Evidence hangs here and never on the Group - the Occurrences of
+    one Group do not have to agree, and a Group cannot say so.
+    """
+
+    run: int
+    run_url: str | None
+    commit: str | None
+    event: str | None
+    at: str | None
+    platform: str | None
+    python: str | None
+    rf: str | None
+    node: str | None
+    leg: str | None
+    attempt: int | None
+    executors: int | None
+    node_process: str | None
+    artifact_url: str | None
+    # A test Occurrence has one, a Fixture Failure's has the other.
+    elapsed_ms: int | None = None
+    tests_marked: int | None = None
+    previous_run_on_this_leg: Neighbour | None = None
+    next_run_on_this_leg: Neighbour | None = None
+    retry: Retry | None = None
+    also_failed_in_this_leg: tuple[CoFailure, ...] = ()
+    also_failed_in_this_leg_not_listed: int = 0
+    log: tuple[LogLine, ...] = ()
+    screenshots: tuple[str, ...] = ()
+    screenshot_status: str | None = None
+
+
+@dataclass(frozen=True)
+class FirstAttempt:
+    """The rate over Legs nobody had to re-run."""
+
+    failures: int
+    ran: int
+    # Exact. Rounding is a Rendering's decision.
+    rate: float
+
+
+@dataclass(frozen=True)
+class TestCounts:
+    failures: int
+    ran: int
+    rate: float
+    distinct_commits: int
+    first_attempt: FirstAttempt
+
+
+@dataclass(frozen=True)
+class FixtureCounts:
+    """`suite_runs`, never `ran`.
+
+    The denominator is Legs that ran the suite, never test rows, and the
+    different name is the guard that stops it being read as a test rate.
+    """
+
+    failures: int
+    suite_runs: int
+    rate: float
+    distinct_commits: int
+    test_rows_marked_failed: int
+    first_attempt: FirstAttempt
+
+
+@dataclass(frozen=True)
+class WhereToLook:
+    """Where in this repository to start, without grepping for it."""
+
+    test_file: str | None
+    keyword: str | None
+    keyword_defined: str | None
+    keyword_owner: str | None
+    keyword_kind: str | None
+
+
+@dataclass(frozen=True)
+class KnownCause:
+    """A conclusion somebody already reached. Absence means nothing is written
+    down, never that the cause is unknown."""
+
+    cause: str | None
+    reference: str | None
+    recorded: str | None
+    fixed_by: str | None
+    fix_verified: str | None
+
+
+@dataclass(frozen=True)
+class RawMessage:
+    """One distinct unmasked message. The mask is what makes grouping possible
+    and also what throws the evidence away."""
+
+    message: str | None
+    occurrences: int
+
+
+@dataclass(frozen=True)
+class SignatureVariant:
+    """One spelling behind a case-folded Group. Two libraries spell the same
+    gRPC deadline differently, and which one fired is real information."""
+
+    signature: str | None
+    occurrences: int
+
+
+@dataclass(frozen=True)
+class TestEntry:
+    """One Group: a test and the error it failed with."""
+
+    test: str
+    where_to_look: WhereToLook
+    signature: str | None
+    raw_messages: tuple[RawMessage, ...]
+    counts: TestCounts
+    rates: tuple[Rate, ...]
+    never_ran_on: tuple[str, ...]
+    occurrences: tuple[Occurrence, ...]
+    known_cause: KnownCause | None = None
+    signature_variants: tuple[SignatureVariant, ...] = ()
+    scope: str = "test"
+
+
+@dataclass(frozen=True)
+class FixtureEntry:
+    """One Fixture Failure: a suite setup or teardown and the error it broke on,
+    counted once per Leg rather than once per test it marked."""
+
+    suite: str
+    scope: str
+    where_to_look: WhereToLook
+    signature: str | None
+    raw_messages: tuple[RawMessage, ...]
+    counts: FixtureCounts
+    affected_tests: tuple[str, ...]
+    rates: tuple[Rate, ...]
+    never_ran_on: tuple[str, ...]
+    occurrences: tuple[Occurrence, ...]
+    known_cause: KnownCause | None = None
+    signature_variants: tuple[SignatureVariant, ...] = ()
+
+
+@dataclass(frozen=True)
+class PlatformRow:
+    """Failures per matrix Leg. Per leg, not in total: the matrix does not run
+    the platforms an equal number of times."""
+
+    platform: str | None
+    legs: int
+    failures: int
+    per_leg: float
+
+
+@dataclass(frozen=True)
+class LatestRun:
+    """The newest Run and its failure count. The rates say how often things
+    break; a merge is judged on whether the head is green."""
+
+    run: int
+    commit: str | None
+    event: str | None
+    at: str | None
+    failures: int
+
+
+@dataclass(frozen=True)
+class WindowSummary:
+    """What the Report covers, and how much of it there was."""
+
+    runs: int
+    legs: int
+    results: int
+    failures: int
+    distinct_tests: int
+    legs_with_unknown_attempt: int
+    since: str | None
+    until: str | None
+    latest_run: LatestRun | None
+    label: str
+    bounded: bool
+
+
+@dataclass(frozen=True)
+class Report:
+    """Everything one run of the tool says about a Window."""
+
+    about: dict
+    window: WindowSummary
+    # annotations.compare's own shape, passed through. None when nobody has
+    # taken a Snapshot - and also under a Window, where an all-history baseline
+    # would call every Group shrunken for the same reason a windowed baseline
+    # would call every Group grown.
+    since_last_report: dict | None
+    fixture_failures: tuple[FixtureEntry, ...]
+    test_failures: tuple[TestEntry, ...]
+    platforms: tuple[PlatformRow, ...]
+
+
+def zero_is_inconclusive(ran: int, overall_rate: float) -> InconclusiveZero | None:
     """Whether a configuration's clean sheet is evidence or just a small sample.
 
     A rate of zero and an absence of evidence render identically, and on a rare
@@ -1167,23 +498,10 @@ def zero_is_inconclusive(ran: int, overall_rate: float) -> dict | None:
     if would_look_clean <= INCONCLUSIVE_ABOVE:
         return None
     needed = math.ceil(math.log(INCONCLUSIVE_ABOVE) / math.log(1 - overall_rate))
-    return {
-        "would_look_clean_anyway": round(would_look_clean, 2),
-        "runs_for_a_meaningful_zero": needed,
-    }
+    return InconclusiveZero(round(would_look_clean, 2), needed)
 
 
-# A merged pabot artifact is stamped with the run timestamp and the worker, so
-# the file on disk is not named what the keyword that used it logged.
-_ARTIFACT_STAMP = re.compile(r"^\d{8}_\d{6}-\d+-")
-
-
-def _screenshot_key(path: str) -> str:
-    """One file, one key, whatever name it is referred to by."""
-    return _ARTIFACT_STAMP.sub("", path.rsplit("/", 1)[-1])
-
-
-def rank_screenshots(paths: list[str], log: list[dict]) -> list[str]:
+def rank_screenshots(paths: list[str], log: list[LogLine]) -> tuple[str, ...]:
     """Most likely to be the evidence first.
 
     A failing test leaves more pictures than anyone will open. The ones the
@@ -1192,27 +510,401 @@ def rank_screenshots(paths: list[str], log: list[dict]) -> list[str]:
     one the library took because the test failed, then anything named by a
     failure that was caught and thrown away, then the rest.
 
-    Deliberately done here rather than at ingest. It is a display decision, it
-    depends only on rows already in the database, and computing it during
-    parsing would freeze it into stored data that only a full re-download can
-    change.
+    Deliberately not done at ingest: it depends only on rows already in the
+    database, and computing it during parsing would freeze it into stored data
+    that only a full re-download can change. Deliberately not done in a
+    Rendering either - it is the same question with the same answer for both,
+    and two implementations are two chances to show the reader a different
+    picture.
     """
 
-    def named_in(lines: list[dict]) -> set[str]:
+    def named_in(lines: list[LogLine]) -> set[str]:
         return {
-            _screenshot_key(word.strip("'\",;:()[]<>"))
+            screenshot_key(word.strip("'\",;:()[]<>"))
             for line in lines
-            for word in (line.get("message") or "").replace("\\", "/").split()
+            for word in (line.message or "").replace("\\", "/").split()
         }
 
-    failing = named_in([line for line in log if not line.get("origin")])
-    caught = named_in([line for line in log if line.get("origin")])
-    return sorted(
-        paths,
-        key=lambda path: (
-            _screenshot_key(path) not in failing,
-            "fail-screenshot" not in path,
-            _screenshot_key(path) not in caught,
-            path,
+    failing = named_in([line for line in log if not line.origin])
+    caught = named_in([line for line in log if line.origin])
+    return tuple(
+        sorted(
+            paths,
+            key=lambda path: (
+                screenshot_key(path) not in failing,
+                "fail-screenshot" not in path,
+                screenshot_key(path) not in caught,
+                path,
+            ),
+        )
+    )
+
+
+def _split(value: str | None) -> tuple[str, ...]:
+    return tuple(part for part in (value or "").split(",") if part)
+
+
+def _where_to_look(row, test_lineno: int | None) -> WhereToLook:
+    defined = None
+    if row.keyword_source:
+        defined = row.keyword_source
+        if row.keyword_lineno:
+            defined = f"{defined}:{row.keyword_lineno}"
+    test = row.test_source
+    if test and test_lineno:
+        test = f"{test}:{test_lineno}"
+    return WhereToLook(
+        test_file=test,
+        keyword=row.failing_keyword,
+        keyword_defined=defined,
+        keyword_owner=row.keyword_owner,
+        keyword_kind=row.keyword_kind,
+    )
+
+
+def _pass_ms(measured: dict | None) -> PassMs | None:
+    if not measured:
+        return None
+    return PassMs(measured["min"], measured["median"], measured["p95"], measured["max"])
+
+
+def _rates(
+    coverage: list[dict],
+    known_platforms: set,
+    durations: dict | None,
+    longname: str,
+    overall_rate: float = 0.0,
+) -> tuple[tuple[Rate, ...], tuple[str, ...]]:
+    """Per configuration, how often it ran and how often it broke.
+
+    Configurations that never failed are kept: 3 of 81 says nothing, and 3 of 55
+    on linux against 0 of 26 on darwin says where to look. A configuration
+    missing from the list never ran this at all, which is the opposite finding to
+    a zero, so it comes back separately.
+
+    `durations` is None for a Fixture Failure, which has no duration of its own -
+    only the tests it marked have one.
+    """
+    rates = []
+    for entry in coverage:
+        failed = entry["failed"] or 0
+        ran = entry["ran"]
+        measured = None
+        if durations is not None:
+            measured = durations.get(
+                (
+                    longname,
+                    entry["platform"],
+                    entry["python_version"],
+                    entry["rf_version"],
+                    entry["node_version"],
+                )
+            )
+        rates.append(
+            Rate(
+                platform=entry["platform"],
+                python=entry["python_version"],
+                rf=entry["rf_version"],
+                node=entry["node_version"] or None,
+                ran=ran,
+                failed=failed,
+                zero_is_inconclusive=(
+                    None if failed else zero_is_inconclusive(ran, overall_rate)
+                ),
+                pass_ms=_pass_ms(measured),
+            )
+        )
+    seen = {entry["platform"] for entry in coverage if entry["platform"]}
+    return tuple(rates), tuple(sorted(known_platforms - seen))
+
+
+def _neighbour(entry: dict | None) -> Neighbour | None:
+    if not entry:
+        return None
+    return Neighbour(
+        entry["run"], entry.get("commit"), entry.get("at"), entry["outcome"]
+    )
+
+
+def _retry(entry: dict | None) -> Retry | None:
+    if not entry:
+        return None
+    return Retry(entry["attempts"], entry["passed_on_another_attempt"])
+
+
+def _log_lines(rows: list[dict]) -> tuple[LogLine, ...]:
+    return tuple(
+        LogLine(row["level"], row["keyword"], row["origin"], row["message"])
+        for row in rows
+    )
+
+
+def _occurrence(
+    entry: dict,
+    around: dict,
+    alongside: list[dict],
+    logs: dict,
+    *,
+    elapsed_ms: int | None = None,
+    tests_marked: int | None = None,
+) -> Occurrence:
+    lines = _log_lines(logs.get(entry["result_id"], []))
+    kept = alongside[:CO_FAILURE_LIMIT]
+    return Occurrence(
+        run=entry["run_id"],
+        run_url=entry["run_url"],
+        commit=entry["head_sha"],
+        event=entry["event"],
+        at=entry["created_at"],
+        platform=entry["platform"],
+        python=entry["python_version"],
+        rf=entry["rf_version"],
+        node=entry["node_version"] or None,
+        leg=entry["artifact_name"],
+        attempt=entry["attempt"],
+        executors=entry.get("executors"),
+        node_process=entry.get("node_process"),
+        artifact_url=entry["artifact_url"],
+        elapsed_ms=elapsed_ms,
+        tests_marked=tests_marked,
+        previous_run_on_this_leg=_neighbour(around.get("previous_run_on_this_leg")),
+        next_run_on_this_leg=_neighbour(around.get("next_run_on_this_leg")),
+        retry=_retry(around.get("retry")),
+        also_failed_in_this_leg=tuple(
+            CoFailure(item["test"], item.get("scope")) for item in kept
         ),
+        also_failed_in_this_leg_not_listed=max(0, len(alongside) - CO_FAILURE_LIMIT),
+        log=lines,
+        screenshots=rank_screenshots(
+            list(_split(entry.get("screenshots"))), list(lines)
+        ),
+        screenshot_status=entry.get("screenshot_status"),
+    )
+
+
+def _occurrences(
+    entries: list[dict], neighbours: dict, others: dict, logs: dict
+) -> tuple[Occurrence, ...]:
+    return tuple(
+        _occurrence(
+            entry,
+            neighbours.get(entry["result_id"], {}),
+            others.get(entry["result_id"], []),
+            logs,
+            elapsed_ms=entry["elapsed_ms"],
+        )
+        for entry in entries
+    )
+
+
+def _fixture_occurrences(
+    entries: list[dict], identity: tuple, neighbours: dict, others: dict, logs: dict
+) -> tuple[Occurrence, ...]:
+    """One Leg the fixture broke in. `tests_marked` is what that Leg lost, a fact
+    about the Leg rather than a multiplier on the count."""
+    return tuple(
+        _occurrence(
+            entry,
+            neighbours.get((*identity, entry["leg_id"]), {}),
+            others.get((*identity, entry["leg_id"]), []),
+            logs,
+            tests_marked=entry["tests_marked"],
+        )
+        for entry in entries
+    )
+
+
+def _first_attempt(failures: int, ran: int) -> FirstAttempt:
+    return FirstAttempt(failures, ran, failures / ran if ran else 0.0)
+
+
+def _known_cause(known: dict, subject: str, signature: str | None) -> KnownCause | None:
+    cause = known_cause_for(known, subject, signature)
+    if not cause:
+        return None
+    return KnownCause(
+        cause["cause"],
+        cause["reference"],
+        cause["recorded"],
+        cause["fixed_by"],
+        cause["fix_verified"],
+    )
+
+
+def _messages(rows: list[dict]) -> tuple[RawMessage, ...]:
+    return tuple(RawMessage(row["message"], row["occurrences"]) for row in rows)
+
+
+def _variants(rows: list[dict]) -> tuple[SignatureVariant, ...]:
+    return tuple(SignatureVariant(row["signature"], row["occurrences"]) for row in rows)
+
+
+def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
+    """What a Snapshot records, read off the Report rather than rebuilt.
+
+    Rebuilding it from the queries is how a third construction of this shape
+    came to exist, and a Snapshot that disagreed with the Report it was taken
+    beside would make the next comparison wrong rather than merely stale.
+    """
+    return [
+        (entry.test, entry.signature, entry.counts.failures)
+        for entry in report.test_failures
+    ] + [
+        (entry.suite, entry.signature, entry.counts.failures)
+        for entry in report.fixture_failures
+    ]
+
+
+def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Report:
+    """The whole Report for one Window."""
+    summary = totals(db_path, window=window)
+    platform_rows = platform_breakdown(db_path, window=window)
+    platforms = {row["platform"] for row in platform_rows}
+    coverage = coverage_by_test(db_path, window=window)
+    occurrences = occurrences_by_test(db_path, window=window)
+    messages = messages_by_test(db_path, window=window)
+    variants = signature_variants(db_path, window=window)
+    fixture_variants = fixture_signature_variants(db_path, window=window)
+    durations = pass_durations_by_test(db_path, window=window)
+    neighbours = neighbouring_outcomes(db_path, window=window)
+    alongside = co_failures(db_path, window=window)
+    first_runs, first_failures = first_attempt_counts_by_test(db_path, window=window)
+    logs = log_messages_by_result(db_path, window=window)
+    known = load_known_causes()
+
+    tests = []
+    for group in failure_groups(db_path, limit=limit, window=window):
+        key = (group.longname, group.signature_key)
+        rates, never = _rates(
+            coverage.get(group.longname, []),
+            platforms,
+            durations,
+            group.longname,
+            group.failure_rate,
+        )
+        tests.append(
+            TestEntry(
+                test=group.longname,
+                where_to_look=_where_to_look(group, group.test_lineno),
+                signature=group.error_signature,
+                raw_messages=_messages(messages.get(key, [])),
+                counts=TestCounts(
+                    failures=group.failures,
+                    ran=group.total_runs,
+                    rate=group.failure_rate,
+                    distinct_commits=group.distinct_shas,
+                    first_attempt=_first_attempt(
+                        first_failures.get(key, 0), first_runs.get(group.longname, 0)
+                    ),
+                ),
+                rates=rates,
+                never_ran_on=never,
+                # No Group-level log or screenshots. Both used to be one
+                # Occurrence's, unlabelled, and the Occurrences of a Group do
+                # not have to agree: they are on the Occurrences now.
+                occurrences=_occurrences(
+                    occurrences.get(key, []), neighbours, alongside, logs
+                ),
+                known_cause=_known_cause(known, group.longname, group.error_signature),
+                signature_variants=_variants(variants.get(key, [])),
+            )
+        )
+
+    fixture_coverage = coverage_by_fixture(db_path, window=window)
+    fixture_occurrences = occurrences_by_fixture(db_path, window=window)
+    fixture_messages = messages_by_fixture(db_path, window=window)
+    fixture_neighbours = neighbouring_fixture_outcomes(db_path, window=window)
+    fixture_alongside = fixture_co_failures(db_path, window=window)
+    first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
+        db_path, window=window
+    )
+
+    fixtures = []
+    for fixture in fixture_failures(db_path, limit=limit, window=window):
+        identity = (fixture.scope_owner, fixture.failure_scope)
+        key = (*identity, fixture.signature_key)
+        rates, never = _rates(
+            fixture_coverage.get(identity, []),
+            platforms,
+            None,
+            fixture.scope_owner,
+            fixture.failure_rate,
+        )
+        fixtures.append(
+            FixtureEntry(
+                suite=fixture.scope_owner,
+                scope=fixture.failure_scope,
+                where_to_look=_where_to_look(fixture, None),
+                signature=fixture.error_signature,
+                raw_messages=_messages(fixture_messages.get(key, [])),
+                counts=FixtureCounts(
+                    failures=fixture.occurrences,
+                    suite_runs=fixture.suite_runs,
+                    rate=fixture.failure_rate,
+                    distinct_commits=fixture.distinct_shas,
+                    test_rows_marked_failed=fixture.tests_marked,
+                    first_attempt=_first_attempt(
+                        first_fixture_failures.get(key, 0),
+                        first_fixture_runs.get(identity, 0),
+                    ),
+                ),
+                affected_tests=_split(fixture.affected_tests),
+                rates=rates,
+                never_ran_on=never,
+                occurrences=_fixture_occurrences(
+                    fixture_occurrences.get(key, []),
+                    identity,
+                    fixture_neighbours,
+                    fixture_alongside,
+                    logs,
+                ),
+                known_cause=_known_cause(
+                    known, fixture.scope_owner, fixture.error_signature
+                ),
+                signature_variants=_variants(fixture_variants.get(key, [])),
+            )
+        )
+
+    newest = latest_run(db_path, window=window)
+    report = Report(
+        about=ABOUT,
+        window=WindowSummary(
+            runs=summary["runs"],
+            legs=summary["legs"],
+            results=summary["results"],
+            failures=summary["failures"],
+            distinct_tests=summary["tests"],
+            legs_with_unknown_attempt=summary["legs_without_attempt"],
+            since=summary["since"],
+            until=summary["until"],
+            latest_run=(
+                LatestRun(
+                    newest["run"],
+                    newest["commit"],
+                    newest["event"],
+                    newest["at"],
+                    newest["failures"],
+                )
+                if newest
+                else None
+            ),
+            label=window.label,
+            bounded=window.bounded,
+        ),
+        # A windowed Report has no comparable baseline. A Snapshot is never
+        # taken from one, so the only baseline available covers more data, and
+        # comparing against it would call every Group shrunken.
+        since_last_report=None,
+        fixture_failures=tuple(fixtures),
+        test_failures=tuple(tests),
+        platforms=tuple(
+            PlatformRow(row["platform"], row["legs"], row["failures"], row["per_leg"])
+            for row in platform_rows
+        ),
+    )
+    if window.bounded:
+        return report
+    return replace(
+        report,
+        since_last_report=compare(read_snapshot(db_path), snapshot_entries(report)),
     )

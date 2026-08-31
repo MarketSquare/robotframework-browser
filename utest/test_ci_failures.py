@@ -11,8 +11,10 @@ from robot import run as robot_run
 from tools.ci_failures import github, ingest
 from tools.ci_failures.db import connect as connect_db
 from tools.ci_failures.parse import error_signature, parse
-from tools.ci_failures.json_report import build as build_json
-from tools.ci_failures.report import (
+from tools.ci_failures.render_json import document as json_document
+from tools.ci_failures.report import LogLine
+from tools.ci_failures.report import build as build_report
+from tools.ci_failures.queries import (
     co_failures,
     coverage_by_fixture,
     coverage_by_test,
@@ -28,6 +30,12 @@ from tools.ci_failures.report import (
     signature_variants,
     totals,
 )
+
+
+def build_json(db_path: Path, limit: int = 100) -> dict:
+    """The JSON Rendering of a Report, which is what these tests grew up asserting on."""
+    return json_document(build_report(db_path, limit=limit))
+
 
 SUITE = """\
 *** Test Cases ***
@@ -392,7 +400,7 @@ class TestLogMessages:
         assert next(r for r in results if r.status == "PASS").log_messages == []
 
     def test_they_survive_the_round_trip(self, fake_ci, tmp_path):
-        from tools.ci_failures.report import log_messages
+        from tools.ci_failures.queries import log_messages
 
         db = tmp_path / "ci.sqlite3"
         ingest.ingest(db, limit=5, report=lambda _: None)
@@ -405,7 +413,7 @@ class TestLogMessages:
 
     def test_no_messages_is_not_an_error(self, tmp_path):
         from tools.ci_failures.db import connect
-        from tools.ci_failures.report import log_messages
+        from tools.ci_failures.queries import log_messages
 
         db = tmp_path / "ci.sqlite3"
         connect(db).close()
@@ -2134,7 +2142,7 @@ class TestTheDenominatorAndTheRerun:
 class TestHtmlReport:
     def test_it_renders_a_self_contained_page(self, tmp_path):
         from tools.ci_failures.db import connect
-        from tools.ci_failures.html_report import render
+        from tools.ci_failures.render_html import render
 
         db = tmp_path / "ci.sqlite3"
         connect(db).close()
@@ -2261,7 +2269,7 @@ class TestWhatChangedSinceLastTime:
         second time it was run on unchanged data."""
         from tools.ci_failures.annotations import snapshot_path
         from tools.ci_failures.db import connect
-        from tools.ci_failures.json_report import build
+        from tools.ci_failures.report import build
 
         db = tmp_path / "ci.sqlite3"
         connect(db).close()
@@ -2284,11 +2292,18 @@ class TestScreenshotRanking:
         "p/4/browser/screenshot/other.png",
     ]
     COMPARED = [
-        {
-            "message": "Comparing image img1_path '/x/rfb-screenshot-2.png'",
-            "origin": None,
-        },
-        {"message": "With image from path '/x/rfb-screenshot-3.png'", "origin": None},
+        LogLine(
+            level="INFO",
+            keyword="Compare Images",
+            origin=None,
+            message="Comparing image img1_path '/x/rfb-screenshot-2.png'",
+        ),
+        LogLine(
+            level="INFO",
+            keyword="Compare Images",
+            origin=None,
+            message="With image from path '/x/rfb-screenshot-3.png'",
+        ),
     ]
 
     def test_the_files_the_failing_keyword_named_lead(self):
@@ -2319,10 +2334,12 @@ class TestScreenshotRanking:
 
         log = [
             *self.COMPARED,
-            {
-                "message": "Screenshot successfully captured to: /x/fail-screenshot-1.png",
-                "origin": "caught by Run Keyword And Expect Error",
-            },
+            LogLine(
+                level="DEBUG",
+                keyword="Take Screenshot",
+                origin="caught by Run Keyword And Expect Error",
+                message="Screenshot successfully captured to: /x/fail-screenshot-1.png",
+            ),
         ]
 
         ranked = rank_screenshots(self.STAMPED, log)
@@ -2340,7 +2357,7 @@ class TestScreenshotRanking:
     def test_no_screenshots_ranks_to_nothing(self):
         from tools.ci_failures.report import rank_screenshots
 
-        assert rank_screenshots([], self.COMPARED) == []
+        assert rank_screenshots([], self.COMPARED) == ()
 
 
 class TestTheReportingWindow:
@@ -2598,7 +2615,7 @@ class TestTheReportingWindow:
     def test_the_page_says_which_window_it_is(self, four_days):
         """Both reports are written to the same path, and their numbers are not
         comparable. A saved page has to say which one it is."""
-        from tools.ci_failures.html_report import render
+        from tools.ci_failures.render_html import render
         from tools.ci_failures.window import of_days
         from datetime import datetime, time
 
@@ -2613,7 +2630,7 @@ class TestTheReportingWindow:
         assert windowed.exists() and plain.exists()
 
     def test_the_page_says_so_when_the_window_ran_clean(self, tmp_path):
-        from tools.ci_failures.html_report import render
+        from tools.ci_failures.render_html import render
         from tools.ci_failures.window import of_days
         from datetime import date, datetime, time, timedelta
 

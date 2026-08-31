@@ -68,6 +68,18 @@ _Avoid_: setup failure, teardown error
 
 ### What the report says
 
+**Report**:
+Everything one run of the tool has to say about a Window: every Group, every Fixture Failure,
+every Occurrence and the rules they were counted under, complete and independent of how it is
+displayed. One question asked of the database, answered once.
+_Avoid_: document, payload, output, the page, the JSON
+
+**Rendering**:
+One display of a Report — the page a person reads, or the plain-data document an agent reads.
+A Rendering may show less than the Report holds; it can never hold more, and what it leaves out
+is a choice rather than an absence.
+_Avoid_: renderer, view, output format, report (for the file on disk)
+
 **Window**:
 The span of whole local calendar days a report covers, counted back from today inclusive: one
 day is today, two is today and yesterday. A hard scope — every count, rate and denominator in
@@ -95,3 +107,17 @@ others would also have shown nothing this often. The distinction between evidenc
 and absence of evidence, reported next to the zero because the reader's next move depends on
 which one it is.
 _Avoid_: clean, passing, green
+
+
+## Relationships
+
+- A **Report** covers exactly one **Window** and is built of **Groups** and **Fixture Failures**
+- A **Group** has one or more **Occurrences**; a **Fixture Failure**'s Occurrence is one **Leg**
+- A **Report** has many **Renderings**, and every **Rendering** shows the same Report
+- A **Snapshot** is what one **Report** said, kept so the next one can say what changed
+
+## Flagged ambiguities
+
+- "report" was used for three things — the Report, a Rendering of it, and the file a Rendering
+  is written to. Resolved: the **Report** is the answer, a **Rendering** is a display of it, and
+  a file is just where a Rendering was written.

@@ -377,7 +377,7 @@ def suite_fixture_failures(suite: Any) -> list[tuple]:
 _ARTIFACT_STAMP = re.compile(r"^\d{8}_\d{6}-\d+-")
 
 
-def _screenshot_key(path: str) -> str:
+def screenshot_key(path: str) -> str:
     """One file, one key.
 
     Two things put the same picture under two names. A pabot leg's merged log
@@ -442,7 +442,7 @@ def screenshots_of(test: Any, fixtures: list[tuple]) -> tuple[str | None, str | 
     if found:
         by_file: dict[str, str] = {}
         for path in found:
-            key = _screenshot_key(path)
+            key = screenshot_key(path)
             # The longer path is the one carrying the pabot prefix, and so the
             # one that resolves inside the artifact.
             if key not in by_file or len(path) > len(by_file[key]):
