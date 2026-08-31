@@ -11,8 +11,24 @@ import time
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-DEFAULT_REPO = "MarketSquare/robotframework-browser"
+# Not parameters. This tool reads this project's CI, imports this repository's
+# library to resolve where a keyword lives, and ships with the repository - so a
+# repository, a branch or an event that could vary is a door onto data the rest
+# of it would then be quietly wrong about.
+REPO = "MarketSquare/robotframework-browser"
 WORKFLOW_FILE = "on-push.yml"
+BRANCH = "main"
+# A failure from a run where somebody was changing the code is not evidence
+# about the library, which is what these two events select for. See
+# `docs/adr/0002-only-runs-nobody-was-changing.md`.
+EVENTS = ("push", "schedule")
+
+# `on-release.yml` also runs the suite and is deliberately not read. It would
+# need more than another event: it is a different workflow file, it uploads under
+# `Clean_install_results_*` rather than `Test results-*`, and its Linux legs run
+# `--smoke`, so its results are a different set of tests and would not share a
+# denominator with these. Releases are monthly besides, which is too few to
+# carry a rate.
 
 # The artifact of one matrix leg of the `testing` job, e.g.
 # "Test results-ubuntu-latest-3-3.13-22.x". Matched only to pick the right
@@ -71,12 +87,12 @@ def _paginated(endpoint: str, key: str) -> list[dict]:
     return [item for page in pages for item in (page.get(key) or [])]
 
 
-def _run(item: dict, event: str = "", branch: str = "main") -> Run:
+def _run(item: dict, event: str = "") -> Run:
     return Run(
         id=item["id"],
         event=item.get("event", event),
         head_sha=item.get("head_sha", ""),
-        head_branch=item.get("head_branch", branch),
+        head_branch=item.get("head_branch", BRANCH),
         created_at=item.get("created_at", ""),
         conclusion=item.get("conclusion"),
         url=item.get("html_url", ""),
@@ -84,27 +100,18 @@ def _run(item: dict, event: str = "", branch: str = "main") -> Run:
     )
 
 
-def get_run(run_id: int, repo: str = DEFAULT_REPO) -> Run:
-    return _run(_api(f"repos/{repo}/actions/runs/{run_id}"))
+def get_run(run_id: int) -> Run:
+    return _run(_api(f"repos/{REPO}/actions/runs/{run_id}"))
 
 
-def list_runs(
-    repo: str = DEFAULT_REPO,
-    branch: str = "main",
-    events: tuple[str, ...] = ("push", "schedule"),
-    limit: int = 25,
-) -> list[Run]:
-    """Finished CI runs, newest first.
-
-    Only ``branch`` and only ``events``: a run on a pull request fails because of
-    the pull request, which would drown out what we are looking for.
-    """
+def list_runs(limit: int = 25) -> list[Run]:
+    """Finished CI runs on `main` from `push` and `schedule`, newest first."""
     runs = [
-        _run(item, event=event, branch=branch)
-        for event in events
+        _run(item, event=event)
+        for event in EVENTS
         for item in _paginated(
-            f"repos/{repo}/actions/workflows/{WORKFLOW_FILE}/runs"
-            f"?branch={branch}&event={event}&status=completed&per_page=100",
+            f"repos/{REPO}/actions/workflows/{WORKFLOW_FILE}/runs"
+            f"?branch={BRANCH}&event={event}&status=completed&per_page=100",
             "workflow_runs",
         )
     ]
@@ -112,23 +119,23 @@ def list_runs(
     return runs[:limit]
 
 
-def list_test_artifacts(run_id: int, repo: str = DEFAULT_REPO) -> list[Artifact]:
+def list_test_artifacts(run_id: int) -> list[Artifact]:
     return [
         Artifact(
             id=item["id"],
             name=item["name"],
             expired=bool(item.get("expired")),
-            url=f"https://github.com/{repo}/actions/runs/{run_id}/artifacts/{item['id']}",
+            url=f"https://github.com/{REPO}/actions/runs/{run_id}/artifacts/{item['id']}",
             created_at=item.get("created_at", ""),
         )
         for item in _paginated(
-            f"repos/{repo}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts"
+            f"repos/{REPO}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts"
         )
         if _TEST_RESULTS.match(item["name"])
     ]
 
 
-def attempt_starts(run: Run, repo: str = DEFAULT_REPO) -> list[tuple[int, str]]:
+def attempt_starts(run: Run) -> list[tuple[int, str]]:
     """When each attempt of a run began, oldest first.
 
     Attempt 1 began when the run did, so a run nobody re-ran costs no request at
@@ -137,7 +144,7 @@ def attempt_starts(run: Run, repo: str = DEFAULT_REPO) -> list[tuple[int, str]]:
     """
     starts = [(1, run.created_at)]
     for number in range(2, max(run.run_attempt, 1) + 1):
-        attempt = _api(f"repos/{repo}/actions/runs/{run.id}/attempts/{number}")
+        attempt = _api(f"repos/{REPO}/actions/runs/{run.id}/attempts/{number}")
         starts.append(
             (number, attempt.get("run_started_at") or attempt.get("created_at") or "")
         )
@@ -173,9 +180,7 @@ def with_attempts(
 DOWNLOAD_ATTEMPTS = 3
 
 
-def download_artifact(
-    artifact_id: int, destination: Path, repo: str = DEFAULT_REPO
-) -> Path:
+def download_artifact(artifact_id: int, destination: Path) -> Path:
     """Downloads one artifact, retrying the transient failures.
 
     These are ten megabyte downloads over a network, and a connection reset
@@ -186,7 +191,7 @@ def download_artifact(
     for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
         with destination.open("wb") as handle:
             result = subprocess.run(
-                ["gh", "api", f"repos/{repo}/actions/artifacts/{artifact_id}/zip"],
+                ["gh", "api", f"repos/{REPO}/actions/artifacts/{artifact_id}/zip"],
                 stdout=handle,
                 stderr=subprocess.PIPE,
                 check=False,

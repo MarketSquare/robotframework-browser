@@ -1926,7 +1926,7 @@ def demo_app(c):
 
 
 @task
-def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=None):
+def ci_ingest(c, limit=25, db=None):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
@@ -1935,21 +1935,10 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
     Args:
         limit: How many runs to consider, newest first.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
-        branch: Whose runs to take. Pull request runs are not ingested: they fail
-            because of the pull request.
-        events: Comma separated run events, "push,schedule" by default.
-        repo: owner/name, defaults to the upstream repository.
     """
-    from tools.ci_failures.github import DEFAULT_REPO
     from tools.ci_failures.ingest import ingest
 
-    totals = ingest(
-        db_path=Path(db) if db else CI_FAILURES_DB,
-        limit=int(limit),
-        repo=repo or DEFAULT_REPO,
-        branch=branch,
-        events=tuple(e.strip() for e in events.split(",") if e.strip()),
-    )
+    totals = ingest(db_path=Path(db) if db else CI_FAILURES_DB, limit=int(limit))
     print(
         f"\nIngested {totals['runs']} run(s), {totals['legs']} leg(s), "
         f"{totals['tests']} results, {totals['failures']} failures. "

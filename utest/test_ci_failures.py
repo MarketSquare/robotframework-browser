@@ -290,11 +290,9 @@ def fake_ci(monkeypatch, tmp_path, output_xml):
         archive.writestr("log.html", "not wanted")
 
     monkeypatch.setattr(ingest.github, "list_runs", lambda **kwargs: [run])
-    monkeypatch.setattr(
-        ingest.github, "list_test_artifacts", lambda run_id, repo=None: [artifact]
-    )
+    monkeypatch.setattr(ingest.github, "list_test_artifacts", lambda run_id: [artifact])
 
-    def fake_download(artifact_id, destination, repo=None):
+    def fake_download(artifact_id, destination):
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(zip_path.read_bytes())
         return destination
@@ -353,9 +351,7 @@ class TestIngest:
         self, fake_ci, tmp_path, monkeypatch
     ):
         gone = github.Artifact(**{**fake_ci["artifact"].__dict__, "expired": True})
-        monkeypatch.setattr(
-            ingest.github, "list_test_artifacts", lambda run_id, repo=None: [gone]
-        )
+        monkeypatch.setattr(ingest.github, "list_test_artifacts", lambda run_id: [gone])
 
         result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
 
@@ -1030,14 +1026,14 @@ class TestTransientDownloadFailures:
             **{**good.__dict__, "id": 999, "name": "Test results-bad"}
         )
         monkeypatch.setattr(
-            ingest.github, "list_test_artifacts", lambda run_id, repo=None: [bad, good]
+            ingest.github, "list_test_artifacts", lambda run_id: [bad, good]
         )
         original = ingest.github.download_artifact
 
-        def flaky(artifact_id, destination, repo=None):
+        def flaky(artifact_id, destination):
             if artifact_id == 999:
                 raise github.GhError("connection reset by peer")
-            return original(artifact_id, destination, repo=repo)
+            return original(artifact_id, destination)
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
 
@@ -1056,15 +1052,15 @@ class TestTransientDownloadFailures:
             **{**good.__dict__, "id": 999, "name": "Test results-bad"}
         )
         monkeypatch.setattr(
-            ingest.github, "list_test_artifacts", lambda run_id, repo=None: [bad, good]
+            ingest.github, "list_test_artifacts", lambda run_id: [bad, good]
         )
         original = ingest.github.download_artifact
         broken = {"still": True}
 
-        def flaky(artifact_id, destination, repo=None):
+        def flaky(artifact_id, destination):
             if artifact_id == 999 and broken["still"]:
                 raise github.GhError("connection reset by peer")
-            return original(artifact_id, destination, repo=repo)
+            return original(artifact_id, destination)
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
         db = tmp_path / "ci.sqlite3"
@@ -1941,11 +1937,11 @@ class TestWhichAttemptRanIt:
             url="u",
             run_attempt=2,
         )
-        monkeypatch.setattr(github, "get_run", lambda run_id, repo=None: run)
+        monkeypatch.setattr(github, "get_run", lambda run_id: run)
         monkeypatch.setattr(
             github,
             "attempt_starts",
-            lambda run, repo=None: [
+            lambda run: [
                 (1, "2026-08-19T17:14:38Z"),
                 (2, "2026-08-19T17:43:17Z"),
             ],
@@ -1953,7 +1949,7 @@ class TestWhichAttemptRanIt:
         monkeypatch.setattr(
             github,
             "list_test_artifacts",
-            lambda run_id, repo=None: [
+            lambda run_id: [
                 github.Artifact(11, "leg", False, "u", "2026-08-19T17:22:21Z"),
                 github.Artifact(22, "leg", False, "u", "2026-08-19T17:50:56Z"),
             ],
@@ -1994,18 +1990,18 @@ class TestWhichAttemptRanIt:
 
         monkeypatch.setattr(ingest.github, "list_runs", lambda **kwargs: [run])
         monkeypatch.setattr(
-            ingest.github, "list_test_artifacts", lambda run_id, repo=None: artifacts
+            ingest.github, "list_test_artifacts", lambda run_id: artifacts
         )
         monkeypatch.setattr(
             ingest.github,
             "attempt_starts",
-            lambda run, repo=None: [
+            lambda run: [
                 (1, "2026-08-19T17:14:38Z"),
                 (2, "2026-08-19T17:43:17Z"),
             ],
         )
 
-        def fake_download(artifact_id, destination, repo=None):
+        def fake_download(artifact_id, destination):
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(zip_path.read_bytes())
             return destination
@@ -2037,7 +2033,7 @@ class TestWhichAttemptRanIt:
         connection.commit()
         connection.close()
 
-        def gone(run_id, repo=None):
+        def gone(run_id):
             raise github.GhError("run not found")
 
         monkeypatch.setattr(github, "get_run", gone)

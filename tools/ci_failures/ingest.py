@@ -128,13 +128,10 @@ def ingest(
     db_path: Path,
     *,
     limit: int = 25,
-    repo: str = github.DEFAULT_REPO,
-    branch: str = "main",
-    events: tuple[str, ...] = ("push", "schedule"),
     report: Callable[[str], None] = print,
 ) -> dict:
     """Ingests up to ``limit`` runs, newest first, skipping what is already in."""
-    backfill_attempts(db_path, repo=repo, report=report)
+    backfill_attempts(db_path, report=report)
     connection = connect(db_path)
     already = ingested_artifact_ids(connection)
     totals = {
@@ -147,17 +144,16 @@ def ingest(
         "unreachable": 0,
     }
 
-    runs = github.list_runs(repo=repo, branch=branch, events=events, limit=limit)
-    report(f"{len(runs)} run(s) to consider on {branch} ({', '.join(events)})")
+    runs = github.list_runs(limit=limit)
+    report(
+        f"{len(runs)} run(s) to consider on {github.BRANCH} "
+        f"({', '.join(github.EVENTS)})"
+    )
 
     for run in runs:
         artifacts = github.with_attempts(
-            [
-                a
-                for a in github.list_test_artifacts(run.id, repo=repo)
-                if a.id not in already
-            ],
-            github.attempt_starts(run, repo=repo),
+            [a for a in github.list_test_artifacts(run.id) if a.id not in already],
+            github.attempt_starts(run),
         )
         expired = [a for a in artifacts if a.expired]
         pending = [a for a in artifacts if not a.expired]
@@ -181,7 +177,7 @@ def ingest(
                 with tempfile.TemporaryDirectory() as work_dir:
                     work = Path(work_dir)
                     zip_path = github.download_artifact(
-                        artifact.id, work / "artifact.zip", repo=repo
+                        artifact.id, work / "artifact.zip"
                     )
                     output_xml = _extract_output_xml(zip_path, work / "unpacked")
                     if output_xml is None:
@@ -213,7 +209,6 @@ def ingest(
 def backfill_attempts(
     db_path: Path,
     *,
-    repo: str = github.DEFAULT_REPO,
     report: Callable[[str], None] = print,
 ) -> int:
     """Fills in the attempt of legs ingested before it was being recorded.
@@ -241,10 +236,10 @@ def backfill_attempts(
     filled = 0
     for run_id in run_ids:
         try:
-            run = github.get_run(run_id, repo=repo)
+            run = github.get_run(run_id)
             artifacts = github.with_attempts(
-                github.list_test_artifacts(run_id, repo=repo),
-                github.attempt_starts(run, repo=repo),
+                github.list_test_artifacts(run_id),
+                github.attempt_starts(run),
             )
         except github.GhError as error:
             report(f"  run {run_id}: {error}")
