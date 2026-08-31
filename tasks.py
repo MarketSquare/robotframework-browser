@@ -1995,32 +1995,24 @@ def ci_report(
             scope - every count, rate and denominator comes from inside it, and
             a test that did not fail inside it does not appear at all. That is
             what makes it answer "did what I fixed come back", which no
-            all-history report can. Takes no other argument alongside it; see
-            `tools/ci_failures/window.py`.
+            all-history report can. Goes with everything except --mark-seen;
+            see `tools/ci_failures/window.py`.
     """
     from tools.ci_failures.window import ALL_HISTORY, of_days
 
     window = ALL_HISTORY
     if days is not None:
-        # `--days` is the whole command. Every other flag either changes what
-        # the report contains or moves state, and both are meaningless against a
-        # window: a windowed baseline would call every group "shrank" the next
-        # time an unwindowed report compared itself with it.
-        alongside = sorted(
-            flag
-            for flag, used in {
-                "--db": db is not None,
-                "--html": html is not None,
-                "--json": json is not None,
-                "--limit": limit != 100,
-                "--open-it": bool(open_it),
-                "--mark-seen": bool(mark_seen),
-            }.items()
-            if used
-        )
-        if alongside:
+        # `--mark-seen` is the one flag a window cannot take. A baseline is what
+        # the next report compares itself against, and one taken from a window
+        # covers less data than the report that reads it, so every group would
+        # come back "grew". Nothing else here cares: a window is a question, and
+        # every rendering of the report can answer it.
+        if mark_seen:
             raise Exit(
-                f"--days takes no other argument; drop {', '.join(alongside)}.", 2
+                "--days and --mark-seen do not go together: a baseline taken "
+                "from a window would make the next report call every group "
+                "grown. Take the baseline without --days.",
+                2,
             )
         try:
             window = of_days(int(days))
@@ -2058,7 +2050,9 @@ def ci_report(
     if json:
         from tools.ci_failures.render_json import render as render_json
 
-        print(f"Wrote {render_json(db_path, Path(json), limit=int(limit))}")
+        print(
+            f"Wrote {render_json(db_path, Path(json), limit=int(limit), window=window)}"
+        )
         return
     from tools.ci_failures.render_html import render
 

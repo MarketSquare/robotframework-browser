@@ -2649,3 +2649,44 @@ class TestTheReportingWindow:
 
         assert "No test failures in --days 1" in page
         assert "1 run(s) and 1 matrix leg(s) examined" in page
+
+    def test_the_document_is_windowed_like_the_page(self, four_days):
+        """Both Renderings answer the same question.
+
+        The document used to take no window at all, so `--days` with `--json`
+        was refused outright and the one question the flag exists for could only
+        be asked of the page.
+        """
+        from datetime import datetime, time
+
+        from tools.ci_failures.window import of_days
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        windowed = build_report(db, window=of_days(2, now))
+        everything = build_report(db)
+
+        assert windowed.window.runs == 2
+        assert everything.window.runs == 4
+        assert windowed.test_failures[0].counts.failures == 2
+        assert everything.test_failures[0].counts.failures == 4
+
+    def test_a_windowed_report_has_no_baseline_to_compare_itself_with(self, four_days):
+        """A Snapshot is never taken from a window, so the only baseline there
+        can be covers more data than the window does. Comparing against it would
+        report every Group as having shrunk, which is an artefact of the window
+        rather than anything that happened in CI. Null says so; a number would
+        not."""
+        from datetime import datetime, time
+
+        from tools.ci_failures.annotations import write_snapshot
+        from tools.ci_failures.report import snapshot_entries
+        from tools.ci_failures.window import of_days
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+        write_snapshot(db, snapshot_entries(build_report(db)))
+
+        assert build_report(db, window=of_days(2, now)).since_last_report is None
+        assert build_report(db).since_last_report is not None
