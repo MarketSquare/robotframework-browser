@@ -2156,6 +2156,134 @@ class TestHtmlReport:
         assert "<script" not in text
 
 
+class TestWhatThePageCanNowReach:
+    """Four things the Report held that only the JSON Rendering ever showed, and
+    one the page showed that the document never carried.
+
+    None of it was a decision anybody made. Each renderer assembled its own
+    document from the same queries, so a field arrived in whichever one its
+    author happened to be editing.
+    """
+
+    def _page(self, db: Path, tmp_path: Path, **kwargs) -> str:
+        from tools.ci_failures.render_html import render
+
+        return render(db, tmp_path / "report.html", **kwargs).read_text(
+            encoding="utf-8"
+        )
+
+    def test_the_page_carries_the_messages_behind_the_signature(self, tmp_path):
+        """The mask is what makes grouping possible and also what throws the
+        evidence away. Three failures sharing a signature can differ by the one
+        number that says whether it is deterministic."""
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "Box (<n>, <n>) has difference of <n>",
+                    "message": "Box (0, 117) has difference of 5046301",
+                },
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "Box (<n>, <n>) has difference of <n>",
+                    "message": "Box (0, 117) has difference of 5046298",
+                },
+            ],
+        )
+
+        page = self._page(db, tmp_path)
+
+        assert "distinct message" in page
+        assert "5046301" in page
+        assert "5046298" in page
+
+    def test_the_page_names_the_spellings_a_group_merged(self, tmp_path):
+        """Which side of the gRPC boundary gave up first is real information,
+        and the case-folded key throws the spelling away from the heading."""
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(db, TestCaseFoldedGrouping()._deadlines())
+
+        page = self._page(db, tmp_path)
+
+        assert "spelled 2 ways" in page
+        assert "Deadline Exceeded" in page
+        assert "Deadline exceeded" in page
+
+    def test_the_page_says_what_moved_since_the_baseline(self, tmp_path):
+        from tools.ci_failures.annotations import write_snapshot
+
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "was here before"}]
+        )
+        write_snapshot(db, [("Gone Test", "an error nobody sees now", 4)])
+
+        page = self._page(db, tmp_path)
+
+        assert "Since the last report" in page
+        assert "Gone Test" in page
+        assert ">gone<" in page
+        assert ">new<" in page
+
+    def test_the_page_says_which_kind_of_absence_a_missing_baseline_is(self, tmp_path):
+        """Nobody has taken one, and a windowed report cannot use one, are
+        different facts. Neither is "nothing changed"."""
+        from datetime import datetime, time
+
+        from tools.ci_failures.window import of_days
+
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
+        )
+
+        never_taken = self._page(db, tmp_path)
+        windowed = self._page(
+            db,
+            tmp_path,
+            window=of_days(
+                1, datetime.combine(datetime.now().date(), time(9, 0)).astimezone()
+            ),
+        )
+
+        assert "No baseline has been taken" in never_taken
+        assert "windowed report has no baseline" in windowed
+
+    def test_the_page_states_the_rules_rather_than_restating_them(self, tmp_path):
+        """The fixture rule used to be authored twice - once in `about` for the
+        document, once in the page's own prose - with nothing keeping the two in
+        agreement."""
+        from tools.ci_failures.report import ABOUT
+
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
+        )
+
+        page = self._page(db, tmp_path)
+
+        assert "How these numbers are built" in page
+        assert "suite_fixtures_are_separate" in page
+        assert ABOUT["suite_fixtures_are_separate"][:60] in page
+
+    def test_the_document_carries_the_platform_breakdown(self, tmp_path):
+        """The page had it and the document did not, which is the drift running
+        the other way."""
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
+        )
+
+        platforms = build_json(db)["platforms"]
+
+        assert platforms
+        assert {"platform", "legs", "failures", "per_leg"} == set(platforms[0])
+
+
 class TestKnownCauses:
     """A conclusion somebody reached by reading an artifact is not derived from
     anything, so it cannot live in a database that gets rebuilt whenever a

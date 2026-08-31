@@ -146,6 +146,11 @@ ABOUT = {
         "the same reason 'ran' on a fixture rate counts legs that ran the "
         "suite, and the occurrence count of a raw message counts legs too."
     ),
+    "failures_per_leg": (
+        "'platforms' counts failures per matrix leg, not in total. The matrix does "
+        "not run the platforms an equal number of times, so a raw count describes "
+        "the matrix rather than the platforms."
+    ),
     "latest_run": (
         "'window.latest_run' is the newest run in the window and how many "
         "failures it carried. The rates say how often things break, not whether "

@@ -20,7 +20,9 @@ from .report import (
     LogLine,
     Occurrence,
     Rate,
+    RawMessage,
     Report,
+    SignatureVariant,
     TestEntry,
     WhereToLook,
     build,
@@ -288,6 +290,66 @@ a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
   font-weight: 600;
 }
 .cause .ref { color: var(--ink-muted); font-size: 11.5px; }
+.raw { margin: 4px 0 2px; }
+.raw > summary, .variants > summary {
+  cursor: pointer;
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  list-style: none;
+}
+.raw > summary::-webkit-details-marker, .variants > summary::-webkit-details-marker { display: none; }
+.raw > summary::before, .variants > summary::before { content: "\25B8  "; }
+.raw[open] > summary::before, .variants[open] > summary::before { content: "\25BE  "; }
+.raw > summary:hover, .variants > summary:hover { color: var(--bar); }
+.rawmsg {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-left: 2px solid var(--rule);
+  padding: 4px 0 4px 8px;
+  margin: 4px 0;
+}
+.rawmsg .n { color: var(--ink-muted); font-family: var(--sans); font-size: 11px; }
+.variants { margin: 4px 0 2px; }
+.variants .v { font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); padding: 2px 0; }
+.changed { display: flex; flex-direction: column; gap: 4px; }
+.chg { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+.chg .tag {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  min-width: 52px;
+  color: var(--ink-muted);
+}
+.chg .tag[data-kind="new"], .chg .tag[data-kind="grew"] { color: var(--critical); }
+.chg .tag[data-kind="gone"] { color: var(--bar); }
+.chg .subj { color: var(--ink-2); }
+.chg .was { color: var(--ink-muted); font-size: 11.5px; }
+.rules > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  list-style: none;
+}
+.rules > summary::-webkit-details-marker { display: none; }
+.rules > summary::before { content: "\25B8  "; }
+.rules[open] > summary::before { content: "\25BE  "; }
+.rules dl { margin: 10px 0 0; }
+.rules dt {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink);
+  margin-top: 10px;
+}
+.rules dd {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  max-width: 74ch;
+}
 .oev { margin: 4px 0 2px; }
 .oev > summary {
   cursor: pointer;
@@ -757,6 +819,122 @@ def _where_html(where: WhereToLook) -> str:
     return f'<div class="where">{"".join(rows)}</div>' if rows else ""
 
 
+def _messages_html(messages: tuple[RawMessage, ...]) -> str:
+    """The unmasked messages behind the signature.
+
+    The mask is what makes grouping possible and also what throws the evidence
+    away: three `Compare Images` failures share a byte-identical box and differ
+    by three pixels, and the signature renders all of it as `<n>`.
+    """
+    if not messages:
+        return ""
+    body = "".join(
+        f'<div class="rawmsg">{_e(message.message)}'
+        f'<span class="n">  seen {message.occurrences}x</span></div>'
+        for message in messages
+    )
+    total = len(messages)
+    return (
+        f'<details class="raw"><summary>{total} distinct message'
+        f"{'' if total == 1 else 's'} behind this signature</summary>{body}</details>"
+    )
+
+
+# One spelling is not a variant of anything, and saying "spelled 1 ways" beside
+# a signature that is already on the page is noise.
+VARIANTS_WORTH_SHOWING = 2
+
+
+def _variants_html(variants: tuple[SignatureVariant, ...]) -> str:
+    """The spellings a case-folded Group merged.
+
+    Two libraries implement the same gRPC deadline and whichever timer fires
+    first names the error, so the spelling says which side gave up - real
+    information, and still no reason to call one problem two.
+    """
+    if len(variants) < VARIANTS_WORTH_SHOWING:
+        return ""
+    body = "".join(
+        f'<div class="v">{_e(variant.signature)}'
+        f'<span class="n">  {variant.occurrences}x</span></div>'
+        for variant in variants
+    )
+    return (
+        f'<details class="variants"><summary>spelled {len(variants)} ways'
+        f"</summary>{body}</details>"
+    )
+
+
+def _changes_html(changes: dict | None, bounded: bool) -> str:
+    """What is new, gone or moved since somebody last took a baseline.
+
+    Absence is three different facts and the page has to say which: no baseline
+    was ever taken, the report is windowed and has none it could compare with,
+    or a baseline exists and nothing moved.
+    """
+    if changes is None:
+        why = (
+            "A windowed report has no baseline it can compare with: one is never "
+            "taken from a window, so the only baseline available covers more "
+            "data and would report every group as having shrunk."
+            if bounded
+            else "No baseline has been taken. <code>inv ci-report --mark-seen</code> "
+            "records what this report said, so the next one can say what moved."
+        )
+        return (
+            "  <section>\n    <h2>Since the last report</h2>\n"
+            f'    <p class="section-note">{why}</p>\n  </section>\n'
+        )
+    rows = []
+    for kind in ("new", "grew", "shrank", "gone"):
+        for change in changes.get(kind, []):
+            was, now = change.get("was"), change.get("now")
+            if was is not None and now is not None:
+                counts = f"{was} &rarr; {now}"
+            elif now is not None:
+                counts = f"{now} failure(s)"
+            else:
+                counts = f"was {was}"
+            rows.append(
+                f'      <div class="chg"><span class="tag" data-kind="{kind}">'
+                f'{kind}</span><span class="subj">{_e(change.get("subject"))}</span>'
+                f'<span class="was">{counts}</span></div>\n'
+            )
+    taken = changes.get("compared_with")
+    note = (
+        f"Against the baseline taken {_e(taken[:16])}."
+        if taken
+        else "Against the last baseline."
+    )
+    body = (
+        f'    <div class="changed">\n{"".join(rows)}    </div>\n'
+        if rows
+        else '    <p class="section-note">Nothing has moved.</p>\n'
+    )
+    return (
+        "  <section>\n    <h2>Since the last report</h2>\n"
+        f'    <p class="section-note">{note}</p>\n{body}  </section>\n'
+    ).replace("&amp;rarr;", "&rarr;")
+
+
+def _about_html(about: dict) -> str:
+    """The rules the numbers were built on, so they are read rather than inferred.
+
+    The same text the document carries, rendered rather than restated. The page
+    used to make three of these claims in its own prose, which is two authors of
+    one rule and nothing keeping them in agreement.
+    """
+    items = "".join(
+        f"      <dt>{_e(name)}</dt>\n      <dd>{_e(rule)}</dd>\n"
+        for name, rule in about.items()
+    )
+    return (
+        '  <section>\n    <details class="rules">'
+        f"<summary>How these numbers are built &mdash; {len(about)} rules</summary>\n"
+        f"    <dl>\n{items}    </dl></details>\n  </section>\n"
+    ).replace("&amp;mdash;", "&mdash;")
+
+
 def _group_html(entry: TestEntry, widest: int) -> str:
     counts = entry.counts
     width = (counts.failures / widest * 100) if widest else 0
@@ -783,6 +961,8 @@ def _group_html(entry: TestEntry, widest: int) -> str:
           {_where_html(entry.where_to_look)}
           {_cause_html(entry.known_cause)}
           {_rates_html(entry.rates, entry.never_ran_on)}
+          {_variants_html(entry.signature_variants)}
+          {_messages_html(entry.raw_messages)}
           {_occurrences_html(entry.occurrences)}
         </div>
       </article>
@@ -821,6 +1001,8 @@ def _fixture_html(entry: FixtureEntry, widest: int) -> str:
         counts.test_rows_marked_failed
     } test row(s) failed:
             {_e(", ".join(entry.affected_tests)) or "-"}</div>
+          {_variants_html(entry.signature_variants)}
+          {_messages_html(entry.raw_messages)}
           {_occurrences_html(entry.occurrences)}
         </div>
       </article>
@@ -871,10 +1053,9 @@ def page(report: Report) -> str:
     fixture_section = (
         f"""  <section>
     <h2>Suite setup and teardown failures</h2>
-    <p class="section-note">These failed outside any test. Robot Framework marks every test in
-    the suite as failed, which is why the same broken teardown would otherwise look like as many
-    flaky tests as the suite happens to contain. Counted once here, against the number of times
-    the suite ran.</p>
+    <p class="section-note">These failed outside any test, and are counted once per fixture
+    against the number of times the suite ran - never once per test they marked. The rules at the
+    foot of this page say why.</p>
     <div class="groups">
 {"".join(_fixture_html(f, widest_fixture) for f in fixtures)}    </div>
   </section>
@@ -909,6 +1090,8 @@ def page(report: Report) -> str:
     # Formatted outside the page template: a nested same-quote f-string needs
     # Python 3.12 and this repo supports 3.10, and `ruff format` will happily
     # rewrite it back into one if the expression sits inline.
+    changes_section = _changes_html(report.since_last_report, summary.bounded)
+    about_section = _about_html(report.about)
     result_count = f"{summary.results:,}"
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     newest = summary.latest_run
@@ -956,6 +1139,7 @@ def page(report: Report) -> str:
   </div>
 {unknown_note}
 
+{changes_section}
 {platform_section}
 {fixture_section}
   <section>
@@ -964,6 +1148,7 @@ def page(report: Report) -> str:
     {body}
   </section>
 
+{about_section}
   <footer>
     <div>Generated {_e(generated)} by <code>inv ci-report --html</code> from {
         _e(summary.distinct_tests):} distinct tests.</div>

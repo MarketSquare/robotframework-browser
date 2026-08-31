@@ -260,6 +260,15 @@ def document(report: Report) -> dict:
                 }
             ),
         },
+        "platforms": [
+            {
+                "platform": row.platform,
+                "legs": row.legs,
+                "failures": row.failures,
+                "per_leg": row.per_leg,
+            }
+            for row in report.platforms
+        ],
         "since_last_report": report.since_last_report,
         "fixture_failures": [_fixture(entry) for entry in report.fixture_failures],
         "test_failures": [_test(entry) for entry in report.test_failures],
