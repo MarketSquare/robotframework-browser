@@ -2341,3 +2341,294 @@ class TestScreenshotRanking:
         from tools.ci_failures.report import rank_screenshots
 
         assert rank_screenshots([], self.COMPARED) == []
+
+
+class TestTheReportingWindow:
+    """`--days N` asks what has failed in the last N whole local days.
+
+    The question it exists for is "I fixed this on Tuesday, has it come back",
+    and the failures from before the fix are exactly the ones that must not be
+    counted. So the window is a hard scope rather than a filter on the listing:
+    every count, rate and denominator comes from inside it, and a test that did
+    not fail inside it does not appear at all. See `tools/ci_failures/window.py`.
+    """
+
+    @staticmethod
+    def _local_utc(day, hour=12, minute=0) -> str:
+        """A moment on a local calendar day, spelled the way a run is stored.
+
+        Seeded from the local clock rather than written as a UTC literal: the
+        window is defined in local days, so a fixture written in UTC would pass
+        or fail depending on the machine's offset.
+        """
+        from datetime import datetime, time, timezone
+
+        moment = datetime.combine(day, time(hour, minute)).astimezone()
+        return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def _seed(self, db: Path, runs: list[tuple[int, str, list[tuple[str, str]]]]):
+        """runs of (run_id, created_at, [(test, status)]), one leg each."""
+        connection = connect_db(db)
+        for run_id, created_at, rows in runs:
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', ?, 'main', ?, 'failure', 'u')",
+                (run_id, f"sha{run_id}", created_at),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                "artifact_url, platform, attempt, ingested_at) "
+                "VALUES (?, ?, ?, 'Test results-x', 'a-url', 'linux', 1, 'now')",
+                (run_id, run_id, run_id),
+            )
+            for longname, status in rows:
+                connection.execute(
+                    "INSERT INTO test_result (leg_id, longname, name, "
+                    "suite_longname, status, message, error_signature) "
+                    "VALUES (?, ?, ?, 'S', ?, ?, ?)",
+                    (
+                        run_id,
+                        longname,
+                        longname,
+                        status,
+                        "raw" if status == "FAIL" else None,
+                        "error X" if status == "FAIL" else None,
+                    ),
+                )
+        connection.commit()
+        connection.close()
+
+    @pytest.fixture
+    def four_days(self, tmp_path):
+        """A failure today, and the same failure on each of the three days before.
+
+        `today` is pinned so the test does not change meaning at midnight.
+        """
+        from datetime import date, timedelta
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (
+                    n + 1,
+                    self._local_utc(today - timedelta(days=n)),
+                    [("Test A", "FAIL"), ("Test B", "PASS")],
+                )
+                for n in range(4)
+            ],
+        )
+        return db, today
+
+    def test_one_day_is_today(self, four_days):
+        from tools.ci_failures.window import of_days
+        from datetime import datetime, time
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        assert totals(db, window=of_days(1, now))["runs"] == 1
+
+    def test_two_days_is_today_and_yesterday(self, four_days):
+        from tools.ci_failures.window import of_days
+        from datetime import datetime, time
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        assert totals(db, window=of_days(2, now))["runs"] == 2
+
+    def test_the_denominator_is_windowed_too(self, four_days):
+        """The point of the flag. A rate that kept its all-time denominator
+        would answer "how often does this break" when the question asked was
+        "has it broken since I fixed it"."""
+        from tools.ci_failures.window import of_days
+        from datetime import datetime, time
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        group = failure_groups(db, window=of_days(2, now))[0]
+
+        assert (group.failures, group.total_runs) == (2, 2)
+
+    def test_a_test_that_failed_only_before_the_window_is_absent(self, tmp_path):
+        from tools.ci_failures.window import of_days
+        from datetime import date, datetime, time, timedelta
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (
+                    1,
+                    self._local_utc(today - timedelta(days=3)),
+                    [("Fixed Test", "FAIL")],
+                ),
+                (2, self._local_utc(today), [("Fixed Test", "PASS")]),
+            ],
+        )
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        assert failure_groups(db, window=of_days(1, now)) == []
+        assert len(failure_groups(db)) == 1, "still there over all history"
+
+    def test_runs_with_nothing_failing_is_not_the_same_as_no_runs(self, tmp_path):
+        """The two empty reports. One means the fix held; the other means you
+        forgot to ingest, and they must not render alike."""
+        from tools.ci_failures.window import of_days
+        from datetime import date, datetime, time, timedelta
+
+        today = date(2026, 8, 31)
+        now = datetime.combine(today, time(9, 0)).astimezone()
+        stale = self._local_utc(today - timedelta(days=5))
+
+        clean = tmp_path / "clean.sqlite3"
+        self._seed(
+            clean,
+            [
+                (1, stale, [("Test A", "FAIL")]),
+                (2, self._local_utc(today), [("Test A", "PASS")]),
+            ],
+        )
+        unfed = tmp_path / "unfed.sqlite3"
+        self._seed(unfed, [(1, stale, [("Test A", "FAIL")])])
+
+        ran_clean = totals(clean, window=of_days(1, now))
+        nothing_ran = totals(unfed, window=of_days(1, now))
+
+        assert (ran_clean["runs"], ran_clean["failures"]) == (1, 0)
+        assert nothing_ran["runs"] == 0
+
+    def test_the_window_is_calendar_days_not_the_last_n_times_24_hours(self, tmp_path):
+        """A run at half past eleven last night is yesterday, whatever the hour
+        it is now. A rolling window would keep pulling it in and out."""
+        from tools.ci_failures.window import of_days
+        from datetime import date, datetime, time, timedelta
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (
+                    1,
+                    self._local_utc(today - timedelta(days=1), 23, 30),
+                    [("Test A", "FAIL")],
+                ),
+                (2, self._local_utc(today, 0, 30), [("Test B", "FAIL")]),
+            ],
+        )
+        now = datetime.combine(today, time(1, 0)).astimezone()
+
+        groups = failure_groups(db, window=of_days(1, now))
+
+        assert [g.longname for g in groups] == ["Test B"]
+
+    def test_every_derived_query_narrows_with_it(self, four_days):
+        """The window is applied to the connection, so a query cannot opt out of
+        it by forgetting to mention it. This is the test that says so."""
+        from tools.ci_failures.window import of_days
+        from datetime import datetime, time
+        from tools.ci_failures.report import platform_breakdown
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+        window = of_days(2, now)
+
+        assert (
+            sum(
+                e["ran"]
+                for v in coverage_by_test(db, window=window).values()
+                for e in v
+            )
+            == 4
+        )
+        assert len(occurrences_by_test(db, window=window)[("Test A", "error x")]) == 2
+        assert len(neighbouring_outcomes(db, window=window)) == 2
+        assert platform_breakdown(db, window=window)[0]["legs"] == 2
+        assert first_attempt_counts_by_test(db, window=window)[0]["Test A"] == 2
+        assert latest_run(db, window=window)["run"] == 1
+
+    def test_no_window_reports_over_everything(self, four_days):
+        """The default is the behaviour the command already had."""
+        db, _ = four_days
+
+        assert totals(db)["runs"] == 4
+        assert failure_groups(db)[0].failures == 4
+
+    def test_a_window_needs_at_least_one_day(self):
+        from tools.ci_failures.window import of_days
+
+        for refused in (0, -1):
+            with pytest.raises(ValueError):
+                of_days(refused)
+
+    def test_the_cutoff_is_local_midnight_of_the_first_day(self):
+        from tools.ci_failures.window import of_days
+        from datetime import date, datetime, time, timezone
+
+        now = datetime.combine(date(2026, 8, 31), time(15, 0)).astimezone()
+        window = of_days(3, now)
+
+        expected = (
+            datetime.combine(date(2026, 8, 29), time.min)
+            .astimezone()
+            .astimezone(timezone.utc)
+            .strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
+        assert window.cutoff == expected
+        assert (window.first_day, window.last_day) == (
+            date(2026, 8, 29),
+            date(2026, 8, 31),
+        )
+
+    def test_the_label_says_what_the_report_covers(self):
+        from tools.ci_failures.window import ALL_HISTORY, of_days
+        from datetime import date, datetime, time
+
+        now = datetime.combine(date(2026, 8, 31), time(15, 0)).astimezone()
+
+        assert of_days(1, now).label == "--days 1 (2026-08-31 local)"
+        assert of_days(3, now).label == "--days 3 (2026-08-29..2026-08-31 local)"
+        assert ALL_HISTORY.label == "all history"
+
+    def test_the_page_says_which_window_it_is(self, four_days):
+        """Both reports are written to the same path, and their numbers are not
+        comparable. A saved page has to say which one it is."""
+        from tools.ci_failures.html_report import render
+        from tools.ci_failures.window import of_days
+        from datetime import datetime, time
+
+        db, today = four_days
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        windowed = render(db, tmp := (db.parent / "w.html"), window=of_days(2, now))
+        plain = render(db, db.parent / "p.html")
+
+        assert "--days 2 (2026-08-30..2026-08-31 local), 2 run(s)" in tmp.read_text()
+        assert "--days" not in plain.read_text().split("<p class=")[0]
+        assert windowed.exists() and plain.exists()
+
+    def test_the_page_says_so_when_the_window_ran_clean(self, tmp_path):
+        from tools.ci_failures.html_report import render
+        from tools.ci_failures.window import of_days
+        from datetime import date, datetime, time, timedelta
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (1, self._local_utc(today - timedelta(days=5)), [("Test A", "FAIL")]),
+                (2, self._local_utc(today), [("Test A", "PASS")]),
+            ],
+        )
+        now = datetime.combine(today, time(9, 0)).astimezone()
+
+        page = render(db, tmp_path / "w.html", window=of_days(1, now)).read_text()
+
+        assert "No test failures in --days 1" in page
+        assert "1 run(s) and 1 matrix leg(s) examined" in page

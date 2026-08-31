@@ -28,6 +28,7 @@ from .report import (
     totals,
     zero_is_inconclusive,
 )
+from .window import ALL_HISTORY, Window
 
 _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
 
@@ -942,24 +943,35 @@ def _fixture_section_html(
     )
 
 
-def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
-    summary = totals(db_path)
-    groups = failure_groups(db_path, limit=limit)
-    platforms = platform_breakdown(db_path)
+def render(
+    db_path: Path,
+    destination: Path,
+    limit: int = 100,
+    window: Window = ALL_HISTORY,
+) -> Path:
+    summary = totals(db_path, window=window)
+    groups = failure_groups(db_path, limit=limit, window=window)
+    platforms = platform_breakdown(db_path, window=window)
     known_platforms = {p["platform"] for p in platforms}
-    coverage = coverage_by_test(db_path)
-    durations = pass_durations_by_test(db_path)
-    occurrences = occurrences_by_test(db_path)
-    neighbours = neighbouring_outcomes(db_path)
-    alongside = co_failures(db_path)
-    first_runs, first_failures = first_attempt_counts_by_test(db_path)
-    logs = log_messages_by_result(db_path)
+    coverage = coverage_by_test(db_path, window=window)
+    durations = pass_durations_by_test(db_path, window=window)
+    occurrences = occurrences_by_test(db_path, window=window)
+    neighbours = neighbouring_outcomes(db_path, window=window)
+    alongside = co_failures(db_path, window=window)
+    first_runs, first_failures = first_attempt_counts_by_test(db_path, window=window)
+    logs = log_messages_by_result(db_path, window=window)
     known = load_known_causes()
     widest = max((g.failures for g in groups), default=0)
-    window = (
+    ingested_span = (
         f"{summary['since'][:10]} to {summary['until'][:10]}"
         if summary["since"]
         else "no runs ingested"
+    )
+    # A saved page has to say which question it answers: an all-history report
+    # and a `--days 3` one are the same document with incomparable numbers, and
+    # both are written to the same path.
+    scope = (
+        f"{window.label}, {summary['runs']} run(s)" if window.bounded else ingested_span
     )
     rate = (summary["failures"] / summary["results"]) if summary["results"] else 0
 
@@ -1002,16 +1014,22 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
             "test ran, passes included."
         )
     else:
-        body = '<div class="empty">No failures in the ingested runs.</div>'
+        body = (
+            f'<div class="empty">No test failures in {_e(window.label)}. '
+            f"{summary['runs']} run(s) and {summary['legs']} matrix leg(s) "
+            "examined.</div>"
+            if window.bounded
+            else '<div class="empty">No failures in the ingested runs.</div>'
+        )
         note = "Nothing failed in this window."
 
-    fixtures = fixture_failures(db_path, limit=limit)
-    fixture_coverage = coverage_by_fixture(db_path)
-    fixture_occurrences = occurrences_by_fixture(db_path)
-    fixture_neighbours = neighbouring_fixture_outcomes(db_path)
-    fixture_alongside = fixture_co_failures(db_path)
+    fixtures = fixture_failures(db_path, limit=limit, window=window)
+    fixture_coverage = coverage_by_fixture(db_path, window=window)
+    fixture_occurrences = occurrences_by_fixture(db_path, window=window)
+    fixture_neighbours = neighbouring_fixture_outcomes(db_path, window=window)
+    fixture_alongside = fixture_co_failures(db_path, window=window)
     first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
-        db_path
+        db_path, window=window
     )
     widest_fixture = max((f.occurrences for f in fixtures), default=0)
     fixture_section = (
@@ -1057,7 +1075,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
     # rewrite it back into one if the expression sits inline.
     result_count = f"{summary['results']:,}"
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    newest = latest_run(db_path)
+    newest = latest_run(db_path, window=window)
     # A first-attempt rate is a floor while any leg is unplaced, and a page that
     # does not say so is a page that reads as if it were not.
     unknown = summary["legs_without_attempt"]
@@ -1075,7 +1093,7 @@ def render(db_path: Path, destination: Path, limit: int = 100) -> Path:
 <div class="page">
   <header>
     <h1>Browser CI Failures</h1>
-    <div class="window">{_e(window)} &middot; main branch, push and scheduled runs</div>
+    <div class="window">{_e(scope)} &middot; main branch, push and scheduled runs</div>
   </header>
 
   <p class="lede">What actually failed in the acceptance test matrix, grouped by the error

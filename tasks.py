@@ -1961,7 +1961,14 @@ def ci_ingest(c, limit=25, db=None, branch="main", events="push,schedule", repo=
 
 @task
 def ci_report(
-    c, db=None, html=None, json=None, limit=100, open_it=False, mark_seen=False
+    c,
+    db=None,
+    html=None,
+    json=None,
+    limit=100,
+    open_it=False,
+    mark_seen=False,
+    days=None,
 ):
     """Shows which tests fail and on which error.
 
@@ -1983,11 +1990,65 @@ def ci_report(
             changed. Never done automatically: a report that moved its own
             baseline would answer differently the second time it was run on
             unchanged data.
+        days: Report only on the last this-many whole local days, today
+            included: 1 is today, 2 is today and yesterday. The window is a hard
+            scope - every count, rate and denominator comes from inside it, and
+            a test that did not fail inside it does not appear at all. That is
+            what makes it answer "did what I fixed come back", which no
+            all-history report can. Takes no other argument alongside it; see
+            `tools/ci_failures/window.py`.
     """
+    from tools.ci_failures.window import ALL_HISTORY, of_days
+
+    window = ALL_HISTORY
+    if days is not None:
+        # `--days` is the whole command. Every other flag either changes what
+        # the report contains or moves state, and both are meaningless against a
+        # window: a windowed baseline would call every group "shrank" the next
+        # time an unwindowed report compared itself with it.
+        alongside = sorted(
+            flag
+            for flag, used in {
+                "--db": db is not None,
+                "--html": html is not None,
+                "--json": json is not None,
+                "--limit": limit != 100,
+                "--open-it": bool(open_it),
+                "--mark-seen": bool(mark_seen),
+            }.items()
+            if used
+        )
+        if alongside:
+            raise Exit(
+                f"--days takes no other argument; drop {', '.join(alongside)}.", 2
+            )
+        try:
+            window = of_days(int(days))
+        except ValueError:
+            raise Exit(
+                f"--days wants a whole number of days, got {days!r}.", 2
+            ) from None
     db_path = Path(db) if db else CI_FAILURES_DB
     if not db_path.exists():
         print(f"No database at {db_path}. Run `inv ci-ingest` first.")
         return
+    if window.bounded:
+        from tools.ci_failures.report import latest_run, totals
+
+        if not totals(db_path, window=window)["runs"]:
+            # Nothing ran is not the same fact as nothing failed, and an empty
+            # page cannot say which one it is. So no page.
+            newest = latest_run(db_path)
+            seen = (
+                f"newest ingested run {newest['at'][:10]}"
+                if newest
+                else "nothing ingested yet"
+            )
+            raise Exit(
+                f"No runs in {window.label} - {seen}. "
+                "Run `inv ci-ingest`, or widen --days.",
+                1,
+            )
     if mark_seen:
         from tools.ci_failures.annotations import write_snapshot
         from tools.ci_failures.report import failure_groups, fixture_failures
@@ -2007,7 +2068,12 @@ def ci_report(
         return
     from tools.ci_failures.html_report import render
 
-    written = render(db_path, Path(html) if html else CI_REPORT_HTML, limit=int(limit))
+    written = render(
+        db_path,
+        Path(html) if html else CI_REPORT_HTML,
+        limit=int(limit),
+        window=window,
+    )
     print(f"Wrote {written}")
     if open_it:
         webbrowser.open(written.resolve().as_uri())

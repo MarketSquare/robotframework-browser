@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .db import connect
+from .window import ALL_HISTORY, Window
 
 # Two libraries implement the same gRPC deadline and spell the expiry
 # differently: grpcio's C core says "Deadline Exceeded" when the Python client's
@@ -29,6 +30,18 @@ from .db import connect
 # each use rather than interpolated: these queries are read far more often than
 # they are edited, and a format placeholder in the middle of a GROUP BY hides
 # the one thing a reader needs to see.
+
+
+def _connect(db_path: Path, window: Window):
+    """A connection that can only see the window.
+
+    The restriction lives here rather than in the queries: `window.apply` hangs
+    shadowing views off the connection, so every statement below is windowed
+    without saying so. See `window.py`.
+    """
+    connection = connect(db_path)
+    window.apply(connection)
+    return connection
 
 
 @dataclass
@@ -76,9 +89,11 @@ class FailureGroup:
         return (self.error_signature or "").lower()
 
 
-def failure_groups(db_path: Path, limit: int = 100) -> list[FailureGroup]:
+def failure_groups(
+    db_path: Path, limit: int = 100, window: Window = ALL_HISTORY
+) -> list[FailureGroup]:
     """Every (test, error) pair that has failed, most failures first."""
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         WITH runs_per_test AS (
@@ -196,9 +211,11 @@ class FixtureFailure:
         return (self.error_signature or "").lower()
 
 
-def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
+def fixture_failures(
+    db_path: Path, limit: int = 50, window: Window = ALL_HISTORY
+) -> list[FixtureFailure]:
     """Suite setup and teardown failures, one row per fixture and error."""
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.scope_owner,
@@ -254,14 +271,16 @@ def fixture_failures(db_path: Path, limit: int = 50) -> list[FixtureFailure]:
     return [FixtureFailure(**dict(row)) for row in rows]
 
 
-def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
+def occurrences_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """Every individual failure behind a group: which run, which commit, when.
 
     A group's counts cannot say whether four failures are one bad commit seen
     four times or a problem that has survived four of them. The commit and the
     event are in the database and were simply never asked for.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.longname,
@@ -309,7 +328,9 @@ def occurrences_by_test(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def coverage_by_test(db_path: Path) -> dict[str, list[dict]]:
+def coverage_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[str, list[dict]]:
     """Per configuration, how often a test ran and how often it failed.
 
     One global rate hides the only thing that matters about it. Screenshot On
@@ -318,7 +339,7 @@ def coverage_by_test(db_path: Path) -> dict[str, list[dict]]:
     are included: 26 clean runs is evidence, and a configuration missing from
     this list never ran the test at all, which is not the same as passing it.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
@@ -364,7 +385,9 @@ def _spread(values: list[int]) -> dict:
     }
 
 
-def pass_durations_by_test(db_path: Path) -> dict[tuple, dict]:
+def pass_durations_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, dict]:
     """How long a test takes on the runs where it passes, per configuration.
 
     A timeout message supports two readings that want opposite fixes: something
@@ -382,7 +405,7 @@ def pass_durations_by_test(db_path: Path) -> dict[tuple, dict]:
     Keyed the same way as `coverage_by_test` groups, so the two join. Only tests
     that failed at least once are measured - nothing else is being asked about.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
@@ -414,7 +437,9 @@ def _verdict(statuses: list[str]) -> str:
     return "pass" if "PASS" in unique else "skip"
 
 
-def neighbouring_outcomes(db_path: Path) -> dict[int, dict]:
+def neighbouring_outcomes(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[int, dict]:
     """What the same test did on the same leg in the runs either side of this one.
 
     A rate says how often a test fails. It cannot say whether a failure is a blip
@@ -436,7 +461,7 @@ def neighbouring_outcomes(db_path: Path) -> dict[int, dict]:
     run sat in the day's merges, not what failed - so a retry is reported when it
     exists and nothing at all is concluded from it when it does not.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.id AS result_id, f.longname, f.status,
@@ -503,7 +528,7 @@ def neighbouring_outcomes(db_path: Path) -> dict[int, dict]:
     return outcomes
 
 
-def co_failures(db_path: Path) -> dict[int, list[dict]]:
+def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[dict]]:
     """The other tests that failed in the same leg as this one.
 
     Section 3 splits out the cascade Robot Framework creates structurally: a
@@ -518,7 +543,7 @@ def co_failures(db_path: Path) -> dict[int, list[dict]]:
     This claims no causation and cannot. It reports what else broke in the same
     leg, which costs one query and is the only hint the data has to offer.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT a.id AS result_id, b.longname,
@@ -576,7 +601,9 @@ def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
     ).fetchall()
 
 
-def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+def occurrences_by_fixture(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """Every leg a fixture broke in: which run, which commit, which leg.
 
     One entry per leg, not per marked test row. Five teardown failures of
@@ -585,7 +612,7 @@ def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     each leg lost is carried as `tests_marked` instead, where it is a fact about
     the leg rather than a multiplier on the count.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.scope_owner, f.failure_scope,
@@ -618,7 +645,9 @@ def occurrences_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def coverage_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+def coverage_by_fixture(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """Per configuration, how often the suite ran and how often the fixture broke.
 
     `seen_on` said which matrix legs a fixture had been seen failing on and how
@@ -626,7 +655,7 @@ def coverage_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     tests: 5 occurrences is not a rate, and 3 of 68 on win32 against 0 of 46
     everywhere else is where to look.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     grouped: dict[tuple, list[dict]] = {}
     for fixture in _failing_fixtures(connection):
         owner = fixture["scope_owner"]
@@ -659,14 +688,16 @@ def coverage_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def neighbouring_fixture_outcomes(db_path: Path) -> dict[tuple, dict]:
+def neighbouring_fixture_outcomes(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, dict]:
     """`neighbouring_outcomes` for suite fixtures, keyed by the leg it broke in.
 
     The same question and the same answer, with one difference in what counts as
     an outcome: a fixture has no status of its own in `test_result`, so the leg
     passed if the suite ran there and the fixture is not among the failures.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     outcomes: dict[tuple, dict] = {}
     for fixture in _failing_fixtures(connection):
         owner = fixture["scope_owner"]
@@ -722,14 +753,16 @@ def neighbouring_fixture_outcomes(db_path: Path) -> dict[tuple, dict]:
     return outcomes
 
 
-def fixture_co_failures(db_path: Path) -> dict[tuple, list[dict]]:
+def fixture_co_failures(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """What else broke in a leg the fixture broke in.
 
     The tests this fixture marked are excluded. They are the same event already
     counted once, and listing them here would restate the fixture's own damage
     as if it were context.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT a.scope_owner, a.failure_scope, a.leg_id, b.longname,
@@ -756,13 +789,15 @@ def fixture_co_failures(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def messages_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
+def messages_by_fixture(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """`messages_by_test` for suite fixtures, counted in legs.
 
     Robot Framework writes the fixture's message onto every test it marked, so
     counting rows would report one teardown failure as ten.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.scope_owner, f.failure_scope,
@@ -786,7 +821,9 @@ def messages_by_fixture(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def first_attempt_counts_by_test(db_path: Path) -> tuple[dict[str, int], dict]:
+def first_attempt_counts_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> tuple[dict[str, int], dict]:
     """How often a test ran and failed on runs nobody had to re-run.
 
     A leg is only ever re-run because it failed, so re-attempts land exactly
@@ -807,7 +844,7 @@ def first_attempt_counts_by_test(db_path: Path) -> tuple[dict[str, int], dict]:
     a group whose every failure landed on a re-attempt still gets a denominator
     instead of vanishing.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     runs = {
         row["longname"]: row["ran"]
         for row in connection.execute(
@@ -840,9 +877,11 @@ def first_attempt_counts_by_test(db_path: Path) -> tuple[dict[str, int], dict]:
     return runs, failures
 
 
-def first_attempt_counts_by_fixture(db_path: Path) -> tuple[dict[tuple, int], dict]:
+def first_attempt_counts_by_fixture(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> tuple[dict[tuple, int], dict]:
     """`first_attempt_counts_by_test` for suite fixtures, counted in legs."""
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     runs: dict[tuple, int] = {}
     for fixture in _failing_fixtures(connection):
         identity = (fixture["scope_owner"], fixture["failure_scope"])
@@ -869,7 +908,7 @@ def first_attempt_counts_by_fixture(db_path: Path) -> tuple[dict[tuple, int], di
     return runs, failures
 
 
-def latest_run(db_path: Path) -> dict:
+def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
     """The newest run in the window, and how many failures it carried.
 
     The rates answer "how often does this break". They do not answer "is it
@@ -877,7 +916,7 @@ def latest_run(db_path: Path) -> dict:
     newest run is clean is a different situation from one whose newest run is
     not - however bad the rates in between.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     row = connection.execute(
         "SELECT id, created_at, event, head_sha FROM run "
         "ORDER BY created_at DESC, id DESC LIMIT 1"
@@ -903,7 +942,9 @@ def latest_run(db_path: Path) -> dict:
     }
 
 
-def messages_by_test(db_path: Path) -> dict[tuple, list[dict]]:
+def messages_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """Every distinct raw message behind a group, with how often each occurred.
 
     The signature masks what varies, which is what makes grouping possible and
@@ -912,7 +953,7 @@ def messages_by_test(db_path: Path) -> dict[tuple, list[dict]]:
     not jittery - and the signature renders all of that as `<n>`. Cheap to keep:
     16 of the 18 groups have exactly one distinct message.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT f.longname,
@@ -934,8 +975,10 @@ def messages_by_test(db_path: Path) -> dict[tuple, list[dict]]:
     return grouped
 
 
-def _variants(db_path: Path, sql: str, key_length: int) -> dict[tuple, list[dict]]:
-    connection = connect(db_path)
+def _variants(
+    db_path: Path, sql: str, key_length: int, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
+    connection = _connect(db_path, window)
     rows = connection.execute(sql).fetchall()
     connection.close()
     grouped: dict[tuple, list[dict]] = {}
@@ -952,7 +995,9 @@ def _variants(db_path: Path, sql: str, key_length: int) -> dict[tuple, list[dict
     return {key: value for key, value in grouped.items() if len(value) > 1}
 
 
-def signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
+def signature_variants(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """The distinct spellings of one test group's signature, with counts.
 
     Only ever more than one when two libraries name the same condition, which is
@@ -972,10 +1017,13 @@ def signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
         ORDER BY occurrences DESC
         """,
         2,
+        window=window,
     )
 
 
-def fixture_signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
+def fixture_signature_variants(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
     """The same, for suite fixtures - which is where it actually happens.
 
     The `Deadline Exceeded` / `Deadline exceeded` split that motivated the
@@ -997,14 +1045,17 @@ def fixture_signature_variants(db_path: Path) -> dict[tuple, list[dict]]:
         ORDER BY occurrences DESC
         """,
         3,
+        window=window,
     )
 
 
-def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
+def log_messages(
+    db_path: Path, result_id: int | None, window: Window = ALL_HISTORY
+) -> list[dict]:
     """What the failing keywords logged, for one occurrence of a failure."""
     if result_id is None:
         return []
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         "SELECT seq, level, keyword, origin, message FROM log_message "
         "WHERE test_result_id = ? ORDER BY seq",
@@ -1014,7 +1065,9 @@ def log_messages(db_path: Path, result_id: int | None) -> list[dict]:
     return [dict(row) for row in rows]
 
 
-def log_messages_by_result(db_path: Path) -> dict[int, list[dict]]:
+def log_messages_by_result(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[int, list[dict]]:
     """The same lines, for every failure at once, keyed on the occurrence.
 
     One query rather than one per occurrence, because every occurrence needs its
@@ -1023,7 +1076,7 @@ def log_messages_by_result(db_path: Path) -> dict[int, list[dict]]:
     `Screenshot On Failure` failures in one window split two and two across two
     different image comparisons, and the group showed only the newer pair.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         "SELECT test_result_id, seq, level, keyword, origin, message "
         "FROM log_message ORDER BY test_result_id, seq"
@@ -1042,14 +1095,14 @@ def log_messages_by_result(db_path: Path) -> dict[int, list[dict]]:
     return grouped
 
 
-def platform_breakdown(db_path: Path) -> list[dict]:
+def platform_breakdown(db_path: Path, window: Window = ALL_HISTORY) -> list[dict]:
     """Failures per matrix leg, by platform.
 
     Per leg rather than absolute, because the matrix does not run the platforms
     an equal number of times and the raw counts would say more about the matrix
     than about the platforms.
     """
-    connection = connect(db_path)
+    connection = _connect(db_path, window)
     rows = connection.execute(
         """
         SELECT l.platform,
@@ -1075,8 +1128,8 @@ def platform_breakdown(db_path: Path) -> list[dict]:
     ]
 
 
-def totals(db_path: Path) -> dict:
-    connection = connect(db_path)
+def totals(db_path: Path, window: Window = ALL_HISTORY) -> dict:
+    connection = _connect(db_path, window)
     row = connection.execute(
         "SELECT (SELECT COUNT(*) FROM run) AS runs, "
         "(SELECT COUNT(*) FROM leg) AS legs, "
