@@ -27,13 +27,21 @@ maintainer, so the only build that has to be new enough is theirs.)
 
 ## Where these live
 
-Temp views on the connection, created after `window.apply`, and that ordering is
-load-bearing rather than tidy. A permanent view resolves its body against `main`
-and would not see the Window's shadowing views at all, so putting these in
-`schema.sql` would quietly hand every windowed report the whole of history -
-the exact failure `window.py` exists to prevent, reintroduced by the fix for a
-different one. Created here and unqualified, they layer on the shadow when there
-is one and fall through to the real table when there is not.
+Temp views on the connection, and being temp is the load-bearing part. A
+permanent view resolves its body against `main` and would not see the Window's
+shadowing views at all, so putting these in `schema.sql` would quietly hand
+every windowed report the whole of history - the exact failure `window.py`
+exists to prevent, reintroduced by the fix for a different one. Created here and
+unqualified, they layer on the shadow when there is one and fall through to the
+real table when there is not.
+
+`reading.of` puts them up after `window.apply`, which is the order they read in.
+It is not the order SQLite needs: a temp view resolves the names in its body when
+it is queried, against `temp` before `main`, so these layer on the shadowing
+views whichever went up first. This docstring used to call the ordering itself
+load-bearing; measuring it both ways says otherwise, and the distinction matters
+because it says what would actually break the guarantee - moving these into
+`schema.sql`, never reordering two lines.
 """
 
 from sqlite3 import Connection

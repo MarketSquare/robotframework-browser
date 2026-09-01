@@ -20,9 +20,21 @@ import math
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+from . import reading
 from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
 from .parse import screenshot_key
 from .queries import (
+    NOTHING_AROUND,
+    AdjacentRun,
+    CoverageRow,
+    FixtureLegKey,
+    # Re-exported deliberately. `outcome` is a Report field, so a Rendering
+    # reads the vocabulary for it here rather than reaching into `queries`.
+    # It is produced there because `_verdict` is - which is itself a function
+    # in `queries.py` that runs no SQL, and so by that module's own rule
+    # belongs over here.
+    Outcome,  # noqa: F401
+    Spread,
     co_failures,
     coverage_by_fixture,
     coverage_by_test,
@@ -44,6 +56,9 @@ from .queries import (
     runs_either_side,
     signature_variants,
     totals,
+)
+from .queries import (
+    Retry as QueryRetry,
 )
 from .window import ALL_HISTORY, Window
 
@@ -254,6 +269,8 @@ class Neighbour:
     run: int
     commit: str | None
     at: str | None
+    #: One of `Outcome`. A Rendering that wants to know which of them mean
+    #: trouble asks `Outcome.BAD` rather than writing the list out again.
     outcome: str
 
 
@@ -571,16 +588,16 @@ def _where_to_look(row, test_lineno: int | None) -> WhereToLook:
     )
 
 
-def _pass_ms(measured: dict | None) -> PassMs | None:
+def _pass_ms(measured: Spread | None) -> PassMs | None:
     if not measured:
         return None
-    return PassMs(measured["min"], measured["median"], measured["p95"], measured["max"])
+    return PassMs(measured.min, measured.median, measured.p95, measured.max)
 
 
 def _rates(
-    coverage: list[dict],
+    coverage: list[CoverageRow],
     known_platforms: set,
-    durations: dict | None,
+    durations: dict[tuple, Spread] | None,
     longname: str,
     overall_rate: float = 0.0,
 ) -> tuple[tuple[Rate, ...], tuple[str, ...]]:
@@ -596,25 +613,25 @@ def _rates(
     """
     rates = []
     for entry in coverage:
-        failed = entry["failed"] or 0
-        ran = entry["ran"]
+        failed = entry.failed or 0
+        ran = entry.ran
         measured = None
         if durations is not None:
             measured = durations.get(
                 (
                     longname,
-                    entry["platform"],
-                    entry["python_version"],
-                    entry["rf_version"],
-                    entry["node_version"],
+                    entry.platform,
+                    entry.python_version,
+                    entry.rf_version,
+                    entry.node_version,
                 )
             )
         rates.append(
             Rate(
-                platform=entry["platform"],
-                python=entry["python_version"],
-                rf=entry["rf_version"],
-                node=entry["node_version"] or None,
+                platform=entry.platform,
+                python=entry.python_version,
+                rf=entry.rf_version,
+                node=entry.node_version or None,
                 ran=ran,
                 failed=failed,
                 zero_is_inconclusive=(
@@ -623,29 +640,39 @@ def _rates(
                 pass_ms=_pass_ms(measured),
             )
         )
-    seen = {entry["platform"] for entry in coverage if entry["platform"]}
+    seen = {entry.platform for entry in coverage if entry.platform}
     return tuple(rates), tuple(sorted(known_platforms - seen))
 
 
-def _neighbour(entry: dict | None) -> Neighbour | None:
+def _neighbour(entry: AdjacentRun | None) -> Neighbour | None:
     if not entry:
         return None
-    return Neighbour(
-        entry["run"], entry.get("commit"), entry.get("at"), entry["outcome"]
-    )
+    return Neighbour(entry.run, entry.commit, entry.at, entry.outcome)
 
 
-def _retry(entry: dict | None) -> Retry | None:
+def _retry(entry: QueryRetry | None) -> Retry | None:
     if not entry:
         return None
-    return Retry(entry["attempts"], entry["passed_on_another_attempt"])
+    return Retry(entry.attempts, entry.passed_on_another_attempt)
 
 
 def _log_lines(rows: list[dict]) -> tuple[LogLine, ...]:
     return tuple(
-        LogLine(row["level"], row["keyword"], row["origin"], row["message"])
-        for row in rows
+        LogLine(row.level, row.keyword, row.origin, row.message) for row in rows
     )
+
+
+# The upload step names every artifact "Test results-<leg>". The prefix is a
+# fact about the upload rather than about the Leg, and leaving it on meant the
+# page stripped it while the document did not - one Leg reading as two strings.
+# Stripped once, here, so both Renderings say the same thing.
+_ARTIFACT_PREFIX = "Test results-"
+
+
+def _leg_name(artifact_name: str | None) -> str | None:
+    if not artifact_name:
+        return None
+    return artifact_name.removeprefix(_ARTIFACT_PREFIX)
 
 
 def _occurrence(
@@ -657,37 +684,35 @@ def _occurrence(
     elapsed_ms: int | None = None,
     tests_marked: int | None = None,
 ) -> Occurrence:
-    lines = _log_lines(logs.get(entry["result_id"], []))
+    lines = _log_lines(logs.get(entry.result_id, []))
     kept = alongside[:CO_FAILURE_LIMIT]
     return Occurrence(
-        run=entry["run_id"],
-        run_url=entry["run_url"],
-        commit=entry["head_sha"],
-        event=entry["event"],
-        at=entry["created_at"],
-        platform=entry["platform"],
-        python=entry["python_version"],
-        rf=entry["rf_version"],
-        node=entry["node_version"] or None,
-        leg=entry["artifact_name"],
-        attempt=entry["attempt"],
-        executors=entry.get("executors"),
-        node_process=entry.get("node_process"),
-        artifact_url=entry["artifact_url"],
+        run=entry.run_id,
+        run_url=entry.run_url,
+        commit=entry.head_sha,
+        event=entry.event,
+        at=entry.created_at,
+        platform=entry.platform,
+        python=entry.python_version,
+        rf=entry.rf_version,
+        node=entry.node_version or None,
+        leg=_leg_name(entry.artifact_name),
+        attempt=entry.attempt,
+        executors=entry.executors,
+        node_process=entry.node_process,
+        artifact_url=entry.artifact_url,
         elapsed_ms=elapsed_ms,
         tests_marked=tests_marked,
-        previous_run_on_this_leg=_neighbour(around.get("previous_run_on_this_leg")),
-        next_run_on_this_leg=_neighbour(around.get("next_run_on_this_leg")),
-        retry=_retry(around.get("retry")),
+        previous_run_on_this_leg=_neighbour(around.previous_run_on_this_leg),
+        next_run_on_this_leg=_neighbour(around.next_run_on_this_leg),
+        retry=_retry(around.retry),
         also_failed_in_this_leg=tuple(
-            CoFailure(item["subject"], item.get("scope")) for item in kept
+            CoFailure(item.subject, item.scope) for item in kept
         ),
         also_failed_in_this_leg_not_listed=max(0, len(alongside) - CO_FAILURE_LIMIT),
         log=lines,
-        screenshots=rank_screenshots(
-            list(_split(entry.get("screenshots"))), list(lines)
-        ),
-        screenshot_status=entry.get("screenshot_status"),
+        screenshots=rank_screenshots(list(_split(entry.screenshots)), list(lines)),
+        screenshot_status=entry.screenshot_status,
     )
 
 
@@ -697,10 +722,10 @@ def _occurrences(
     return tuple(
         _occurrence(
             entry,
-            neighbours.get(entry["result_id"], {}),
-            others.get(entry["result_id"], []),
+            neighbours.get(entry.result_id, NOTHING_AROUND),
+            others.get(entry.result_id, []),
             logs,
-            elapsed_ms=entry["elapsed_ms"],
+            elapsed_ms=entry.elapsed_ms,
         )
         for entry in entries
     )
@@ -714,10 +739,10 @@ def _fixture_occurrences(
     return tuple(
         _occurrence(
             entry,
-            neighbours.get((*identity, entry["leg_id"]), {}),
-            others.get((*identity, entry["leg_id"]), []),
+            neighbours.get(FixtureLegKey(*identity, entry.leg_id), NOTHING_AROUND),
+            others.get((*identity, entry.leg_id), []),
             logs,
-            tests_marked=entry["tests_marked"],
+            tests_marked=entry.tests_marked,
         )
         for entry in entries
     )
@@ -741,11 +766,11 @@ def _known_cause(known: dict, subject: str, signature: str | None) -> KnownCause
 
 
 def _messages(rows: list[dict]) -> tuple[RawMessage, ...]:
-    return tuple(RawMessage(row["message"], row["occurrences"]) for row in rows)
+    return tuple(RawMessage(row.message, row.occurrences) for row in rows)
 
 
 def _variants(rows: list[dict]) -> tuple[SignatureVariant, ...]:
-    return tuple(SignatureVariant(row["signature"], row["occurrences"]) for row in rows)
+    return tuple(SignatureVariant(row.signature, row.occurrences) for row in rows)
 
 
 def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
@@ -765,24 +790,33 @@ def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
 
 
 def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Report:
-    """The whole Report for one Window."""
-    summary = totals(db_path, window=window)
-    platform_rows = platform_breakdown(db_path, window=window)
-    platforms = {row["platform"] for row in platform_rows}
-    coverage = coverage_by_test(db_path, window=window)
-    occurrences = occurrences_by_test(db_path, window=window)
-    messages = messages_by_test(db_path, window=window)
-    variants = signature_variants(db_path, window=window)
-    fixture_variants = fixture_signature_variants(db_path, window=window)
-    durations = pass_durations_by_test(db_path, window=window)
-    neighbours = runs_either_side(db_path, window=window)
-    alongside = co_failures(db_path, window=window)
-    first_runs, first_failures = first_attempt_counts_by_test(db_path, window=window)
-    logs = log_messages_by_result(db_path, window=window)
+    """The whole Report for one Window.
+
+    One Reading, opened here and shared by every query below. They used to open
+    one each, which meant materialising the Window once per question.
+    """
+    with reading.of(db_path, window) as db:
+        return _build(db, limit, window, db_path)
+
+
+def _build(db: reading.Reading, limit: int, window: Window, db_path: Path) -> Report:
+    summary = totals(db)
+    platform_rows = platform_breakdown(db)
+    platforms = {row.platform for row in platform_rows}
+    coverage = coverage_by_test(db)
+    occurrences = occurrences_by_test(db)
+    messages = messages_by_test(db)
+    variants = signature_variants(db)
+    fixture_variants = fixture_signature_variants(db)
+    durations = pass_durations_by_test(db)
+    neighbours = runs_either_side(db)
+    alongside = co_failures(db)
+    first_runs, first_failures = first_attempt_counts_by_test(db)
+    logs = log_messages_by_result(db)
     known = load_known_causes()
 
     tests = []
-    for group in failure_groups(db_path, limit=limit, window=window):
+    for group in failure_groups(db, limit=limit):
         # One key shape for every Subject, test or fixture:
         # (owner, scope, signature).
         key = (group.longname, "test", group.signature_key)
@@ -821,17 +855,15 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
             )
         )
 
-    fixture_coverage = coverage_by_fixture(db_path, window=window)
-    fixture_occurrences = occurrences_by_fixture(db_path, window=window)
-    fixture_messages = messages_by_fixture(db_path, window=window)
-    fixture_neighbours = fixture_runs_either_side(db_path, window=window)
-    fixture_alongside = fixture_co_failures(db_path, window=window)
-    first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
-        db_path, window=window
-    )
+    fixture_coverage = coverage_by_fixture(db)
+    fixture_occurrences = occurrences_by_fixture(db)
+    fixture_messages = messages_by_fixture(db)
+    fixture_neighbours = fixture_runs_either_side(db)
+    fixture_alongside = fixture_co_failures(db)
+    first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(db)
 
     fixtures = []
-    for fixture in fixture_failures(db_path, limit=limit, window=window):
+    for fixture in fixture_failures(db, limit=limit):
         identity = (fixture.scope_owner, fixture.failure_scope)
         key = (*identity, fixture.signature_key)
         rates, never = _rates(
@@ -876,25 +908,25 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
             )
         )
 
-    newest = latest_run(db_path, window=window)
+    newest = latest_run(db)
     report = Report(
         about=ABOUT,
         window=WindowSummary(
-            runs=summary["runs"],
-            legs=summary["legs"],
-            results=summary["results"],
-            failures=summary["failures"],
-            distinct_tests=summary["tests"],
-            legs_with_unknown_attempt=summary["legs_without_attempt"],
-            since=summary["since"],
-            until=summary["until"],
+            runs=summary.runs,
+            legs=summary.legs,
+            results=summary.results,
+            failures=summary.failures,
+            distinct_tests=summary.tests,
+            legs_with_unknown_attempt=summary.legs_without_attempt,
+            since=summary.since,
+            until=summary.until,
             latest_run=(
                 LatestRun(
-                    newest["run"],
-                    newest["commit"],
-                    newest["event"],
-                    newest["at"],
-                    newest["failures"],
+                    newest.run,
+                    newest.commit,
+                    newest.event,
+                    newest.at,
+                    newest.failures,
                 )
                 if newest
                 else None
@@ -909,7 +941,7 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
         fixture_failures=tuple(fixtures),
         test_failures=tuple(tests),
         platforms=tuple(
-            PlatformRow(row["platform"], row["legs"], row["failures"], row["per_leg"])
+            PlatformRow(row.platform, row.legs, row.failures, row.per_leg)
             for row in platform_rows
         ),
     )

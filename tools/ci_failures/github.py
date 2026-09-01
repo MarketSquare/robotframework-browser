@@ -75,6 +75,18 @@ def _api(endpoint: str) -> dict:
     return json.loads(result.stdout or "{}")
 
 
+def _first_page(endpoint: str, key: str) -> list[dict]:
+    """One page, not the whole history.
+
+    The runs listing is newest first, so the newest `limit` of them are on the
+    first page and every page after it is older than anything that will be
+    kept. Walking all of them and then slicing cost a request per hundred runs
+    the workflow had ever made, on every invocation, forever - the one call here
+    whose cost grew with the age of the repository rather than with the work.
+    """
+    return _api(endpoint).get(key) or []
+
+
 def _paginated(endpoint: str, key: str) -> list[dict]:
     """Every page of ``endpoint``, with each page's ``key`` list flattened."""
     args = ["api", "--paginate", "--slurp", endpoint]
@@ -105,13 +117,20 @@ def get_run(run_id: int) -> Run:
 
 
 def list_runs(limit: int = 25) -> list[Run]:
-    """Finished CI runs on `main` from `push` and `schedule`, newest first."""
+    """Finished CI runs on `main` from `push` and `schedule`, newest first.
+
+    `limit` is asked of each event separately and the two are merged: the newest
+    `limit` runs overall can only come from the newest `limit` of each event, so
+    one page each is always enough however the merge falls out.
+    """
+    per_event = min(max(limit, 1), 100)
     runs = [
         _run(item, event=event)
         for event in EVENTS
-        for item in _paginated(
+        for item in _first_page(
             f"repos/{REPO}/actions/workflows/{WORKFLOW_FILE}/runs"
-            f"?branch={BRANCH}&event={event}&status=completed&per_page=100",
+            f"?branch={BRANCH}&event={event}&status=completed"
+            f"&per_page={per_event}",
             "workflow_runs",
         )
     ]

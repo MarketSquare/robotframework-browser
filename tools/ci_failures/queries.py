@@ -9,11 +9,9 @@ run SQL it is in the wrong file. `report.py` decides what the numbers mean.
 """
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import NamedTuple
 
-from . import subject
-from .db import connect
-from .window import ALL_HISTORY, Window
+from .reading import Reading
 
 # Two libraries implement the same gRPC deadline and spell the expiry
 # differently: grpcio's C core says "Deadline Exceeded" when the Python client's
@@ -31,21 +29,234 @@ from .window import ALL_HISTORY, Window
 # the one thing a reader needs to see.
 
 
-def _connect(db_path: Path, window: Window):
-    """A connection that can only see the window, and knows what a Subject is.
+# --- What a query hands back -------------------------------------------------
+#
+# Rows, not dicts. `report.py` used to reach into these by string key about
+# sixty times, naming SQL aliases it could not see, and half of those shapes had
+# two producers that were free to drift apart - which is the defect ADR 0001 was
+# written against, one layer below where it was applied. Built with `**` off the
+# row wherever the shape comes straight from SQL, so a renamed or dropped alias
+# is a TypeError here rather than a KeyError, a None, or a section that quietly
+# renders empty.
 
-    Both restrictions live here rather than in the queries. `window.apply` hangs
-    shadowing views off the connection so every statement below is windowed
-    without saying so; `subject.apply` then adds `test_failure` and
-    `fixture_failure`, so no query has to remember which rows a broken suite
-    fixture wrote. See `window.py` and `subject.py`.
+
+def _subject_key(row) -> "SubjectKey":
+    return SubjectKey(row["subject_owner"], row["subject_scope"], row["signature_key"])
+
+
+def _row_without_key(row) -> dict:
+    """The row's own columns. The three key ones identify it, they are not it."""
+    return {
+        name: value
+        for name, value in dict(row).items()
+        if name not in ("subject_owner", "subject_scope", "signature_key")
+    }
+
+
+class SubjectKey(NamedTuple):
+    """What a Group or a Fixture Failure is keyed on: one Subject, one signature.
+
+    A NamedTuple rather than a class, so it still compares equal to the plain
+    tuple every lookup used to build by hand.
     """
-    connection = connect(db_path)
-    window.apply(connection)
-    # After the Window, never before: these read the shadowed table names, so
-    # they inherit the scope rather than reaching past it. See `subject.py`.
-    subject.apply(connection)
-    return connection
+
+    owner: str
+    scope: str
+    signature: str
+
+
+class FixtureLegKey(NamedTuple):
+    """A Fixture Failure in one Leg.
+
+    Also three fields, and it is not a SubjectKey - the third is a Leg, not a
+    signature. They were both bare 3-tuples and telling them apart was left to
+    whoever was reading.
+    """
+
+    owner: str
+    scope: str
+    leg_id: int
+
+
+class Outcome:
+    """What a Subject did in one Run on one Leg.
+
+    Five values, of which exactly one used to be a named constant. The page
+    asked `outcome in ("fail", "mixed")` with the list written out, so a sixth
+    verdict would have rendered as healthy and nothing would have said so.
+    """
+
+    PASS = "pass"
+    FAIL = "fail"
+    MIXED = "mixed"
+    SKIP = "skip"
+    # No verdict rather than a bad one: every row was marked by a suite fixture,
+    # so the Run says nothing about this Subject.
+    SUITE_BROKE = "suite broke"
+
+    #: The outcomes that mean this Subject was not healthy in that Run.
+    BAD = frozenset({FAIL, MIXED})
+
+
+@dataclass(frozen=True)
+class OccurrenceRow:
+    """One Occurrence, whether its Subject is a test or a suite fixture.
+
+    The two producers selected the same columns and returned different shapes -
+    one hand-listed eighteen keys, the other passed the row through whole - so
+    one concept arrived at `report.py` as two dicts. The fields that genuinely
+    differ are the last three, and they differ because the grains do: a test's
+    Occurrence is one Result and has a duration, a fixture's is one Leg and has
+    the number of rows it marked.
+    """
+
+    result_id: int
+    run_id: int
+    head_sha: str | None
+    event: str | None
+    created_at: str | None
+    run_url: str | None
+    platform: str | None
+    python_version: str | None
+    rf_version: str | None
+    node_version: str | None
+    artifact_name: str | None
+    artifact_url: str | None
+    attempt: int | None
+    executors: int | None
+    node_process: str | None
+    screenshots: str | None
+    screenshot_status: str | None
+    elapsed_ms: int | None = None  # tests only
+    leg_id: int | None = None  # fixtures only
+    tests_marked: int | None = None  # fixtures only
+
+
+@dataclass(frozen=True)
+class CoverageRow:
+    """How often one configuration ran a Subject, and how often it failed it."""
+
+    platform: str | None
+    python_version: str | None
+    rf_version: str | None
+    node_version: str | None
+    ran: int
+    failed: int
+
+
+@dataclass(frozen=True)
+class Spread:
+    """Four numbers, because the shape is what carries the argument."""
+
+    min: int
+    median: int
+    p95: int
+    max: int
+
+
+@dataclass(frozen=True)
+class AdjacentRun:
+    """What the same Subject did in the Run either side of this one, same Leg."""
+
+    run: int
+    commit: str | None
+    at: str | None
+    outcome: str
+
+
+@dataclass(frozen=True)
+class Retry:
+    """A Leg re-run by hand, and whether the Subject passed on one of the tries."""
+
+    attempts: int
+    passed_on_another_attempt: bool
+
+
+@dataclass(frozen=True)
+class Around:
+    """Everything that surrounded one Occurrence but is not part of it."""
+
+    previous_run_on_this_leg: AdjacentRun | None
+    next_run_on_this_leg: AdjacentRun | None
+    retry: Retry | None
+
+
+#: What is known about an Occurrence nothing surrounds - no Run either side on
+#: its Leg, and nobody re-ran it. A default that is the right shape, because a
+#: `.get(key, {})` that missed used to hand `report.py` a dict where a row
+#: belonged and take the whole section down with it.
+NOTHING_AROUND = Around(
+    previous_run_on_this_leg=None, next_run_on_this_leg=None, retry=None
+)
+
+
+@dataclass(frozen=True)
+class CoFailure:
+    """Another Subject that failed in the same Leg."""
+
+    subject: str
+    scope: str | None
+
+
+@dataclass(frozen=True)
+class MessageRow:
+    """One distinct raw message behind a Subject, and how often it occurred."""
+
+    message: str
+    occurrences: int
+
+
+@dataclass(frozen=True)
+class VariantRow:
+    """One spelling of an Error Signature, and how often it occurred."""
+
+    signature: str
+    occurrences: int
+
+
+@dataclass(frozen=True)
+class LogRow:
+    """One line a failing keyword logged."""
+
+    level: str | None
+    keyword: str | None
+    origin: str | None
+    message: str | None
+
+
+@dataclass(frozen=True)
+class PlatformRow:
+    """How much of the window one platform ran, and how much of it failed."""
+
+    platform: str | None
+    legs: int
+    failures: int
+    per_leg: float
+
+
+@dataclass(frozen=True)
+class LatestRun:
+    """The newest Run in the window, and how many failures it carried."""
+
+    run: int
+    commit: str | None
+    event: str | None
+    at: str | None
+    failures: int
+
+
+@dataclass(frozen=True)
+class Totals:
+    """What the window holds at all, which is what every rate is divided by."""
+
+    runs: int
+    legs: int
+    results: int
+    failures: int
+    tests: int
+    legs_without_attempt: int
+    since: str | None
+    until: str | None
 
 
 @dataclass
@@ -55,15 +266,6 @@ class FailureGroup:
     failing_keyword: str | None
     failures: int
     total_runs: int  # how many times the test ran at all
-    example_message: str | None
-    platforms: str
-    first_seen: str
-    last_seen: str
-    # Where to go for the screenshots, traces and playwright-log.txt of the most
-    # recent occurrence. The whole reason the artifact URL is stored.
-    latest_artifact_url: str | None
-    latest_run_url: str | None
-    latest_result_id: int | None
 
     test_source: str | None
     test_lineno: int | None
@@ -71,13 +273,6 @@ class FailureGroup:
     keyword_kind: str | None
     keyword_source: str | None
     keyword_lineno: int | None
-
-    rf_versions: str | None
-    python_versions: str | None
-    node_versions: str | None
-
-    screenshots: str | None
-    screenshot_status: str | None
 
     # How many different commits this was seen on. Four failures across four
     # commits is a standing problem; four across one is that one commit.
@@ -93,12 +288,9 @@ class FailureGroup:
         return (self.error_signature or "").lower()
 
 
-def failure_groups(
-    db_path: Path, limit: int = 100, window: Window = ALL_HISTORY
-) -> list[FailureGroup]:
+def failure_groups(db: Reading, limit: int = 100) -> list[FailureGroup]:
     """Every (test, error) pair that has failed, most failures first."""
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         WITH runs_per_test AS (
             SELECT longname, COUNT(*) AS total FROM test_result GROUP BY longname
@@ -115,42 +307,9 @@ def failure_groups(
                f.keyword_kind,
                f.keyword_source,
                f.keyword_lineno,
-               MAX(f.screenshots)             AS screenshots,
-               MAX(f.screenshot_status)       AS screenshot_status,
                COUNT(*)                       AS failures,
                COUNT(DISTINCT r.head_sha)     AS distinct_shas,
-               runs_per_test.total            AS total_runs,
-               MIN(f.message)                 AS example_message,
-               GROUP_CONCAT(DISTINCT l.platform) AS platforms,
-               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
-               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
-               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
-               MIN(r.created_at)              AS first_seen,
-               MAX(r.created_at)              AS last_seen,
-               (SELECT l2.artifact_url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
-               (SELECT r2.url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_run_url,
-               (SELECT f2.id FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.longname = f.longname
-                   AND f2.status = 'FAIL'
-                   AND LOWER(IFNULL(f2.error_signature, ''))
-                     = LOWER(IFNULL(f.error_signature, ''))
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
+               runs_per_test.total            AS total_runs
         FROM test_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -161,7 +320,6 @@ def failure_groups(
         """,
         (limit,),
     ).fetchall()
-    connection.close()
     return [FailureGroup(**dict(row)) for row in rows]
 
 
@@ -181,11 +339,6 @@ class FixtureFailure:
     suite_runs: int  # distinct legs that ran any test of that suite
     tests_marked: int  # test rows Robot Framework failed because of it
     affected_tests: str
-    platforms: str
-    first_seen: str
-    last_seen: str
-    latest_artifact_url: str | None
-    latest_result_id: int | None
 
     test_source: str | None
     failing_keyword: str | None
@@ -193,13 +346,6 @@ class FixtureFailure:
     keyword_kind: str | None
     keyword_source: str | None
     keyword_lineno: int | None
-
-    rf_versions: str | None
-    python_versions: str | None
-    node_versions: str | None
-
-    screenshots: str | None
-    screenshot_status: str | None
 
     distinct_shas: int
 
@@ -213,12 +359,9 @@ class FixtureFailure:
         return (self.error_signature or "").lower()
 
 
-def fixture_failures(
-    db_path: Path, limit: int = 50, window: Window = ALL_HISTORY
-) -> list[FixtureFailure]:
+def fixture_failures(db: Reading, limit: int = 50) -> list[FixtureFailure]:
     """Suite setup and teardown failures, one row per fixture and error."""
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.scope_owner,
                f.failure_scope,
@@ -230,33 +373,13 @@ def fixture_failures(
                f.keyword_kind,
                f.keyword_source,
                f.keyword_lineno,
-               MAX(f.screenshots)                AS screenshots,
-               MAX(f.screenshot_status)          AS screenshot_status,
                COUNT(DISTINCT l.id)              AS occurrences,
                COUNT(*)                          AS tests_marked,
                GROUP_CONCAT(DISTINCT f.name)     AS affected_tests,
-               GROUP_CONCAT(DISTINCT l.platform) AS platforms,
-               GROUP_CONCAT(DISTINCT l.rf_version) AS rf_versions,
-               GROUP_CONCAT(DISTINCT l.python_version) AS python_versions,
-               GROUP_CONCAT(DISTINCT l.node_version) AS node_versions,
-               MIN(r.created_at)                 AS first_seen,
-               MAX(r.created_at)                 AS last_seen,
                (SELECT COUNT(DISTINCT l2.id) FROM test_result f2
                   JOIN leg l2 ON l2.id = f2.leg_id
                  WHERE f2.suite_longname = f.scope_owner
-                    OR f2.suite_longname LIKE f.scope_owner || '.%') AS suite_runs,
-               (SELECT l2.artifact_url FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.scope_owner = f.scope_owner
-                   AND f2.status = 'FAIL'
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_artifact_url,
-               (SELECT f2.id FROM test_result f2
-                  JOIN leg l2 ON l2.id = f2.leg_id
-                  JOIN run r2 ON r2.id = l2.run_id
-                 WHERE f2.scope_owner = f.scope_owner
-                   AND f2.status = 'FAIL'
-                 ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
+                    OR f2.suite_longname LIKE f.scope_owner || '.%') AS suite_runs
         FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
@@ -267,21 +390,17 @@ def fixture_failures(
         """,
         (limit,),
     ).fetchall()
-    connection.close()
     return [FixtureFailure(**dict(row)) for row in rows]
 
 
-def occurrences_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def occurrences_by_test(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]:
     """Every individual failure behind a group: which run, which commit, when.
 
     A group's counts cannot say whether four failures are one bad commit seen
     four times or a problem that has survived four of them. The commit and the
     event are in the database and were simply never asked for.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.subject_owner, f.subject_scope, f.signature_key,
                f.id AS result_id, f.elapsed_ms,
@@ -296,38 +415,15 @@ def occurrences_by_test(
         ORDER BY r.created_at DESC
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
+    grouped: dict[SubjectKey, list[OccurrenceRow]] = {}
     for row in rows:
-        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {
-                "result_id": row["result_id"],
-                "elapsed_ms": row["elapsed_ms"],
-                "screenshots": row["screenshots"],
-                "screenshot_status": row["screenshot_status"],
-                "run_id": row["run_id"],
-                "head_sha": row["head_sha"],
-                "event": row["event"],
-                "created_at": row["created_at"],
-                "run_url": row["run_url"],
-                "platform": row["platform"],
-                "python_version": row["python_version"],
-                "rf_version": row["rf_version"],
-                "node_version": row["node_version"],
-                "artifact_name": row["artifact_name"],
-                "artifact_url": row["artifact_url"],
-                "attempt": row["attempt"],
-                "executors": row["executors"],
-                "node_process": row["node_process"],
-            }
+        grouped.setdefault(_subject_key(row), []).append(
+            OccurrenceRow(**_row_without_key(row))
         )
     return grouped
 
 
-def coverage_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[str, list[dict]]:
+def coverage_by_test(db: Reading) -> dict[str, list[CoverageRow]]:
     """Per configuration, how often a test ran and how often it failed.
 
     One global rate hides the only thing that matters about it. Screenshot On
@@ -341,8 +437,7 @@ def coverage_by_test(
     counting it here made the rates disagree with the Group they sat under.
     `ran` stays every row: the test really did run, whatever failed it.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
                l.node_version,
@@ -358,23 +453,22 @@ def coverage_by_test(
         ORDER BY failed DESC, ran DESC
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[str, list[dict]] = {}
+    grouped: dict[str, list[CoverageRow]] = {}
     for row in rows:
         grouped.setdefault(row["longname"], []).append(
-            {
-                "platform": row["platform"],
-                "python_version": row["python_version"],
-                "rf_version": row["rf_version"],
-                "node_version": row["node_version"],
-                "ran": row["ran"],
-                "failed": row["failed"] or 0,
-            }
+            CoverageRow(
+                platform=row["platform"],
+                python_version=row["python_version"],
+                rf_version=row["rf_version"],
+                node_version=row["node_version"],
+                ran=row["ran"],
+                failed=row["failed"] or 0,
+            )
         )
     return grouped
 
 
-def _spread(values: list[int]) -> dict:
+def _spread(values: list[int]) -> Spread:
     """Four numbers, because the shape is what carries the argument.
 
     A cliff between the passes and the failures is a keyword that broke. A tail
@@ -382,17 +476,15 @@ def _spread(values: list[int]) -> dict:
     cannot tell those apart; the median says where the mass sits.
     """
     last = len(values) - 1
-    return {
-        "min": values[0],
-        "median": values[last // 2],
-        "p95": values[min(last, round(0.95 * last))],
-        "max": values[last],
-    }
+    return Spread(
+        min=values[0],
+        median=values[last // 2],
+        p95=values[min(last, round(0.95 * last))],
+        max=values[last],
+    )
 
 
-def pass_durations_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, dict]:
+def pass_durations_by_test(db: Reading) -> dict[tuple, Spread]:
     """How long a test takes on the runs where it passes, per configuration.
 
     A timeout message supports two readings that want opposite fixes: something
@@ -410,8 +502,7 @@ def pass_durations_by_test(
     Keyed the same way as `coverage_by_test` groups, so the two join. Only tests
     that failed at least once are measured - nothing else is being asked about.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
                l.node_version, f.elapsed_ms
@@ -421,7 +512,6 @@ def pass_durations_by_test(
           AND f.longname IN (SELECT longname FROM test_result WHERE status = 'FAIL')
         """
     ).fetchall()
-    connection.close()
     grouped: dict[tuple, list[int]] = {}
     for row in rows:
         key = (
@@ -461,7 +551,7 @@ def _verdict(statuses: list[tuple[str, str | None]]) -> str:
     return "pass" if "PASS" in own else "skip"
 
 
-def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, dict]:
+def runs_either_side(db: Reading) -> dict[int, Around]:
     """The Adjacent Runs of each failure: what the same test did on the same Leg
     in the Run immediately before this one and the one immediately after.
 
@@ -489,8 +579,7 @@ def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, d
     run sat in the day's merges, not what failed - so a retry is reported when it
     exists and nothing at all is concluded from it when it does not.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.id AS result_id, f.longname, f.status, f.failure_scope,
                l.artifact_name, l.id AS leg_id,
@@ -502,7 +591,6 @@ def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, d
         ORDER BY r.created_at, r.id
         """
     ).fetchall()
-    connection.close()
 
     # One lane per (test, matrix leg), each holding the runs that leg made in
     # order. A run appears once even when it holds several attempts of the leg.
@@ -522,15 +610,15 @@ def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, d
         run["statuses"].append((row["status"], row["failure_scope"]))
         run["legs"].add(row["leg_id"])
 
-    def seen(run: dict) -> dict:
-        return {
-            "run": run["run"],
-            "commit": run["commit"],
-            "at": run["at"],
-            "outcome": _verdict(run["statuses"]),
-        }
+    def seen(run: dict) -> AdjacentRun:
+        return AdjacentRun(
+            run=run["run"],
+            commit=run["commit"],
+            at=run["at"],
+            outcome=_verdict(run["statuses"]),
+        )
 
-    outcomes: dict[int, dict] = {}
+    outcomes: dict[int, Around] = {}
     for row in rows:
         if row["status"] != "FAIL":
             continue
@@ -542,23 +630,23 @@ def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, d
         # never reached this test is not evidence about this test.
         retry = None
         if len(mine["legs"]) > 1:
-            retry = {
-                "attempts": len(mine["legs"]),
-                "passed_on_another_attempt": any(
+            retry = Retry(
+                attempts=len(mine["legs"]),
+                passed_on_another_attempt=any(
                     status == "PASS" for status, _ in mine["statuses"]
                 ),
-            }
-        outcomes[row["result_id"]] = {
-            "previous_run_on_this_leg": seen(lane[order[here - 1]]) if here else None,
-            "next_run_on_this_leg": (
+            )
+        outcomes[row["result_id"]] = Around(
+            previous_run_on_this_leg=seen(lane[order[here - 1]]) if here else None,
+            next_run_on_this_leg=(
                 seen(lane[order[here + 1]]) if here + 1 < len(order) else None
             ),
-            "retry": retry,
-        }
+            retry=retry,
+        )
     return outcomes
 
 
-def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[dict]]:
+def co_failures(db: Reading) -> dict[int, list[CoFailure]]:
     """The other tests that failed in the same leg as this one.
 
     Section 3 splits out the cascade Robot Framework creates structurally: a
@@ -578,8 +666,7 @@ def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[d
     that are one event is an anti-hint: it buries the tests that broke on their
     own account, which are the ones worth reading.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT a.id AS result_id,
                CASE WHEN b.failure_scope IN ('suite_setup', 'suite_teardown')
@@ -593,17 +680,16 @@ def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[d
         ORDER BY a.id, subject
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[int, list[dict]] = {}
+    grouped: dict[int, list[CoFailure]] = {}
     for row in rows:
         grouped.setdefault(row["result_id"], []).append(
-            {"subject": row["subject"], "scope": row["scope"]}
+            CoFailure(subject=row["subject"], scope=row["scope"])
         )
     return grouped
 
 
-def _failing_fixtures(connection) -> list:
-    return connection.execute(
+def _failing_fixtures(db) -> list:
+    return db.execute(
         """
         SELECT DISTINCT subject_owner AS scope_owner,
                         subject_scope  AS failure_scope
@@ -612,7 +698,7 @@ def _failing_fixtures(connection) -> list:
     ).fetchall()
 
 
-def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
+def _fixture_legs(db, scope_owner: str, failure_scope: str) -> list:
     """Every leg that ran the suite, and whether this fixture broke in it.
 
     The denominator for a fixture is legs that ran the suite, never test rows:
@@ -620,7 +706,7 @@ def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
     the suite's size. `suite_longname LIKE owner || '.%'` is what includes the
     child suites the fixture also fails.
     """
-    return connection.execute(
+    return db.execute(
         """
         SELECT l.id AS leg_id, l.artifact_name, l.platform, l.python_version,
                l.rf_version, l.node_version, l.attempt,
@@ -638,9 +724,7 @@ def _fixture_legs(connection, scope_owner: str, failure_scope: str) -> list:
     ).fetchall()
 
 
-def occurrences_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def occurrences_by_fixture(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]:
     """Every leg a fixture broke in: which run, which commit, which leg.
 
     One entry per leg, not per marked test row. Five teardown failures of
@@ -649,8 +733,7 @@ def occurrences_by_fixture(
     each leg lost is carried as `tests_marked` instead, where it is a fact about
     the leg rather than a multiplier on the count.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT f.subject_owner, f.subject_scope, f.signature_key,
                l.id AS leg_id, f.occurrence_id AS result_id,
@@ -671,17 +754,15 @@ def occurrences_by_fixture(
         ORDER BY r.created_at DESC
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
+    grouped: dict[SubjectKey, list[OccurrenceRow]] = {}
     for row in rows:
-        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(dict(row))
+        grouped.setdefault(_subject_key(row), []).append(
+            OccurrenceRow(**_row_without_key(row))
+        )
     return grouped
 
 
-def coverage_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def coverage_by_fixture(db: Reading) -> dict[tuple, list[CoverageRow]]:
     """Per configuration, how often the suite ran and how often the fixture broke.
 
     `seen_on` said which matrix legs a fixture had been seen failing on and how
@@ -689,54 +770,43 @@ def coverage_by_fixture(
     tests: 5 occurrences is not a rate, and 3 of 68 on win32 against 0 of 46
     everywhere else is where to look.
     """
-    connection = _connect(db_path, window)
-    grouped: dict[tuple, list[dict]] = {}
-    for fixture in _failing_fixtures(connection):
+    grouped: dict[tuple, list[CoverageRow]] = {}
+    for fixture in _failing_fixtures(db):
         owner = fixture["scope_owner"]
         scope = fixture["failure_scope"]
-        counts: dict[tuple, dict] = {}
-        for row in _fixture_legs(connection, owner, scope):
+        counts: dict[tuple, list[int]] = {}
+        for row in _fixture_legs(db, owner, scope):
             key = (
                 row["platform"],
                 row["python_version"],
                 row["rf_version"],
                 row["node_version"],
             )
-            entry = counts.setdefault(
-                key,
-                {
-                    "platform": row["platform"],
-                    "python_version": row["python_version"],
-                    "rf_version": row["rf_version"],
-                    "node_version": row["node_version"],
-                    "ran": 0,
-                    "failed": 0,
-                },
-            )
-            entry["ran"] += 1
-            entry["failed"] += row["broke"]
+            tally = counts.setdefault(key, [0, 0])
+            tally[0] += 1
+            tally[1] += row["broke"]
         grouped[(owner, scope)] = sorted(
-            counts.values(), key=lambda entry: (-entry["failed"], -entry["ran"])
+            (
+                CoverageRow(*configuration, ran=ran, failed=failed)
+                for configuration, (ran, failed) in counts.items()
+            ),
+            key=lambda entry: (-entry.failed, -entry.ran),
         )
-    connection.close()
     return grouped
 
 
-def fixture_runs_either_side(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, dict]:
+def fixture_runs_either_side(db: Reading) -> dict[FixtureLegKey, Around]:
     """`runs_either_side` for suite fixtures, keyed by the leg it broke in.
 
     The same question and the same answer, with one difference in what counts as
     an outcome: a fixture has no status of its own in `test_result`, so the leg
     passed if the suite ran there and the fixture is not among the failures.
     """
-    connection = _connect(db_path, window)
-    outcomes: dict[tuple, dict] = {}
-    for fixture in _failing_fixtures(connection):
+    outcomes: dict[FixtureLegKey, Around] = {}
+    for fixture in _failing_fixtures(db):
         owner = fixture["scope_owner"]
         scope = fixture["failure_scope"]
-        rows = _fixture_legs(connection, owner, scope)
+        rows = _fixture_legs(db, owner, scope)
         lanes: dict[str, dict] = {}
         for row in rows:
             lane = lanes.setdefault(row["artifact_name"], {})
@@ -753,13 +823,13 @@ def fixture_runs_either_side(
             run["statuses"].append(("FAIL" if row["broke"] else "PASS", None))
             run["legs"].add(row["leg_id"])
 
-        def seen(run: dict) -> dict:
-            return {
-                "run": run["run"],
-                "commit": run["commit"],
-                "at": run["at"],
-                "outcome": _verdict(run["statuses"]),
-            }
+        def seen(run: dict) -> AdjacentRun:
+            return AdjacentRun(
+                run=run["run"],
+                commit=run["commit"],
+                at=run["at"],
+                outcome=_verdict(run["statuses"]),
+            )
 
         for row in rows:
             if not row["broke"]:
@@ -770,36 +840,32 @@ def fixture_runs_either_side(
             mine = lane[order[here]]
             retry = None
             if len(mine["legs"]) > 1:
-                retry = {
-                    "attempts": len(mine["legs"]),
-                    "passed_on_another_attempt": any(
+                retry = Retry(
+                    attempts=len(mine["legs"]),
+                    passed_on_another_attempt=any(
                         status == "PASS" for status, _ in mine["statuses"]
                     ),
-                }
-            outcomes[(owner, scope, row["leg_id"])] = {
-                "previous_run_on_this_leg": (
+                )
+            outcomes[FixtureLegKey(owner, scope, row["leg_id"])] = Around(
+                previous_run_on_this_leg=(
                     seen(lane[order[here - 1]]) if here else None
                 ),
-                "next_run_on_this_leg": (
+                next_run_on_this_leg=(
                     seen(lane[order[here + 1]]) if here + 1 < len(order) else None
                 ),
-                "retry": retry,
-            }
-    connection.close()
+                retry=retry,
+            )
     return outcomes
 
 
-def fixture_co_failures(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def fixture_co_failures(db: Reading) -> dict[FixtureLegKey, list[CoFailure]]:
     """What else broke in a leg the fixture broke in.
 
     The tests this fixture marked are excluded. They are the same event already
     counted once, and listing them here would restate the fixture's own damage
     as if it were context.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT a.scope_owner, a.failure_scope, a.leg_id, b.longname,
                IFNULL(b.failure_scope, 'test') AS scope
@@ -813,28 +879,23 @@ def fixture_co_failures(
         ORDER BY a.leg_id, b.longname
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
+    grouped: dict[FixtureLegKey, list[CoFailure]] = {}
     for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["leg_id"])
+        key = FixtureLegKey(row["scope_owner"], row["failure_scope"], row["leg_id"])
         grouped.setdefault(key, []).append(
-            {"subject": row["longname"], "scope": row["scope"]}
+            CoFailure(subject=row["longname"], scope=row["scope"])
         )
     return grouped
 
 
-def messages_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def messages_by_fixture(db: Reading) -> dict[SubjectKey, list[MessageRow]]:
     """`messages_by_test` for suite fixtures. Robot Framework writes the
     fixture's message onto every test it marked, so counting rows would report
     one teardown failure as ten; the Occurrence is the Leg."""
-    return _messages(db_path, "fixture_failure", window)
+    return _messages(db, "fixture_failure")
 
 
-def first_attempt_counts_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> tuple[dict[str, int], dict]:
+def first_attempt_counts_by_test(db: Reading) -> tuple[dict[str, int], dict]:
     """How often a test ran and failed on runs nobody had to re-run.
 
     A leg is only ever re-run because it failed, so re-attempts land exactly
@@ -855,10 +916,9 @@ def first_attempt_counts_by_test(
     a group whose every failure landed on a re-attempt still gets a denominator
     instead of vanishing.
     """
-    connection = _connect(db_path, window)
     runs = {
         row["longname"]: row["ran"]
-        for row in connection.execute(
+        for row in db.execute(
             """
             SELECT f.longname, COUNT(*) AS ran
             FROM test_result f
@@ -872,7 +932,7 @@ def first_attempt_counts_by_test(
         (row["subject_owner"], row["subject_scope"], row["signature_key"]): row[
             "failures"
         ]
-        for row in connection.execute(
+        for row in db.execute(
             """
             SELECT f.subject_owner, f.subject_scope, f.signature_key,
                    COUNT(*) AS failures
@@ -883,24 +943,20 @@ def first_attempt_counts_by_test(
             """
         )
     }
-    connection.close()
     return runs, failures
 
 
-def first_attempt_counts_by_fixture(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> tuple[dict[tuple, int], dict]:
+def first_attempt_counts_by_fixture(db: Reading) -> tuple[dict[tuple, int], dict]:
     """`first_attempt_counts_by_test` for suite fixtures, counted in legs."""
-    connection = _connect(db_path, window)
     runs: dict[tuple, int] = {}
-    for fixture in _failing_fixtures(connection):
+    for fixture in _failing_fixtures(db):
         identity = (fixture["scope_owner"], fixture["failure_scope"])
         runs[identity] = sum(
-            1 for row in _fixture_legs(connection, *identity) if row["attempt"] == 1
+            1 for row in _fixture_legs(db, *identity) if row["attempt"] == 1
         )
     failures = {
         (row["subject_owner"], row["subject_scope"], row["signature_key"]): row["legs"]
-        for row in connection.execute(
+        for row in db.execute(
             """
             SELECT f.subject_owner, f.subject_scope, f.signature_key,
                    COUNT(DISTINCT l.id) AS legs
@@ -911,11 +967,10 @@ def first_attempt_counts_by_fixture(
             """
         )
     }
-    connection.close()
     return runs, failures
 
 
-def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
+def latest_run(db: Reading) -> LatestRun | None:
     """The newest run in the window, and how many failures it carried.
 
     The rates answer "how often does this break". They do not answer "is it
@@ -923,15 +978,13 @@ def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
     newest run is clean is a different situation from one whose newest run is
     not - however bad the rates in between.
     """
-    connection = _connect(db_path, window)
-    row = connection.execute(
+    row = db.execute(
         "SELECT id, created_at, event, head_sha FROM run "
         "ORDER BY created_at DESC, id DESC LIMIT 1"
     ).fetchone()
     if row is None:
-        connection.close()
-        return {}
-    failures = connection.execute(
+        return None
+    failures = db.execute(
         """
         SELECT COUNT(*) FROM test_result f
         JOIN leg l ON l.id = f.leg_id
@@ -939,17 +992,16 @@ def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
         """,
         (row["id"],),
     ).fetchone()[0]
-    connection.close()
-    return {
-        "run": row["id"],
-        "commit": row["head_sha"],
-        "event": row["event"],
-        "at": row["created_at"],
-        "failures": failures,
-    }
+    return LatestRun(
+        run=row["id"],
+        commit=row["head_sha"],
+        event=row["event"],
+        at=row["created_at"],
+        failures=failures,
+    )
 
 
-def _messages(db_path: Path, view: str, window: Window) -> dict[tuple, list[dict]]:
+def _messages(db: Reading, view: str) -> dict[SubjectKey, list[MessageRow]]:
     """Every distinct raw message behind a Subject's group, with how often each
     occurred.
 
@@ -958,8 +1010,7 @@ def _messages(db_path: Path, view: str, window: Window) -> dict[tuple, list[dict
     so `COUNT(DISTINCT occurrence_id)` is `COUNT(*)` on one side and a count of
     Legs on the other without saying so twice.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         f"""
         SELECT f.subject_owner, f.subject_scope, f.signature_key,
                f.message, COUNT(DISTINCT f.occurrence_id) AS occurrences
@@ -969,40 +1020,38 @@ def _messages(db_path: Path, view: str, window: Window) -> dict[tuple, list[dict
         ORDER BY occurrences DESC
         """
     ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
+    grouped: dict[SubjectKey, list[MessageRow]] = {}
     for row in rows:
-        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {"message": row["message"], "occurrences": row["occurrences"]}
+        grouped.setdefault(_subject_key(row), []).append(
+            MessageRow(message=row["message"], occurrences=row["occurrences"])
         )
     return grouped
 
 
-def messages_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def messages_by_test(db: Reading) -> dict[SubjectKey, list[MessageRow]]:
     """The signature masks what varies, which is what makes grouping possible
     and is also what throws away the evidence. Three failures of Compare Images
     carry an identical box and a pixel count differing by three - deterministic,
     not jittery - and the signature renders all of that as `<n>`."""
-    return _messages(db_path, "test_failure", window)
+    return _messages(db, "test_failure")
 
 
-def _variants(
-    db_path: Path, sql: str, key_length: int, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    connection = _connect(db_path, window)
-    rows = connection.execute(sql).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
+def _variants(db: Reading, view: str) -> dict[SubjectKey, list[VariantRow]]:
+    """Parameterised on the view, like `_messages`, which is its twin.
+
+    It used to take the SQL itself and how many leading columns made the key -
+    always three, and always one of two formattings of the same template. The
+    key was then built by position, so "the first three columns are the key"
+    was written down nowhere but in the query text.
+    """
+    rows = db.execute(_VARIANT_SQL.format(view=view)).fetchall()
+    grouped: dict[SubjectKey, list[VariantRow]] = {}
     for row in rows:
-        key = tuple(row[index] for index in range(key_length))
-        grouped.setdefault(key, []).append(
-            {
-                "signature": row["error_signature"],
-                "occurrences": row["occurrences"],
-            }
+        grouped.setdefault(_subject_key(row), []).append(
+            VariantRow(
+                signature=row["error_signature"],
+                occurrences=row["occurrences"],
+            )
         )
     # Only the groups the case-folded key actually merged. One spelling is the
     # normal case and saying so on every entry would bury the one that matters.
@@ -1019,47 +1068,21 @@ _VARIANT_SQL = """
 """
 
 
-def signature_variants(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def signature_variants(db: Reading) -> dict[SubjectKey, list[VariantRow]]:
     """The distinct spellings of one test group's signature, with counts.
 
     Only ever more than one when two libraries name the same condition, which is
     exactly the case the case-folded key exists to merge. See `_KEY`.
     """
-    return _variants(
-        db_path, _VARIANT_SQL.format(view="test_failure"), 3, window=window
-    )
+    return _variants(db, "test_failure")
 
 
-def fixture_signature_variants(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
+def fixture_signature_variants(db: Reading) -> dict[SubjectKey, list[VariantRow]]:
     """`signature_variants` for suite fixtures, counted in Legs."""
-    return _variants(
-        db_path, _VARIANT_SQL.format(view="fixture_failure"), 3, window=window
-    )
+    return _variants(db, "fixture_failure")
 
 
-def log_messages(
-    db_path: Path, result_id: int | None, window: Window = ALL_HISTORY
-) -> list[dict]:
-    """What the failing keywords logged, for one occurrence of a failure."""
-    if result_id is None:
-        return []
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        "SELECT seq, level, keyword, origin, message FROM log_message "
-        "WHERE test_result_id = ? ORDER BY seq",
-        (result_id,),
-    ).fetchall()
-    connection.close()
-    return [dict(row) for row in rows]
-
-
-def log_messages_by_result(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[int, list[dict]]:
+def log_messages_by_result(db: Reading) -> dict[int, list[LogRow]]:
     """The same lines, for every failure at once, keyed on the occurrence.
 
     One query rather than one per occurrence, because every occurrence needs its
@@ -1068,34 +1091,31 @@ def log_messages_by_result(
     `Screenshot On Failure` failures in one window split two and two across two
     different image comparisons, and the group showed only the newer pair.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         "SELECT test_result_id, seq, level, keyword, origin, message "
         "FROM log_message ORDER BY test_result_id, seq"
     ).fetchall()
-    connection.close()
-    grouped: dict[int, list[dict]] = {}
+    grouped: dict[int, list[LogRow]] = {}
     for row in rows:
         grouped.setdefault(row["test_result_id"], []).append(
-            {
-                "level": row["level"],
-                "keyword": row["keyword"],
-                "origin": row["origin"] or None,
-                "message": row["message"],
-            }
+            LogRow(
+                level=row["level"],
+                keyword=row["keyword"],
+                origin=row["origin"] or None,
+                message=row["message"],
+            )
         )
     return grouped
 
 
-def platform_breakdown(db_path: Path, window: Window = ALL_HISTORY) -> list[dict]:
+def platform_breakdown(db: Reading) -> list[PlatformRow]:
     """Failures per matrix leg, by platform.
 
     Per leg rather than absolute, because the matrix does not run the platforms
     an equal number of times and the raw counts would say more about the matrix
     than about the platforms.
     """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
+    rows = db.execute(
         """
         SELECT l.platform,
                COUNT(DISTINCT l.id) AS legs,
@@ -1108,21 +1128,19 @@ def platform_breakdown(db_path: Path, window: Window = ALL_HISTORY) -> list[dict
                  / COUNT(DISTINCT l.id) DESC
         """
     ).fetchall()
-    connection.close()
     return [
-        {
-            "platform": row["platform"],
-            "legs": row["legs"],
-            "failures": row["failures"] or 0,
-            "per_leg": (row["failures"] or 0) / row["legs"] if row["legs"] else 0.0,
-        }
+        PlatformRow(
+            platform=row["platform"],
+            legs=row["legs"],
+            failures=row["failures"] or 0,
+            per_leg=(row["failures"] or 0) / row["legs"] if row["legs"] else 0.0,
+        )
         for row in rows
     ]
 
 
-def totals(db_path: Path, window: Window = ALL_HISTORY) -> dict:
-    connection = _connect(db_path, window)
-    row = connection.execute(
+def totals(db: Reading) -> Totals:
+    row = db.execute(
         "SELECT (SELECT COUNT(*) FROM run) AS runs, "
         "(SELECT COUNT(*) FROM leg) AS legs, "
         "(SELECT COUNT(*) FROM test_result) AS results, "
@@ -1132,5 +1150,4 @@ def totals(db_path: Path, window: Window = ALL_HISTORY) -> dict:
         "(SELECT MIN(created_at) FROM run) AS since, "
         "(SELECT MAX(created_at) FROM run) AS until"
     ).fetchone()
-    connection.close()
-    return dict(row)
+    return Totals(**dict(row))

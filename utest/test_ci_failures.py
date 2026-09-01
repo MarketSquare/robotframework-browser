@@ -8,9 +8,11 @@ from pathlib import Path
 import pytest
 from robot import run as robot_run
 
-from tools.ci_failures import github, ingest
+from tools.ci_failures import github, ingest, render_html
 from tools.ci_failures.db import connect as connect_db
 from tools.ci_failures.parse import error_signature, parse
+from tools.ci_failures.queries import Spread, VariantRow
+from tools.ci_failures.reading import of as reading_of
 from tools.ci_failures.render_json import document as json_document
 from tools.ci_failures.report import LogLine
 from tools.ci_failures.report import build as build_report
@@ -307,10 +309,10 @@ class TestIngest:
 
         result = ingest.ingest(db, limit=5, report=lambda _: None)
 
-        assert result["runs"] == 1
-        assert result["legs"] == 1
-        assert result["tests"] == 4
-        assert result["failures"] == 2
+        assert result.runs == 1
+        assert result.legs == 1
+        assert result.tests == 4
+        assert result.failures == 2
 
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
@@ -338,8 +340,8 @@ class TestIngest:
 
         second = ingest.ingest(db, limit=5, report=lambda _: None)
 
-        assert second["legs"] == 0
-        assert second["skipped"] == 1
+        assert second.legs == 0
+        assert second.skipped == 1
         assert (
             sqlite3.connect(db)
             .execute("SELECT COUNT(*) FROM test_result")
@@ -355,8 +357,8 @@ class TestIngest:
 
         result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
 
-        assert result["expired"] == 1
-        assert result["legs"] == 0
+        assert result.expired == 1
+        assert result.legs == 0
 
 
 class TestLogMessages:
@@ -396,25 +398,29 @@ class TestLogMessages:
         assert next(r for r in results if r.status == "PASS").log_messages == []
 
     def test_they_survive_the_round_trip(self, fake_ci, tmp_path):
-        from tools.ci_failures.queries import log_messages
+        from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
         ingest.ingest(db, limit=5, report=lambda _: None)
 
-        group = failure_groups(db)[0]
-        entries = log_messages(db, group.latest_result_id)
-        assert [e["message"] for e in entries] == [
-            "Timeout 5000ms exceeded waiting for #id-4f2a"
-        ]
+        lines = log_messages_by_result(reading_of(db))
+
+        # Keyed on the occurrence, never merged: two failures in one leg keep
+        # their own lines, which is the whole reason this replaced the
+        # per-group query.
+        assert sorted(
+            entry.message for entries in lines.values() for entry in entries
+        ) == ["Timeout 5000ms exceeded waiting for #id-4f2a", "teardown blew up"]
+        assert len(lines) == 2
 
     def test_no_messages_is_not_an_error(self, tmp_path):
         from tools.ci_failures.db import connect
-        from tools.ci_failures.queries import log_messages
+        from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
         connect(db).close()
 
-        assert log_messages(db, None) == []
+        assert log_messages_by_result(reading_of(db)) == {}
 
 
 SWALLOWED_SUITE = """\
@@ -693,7 +699,7 @@ class TestFixtureFailureGrouping:
             ],
         )
 
-        fixtures = fixture_failures(db)
+        fixtures = fixture_failures(reading_of(db))
 
         assert len(fixtures) == 1
         assert fixtures[0].occurrences == 2, "two legs, not four test rows"
@@ -709,7 +715,9 @@ class TestFixtureFailureGrouping:
             ],
         )
 
-        assert sorted(fixture_failures(db)[0].affected_tests.split(",")) == [
+        assert sorted(
+            fixture_failures(reading_of(db))[0].affected_tests.split(",")
+        ) == [
             "Test A",
             "Test B",
         ]
@@ -724,13 +732,15 @@ class TestFixtureFailureGrouping:
             ],
         )
 
-        assert [g.longname for g in failure_groups(db)] == ["Outer.Middle.Test C"]
+        assert [g.longname for g in failure_groups(reading_of(db))] == [
+            "Outer.Middle.Test C"
+        ]
 
     def test_the_denominator_is_how_often_the_suite_ran(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         self._seed(db, [("Test A", "Outer.Middle", "FAIL", "suite_teardown", "Outer")])
 
-        fixture = fixture_failures(db)[0]
+        fixture = fixture_failures(reading_of(db))[0]
         assert fixture.suite_runs == 2
         assert fixture.failure_rate == pytest.approx(1.0)
 
@@ -798,7 +808,7 @@ class TestTheFixtureRuleReachesEveryNumber:
         db = tmp_path / "ci.sqlite3"
         self._seed(db)
 
-        assert coverage_by_test(db)["S.T"][0]["ran"] == 2
+        assert coverage_by_test(reading_of(db))["S.T"][0].ran == 2
 
     def test_a_fixture_message_is_not_evidence_about_the_test(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
@@ -849,41 +859,6 @@ class TestVersionsOnAFailure:
         connection.commit()
         connection.close()
 
-    def test_every_version_the_failure_was_seen_on_is_listed(self, tmp_path):
-        db = tmp_path / "ci.sqlite3"
-        self._seed(
-            db,
-            [
-                ("7.4.2", "3.10.11", "v22.1.0", "win32"),
-                ("7.1.1", "3.14.7", "v24.15.0", "win32"),
-            ],
-        )
-
-        group = failure_groups(db)[0]
-
-        assert sorted(group.rf_versions.split(",")) == ["7.1.1", "7.4.2"]
-        assert sorted(group.python_versions.split(",")) == ["3.10.11", "3.14.7"]
-        assert sorted(group.node_versions.split(",")) == ["v22.1.0", "v24.15.0"]
-
-    def test_one_version_throughout_is_listed_once(self, tmp_path):
-        db = tmp_path / "ci.sqlite3"
-        self._seed(
-            db,
-            [
-                ("7.4.2", "3.14.7", "v24.15.0", "win32"),
-                ("7.4.2", "3.14.7", "v24.15.0", "win32"),
-            ],
-        )
-
-        assert failure_groups(db)[0].rf_versions == "7.4.2"
-
-    def test_a_backfilled_run_without_a_node_version_is_not_an_error(self, tmp_path):
-        """Runs from before the metadata was added carry no NodeJS version."""
-        db = tmp_path / "ci.sqlite3"
-        self._seed(db, [("7.4.2", "3.14.7", None, "win32")])
-
-        assert failure_groups(db)[0].node_versions is None
-
     def test_the_combinations_are_reported_not_the_dimensions(self, tmp_path):
         """Two legs, each pairing one rf with one Python, is two combinations.
 
@@ -899,11 +874,12 @@ class TestVersionsOnAFailure:
             ],
         )
 
-        configurations = coverage_by_test(db)["S.Test A"]
+        configurations = coverage_by_test(reading_of(db))["S.Test A"]
 
-        assert sorted(
-            (c["rf_version"], c["python_version"]) for c in configurations
-        ) == [("7.1.1", "3.13.15"), ("7.4.2", "3.14.7")]
+        assert sorted((c.rf_version, c.python_version) for c in configurations) == [
+            ("7.1.1", "3.13.15"),
+            ("7.4.2", "3.14.7"),
+        ]
 
     def test_a_repeated_combination_is_counted_rather_than_repeated(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
@@ -916,11 +892,11 @@ class TestVersionsOnAFailure:
             ],
         )
 
-        configurations = coverage_by_test(db)["S.Test A"]
+        configurations = coverage_by_test(reading_of(db))["S.Test A"]
 
         assert len(configurations) == 2
-        assert configurations[0]["failed"] == 2, "most failed first"
-        assert configurations[1]["failed"] == 1
+        assert configurations[0].failed == 2, "most failed first"
+        assert configurations[1].failed == 1
 
     def test_a_fixture_failure_counts_legs_not_the_rows_it_marked(self, tmp_path):
         """One broken teardown marking four tests is one occurrence, not four."""
@@ -947,11 +923,11 @@ class TestVersionsOnAFailure:
         connection.commit()
         connection.close()
 
-        configurations = coverage_by_fixture(db)[("S", "suite_teardown")]
+        configurations = coverage_by_fixture(reading_of(db))[("S", "suite_teardown")]
 
         assert len(configurations) == 1
-        assert configurations[0]["failed"] == 1, "one leg, not the four rows it marked"
-        assert configurations[0]["ran"] == 1
+        assert configurations[0].failed == 1, "one leg, not the four rows it marked"
+        assert configurations[0].ran == 1
 
 
 class TestScreenshotEvidence:
@@ -1099,6 +1075,116 @@ class TestEmbeddedScreenshots:
         assert strip_embedded_data(None) is None
 
 
+class TestListingRunsCostsTheSameForever:
+    def test_the_newest_runs_are_asked_for_rather_than_all_of_them(self, monkeypatch):
+        """The one call whose cost grew with the age of the repository.
+
+        It walked every page of the workflow's whole history, for both events,
+        sorted the lot and then kept the newest few - on every invocation. The
+        listing is newest first, so the newest `limit` are on the first page.
+        """
+        calls = []
+
+        def capture(args, **kwargs):
+            calls.append(args)
+
+            class Result:
+                returncode = 0
+                stdout = '{"workflow_runs": []}'
+                stderr = ""
+
+            return Result()
+
+        monkeypatch.setattr(github.subprocess, "run", capture)
+
+        github.list_runs(limit=25)
+
+        assert calls, "nothing was asked of gh"
+        for args in calls:
+            assert "--paginate" not in args
+            assert any("per_page=25" in part for part in args)
+
+
+class TestOneBadArtifactCostsOneLeg:
+    """A full ingest is download-bound and runs for half an hour. Everything that
+    can go wrong partway through has to cost the leg it went wrong on and no
+    more, and has to be visible in the summary rather than only in the scroll."""
+
+    def test_a_run_whose_artifacts_cannot_be_listed_is_skipped(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """The listing used to sit outside the guard, so a bad response twenty
+        minutes in ended the ingest with a traceback and no summary."""
+
+        def refuse(run_id):
+            raise github.GhError("502 Bad Gateway")
+
+        monkeypatch.setattr(ingest.github, "list_test_artifacts", refuse)
+        db = tmp_path / "ci.sqlite3"
+
+        result = ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert (result.unlisted, result.legs) == (1, 0)
+
+    def test_an_artifact_that_will_not_unzip_costs_one_leg(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """Catching only GhError let a truncated download end the whole run."""
+
+        def truncated(artifact_id, destination):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"not a zip")
+            return destination
+
+        monkeypatch.setattr(ingest.github, "download_artifact", truncated)
+        db = tmp_path / "ci.sqlite3"
+
+        result = ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert (result.unreachable, result.legs) == (1, 0)
+
+    def test_an_artifact_with_no_output_xml_is_never_fetched_twice(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """There is nothing in it to ingest and there never will be, so it is
+        remembered. It used to be re-downloaded on every future ingest - ten
+        megabytes a time - and counted in no total at all."""
+        empty = tmp_path / "empty.zip"
+        with zipfile.ZipFile(empty, "w") as archive:
+            archive.writestr("log.html", "no output.xml here")
+        downloads = []
+
+        def fake_download(artifact_id, destination):
+            downloads.append(artifact_id)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(empty.read_bytes())
+            return destination
+
+        monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
+        db = tmp_path / "ci.sqlite3"
+
+        first = ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert first.unusable == 1
+        assert len(downloads) == 1, "the second ingest downloaded nothing"
+        assert second.unusable == 0
+
+    def test_a_dry_run_says_the_size_of_the_job_and_fetches_nothing(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        def refuse(artifact_id, destination):
+            raise AssertionError("a dry run must not download")
+
+        monkeypatch.setattr(ingest.github, "download_artifact", refuse)
+        db = tmp_path / "ci.sqlite3"
+
+        result = ingest.ingest(db, limit=5, report=lambda _: None, dry_run=True)
+
+        assert (result.runs, result.legs) == (1, 1)
+        assert connect_db(db).execute("SELECT COUNT(*) FROM leg").fetchone()[0] == 0
+
+
 class TestTransientDownloadFailures:
     """A ten megabyte download over a network fails sometimes. Losing one leg is
     ordinary; losing the other hundred and fifty because of it is not."""
@@ -1124,9 +1210,9 @@ class TestTransientDownloadFailures:
 
         result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
 
-        assert result["unreachable"] == 1
-        assert result["legs"] == 1, "the good artifact still went in"
-        assert result["tests"] == 4
+        assert result.unreachable == 1
+        assert result.legs == 1, "the good artifact still went in"
+        assert result.tests == 4
 
     def test_the_skipped_leg_is_picked_up_next_time(
         self, fake_ci, tmp_path, monkeypatch
@@ -1154,8 +1240,8 @@ class TestTransientDownloadFailures:
         broken["still"] = False
         second = ingest.ingest(db, limit=5, report=lambda _: None)
 
-        assert second["legs"] == 1
-        assert second["unreachable"] == 0
+        assert second.legs == 1
+        assert second.unreachable == 0
 
     def test_a_download_is_retried_before_being_given_up_on(
         self, tmp_path, monkeypatch
@@ -1231,7 +1317,7 @@ class TestGrouping:
             + [("Test A", "PASS", None)] * 4,
         )
 
-        groups = failure_groups(db)
+        groups = failure_groups(reading_of(db))
 
         assert [(g.error_signature, g.failures) for g in groups] == [
             ("error Y", 4),
@@ -1244,7 +1330,7 @@ class TestGrouping:
             db, [("Test A", "FAIL", "error X")] * 2 + [("Test A", "PASS", None)] * 8
         )
 
-        group = failure_groups(db)[0]
+        group = failure_groups(reading_of(db))[0]
 
         assert group.failures == 2
         assert group.total_runs == 10
@@ -1254,23 +1340,17 @@ class TestGrouping:
         db = tmp_path / "ci.sqlite3"
         self._seed(db, [("Test A", "PASS", None)] * 5)
 
-        assert failure_groups(db) == []
-
-    def test_the_evidence_link_points_at_the_artifact(self, tmp_path):
-        db = tmp_path / "ci.sqlite3"
-        self._seed(db, [("Test A", "FAIL", "error X")])
-
-        assert failure_groups(db)[0].latest_artifact_url == "a-url"
+        assert failure_groups(reading_of(db)) == []
 
     def test_totals_count_passes_and_failures_apart(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         self._seed(db, [("Test A", "FAIL", "error X")] + [("Test B", "PASS", None)] * 3)
 
-        summary = totals(db)
+        summary = totals(reading_of(db))
 
-        assert summary["results"] == 4
-        assert summary["failures"] == 1
-        assert summary["tests"] == 2
+        assert summary.results == 4
+        assert summary.failures == 1
+        assert summary.tests == 2
 
 
 class TestCaseFoldedGrouping:
@@ -1356,7 +1436,7 @@ class TestCaseFoldedGrouping:
         db = tmp_path / "ci.sqlite3"
         self._seed(db, self._deadlines())
 
-        groups = failure_groups(db)
+        groups = failure_groups(reading_of(db))
 
         assert len(groups) == 1
         assert groups[0].failures == 3
@@ -1365,25 +1445,27 @@ class TestCaseFoldedGrouping:
         db = tmp_path / "ci.sqlite3"
         self._seed(db, self._deadlines())
 
-        assert failure_groups(db)[0].signature_key == "deadline exceeded"
+        assert failure_groups(reading_of(db))[0].signature_key == "deadline exceeded"
 
     def test_the_spellings_survive_the_merge(self, tmp_path):
         """Which side of the boundary gave up first is evidence, not noise."""
         db = tmp_path / "ci.sqlite3"
         self._seed(db, self._deadlines())
 
-        variants = signature_variants(db)[("T", "test", "deadline exceeded")]
+        variants = signature_variants(reading_of(db))[
+            ("T", "test", "deadline exceeded")
+        ]
 
         assert variants == [
-            {"signature": "Deadline Exceeded", "occurrences": 2},
-            {"signature": "Deadline exceeded", "occurrences": 1},
+            VariantRow(signature="Deadline Exceeded", occurrences=2),
+            VariantRow(signature="Deadline exceeded", occurrences=1),
         ]
 
     def test_a_group_with_one_spelling_reports_no_variants(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
-        assert signature_variants(db) == {}
+        assert signature_variants(reading_of(db)) == {}
 
     def test_suite_fixtures_are_merged_the_same_way(self, tmp_path):
         """Where it actually happens: the real case is a suite teardown."""
@@ -1396,13 +1478,13 @@ class TestCaseFoldedGrouping:
             ],
         )
 
-        fixtures = fixture_failures(db)
+        fixtures = fixture_failures(reading_of(db))
 
         assert len(fixtures) == 1
         assert fixtures[0].occurrences == 3
         assert (
             len(
-                fixture_signature_variants(db)[
+                fixture_signature_variants(reading_of(db))[
                     ("Suite X", "suite_teardown", "deadline exceeded")
                 ]
             )
@@ -1433,9 +1515,9 @@ class TestPayloadForALanguageModel:
             + [{"test": "T", "status": "PASS", "platform": "darwin"}] * 4,
         )
 
-        coverage = coverage_by_test(db)["T"]
+        coverage = coverage_by_test(reading_of(db))["T"]
 
-        assert {c["platform"]: (c["ran"], c["failed"]) for c in coverage} == {
+        assert {c.platform: (c.ran, c.failed) for c in coverage} == {
             "linux": (8, 3),
             "darwin": (4, 0),
         }
@@ -1706,14 +1788,11 @@ class TestWhatSurroundedTheFailure:
             ],
         )
 
-        durations = pass_durations_by_test(db)
+        durations = pass_durations_by_test(reading_of(db))
 
-        assert durations[("T", "linux", "3.13.15", "7.4.2", None)] == {
-            "min": 1001,
-            "median": 1400,
-            "p95": 1853,
-            "max": 1853,
-        }
+        assert durations[("T", "linux", "3.13.15", "7.4.2", None)] == Spread(
+            min=1001, median=1400, p95=1853, max=1853
+        )
 
     def test_the_passing_durations_reach_the_document(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
@@ -1749,8 +1828,8 @@ class TestWhatSurroundedTheFailure:
             ],
         )
 
-        assert latest_run(db)["commit"] == "new"
-        assert latest_run(db)["failures"] == 0
+        assert latest_run(reading_of(db)).commit == "new"
+        assert latest_run(reading_of(db)).failures == 0
         assert build_json(db)["window"]["latest_run"]["failures"] == 0
 
     def test_only_tests_that_failed_are_measured(self, tmp_path):
@@ -1767,8 +1846,8 @@ class TestWhatSurroundedTheFailure:
             ],
         )
 
-        assert {key[0] for key in pass_durations_by_test(db)} == {"T"}
-        assert len(runs_either_side(db)) == 1
+        assert {key[0] for key in pass_durations_by_test(reading_of(db))} == {"T"}
+        assert len(runs_either_side(reading_of(db))) == 1
 
 
 class TestFixtureEntriesAskTheSameQuestions:
@@ -1845,8 +1924,8 @@ class TestFixtureEntriesAskTheSameQuestions:
         )
 
         assert {
-            (c["platform"], c["ran"], c["failed"])
-            for c in coverage_by_fixture(db)[("Suite X", "suite_teardown")]
+            (c.platform, c.ran, c.failed)
+            for c in coverage_by_fixture(reading_of(db))[("Suite X", "suite_teardown")]
         } == {("win32", 2, 1), ("linux", 2, 0)}
 
     def test_a_fixture_rate_carries_no_pass_duration(self, tmp_path):
@@ -2127,7 +2206,7 @@ class TestWhichAttemptRanIt:
 
         connection = connect_db(db)
         assert connection.execute("SELECT attempt FROM leg").fetchone()[0] is None
-        assert totals(db)["legs_without_attempt"] == 1
+        assert totals(reading_of(db)).legs_without_attempt == 1
         connection.close()
 
 
@@ -2189,7 +2268,7 @@ class TestTheDenominatorAndTheRerun:
             ],
         )
 
-        runs, failures = first_attempt_counts_by_test(db)
+        runs, failures = first_attempt_counts_by_test(reading_of(db))
 
         assert runs["T"] == 1
         assert ("T", "boom") not in failures
@@ -2592,6 +2671,111 @@ class TestWhatChangedSinceLastTime:
         assert not snapshot_path(db).exists()
 
 
+class TestTheReading:
+    """The database as one Report reads it: windowed, with Subjects resolved.
+
+    Both restrictions used to hold only because every query happened to go
+    through one private helper, and a query written not to would have been
+    answered from the whole archive with nothing to say so.
+    """
+
+    def _two_fixture_failures(self, db: Path, now) -> None:
+        """One broken teardown inside a one-day window, one forty days before."""
+        from datetime import timedelta, timezone
+
+        connection = connect_db(db)
+        for index, day in enumerate((now - timedelta(days=40), now), start=1):
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', 's', 'main', ?, 'failure', 'u')",
+                (index, day.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, platform, "
+                "ingested_at) VALUES (?, ?, ?, 'a', 'linux', 'now')",
+                (index, index, index),
+            )
+            connection.execute(
+                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                "status, message, error_signature, failure_scope, scope_owner) "
+                "VALUES (?, 'S.T', 'T', 'S', 'FAIL', 'm', 'sig', 'suite_teardown', 'S')",
+                (index,),
+            )
+        connection.commit()
+        connection.close()
+
+    def test_a_connection_nobody_restricted_is_not_a_reading(self, tmp_path):
+        """The one check between a hand-made connection and a report that
+        silently spans all history."""
+        from tools.ci_failures.reading import Reading
+
+        db = tmp_path / "ci.sqlite3"
+
+        with pytest.raises(ValueError, match="not a Reading"):
+            Reading(connect_db(db))
+
+    def test_the_subject_views_are_windowed_like_everything_else(self, tmp_path):
+        """The guarantee that would break if these became permanent views.
+
+        A view in `main` resolves its body against `main`, cannot see the
+        Window's shadowing views, and would answer from the whole archive - no
+        error, just a windowed report that is not windowed.
+        """
+        from datetime import datetime
+
+        from tools.ci_failures.window import of_days
+
+        now = datetime.now().astimezone()
+        db = tmp_path / "ci.sqlite3"
+        self._two_fixture_failures(db, now)
+
+        with reading_of(db, of_days(1, now)) as windowed:
+            inside = windowed.execute(
+                "SELECT COUNT(*) FROM fixture_failure"
+            ).fetchone()[0]
+        with reading_of(db) as everything:
+            all_history = everything.execute(
+                "SELECT COUNT(*) FROM fixture_failure"
+            ).fetchone()[0]
+
+        assert (inside, all_history) == (1, 2)
+
+
+class TestTheLogLinesShown:
+    """The opening lines and every FAIL or WARN, with a marker where lines were
+    passed over. Asked of `_log_html` directly: it takes LogLines and returns a
+    string, so a database would only be in the way."""
+
+    def _lines(self, *levels: str) -> tuple[LogLine, ...]:
+        return tuple(
+            LogLine(level=level, keyword="K", origin=None, message=f"line {n}")
+            for n, level in enumerate(levels)
+        )
+
+    def test_a_marker_stands_where_lines_were_passed_over(self):
+        entries = self._lines("INFO", "INFO", "INFO", "INFO", "INFO", "FAIL")
+
+        assert render_html._log_html(entries).count('class="logline gap"') == 1
+
+    def test_nothing_passed_over_needs_no_marker(self):
+        entries = self._lines("INFO", "INFO", "INFO", "FAIL")
+
+        assert 'class="logline gap"' not in render_html._log_html(entries)
+
+    def test_two_identical_lines_are_two_positions_not_one(self):
+        """A LogLine is a frozen dataclass, so two identical lines compare equal.
+
+        Looking the shown line up by value found the earlier twin instead of
+        this one and made the distance negative, which silently dropped the
+        marker. Robot Framework logs identical lines routinely.
+        """
+        warn = LogLine(level="WARN", keyword="K", origin=None, message="retrying")
+        middle = self._lines("INFO", "INFO", "INFO", "INFO")
+        entries = (warn, *middle, warn)
+
+        assert render_html._log_html(entries).count('class="logline gap"') == 1
+
+
 class TestScreenshotRanking:
     """Which picture is the evidence is a question about the log lines, so it is
     answered at report time. Doing it during parsing would freeze a display
@@ -2757,7 +2941,7 @@ class TestTheReportingWindow:
         db, today = four_days
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        assert totals(db, window=of_days(1, now))["runs"] == 1
+        assert totals(reading_of(db, of_days(1, now))).runs == 1
 
     def test_two_days_is_today_and_yesterday(self, four_days):
         from tools.ci_failures.window import of_days
@@ -2766,7 +2950,7 @@ class TestTheReportingWindow:
         db, today = four_days
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        assert totals(db, window=of_days(2, now))["runs"] == 2
+        assert totals(reading_of(db, of_days(2, now))).runs == 2
 
     def test_the_denominator_is_windowed_too(self, four_days):
         """The point of the flag. A rate that kept its all-time denominator
@@ -2778,7 +2962,7 @@ class TestTheReportingWindow:
         db, today = four_days
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        group = failure_groups(db, window=of_days(2, now))[0]
+        group = failure_groups(reading_of(db, of_days(2, now)))[0]
 
         assert (group.failures, group.total_runs) == (2, 2)
 
@@ -2801,8 +2985,8 @@ class TestTheReportingWindow:
         )
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        assert failure_groups(db, window=of_days(1, now)) == []
-        assert len(failure_groups(db)) == 1, "still there over all history"
+        assert failure_groups(reading_of(db, of_days(1, now))) == []
+        assert len(failure_groups(reading_of(db))) == 1, "still there over all history"
 
     def test_runs_with_nothing_failing_is_not_the_same_as_no_runs(self, tmp_path):
         """The two empty reports. One means the fix held; the other means you
@@ -2825,11 +3009,11 @@ class TestTheReportingWindow:
         unfed = tmp_path / "unfed.sqlite3"
         self._seed(unfed, [(1, stale, [("Test A", "FAIL")])])
 
-        ran_clean = totals(clean, window=of_days(1, now))
-        nothing_ran = totals(unfed, window=of_days(1, now))
+        ran_clean = totals(reading_of(clean, of_days(1, now)))
+        nothing_ran = totals(reading_of(unfed, of_days(1, now)))
 
-        assert (ran_clean["runs"], ran_clean["failures"]) == (1, 0)
-        assert nothing_ran["runs"] == 0
+        assert (ran_clean.runs, ran_clean.failures) == (1, 0)
+        assert nothing_ran.runs == 0
 
     def test_the_window_is_calendar_days_not_the_last_n_times_24_hours(self, tmp_path):
         """A run at half past eleven last night is yesterday, whatever the hour
@@ -2852,7 +3036,7 @@ class TestTheReportingWindow:
         )
         now = datetime.combine(today, time(1, 0)).astimezone()
 
-        groups = failure_groups(db, window=of_days(1, now))
+        groups = failure_groups(reading_of(db, of_days(1, now)))
 
         assert [g.longname for g in groups] == ["Test B"]
 
@@ -2869,27 +3053,31 @@ class TestTheReportingWindow:
 
         assert (
             sum(
-                e["ran"]
-                for v in coverage_by_test(db, window=window).values()
+                e.ran
+                for v in coverage_by_test(reading_of(db, window)).values()
                 for e in v
             )
             == 4
         )
         assert (
-            len(occurrences_by_test(db, window=window)[("Test A", "test", "error x")])
+            len(
+                occurrences_by_test(reading_of(db, window))[
+                    ("Test A", "test", "error x")
+                ]
+            )
             == 2
         )
-        assert len(runs_either_side(db, window=window)) == 2
-        assert platform_breakdown(db, window=window)[0]["legs"] == 2
-        assert first_attempt_counts_by_test(db, window=window)[0]["Test A"] == 2
-        assert latest_run(db, window=window)["run"] == 1
+        assert len(runs_either_side(reading_of(db, window))) == 2
+        assert platform_breakdown(reading_of(db, window))[0].legs == 2
+        assert first_attempt_counts_by_test(reading_of(db, window))[0]["Test A"] == 2
+        assert latest_run(reading_of(db, window)).run == 1
 
     def test_no_window_reports_over_everything(self, four_days):
         """The default is the behaviour the command already had."""
         db, _ = four_days
 
-        assert totals(db)["runs"] == 4
-        assert failure_groups(db)[0].failures == 4
+        assert totals(reading_of(db)).runs == 4
+        assert failure_groups(reading_of(db))[0].failures == 4
 
     def test_a_window_needs_at_least_one_day(self):
         from tools.ci_failures.window import of_days

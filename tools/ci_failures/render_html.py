@@ -15,10 +15,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .report import (
+    FirstAttempt,
     FixtureEntry,
     KnownCause,
     LogLine,
     Occurrence,
+    Outcome,
     Rate,
     RawMessage,
     Report,
@@ -34,6 +36,8 @@ _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&fa
 _CSS = r"""
 :root {
   color-scheme: light;
+  --sans:       "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --mono:       "IBM Plex Mono", ui-monospace, monospace;
   --surface:    #fcfcfb;
   --plane:      #f9f9f7;
   --ink:        #0b0b0b;
@@ -83,7 +87,7 @@ body {
   margin: 0;
   background: var(--plane);
   color: var(--ink);
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--sans);
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
@@ -106,7 +110,7 @@ h1 {
   text-wrap: balance;
 }
 .window {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 13px;
   color: var(--ink-muted);
 }
@@ -132,7 +136,7 @@ h1 {
 }
 .tile:first-child { border-top: none; }
 .tile .value {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 26px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
@@ -168,7 +172,7 @@ h2 {
 
 .magnitude { display: flex; flex-direction: column; gap: 6px; }
 .count {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: 20px;
   font-weight: 500;
@@ -177,7 +181,7 @@ h2 {
 .track { height: 8px; background: var(--bar-soft); border-radius: 4px; overflow: hidden; }
 .fill { height: 100%; background: var(--bar); border-radius: 4px; }
 .rate {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--ink-muted);
@@ -185,14 +189,14 @@ h2 {
 
 .identity { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .testname {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 13.5px;
   font-weight: 500;
   overflow-wrap: anywhere;
 }
 .suite { color: var(--ink-muted); font-weight: 400; }
 .error {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 12.5px;
   color: var(--ink-2);
   background: var(--plane);
@@ -203,7 +207,7 @@ h2 {
 }
 .error.is-empty { border-left-color: var(--baseline); color: var(--ink-muted); font-style: italic; }
 .where {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 11.5px;
   color: var(--ink-2);
   display: flex;
@@ -230,7 +234,7 @@ h2 {
 .kind[data-kind="project"] { color: var(--ink-2); }
 
 .seen {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 11.5px;
   color: var(--ink-2);
   display: flex;
@@ -261,7 +265,7 @@ h2 {
   white-space: nowrap;
 }
 .chip .k { color: var(--ink-muted); }
-.chip.kw { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.chip.kw { font-family: var(--mono); }
 a.evidence { color: var(--bar); text-decoration: none; font-size: 12px; border-bottom: 1px solid transparent; }
 a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 :focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
@@ -367,7 +371,7 @@ a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
   display: grid;
   grid-template-columns: 52px minmax(0, 1fr);
   gap: 10px;
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 11.5px;
   line-height: 1.5;
   padding: 2px 0;
@@ -386,7 +390,7 @@ a.evidence:hover, a.evidence:focus-visible { border-bottom-color: var(--bar); }
 .logline.gap .txt { color: var(--ink-muted); }
 
 .shots {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 11.5px;
   color: var(--ink-2);
   display: flex;
@@ -420,7 +424,7 @@ details.more[open] > summary::before { content: "\25BE  "; }
 details.more > summary:hover { color: var(--ink-2); }
 
 .affected {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-family: var(--mono);
   font-size: 11.5px;
   color: var(--ink-muted);
   overflow-wrap: anywhere;
@@ -439,15 +443,15 @@ details.more > summary:hover { color: var(--ink-2); }
 
 .platforms { display: flex; flex-direction: column; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
 .prow { background: var(--surface); display: grid; grid-template-columns: 92px minmax(0, 1fr) 132px; gap: 16px; align-items: center; padding: 12px 20px; }
-.pname { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 13px; }
-.pnum { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); text-align: right; }
+.pname { font-family: var(--mono); font-size: 13px; }
+.pnum { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-2); text-align: right; }
 .ptrack { height: 10px; background: var(--bar-soft); border-radius: 4px; overflow: hidden; }
 .pfill { height: 100%; background: var(--bar); border-radius: 4px; }
 
 .empty { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; padding: 40px 24px; text-align: center; color: var(--ink-muted); }
 
 footer { border-top: 1px solid var(--rule); padding-top: 16px; font-size: 12px; color: var(--ink-muted); display: flex; flex-direction: column; gap: 4px; }
-code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+code { font-family: var(--mono); }
 
 .seen .n.is-clean { color: var(--baseline); }
 .seen .ms { color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
@@ -457,7 +461,7 @@ code { font-family: "IBM Plex Mono", ui-monospace, monospace; }
 .occ { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--rule); padding-top: 10px; }
 .occ .hd { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-muted); }
 .orow { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; font-size: 12px; }
-.odate, .oleg { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; }
+.odate, .oleg { font-family: var(--mono); font-size: 11px; }
 .oleg { color: var(--ink-2); }
 .otag {
   font-size: 11px; line-height: 1.7; padding: 0 6px; border-radius: 3px;
@@ -492,15 +496,6 @@ SHOWN_LOG_LINES = 3
 _LOUD_LEVELS = {"FAIL", "WARN", "ERROR"}
 
 
-def _skipped_before(
-    entries: tuple[LogLine, ...], shown: list[LogLine], index: int
-) -> bool:
-    """Whether lines were passed over between this shown line and the one before."""
-    previous = entries.index(shown[index - 1])
-    current = entries.index(shown[index])
-    return current - previous > 1
-
-
 def _log_line(entry: LogLine, skipped: bool = False) -> str:
     level = entry.level or ""
     gap = (
@@ -529,15 +524,21 @@ def _log_html(entries: tuple[LogLine, ...]) -> str:
         return ""
     origins = {e.origin for e in entries if e.origin}
     note = _origin_note(sorted(origins)[0]) if len(origins) == 1 else ""
-    visible = {id(e) for e in entries[:SHOWN_LOG_LINES]}
-    visible |= {id(e) for e in entries if (e.level or "") in _LOUD_LEVELS}
-    shown_entries = [e for e in entries if id(e) in visible]
-    rest = [e for e in entries if id(e) not in visible]
+    shown_at = [
+        position
+        for position, entry in enumerate(entries)
+        if position < SHOWN_LOG_LINES or (entry.level or "") in _LOUD_LEVELS
+    ]
+    rest = [e for position, e in enumerate(entries) if position not in set(shown_at)]
     shown = note + "".join(
         _log_line(
-            entry, skipped=index > 0 and _skipped_before(entries, shown_entries, index)
+            entries[position],
+            # A gap marker means lines were passed over, so it asks about the
+            # distance between two positions and never about the lines
+            # themselves, which may be identical.
+            skipped=index > 0 and position - shown_at[index - 1] > 1,
         )
-        for index, entry in enumerate(shown_entries)
+        for index, position in enumerate(shown_at)
     )
     if not rest:
         return f'<div class="log">{shown}</div>'
@@ -591,11 +592,12 @@ SHOWN_CO_FAILURES = 3
 
 
 def _configuration_label(rate: Rate) -> str:
+    """Escaped here, because the separator between the parts is markup."""
     parts = [rate.platform or "?"]
     for label, value in (("rf", rate.rf), ("py", rate.python), ("node", rate.node)):
         if value:
             parts.append(f"{label} {value}")
-    return " &middot; ".join(parts)
+    return " &middot; ".join(_e(part) for part in parts)
 
 
 def _rates_html(rates: tuple[Rate, ...], never_ran_on: tuple[str, ...]) -> str:
@@ -639,7 +641,7 @@ def _rates_html(rates: tuple[Rate, ...], never_ran_on: tuple[str, ...]) -> str:
             )
         rows.append(
             f'<div class="row"><span class="k">{"ran on" if not index else ""}</span>'
-            f'<span class="cfg">{_e(_configuration_label(rate))}</span>'
+            f'<span class="cfg">{_configuration_label(rate)}</span>'
             f'<span class="n{"" if rate.failed else " is-clean"}">'
             f"{rate.failed} of {rate.ran}</span>"
             f"{spread}</div>"
@@ -650,13 +652,7 @@ def _rates_html(rates: tuple[Rate, ...], never_ran_on: tuple[str, ...]) -> str:
             f'<span class="never">never ran on {_e(", ".join(never_ran_on))}</span>'
             "</div>"
         )
-    return f'<div class="seen">{"".join(rows)}</div>'.replace(
-        "&amp;middot;", "&middot;"
-    ).replace("&amp;ndash;", "&ndash;")
-
-
-def _leg_label(name: str | None) -> str:
-    return (name or "?").replace("Test results-", "")
+    return f'<div class="seen">{"".join(rows)}</div>'
 
 
 def _cause_html(cause: KnownCause | None) -> str:
@@ -733,7 +729,7 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
         ):
             if not neighbour:
                 continue
-            bad = " is-bad" if neighbour.outcome in ("fail", "mixed") else ""
+            bad = " is-bad" if neighbour.outcome in Outcome.BAD else ""
             tags.append(
                 f'<span class="otag{bad}">{label} {_e(neighbour.outcome)}</span>'
             )
@@ -773,7 +769,7 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
         rows.append(
             f'<div class="orow">'
             f'<span class="odate">{_e((occurrence.at or "")[:10])}</span>'
-            f'<span class="oleg">{_e(_leg_label(occurrence.leg))}</span>'
+            f'<span class="oleg">{_e(occurrence.leg or "?")}</span>'
             f"{''.join(tags)}</div>{also}{_evidence_html(occurrence)}"
         )
     hidden = len(occurrences) - SHOWN_OCCURRENCES
@@ -785,21 +781,24 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
     return (
         '<div class="occ"><div class="hd">every occurrence</div>'
         f"{''.join(rows)}{more}</div>"
-    ).replace("&amp;rarr;", "&rarr;")
+    )
 
 
-def _first_attempt_html(failures: int, ran: int, total_runs: int) -> str:
+def _first_attempt_html(first: FirstAttempt, total_runs: int) -> str:
     """Only when a re-run actually moved the denominator.
 
     A leg is re-run because it failed, so re-attempts land where the failures
     are and pull the rate down. Where nothing was re-run the two numbers are the
     same and printing both is noise.
+
+    The rate is the Report's, never divided again here: it is carried exact so
+    that rounding is the one thing a Rendering decides about it.
     """
-    if ran >= total_runs:
+    if first.ran >= total_runs:
         return ""
-    rate = failures / ran if ran else 0
     return (
-        f'<span class="first">{failures} / {ran} on first attempts ({rate:.1%})</span>'
+        f'<span class="first">{first.failures} / {first.ran} '
+        f"on first attempts ({first.rate:.1%})</span>"
     )
 
 
@@ -919,7 +918,7 @@ def _changes_html(changes: dict | None, bounded: bool) -> str:
     return (
         "  <section>\n    <h2>Since the last report</h2>\n"
         f'    <p class="section-note">{note}</p>\n{body}  </section>\n'
-    ).replace("&amp;rarr;", "&rarr;")
+    )
 
 
 def _about_html(about: dict) -> str:
@@ -937,7 +936,7 @@ def _about_html(about: dict) -> str:
         '  <section>\n    <details class="rules">'
         f"<summary>How these numbers are built &mdash; {len(about)} rules</summary>\n"
         f"    <dl>\n{items}    </dl></details>\n  </section>\n"
-    ).replace("&amp;mdash;", "&mdash;")
+    )
 
 
 def _group_html(entry: TestEntry, widest: int) -> str:
@@ -952,11 +951,7 @@ def _group_html(entry: TestEntry, widest: int) -> str:
     }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{counts.rate:.1%} of runs</span>
-          {
-        _first_attempt_html(
-            counts.first_attempt.failures, counts.first_attempt.ran, counts.ran
-        )
-    }
+          {_first_attempt_html(counts.first_attempt, counts.ran)}
         </div>
         <div class="identity">
           <div class="testname"><span class="suite">{_e(suite)}.</span>{_e(leaf)}</div>
@@ -985,13 +980,7 @@ def _fixture_html(entry: FixtureEntry, widest: int) -> str:
     }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
           <span class="rate">{counts.rate:.1%} of suite runs</span>
-          {
-        _first_attempt_html(
-            counts.first_attempt.failures,
-            counts.first_attempt.ran,
-            counts.suite_runs,
-        )
-    }
+          {_first_attempt_html(counts.first_attempt, counts.suite_runs)}
         </div>
         <div class="identity">
           <div><span class="scope">{_e(kind)}</span></div>

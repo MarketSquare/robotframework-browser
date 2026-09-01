@@ -53,4 +53,15 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def ingested_artifact_ids(connection: sqlite3.Connection) -> set[int]:
-    return {row[0] for row in connection.execute("SELECT artifact_id FROM leg")}
+    """Artifacts there is no reason to download again.
+
+    The ones already in, and the ones that came down and held no output.xml.
+    Both are settled; only the ones that failed on the way are worth retrying.
+    """
+    return {
+        row[0]
+        for row in connection.execute(
+            "SELECT artifact_id FROM leg "
+            "UNION SELECT artifact_id FROM unusable_artifact"
+        )
+    }

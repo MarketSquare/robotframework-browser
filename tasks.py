@@ -1926,7 +1926,7 @@ def demo_app(c):
 
 
 @task
-def ci_ingest(c, limit=25, db=None):
+def ci_ingest(c, limit=25, db=None, dry_run=False):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
@@ -1935,17 +1935,40 @@ def ci_ingest(c, limit=25, db=None):
     Args:
         limit: How many runs to consider, newest first.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        dry_run: Say which legs would be fetched and fetch nothing. A full
+            ingest is download-bound and can run for half an hour; the listing
+            that says how much work it is costs a few requests.
     """
     from tools.ci_failures.ingest import ingest
 
-    totals = ingest(db_path=Path(db) if db else CI_FAILURES_DB, limit=int(limit))
-    print(
-        f"\nIngested {totals['runs']} run(s), {totals['legs']} leg(s), "
-        f"{totals['tests']} results, {totals['failures']} failures. "
-        f"{totals['skipped']} run(s) already complete, "
-        f"{totals['expired']} artifact(s) expired, "
-        f"{totals['unreachable']} could not be downloaded."
+    totals = ingest(
+        db_path=Path(db) if db else CI_FAILURES_DB,
+        limit=int(limit),
+        dry_run=bool(dry_run),
     )
+    if dry_run:
+        print(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
+        return
+    print(f"\n{totals.line()}")
+
+
+@task
+def ci_backfill_attempts(c, db=None):
+    """Resolves the attempt of legs ingested before it was being recorded.
+
+    Downloads nothing - a run says how many attempts it had and the artifact
+    listing says when each was created, which is all the resolution needs.
+
+    Run by hand rather than on every ingest, which is where it used to sit. Its
+    whole population is databases predating the column, so on any other it was a
+    connection opened and a query returning no rows, every time.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+    """
+    from tools.ci_failures.ingest import backfill_attempts
+
+    backfill_attempts(Path(db) if db else CI_FAILURES_DB)
 
 
 @task
@@ -2015,13 +2038,18 @@ def ci_report(
         return
     if window.bounded:
         from tools.ci_failures.queries import latest_run, totals
+        from tools.ci_failures.reading import of as reading_of
 
-        if not totals(db_path, window=window)["runs"]:
+        with reading_of(db_path, window) as windowed:
+            ran = totals(windowed).runs
+        if not ran:
             # Nothing ran is not the same fact as nothing failed, and an empty
             # page cannot say which one it is. So no page.
-            newest = latest_run(db_path)
+            # Read unwindowed on purpose: the point is what was ingested at all.
+            with reading_of(db_path) as everything:
+                newest = latest_run(everything)
             seen = (
-                f"newest ingested run {newest['at'][:10]}"
+                f"newest ingested run {newest.at[:10]}"
                 if newest
                 else "nothing ingested yet"
             )

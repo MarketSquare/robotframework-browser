@@ -124,3 +124,19 @@ CREATE INDEX IF NOT EXISTS idx_result_leg    ON test_result(leg_id);
 CREATE INDEX IF NOT EXISTS idx_result_name   ON test_result(longname);
 CREATE INDEX IF NOT EXISTS idx_result_status ON test_result(status);
 CREATE INDEX IF NOT EXISTS idx_result_group  ON test_result(longname, error_signature);
+
+-- An artifact that came down and turned out to hold no output.xml. There is
+-- nothing to ingest and there never will be, so it is remembered rather than
+-- fetched again on every future run: without this the incremental guarantee in
+-- `ingest.py` did not hold for it, and it was counted in no total either, so it
+-- cost ten megabytes a time and said nothing.
+--
+-- Only for what the artifact *is*. An artifact that would not download, or a
+-- zip that arrived truncated, is a fact about the network and gets retried.
+CREATE TABLE IF NOT EXISTS unusable_artifact (
+    artifact_id INTEGER PRIMARY KEY,
+    run_id      INTEGER NOT NULL,
+    name        TEXT    NOT NULL,
+    reason      TEXT    NOT NULL,
+    noticed_at  TEXT    NOT NULL
+);
