@@ -20,7 +20,7 @@ from tools.ci_failures.queries import (
     coverage_by_test,
     first_attempt_counts_by_test,
     latest_run,
-    neighbouring_outcomes,
+    runs_either_side,
     pass_durations_by_test,
     failure_groups,
     fixture_signature_variants,
@@ -1372,7 +1372,7 @@ class TestCaseFoldedGrouping:
         db = tmp_path / "ci.sqlite3"
         self._seed(db, self._deadlines())
 
-        variants = signature_variants(db)[("T", "deadline exceeded")]
+        variants = signature_variants(db)[("T", "test", "deadline exceeded")]
 
         assert variants == [
             {"signature": "Deadline Exceeded", "occurrences": 2},
@@ -1768,7 +1768,7 @@ class TestWhatSurroundedTheFailure:
         )
 
         assert {key[0] for key in pass_durations_by_test(db)} == {"T"}
-        assert len(neighbouring_outcomes(db)) == 1
+        assert len(runs_either_side(db)) == 1
 
 
 class TestFixtureEntriesAskTheSameQuestions:
@@ -2875,8 +2875,11 @@ class TestTheReportingWindow:
             )
             == 4
         )
-        assert len(occurrences_by_test(db, window=window)[("Test A", "error x")]) == 2
-        assert len(neighbouring_outcomes(db, window=window)) == 2
+        assert (
+            len(occurrences_by_test(db, window=window)[("Test A", "test", "error x")])
+            == 2
+        )
+        assert len(runs_either_side(db, window=window)) == 2
         assert platform_breakdown(db, window=window)[0]["legs"] == 2
         assert first_attempt_counts_by_test(db, window=window)[0]["Test A"] == 2
         assert latest_run(db, window=window)["run"] == 1

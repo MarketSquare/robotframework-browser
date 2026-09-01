@@ -31,17 +31,17 @@ from .queries import (
     first_attempt_counts_by_test,
     fixture_co_failures,
     fixture_failures,
+    fixture_runs_either_side,
     fixture_signature_variants,
     latest_run,
     log_messages_by_result,
     messages_by_fixture,
     messages_by_test,
-    neighbouring_fixture_outcomes,
-    neighbouring_outcomes,
     occurrences_by_fixture,
     occurrences_by_test,
     pass_durations_by_test,
     platform_breakdown,
+    runs_either_side,
     signature_variants,
     totals,
 )
@@ -775,7 +775,7 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
     variants = signature_variants(db_path, window=window)
     fixture_variants = fixture_signature_variants(db_path, window=window)
     durations = pass_durations_by_test(db_path, window=window)
-    neighbours = neighbouring_outcomes(db_path, window=window)
+    neighbours = runs_either_side(db_path, window=window)
     alongside = co_failures(db_path, window=window)
     first_runs, first_failures = first_attempt_counts_by_test(db_path, window=window)
     logs = log_messages_by_result(db_path, window=window)
@@ -783,7 +783,9 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
 
     tests = []
     for group in failure_groups(db_path, limit=limit, window=window):
-        key = (group.longname, group.signature_key)
+        # One key shape for every Subject, test or fixture:
+        # (owner, scope, signature).
+        key = (group.longname, "test", group.signature_key)
         rates, never = _rates(
             coverage.get(group.longname, []),
             platforms,
@@ -822,7 +824,7 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
     fixture_coverage = coverage_by_fixture(db_path, window=window)
     fixture_occurrences = occurrences_by_fixture(db_path, window=window)
     fixture_messages = messages_by_fixture(db_path, window=window)
-    fixture_neighbours = neighbouring_fixture_outcomes(db_path, window=window)
+    fixture_neighbours = fixture_runs_either_side(db_path, window=window)
     fixture_alongside = fixture_co_failures(db_path, window=window)
     first_fixture_runs, first_fixture_failures = first_attempt_counts_by_fixture(
         db_path, window=window

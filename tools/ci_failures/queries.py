@@ -283,8 +283,7 @@ def occurrences_by_test(
     connection = _connect(db_path, window)
     rows = connection.execute(
         """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+        SELECT f.subject_owner, f.subject_scope, f.signature_key,
                f.id AS result_id, f.elapsed_ms,
                f.screenshots, f.screenshot_status,
                r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
@@ -300,7 +299,7 @@ def occurrences_by_test(
     connection.close()
     grouped: dict[tuple, list[dict]] = {}
     for row in rows:
-        key = (row["longname"], row["signature_key"])
+        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
         grouped.setdefault(key, []).append(
             {
                 "result_id": row["result_id"],
@@ -462,10 +461,14 @@ def _verdict(statuses: list[tuple[str, str | None]]) -> str:
     return "pass" if "PASS" in own else "skip"
 
 
-def neighbouring_outcomes(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[int, dict]:
-    """What the same test did on the same leg in the runs either side of this one.
+def runs_either_side(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, dict]:
+    """The Adjacent Runs of each failure: what the same test did on the same Leg
+    in the Run immediately before this one and the one immediately after.
+
+    Named for the Runs and not for anything inside a test. The keywords a few
+    lines above the one that broke are a different question and this does not
+    answer it - see **Adjacent Run** in `CONTEXT.md`, and `0012` section 10 for
+    the question that would.
 
     A rate says how often a test fails. It cannot say whether a failure is a blip
     on a leg that is otherwise healthy or the point where something broke and
@@ -477,7 +480,7 @@ def neighbouring_outcomes(
     nothing to learn from the linux run that happened to come next.
 
     Retries answer the same question with the commit held constant, which is the
-    one thing the neighbouring runs cannot do - a real regression, fixed by the
+    one thing the Adjacent Runs cannot do - a real regression, fixed by the
     next commit, has passing neighbours and looks like a flake. There is no
     automatic retry in any of the three workflows, so a leg that ran more than
     once in one run was re-run by hand; when the test passed on one of those
@@ -602,10 +605,9 @@ def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[d
 def _failing_fixtures(connection) -> list:
     return connection.execute(
         """
-        SELECT DISTINCT scope_owner, failure_scope FROM test_result
-        WHERE status = 'FAIL'
-          AND failure_scope IN ('suite_setup', 'suite_teardown')
-          AND scope_owner IS NOT NULL
+        SELECT DISTINCT subject_owner AS scope_owner,
+                        subject_scope  AS failure_scope
+        FROM fixture_failure WHERE subject_owner IS NOT NULL
         """
     ).fetchall()
 
@@ -650,9 +652,9 @@ def occurrences_by_fixture(
     connection = _connect(db_path, window)
     rows = connection.execute(
         """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               l.id AS leg_id, MIN(f.id) AS result_id, COUNT(*) AS tests_marked,
+        SELECT f.subject_owner, f.subject_scope, f.signature_key,
+               l.id AS leg_id, f.occurrence_id AS result_id,
+               COUNT(*) AS tests_marked,
                -- Every row this fixture marked in one leg carries the same
                -- fixture evidence, so any of them stands for the occurrence.
                MAX(f.screenshots) AS screenshots,
@@ -665,15 +667,14 @@ def occurrences_by_fixture(
         FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), l.id
+        GROUP BY f.occurrence_id
         ORDER BY r.created_at DESC
         """
     ).fetchall()
     connection.close()
     grouped: dict[tuple, list[dict]] = {}
     for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
+        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
         grouped.setdefault(key, []).append(dict(row))
     return grouped
 
@@ -721,10 +722,10 @@ def coverage_by_fixture(
     return grouped
 
 
-def neighbouring_fixture_outcomes(
+def fixture_runs_either_side(
     db_path: Path, window: Window = ALL_HISTORY
 ) -> dict[tuple, dict]:
-    """`neighbouring_outcomes` for suite fixtures, keyed by the leg it broke in.
+    """`runs_either_side` for suite fixtures, keyed by the leg it broke in.
 
     The same question and the same answer, with one difference in what counts as
     an outcome: a fixture has no status of its own in `test_result`, so the leg
@@ -802,11 +803,9 @@ def fixture_co_failures(
         """
         SELECT a.scope_owner, a.failure_scope, a.leg_id, b.longname,
                IFNULL(b.failure_scope, 'test') AS scope
-        FROM (SELECT DISTINCT scope_owner, failure_scope, leg_id
-                FROM test_result
-               WHERE status = 'FAIL'
-                 AND failure_scope IN ('suite_setup', 'suite_teardown')
-                 AND scope_owner IS NOT NULL) a
+        FROM (SELECT DISTINCT subject_owner AS scope_owner,
+                             subject_scope  AS failure_scope, leg_id
+                FROM fixture_failure WHERE subject_owner IS NOT NULL) a
         JOIN test_result b ON b.leg_id = a.leg_id AND b.status = 'FAIL'
         WHERE NOT (IFNULL(b.failure_scope, 'test') = a.failure_scope
                    AND IFNULL(b.scope_owner, '') = a.scope_owner)
@@ -827,32 +826,10 @@ def fixture_co_failures(
 def messages_by_fixture(
     db_path: Path, window: Window = ALL_HISTORY
 ) -> dict[tuple, list[dict]]:
-    """`messages_by_test` for suite fixtures, counted in legs.
-
-    Robot Framework writes the fixture's message onto every test it marked, so
-    counting rows would report one teardown failure as ten.
-    """
-    connection = _connect(db_path, window)
-    rows = connection.execute(
-        """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.message, COUNT(DISTINCT f.leg_id) AS occurrences
-        FROM fixture_failure f
-        WHERE f.message IS NOT NULL
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), f.message
-        ORDER BY occurrences DESC
-        """
-    ).fetchall()
-    connection.close()
-    grouped: dict[tuple, list[dict]] = {}
-    for row in rows:
-        key = (row["scope_owner"], row["failure_scope"], row["signature_key"])
-        grouped.setdefault(key, []).append(
-            {"message": row["message"], "occurrences": row["occurrences"]}
-        )
-    return grouped
+    """`messages_by_test` for suite fixtures. Robot Framework writes the
+    fixture's message onto every test it marked, so counting rows would report
+    one teardown failure as ten; the Occurrence is the Leg."""
+    return _messages(db_path, "fixture_failure", window)
 
 
 def first_attempt_counts_by_test(
@@ -892,18 +869,17 @@ def first_attempt_counts_by_test(
         )
     }
     failures = {
-        (row["longname"], row["signature_key"]): row["failures"]
+        (row["subject_owner"], row["subject_scope"], row["signature_key"]): row[
+            "failures"
+        ]
         for row in connection.execute(
             """
-            SELECT f.longname,
-                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+            SELECT f.subject_owner, f.subject_scope, f.signature_key,
                    COUNT(*) AS failures
-            FROM test_result f
+            FROM test_failure f
             JOIN leg l ON l.id = f.leg_id
-            WHERE f.status = 'FAIL' AND l.attempt = 1
-              AND IFNULL(f.failure_scope, 'test')
-                  NOT IN ('suite_setup', 'suite_teardown')
-            GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
+            WHERE l.attempt = 1
+            GROUP BY f.subject_owner, f.subject_scope, f.signature_key
             """
         )
     }
@@ -923,18 +899,15 @@ def first_attempt_counts_by_fixture(
             1 for row in _fixture_legs(connection, *identity) if row["attempt"] == 1
         )
     failures = {
-        (row["scope_owner"], row["failure_scope"], row["signature_key"]): row["legs"]
+        (row["subject_owner"], row["subject_scope"], row["signature_key"]): row["legs"]
         for row in connection.execute(
             """
-            SELECT f.scope_owner, f.failure_scope,
-                   LOWER(IFNULL(f.error_signature, '')) AS signature_key,
+            SELECT f.subject_owner, f.subject_scope, f.signature_key,
                    COUNT(DISTINCT l.id) AS legs
-            FROM test_result f
+            FROM fixture_failure f
             JOIN leg l ON l.id = f.leg_id
-            WHERE f.status = 'FAIL' AND l.attempt = 1
-              AND f.failure_scope IN ('suite_setup', 'suite_teardown')
-            GROUP BY f.scope_owner, f.failure_scope,
-                     LOWER(IFNULL(f.error_signature, ''))
+            WHERE l.attempt = 1
+            GROUP BY f.subject_owner, f.subject_scope, f.signature_key
             """
         )
     }
@@ -976,37 +949,44 @@ def latest_run(db_path: Path, window: Window = ALL_HISTORY) -> dict:
     }
 
 
-def messages_by_test(
-    db_path: Path, window: Window = ALL_HISTORY
-) -> dict[tuple, list[dict]]:
-    """Every distinct raw message behind a group, with how often each occurred.
+def _messages(db_path: Path, view: str, window: Window) -> dict[tuple, list[dict]]:
+    """Every distinct raw message behind a Subject's group, with how often each
+    occurred.
 
-    The signature masks what varies, which is what makes grouping possible and
-    is also what throws away the evidence. Three failures of Compare Images
-    carry an identical box and a pixel count differing by three - deterministic,
-    not jittery - and the signature renders all of that as `<n>`. Cheap to keep:
-    16 of the 18 groups have exactly one distinct message.
+    Counted in Occurrences rather than rows, which is one expression for both
+    scopes: a test's Occurrence is its own row, and a suite fixture's is the Leg,
+    so `COUNT(DISTINCT occurrence_id)` is `COUNT(*)` on one side and a count of
+    Legs on the other without saying so twice.
     """
     connection = _connect(db_path, window)
     rows = connection.execute(
-        """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.message, COUNT(*) AS occurrences
-        FROM test_failure f
+        f"""
+        SELECT f.subject_owner, f.subject_scope, f.signature_key,
+               f.message, COUNT(DISTINCT f.occurrence_id) AS occurrences
+        FROM {view} f
         WHERE f.message IS NOT NULL
-        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), f.message
+        GROUP BY f.subject_owner, f.subject_scope, f.signature_key, f.message
         ORDER BY occurrences DESC
         """
     ).fetchall()
     connection.close()
     grouped: dict[tuple, list[dict]] = {}
     for row in rows:
-        key = (row["longname"], row["signature_key"])
+        key = (row["subject_owner"], row["subject_scope"], row["signature_key"])
         grouped.setdefault(key, []).append(
             {"message": row["message"], "occurrences": row["occurrences"]}
         )
     return grouped
+
+
+def messages_by_test(
+    db_path: Path, window: Window = ALL_HISTORY
+) -> dict[tuple, list[dict]]:
+    """The signature masks what varies, which is what makes grouping possible
+    and is also what throws away the evidence. Three failures of Compare Images
+    carry an identical box and a pixel count differing by three - deterministic,
+    not jittery - and the signature renders all of that as `<n>`."""
+    return _messages(db_path, "test_failure", window)
 
 
 def _variants(
@@ -1029,6 +1009,16 @@ def _variants(
     return {key: value for key, value in grouped.items() if len(value) > 1}
 
 
+_VARIANT_SQL = """
+    SELECT f.subject_owner, f.subject_scope, f.signature_key,
+           f.error_signature, COUNT(DISTINCT f.occurrence_id) AS occurrences
+    FROM {view} f
+    WHERE f.error_signature IS NOT NULL
+    GROUP BY f.subject_owner, f.subject_scope, f.signature_key, f.error_signature
+    ORDER BY occurrences DESC
+"""
+
+
 def signature_variants(
     db_path: Path, window: Window = ALL_HISTORY
 ) -> dict[tuple, list[dict]]:
@@ -1038,46 +1028,16 @@ def signature_variants(
     exactly the case the case-folded key exists to merge. See `_KEY`.
     """
     return _variants(
-        db_path,
-        """
-        SELECT f.longname,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.error_signature, COUNT(*) AS occurrences
-        FROM test_failure f
-        WHERE f.error_signature IS NOT NULL
-        GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')),
-                 f.error_signature
-        ORDER BY occurrences DESC
-        """,
-        2,
-        window=window,
+        db_path, _VARIANT_SQL.format(view="test_failure"), 3, window=window
     )
 
 
 def fixture_signature_variants(
     db_path: Path, window: Window = ALL_HISTORY
 ) -> dict[tuple, list[dict]]:
-    """The same, for suite fixtures - which is where it actually happens.
-
-    The `Deadline Exceeded` / `Deadline exceeded` split that motivated the
-    case-folded key is a suite teardown, so keying these per test would have
-    missed the only case in the data that has any.
-    """
+    """`signature_variants` for suite fixtures, counted in Legs."""
     return _variants(
-        db_path,
-        """
-        SELECT f.scope_owner, f.failure_scope,
-               LOWER(IFNULL(f.error_signature, '')) AS signature_key,
-               f.error_signature, COUNT(DISTINCT l.id) AS occurrences
-        FROM fixture_failure f
-        JOIN leg l ON l.id = f.leg_id
-        WHERE f.error_signature IS NOT NULL
-        GROUP BY f.scope_owner, f.failure_scope,
-                 LOWER(IFNULL(f.error_signature, '')), f.error_signature
-        ORDER BY occurrences DESC
-        """,
-        3,
-        window=window,
+        db_path, _VARIANT_SQL.format(view="fixture_failure"), 3, window=window
     )
 
 
