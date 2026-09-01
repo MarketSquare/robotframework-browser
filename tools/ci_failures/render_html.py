@@ -467,6 +467,10 @@ code { font-family: var(--mono); }
 }
 .otag.is-rerun { color: var(--bar); border-color: var(--bar); }
 .otag.is-bad { color: var(--critical); border-color: var(--critical); }
+.ocommit { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+.orun { font-size: 11px; color: var(--bar); text-decoration: none; }
+.orun:hover { text-decoration: underline; }
+.ms .mid { color: var(--ink-muted); }
 .oalso { font-size: 11px; color: var(--ink-muted); padding-left: 2px; overflow-wrap: anywhere; }
 .omore { font-size: 11px; color: var(--ink-muted); font-style: italic; }
 
@@ -625,9 +629,16 @@ def _rates_html(rates: tuple[Rate, ...], never_ran_on: tuple[str, ...]) -> str:
     for index, rate in enumerate(rates):
         spread = ""
         if rate.pass_ms:
+            # Four numbers, because the shape is what carries the argument: a
+            # cliff between the passes and the failures is a keyword that broke,
+            # a tail reaching up into them is a margin that ran out. min and max
+            # alone cannot tell those apart, which is what `PassMs` says and
+            # what the page was dropping.
             spread = (
                 f'<span class="ms">passes {rate.pass_ms.min}&ndash;'
-                f"{rate.pass_ms.max} ms</span>"
+                f"{rate.pass_ms.max} ms"
+                f'<span class="mid"> median {rate.pass_ms.median}'
+                f", p95 {rate.pass_ms.p95}</span></span>"
             )
         thin = rate.zero_is_inconclusive
         if thin:
@@ -764,11 +775,25 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
                 f'<div class="oalso">also failed here: '
                 f"{_e('; '.join(names))}{_e(tail)}</div>"
             )
+        # The commit, because it is the question Occurrences exist to answer:
+        # four failures on one commit is that commit, and four across four is a
+        # standing problem. The page rendered the whole apparatus around it -
+        # leg, attempt, neighbours, re-runs - and withheld this.
+        commit = (
+            f'<span class="ocommit">{_e(occurrence.commit[:7])}</span>'
+            if occurrence.commit
+            else ""
+        )
+        run = (
+            f'<a class="orun" href="{_e(occurrence.run_url)}">run &rarr;</a>'
+            if occurrence.run_url
+            else ""
+        )
         rows.append(
             f'<div class="orow">'
             f'<span class="odate">{_e((occurrence.at or "")[:10])}</span>'
             f'<span class="oleg">{_e(occurrence.leg or "?")}</span>'
-            f"{''.join(tags)}</div>{also}{_evidence_html(occurrence)}"
+            f"{commit}{''.join(tags)}{run}</div>{also}{_evidence_html(occurrence)}"
         )
     hidden = len(occurrences) - SHOWN_OCCURRENCES
     more = (

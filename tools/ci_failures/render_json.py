@@ -238,6 +238,12 @@ def document(report: Report) -> dict:
     return {
         "about": report.about,
         "window": {
+            # Which question this document answers. An all-history report and a
+            # --days 3 one are the same shape with incomparable numbers, and both
+            # are written to whatever --json names; without these the file cannot
+            # say which it is. The page has said so all along.
+            "label": report.window.label,
+            "bounded": report.window.bounded,
             "runs": report.window.runs,
             "legs": report.window.legs,
             "results": report.window.results,

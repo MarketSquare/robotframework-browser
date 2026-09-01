@@ -2386,8 +2386,8 @@ class TestWhatThePageCanNowReach:
 
         assert "Since the last report" in page
         assert "Gone Test" in page
-        assert ">gone<" in page
-        assert ">new<" in page
+        assert 'data-kind="gone"' in page
+        assert 'data-kind="new"' in page
 
     def test_the_page_says_which_kind_of_absence_a_missing_baseline_is(self, tmp_path):
         """Nobody has taken one, and a windowed report cannot use one, are
@@ -2667,6 +2667,114 @@ class TestWhatChangedSinceLastTime:
         build(db)
 
         assert not snapshot_path(db).exists()
+
+
+# Fields the page deliberately does not show. ADR 0001 says a Rendering may show
+# less than the Report holds and that what it leaves out is a choice rather than
+# an absence - but nothing made the choice visible, so nineteen fields had drifted
+# into one Rendering without anybody deciding. A field belongs here or on the
+# page; there is no third state.
+PAGE_OMITS = {
+    "TestCounts.distinct_commits": "the page names the commits on the "
+    "occurrences themselves, so the count restates what is already listed",
+    "FixtureCounts.distinct_commits": "as above",
+    "LatestRun.run": "the newest run is named by date and failure count; its id "
+    "is a key to join on, which is the document's job",
+    "LatestRun.event": "push and schedule run the same suite; the distinction "
+    "matters when grouping, not when reading",
+    "Neighbour.run": "the page says what the run either side did, not which run "
+    "it was - the outcome is the finding, the id is a key",
+    "Occurrence.run": "the page links the run rather than printing its id",
+    "Occurrence.event": "as LatestRun.event",
+    "Occurrence.executors": "null on every leg ingested so far, and a property "
+    "of the leg rather than of this failure",
+    "Occurrence.node_process": "as above",
+    "Occurrence.elapsed_ms": "the page shows the passing spread, which is the "
+    "comparison that means something; one failure's duration alone does not",
+    "Retry.attempts": "the page says whether a hand re-run passed, which is the "
+    "whole finding; how many tries it took is detail",
+}
+
+#: Fields the document does not carry. It is read by a language model that
+#: cannot ask a follow-up question, so it carries everything.
+DOCUMENT_OMITS: dict[str, str] = {}
+
+
+class TestNeitherRenderingDropsAFieldByAccident:
+    """ADR 0001's premise, made checkable.
+
+    The Report is typed so that a Rendering ignoring a field is a fact you can
+    see. Nothing looked, so it was not one: nineteen fields reached exactly one
+    Rendering, including the commit of an Occurrence - which is the question
+    CONTEXT.md says Occurrences exist to answer - and which Window the document
+    covers, which the page carries a comment explaining it must say.
+
+    Reachability is read from the Rendering sources by name. That cannot tell
+    `Occurrence.commit` from `LatestRun.commit`, so a new field sharing a name
+    with a rendered one slips through; a new field with a name of its own does
+    not. The omission tables are the specification, and this only checks that
+    nobody added to them silently.
+    """
+
+    def _fields(self) -> list[str]:
+        import dataclasses
+
+        from tools.ci_failures import report as module
+
+        names = []
+        for attribute in vars(module).values():
+            if not (
+                isinstance(attribute, type) and dataclasses.is_dataclass(attribute)
+            ):
+                continue
+            if attribute.__module__ != module.__name__:
+                continue
+            names += [
+                f"{attribute.__name__}.{field.name}"
+                for field in dataclasses.fields(attribute)
+            ]
+        return names
+
+    def _reached(self, rendering: str, field: str) -> bool:
+        import re
+        from pathlib import Path as _Path
+
+        source = _Path(f"tools/ci_failures/{rendering}").read_text(encoding="utf-8")
+        return bool(re.search(rf"\.{field.split('.')[1]}\b", source))
+
+    def test_every_field_reaches_the_page_or_is_declared(self):
+        missing = {
+            field
+            for field in self._fields()
+            if not self._reached("render_html.py", field) and field not in PAGE_OMITS
+        }
+
+        assert not missing, (
+            f"{sorted(missing)} reach the document and not the page. Show them, "
+            "or add them to PAGE_OMITS with the reason."
+        )
+
+    def test_every_field_reaches_the_document_or_is_declared(self):
+        missing = {
+            field
+            for field in self._fields()
+            if not self._reached("render_json.py", field)
+            and field not in DOCUMENT_OMITS
+        }
+
+        assert not missing, (
+            f"{sorted(missing)} reach the page and not the document. Carry them, "
+            "or add them to DOCUMENT_OMITS with the reason."
+        )
+
+    def test_the_omission_tables_do_not_outlive_what_they_describe(self):
+        """A field shown after all, or deleted, leaves its excuse behind."""
+        fields = set(self._fields())
+        stale = (set(PAGE_OMITS) | set(DOCUMENT_OMITS)) - fields
+        shown = {f for f in PAGE_OMITS if self._reached("render_html.py", f)}
+
+        assert not stale, f"{sorted(stale)} are declared omitted but do not exist"
+        assert not shown, f"{sorted(shown)} are declared omitted but are shown"
 
 
 class TestWhenThereIsNoReportToGive:
@@ -3183,10 +3291,16 @@ class TestTheReportingWindow:
         windowed = write_page(
             build_report(db, window=of_days(2, now)), tmp := (db.parent / "w.html")
         )
-        plain = write_page(build_report(db), db.parent / "p.html")
+        everything = build_report(db)
+        plain = write_page(everything, db.parent / "p.html")
+        span = f"{everything.window.since[:10]} to {everything.window.until[:10]}"
 
         assert "--days 2 (2026-08-30..2026-08-31 local), 2 run(s)" in tmp.read_text()
-        assert "--days" not in plain.read_text().split("<p class=")[0]
+        # An all-history page names no window at all - it says what has been
+        # ingested instead, which is the other honest answer to the same
+        # question and cannot be mistaken for a windowed one.
+        assert span in plain.read_text()
+        assert "--days" not in plain.read_text()
         assert windowed.exists() and plain.exists()
 
     def test_the_page_says_so_when_the_window_ran_clean(self, tmp_path):
