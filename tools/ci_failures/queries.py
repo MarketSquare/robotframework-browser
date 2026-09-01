@@ -11,6 +11,7 @@ run SQL it is in the wrong file. `report.py` decides what the numbers mean.
 from dataclasses import dataclass
 from pathlib import Path
 
+from . import subject
 from .db import connect
 from .window import ALL_HISTORY, Window
 
@@ -31,14 +32,19 @@ from .window import ALL_HISTORY, Window
 
 
 def _connect(db_path: Path, window: Window):
-    """A connection that can only see the window.
+    """A connection that can only see the window, and knows what a Subject is.
 
-    The restriction lives here rather than in the queries: `window.apply` hangs
-    shadowing views off the connection, so every statement below is windowed
-    without saying so. See `window.py`.
+    Both restrictions live here rather than in the queries. `window.apply` hangs
+    shadowing views off the connection so every statement below is windowed
+    without saying so; `subject.apply` then adds `test_failure` and
+    `fixture_failure`, so no query has to remember which rows a broken suite
+    fixture wrote. See `window.py` and `subject.py`.
     """
     connection = connect(db_path)
     window.apply(connection)
+    # After the Window, never before: these read the shadowed table names, so
+    # they inherit the scope rather than reaching past it. See `subject.py`.
+    subject.apply(connection)
     return connection
 
 
@@ -145,12 +151,10 @@ def failure_groups(
                    AND LOWER(IFNULL(f2.error_signature, ''))
                      = LOWER(IFNULL(f.error_signature, ''))
                  ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
-        FROM test_result f
+        FROM test_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
         JOIN runs_per_test ON runs_per_test.longname = f.longname
-        WHERE f.status = 'FAIL'
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
         GROUP BY f.longname, LOWER(IFNULL(f.error_signature, ''))
         ORDER BY failures DESC, f.longname
         LIMIT ?
@@ -253,11 +257,9 @@ def fixture_failures(
                  WHERE f2.scope_owner = f.scope_owner
                    AND f2.status = 'FAIL'
                  ORDER BY r2.created_at DESC LIMIT 1) AS latest_result_id
-        FROM test_result f
+        FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
         GROUP BY f.scope_owner, f.failure_scope,
                  LOWER(IFNULL(f.error_signature, ''))
         ORDER BY occurrences DESC, f.scope_owner
@@ -289,11 +291,9 @@ def occurrences_by_test(
                l.platform, l.python_version, l.rf_version, l.node_version,
                l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
-        FROM test_result f
+        FROM test_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
         ORDER BY r.created_at DESC
         """
     ).fetchall()
@@ -662,11 +662,9 @@ def occurrences_by_fixture(
                l.platform, l.python_version, l.rf_version, l.node_version,
                l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
-        FROM test_result f
+        FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
         JOIN run r ON r.id = l.run_id
-        WHERE f.status = 'FAIL'
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
         GROUP BY f.scope_owner, f.failure_scope,
                  LOWER(IFNULL(f.error_signature, '')), l.id
         ORDER BY r.created_at DESC
@@ -840,9 +838,8 @@ def messages_by_fixture(
         SELECT f.scope_owner, f.failure_scope,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                f.message, COUNT(DISTINCT f.leg_id) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        FROM fixture_failure f
+        WHERE f.message IS NOT NULL
         GROUP BY f.scope_owner, f.failure_scope,
                  LOWER(IFNULL(f.error_signature, '')), f.message
         ORDER BY occurrences DESC
@@ -996,10 +993,8 @@ def messages_by_test(
         SELECT f.longname,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                f.message, COUNT(*) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.message IS NOT NULL
-          AND IFNULL(f.failure_scope, 'test')
-              NOT IN ('suite_setup', 'suite_teardown')
+        FROM test_failure f
+        WHERE f.message IS NOT NULL
         GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), f.message
         ORDER BY occurrences DESC
         """
@@ -1048,9 +1043,8 @@ def signature_variants(
         SELECT f.longname,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                f.error_signature, COUNT(*) AS occurrences
-        FROM test_result f
-        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
-          AND IFNULL(f.failure_scope, 'test') NOT IN ('suite_setup', 'suite_teardown')
+        FROM test_failure f
+        WHERE f.error_signature IS NOT NULL
         GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')),
                  f.error_signature
         ORDER BY occurrences DESC
@@ -1075,10 +1069,9 @@ def fixture_signature_variants(
         SELECT f.scope_owner, f.failure_scope,
                LOWER(IFNULL(f.error_signature, '')) AS signature_key,
                f.error_signature, COUNT(DISTINCT l.id) AS occurrences
-        FROM test_result f
+        FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
-        WHERE f.status = 'FAIL' AND f.error_signature IS NOT NULL
-          AND f.failure_scope IN ('suite_setup', 'suite_teardown')
+        WHERE f.error_signature IS NOT NULL
         GROUP BY f.scope_owner, f.failure_scope,
                  LOWER(IFNULL(f.error_signature, '')), f.error_signature
         ORDER BY occurrences DESC
