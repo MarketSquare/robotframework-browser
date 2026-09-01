@@ -30,9 +30,7 @@ from .report import (
     Report,
     Retry,
     TestEntry,
-    build,
 )
-from .window import ALL_HISTORY, Window
 
 
 def _neighbour(neighbour: Neighbour | None) -> dict | None:
@@ -275,16 +273,10 @@ def document(report: Report) -> dict:
     }
 
 
-def render(
-    db_path: Path,
-    destination: Path,
-    limit: int = 100,
-    window: Window = ALL_HISTORY,
-) -> Path:
+def write(report: Report, destination: Path) -> Path:
+    """Writes the document for a Report somebody else built."""
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(
-        json.dumps(document(build(db_path, limit=limit, window=window)), indent=2)
-        + "\n",
-        encoding="utf-8",
+        json.dumps(document(report), indent=2) + "\n", encoding="utf-8"
     )
     return destination

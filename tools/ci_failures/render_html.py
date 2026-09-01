@@ -27,9 +27,7 @@ from .report import (
     SignatureVariant,
     TestEntry,
     WhereToLook,
-    build,
 )
-from .window import ALL_HISTORY, Window
 
 _FONTS = "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
 
@@ -1153,19 +1151,15 @@ def page(report: Report) -> str:
 """
 
 
-def render(
-    db_path: Path,
-    destination: Path,
-    limit: int = 100,
-    window: Window = ALL_HISTORY,
-) -> Path:
+def write(report: Report, destination: Path) -> Path:
+    """Writes the page for a Report somebody else built.
+
+    It used to build its own, so asking for both Renderings of one Report built
+    it twice and `--mark-seen` made that three.
+    """
     destination.parent.mkdir(parents=True, exist_ok=True)
     # ASCII with the rest as numeric character references. Test names and error
     # messages are arbitrary text, and the page cannot declare its own encoding,
     # so anything above ASCII has to survive as an entity rather than as bytes.
-    destination.write_text(
-        page(build(db_path, limit=limit, window=window)),
-        encoding="ascii",
-        errors="xmlcharrefreplace",
-    )
+    destination.write_text(page(report), encoding="ascii", errors="xmlcharrefreplace")
     return destination

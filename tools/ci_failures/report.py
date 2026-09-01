@@ -779,7 +779,17 @@ def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
     Rebuilding it from the queries is how a third construction of this shape
     came to exist, and a Snapshot that disagreed with the Report it was taken
     beside would make the next comparison wrong rather than merely stale.
+
+    Refuses a windowed Report, here rather than in whatever invoked it: a
+    baseline covering less data than the report that reads it makes every Group
+    come back grown, and that is silent - the numbers are all plausible.
     """
+    if report.window.bounded:
+        raise WindowedBaselineError(
+            f"A baseline cannot be taken from {report.window.label}: it covers "
+            "less than the report that will read it, so every group would come "
+            "back grown. Take the baseline without --days."
+        )
     return [
         (entry.test, entry.signature, entry.counts.failures)
         for entry in report.test_failures
@@ -789,13 +799,59 @@ def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
     ]
 
 
+class UnanswerableError(Exception):
+    """The question cannot be answered, and this says why.
+
+    These are the conditions a caller has to have handled to use `build`
+    correctly. They lived in the invoke task, which meant they were the caller's
+    to remember, were checked nowhere else, and could only be exercised by
+    typing `inv`.
+    """
+
+
+class NoDatabaseError(UnanswerableError):
+    """Nothing has been ingested here yet."""
+
+
+class NothingInWindowError(UnanswerableError):
+    """The Window holds no Runs, so there is no report to render.
+
+    An empty page cannot say whether nothing ran or nothing failed, and those
+    are opposite findings. Refusing is the only answer that does not mislead.
+    """
+
+
+class WindowedBaselineError(UnanswerableError):
+    """A Snapshot was asked for from a windowed Report. See `snapshot_entries`."""
+
+
+def _nothing_ran(db_path: Path, window: Window) -> str:
+    """Why the Window is empty, said in terms of what has been ingested.
+
+    Read unwindowed on purpose: the useful fact is how far the archive reaches,
+    which is exactly what the Window is hiding.
+    """
+    with reading.of(db_path) as everything:
+        newest = latest_run(everything)
+    seen = f"newest ingested run {newest.at[:10]}" if newest else "nothing ingested yet"
+    return f"No runs in {window.label} - {seen}. Run `inv ci-ingest`, or widen --days."
+
+
 def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Report:
-    """The whole Report for one Window.
+    """The whole Report for one Window, or why there is not one.
 
     One Reading, opened here and shared by every query below. They used to open
     one each, which meant materialising the Window once per question.
+
+    Raises `UnanswerableError` rather than returning something empty. The database is
+    checked before it is opened, because opening it would create it and an
+    absent archive would render as a clean one.
     """
+    if not db_path.exists():
+        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
     with reading.of(db_path, window) as db:
+        if window.bounded and not totals(db).runs:
+            raise NothingInWindowError(_nothing_ran(db_path, window))
         return _build(db, limit, window, db_path)
 
 

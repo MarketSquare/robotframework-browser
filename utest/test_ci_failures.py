@@ -2302,12 +2302,12 @@ class TestTheDenominatorAndTheRerun:
 class TestHtmlReport:
     def test_it_renders_a_self_contained_page(self, tmp_path):
         from tools.ci_failures.db import connect
-        from tools.ci_failures.render_html import render
+        from tools.ci_failures.render_html import write as write_page
 
         db = tmp_path / "ci.sqlite3"
         connect(db).close()
 
-        page = render(db, tmp_path / "report.html")
+        page = write_page(build_report(db), tmp_path / "report.html")
 
         text = page.read_text(encoding="utf-8")
         assert "<title>Browser CI Failures</title>" in text
@@ -2326,11 +2326,11 @@ class TestWhatThePageCanNowReach:
     """
 
     def _page(self, db: Path, tmp_path: Path, **kwargs) -> str:
-        from tools.ci_failures.render_html import render
+        from tools.ci_failures.render_html import write as write_page
 
-        return render(db, tmp_path / "report.html", **kwargs).read_text(
-            encoding="utf-8"
-        )
+        return write_page(
+            build_report(db, **kwargs), tmp_path / "report.html"
+        ).read_text(encoding="utf-8")
 
     def test_the_page_carries_the_messages_behind_the_signature(self, tmp_path):
         """The mask is what makes grouping possible and also what throws the
@@ -2401,14 +2401,12 @@ class TestWhatThePageCanNowReach:
             db, [{"test": "T", "status": "FAIL", "signature": "e"}]
         )
 
+        # A window the seeded run falls inside: an empty one is refused
+        # outright now, which is a different message and a different test.
+        seeded_day = datetime(2026, 8, 20, 12, 0).astimezone()
+
         never_taken = self._page(db, tmp_path)
-        windowed = self._page(
-            db,
-            tmp_path,
-            window=of_days(
-                1, datetime.combine(datetime.now().date(), time(9, 0)).astimezone()
-            ),
-        )
+        windowed = self._page(db, tmp_path, window=of_days(1, seeded_day))
 
         assert "No baseline has been taken" in never_taken
         assert "windowed report has no baseline" in windowed
@@ -2669,6 +2667,63 @@ class TestWhatChangedSinceLastTime:
         build(db)
 
         assert not snapshot_path(db).exists()
+
+
+class TestWhenThereIsNoReportToGive:
+    """The conditions a caller has to have handled to ask this tool a question.
+
+    They lived in the invoke task, so a second caller had to reimplement all of
+    them, and none could be exercised without typing `inv`. One of them fails
+    silently when it is got wrong, which is the one worth a test most.
+    """
+
+    def test_an_absent_database_is_refused_rather_than_created(self, tmp_path):
+        """Opening it would create it, and an empty archive renders as a clean
+        one - a page saying nothing has ever failed."""
+        from tools.ci_failures.report import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            build_report(missing)
+
+        assert not missing.exists(), "asking must not create the archive"
+
+    def test_a_window_with_no_runs_is_refused(self, tmp_path):
+        """An empty page cannot say whether nothing ran or nothing failed, and
+        those are opposite findings."""
+        from datetime import datetime
+
+        from tools.ci_failures.report import NothingInWindowError
+        from tools.ci_failures.window import of_days
+
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
+        )
+        long_after = datetime(2026, 12, 25, 12, 0).astimezone()
+
+        with pytest.raises(NothingInWindowError, match="newest ingested run 2026-08"):
+            build_report(db, window=of_days(1, long_after))
+
+    def test_a_baseline_cannot_be_taken_from_a_windowed_report(self, tmp_path):
+        """The one that is silent when it goes wrong: a baseline covering less
+        than the report that reads it makes every group come back grown, and
+        every number involved stays plausible."""
+        from datetime import datetime
+
+        from tools.ci_failures.report import WindowedBaselineError, snapshot_entries
+        from tools.ci_failures.window import of_days
+
+        db = tmp_path / "ci.sqlite3"
+        TestCaseFoldedGrouping()._seed(
+            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
+        )
+        seeded_day = datetime(2026, 8, 20, 12, 0).astimezone()
+
+        assert snapshot_entries(build_report(db)), "all history is fine"
+        with pytest.raises(WindowedBaselineError):
+            snapshot_entries(build_report(db, window=of_days(1, seeded_day)))
 
 
 class TestTheReading:
@@ -3118,22 +3173,24 @@ class TestTheReportingWindow:
     def test_the_page_says_which_window_it_is(self, four_days):
         """Both reports are written to the same path, and their numbers are not
         comparable. A saved page has to say which one it is."""
-        from tools.ci_failures.render_html import render
+        from tools.ci_failures.render_html import write as write_page
         from tools.ci_failures.window import of_days
         from datetime import datetime, time
 
         db, today = four_days
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        windowed = render(db, tmp := (db.parent / "w.html"), window=of_days(2, now))
-        plain = render(db, db.parent / "p.html")
+        windowed = write_page(
+            build_report(db, window=of_days(2, now)), tmp := (db.parent / "w.html")
+        )
+        plain = write_page(build_report(db), db.parent / "p.html")
 
         assert "--days 2 (2026-08-30..2026-08-31 local), 2 run(s)" in tmp.read_text()
         assert "--days" not in plain.read_text().split("<p class=")[0]
         assert windowed.exists() and plain.exists()
 
     def test_the_page_says_so_when_the_window_ran_clean(self, tmp_path):
-        from tools.ci_failures.render_html import render
+        from tools.ci_failures.render_html import write as write_page
         from tools.ci_failures.window import of_days
         from datetime import date, datetime, time, timedelta
 
@@ -3148,7 +3205,9 @@ class TestTheReportingWindow:
         )
         now = datetime.combine(today, time(9, 0)).astimezone()
 
-        page = render(db, tmp_path / "w.html", window=of_days(1, now)).read_text()
+        page = write_page(
+            build_report(db, window=of_days(1, now)), tmp_path / "w.html"
+        ).read_text()
 
         assert "No test failures in --days 1" in page
         assert "1 run(s) and 1 matrix leg(s) examined" in page

@@ -1996,6 +1996,7 @@ def ci_report(
         html: Write a self-contained HTML page here. Defaults to
             ci_failures/ci_report.html.
         json: Write the report as JSON here, for a language model to read.
+            Goes with --html: both are renderings of the one Report.
         limit: How many test/error groups to show.
         open_it: Open the HTML page in a browser once written.
         mark_seen: Record what this report said, so the next one can say what
@@ -2010,22 +2011,17 @@ def ci_report(
             all-history report can. Goes with everything except --mark-seen;
             see `tools/ci_failures/window.py`.
     """
+    from tools.ci_failures.report import (
+        NoDatabaseError,
+        UnanswerableError,
+        WindowedBaselineError,
+        build,
+        snapshot_entries,
+    )
     from tools.ci_failures.window import ALL_HISTORY, of_days
 
     window = ALL_HISTORY
     if days is not None:
-        # `--mark-seen` is the one flag a window cannot take. A baseline is what
-        # the next report compares itself against, and one taken from a window
-        # covers less data than the report that reads it, so every group would
-        # come back "grew". Nothing else here cares: a window is a question, and
-        # every rendering of the report can answer it.
-        if mark_seen:
-            raise Exit(
-                "--days and --mark-seen do not go together: a baseline taken "
-                "from a window would make the next report call every group "
-                "grown. Take the baseline without --days.",
-                2,
-            )
         try:
             window = of_days(int(days))
         except ValueError:
@@ -2033,55 +2029,42 @@ def ci_report(
                 f"--days wants a whole number of days, got {days!r}.", 2
             ) from None
     db_path = Path(db) if db else CI_FAILURES_DB
-    if not db_path.exists():
-        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
-        return
-    if window.bounded:
-        from tools.ci_failures.queries import latest_run, totals
-        from tools.ci_failures.reading import of as reading_of
 
-        with reading_of(db_path, window) as windowed:
-            ran = totals(windowed).runs
-        if not ran:
-            # Nothing ran is not the same fact as nothing failed, and an empty
-            # page cannot say which one it is. So no page.
-            # Read unwindowed on purpose: the point is what was ingested at all.
-            with reading_of(db_path) as everything:
-                newest = latest_run(everything)
-            seen = (
-                f"newest ingested run {newest.at[:10]}"
-                if newest
-                else "nothing ingested yet"
-            )
-            raise Exit(
-                f"No runs in {window.label} - {seen}. "
-                "Run `inv ci-ingest`, or widen --days.",
-                1,
-            )
+    # Built once. Both renderings and the baseline are of the same Report, and
+    # the reasons there may not be one are the tool's to state, not this task's.
+    try:
+        report = build(db_path, limit=int(limit), window=window)
+    except NoDatabaseError as absent:
+        print(absent)
+        return
+    except UnanswerableError as why:
+        raise Exit(str(why), 1) from None
+
     if mark_seen:
         from tools.ci_failures.annotations import write_snapshot
-        from tools.ci_failures.report import build, snapshot_entries
 
-        seen = snapshot_entries(build(db_path, limit=int(limit)))
+        try:
+            seen = snapshot_entries(report)
+        except WindowedBaselineError as why:
+            raise Exit(str(why), 2) from None
         print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
+
+    written = []
     if json:
-        from tools.ci_failures.render_json import render as render_json
+        from tools.ci_failures.render_json import write as write_json
 
-        print(
-            f"Wrote {render_json(db_path, Path(json), limit=int(limit), window=window)}"
-        )
-        return
-    from tools.ci_failures.render_html import render
+        written.append(write_json(report, Path(json)))
+    # The page unless only the document was asked for. Both used to be an
+    # either/or that silently dropped --html whenever --json was given.
+    if html or not json:
+        from tools.ci_failures.render_html import write as write_page
 
-    written = render(
-        db_path,
-        Path(html) if html else CI_REPORT_HTML,
-        limit=int(limit),
-        window=window,
-    )
-    print(f"Wrote {written}")
-    if open_it:
-        webbrowser.open(written.resolve().as_uri())
+        page_at = write_page(report, Path(html) if html else CI_REPORT_HTML)
+        written.append(page_at)
+        if open_it:
+            webbrowser.open(page_at.resolve().as_uri())
+    for destination in written:
+        print(f"Wrote {destination}")
 
 
 @task
