@@ -336,6 +336,11 @@ def coverage_by_test(
     0 of 26 on darwin, which says where to look. Configurations with no failures
     are included: 26 clean runs is evidence, and a configuration missing from
     this list never ran the test at all, which is not the same as passing it.
+
+    The numerator counts only what the test itself did. A row a broken suite
+    fixture marked is a Fixture Failure and is counted in its own section, and
+    counting it here made the rates disagree with the Group they sat under.
+    `ran` stays every row: the test really did run, whatever failed it.
     """
     connection = _connect(db_path, window)
     rows = connection.execute(
@@ -343,7 +348,10 @@ def coverage_by_test(
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
                l.node_version,
                COUNT(*) AS ran,
-               SUM(CASE WHEN f.status = 'FAIL' THEN 1 ELSE 0 END) AS failed
+               SUM(CASE WHEN f.status = 'FAIL'
+                         AND IFNULL(f.failure_scope, 'test')
+                             NOT IN ('suite_setup', 'suite_teardown')
+                        THEN 1 ELSE 0 END) AS failed
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         GROUP BY f.longname, l.platform, l.python_version, l.rf_version,
@@ -959,6 +967,8 @@ def messages_by_test(
                f.message, COUNT(*) AS occurrences
         FROM test_result f
         WHERE f.status = 'FAIL' AND f.message IS NOT NULL
+          AND IFNULL(f.failure_scope, 'test')
+              NOT IN ('suite_setup', 'suite_teardown')
         GROUP BY f.longname, LOWER(IFNULL(f.error_signature, '')), f.message
         ORDER BY occurrences DESC
         """

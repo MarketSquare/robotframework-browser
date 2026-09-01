@@ -735,6 +735,91 @@ class TestFixtureFailureGrouping:
         assert fixture.failure_rate == pytest.approx(1.0)
 
 
+class TestTheFixtureRuleReachesEveryNumber:
+    """A row a broken suite fixture marked is a Fixture Failure everywhere or
+    nowhere.
+
+    It was excluded from the Groups and counted in the rates, so one test on the
+    working database rendered `1 / 108` in its heading and `2 of 30` in the
+    configuration beneath it. Nothing about that looks wrong on the page, which
+    is the failure mode this tool exists to catch in others.
+    """
+
+    def _seed(self, db: Path) -> None:
+        """One test that broke on its own account, and was later marked failed
+        by its suite's teardown.
+
+        Two legs, one configuration, so both land in the same rate row. Both
+        carry the same Error Signature and different raw messages, which is the
+        case that bites: masking is what makes two unrelated failures share a
+        key, so the fixture's message lands under the test's own Group.
+        """
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        rows = [
+            (1, "test", None, "the test itself broke", "boom"),
+            (2, "suite_teardown", "S", "the teardown broke", "boom"),
+        ]
+        for run_id, scope, owner, message, signature in rows:
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', 'sha', 'main', ?, 'failure', 'u')",
+                (run_id, f"2026-08-2{run_id}T10:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                "artifact_url, platform, python_version, rf_version, attempt, "
+                "ingested_at) VALUES (?, ?, ?, 'Test results-x', 'u', 'linux', "
+                "'3.13', '7.4', 1, 'now')",
+                (run_id, run_id, run_id),
+            )
+            connection.execute(
+                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+                "status, message, error_signature, failure_scope, scope_owner) "
+                "VALUES (?, 'S.T', 'T', 'S', 'FAIL', ?, ?, ?, ?)",
+                (run_id, message, signature, scope, owner),
+            )
+        connection.commit()
+        connection.close()
+
+    def test_the_rate_agrees_with_the_count_above_it(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db)
+
+        entry = build_report(db).test_failures[0]
+
+        assert entry.counts.failures == 1
+        assert [(r.failed, r.ran) for r in entry.rates] == [(1, 2)]
+
+    def test_the_denominator_still_counts_the_run_the_fixture_spoiled(self, tmp_path):
+        """`ran` is every row. The test really did run that time, whatever
+        failed it - only the numerator is about what the test itself did."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db)
+
+        assert coverage_by_test(db)["S.T"][0]["ran"] == 2
+
+    def test_a_fixture_message_is_not_evidence_about_the_test(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db)
+
+        entry = build_report(db).test_failures[0]
+
+        assert [m.message for m in entry.raw_messages] == ["the test itself broke"]
+
+    def test_the_fixture_keeps_its_own_row(self, tmp_path):
+        """Excluded from the test's numbers, not from the report."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(db)
+
+        fixtures = build_report(db).fixture_failures
+
+        assert [
+            (f.suite, f.scope, f.signature, f.counts.failures) for f in fixtures
+        ] == [("S", "suite_teardown", "boom", 1)]
+
+
 class TestVersionsOnAFailure:
     """Which versions a failure was seen on, so "is it version dependent?" is a
     question the report answers rather than one it raises."""
