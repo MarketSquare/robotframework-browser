@@ -733,7 +733,7 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
         ):
             if not neighbour:
                 continue
-            bad = " is-bad" if neighbour.outcome != "pass" else ""
+            bad = " is-bad" if neighbour.outcome in ("fail", "mixed") else ""
             tags.append(
                 f'<span class="otag{bad}">{label} {_e(neighbour.outcome)}</span>'
             )
@@ -751,7 +751,12 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
         also = ""
         if occurrence.also_failed_in_this_leg:
             named = occurrence.also_failed_in_this_leg[:SHOWN_CO_FAILURES]
-            names = [item.test for item in named]
+            names = [
+                f"{item.subject} ({item.scope.replace('_', ' ')})"
+                if item.scope in ("suite_setup", "suite_teardown")
+                else item.subject
+                for item in named
+            ]
             # Counted against everything the Report found, not only what it
             # listed, or a leg with more than CO_FAILURE_LIMIT co-failures would
             # understate how much went down with it.

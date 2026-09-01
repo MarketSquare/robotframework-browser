@@ -267,9 +267,13 @@ class Retry:
 
 @dataclass(frozen=True)
 class CoFailure:
-    """Something else that broke in the same Leg. No causation is claimed."""
+    """Another Subject that broke in the same Leg. No causation is claimed.
 
-    test: str
+    A Subject, not a test: a broken suite fixture appears once, naming the suite,
+    rather than once for each of the tests it marked.
+    """
+
+    subject: str
     scope: str | None
 
 
@@ -676,7 +680,7 @@ def _occurrence(
         next_run_on_this_leg=_neighbour(around.get("next_run_on_this_leg")),
         retry=_retry(around.get("retry")),
         also_failed_in_this_leg=tuple(
-            CoFailure(item["test"], item.get("scope")) for item in kept
+            CoFailure(item["subject"], item.get("scope")) for item in kept
         ),
         also_failed_in_this_leg_not_listed=max(0, len(alongside) - CO_FAILURE_LIMIT),
         log=lines,

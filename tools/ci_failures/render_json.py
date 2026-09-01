@@ -124,7 +124,7 @@ def _occurrence(occurrence: Occurrence, *, fixture: bool) -> dict:
     entry["next_run_on_this_leg"] = _neighbour(occurrence.next_run_on_this_leg)
     entry["retry"] = _retry(occurrence.retry)
     entry["also_failed_in_this_leg"] = [
-        {"test": item.test, "scope": item.scope}
+        {"subject": item.subject, "scope": item.scope}
         for item in occurrence.also_failed_in_this_leg
     ]
     if occurrence.also_failed_in_this_leg_not_listed:

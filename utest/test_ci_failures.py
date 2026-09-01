@@ -1673,7 +1673,7 @@ class TestWhatSurroundedTheFailure:
         )
 
         assert self._occurrence(db, "Second")["also_failed_in_this_leg"] == [
-            {"test": "First", "scope": "test"}
+            {"subject": "First", "scope": "test"}
         ]
 
     def test_a_leg_that_broke_wholesale_says_what_it_left_out(self, tmp_path):
@@ -1893,7 +1893,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         )
 
         assert self._fixture(db)["occurrences"][0]["also_failed_in_this_leg"] == [
-            {"test": "Unrelated", "scope": "test"}
+            {"subject": "Unrelated", "scope": "test"}
         ]
 
     def test_a_raw_message_is_counted_in_legs_not_in_marked_rows(self, tmp_path):
@@ -2363,6 +2363,109 @@ class TestWhatThePageCanNowReach:
 
         assert platforms
         assert {"platform", "legs", "failures", "per_leg"} == set(platforms[0])
+
+
+class TestWhatAFixtureMarkingIsNotEvidenceOf:
+    """A broken suite fixture fails every test beneath it. Those rows are the
+    fixture's outcome and not the test's, and two places were reading them as
+    though they were the test's."""
+
+    def _seed(self, db: Path, runs: list[tuple[int, list[tuple]]]) -> None:
+        """runs of (run_id, [(longname, status, failure_scope, scope_owner)])."""
+        from tools.ci_failures.db import connect
+
+        connection = connect(db)
+        for run_id, rows in runs:
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', ?, 'main', ?, 'failure', 'u')",
+                (run_id, f"sha{run_id}", f"2026-08-1{run_id}T10:00:00Z"),
+            )
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                "artifact_url, platform, attempt, ingested_at) VALUES "
+                "(?, ?, ?, 'Test results-x', 'u', 'linux', 1, 'now')",
+                (run_id, run_id, run_id),
+            )
+            for longname, status, scope, owner in rows:
+                connection.execute(
+                    "INSERT INTO test_result (leg_id, longname, name, "
+                    "suite_longname, status, message, error_signature, "
+                    "failure_scope, scope_owner) VALUES (?, ?, ?, 'S', ?, ?, ?, ?, ?)",
+                    (
+                        run_id,
+                        longname,
+                        longname,
+                        status,
+                        "raw" if status == "FAIL" else None,
+                        "boom" if status == "FAIL" else None,
+                        scope,
+                        owner,
+                    ),
+                )
+        connection.commit()
+        connection.close()
+
+    def test_a_broken_fixture_is_one_line_naming_the_suite(self, tmp_path):
+        """Not one line for each of the tests it marked. Twelve names that are
+        one event bury the test that broke on its own account."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (
+                    1,
+                    [
+                        ("S.Broke", "FAIL", "test", None),
+                        ("S.Marked1", "FAIL", "suite_teardown", "S"),
+                        ("S.Marked2", "FAIL", "suite_teardown", "S"),
+                        ("S.Marked3", "FAIL", "suite_teardown", "S"),
+                    ],
+                )
+            ],
+        )
+
+        entry = next(e for e in build_report(db).test_failures if e.test == "S.Broke")
+
+        assert [
+            (c.subject, c.scope) for c in entry.occurrences[0].also_failed_in_this_leg
+        ] == [("S", "suite_teardown")]
+
+    def test_an_adjacent_run_the_fixture_decided_has_no_verdict(self, tmp_path):
+        """The run happened and the test ran in it, so null would be wrong -
+        that already means there was no such run. It failed, so `fail` would be
+        wrong too: nothing about this test broke."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (1, [("S.T", "FAIL", "suite_teardown", "S")]),
+                (2, [("S.T", "FAIL", "test", None)]),
+                (3, [("S.T", "PASS", None, None)]),
+            ],
+        )
+
+        entry = build_report(db).test_failures[0]
+        occurrence = entry.occurrences[0]
+
+        assert occurrence.previous_run_on_this_leg.outcome == "suite broke"
+        assert occurrence.next_run_on_this_leg.outcome == "pass"
+
+    def test_a_run_where_the_test_itself_failed_still_says_fail(self, tmp_path):
+        """The abstention is only for runs where the fixture was the whole
+        story."""
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (1, [("S.T", "FAIL", "test", None)]),
+                (2, [("S.T", "FAIL", "test", None)]),
+            ],
+        )
+
+        occurrence = build_report(db).test_failures[0].occurrences[0]
+
+        assert occurrence.previous_run_on_this_leg.outcome == "fail"
 
 
 class TestKnownCauses:

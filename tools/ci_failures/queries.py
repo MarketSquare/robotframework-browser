@@ -436,11 +436,30 @@ def pass_durations_by_test(
     return {key: _spread(sorted(values)) for key, values in grouped.items()}
 
 
-def _verdict(statuses: list[str]) -> str:
-    unique = set(statuses)
-    if "FAIL" in unique:
-        return "mixed" if "PASS" in unique else "fail"
-    return "pass" if "PASS" in unique else "skip"
+# What an Adjacent Run says when the only thing that happened to this Subject
+# was its suite breaking above it. Not "fail": nothing about this Subject broke,
+# and reading it as a failure makes a healthy test look like it had been failing
+# for days. Not null either - that already means there was no such run at all.
+SUITE_BROKE = "suite broke"
+
+
+def _verdict(statuses: list[tuple[str, str | None]]) -> str:
+    """The outcome of one Subject in one Run on one Leg.
+
+    Rows a suite fixture marked are set aside first. They are the fixture's
+    outcome, not this Subject's, and a Run where that is all that happened has no
+    verdict to give - which is a third answer rather than a bad one.
+    """
+    own = {
+        status
+        for status, scope in statuses
+        if (scope or "test") not in ("suite_setup", "suite_teardown")
+    }
+    if not own:
+        return SUITE_BROKE
+    if "FAIL" in own:
+        return "mixed" if "PASS" in own else "fail"
+    return "pass" if "PASS" in own else "skip"
 
 
 def neighbouring_outcomes(
@@ -470,7 +489,7 @@ def neighbouring_outcomes(
     connection = _connect(db_path, window)
     rows = connection.execute(
         """
-        SELECT f.id AS result_id, f.longname, f.status,
+        SELECT f.id AS result_id, f.longname, f.status, f.failure_scope,
                l.artifact_name, l.id AS leg_id,
                r.id AS run_id, r.head_sha, r.created_at
         FROM test_result f
@@ -497,7 +516,7 @@ def neighbouring_outcomes(
                 "legs": set(),
             },
         )
-        run["statuses"].append(row["status"])
+        run["statuses"].append((row["status"], row["failure_scope"]))
         run["legs"].add(row["leg_id"])
 
     def seen(run: dict) -> dict:
@@ -522,7 +541,9 @@ def neighbouring_outcomes(
         if len(mine["legs"]) > 1:
             retry = {
                 "attempts": len(mine["legs"]),
-                "passed_on_another_attempt": "PASS" in mine["statuses"],
+                "passed_on_another_attempt": any(
+                    status == "PASS" for status, _ in mine["statuses"]
+                ),
             }
         outcomes[row["result_id"]] = {
             "previous_run_on_this_leg": seen(lane[order[here - 1]]) if here else None,
@@ -548,24 +569,32 @@ def co_failures(db_path: Path, window: Window = ALL_HISTORY) -> dict[int, list[d
 
     This claims no causation and cannot. It reports what else broke in the same
     leg, which costs one query and is the only hint the data has to offer.
+
+    Reported per Subject, so a broken suite fixture is one line naming the suite
+    rather than one line for each of the twelve tests it marked. Twelve names
+    that are one event is an anti-hint: it buries the tests that broke on their
+    own account, which are the ones worth reading.
     """
     connection = _connect(db_path, window)
     rows = connection.execute(
         """
-        SELECT a.id AS result_id, b.longname,
+        SELECT a.id AS result_id,
+               CASE WHEN b.failure_scope IN ('suite_setup', 'suite_teardown')
+                    THEN b.scope_owner ELSE b.longname END AS subject,
                IFNULL(b.failure_scope, 'test') AS scope
         FROM test_result a
         JOIN test_result b
           ON b.leg_id = a.leg_id AND b.id <> a.id AND b.status = 'FAIL'
         WHERE a.status = 'FAIL'
-        ORDER BY a.id, b.longname
+        GROUP BY a.id, subject, scope
+        ORDER BY a.id, subject
         """
     ).fetchall()
     connection.close()
     grouped: dict[int, list[dict]] = {}
     for row in rows:
         grouped.setdefault(row["result_id"], []).append(
-            {"test": row["longname"], "scope": row["scope"]}
+            {"subject": row["subject"], "scope": row["scope"]}
         )
     return grouped
 
@@ -722,7 +751,7 @@ def neighbouring_fixture_outcomes(
                     "legs": set(),
                 },
             )
-            run["statuses"].append("FAIL" if row["broke"] else "PASS")
+            run["statuses"].append(("FAIL" if row["broke"] else "PASS", None))
             run["legs"].add(row["leg_id"])
 
         def seen(run: dict) -> dict:
@@ -744,7 +773,9 @@ def neighbouring_fixture_outcomes(
             if len(mine["legs"]) > 1:
                 retry = {
                     "attempts": len(mine["legs"]),
-                    "passed_on_another_attempt": "PASS" in mine["statuses"],
+                    "passed_on_another_attempt": any(
+                        status == "PASS" for status, _ in mine["statuses"]
+                    ),
                 }
             outcomes[(owner, scope, row["leg_id"])] = {
                 "previous_run_on_this_leg": (
@@ -790,7 +821,7 @@ def fixture_co_failures(
     for row in rows:
         key = (row["scope_owner"], row["failure_scope"], row["leg_id"])
         grouped.setdefault(key, []).append(
-            {"test": row["longname"], "scope": row["scope"]}
+            {"subject": row["longname"], "scope": row["scope"]}
         )
     return grouped
 
