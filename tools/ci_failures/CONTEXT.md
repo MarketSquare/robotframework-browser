@@ -39,6 +39,12 @@ masked out, so that the same problem seen five times reads as one thing. Compare
 case-insensitively, because two libraries spell the same gRPC deadline differently.
 _Avoid_: error type, fingerprint, hash
 
+**Subject**:
+What failed, and what its failures are counted against: a test, counted in Results, or a suite
+fixture, counted in Legs. A Group and a Fixture Failure are each one Subject and one Error
+Signature, which is why a Known Cause and a Snapshot can key on both with one key.
+_Avoid_: entity, target, owner (which is the Scope Owner), thing
+
 **Group**:
 A (test, Error Signature) pair, and the unit the report is built on. One test failing on two
 different errors is two Groups, because they are two problems.
@@ -101,6 +107,14 @@ version control. Never taken from a windowed report: a baseline that covered les
 make every Group look as though it had shrunk.
 _Avoid_: baseline (as the file), history
 
+**Adjacent Run**:
+The Run immediately before or after this one on the same Leg, and the outcome the same Subject
+had in it. Compared per Leg and never per Run: a test that only fails on win32 has nothing to
+learn from the linux run that happened to come next. A Subject marked failed by a Fixture Failure
+has no outcome here at all - its suite broke, not it, and that is neither a pass nor a fail.
+_Avoid_: neighbouring, surrounding, nearby - and never for the keywords before a failure inside
+one test, which is a different question this tool does not answer.
+
 **Inconclusive Zero**:
 A configuration that has failed nothing yet, where a configuration exactly as broken as the
 others would also have shown nothing this often. The distinction between evidence of health
@@ -112,8 +126,11 @@ _Avoid_: clean, passing, green
 ## Relationships
 
 - A **Report** covers exactly one **Window** and is built of **Groups** and **Fixture Failures**
+- A **Group** and a **Fixture Failure** are each one **Subject** and one **Error Signature**,
+  and differ in what their **Occurrences** are counted in: Results for a test, Legs for a fixture
 - A **Group** has one or more **Occurrences**; a **Fixture Failure**'s Occurrence is one **Leg**
 - A **Report** has many **Renderings**, and every **Rendering** shows the same Report
+- An **Occurrence** may have an **Adjacent Run** either side of it, on its own **Leg**
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed
 
 ## Flagged ambiguities
