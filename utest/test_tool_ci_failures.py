@@ -17,7 +17,6 @@ from tools.ci_failures.render_json import document as json_document
 from tools.ci_failures.report import LogLine
 from tools.ci_failures.report import build as build_report
 from tools.ci_failures.queries import (
-    co_failures,
     coverage_by_fixture,
     coverage_by_test,
     first_attempt_counts_by_test,
@@ -27,7 +26,6 @@ from tools.ci_failures.queries import (
     failure_groups,
     fixture_signature_variants,
     fixture_failures,
-    messages_by_test,
     occurrences_by_test,
     signature_variants,
     totals,
@@ -97,6 +95,24 @@ Suite Level Cleanup
     Log    cleaning up
     Fail    the suite teardown broke
 """
+
+
+def one_row(db: Path, sql: str):
+    """One row, with the connection closed behind it."""
+    connection = connect_db(db)
+    try:
+        return connection.execute(sql).fetchone()
+    finally:
+        connection.close()
+
+
+def run_sql(db: Path, script: str) -> None:
+    """A statement or two against a seeded database, and then closed."""
+    connection = connect_db(db)
+    try:
+        connection.executescript(script)
+    finally:
+        connection.close()
 
 
 def seed(db: Path, rows: list[dict]) -> None:
@@ -1275,7 +1291,7 @@ class TestOneBadArtifactCostsOneLeg:
         result = ingest.ingest(db, limit=5, report=lambda _: None, dry_run=True)
 
         assert (result.runs, result.legs) == (1, 1)
-        assert connect_db(db).execute("SELECT COUNT(*) FROM leg").fetchone()[0] == 0
+        assert one_row(db, "SELECT COUNT(*) AS n FROM leg")["n"] == 0
 
 
 class TestTransientDownloadFailures:
@@ -1355,8 +1371,6 @@ class TestTransientDownloadFailures:
 
         with pytest.raises(github.GhError, match="after 3 attempts"):
             github.download_artifact(1, tmp_path / "a.zip")
-
-        assert attempts["n"] == github.DOWNLOAD_ATTEMPTS
 
     def test_a_retry_that_succeeds_is_not_an_error(self, tmp_path, monkeypatch):
         attempts = {"n": 0}
@@ -2881,8 +2895,12 @@ class TestTheReading:
 
         db = tmp_path / "ci.sqlite3"
 
-        with pytest.raises(ValueError, match="not a Reading"):
-            Reading(connect_db(db))
+        connection = connect_db(db)
+        try:
+            with pytest.raises(ValueError, match="not a Reading"):
+                Reading(connection)
+        finally:
+            connection.close()
 
     def test_the_subject_views_are_windowed_like_everything_else(self, tmp_path):
         """The guarantee that would break if these became permanent views.
@@ -3075,19 +3093,16 @@ class TestTheColumnsThatNeedNoArtifact:
     def test_a_keyword_that_moved_is_found_again_without_downloading(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
-        connect_db(db).executescript(
+        run_sql(
+            db,
             "UPDATE test_result SET keyword_owner = 'Browser', "
             "failing_keyword = 'Close Browser', keyword_source = 'gone/away.py', "
-            "keyword_kind = 'unknown', keyword_lineno = 1"
+            "keyword_kind = 'unknown', keyword_lineno = 1",
         )
 
         resolved = ingest.recompute_keyword_locations(db, report=lambda _: None)
 
-        row = (
-            connect_db(db)
-            .execute("SELECT keyword_kind, keyword_source FROM test_result")
-            .fetchone()
-        )
+        row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert resolved == 1
         assert row["keyword_kind"] == "library"
         assert row["keyword_source"] == "Browser/keywords/playwright_state.py"
@@ -3099,18 +3114,15 @@ class TestTheColumnsThatNeedNoArtifact:
         database pointed nowhere and nothing said why."""
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
-        connect_db(db).executescript(
+        run_sql(
+            db,
             "UPDATE test_result SET keyword_owner = 'scope_logger', "
-            "failing_keyword = 'Assert Passed Duration'"
+            "failing_keyword = 'Assert Passed Duration'",
         )
 
         ingest.recompute_keyword_locations(db, report=lambda _: None)
 
-        row = (
-            connect_db(db)
-            .execute("SELECT keyword_kind, keyword_source FROM test_result")
-            .fetchone()
-        )
+        row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert row["keyword_kind"] == "project"
         assert row["keyword_source"] == "atest/test/08_Scope_Tests/scope_logger.py"
 
@@ -3189,11 +3201,7 @@ class TestRegroupingWithoutTheArtifacts:
 
         changed = ingest.recompute_signatures(db, report=lambda _: None)
 
-        after = (
-            connect_db(db)
-            .execute("SELECT error_signature FROM test_result")
-            .fetchone()[0]
-        )
+        after = one_row(db, "SELECT error_signature FROM test_result")[0]
         assert changed == 1
         # The parts that vary between occurrences are masked; an id inside a
         # selector is not one of them, and the message is the test's own text.

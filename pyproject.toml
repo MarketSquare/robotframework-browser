@@ -190,14 +190,17 @@ configure = [
 
 [tool.pytest.ini_options]
 testpaths = ["utest"]
-addopts = "--cov=Browser --cov-report=term-missing"
+addopts = "--cov=Browser --cov=tools/ci_failures --cov-report=term-missing"
 pythonpath = [
   "src"
 ]
 
 
 [tool.coverage.run]
-source = ["Browser"]
+# The library, and the CI failure tool that ships beside it. The tool is
+# maintainers-only and excluded from the wheel, but it is 5,200 lines with 195
+# tests and nothing was reporting on any of it.
+source = ["Browser", "tools/ci_failures"]
 
 [tool.coverage.report]
 show_missing = true
