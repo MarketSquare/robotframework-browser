@@ -962,9 +962,7 @@ def _about_html(about: dict) -> str:
     )
 
 
-def _subject_html(
-    entry: TestEntry | FixtureEntry, widest: int, *, fixture: bool
-) -> str:
+def _subject_html(entry: TestEntry | FixtureEntry, widest: int) -> str:
     """One Subject's article, whichever kind of Subject it is.
 
     This was two functions that ran the same six blocks in the same order -
@@ -973,13 +971,16 @@ def _subject_html(
     Six shared calls written twice is six chances for the page to gain something
     for a test and not for a broken suite fixture, which is the shape of every
     Subject bug this tool has had.
-    """
-    counts = entry.counts
-    width = (counts.failures / widest * 100) if widest else 0
-    ran = counts.suite_runs if fixture else counts.ran
-    unit = "suite runs" if fixture else "runs"
 
-    if fixture:
+    Which kind it is comes from the entry rather than from a flag beside it: one
+    source of truth, and it is what lets the type checker see that only a
+    Fixture Failure is ever asked for `suite_runs`.
+    """
+    width = (entry.counts.failures / widest * 100) if widest else 0
+
+    if isinstance(entry, FixtureEntry):
+        ran = entry.counts.suite_runs
+        unit = "suite runs"
         kind = entry.scope.replace("_", " ")
         heading = (
             f'<div><span class="scope">{_e(kind)}</span></div>\n'
@@ -989,10 +990,12 @@ def _subject_html(
         error_class = "error"
         affected = (
             f'\n          <div class="affected">marked '
-            f"{counts.test_rows_marked_failed} test row(s) failed:\n"
+            f"{entry.counts.test_rows_marked_failed} test row(s) failed:\n"
             f"            {_e(', '.join(entry.affected_tests)) or '-'}</div>"
         )
     else:
+        ran = entry.counts.ran
+        unit = "runs"
         suite, _, leaf = entry.test.rpartition(".")
         heading = (
             f'<div class="testname"><span class="suite">{_e(suite)}.</span>'
@@ -1003,10 +1006,12 @@ def _subject_html(
 
     return f"""      <article class="group">
         <div class="magnitude">
-          <span class="count">{counts.failures}<span class="of"> / {ran}</span></span>
+          <span class="count">{entry.counts.failures}<span class="of"> / {
+        ran
+    }</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
-          <span class="rate">{counts.rate:.1%} of {unit}</span>
-          {_first_attempt_html(counts.first_attempt, ran)}
+          <span class="rate">{entry.counts.rate:.1%} of {unit}</span>
+          {_first_attempt_html(entry.counts.first_attempt, ran)}
         </div>
         <div class="identity">
           {heading}
@@ -1033,7 +1038,7 @@ def page(report: Report) -> str:
     widest_fixture = max((f.counts.failures for f in fixtures), default=0)
     rate = (summary.failures / summary.results) if summary.results else 0
     ingested_span = (
-        f"{summary.since[:10]} to {summary.until[:10]}"
+        f"{(summary.since or '')[:10]} to {(summary.until or '')[:10]}"
         if summary.since
         else "no runs ingested"
     )
@@ -1047,7 +1052,7 @@ def page(report: Report) -> str:
     if groups:
         body = (
             '<div class="groups">\n'
-            + "".join(_subject_html(g, widest, fixture=False) for g in groups)
+            + "".join(_subject_html(g, widest) for g in groups)
             + "</div>"
         )
         note = (
@@ -1072,7 +1077,7 @@ def page(report: Report) -> str:
     against the number of times the suite ran - never once per test they marked. The rules at the
     foot of this page say why.</p>
     <div class="groups">
-{"".join(_subject_html(f, widest_fixture, fixture=True) for f in fixtures)}    </div>
+{"".join(_subject_html(f, widest_fixture) for f in fixtures)}    </div>
   </section>
 """
         if fixtures

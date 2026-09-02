@@ -41,7 +41,7 @@ queries opening their own paid that twenty-one times to answer twenty-one
 questions, and the cost grows with the archive while the Report does not.
 """
 
-from collections.abc import Iterable
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from sqlite3 import Connection, Cursor
@@ -80,7 +80,7 @@ class Reading:
                 "the Subject views, in that order."
             )
 
-    def execute(self, sql: str, parameters: Iterable[Any] = ()) -> Cursor:
+    def execute(self, sql: str, parameters: Sequence[Any] = ()) -> Cursor:
         return self.connection.execute(sql, parameters)
 
     def close(self) -> None:

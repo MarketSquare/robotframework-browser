@@ -94,7 +94,9 @@ def _insert_leg(
             info.node_process,
         ),
     )
-    return int(cursor.lastrowid)
+    # `lastrowid` is Optional in the stubs; an INSERT that returned no
+    # rowid would have raised above.
+    return int(cursor.lastrowid or 0)
 
 
 def _insert_results(

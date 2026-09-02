@@ -1468,6 +1468,7 @@ def lint_python(c, fix=False):
         "bootstrap.py",
         "browser_batteries/",
         ".github/skills/",
+        "tools/",
     ]
     c.run(" ".join(mypy_cmd))
 

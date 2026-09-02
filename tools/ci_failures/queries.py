@@ -797,7 +797,14 @@ def coverage_by_fixture(db: Reading) -> dict[tuple, list[CoverageRow]]:
             tally[1] += row["broke"]
         grouped[(owner, scope)] = sorted(
             (
-                CoverageRow(*configuration, ran=ran, failed=failed)
+                CoverageRow(
+                    platform=configuration[0],
+                    python_version=configuration[1],
+                    rf_version=configuration[2],
+                    node_version=configuration[3],
+                    ran=ran,
+                    failed=failed,
+                )
                 for configuration, (ran, failed) in counts.items()
             ),
             key=lambda entry: (-entry.failed, -entry.ran),

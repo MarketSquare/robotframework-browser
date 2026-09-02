@@ -69,7 +69,7 @@ def _rate(rate: Rate, *, measurable: bool) -> dict:
     """`measurable` is False for a Fixture Failure, which has no duration of its
     own. The key is left out rather than carried as null: a field that is null on
     every row of a whole section reads as a measurement that was attempted."""
-    entry = {
+    entry: dict = {
         "platform": rate.platform,
         "python": rate.python,
         "rf": rate.rf,
@@ -98,7 +98,7 @@ def _rate(rate: Rate, *, measurable: bool) -> dict:
 
 
 def _occurrence(occurrence: Occurrence, *, fixture: bool) -> dict:
-    entry = {
+    entry: dict = {
         "run": occurrence.run,
         "run_url": occurrence.run_url,
         "commit": occurrence.commit,
@@ -138,7 +138,7 @@ def _occurrence(occurrence: Occurrence, *, fixture: bool) -> dict:
     return entry
 
 
-def _cause(cause: KnownCause | None) -> dict:
+def _cause(cause: KnownCause) -> dict:
     return {
         "cause": cause.cause,
         "reference": cause.reference,
@@ -148,56 +148,61 @@ def _cause(cause: KnownCause | None) -> dict:
     }
 
 
-def _subject(entry: TestEntry | FixtureEntry, *, fixture: bool) -> dict:
+def _subject(entry: TestEntry | FixtureEntry) -> dict:
     """One Subject, whichever kind it is.
 
     A Group and a Fixture Failure differ in what they are counted in - Results
     for a test, Legs for a suite fixture - and in almost nothing else. This was
     two functions of forty lines whose `where_to_look`, `raw_messages`,
     `first_attempt` and whole known-cause tail were byte-identical, so a field
-    added to a Subject reached the document for one kind of Subject and not the
-    other, and nothing here would have said so: the check in `utest` matches
-    field names across the file, and the name was present either way.
+    added to a Subject reached the document for one kind and not the other, and
+    nothing would have said so.
 
-    The flag is the shape `_rate` and `_occurrence` already use.
+    Which kind it is comes from the entry itself rather than from a flag beside
+    it: one source of truth, and it is what lets the type checker see that only
+    a Fixture Failure is asked for `suite_runs`.
+
+    Built key by key rather than as a literal, because a saved report is read by
+    diff as often as by eye and the order is part of what it says.
     """
-    counts = entry.counts
-    # Built in order rather than by literal, so the document keeps the shape it
-    # had: a saved report is read by diff as often as by eye.
-    tally: dict = {"failures": counts.failures}
+    fixture = isinstance(entry, FixtureEntry)
+
+    tally: dict = {"failures": entry.counts.failures}
     # The denominator, and the only place the two grains show through: a test's
     # Occurrence is a Result, a suite fixture's is a Leg that ran the suite.
-    tally["suite_runs" if fixture else "ran"] = (
-        counts.suite_runs if fixture else counts.ran
-    )
-    tally["rate"] = round(counts.rate, 4)
-    tally["distinct_commits"] = counts.distinct_commits
-    if fixture:
-        tally["test_rows_marked_failed"] = counts.test_rows_marked_failed
+    if isinstance(entry, FixtureEntry):
+        tally["suite_runs"] = entry.counts.suite_runs
+    else:
+        tally["ran"] = entry.counts.ran
+    tally["rate"] = round(entry.counts.rate, 4)
+    tally["distinct_commits"] = entry.counts.distinct_commits
+    if isinstance(entry, FixtureEntry):
+        tally["test_rows_marked_failed"] = entry.counts.test_rows_marked_failed
     tally["first_attempt"] = {
-        "failures": counts.first_attempt.failures,
-        "ran": counts.first_attempt.ran,
-        "rate": round(counts.first_attempt.rate, 4),
+        "failures": entry.counts.first_attempt.failures,
+        "ran": entry.counts.first_attempt.ran,
+        "rate": round(entry.counts.first_attempt.rate, 4),
     }
 
-    out: dict = {
-        "suite" if fixture else "test": entry.suite if fixture else entry.test,
-        "scope": entry.scope,
-        "where_to_look": {
-            "test_file": entry.where_to_look.test_file,
-            "keyword": entry.where_to_look.keyword,
-            "keyword_defined": entry.where_to_look.keyword_defined,
-            "keyword_owner": entry.where_to_look.keyword_owner,
-            "keyword_kind": entry.where_to_look.keyword_kind,
-        },
-        "signature": entry.signature,
-        "raw_messages": [
-            {"message": m.message, "occurrences": m.occurrences}
-            for m in entry.raw_messages
-        ],
-        "counts": tally,
+    out: dict = {}
+    if isinstance(entry, FixtureEntry):
+        out["suite"] = entry.suite
+    else:
+        out["test"] = entry.test
+    out["scope"] = entry.scope
+    out["where_to_look"] = {
+        "test_file": entry.where_to_look.test_file,
+        "keyword": entry.where_to_look.keyword,
+        "keyword_defined": entry.where_to_look.keyword_defined,
+        "keyword_owner": entry.where_to_look.keyword_owner,
+        "keyword_kind": entry.where_to_look.keyword_kind,
     }
-    if fixture:
+    out["signature"] = entry.signature
+    out["raw_messages"] = [
+        {"message": m.message, "occurrences": m.occurrences} for m in entry.raw_messages
+    ]
+    out["counts"] = tally
+    if isinstance(entry, FixtureEntry):
         # What the fixture took down with it. A test marks nothing but itself.
         out["affected_tests"] = list(entry.affected_tests)
     out["rates"] = [_rate(r, measurable=not fixture) for r in entry.rates]
@@ -255,12 +260,8 @@ def document(report: Report) -> dict:
             for row in report.platforms
         ],
         "since_last_report": report.since_last_report,
-        "fixture_failures": [
-            _subject(entry, fixture=True) for entry in report.fixture_failures
-        ],
-        "test_failures": [
-            _subject(entry, fixture=False) for entry in report.test_failures
-        ],
+        "fixture_failures": [_subject(entry) for entry in report.fixture_failures],
+        "test_failures": [_subject(entry) for entry in report.test_failures],
     }
 
 

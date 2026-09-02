@@ -26,8 +26,12 @@ from .parse import screenshot_key
 from .queries import (
     NOTHING_AROUND,
     AdjacentRun,
+    Around,
     CoverageRow,
     FixtureLegKey,
+    LogRow,
+    MessageRow,
+    OccurrenceRow,
     # Re-exported deliberately. `outcome` is a Report field, so a Rendering
     # reads the vocabulary for it here rather than reaching into `queries`.
     # It is produced there because `_verdict` is, and `_verdict` is there
@@ -35,6 +39,8 @@ from .queries import (
     # now says so rather than claiming no such function exists.
     Outcome,  # noqa: F401
     Spread,
+    SubjectKey,
+    VariantRow,
     co_failures,
     coverage_by_fixture,
     coverage_by_test,
@@ -56,6 +62,9 @@ from .queries import (
     runs_either_side,
     signature_variants,
     totals,
+)
+from .queries import (
+    CoFailure as CoFailureRow,
 )
 from .queries import (
     Retry as QueryRetry,
@@ -656,7 +665,7 @@ def _retry(entry: QueryRetry | None) -> Retry | None:
     return Retry(entry.attempts, entry.passed_on_another_attempt)
 
 
-def _log_lines(rows: list[dict]) -> tuple[LogLine, ...]:
+def _log_lines(rows: list[LogRow]) -> tuple[LogLine, ...]:
     return tuple(
         LogLine(row.level, row.keyword, row.origin, row.message) for row in rows
     )
@@ -676,10 +685,10 @@ def _leg_name(artifact_name: str | None) -> str | None:
 
 
 def _occurrence(
-    entry: dict,
-    around: dict,
-    alongside: list[dict],
-    logs: dict,
+    entry: OccurrenceRow,
+    around: Around,
+    alongside: list[CoFailureRow],
+    logs: dict[int, list[LogRow]],
     *,
     elapsed_ms: int | None = None,
     tests_marked: int | None = None,
@@ -717,7 +726,10 @@ def _occurrence(
 
 
 def _occurrences(
-    entries: list[dict], neighbours: dict, others: dict, logs: dict
+    entries: list[OccurrenceRow],
+    neighbours: dict[int, Around],
+    others: dict[int, list[CoFailureRow]],
+    logs: dict[int, list[LogRow]],
 ) -> tuple[Occurrence, ...]:
     return tuple(
         _occurrence(
@@ -732,15 +744,19 @@ def _occurrences(
 
 
 def _fixture_occurrences(
-    entries: list[dict], identity: tuple, neighbours: dict, others: dict, logs: dict
+    entries: list[OccurrenceRow],
+    identity: tuple[str, str],
+    neighbours: dict[FixtureLegKey, Around],
+    others: dict[FixtureLegKey, list[CoFailureRow]],
+    logs: dict[int, list[LogRow]],
 ) -> tuple[Occurrence, ...]:
     """One Leg the fixture broke in. `tests_marked` is what that Leg lost, a fact
     about the Leg rather than a multiplier on the count."""
     return tuple(
         _occurrence(
             entry,
-            neighbours.get(FixtureLegKey(*identity, entry.leg_id), NOTHING_AROUND),
-            others.get((*identity, entry.leg_id), []),
+            neighbours.get(FixtureLegKey(*identity, entry.leg_id or 0), NOTHING_AROUND),
+            others.get(FixtureLegKey(*identity, entry.leg_id or 0), []),
             logs,
             tests_marked=entry.tests_marked,
         )
@@ -765,11 +781,11 @@ def _known_cause(known: dict, subject: str, signature: str | None) -> KnownCause
     )
 
 
-def _messages(rows: list[dict]) -> tuple[RawMessage, ...]:
+def _messages(rows: list[MessageRow]) -> tuple[RawMessage, ...]:
     return tuple(RawMessage(row.message, row.occurrences) for row in rows)
 
 
-def _variants(rows: list[dict]) -> tuple[SignatureVariant, ...]:
+def _variants(rows: list[VariantRow]) -> tuple[SignatureVariant, ...]:
     return tuple(SignatureVariant(row.signature, row.occurrences) for row in rows)
 
 
@@ -833,7 +849,11 @@ def _nothing_ran(db_path: Path, window: Window) -> str:
     """
     with reading.of(db_path) as everything:
         newest = latest_run(everything)
-    seen = f"newest ingested run {newest.at[:10]}" if newest else "nothing ingested yet"
+    seen = (
+        f"newest ingested run {newest.at[:10]}"
+        if newest and newest.at
+        else "nothing ingested yet"
+    )
     return f"No runs in {window.label} - {seen}. Run `inv ci-ingest`, or widen --days."
 
 
@@ -886,7 +906,7 @@ def _build(
     for group in failure_groups(db, limit=limit):
         # One key shape for every Subject, test or fixture:
         # (owner, scope, signature).
-        key = (group.longname, "test", group.signature_key)
+        key = SubjectKey(group.longname, "test", group.signature_key)
         rates, never = _rates(
             coverage.get(group.longname, []),
             platforms,
@@ -932,7 +952,7 @@ def _build(
     fixtures = []
     for fixture in fixture_failures(db, limit=limit):
         identity = (fixture.scope_owner, fixture.failure_scope)
-        key = (*identity, fixture.signature_key)
+        key = SubjectKey(*identity, fixture.signature_key)
         rates, never = _rates(
             fixture_coverage.get(identity, []),
             platforms,

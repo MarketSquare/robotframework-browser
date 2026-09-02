@@ -149,7 +149,9 @@ def compare(
     for group in snapshot.get("groups", []):
         if isinstance(group, dict):
             key = _key(group.get("subject"), group.get("signature"))
-            labels.setdefault(key, (group.get("subject"), group.get("signature")))
+            labels.setdefault(
+                key, (str(group.get("subject") or ""), group.get("signature"))
+            )
 
     changes = []
     for key in sorted(set(before) | set(after)):
@@ -169,7 +171,7 @@ def compare(
 
 
 def _change_dict(change: Change) -> dict:
-    entry = {"subject": change.subject, "signature": change.signature}
+    entry: dict = {"subject": change.subject, "signature": change.signature}
     if change.was is not None:
         entry["was"] = change.was
     if change.now is not None:
