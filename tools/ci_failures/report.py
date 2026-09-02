@@ -30,9 +30,9 @@ from .queries import (
     FixtureLegKey,
     # Re-exported deliberately. `outcome` is a Report field, so a Rendering
     # reads the vocabulary for it here rather than reaching into `queries`.
-    # It is produced there because `_verdict` is - which is itself a function
-    # in `queries.py` that runs no SQL, and so by that module's own rule
-    # belongs over here.
+    # It is produced there because `_verdict` is, and `_verdict` is there
+    # because it is called from inside a lane walk; `queries.py`'s own docstring
+    # now says so rather than claiming no such function exists.
     Outcome,  # noqa: F401
     Spread,
     co_failures,

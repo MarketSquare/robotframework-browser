@@ -148,9 +148,40 @@ def _cause(cause: KnownCause | None) -> dict:
     }
 
 
-def _test(entry: TestEntry) -> dict:
-    out = {
-        "test": entry.test,
+def _subject(entry: TestEntry | FixtureEntry, *, fixture: bool) -> dict:
+    """One Subject, whichever kind it is.
+
+    A Group and a Fixture Failure differ in what they are counted in - Results
+    for a test, Legs for a suite fixture - and in almost nothing else. This was
+    two functions of forty lines whose `where_to_look`, `raw_messages`,
+    `first_attempt` and whole known-cause tail were byte-identical, so a field
+    added to a Subject reached the document for one kind of Subject and not the
+    other, and nothing here would have said so: the check in `utest` matches
+    field names across the file, and the name was present either way.
+
+    The flag is the shape `_rate` and `_occurrence` already use.
+    """
+    counts = entry.counts
+    # Built in order rather than by literal, so the document keeps the shape it
+    # had: a saved report is read by diff as often as by eye.
+    tally: dict = {"failures": counts.failures}
+    # The denominator, and the only place the two grains show through: a test's
+    # Occurrence is a Result, a suite fixture's is a Leg that ran the suite.
+    tally["suite_runs" if fixture else "ran"] = (
+        counts.suite_runs if fixture else counts.ran
+    )
+    tally["rate"] = round(counts.rate, 4)
+    tally["distinct_commits"] = counts.distinct_commits
+    if fixture:
+        tally["test_rows_marked_failed"] = counts.test_rows_marked_failed
+    tally["first_attempt"] = {
+        "failures": counts.first_attempt.failures,
+        "ran": counts.first_attempt.ran,
+        "rate": round(counts.first_attempt.rate, 4),
+    }
+
+    out: dict = {
+        "suite" if fixture else "test": entry.suite if fixture else entry.test,
         "scope": entry.scope,
         "where_to_look": {
             "test_file": entry.where_to_look.test_file,
@@ -164,64 +195,14 @@ def _test(entry: TestEntry) -> dict:
             {"message": m.message, "occurrences": m.occurrences}
             for m in entry.raw_messages
         ],
-        "counts": {
-            "failures": entry.counts.failures,
-            "ran": entry.counts.ran,
-            "rate": round(entry.counts.rate, 4),
-            "distinct_commits": entry.counts.distinct_commits,
-            "first_attempt": {
-                "failures": entry.counts.first_attempt.failures,
-                "ran": entry.counts.first_attempt.ran,
-                "rate": round(entry.counts.first_attempt.rate, 4),
-            },
-        },
-        "rates": [_rate(r, measurable=True) for r in entry.rates],
-        "never_ran_on": list(entry.never_ran_on),
-        "occurrences": [_occurrence(o, fixture=False) for o in entry.occurrences],
+        "counts": tally,
     }
-    if entry.known_cause:
-        out["known_cause"] = _cause(entry.known_cause)
-    if entry.signature_variants:
-        out["signature_variants"] = [
-            {"signature": v.signature, "occurrences": v.occurrences}
-            for v in entry.signature_variants
-        ]
-    return out
-
-
-def _fixture(entry: FixtureEntry) -> dict:
-    out = {
-        "suite": entry.suite,
-        "scope": entry.scope,
-        "where_to_look": {
-            "test_file": entry.where_to_look.test_file,
-            "keyword": entry.where_to_look.keyword,
-            "keyword_defined": entry.where_to_look.keyword_defined,
-            "keyword_owner": entry.where_to_look.keyword_owner,
-            "keyword_kind": entry.where_to_look.keyword_kind,
-        },
-        "signature": entry.signature,
-        "raw_messages": [
-            {"message": m.message, "occurrences": m.occurrences}
-            for m in entry.raw_messages
-        ],
-        "counts": {
-            "failures": entry.counts.failures,
-            "suite_runs": entry.counts.suite_runs,
-            "rate": round(entry.counts.rate, 4),
-            "distinct_commits": entry.counts.distinct_commits,
-            "test_rows_marked_failed": entry.counts.test_rows_marked_failed,
-            "first_attempt": {
-                "failures": entry.counts.first_attempt.failures,
-                "ran": entry.counts.first_attempt.ran,
-                "rate": round(entry.counts.first_attempt.rate, 4),
-            },
-        },
-        "affected_tests": list(entry.affected_tests),
-        "rates": [_rate(r, measurable=False) for r in entry.rates],
-        "never_ran_on": list(entry.never_ran_on),
-        "occurrences": [_occurrence(o, fixture=True) for o in entry.occurrences],
-    }
+    if fixture:
+        # What the fixture took down with it. A test marks nothing but itself.
+        out["affected_tests"] = list(entry.affected_tests)
+    out["rates"] = [_rate(r, measurable=not fixture) for r in entry.rates]
+    out["never_ran_on"] = list(entry.never_ran_on)
+    out["occurrences"] = [_occurrence(o, fixture=fixture) for o in entry.occurrences]
     if entry.known_cause:
         out["known_cause"] = _cause(entry.known_cause)
     if entry.signature_variants:
@@ -274,8 +255,12 @@ def document(report: Report) -> dict:
             for row in report.platforms
         ],
         "since_last_report": report.since_last_report,
-        "fixture_failures": [_fixture(entry) for entry in report.fixture_failures],
-        "test_failures": [_test(entry) for entry in report.test_failures],
+        "fixture_failures": [
+            _subject(entry, fixture=True) for entry in report.fixture_failures
+        ],
+        "test_failures": [
+            _subject(entry, fixture=False) for entry in report.test_failures
+        ],
     }
 
 

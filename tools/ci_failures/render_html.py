@@ -962,62 +962,60 @@ def _about_html(about: dict) -> str:
     )
 
 
-def _group_html(entry: TestEntry, widest: int) -> str:
+def _subject_html(
+    entry: TestEntry | FixtureEntry, widest: int, *, fixture: bool
+) -> str:
+    """One Subject's article, whichever kind of Subject it is.
+
+    This was two functions that ran the same six blocks in the same order -
+    where to look, the known cause, the rates, the variants, the messages, the
+    occurrences - and differed in a denominator, a heading and one extra row.
+    Six shared calls written twice is six chances for the page to gain something
+    for a test and not for a broken suite fixture, which is the shape of every
+    Subject bug this tool has had.
+    """
     counts = entry.counts
     width = (counts.failures / widest * 100) if widest else 0
-    suite, _, leaf = entry.test.rpartition(".")
-    error_class = "error" if entry.signature else "error is-empty"
+    ran = counts.suite_runs if fixture else counts.ran
+    unit = "suite runs" if fixture else "runs"
+
+    if fixture:
+        kind = entry.scope.replace("_", " ")
+        heading = (
+            f'<div><span class="scope">{_e(kind)}</span></div>\n'
+            f'          <div class="testname">{_e(entry.suite)}</div>'
+        )
+        # A fixture always has a message: it is why the suite broke.
+        error_class = "error"
+        affected = (
+            f'\n          <div class="affected">marked '
+            f"{counts.test_rows_marked_failed} test row(s) failed:\n"
+            f"            {_e(', '.join(entry.affected_tests)) or '-'}</div>"
+        )
+    else:
+        suite, _, leaf = entry.test.rpartition(".")
+        heading = (
+            f'<div class="testname"><span class="suite">{_e(suite)}.</span>'
+            f"{_e(leaf)}</div>"
+        )
+        error_class = "error" if entry.signature else "error is-empty"
+        affected = ""
+
     return f"""      <article class="group">
         <div class="magnitude">
-          <span class="count">{counts.failures}<span class="of"> / {
-        counts.ran
-    }</span></span>
+          <span class="count">{counts.failures}<span class="of"> / {ran}</span></span>
           <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
-          <span class="rate">{counts.rate:.1%} of runs</span>
-          {_first_attempt_html(counts.first_attempt, counts.ran)}
+          <span class="rate">{counts.rate:.1%} of {unit}</span>
+          {_first_attempt_html(counts.first_attempt, ran)}
         </div>
         <div class="identity">
-          <div class="testname"><span class="suite">{_e(suite)}.</span>{_e(leaf)}</div>
+          {heading}
           <div class="{error_class}">{
         _e(entry.signature) if entry.signature else "no message recorded"
     }</div>
           {_where_html(entry.where_to_look)}
           {_cause_html(entry.known_cause)}
-          {_rates_html(entry.rates, entry.never_ran_on)}
-          {_variants_html(entry.signature_variants)}
-          {_messages_html(entry.raw_messages)}
-          {_occurrences_html(entry.occurrences)}
-        </div>
-      </article>
-"""
-
-
-def _fixture_html(entry: FixtureEntry, widest: int) -> str:
-    counts = entry.counts
-    width = (counts.failures / widest * 100) if widest else 0
-    kind = entry.scope.replace("_", " ")
-    return f"""      <article class="group">
-        <div class="magnitude">
-          <span class="count">{counts.failures}<span class="of"> / {
-        counts.suite_runs
-    }</span></span>
-          <div class="track"><div class="fill" style="width: {width:.1f}%"></div></div>
-          <span class="rate">{counts.rate:.1%} of suite runs</span>
-          {_first_attempt_html(counts.first_attempt, counts.suite_runs)}
-        </div>
-        <div class="identity">
-          <div><span class="scope">{_e(kind)}</span></div>
-          <div class="testname">{_e(entry.suite)}</div>
-          <div class="error">{
-        _e(entry.signature) if entry.signature else "no message recorded"
-    }</div>
-          {_where_html(entry.where_to_look)}
-          {_cause_html(entry.known_cause)}
-          {_rates_html(entry.rates, entry.never_ran_on)}
-          <div class="affected">marked {
-        counts.test_rows_marked_failed
-    } test row(s) failed:
-            {_e(", ".join(entry.affected_tests)) or "-"}</div>
+          {_rates_html(entry.rates, entry.never_ran_on)}{affected}
           {_variants_html(entry.signature_variants)}
           {_messages_html(entry.raw_messages)}
           {_occurrences_html(entry.occurrences)}
@@ -1049,7 +1047,7 @@ def page(report: Report) -> str:
     if groups:
         body = (
             '<div class="groups">\n'
-            + "".join(_group_html(g, widest) for g in groups)
+            + "".join(_subject_html(g, widest, fixture=False) for g in groups)
             + "</div>"
         )
         note = (
@@ -1074,7 +1072,7 @@ def page(report: Report) -> str:
     against the number of times the suite ran - never once per test they marked. The rules at the
     foot of this page say why.</p>
     <div class="groups">
-{"".join(_fixture_html(f, widest_fixture) for f in fixtures)}    </div>
+{"".join(_subject_html(f, widest_fixture, fixture=True) for f in fixtures)}    </div>
   </section>
 """
         if fixtures

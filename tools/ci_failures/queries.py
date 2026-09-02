@@ -4,8 +4,18 @@ Which tests fail, and on which error. A test that fails twice on one error and
 four times on another is two problems, not one, so the pair is the unit - not the
 test, and not the error.
 
-No flakiness verdict, and no judgement of any kind: if a function here does not
-run SQL it is in the wrong file. `report.py` decides what the numbers mean.
+No flakiness verdict, and no judgement of any kind: `report.py` decides what the
+numbers mean.
+
+This used to be written as "if a function here does not run SQL it is in the
+wrong file", which is a sharper rule than the one actually kept. Four functions
+run none. `_subject_key` and `_row_without_key` shape a row on its way out;
+`_spread` picks four order statistics out of a sorted list; `_verdict` reads a
+Leg's statuses and says what the Subject did in that Run - and that last one is
+a judgement by any reading. It is here because it is called from inside the lane
+walk in `runs_either_side` and its fixture twin, where moving it would mean
+handing `report.py` raw status tuples instead of an answer. Worth knowing about
+rather than worth pretending away.
 """
 
 from dataclasses import dataclass
