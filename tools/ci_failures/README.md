@@ -52,60 +52,59 @@ before the fix are exactly the ones that must not be counted.
 
 ## Architecture
 
-Two halves that meet at the database. The left half talks to the network and
-runs once per ingest; the right half never does and runs once per report.
+Two halves that meet at the database. One talks to the network and runs once per
+ingest; the other never touches it and runs once per report.
 
-```
-  INGEST — needs the network                READ — never touches the network
-  ─────────────────────────────             ────────────────────────────────
+### Ingest — needs the network
 
-   GitHub Actions                            ci_failures.sqlite3
-        │                                     (the same database)
-        │  gh api                                      │
-        ▼                                              ▼
-   ┌───────────┐                               ┌────────────┐
-   │ github.py │  runs, artifacts, attempts    │  window.py │  --days, as temp
-   └─────┬─────┘                               └─────┬──────┘  views that shadow
-         │  artifact.zip (10 MB, discarded)          │         the real tables
-         ▼                                           ▼
-   ┌───────────┐    ┌───────────┐              ┌────────────┐
-   │  parse.py │◄───│ locate.py │              │ subject.py │  test_failure /
-   └─────┬─────┘    └───────────┘              └─────┬──────┘  fixture_failure
-         │           where a keyword                 │
-         │           lives, from your                ▼
-         │           working copy              ┌────────────┐
-         ▼                                     │ reading.py │  ONE Reading,
-   ┌───────────┐                               └─────┬──────┘  made once
-   │ ingest.py │                                     │
-   └─────┬─────┘                                     ▼
-         │                                     ┌────────────┐
-         ▼                                     │ queries.py │  21 questions,
-   ci_failures.sqlite3                         └─────┬──────┘  typed rows
-   (db.py, schema.sql)                               │
-                                                     ▼
-                             known_causes.json ─►┌────────────┐
-                             last_report.json  ─►│  report.py │  one Report,
-                               (annotations.py)  └─────┬──────┘  frozen
-                                                       │
-                                           ┌───────────┴───────────┐
-                                           ▼                       ▼
-                                   ┌────────────────┐    ┌────────────────┐
-                                   │ render_html.py │    │ render_json.py │
-                                   └────────────────┘    └────────────────┘
-                                     a page to read       a document for
-                                                          an agent to read
+```mermaid
+flowchart TB
+    GHA["GitHub Actions"] -->|"gh api"| GH["github.py<br/><i>runs, artifacts, attempts</i>"]
+    GH -->|"artifact.zip &middot; 10 MB &middot; discarded"| PAR["parse.py<br/><i>output.xml &rarr; rows</i>"]
+    LOC["locate.py<br/><i>where a keyword lives,<br/>from your working copy</i>"] --> PAR
+    PAR --> ING["ingest.py<br/><i>one leg at a time, each contained</i>"]
+    ING --> DB[("ci_failures.sqlite3<br/><i>db.py &middot; schema.sql</i>")]
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px;
+    class DB store
 ```
 
-**The ingest half** downloads one artifact at a time, reads `output.xml` out of
-it, and throws the zip away. Nothing but the parsed rows is kept — the artifact
-URL is stored so screenshots, traces and `playwright-log.txt` can be fetched
-later for a failure that turns out to deserve it. One artifact that will not
-download, or will not unzip, or will not parse, costs that leg and nothing else.
+Downloads one artifact at a time, reads `output.xml` out of it, and throws the
+zip away. Nothing but the parsed rows is kept — the artifact URL is stored so
+screenshots, traces and `playwright-log.txt` can be fetched later for a failure
+that turns out to deserve it. One artifact that will not download, or will not
+unzip, or will not parse, costs that leg and nothing else.
 
-**The read half** builds one **Report** and renders it twice. The Report is
-frozen dataclasses, complete and independent of how it is displayed, so the two
-renderings cannot quietly drift apart — a test fails if a field reaches one and
-not the other without somebody writing down why.
+`locate.py` is the one part that reads your working copy rather than the
+artifact: `output.xml` says which library owns a failing keyword but not where
+it lives.
+
+### Read — never touches the network
+
+```mermaid
+flowchart TB
+    DB[("ci_failures.sqlite3")] --> WIN["window.py<br/><i>--days, as temp views that shadow the real tables</i>"]
+    WIN --> SUB["subject.py<br/><i>test_failure / fixture_failure</i>"]
+    SUB --> RDG["reading.py<br/><i>ONE Reading, made once</i>"]
+    RDG --> QRY["queries.py<br/><i>21 questions, typed rows</i>"]
+    QRY --> REP["report.py<br/><i>one Report, frozen</i>"]
+    ANN["annotations.py<br/><i>known_causes.json &middot; last_report.json</i>"] --> REP
+    REP --> HTM["render_html.py<br/><i>a page to read</i>"]
+    REP --> JSN["render_json.py<br/><i>a document for an agent to read</i>"]
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px;
+    classDef out fill:#ecfdf5,stroke:#059669,stroke-width:2px;
+    class DB,ANN store
+    class HTM,JSN out
+```
+
+Builds one **Report** and renders it twice. The Report is frozen dataclasses,
+complete and independent of how it is displayed, so the two renderings cannot
+quietly drift apart — a test fails if a field reaches one and not the other
+without somebody writing down why.
+
+Everything above `report.py` narrows what can be seen: the Window restricts the
+tables, the Subject views resolve which rows belong to a test and which to the
+suite fixture above it, and a **Reading** is the only thing the queries accept.
+By the time a query runs, there is no way for it to ask about the wrong rows.
 
 ### The modules
 
