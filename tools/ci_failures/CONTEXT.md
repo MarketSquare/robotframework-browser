@@ -5,6 +5,9 @@ which error, by reading the artifacts each GitHub Actions run leaves behind. A m
 tool: it reads this repository's CI, imports this repository's library, and ships with the
 repository rather than with the package.
 
+`README.md` beside this file is how to run it and how the pieces fit together. This file is
+only what the words mean.
+
 ## Language
 
 ### What a run leaves behind
