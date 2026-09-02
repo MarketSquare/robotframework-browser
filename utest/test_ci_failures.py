@@ -99,6 +99,99 @@ Suite Level Cleanup
 """
 
 
+def seed(db: Path, rows: list[dict]) -> None:
+    """A database holding these results, and the Runs and Legs under them.
+
+    The test-side counterpart of `_run_robot`: that one produces a real
+    output.xml, this one produces a database without going near an artifact.
+
+    One dict per Result. Rows sharing a (commit, platform, python, attempt) land
+    on the same Leg, which is what makes a per-configuration denominator mean
+    anything, and an `attempt` above 1 puts a row on a second Leg of the same
+    name in the same Run - which is what a hand re-run of a failed job looks
+    like once it has been ingested.
+
+    Keys, all optional but `test` and `status`:
+
+        test suite status signature message elapsed scope owner
+        sha platform python rf node executors node_process attempt
+        screenshots screenshot_status logs
+
+    `logs` is a list of (level, keyword, message). There were eight seeders
+    before this one, agreeing about the four columns they happened to share and
+    unable between them to write `executors`, `node_process` or a screenshot -
+    very nearly the set of things nothing tested.
+    """
+    from tools.ci_failures.db import connect
+
+    connection = connect(db)
+    runs: dict[str, int] = {}
+    legs: dict[tuple, int] = {}
+    for row in rows:
+        sha = row.get("sha", "sha1")
+        if sha not in runs:
+            runs[sha] = len(runs) + 1
+            created = f"2026-08-{19 + runs[sha]:02d}T10:00:00Z"
+            connection.execute(
+                "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
+                "conclusion, url) VALUES (?, 'push', ?, 'main', ?, 'failure', 'u')",
+                (runs[sha], sha, created),
+            )
+        platform = row.get("platform", "linux")
+        python = row.get("python", "3.13.15")
+        attempt = row.get("attempt", 1)
+        key = (sha, platform, python, attempt)
+        if key not in legs:
+            legs[key] = len(legs) + 1
+            connection.execute(
+                "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
+                "artifact_url, platform, python_version, rf_version, "
+                "node_version, executors, node_process, ingested_at, attempt) "
+                "VALUES (?, ?, ?, ?, 'a-url', ?, ?, ?, ?, ?, ?, 'now', ?)",
+                (
+                    legs[key],
+                    runs[sha],
+                    legs[key],
+                    f"leg-{platform}-{python}",
+                    platform,
+                    python,
+                    row.get("rf", "7.4.2"),
+                    row.get("node"),
+                    row.get("executors"),
+                    row.get("node_process"),
+                    attempt,
+                ),
+            )
+        cursor = connection.execute(
+            "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
+            "status, elapsed_ms, message, error_signature, failure_scope, "
+            "scope_owner, screenshots, screenshot_status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                legs[key],
+                row["test"],
+                row["test"],
+                row.get("suite", "S"),
+                row["status"],
+                row.get("elapsed"),
+                row.get("message"),
+                row.get("signature"),
+                row.get("scope", "test"),
+                row.get("owner"),
+                row.get("screenshots"),
+                row.get("screenshot_status"),
+            ),
+        )
+        for seq, (level, keyword, message) in enumerate(row.get("logs", [])):
+            connection.execute(
+                "INSERT INTO log_message (test_result_id, seq, level, keyword, "
+                "origin, message) VALUES (?, ?, ?, ?, NULL, ?)",
+                (cursor.lastrowid, seq, level, keyword, message),
+            )
+    connection.commit()
+    connection.close()
+
+
 @pytest.fixture(scope="module")
 def broken_teardown_xml(tmp_path_factory) -> Path:
     return _run_robot(tmp_path_factory.mktemp("teardown"), BROKEN_TEARDOWN_SUITE)
@@ -1361,70 +1454,6 @@ class TestCaseFoldedGrouping:
     the same race. Two libraries naming one condition, not two conditions.
     """
 
-    def _seed(self, db: Path, rows: list[dict]) -> None:
-        """One row per test result, carrying the leg and run it belongs to.
-
-        Rows sharing a (commit, platform, python) land on the same leg, which is
-        what makes a per-configuration denominator mean anything. An `attempt`
-        puts a row on a second leg of the same name in the same run, which is
-        what a hand re-run of a failed job looks like once it is ingested.
-        """
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
-        runs: dict[str, int] = {}
-        legs: dict[tuple, int] = {}
-        for row in rows:
-            sha = row.get("sha", "sha1")
-            if sha not in runs:
-                runs[sha] = len(runs) + 1
-                created = f"2026-08-{19 + runs[sha]:02d}T10:00:00Z"
-                connection.execute(
-                    "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
-                    "conclusion, url) VALUES (?, 'push', ?, 'main', ?, 'failure', 'u')",
-                    (runs[sha], sha, created),
-                )
-            platform = row.get("platform", "linux")
-            python = row.get("python", "3.13.15")
-            attempt = row.get("attempt", 1)
-            key = (sha, platform, python, attempt)
-            if key not in legs:
-                legs[key] = len(legs) + 1
-                connection.execute(
-                    "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
-                    "artifact_url, platform, python_version, rf_version, "
-                    "ingested_at, attempt) "
-                    "VALUES (?, ?, ?, ?, 'a-url', ?, ?, '7.4.2', 'now', ?)",
-                    (
-                        legs[key],
-                        runs[sha],
-                        legs[key],
-                        f"leg-{platform}-{python}",
-                        platform,
-                        python,
-                        attempt,
-                    ),
-                )
-            connection.execute(
-                "INSERT INTO test_result (leg_id, longname, name, suite_longname, "
-                "status, elapsed_ms, message, error_signature, failure_scope, "
-                "scope_owner) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    legs[key],
-                    row["test"],
-                    row["test"],
-                    row.get("suite", "S"),
-                    row["status"],
-                    row.get("elapsed"),
-                    row.get("message"),
-                    row.get("signature"),
-                    row.get("scope", "test"),
-                    row.get("owner"),
-                ),
-            )
-        connection.commit()
-        connection.close()
-
     def _deadlines(self) -> list[dict]:
         return [
             {"test": "T", "status": "FAIL", "signature": "Deadline Exceeded"},
@@ -1434,7 +1463,7 @@ class TestCaseFoldedGrouping:
 
     def test_two_spellings_of_one_error_are_one_group(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._deadlines())
+        seed(db, self._deadlines())
 
         groups = failure_groups(reading_of(db))
 
@@ -1443,14 +1472,14 @@ class TestCaseFoldedGrouping:
 
     def test_the_merged_group_is_keyed_case_insensitively(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._deadlines())
+        seed(db, self._deadlines())
 
         assert failure_groups(reading_of(db))[0].signature_key == "deadline exceeded"
 
     def test_the_spellings_survive_the_merge(self, tmp_path):
         """Which side of the boundary gave up first is evidence, not noise."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._deadlines())
+        seed(db, self._deadlines())
 
         variants = signature_variants(reading_of(db))[
             ("T", "test", "deadline exceeded")
@@ -1463,14 +1492,14 @@ class TestCaseFoldedGrouping:
 
     def test_a_group_with_one_spelling_reports_no_variants(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
         assert signature_variants(reading_of(db)) == {}
 
     def test_suite_fixtures_are_merged_the_same_way(self, tmp_path):
         """Where it actually happens: the real case is a suite teardown."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 dict(row, scope="suite_teardown", owner="Suite X", sha=f"sha{i}")
@@ -1500,15 +1529,13 @@ class TestPayloadForALanguageModel:
     occurrence, and every raw message the signature masked away.
     """
 
-    _seed = TestCaseFoldedGrouping._seed
-
     def _entry(self, db: Path, test: str = "T") -> dict:
         return next(t for t in build_json(db)["test_failures"] if t["test"] == test)
 
     def test_a_configuration_that_never_failed_keeps_its_denominator(self, tmp_path):
         """0 of 4 on darwin is evidence. A global rate cannot say it."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "boom"}] * 3
             + [{"test": "T", "status": "PASS"}] * 5
@@ -1525,7 +1552,7 @@ class TestPayloadForALanguageModel:
     def test_a_platform_the_test_never_ran_on_is_named(self, tmp_path):
         """Absent and clean are opposite findings. A zero cannot tell them apart."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "boom"}]
             + [{"test": "Other", "status": "PASS", "platform": "win32"}],
@@ -1536,7 +1563,7 @@ class TestPayloadForALanguageModel:
     def test_every_distinct_raw_message_is_kept(self, tmp_path):
         """The signature masks what varies, which is exactly the evidence."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {
@@ -1565,7 +1592,7 @@ class TestPayloadForALanguageModel:
     def test_the_commit_of_every_occurrence_is_carried(self, tmp_path):
         """Three failures across two commits is not three across one."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "boom", "sha": "aaa"}] * 2
             + [{"test": "T", "status": "FAIL", "signature": "boom", "sha": "bbb"}],
@@ -1579,14 +1606,14 @@ class TestPayloadForALanguageModel:
 
     def test_occurrences_carry_the_artifact_to_fetch_evidence_from(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
         assert self._entry(db)["occurrences"][0]["artifact_url"] == "a-url"
 
     def test_a_broken_suite_fixture_is_not_a_test_failure(self, tmp_path):
         """Section 3, stated in the document rather than left to be inferred."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {
@@ -1608,7 +1635,7 @@ class TestPayloadForALanguageModel:
 
     def test_the_document_states_the_rules_it_was_built_on(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
         assert "suite_fixtures_are_separate" in build_json(db)["about"]
 
@@ -1616,7 +1643,7 @@ class TestPayloadForALanguageModel:
         """The terminal report cuts at 110 characters for a narrow terminal."""
         db = tmp_path / "ci.sqlite3"
         long_message = "x" * 400
-        self._seed(
+        seed(
             db,
             [
                 {
@@ -1632,7 +1659,7 @@ class TestPayloadForALanguageModel:
 
     def test_where_to_look_survives_into_the_document(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
         from tools.ci_failures.db import connect
 
         connection = connect(db)
@@ -1660,8 +1687,6 @@ class TestWhatSurroundedTheFailure:
     was already in the database and none of which was ever asked for.
     """
 
-    _seed = TestCaseFoldedGrouping._seed
-
     def _occurrence(self, db: Path, test: str = "T") -> dict:
         entry = next(t for t in build_json(db)["test_failures"] if t["test"] == test)
         return entry["occurrences"][0]
@@ -1670,7 +1695,7 @@ class TestWhatSurroundedTheFailure:
         """One failure between two passes is a blip. The same failure with a
         passing run before it and failures after is where something broke."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "PASS", "sha": "one"},
@@ -1690,7 +1715,7 @@ class TestWhatSurroundedTheFailure:
         """A test that fails on win32 learns nothing from the linux run that
         happened to come next, and reading one as the other invents a trend."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {
@@ -1709,7 +1734,7 @@ class TestWhatSurroundedTheFailure:
     def test_a_failure_at_the_edge_of_the_window_has_no_neighbour(self, tmp_path):
         """Absent is reported as absent. A missing run is not a passing one."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
         around = self._occurrence(db)
 
@@ -1720,7 +1745,7 @@ class TestWhatSurroundedTheFailure:
         """The one comparison that holds the commit constant. A regression the
         next commit fixed also has passing neighbours; only this separates them."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 1},
@@ -1738,7 +1763,7 @@ class TestWhatSurroundedTheFailure:
         the button. That is a fact about queue time, not about the failure, and
         it must not read as one."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
 
         assert self._occurrence(db)["retry"] is None
 
@@ -1746,7 +1771,7 @@ class TestWhatSurroundedTheFailure:
         """Take Screenshot fails, the VAR after it never runs, and two later
         suites fail on a variable nobody set. Three entries, one event."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "First", "status": "FAIL", "signature": "screenshot"},
@@ -1761,7 +1786,7 @@ class TestWhatSurroundedTheFailure:
     def test_a_leg_that_broke_wholesale_says_what_it_left_out(self, tmp_path):
         """A list that stops without saying so reads as a complete one."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "boom"}]
             + [
@@ -1779,7 +1804,7 @@ class TestWhatSurroundedTheFailure:
         """A timeout message cannot say whether a keyword broke or a budget was
         always too thin. The passing runs can."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "timeout", "elapsed": 2056}]
             + [
@@ -1796,7 +1821,7 @@ class TestWhatSurroundedTheFailure:
 
     def test_the_passing_durations_reach_the_document(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [{"test": "T", "status": "FAIL", "signature": "timeout", "elapsed": 9}]
             + [{"test": "T", "status": "PASS", "elapsed": 5, "sha": "two"}],
@@ -1809,9 +1834,7 @@ class TestWhatSurroundedTheFailure:
     def test_a_configuration_with_no_passes_carries_no_durations(self, tmp_path):
         """A test that has only ever failed on a leg has no margin to report."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "boom", "elapsed": 9}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom", "elapsed": 9}])
 
         entry = next(t for t in build_json(db)["test_failures"] if t["test"] == "T")
 
@@ -1820,7 +1843,7 @@ class TestWhatSurroundedTheFailure:
     def test_the_newest_run_is_reported_with_its_failure_count(self, tmp_path):
         """The rates say how often things break, not whether the head is green."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "FAIL", "signature": "boom", "sha": "old"},
@@ -1836,7 +1859,7 @@ class TestWhatSurroundedTheFailure:
         """The report is asked about failures. Timing every passing test in the
         window would price the query at the size of the database."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "FAIL", "signature": "boom", "elapsed": 9},
@@ -1857,8 +1880,6 @@ class TestFixtureEntriesAskTheSameQuestions:
     no denominators, no raw messages, and nothing to hang the evidence on: the
     configurations it had been seen on, counted, with nothing to count against.
     """
-
-    _seed = TestCaseFoldedGrouping._seed
 
     def _fixture(self, db: Path) -> dict:
         return build_json(db)["fixture_failures"][0]
@@ -1888,7 +1909,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """Five teardown failures produced ten failed tests. Listing ten
         occurrences puts back the count section 3 exists to remove."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._broke(marking=4))
+        seed(db, self._broke(marking=4))
 
         fixture = self._fixture(db)
 
@@ -1900,7 +1921,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """`seen_on` said which legs it had been seen failing on and how often,
         with nothing to divide by. 5 occurrences is not a rate."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._broke() + self._ran_clean(sha="two"))
+        seed(db, self._broke() + self._ran_clean(sha="two"))
 
         fixture = self._fixture(db)
 
@@ -1915,7 +1936,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """win32 breaking 5 times in 59 while nothing else breaks in 55 is the
         whole finding, and it is invisible without the clean configurations."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             self._broke(platform="win32")
             + self._ran_clean(sha="two", platform="win32")
@@ -1932,7 +1953,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """A suite fixture has no duration of its own in the database. A field
         that is null on every row reads as a measurement that failed."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._broke())
+        seed(db, self._broke())
 
         assert "pass_ms" not in self._fixture(db)["rates"][0]
 
@@ -1940,7 +1961,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """A fixture has no status row of its own: the leg passed if the suite
         ran there and the fixture is not among the failures."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             self._ran_clean(sha="one")
             + self._broke(sha="two")
@@ -1954,7 +1975,7 @@ class TestFixtureEntriesAskTheSameQuestions:
 
     def test_a_hand_rerun_of_a_broken_fixture_is_reported(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._broke(attempt=1) + self._ran_clean(attempt=2))
+        seed(db, self._broke(attempt=1) + self._ran_clean(attempt=2))
 
         assert self._fixture(db)["occurrences"][0]["retry"] == {
             "attempts": 2,
@@ -1965,7 +1986,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """They are its own damage, already counted once. Restating them as
         context makes one event look like a leg falling apart."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             self._broke()
             + [{"test": "Unrelated", "status": "FAIL", "signature": "other"}],
@@ -1979,7 +2000,7 @@ class TestFixtureEntriesAskTheSameQuestions:
         """Robot Framework writes the fixture's message onto every test it
         marked, so counting rows reports one teardown failure as four."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, self._broke(marking=4, message="Deadline Exceeded"))
+        seed(db, self._broke(marking=4, message="Deadline Exceeded"))
 
         assert self._fixture(db)["raw_messages"] == [
             {"message": "Deadline Exceeded", "occurrences": 1}
@@ -2214,15 +2235,13 @@ class TestTheDenominatorAndTheRerun:
     """A leg is only ever re-run because it failed, so re-attempts land exactly
     where the failures are and pull every rate down with them."""
 
-    _seed = TestCaseFoldedGrouping._seed
-
     def _counts(self, db: Path, test: str = "T") -> dict:
         entry = next(t for t in build_json(db)["test_failures"] if t["test"] == test)
         return entry["counts"]
 
     def test_a_rerun_inflates_the_ordinary_denominator(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "FAIL", "signature": "boom", "attempt": 1},
@@ -2242,7 +2261,7 @@ class TestTheDenominatorAndTheRerun:
         """Counting only the last attempt is the other obvious choice and is
         wrong - the last attempt is the one that passed."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "PASS", "attempt": 1},
@@ -2260,7 +2279,7 @@ class TestTheDenominatorAndTheRerun:
     ):
         """Zero of 1 is a finding. A group vanishing from the count is not."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "PASS", "attempt": 1},
@@ -2275,7 +2294,7 @@ class TestTheDenominatorAndTheRerun:
 
     def test_the_attempt_is_on_every_occurrence(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        self._seed(
+        seed(
             db,
             [
                 {"test": "T", "status": "PASS", "attempt": 1},
@@ -2290,7 +2309,7 @@ class TestTheDenominatorAndTheRerun:
     def test_legs_nobody_could_place_are_counted_in_the_window(self, tmp_path):
         """While it is above zero, a first-attempt rate is a floor."""
         db = tmp_path / "ci.sqlite3"
-        self._seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
         connection = connect_db(db)
         connection.execute("UPDATE leg SET attempt = NULL")
         connection.commit()
@@ -2337,7 +2356,7 @@ class TestWhatThePageCanNowReach:
         evidence away. Three failures sharing a signature can differ by the one
         number that says whether it is deterministic."""
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
+        seed(
             db,
             [
                 {
@@ -2365,7 +2384,7 @@ class TestWhatThePageCanNowReach:
         """Which side of the gRPC boundary gave up first is real information,
         and the case-folded key throws the spelling away from the heading."""
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(db, TestCaseFoldedGrouping()._deadlines())
+        seed(db, TestCaseFoldedGrouping()._deadlines())
 
         page = self._page(db, tmp_path)
 
@@ -2377,9 +2396,7 @@ class TestWhatThePageCanNowReach:
         from tools.ci_failures.annotations import write_snapshot
 
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "was here before"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "was here before"}])
         write_snapshot(db, [("Gone Test", "an error nobody sees now", 4)])
 
         page = self._page(db, tmp_path)
@@ -2397,9 +2414,7 @@ class TestWhatThePageCanNowReach:
         from tools.ci_failures.window import of_days
 
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "e"}])
 
         # A window the seeded run falls inside: an empty one is refused
         # outright now, which is a different message and a different test.
@@ -2418,9 +2433,7 @@ class TestWhatThePageCanNowReach:
         from tools.ci_failures.report import ABOUT
 
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "e"}])
 
         page = self._page(db, tmp_path)
 
@@ -2432,9 +2445,7 @@ class TestWhatThePageCanNowReach:
         """The page had it and the document did not, which is the drift running
         the other way."""
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "e"}])
 
         platforms = build_json(db)["platforms"]
 
@@ -2806,9 +2817,7 @@ class TestWhenThereIsNoReportToGive:
         from tools.ci_failures.window import of_days
 
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "e"}])
         long_after = datetime(2026, 12, 25, 12, 0).astimezone()
 
         with pytest.raises(NothingInWindowError, match="newest ingested run 2026-08"):
@@ -2824,9 +2833,7 @@ class TestWhenThereIsNoReportToGive:
         from tools.ci_failures.window import of_days
 
         db = tmp_path / "ci.sqlite3"
-        TestCaseFoldedGrouping()._seed(
-            db, [{"test": "T", "status": "FAIL", "signature": "e"}]
-        )
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "e"}])
         seeded_day = datetime(2026, 8, 20, 12, 0).astimezone()
 
         assert snapshot_entries(build_report(db)), "all history is fine"
@@ -2937,6 +2944,157 @@ class TestTheLogLinesShown:
         entries = (warn, *middle, warn)
 
         assert render_html._log_html(entries).count('class="logline gap"') == 1
+
+
+class TestWhatTheBuilderMadeReachable:
+    """Four things nothing tested, because no seeder could set them up.
+
+    Not a coincidence: the columns eight hand-rolled seeders could not write
+    were very nearly the list of paths nothing exercised.
+    """
+
+    def test_a_clean_configuration_says_whether_its_zero_is_evidence(self, tmp_path):
+        """The Inconclusive Zero: a rate of zero and an absence of evidence
+        render identically, and on a rare failure they are usually the same
+        thing. The reader's next move - "it is linux-only, look at what linux
+        does" - is only sound if the zero means something."""
+        db = tmp_path / "ci.sqlite3"
+        # One failure in twenty on linux; darwin clean over four runs, which a
+        # configuration exactly as broken would manage most of the time.
+        rows = (
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "sha": "s1"},
+            ]
+            + [{"test": "T", "status": "PASS", "sha": f"p{n}"} for n in range(19)]
+            + [
+                {"test": "T", "status": "PASS", "platform": "darwin", "sha": f"d{n}"}
+                for n in range(4)
+            ]
+        )
+        seed(db, rows)
+
+        rates = {r.platform: r for r in build_report(db).test_failures[0].rates}
+
+        assert rates["linux"].zero_is_inconclusive is None, "it failed; not a zero"
+        thin = rates["darwin"].zero_is_inconclusive
+        assert thin is not None, "four clean runs cannot clear a 1-in-20 failure"
+        assert 0 < thin.would_look_clean_anyway <= 1
+        assert thin.runs_for_a_meaningful_zero > 4
+
+    def test_a_configuration_with_enough_clean_runs_is_evidence(self, tmp_path):
+        """The other side of it, or the field would say nothing by always
+        being there."""
+        db = tmp_path / "ci.sqlite3"
+        # A third of all runs fail, so ten clean darwin runs would happen by
+        # luck about once in sixty. That zero is worth reading.
+        rows = (
+            [
+                {"test": "T", "status": "FAIL", "signature": "boom", "sha": f"f{n}"}
+                for n in range(10)
+            ]
+            + [{"test": "T", "status": "PASS", "sha": f"p{n}"} for n in range(10)]
+            + [
+                {"test": "T", "status": "PASS", "platform": "darwin", "sha": f"d{n}"}
+                for n in range(10)
+            ]
+        )
+        seed(db, rows)
+
+        rates = {r.platform: r for r in build_report(db).test_failures[0].rates}
+
+        assert rates["darwin"].ran == 10
+        assert rates["darwin"].zero_is_inconclusive is None
+
+    def test_a_known_cause_reaches_the_report(self, tmp_path):
+        """Recorded by hand and matched at report time. `build` read them from
+        the one path the module knows, so nothing could ask what a Report does
+        with a cause - or without one."""
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "Boom: 5 != 6"}])
+        causes = tmp_path / "known_causes.json"
+        causes.write_text(
+            json.dumps(
+                [
+                    {
+                        "test": "T",
+                        # Matched case-insensitively, the way groups are keyed.
+                        "signature": "boom: 5 != 6",
+                        "cause": "the widget is disposed by another worker",
+                        "reference": "0013_highlight_cache_flake.md",
+                        "recorded": "2026-08-29",
+                        "fixed_by": None,
+                        "fix_verified": None,
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        explained = build_report(db, known_causes=causes).test_failures[0]
+        unexplained = build_report(db, known_causes=tmp_path / "absent.json")
+
+        assert explained.known_cause is not None
+        assert explained.known_cause.reference == "0013_highlight_cache_flake.md"
+        # Absence means nobody has written one down, never that it is unknown.
+        assert unexplained.test_failures[0].known_cause is None
+
+    def test_the_executor_axis_survives_into_both_renderings(self, tmp_path):
+        """How many test executions ran at once, and whether they shared one
+        node process. A failure where one worker reaches another's state lives
+        on this axis and no other, and nothing else in the database records it.
+        No seeder could write either column, so nothing checked the path."""
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "signature": "boom",
+                    "executors": 3,
+                    "node_process": "shared",
+                }
+            ],
+        )
+
+        report = build_report(db)
+        occurrence = report.test_failures[0].occurrences[0]
+        document = json_document(report)["test_failures"][0]["occurrences"][0]
+
+        assert (occurrence.executors, occurrence.node_process) == (3, "shared")
+        assert (document["executors"], document["node_process"]) == (3, "shared")
+
+
+class TestRegroupingWithoutTheArtifacts:
+    def test_the_signatures_are_recomputed_from_the_stored_messages(self, tmp_path):
+        """What you run after changing the masking rules. It needs no network:
+        the message is in the database, so re-grouping never wants the artifact
+        again - which is the one thing on the cheap side of the re-parse wall."""
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": "T",
+                    "status": "FAIL",
+                    "message": "Timeout 5000ms exceeded waiting for #id-4f2a",
+                    "signature": "nonsense recorded by an older masking rule",
+                }
+            ],
+        )
+
+        changed = ingest.recompute_signatures(db, report=lambda _: None)
+
+        after = (
+            connect_db(db)
+            .execute("SELECT error_signature FROM test_result")
+            .fetchone()[0]
+        )
+        assert changed == 1
+        # The parts that vary between occurrences are masked; an id inside a
+        # selector is not one of them, and the message is the test's own text.
+        assert after == "Timeout <duration> exceeded waiting for #id-4f2a"
+        assert after != "nonsense recorded by an older masking rule"
 
 
 class TestScreenshotRanking:

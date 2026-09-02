@@ -837,7 +837,12 @@ def _nothing_ran(db_path: Path, window: Window) -> str:
     return f"No runs in {window.label} - {seen}. Run `inv ci-ingest`, or widen --days."
 
 
-def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Report:
+def build(
+    db_path: Path,
+    limit: int = 100,
+    window: Window = ALL_HISTORY,
+    known_causes: Path | None = None,
+) -> Report:
     """The whole Report for one Window, or why there is not one.
 
     One Reading, opened here and shared by every query below. They used to open
@@ -852,10 +857,16 @@ def build(db_path: Path, limit: int = 100, window: Window = ALL_HISTORY) -> Repo
     with reading.of(db_path, window) as db:
         if window.bounded and not totals(db).runs:
             raise NothingInWindowError(_nothing_ran(db_path, window))
-        return _build(db, limit, window, db_path)
+        return _build(db, limit, window, db_path, known_causes)
 
 
-def _build(db: reading.Reading, limit: int, window: Window, db_path: Path) -> Report:
+def _build(
+    db: reading.Reading,
+    limit: int,
+    window: Window,
+    db_path: Path,
+    known_causes: Path | None = None,
+) -> Report:
     summary = totals(db)
     platform_rows = platform_breakdown(db)
     platforms = {row.platform for row in platform_rows}
@@ -869,7 +880,7 @@ def _build(db: reading.Reading, limit: int, window: Window, db_path: Path) -> Re
     alongside = co_failures(db)
     first_runs, first_failures = first_attempt_counts_by_test(db)
     logs = log_messages_by_result(db)
-    known = load_known_causes()
+    known = load_known_causes(known_causes)
 
     tests = []
     for group in failure_groups(db, limit=limit):
