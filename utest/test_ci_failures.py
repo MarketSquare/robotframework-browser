@@ -3065,6 +3065,110 @@ class TestWhatTheBuilderMadeReachable:
         assert (document["executors"], document["node_process"]) == (3, "shared")
 
 
+class TestTheColumnsThatNeedNoArtifact:
+    """`0012` says there is no re-parse, and for most of what the database holds
+    that is true. It is not true of a derived column whose source is itself
+    stored, and there are four of those - the signature had a door and the three
+    keyword columns did not, so changing `locate._ROOTS` or the classification
+    rule read as "delete the database and download the window again"."""
+
+    def test_a_keyword_that_moved_is_found_again_without_downloading(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        connect_db(db).executescript(
+            "UPDATE test_result SET keyword_owner = 'Browser', "
+            "failing_keyword = 'Close Browser', keyword_source = 'gone/away.py', "
+            "keyword_kind = 'unknown', keyword_lineno = 1"
+        )
+
+        resolved = ingest.recompute_keyword_locations(db, report=lambda _: None)
+
+        row = (
+            connect_db(db)
+            .execute("SELECT keyword_kind, keyword_source FROM test_result")
+            .fetchone()
+        )
+        assert resolved == 1
+        assert row["keyword_kind"] == "library"
+        assert row["keyword_source"] == "Browser/keywords/playwright_state.py"
+
+    def test_a_helper_beside_its_suite_is_located(self, tmp_path):
+        """Robot Framework resolves `Library  helper.py` against the file that
+        imports it, so a test-only library can sit anywhere under `atest/test`.
+        Only `atest/library` was searched, so four failures in the working
+        database pointed nowhere and nothing said why."""
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
+        connect_db(db).executescript(
+            "UPDATE test_result SET keyword_owner = 'scope_logger', "
+            "failing_keyword = 'Assert Passed Duration'"
+        )
+
+        ingest.recompute_keyword_locations(db, report=lambda _: None)
+
+        row = (
+            connect_db(db)
+            .execute("SELECT keyword_kind, keyword_source FROM test_result")
+            .fetchone()
+        )
+        assert row["keyword_kind"] == "project"
+        assert row["keyword_source"] == "atest/test/08_Scope_Tests/scope_logger.py"
+
+    def test_a_library_that_will_not_import_is_named_rather_than_silent(self):
+        """It costs a location and never an ingest, which is right - but the
+        answer is cached, so one failure is every leg's answer for the rest of
+        the run and a whole ingest used to finish with three columns null on
+        every row and nothing anywhere saying why."""
+        from tools.ci_failures import locate
+
+        assert locate.keyword_location("NoSuchLibrary", "Whatever") == (None, None)
+
+        assert "NoSuchLibrary" in locate.unimportable()
+
+
+class TestAddingAColumnToADatabaseThatExists:
+    def test_an_index_on_an_added_column_does_not_break_what_is_already_there(
+        self, tmp_path, monkeypatch
+    ):
+        """`schema.sql` carries standalone CREATE INDEX statements, so running
+        it before the ALTER TABLEs meant that adding a column in one file and an
+        index on it in the other - the obvious pair of edits - raised `no such
+        column` on every database that already existed, on open, which is what
+        ingest and every report go through.
+        """
+        from tools.ci_failures import db as db_module
+
+        schema = Path(db_module.__file__).parent / "schema.sql"
+        original = schema.read_text(encoding="utf-8")
+        existing = tmp_path / "existing.sqlite3"
+        connect_db(existing).close()
+
+        monkeypatch.setitem(db_module._ADDED_COLUMNS["leg"], "runner", "TEXT")
+        schema.write_text(
+            original.replace(
+                "    attempt        INTEGER\n);",
+                "    attempt        INTEGER,\n    runner         TEXT\n);",
+            )
+            + "\nCREATE INDEX IF NOT EXISTS idx_leg_runner ON leg(runner);\n",
+            encoding="utf-8",
+        )
+        try:
+            for database in (existing, tmp_path / "fresh.sqlite3"):
+                connection = connect_db(database)
+                columns = {
+                    row["name"] for row in connection.execute("PRAGMA table_info(leg)")
+                }
+                indexes = {
+                    row["name"] for row in connection.execute("PRAGMA index_list(leg)")
+                }
+                connection.close()
+
+                assert "runner" in columns, database.name
+                assert "idx_leg_runner" in indexes, database.name
+        finally:
+            schema.write_text(original, encoding="utf-8")
+
+
 class TestRegroupingWithoutTheArtifacts:
     def test_the_signatures_are_recomputed_from_the_stored_messages(self, tmp_path):
         """What you run after changing the masking rules. It needs no network:

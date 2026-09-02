@@ -9,8 +9,15 @@ _SCHEMA = Path(__file__).parent / "schema.sql"
 # Columns added after databases existed. `CREATE TABLE IF NOT EXISTS` does
 # nothing to a table that is already there, so they are added in place. The
 # database is derived and rebuildable, but rebuilding it is three gigabytes of
-# downloads, and a column that can be filled in from the API for a tenth of a
-# gigabyte should not cost that.
+# downloads and half an hour, and nothing here is worth that.
+#
+# Only `attempt` can be filled in afterwards from the API, which is what that
+# reasoning was originally written about. `executors` and `node_process` come
+# out of output.xml and cannot be backfilled at all: a leg ingested before the
+# metadata reached CI carries neither, permanently, and they stay NULL rather
+# than being invented. Adding a column still means editing this and `schema.sql`
+# both - here for the databases that exist, there for the ones that do not -
+# and nothing checks that the two agree.
 _ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "leg": {
         "attempt": "INTEGER",
@@ -46,8 +53,17 @@ def connect(db_path: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
-    connection.executescript(_SCHEMA.read_text(encoding="utf-8"))
+    # Columns first, then the schema. `schema.sql` carries standalone
+    # `CREATE INDEX` statements, so running it first meant that the day anyone
+    # added a column here and an index on it there - the obvious pair of edits -
+    # every database that already existed raised `no such column` on open, and
+    # this is what ingest, every Reading and every report open through.
+    #
+    # Safe in the other order: on a database that does not exist yet there are
+    # no tables to read, `_add_missing_columns` finds nothing and returns, and
+    # `executescript` then creates everything including the indexes.
     _add_missing_columns(connection)
+    connection.executescript(_SCHEMA.read_text(encoding="utf-8"))
     connection.commit()
     return connection
 

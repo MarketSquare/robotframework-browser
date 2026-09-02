@@ -26,7 +26,21 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 _ROOTS = ("atest", "Browser", "utest", "node", "tools", "browser_batteries", "docs")
 
 # Where this repo keeps test-only keyword libraries, so they can be imported.
-_LIBRARY_PATHS = (REPO_ROOT / "atest" / "library",)
+# `atest/library` holds the shared ones; the rest sit beside the suite that uses
+# them, because Robot Framework resolves `Library  helper.py` relative to the
+# file that imports it. Only `atest/library` used to be here, so a helper next
+# to its suite - `scope_logger`, and four failures in the working database -
+# resolved to no location at all, and nothing said why.
+_LIBRARY_PATHS = (
+    REPO_ROOT / "atest" / "library",
+    *sorted(
+        {
+            module.parent
+            for module in (REPO_ROOT / "atest" / "test").rglob("*.py")
+            if not module.name.startswith("__")
+        }
+    ),
+)
 
 BROWSER_LIBRARY = "Browser"
 
@@ -79,6 +93,17 @@ def owner_kind(owner: str | None) -> str:
     return "project"
 
 
+#: Libraries this checkout could not import, and what went wrong. A location
+#: is missing for every keyword they own, in this run and in every row it
+#: writes; `recompute_keyword_locations` is how they are filled in later.
+_UNIMPORTABLE: dict[str, str] = {}
+
+
+def unimportable() -> dict[str, str]:
+    """What could not be resolved, for whoever is reporting on the run."""
+    return dict(_UNIMPORTABLE)
+
+
 @cache
 def _library_keywords(owner: str) -> dict[str, tuple[str | None, int | None]]:
     """Keyword name to (source, line) for one library, or empty if unavailable."""
@@ -89,9 +114,16 @@ def _library_keywords(owner: str) -> dict[str, tuple[str | None, int | None]]:
         from robot.libdocpkg import LibraryDocumentation  # noqa: PLC0415
 
         documentation = LibraryDocumentation(owner)
-    except Exception:
+    except Exception as error:
         # A library that cannot be imported here - renamed, removed, or simply
-        # not installed - costs a location, never an ingest.
+        # not installed - costs a location, never an ingest. But this answer is
+        # cached, so one failure is every leg's answer for the rest of the run,
+        # and a whole ingest used to finish with three columns null on every row
+        # and nothing anywhere saying why. Recorded so the caller can say.
+        # First line only: Robot Framework's import errors carry a
+        # traceback and the whole PYTHONPATH, and this goes in a summary.
+        reason = str(error).splitlines()[0] if str(error) else ""
+        _UNIMPORTABLE[owner] = f"{type(error).__name__}: {reason}"
         return {}
     return {
         keyword.name: (repo_relative(keyword.source), keyword.lineno)

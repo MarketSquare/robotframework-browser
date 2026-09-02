@@ -2068,12 +2068,35 @@ def ci_report(
 
 
 @task
-def ci_resignature(c, db=None):
-    """Recomputes the error signatures from the messages already stored.
+def ci_recompute(c, db=None, what="all"):
+    """Works the derived columns out again from what is already stored.
 
-    Use after changing the masking rules in `tools/ci_failures/parse.py`. Needs no
-    network: the messages are in the database.
+    There is no re-parse: nothing is kept but the parsed rows, so changing what
+    is read out of output.xml costs the whole window again. That is not true of
+    a derived column whose source is itself in the database, and there are four
+    of those - none of these needs the network or the artifacts.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        what: `signatures` after changing the masking rules in `parse.py`;
+            `locations` after moving a keyword, after changing `locate._ROOTS`,
+            or after an ingest that reported a library it could not import -
+            that answer is cached for the whole run, so one failed import
+            leaves three columns null on every row it wrote. `all` does both.
     """
-    from tools.ci_failures.ingest import recompute_signatures
+    from tools.ci_failures.ingest import (
+        recompute_keyword_locations,
+        recompute_signatures,
+    )
 
-    recompute_signatures(Path(db) if db else CI_FAILURES_DB)
+    known = {"all", "signatures", "locations"}
+    if what not in known:
+        raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
+    db_path = Path(db) if db else CI_FAILURES_DB
+    if not db_path.exists():
+        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
+        return
+    if what in ("all", "signatures"):
+        recompute_signatures(db_path)
+    if what in ("all", "locations"):
+        recompute_keyword_locations(db_path)

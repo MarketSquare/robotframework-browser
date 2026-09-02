@@ -7,11 +7,6 @@
 -- four times on another is two rows, not one - the errors are what distinguish
 -- one problem from another.
 
-CREATE TABLE IF NOT EXISTS meta (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS run (
     id          INTEGER PRIMARY KEY,   -- the GitHub run id
     event       TEXT,                  -- push | schedule

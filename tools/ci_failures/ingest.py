@@ -16,8 +16,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import github
+from . import github, locate
 from .db import connect, ingested_artifact_ids
+from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
 
 OUTPUT_XML = "output.xml"
@@ -369,6 +370,16 @@ def backfill_attempts(
     return filled
 
 
+# What can be worked out again from what is already stored, and what cannot.
+#
+# There is no re-parse: nothing is kept but the parsed rows, so a change to what
+# is read out of output.xml costs the whole window again - half an hour and three
+# gigabytes. That is true of the log-line rule, of the screenshot cap, of any new
+# column. It is not true of a derived column whose source is itself stored, and
+# there are four of those, not one. `recompute_signatures` was the only one with
+# a door; these are the rest of the family and they are as cheap as it is.
+
+
 def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -> int:
     """Recomputes every error signature from the messages already stored.
 
@@ -387,3 +398,45 @@ def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -
     connection.close()
     report(f"recomputed {len(rows)} signature(s)")
     return len(rows)
+
+
+def recompute_keyword_locations(
+    db_path: Path, report: Callable[[str], None] = print
+) -> int:
+    """Re-resolves where each failing keyword lives, and which side it is on.
+
+    `keyword_kind`, `keyword_source` and `keyword_lineno` are functions of
+    `keyword_owner` and `failing_keyword`, both of which are stored, so this
+    needs no network and no artifact - only the working copy, the same thing
+    ingest resolved them against.
+
+    Worth running after moving a keyword, after changing `locate._ROOTS`, and
+    above all after an ingest that reports a library it could not import: that
+    answer is cached for the whole run, so one failed import leaves these three
+    columns null on every row it wrote, and until now the only repair was
+    deleting the database and downloading the window again.
+
+    It resolves against the working copy rather than the commit each run used,
+    which is the same trade ingest makes and `run.head_sha` is stored for.
+    """
+    connection = connect(db_path)
+    rows = connection.execute(
+        "SELECT id, keyword_owner, failing_keyword FROM test_result "
+        "WHERE status = 'FAIL' AND keyword_owner IS NOT NULL"
+    ).fetchall()
+    updates = []
+    for row in rows:
+        source, lineno = keyword_location(row["keyword_owner"], row["failing_keyword"])
+        updates.append((owner_kind(row["keyword_owner"]), source, lineno, row["id"]))
+    connection.executemany(
+        "UPDATE test_result SET keyword_kind = ?, keyword_source = ?, "
+        "keyword_lineno = ? WHERE id = ?",
+        updates,
+    )
+    connection.commit()
+    located = sum(1 for _, source, _, _ in updates if source)
+    connection.close()
+    report(f"resolved {len(updates)} keyword(s), {located} with a location")
+    for owner, why in locate.unimportable().items():
+        report(f"  {owner} could not be imported, so its keywords have none: {why}")
+    return len(updates)
