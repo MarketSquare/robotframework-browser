@@ -94,6 +94,15 @@ appear at all. That is what lets it answer "has what I fixed come back", which n
 report can.
 _Avoid_: range, period, timeframe, since
 
+**Reading**:
+The database as one Report reads it: restricted to that Report's Window, with the Subject views
+resolved on top of it. Made once and asked every question, because building one costs a pass over
+every Result row and the answers all want the same restriction. Both halves have to have happened
+before any query runs, and a Reading is the only thing the queries accept, so there is no way to
+ask a question of an unrestricted database by accident.
+_Avoid_: connection, session, scope (which is a Failure Scope) - and note that "reading the
+artifacts", elsewhere in this file, is the ordinary verb rather than this.
+
 **Known Cause**:
 A conclusion someone reached by reading the artifacts, recorded by hand in `known_causes.json`
 and matched against a Group at report time. Kept in version control because it is the one
@@ -110,8 +119,10 @@ _Avoid_: baseline (as the file), history
 **Adjacent Run**:
 The Run immediately before or after this one on the same Leg, and the outcome the same Subject
 had in it. Compared per Leg and never per Run: a test that only fails on win32 has nothing to
-learn from the linux run that happened to come next. A Subject marked failed by a Fixture Failure
-has no outcome here at all - its suite broke, not it, and that is neither a pass nor a fail.
+learn from the linux run that happened to come next. The outcome is one of five - `pass`, `fail`,
+`mixed`, `skip` or `suite broke`. A Subject marked failed by a Fixture Failure has no outcome here
+at all: its suite broke, not it, and that is neither a pass nor a fail, which is what the fifth
+value is for.
 _Avoid_: neighbouring, surrounding, nearby - and never for the keywords before a failure inside
 one test, which is a different question this tool does not answer.
 
@@ -132,9 +143,15 @@ _Avoid_: clean, passing, green
 - A **Report** has many **Renderings**, and every **Rendering** shows the same Report
 - An **Occurrence** may have an **Adjacent Run** either side of it, on its own **Leg**
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed
+- A **Report** is built from exactly one **Reading**, and a **Reading** carries exactly one
+  **Window**
 
 ## Flagged ambiguities
 
 - "report" was used for three things — the Report, a Rendering of it, and the file a Rendering
   is written to. Resolved: the **Report** is the answer, a **Rendering** is a display of it, and
   a file is just where a Rendering was written.
+- "scope" means three things here and only two of them are terms. A **Failure Scope** is what
+  broke and a **Scope Owner** owns the fixture it names, while `window.py` calls the Window "a
+  hard scope" in the ordinary English sense. That is why the restricted connection is a
+  **Reading** and not a Scope.
