@@ -112,6 +112,14 @@ h1 {
   font-size: 13px;
   color: var(--ink-muted);
 }
+.window.short {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--warn, #b45309);
+  background: var(--warn-bg, #fffbeb);
+  color: var(--ink-2);
+  max-width: 78ch;
+}
 .lede { margin: 0; max-width: 62ch; color: var(--ink-2); }
 
 .tiles {
@@ -1048,6 +1056,17 @@ def page(report: Report) -> str:
     scope = (
         f"{summary.label}, {summary.runs} run(s)" if summary.bounded else ingested_span
     )
+    # A Window wider than the archive answers over the archive. Both halves were
+    # already on this page - the label above and the ingested span - and nothing
+    # put them next to each other, so the disagreement had to be spotted.
+    short_note = (
+        f'<div class="window short">Asked from {_e(summary.short.asked_from)}; '
+        f"the archive begins {_e(summary.short.holds_from)}, so "
+        f"{summary.short.missing_days} day(s) of the question were never "
+        "ingested. Every count and rate below covers what is here.</div>"
+        if summary.short
+        else ""
+    )
 
     if groups:
         body = (
@@ -1133,6 +1152,7 @@ def page(report: Report) -> str:
   <header>
     <h1>Browser CI Failures</h1>
     <div class="window">{_e(scope)} &middot; main branch, push and scheduled runs</div>
+    {short_note}
   </header>
 
   <p class="lede">What actually failed in the acceptance test matrix, grouped by the error

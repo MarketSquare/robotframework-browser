@@ -18,6 +18,7 @@ a question SQL can answer.
 
 import math
 from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from pathlib import Path
 
 from . import reading
@@ -484,6 +485,27 @@ class LatestRun:
 
 
 @dataclass(frozen=True)
+class ShortWindow:
+    """The Window asked for more days than the archive holds.
+
+    A Window can only restrict what has been ingested, so `--days 60` over a
+    sixteen-day database answers over sixteen. Both numbers were already in the
+    report - the label said what was asked for and `since` said what was there -
+    and nothing put them next to each other, so the reader had to notice the
+    disagreement to know there was one.
+
+    Not an error. The answer is the best one available and worth having; it just
+    has to say what it is answering over. Dates are local calendar days, spelled
+    as the Window spells them, because that is the unit the question was asked
+    in.
+    """
+
+    asked_from: str
+    holds_from: str
+    missing_days: int
+
+
+@dataclass(frozen=True)
 class WindowSummary:
     """What the Report covers, and how much of it there was."""
 
@@ -498,6 +520,10 @@ class WindowSummary:
     latest_run: LatestRun | None
     label: str
     bounded: bool
+    # None whenever the archive covers the question, which is the ordinary case
+    # and has to stay silent: a note on every report is one nobody reads by the
+    # third one.
+    short: ShortWindow | None
 
 
 @dataclass(frozen=True)
@@ -789,6 +815,32 @@ def _variants(rows: list[VariantRow]) -> tuple[SignatureVariant, ...]:
     return tuple(SignatureVariant(row.signature, row.occurrences) for row in rows)
 
 
+def _short_window(window: Window, since: str | None) -> ShortWindow | None:
+    """How much of what `--days` asked for the archive actually holds.
+
+    `since` is the oldest Run in the Window, in UTC; the Window's own bounds are
+    local calendar days. Converting the one to the other here rather than
+    comparing the UTC cutoff directly is what keeps the answer in the unit the
+    question was asked in - a run at half past eleven at night belongs to the
+    local day the reader would call it, which is the same rule `of_days` uses.
+    """
+    if not window.bounded or window.first_day is None or not since:
+        return None
+    holds_from = (
+        datetime.strptime(since, "%Y-%m-%dT%H:%M:%SZ")
+        .replace(tzinfo=timezone.utc)
+        .astimezone()
+        .date()
+    )
+    if holds_from <= window.first_day:
+        return None
+    return ShortWindow(
+        asked_from=str(window.first_day),
+        holds_from=str(holds_from),
+        missing_days=(holds_from - window.first_day).days,
+    )
+
+
 def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
     """What a Snapshot records, read off the Report rather than rebuilt.
 
@@ -1020,6 +1072,7 @@ def _build(
             ),
             label=window.label,
             bounded=window.bounded,
+            short=_short_window(window, summary.since),
         ),
         # A windowed Report has no comparable baseline. A Snapshot is never
         # taken from one, so the only baseline available covers more data, and

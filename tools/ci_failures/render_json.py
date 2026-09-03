@@ -238,6 +238,15 @@ def document(report: Report) -> dict:
             "legs_with_unknown_attempt": report.window.legs_with_unknown_attempt,
             "since": report.window.since,
             "until": report.window.until,
+            "short": (
+                {
+                    "asked_from": report.window.short.asked_from,
+                    "holds_from": report.window.short.holds_from,
+                    "missing_days": report.window.short.missing_days,
+                }
+                if report.window.short
+                else None
+            ),
             "latest_run": (
                 {}
                 if newest is None

@@ -3636,3 +3636,96 @@ class TestTheReportingWindow:
 
         assert build_report(db, window=of_days(2, now)).since_last_report is None
         assert build_report(db).since_last_report is not None
+
+
+class TestAWindowWiderThanTheArchive:
+    """`--days 60` over sixteen days of database answers over sixteen.
+
+    The window can only restrict what has been ingested, so the label says what
+    was asked for and the counts cover what was there, and nothing connected the
+    two. Harmless while the archive is deep, and quietly wrong just after a
+    rebuild, when an ordinary `--days 14` is answered on half of them - which is
+    the one report anybody runs weekly.
+
+    Not an error: the answer is the best one available and worth having. It has
+    to say what it is answering over, and then it is evidence rather than a
+    number that looks like one.
+    """
+
+    # Borrowed rather than inherited: subclassing would re-run that class's
+    # fifteen tests under this name for nothing.
+    _local_utc = staticmethod(TestTheReportingWindow._local_utc)
+    _seed = TestTheReportingWindow._seed
+    four_days = TestTheReportingWindow.four_days
+
+    @staticmethod
+    def _now(today):
+        from datetime import datetime, time
+
+        return datetime.combine(today, time(9, 0)).astimezone()
+
+    def _two_days_of_archive(self, tmp_path):
+        from datetime import date, timedelta
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                (n + 1, self._local_utc(today - timedelta(days=n)), [("A", "FAIL")])
+                for n in range(2)
+            ],
+        )
+        return db, today
+
+    def test_it_says_how_much_of_what_was_asked_for_is_there(self, tmp_path):
+        from datetime import timedelta
+
+        from tools.ci_failures.window import of_days
+
+        db, today = self._two_days_of_archive(tmp_path)
+
+        short = build_report(db, window=of_days(10, self._now(today))).window.short
+
+        assert short is not None, "ten days asked of a two-day archive"
+        assert short.asked_from == str(today - timedelta(days=9))
+        assert short.holds_from == str(today - timedelta(days=1))
+        assert short.missing_days == 8
+
+    def test_an_archive_that_covers_the_question_says_nothing(self, four_days):
+        """The common case, and it has to stay quiet. A note on every report is
+        a note nobody reads by the third one."""
+        from tools.ci_failures.window import of_days
+
+        db, today = four_days
+
+        assert (
+            build_report(db, window=of_days(2, self._now(today))).window.short is None
+        )
+
+    def test_all_history_is_never_short(self, four_days):
+        """Nothing was asked for, so nothing can be missing. `since` already
+        says where the archive begins, which is the whole of that answer."""
+        db, _ = four_days
+
+        assert build_report(db).window.short is None
+
+    def test_both_renderings_say_so(self, tmp_path):
+        """Three rules #3. A finding the page keeps to itself is one the agent
+        reading the document has to derive for itself, and the other way round."""
+        import json
+
+        from tools.ci_failures.render_html import page
+        from tools.ci_failures.render_json import document
+        from tools.ci_failures.window import of_days
+
+        db, today = self._two_days_of_archive(tmp_path)
+        report = build_report(db, window=of_days(10, self._now(today)))
+
+        short = report.window.short
+        assert json.loads(json.dumps(document(report)))["window"]["short"] == {
+            "asked_from": short.asked_from,
+            "holds_from": short.holds_from,
+            "missing_days": 8,
+        }
+        assert short.asked_from in page(report)

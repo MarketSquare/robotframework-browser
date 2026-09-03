@@ -97,6 +97,14 @@ appear at all. That is what lets it answer "has what I fixed come back", which n
 report can.
 _Avoid_: range, period, timeframe, since
 
+**Short Window**:
+A Window that asked for more days than the archive holds, and the report saying so: what was
+asked from, what the archive begins at, and how many days of the question were never ingested.
+Both halves were always in the report - the label said one and `since` said the other - and
+nothing put them together, so `--days 60` over a sixteen-day database read as sixty days of
+evidence. Absent, not zero, whenever the archive covers the question.
+_Avoid_: gap, missing data, incomplete (which is about a Leg that would not parse)
+
 **Reading**:
 The database as one Report reads it: restricted to that Report's Window, with the Subject views
 resolved on top of it. Made once and asked every question, because building one costs a pass over

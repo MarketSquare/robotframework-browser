@@ -55,7 +55,8 @@ so running it often only costs what is new.
 `--days` is the question you ask *after* fixing something: the failures from
 before the fix are exactly the ones that must not be counted. It cannot conjure
 data that was never ingested: ask for more days than the database holds and you
-get what it holds, so read `window.since` against the span the label claims.
+get what it holds, and the report says so — `window.short` in the document, a
+line under the header on the page.
 
 ## Retention, and how much history a limit buys
 
@@ -151,10 +152,10 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
 | `queries.py` | 1170 | Every question asked of the database, and nothing else. |
-| `report.py` | 1040 | The Report, and what the numbers mean. |
+| `report.py` | 1093 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `render_html.py` | 1193 | The page. |
-| `render_json.py` | 274 | The document. |
+| `render_html.py` | 1213 | The page. |
+| `render_json.py` | 283 | The document. |
 
 ## Layout
 
