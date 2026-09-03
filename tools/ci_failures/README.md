@@ -159,7 +159,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `queries.py` | 1170 | Every question asked of the database, and nothing else. |
 | `report.py` | 1093 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `render_html.py` | 1213 | The page. |
+| `render_html.py` | 1219 | The page. |
 | `render_json.py` | 283 | The document. |
 
 ## Layout

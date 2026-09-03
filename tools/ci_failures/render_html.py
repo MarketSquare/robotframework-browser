@@ -47,6 +47,8 @@ _CSS = r"""
   --bar-soft:   rgba(42, 120, 214, 0.14);
   --critical:   #d03b3b;
   --ring:       rgba(11, 11, 11, 0.10);
+  --warn:       #b45309;
+  --warn-bg:    #fffbeb;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -62,6 +64,8 @@ _CSS = r"""
     --bar-soft:  rgba(57, 135, 229, 0.20);
     --critical:  #d03b3b;
     --ring:      rgba(255, 255, 255, 0.10);
+    --warn:      #f0a33a;
+    --warn-bg:   #241f14;
   }
 }
 :root[data-theme="dark"] {
@@ -77,6 +81,8 @@ _CSS = r"""
   --bar-soft:  rgba(57, 135, 229, 0.20);
   --critical:  #d03b3b;
   --ring:      rgba(255, 255, 255, 0.10);
+  --warn:      #f0a33a;
+  --warn-bg:   #241f14;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -115,8 +121,8 @@ h1 {
 .window.short {
   margin-top: 6px;
   padding: 6px 10px;
-  border-left: 3px solid var(--warn, #b45309);
-  background: var(--warn-bg, #fffbeb);
+  border-left: 3px solid var(--warn);
+  background: var(--warn-bg);
   color: var(--ink-2);
   max-width: 78ch;
 }
