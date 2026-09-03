@@ -11,6 +11,13 @@ it does not appear at all. There is no all-time figure anywhere in the document,
 because a report that mixed the two would have a header and denominators that
 disagree, and the reader has no way to tell which number is which.
 
+It is a scope and not a promise. A window can only restrict what has been
+ingested, so `--days 60` over an archive holding sixteen days answers over
+sixteen: the label says what was asked for and `since` says what was there, and
+they can disagree by any amount. That matters most where it is least visible -
+just after a rebuild, when the archive is a few days deep and an ordinary
+`--days 14` is quietly answered on half of them.
+
 ## How it is applied
 
 Not by adding a predicate to each of the thirty queries in `report.py`. Those

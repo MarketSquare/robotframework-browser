@@ -1931,10 +1931,15 @@ def ci_ingest(c, limit=25, db=None, dry_run=False):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
-    costs what is new. See `0012_flaky_test_analysis.md`.
+    costs what is new. See `tools/ci_failures/README.md`.
 
     Args:
-        limit: How many runs to consider, newest first.
+        limit: How many runs to consider, newest first. Runs, not days - 25 is
+            about a week of this repository and 100 about a month, and the rate
+            moves with how busy it is. Above roughly 100 the two events stop
+            coming back in the same proportion and 200 is the ceiling; see
+            *Retention* in the tool's README. Artifacts live 90 days, so
+            anything older cannot be ingested at all.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         dry_run: Say which legs would be fetched and fetch nothing. A full
             ingest is download-bound and can run for half an hour; the listing
@@ -2009,8 +2014,11 @@ def ci_report(
             scope - every count, rate and denominator comes from inside it, and
             a test that did not fail inside it does not appear at all. That is
             what makes it answer "did what I fixed come back", which no
-            all-history report can. Goes with everything except --mark-seen;
-            see `tools/ci_failures/window.py`.
+            all-history report can. It cannot reach further back than the
+            database does: ask for more days than have been ingested and the
+            answer covers what is there, so read `since` against the span the
+            label claims. Goes with everything except --mark-seen; see
+            `tools/ci_failures/window.py`.
     """
     from tools.ci_failures.report import (
         NoDatabaseError,

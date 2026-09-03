@@ -14,7 +14,7 @@ model rather than a person, which changes what has to be in it:
   are stated in `about` rather than left to be rederived from the shape of the
   data, or not rederived.
 
-See `0012_flaky_test_analysis.md`.
+See `README.md` for how it is run and `CONTEXT.md` for what the words mean.
 """
 
 import json

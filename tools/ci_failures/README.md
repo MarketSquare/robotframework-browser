@@ -21,15 +21,20 @@ one, so the tool says what it counted and over what.
   GitHub CLI so that whoever runs this uses the credentials they already have
   and no token is handled here. `gh auth status` should be green.
 - **The database is written to `ci_failures/ci_failures.sqlite3`** at the
-  repository root, gitignored. It is derived and rebuildable — but rebuilding it
-  is about half an hour and three gigabytes of downloads, so it is not disposable
-  in practice. See *Three rules* below.
+  repository root, gitignored. It is derived and rebuildable — but only as far
+  back as GitHub still has the artifacts, and rebuilding what it does have is
+  hours and gigabytes of downloads. See *Retention* and *Three rules* below.
+- **Artifacts live 90 days.** That is the whole horizon: a run older than that
+  cannot be ingested, re-ingested or checked, and `inv ci-ingest` says so —
+  `N artifact(s) expired, unrecoverable`. Everything younger can be fetched
+  again at the cost of the download.
 
 ## Everyday use
 
 ```bash
 inv ci-ingest --dry-run           # how many legs an ingest would fetch
 inv ci-ingest --limit 25          # pull the newest 25 runs (incremental)
+inv ci-ingest --limit 100         # a deeper catch-up, or a rebuild (see Retention)
 
 inv ci-report                     # the page, at ci_failures/ci_report.html
 inv ci-report --open-it           # ... and open it
@@ -48,7 +53,33 @@ opening. Ingest is incremental — legs already stored are never fetched again �
 so running it often only costs what is new.
 
 `--days` is the question you ask *after* fixing something: the failures from
-before the fix are exactly the ones that must not be counted.
+before the fix are exactly the ones that must not be counted. It cannot conjure
+data that was never ingested: ask for more days than the database holds and you
+get what it holds, so read `window.since` against the span the label claims.
+
+## Retention, and how much history a limit buys
+
+`--limit` counts **runs, not days**, and the exchange rate moves with how busy
+the repository is. Measured on 2026-09-03, on `main`, `push` and `schedule`:
+
+| `--limit` | runs | history | note |
+| ---: | ---: | --- | --- |
+| 25 | 25 | ~8 days | the incremental default |
+| 100 | 100 | ~30 days | both events, contiguous |
+| 200 | 200 | ~14 weeks | **push runs stop at ~6 weeks**; older than that is `schedule` only |
+| 300 | 200 | ~14 weeks | no deeper — one page per event, 100 each, is the ceiling |
+
+So "rebuild it" and "restore what I had" are different requests. `--limit 100`
+buys about a month. Past roughly 100 runs the two events stop coming back in the
+same proportion, which changes the shape of every denominator halfway through
+the window, and past 200 there is nothing further to ask for. Neither is
+announced; `--dry-run` shows the span that will actually be fetched, and it is
+worth looking at before a long ingest.
+
+Against 90-day retention that leaves a narrow band: a deep look backwards is
+possible while the artifacts live, and impossible afterwards. Losing the
+database is therefore losing history, not just time — which is a choice to make
+deliberately rather than a cost to be surprised by.
 
 ## Architecture
 
@@ -64,7 +95,7 @@ flowchart TB
     LOC["locate.py<br/><i>where a keyword lives,<br/>from your working copy</i>"] --> PAR
     PAR --> ING["ingest.py<br/><i>one leg at a time, each contained</i>"]
     ING --> DB[("ci_failures.sqlite3<br/><i>db.py &middot; schema.sql</i>")]
-    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px;
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px,color:#1c1917;
     class DB store
 ```
 
@@ -90,8 +121,8 @@ flowchart TB
     ANN["annotations.py<br/><i>known_causes.json &middot; last_report.json</i>"] --> REP
     REP --> HTM["render_html.py<br/><i>a page to read</i>"]
     REP --> JSN["render_json.py<br/><i>a document for an agent to read</i>"]
-    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px;
-    classDef out fill:#ecfdf5,stroke:#059669,stroke-width:2px;
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px,color:#1c1917;
+    classDef out fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b;
     class DB,ANN store
     class HTM,JSN out
 ```
@@ -110,18 +141,18 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 
 | file | lines | what it is |
 | --- | ---: | --- |
-| `github.py` | 227 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
+| `github.py` | 242 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `parse.py` | 588 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
 | `ingest.py` | 444 | Drives the two above into the database, one leg at a time, each contained. |
 | `db.py` | 83 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 137 | The tables, with the reasoning for each column beside it. |
-| `window.py` | 161 | `--days`, as shadowing temp views so no query can forget it. |
+| `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
 | `queries.py` | 1170 | Every question asked of the database, and nothing else. |
 | `report.py` | 1040 | The Report, and what the numbers mean. |
-| `annotations.py` | 179 | Known Causes (in version control) and the Snapshot (beside the database). |
+| `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `render_html.py` | 1193 | The page. |
 | `render_json.py` | 274 | The document. |
 
@@ -132,7 +163,7 @@ tools/ci_failures/
 ├── README.md            # this file
 ├── CONTEXT.md           # the vocabulary — read this before changing anything
 ├── docs/adr/            # decisions that should not be re-litigated
-├── known_causes.json    # conclusions someone reached, by hand, in version control
+├── known_causes.json    # conclusions someone reached, by hand — gitignored
 ├── schema.sql
 └── *.py                 # see the table above
 
@@ -153,6 +184,11 @@ every artifact again. Four derived columns are the exception, because their
 source is itself stored, and `inv ci-recompute` re-derives them with no network:
 `error_signature` from the message, and `keyword_kind` / `keyword_source` /
 `keyword_lineno` from the keyword owner.
+
+Note what "downloading every artifact again" buys, though: everything younger
+than 90 days and nothing older. A re-parse late in the database's life is not
+the same database with a rule changed — it is the last 90 days of it. Which of
+the two the answer needs is worth deciding before deleting anything.
 
 **2. The window is applied to the connection, not to the queries.** A `--days`
 report is windowed by temp views that shadow `run`, `leg`, `test_result` and

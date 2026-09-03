@@ -1,15 +1,19 @@
 """What is already known about a failure, and what changed since last time.
 
-Two things the database cannot hold, for the same reason: the database is
-derived, and rebuilding it is the normal cost of changing a parsing rule. A
-conclusion someone reached by reading an artifact is not derived from anything,
-and putting it where the next re-ingest deletes it would mean re-deriving it or,
-more likely, not noticing it was ever known.
+Two things the database cannot hold, for opposite reasons.
 
-So `known_causes.json` sits next to this code, in version control, and is
-matched against groups at report time. The snapshot of the last report is the
-opposite case - it is entirely derived, worth nothing once it is stale, and
-belongs beside the database rather than in the repository.
+A conclusion someone reached by reading an artifact is not derived from
+anything, so `known_causes.json` sits next to this code and is matched against
+groups at report time. It is gitignored, which is a deliberate choice and not
+the obvious one: it makes the file the only thing here that no rebuild and no
+download can restore. The reasoning is that this tool is read by one maintainer
+over a week or two of CI at a time, and a cause worth recording is a cause worth
+fixing - an annotation that quietly excuses a failure is worth less than the
+fix, and the fix is in the git history anyway.
+
+The snapshot of the last report is the opposite case - entirely derived, worth
+nothing once it is stale, and beside the database for that reason rather than
+for any reason about version control.
 """
 
 import json

@@ -1,4 +1,4 @@
-"""Tests for tools/ci_failures. See 0012_flaky_test_analysis.md."""
+"""Tests for tools/ci_failures. See that package's README.md and CONTEXT.md."""
 
 import json
 import sqlite3

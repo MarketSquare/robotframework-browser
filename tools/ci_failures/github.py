@@ -83,6 +83,21 @@ def _first_page(endpoint: str, key: str) -> list[dict]:
     kept. Walking all of them and then slicing cost a request per hundred runs
     the workflow had ever made, on every invocation, forever - the one call here
     whose cost grew with the age of the repository rather than with the work.
+
+    True while `limit` is at most 100, which is a page. Above that the argument
+    fails quietly rather than loudly: `list_runs` asks for at most 100 runs of
+    each event, so the newest 150 overall cannot be assembled if more than 100
+    of them are pushes. Measured on 2026-09-03, `--limit 200` reached 14 weeks
+    of `schedule` runs but only 6 weeks of `push` ones, and `--limit 300`
+    returned the same 200. A window that needs to be deeper than about 100 runs
+    wants pagination against a date, not a bigger `limit`.
+
+    The listing is also not stable between calls. Three identical `--dry-run
+    --limit 100` invocations on 2026-09-03 gave two answers: twice 75 runs back
+    to 2026-08-03 with nothing expired, and once a different set reaching
+    2026-06-05 with 24 runs expired and eight days of runs simply absent.
+    Nothing here notices, and a run that is missing from the page is skipped
+    without a line of output.
     """
     return _api(endpoint).get(key) or []
 

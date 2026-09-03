@@ -152,7 +152,7 @@ select = [
     "T201",
 ]
 # A standalone diagnostic run by hand against a playwright-log.txt, not part of
-# any package and not imported by anything. See 0013_highlight_cache_flake.md.
+# any package and not imported by anything.
 "tools/measure_highlight_theft.py" = [
     "T201",
     "INP001",

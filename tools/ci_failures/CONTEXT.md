@@ -108,15 +108,19 @@ artifacts", elsewhere in this file, is the ordinary verb rather than this.
 
 **Known Cause**:
 A conclusion someone reached by reading the artifacts, recorded by hand in `known_causes.json`
-and matched against a Group at report time. Kept in version control because it is the one
-thing here not derived from the database, and re-ingesting would otherwise delete it.
+and matched against a Group at report time. The one thing here not derived from the database,
+and gitignored all the same: this tool is run by one maintainer on one machine, and a conclusion
+that matters is acted on rather than filed. It is therefore the only thing here that no rebuild
+and no download can restore — which is accepted, not overlooked.
 _Avoid_: annotation, note, triage
 
 **Snapshot**:
 What the last report said, written beside the database so the next report can say what is new,
-gone or changed. Entirely derived and worth nothing once stale, which is why it is not in
-version control. Never taken from a windowed report: a baseline that covered less data would
-make every Group look as though it had shrunk.
+gone or changed. Entirely derived and worth nothing once stale. Never taken from a windowed
+report, and never read by one: a baseline that covered less data would make every Group look as
+though it had grown, and one that covered more — after a rebuild shortened the archive — would
+make every Group look as though it had shrunk. Both are silent, because both sets of numbers
+are plausible.
 _Avoid_: baseline (as the file), history
 
 **Adjacent Run**:
