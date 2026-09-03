@@ -68,8 +68,3 @@ node/coverage/
 # would also swallow tools/ci_failures, which is source.
 /ci_failures/
 /tools/ci_failures/known_causes.json
-
-# Working notes and handoffs, kept on disk and out of every commit: one
-# maintainer's reminders, not derived from anything the repository holds.
-/0[0-9][0-9][0-9]_*.md
-/HANDOFF*.md
