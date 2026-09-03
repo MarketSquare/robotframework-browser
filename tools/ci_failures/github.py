@@ -99,8 +99,10 @@ def _first_page(endpoint: str, key: str) -> list[dict]:
     --limit 100` invocations on 2026-09-03 gave two answers: twice 75 runs back
     to 2026-08-03 with nothing expired, and once a different set reaching
     2026-06-05 with 24 runs expired and eight days of runs simply absent.
-    Nothing here notices, and a run that is missing from the page is skipped
-    without a line of output.
+    Nothing here can make GitHub consistent. `ingest` now says what span the
+    listing actually covered and checks it against the runs already stored, so
+    an odd page is visible while it happens rather than reconstructed afterwards
+    from a saved dry run.
     """
     return _api(endpoint).get(key) or []
 

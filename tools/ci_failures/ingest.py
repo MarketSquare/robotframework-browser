@@ -168,15 +168,53 @@ class Ingested:
     #: Runs whose artifact listing could not be read. Nothing was lost - they
     #: are picked up next time - but the count says the window is incomplete.
     unlisted: int = 0
+    #: Runs the database holds that the listing did not offer, inside the span
+    #: the listing itself claims to cover. Nothing is lost and nothing is done
+    #: about it: it says the page disagreed with what is already known, which is
+    #: the only handle there is on a listing that varies between calls.
+    unoffered: int = 0
 
     def line(self) -> str:
+        disagreed = (
+            f" {self.unoffered} run(s) known but not offered - the listing is "
+            "incomplete, so run this again."
+            if self.unoffered
+            else ""
+        )
         return (
             f"Ingested {self.runs} run(s), {self.legs} leg(s), {self.tests} results, "
             f"{self.failures} failures. {self.skipped} run(s) already complete, "
             f"{self.expired} artifact(s) expired, {self.unusable} without output.xml, "
             f"{self.unreachable} could not be downloaded, "
-            f"{self.unlisted} run(s) could not be listed."
+            f"{self.unlisted} run(s) could not be listed.{disagreed}"
         )
+
+
+def _stored_but_not_offered(
+    connection: sqlite3.Connection, runs: list[github.Run]
+) -> list[int]:
+    """Runs already in the database that the listing left out of its own span.
+
+    The database is the only second opinion available about a listing that is
+    not stable between calls. A run stored between the oldest and newest the
+    listing just offered, and absent from it, means the page disagreed with what
+    is known - and a page that drops a run it should have had is a page that may
+    have dropped runs nobody has yet.
+
+    Bounded by the span deliberately. Everything older than the listing reached
+    is simply outside the question, and reporting those would say "incomplete"
+    on every incremental ingest ever run.
+    """
+    if not runs:
+        return []
+    offered = {run.id for run in runs}
+    oldest = min(run.created_at for run in runs)
+    newest = max(run.created_at for run in runs)
+    stored = connection.execute(
+        "SELECT id FROM run WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC",
+        (oldest, newest),
+    ).fetchall()
+    return [row[0] for row in stored if row[0] not in offered]
 
 
 def _ingest_legs(
@@ -261,6 +299,7 @@ def ingest(
             "failures",
             "expired",
             "skipped",
+            "unoffered",
             "unreachable",
             "unusable",
             "unlisted",
@@ -270,15 +309,28 @@ def ingest(
 
     runs = github.runs_since(since) if since else github.list_runs(limit=limit)
     asked_for = f"since {since[:10]}" if since else f"newest {limit}"
+    spanned = (
+        f", {min(r.created_at for r in runs)[:10]} to "
+        f"{max(r.created_at for r in runs)[:10]}"
+        if runs
+        else ""
+    )
     report(
         f"{len(runs)} run(s) to consider on {github.BRANCH} "
-        f"({', '.join(github.EVENTS)}, {asked_for})"
+        f"({', '.join(github.EVENTS)}, {asked_for}{spanned})"
     )
+    for unoffered in _stored_but_not_offered(connection, runs):
+        totals["unoffered"] += 1
+        report(
+            f"  run {unoffered} is in the database and inside the span above, "
+            "but was not offered by the listing"
+        )
 
     for run in runs:
         try:
+            offered = github.list_test_artifacts(run.id)
             artifacts = github.with_attempts(
-                [a for a in github.list_test_artifacts(run.id) if a.id not in already],
+                [a for a in offered if a.id not in already],
                 github.attempt_starts(run),
             )
         except github.GhError as error:
@@ -296,6 +348,12 @@ def ingest(
             report(f"  run {run.id}: {len(expired)} artifact(s) expired, unrecoverable")
         if not pending:
             totals["skipped"] += 1
+            # Named rather than only counted. One bucket used to hold both "the
+            # database already has every leg of this" and "this run uploaded no
+            # test results at all", which are different findings - the first is
+            # the incremental ingest working and the second is a hole.
+            if not offered:
+                report(f"  run {run.id} ({run.created_at}): no test artifacts")
             continue
         if dry_run:
             totals["runs"] += 1

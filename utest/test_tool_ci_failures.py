@@ -3895,3 +3895,104 @@ class TestListingRunsByDate:
         ingest(tmp_path / "ci.sqlite3", limit=7, report=lambda _: None)
 
         assert asked == {"limit": 7}
+
+
+class TestTheListingIsNotTakenOnTrust:
+    """The run listing came back different from one call to the next.
+
+    Three identical `--dry-run --limit 100` invocations on 2026-09-03 gave two
+    answers: twice 75 runs reaching 2026-08-03 with nothing expired, and once a
+    different set reaching 2026-06-05 with 24 expired and eight days of runs
+    simply absent. The ingest noticed none of it. A run missing from the page is
+    not fetched, a run with nothing pending is counted into one silent bucket,
+    and the summary line reads the same either way.
+
+    Nothing here can make GitHub consistent. What it can do is say what it was
+    given, so that "reached 2026-06-05" is visible at a glance rather than
+    reconstructed afterwards from a saved dry run.
+    """
+
+    @staticmethod
+    def _listing(monkeypatch, runs):
+        monkeypatch.setattr(github, "list_runs", lambda limit=25: runs)
+        monkeypatch.setattr(github, "list_test_artifacts", lambda run_id: [])
+
+    @staticmethod
+    def _run(run_id, created_at):
+        return github.Run(
+            id=run_id,
+            event="push",
+            head_sha=f"sha{run_id}",
+            head_branch="main",
+            created_at=created_at,
+            conclusion="success",
+            url="u",
+        )
+
+    def _lines(self, db, monkeypatch, runs):
+        from tools.ci_failures.ingest import ingest
+
+        self._listing(monkeypatch, runs)
+        said: list[str] = []
+        ingest(db, limit=25, report=said.append, dry_run=True)
+        return said
+
+    def test_it_says_what_the_listing_actually_spanned(self, tmp_path, monkeypatch):
+        """The line that would have made the odd call obvious while it happened."""
+        said = self._lines(
+            tmp_path / "ci.sqlite3",
+            monkeypatch,
+            [
+                self._run(1, "2026-09-02T10:00:00Z"),
+                self._run(2, "2026-06-05T10:00:00Z"),
+            ],
+        )
+
+        assert any("2026-06-05" in line and "2026-09-02" in line for line in said), said
+
+    def test_a_run_it_already_has_but_was_not_offered_is_called_out(
+        self, tmp_path, monkeypatch
+    ):
+        """The database is the second opinion. A run stored inside the span the
+        listing claims to cover, and absent from it, means the page disagrees
+        with what is known - which is exactly the shape of the bad call."""
+        db = tmp_path / "ci.sqlite3"
+        TestTheReportingWindow._seed(
+            self, db, [(77, "2026-07-01T10:00:00Z", [("A", "PASS")])]
+        )
+
+        said = self._lines(
+            db,
+            monkeypatch,
+            [
+                self._run(1, "2026-09-02T10:00:00Z"),
+                self._run(2, "2026-06-05T10:00:00Z"),
+            ],
+        )
+
+        assert any("77" in line and "not offered" in line for line in said), said
+
+    def test_a_listing_that_agrees_with_the_database_says_nothing(
+        self, tmp_path, monkeypatch
+    ):
+        db = tmp_path / "ci.sqlite3"
+        TestTheReportingWindow._seed(
+            self, db, [(1, "2026-09-02T10:00:00Z", [("A", "PASS")])]
+        )
+
+        said = self._lines(db, monkeypatch, [self._run(1, "2026-09-02T10:00:00Z")])
+
+        assert not any("not offered" in line for line in said), said
+
+    def test_runs_with_nothing_to_fetch_are_named_rather_than_only_counted(
+        self, tmp_path, monkeypatch
+    ):
+        """One silent bucket held both "already have it" and "this run uploaded
+        nothing", and those are different findings."""
+        said = self._lines(
+            tmp_path / "ci.sqlite3", monkeypatch, [self._run(5, "2026-09-02T10:00:00Z")]
+        )
+
+        assert any("run 5" in line and "no test artifacts" in line for line in said), (
+            said
+        )
