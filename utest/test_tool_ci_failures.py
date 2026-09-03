@@ -2631,10 +2631,21 @@ class TestKnownCauses:
 
         assert load_known_causes(tmp_path / "absent.json") == {}
 
-    def test_the_shipped_file_parses(self):
-        """It is edited by hand, so it is the one most likely to be malformed -
-        and a malformed one fails silently by design."""
+    def test_the_local_file_parses_if_there_is_one(self):
+        """Edited by hand, and a malformed one fails silently by design, so it
+        is worth asserting wherever it exists.
+
+        Which is not everywhere any more. The file is gitignored, so it exists
+        on the machine of whoever has been recording causes and nowhere else -
+        not in CI, not in a fresh clone. Skipped there rather than asserted:
+        "nothing explained yet" is the ordinary starting state, the test above
+        covers it, and a test that fails on a fresh clone teaches everyone to
+        ignore it.
+        """
         from tools.ci_failures.annotations import KNOWN_CAUSES, load_known_causes
+
+        if not KNOWN_CAUSES.exists():
+            pytest.skip(f"{KNOWN_CAUSES} is gitignored and not present here")
 
         assert load_known_causes(KNOWN_CAUSES), f"{KNOWN_CAUSES} parsed to nothing"
 
