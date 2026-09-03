@@ -1947,8 +1947,9 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             however it is asked for.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         dry_run: Say which legs would be fetched and fetch nothing. A full
-            ingest is download-bound and can run for half an hour; the listing
-            that says how much work it is costs a few requests.
+            ingest is download-bound and can run for hours; this reads one
+            artifact listing per run instead, so it is minutes for a wide
+            window and worth doing before a long ingest.
     """
     from tools.ci_failures.ingest import ingest
     from tools.ci_failures.window import of_days
@@ -1958,11 +1959,17 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     since = None
     if days is not None:
         try:
-            since = of_days(int(days)).cutoff
+            whole_days = int(days)
         except ValueError:
             raise Exit(
                 f"--days wants a whole number of days, got {days!r}.", 2
             ) from None
+        # Caught separately so `of_days` can say what is wrong with the number
+        # rather than have this guess: 0 is a whole number and still refused.
+        try:
+            since = of_days(whole_days).cutoff
+        except ValueError as refused:
+            raise Exit(str(refused), 2) from None
 
     totals = ingest(
         db_path=Path(db) if db else CI_FAILURES_DB,

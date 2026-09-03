@@ -3730,6 +3730,39 @@ class TestAWindowWiderThanTheArchive:
         }
         assert short.asked_from in page(report)
 
+    def test_a_quiet_first_day_is_not_a_short_archive(self, tmp_path):
+        """The false positive this note exists to avoid.
+
+        `since` is the oldest run *inside the window*, not where the archive
+        begins - the Window shadows `run`, so a query cannot see past it. Read
+        that way, a window whose leading days simply had no CI runs looks like
+        history that was never ingested. On this repository that is one dropped
+        or delayed nightly schedule run on a day nobody merged, which is not
+        rare, and a note that cries wolf is worth less than no note.
+        """
+        from datetime import date, timedelta
+
+        from tools.ci_failures.window import of_days
+
+        today = date(2026, 8, 31)
+        db = tmp_path / "ci.sqlite3"
+        self._seed(
+            db,
+            [
+                # Deep archive, and nothing at all on the window's first day.
+                (1, self._local_utc(today - timedelta(days=9)), [("A", "FAIL")]),
+                (2, self._local_utc(today - timedelta(days=1)), [("A", "FAIL")]),
+                (3, self._local_utc(today), [("A", "FAIL")]),
+            ],
+        )
+
+        short = build_report(db, window=of_days(3, self._now(today))).window.short
+
+        assert short is None, (
+            "the archive reaches nine days back; the window's first day was "
+            f"merely quiet, but it was reported as {short}"
+        )
+
 
 class TestListingRunsByDate:
     """`--days` on the ingest, so "how much history" is asked for in the unit it
@@ -3913,9 +3946,24 @@ class TestTheListingIsNotTakenOnTrust:
     """
 
     @staticmethod
-    def _listing(monkeypatch, runs):
+    def _listing(monkeypatch, runs, conclusion="success"):
         monkeypatch.setattr(github, "list_runs", lambda limit=25: runs)
         monkeypatch.setattr(github, "list_test_artifacts", lambda run_id: [])
+        # A suspect is checked against the run itself; `success` is a run that
+        # really has finished and really was left out of the listing.
+        monkeypatch.setattr(
+            github,
+            "get_run",
+            lambda run_id: github.Run(
+                id=run_id,
+                event="push",
+                head_sha=f"sha{run_id}",
+                head_branch="main",
+                created_at="2026-07-01T10:00:00Z",
+                conclusion=conclusion,
+                url="u",
+            ),
+        )
 
     @staticmethod
     def _run(run_id, created_at):
@@ -3971,6 +4019,32 @@ class TestTheListingIsNotTakenOnTrust:
         )
 
         assert any("77" in line and "not offered" in line for line in said), said
+
+    def test_a_run_being_re_run_right_now_is_not_a_disagreement(
+        self, tmp_path, monkeypatch
+    ):
+        """Both listings ask for `status=completed`, and a job re-run by hand
+        goes back to in_progress until it finishes. That run drops out of the
+        listing legitimately, and calling it a disagreement would fire this
+        warning during exactly the operation the tool exists to observe."""
+        from tools.ci_failures.ingest import ingest
+
+        db = tmp_path / "ci.sqlite3"
+        TestTheReportingWindow._seed(
+            self, db, [(77, "2026-07-01T10:00:00Z", [("A", "PASS")])]
+        )
+        self._listing(
+            monkeypatch,
+            [
+                self._run(1, "2026-09-02T10:00:00Z"),
+                self._run(2, "2026-06-05T10:00:00Z"),
+            ],
+            conclusion=None,
+        )
+        said: list[str] = []
+        ingest(db, limit=25, report=said.append, dry_run=True)
+
+        assert not any("not offered" in line for line in said), said
 
     def test_a_listing_that_agrees_with_the_database_says_nothing(
         self, tmp_path, monkeypatch

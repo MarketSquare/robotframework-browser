@@ -42,6 +42,7 @@ from .queries import (
     Spread,
     SubjectKey,
     VariantRow,
+    archive_begins,
     co_failures,
     coverage_by_fixture,
     coverage_by_test,
@@ -115,6 +116,14 @@ ABOUT = {
     "keyword_locations": (
         "Resolved from the working copy at ingest time, not from the commit the "
         "run used. 'commit' on each occurrence is there for when that matters."
+    ),
+    "short_window": (
+        "'window.short' is present only when a windowed report asked for more "
+        "days than the database holds, and says how many of them were never "
+        "ingested. Null means the archive covers the question - absent, not "
+        "zero - and an all-history report is never short of anything. Where it "
+        "is present, every count and rate below covers the days that are "
+        "there, so a low failure count is not evidence of a quiet fortnight."
     ),
     "artifacts": (
         "Screenshots, traces and playwright-log.txt are not in this document. "
@@ -815,19 +824,37 @@ def _variants(rows: list[VariantRow]) -> tuple[SignatureVariant, ...]:
     return tuple(SignatureVariant(row.signature, row.occurrences) for row in rows)
 
 
-def _short_window(window: Window, since: str | None) -> ShortWindow | None:
+def _archive_begins(db_path: Path) -> str | None:
+    """How far back the database reaches, read past the Window.
+
+    Unwindowed on purpose, for the reason `_nothing_ran` is: the Window is
+    exactly what hides this. Opened only for a bounded Window, and only for one
+    `MIN(created_at)` - an all-history report cannot be short of anything.
+    """
+    with reading.of(db_path) as everything:
+        return archive_begins(everything)
+
+
+def _short_window(window: Window, begins: str | None) -> ShortWindow | None:
     """How much of what `--days` asked for the archive actually holds.
 
-    `since` is the oldest Run in the Window, in UTC; the Window's own bounds are
-    local calendar days. Converting the one to the other here rather than
-    comparing the UTC cutoff directly is what keeps the answer in the unit the
-    question was asked in - a run at half past eleven at night belongs to the
-    local day the reader would call it, which is the same rule `of_days` uses.
+    `begins` is the oldest Run in the *database*, in UTC; the Window's own
+    bounds are local calendar days. Converting the one to the other here rather
+    than comparing the UTC cutoff directly is what keeps the answer in the unit
+    the question was asked in - a run at half past eleven at night belongs to
+    the local day the reader would call it, which is the same rule `of_days`
+    uses.
+
+    Read from the archive rather than from the Window's own `since`, which is
+    the oldest run *inside* the window and cannot see past it. A window whose
+    first day merely had no CI runs - one delayed nightly schedule run on a day
+    nobody merged - would otherwise be reported as history that was never
+    ingested, and a note that cries wolf is worth less than no note at all.
     """
-    if not window.bounded or window.first_day is None or not since:
+    if not window.bounded or window.first_day is None or not begins:
         return None
     holds_from = (
-        datetime.strptime(since, "%Y-%m-%dT%H:%M:%SZ")
+        datetime.strptime(begins, "%Y-%m-%dT%H:%M:%SZ")
         .replace(tzinfo=timezone.utc)
         .astimezone()
         .date()
@@ -1072,7 +1099,7 @@ def _build(
             ),
             label=window.label,
             bounded=window.bounded,
-            short=_short_window(window, summary.since),
+            short=_short_window(window, _archive_begins(db_path)),
         ),
         # A windowed Report has no comparable baseline. A Snapshot is never
         # taken from one, so the only baseline available covers more data, and

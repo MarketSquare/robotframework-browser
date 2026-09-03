@@ -150,14 +150,14 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `github.py` | 297 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `parse.py` | 588 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 511 | Drives the two above into the database, one leg at a time, each contained. |
+| `ingest.py` | 531 | Drives the two above into the database, one leg at a time, each contained. |
 | `db.py` | 83 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 137 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1170 | Every question asked of the database, and nothing else. |
-| `report.py` | 1093 | The Report, and what the numbers mean. |
+| `queries.py` | 1183 | Every question asked of the database, and nothing else. |
+| `report.py` | 1120 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `render_html.py` | 1219 | The page. |
 | `render_json.py` | 283 | The document. |

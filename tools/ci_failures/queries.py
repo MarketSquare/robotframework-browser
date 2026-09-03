@@ -987,6 +987,19 @@ def first_attempt_counts_by_fixture(db: Reading) -> tuple[dict[tuple, int], dict
     return runs, failures
 
 
+def archive_begins(db: Reading) -> str | None:
+    """The oldest Run in the database, for how far back the archive reaches.
+
+    Meaningful only from an unwindowed Reading. Under a Window the temp views
+    shadow `run`, so this would answer "the oldest run in the window" - which is
+    what `totals().since` already says, and a different question entirely: a
+    window whose first days were merely quiet has a `since` later than its
+    cutoff while the archive reaches years further back.
+    """
+    row = db.execute("SELECT MIN(created_at) FROM run").fetchone()
+    return row[0] if row and row[0] else None
+
+
 def latest_run(db: Reading) -> LatestRun | None:
     """The newest run in the window, and how many failures it carried.
 

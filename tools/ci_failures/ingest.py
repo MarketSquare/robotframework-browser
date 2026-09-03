@@ -204,6 +204,13 @@ def _stored_but_not_offered(
     Bounded by the span deliberately. Everything older than the listing reached
     is simply outside the question, and reporting those would say "incomplete"
     on every incremental ingest ever run.
+
+    Each suspect is then checked against the run itself, because both listings
+    ask for `status=completed` and a job re-run by hand goes back to
+    `in_progress` until it finishes. Such a run drops out of the listing quite
+    legitimately, and calling that a disagreement would fire this warning during
+    exactly the operation it exists to watch. Normally there are no suspects at
+    all, so the check normally costs nothing.
     """
     if not runs:
         return []
@@ -214,7 +221,18 @@ def _stored_but_not_offered(
         "SELECT id FROM run WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC",
         (oldest, newest),
     ).fetchall()
-    return [row[0] for row in stored if row[0] not in offered]
+    missing = []
+    for (run_id,) in stored:
+        if run_id in offered:
+            continue
+        try:
+            if github.get_run(run_id).conclusion is not None:
+                missing.append(run_id)
+        except github.GhError:
+            # The run cannot be asked about either. Not evidence of a bad page,
+            # and not worth ending an ingest over.
+            continue
+    return missing
 
 
 def _ingest_legs(
@@ -285,9 +303,11 @@ def ingest(
     whose exchange rate moves with how busy the repository is, and above one
     page of listing it stops being able to reach further at all.
 
-    `dry_run` says what would be fetched and fetches nothing. The listing it
-    needs is the listing the real thing starts with, so the answer costs a few
-    requests rather than the half hour of downloads it is asked about.
+    `dry_run` says what would be fetched and fetches nothing, which is minutes
+    against hours rather than free: the artifact listing of every run in the
+    window is read before anything can be said about it, so the cost is one
+    request per run and `--days 90` is a couple of hundred of them. What it
+    saves is the ten megabytes per leg.
     """
     connection = connect(db_path)
     already = ingested_artifact_ids(connection)
