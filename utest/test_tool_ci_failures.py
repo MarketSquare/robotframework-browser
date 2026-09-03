@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+from contextlib import closing
 import zipfile
 from pathlib import Path
 
@@ -12,7 +13,7 @@ from tools.ci_failures import github, ingest, render_html
 from tools.ci_failures.db import connect as connect_db
 from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.queries import Spread, VariantRow
-from tools.ci_failures.reading import of as reading_of
+from tools.ci_failures import reading
 from tools.ci_failures.render_json import document as json_document
 from tools.ci_failures.report import LogLine
 from tools.ci_failures.report import build as build_report
@@ -63,6 +64,38 @@ Inner Keyword
 """
 
 
+#: Readings opened by `reading_of`, closed after the test that opened them.
+_OPEN_READINGS: list = []
+
+
+def reading_of(db_path, window=None):
+    """`reading.of`, with the closing done for you.
+
+    These tests ask a Reading one question and drop it, forty-seven times over.
+    Closing each by hand is forty-seven chances to forget, and a forgotten one
+    is an unclosed sqlite3.Connection reported as a ResourceWarning against
+    whatever unrelated frame the garbage collector happened to be in when it
+    noticed - which is how this looked for a long time: pages of warnings
+    blaming Robot Framework's parser and `inspect`.
+
+    Production does not need this. All three `reading.of` calls in `report.py`
+    are `with` statements; only the tests were treating a Reading as something
+    you drop on the floor.
+    """
+    from tools.ci_failures.window import ALL_HISTORY
+
+    opened = reading.of(db_path, ALL_HISTORY if window is None else window)
+    _OPEN_READINGS.append(opened)
+    return opened
+
+
+@pytest.fixture(autouse=True)
+def _close_readings():
+    yield
+    while _OPEN_READINGS:
+        _OPEN_READINGS.pop().close()
+
+
 def _run_robot(directory: Path, suite: str, metadata: tuple[str, ...] = ()) -> Path:
     """A real output.xml from a real Robot Framework run.
 
@@ -70,15 +103,19 @@ def _run_robot(directory: Path, suite: str, metadata: tuple[str, ...] = ()) -> P
     working against the format Robot Framework actually emits.
     """
     (directory / "suite.robot").write_text(suite, encoding="utf-8")
-    robot_run(
-        str(directory / "suite.robot"),
-        outputdir=str(directory),
-        output="output.xml",
-        log=None,
-        report=None,
-        metadata=list(metadata),
-        stdout=open(directory / "stdout.txt", "w"),  # noqa: SIM115
-    )
+    # Closed rather than left to the collector: Robot Framework is run once per
+    # test here, and an open handle per run surfaced as a ResourceWarning
+    # against whatever frame happened to be executing when it was noticed.
+    with open(directory / "stdout.txt", "w", encoding="utf-8") as captured:
+        robot_run(
+            str(directory / "suite.robot"),
+            outputdir=str(directory),
+            output="output.xml",
+            log=None,
+            report=None,
+            metadata=list(metadata),
+            stdout=captured,
+        )
     return directory / "output.xml"
 
 
@@ -238,14 +275,15 @@ def ancestor_teardown_xml(tmp_path_factory) -> Path:
     (outer / "Middle" / "inner.robot").write_text(
         "*** Test Cases ***\nScope Test One\n    Log    fine\n", encoding="utf-8"
     )
-    robot_run(
-        str(outer),
-        outputdir=str(root),
-        output="output.xml",
-        log=None,
-        report=None,
-        stdout=open(root / "stdout.txt", "w"),  # noqa: SIM115
-    )
+    with open(root / "stdout.txt", "w", encoding="utf-8") as captured:
+        robot_run(
+            str(outer),
+            outputdir=str(root),
+            output="output.xml",
+            log=None,
+            report=None,
+            stdout=captured,
+        )
     return root / "output.xml"
 
 
@@ -437,11 +475,13 @@ class TestIngest:
 
         ingest.ingest(db, limit=5, report=lambda _: None)
 
-        connection = sqlite3.connect(db)
-        connection.row_factory = sqlite3.Row
-        leg = connection.execute("SELECT * FROM leg").fetchone()
-        assert leg["artifact_url"] == "https://example.invalid/runs/111/artifacts/222"
-        assert leg["node_version"] == "v24.15.0"
+        with closing(sqlite3.connect(db)) as connection:
+            connection.row_factory = sqlite3.Row
+            leg = connection.execute("SELECT * FROM leg").fetchone()
+            assert leg["artifact_url"] == (
+                "https://example.invalid/runs/111/artifacts/222"
+            )
+            assert leg["node_version"] == "v24.15.0"
 
     def test_running_again_ingests_nothing_twice(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
@@ -451,12 +491,11 @@ class TestIngest:
 
         assert second.legs == 0
         assert second.skipped == 1
-        assert (
-            sqlite3.connect(db)
-            .execute("SELECT COUNT(*) FROM test_result")
-            .fetchone()[0]
-            == 4
-        )
+        with closing(sqlite3.connect(db)) as connection:
+            counted = connection.execute("SELECT COUNT(*) FROM test_result").fetchone()[
+                0
+            ]
+        assert counted == 4
 
     def test_an_expired_artifact_is_counted_rather_than_guessed_at(
         self, fake_ci, tmp_path, monkeypatch
