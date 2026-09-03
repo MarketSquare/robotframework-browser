@@ -234,10 +234,18 @@ def ingest(
     db_path: Path,
     *,
     limit: int = 25,
+    since: str | None = None,
     report: Callable[[str], None] = print,
     dry_run: bool = False,
 ) -> Ingested:
-    """Ingests up to ``limit`` runs, newest first, skipping what is already in.
+    """Ingests runs newest first, skipping what is already in.
+
+    Two ways to say how much history, and they are alternatives rather than
+    filters on each other: ``limit`` counts runs and ``since`` is a UTC instant
+    to walk back to. ``since`` is what `--days` resolves to, and it is the one
+    that means the same thing next month - a run count is a proxy for history
+    whose exchange rate moves with how busy the repository is, and above one
+    page of listing it stops being able to reach further at all.
 
     `dry_run` says what would be fetched and fetches nothing. The listing it
     needs is the listing the real thing starts with, so the answer costs a few
@@ -260,10 +268,11 @@ def ingest(
         0,
     )
 
-    runs = github.list_runs(limit=limit)
+    runs = github.runs_since(since) if since else github.list_runs(limit=limit)
+    asked_for = f"since {since[:10]}" if since else f"newest {limit}"
     report(
         f"{len(runs)} run(s) to consider on {github.BRANCH} "
-        f"({', '.join(github.EVENTS)})"
+        f"({', '.join(github.EVENTS)}, {asked_for})"
     )
 
     for run in runs:

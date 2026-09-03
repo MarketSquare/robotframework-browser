@@ -3729,3 +3729,169 @@ class TestAWindowWiderThanTheArchive:
             "missing_days": 8,
         }
         assert short.asked_from in page(report)
+
+
+class TestListingRunsByDate:
+    """`--days` on the ingest, so "how much history" is asked for in the unit it
+    is wanted in.
+
+    `--limit` counts runs, and the exchange rate moves with how busy the
+    repository is: 25 runs was a week when it was measured and 100 was a month,
+    and neither is a number anybody has in mind. Worse, past 100 the one-page
+    listing stops being able to answer at all - `per_event` is capped there, so
+    the two events come back in different depths and the older half of the
+    window quietly becomes schedule-only.
+
+    Asking by date fixes both: pages are walked until they are older than the
+    cutoff and then stopped, so the depth is whatever the question needs, and
+    each event is walked to the same date rather than to the same count.
+    """
+
+    @staticmethod
+    def _pages(monkeypatch, by_event):
+        """Serves `gh api` from canned pages, and records what was asked for."""
+        import json as json_module
+
+        asked = []
+
+        def fake_run(args, **kwargs):
+            endpoint = next(a for a in args if a.startswith("repos/"))
+            asked.append(endpoint)
+            event = endpoint.split("event=")[1].split("&")[0]
+            page = int(endpoint.split("page=")[-1]) if "&page=" in endpoint else 1
+            pages = by_event.get(event, [])
+            body = pages[page - 1] if page <= len(pages) else []
+
+            class Result:
+                returncode = 0
+                stdout = json_module.dumps({"workflow_runs": body})
+                stderr = ""
+
+            return Result()
+
+        monkeypatch.setattr(github.subprocess, "run", fake_run)
+        # A short page means there is no next one, so a one-run page is a full
+        # page here. Shrinking the page rather than writing out a hundred runs
+        # per fixture: the rule under test is "walk until older", not the number.
+        monkeypatch.setattr(github, "_PER_PAGE", 1)
+        return asked
+
+    @staticmethod
+    def _run_at(run_id, created_at, event):
+        return {
+            "id": run_id,
+            "event": event,
+            "head_sha": f"sha{run_id}",
+            "head_branch": "main",
+            "created_at": created_at,
+            "conclusion": "success",
+            "html_url": "u",
+            "run_attempt": 1,
+        }
+
+    def test_it_walks_past_the_first_page_to_reach_the_cutoff(self, monkeypatch):
+        """The whole point. One page is 100 runs; a question that needs 12 weeks
+        of a busy repository needs more than one, and `--limit` cannot ask."""
+        asked = self._pages(
+            monkeypatch,
+            {
+                "push": [
+                    [self._run_at(1, "2026-08-30T10:00:00Z", "push")],
+                    [self._run_at(2, "2026-07-01T10:00:00Z", "push")],
+                ],
+                "schedule": [[self._run_at(3, "2026-08-29T10:00:00Z", "schedule")]],
+            },
+        )
+
+        runs = github.runs_since("2026-08-01T00:00:00Z")
+
+        assert [r.id for r in runs] == [1, 3], "the July run is older than the cutoff"
+        assert any("&page=2" in endpoint for endpoint in asked), "stopped at one page"
+
+    def test_it_stops_asking_once_a_page_is_older_than_the_cutoff(self, monkeypatch):
+        """Bounded by the question, not by the age of the repository - which is
+        the property `_first_page` was protecting when it took one page only."""
+        asked = self._pages(
+            monkeypatch,
+            {
+                "push": [
+                    [self._run_at(1, "2026-08-30T10:00:00Z", "push")],
+                    [self._run_at(2, "2026-06-01T10:00:00Z", "push")],
+                    [self._run_at(3, "2026-05-01T10:00:00Z", "push")],
+                ],
+                "schedule": [[]],
+            },
+        )
+
+        github.runs_since("2026-08-01T00:00:00Z")
+
+        assert not any("&page=3" in endpoint for endpoint in asked)
+
+    def test_both_events_are_walked_to_the_same_date(self, monkeypatch):
+        """The failure `--limit` has above 100: one page each means the busier
+        event runs out first, and the older half of the window becomes the other
+        event only, with nothing saying so."""
+        self._pages(
+            monkeypatch,
+            {
+                "push": [
+                    [
+                        self._run_at(n, f"2026-08-{30 - n:02d}T10:00:00Z", "push")
+                        for n in range(1, 4)
+                    ],
+                    [self._run_at(9, "2026-08-02T10:00:00Z", "push")],
+                ],
+                "schedule": [[self._run_at(20, "2026-08-03T10:00:00Z", "schedule")]],
+            },
+        )
+
+        runs = github.runs_since("2026-08-01T00:00:00Z")
+
+        assert {r.event for r in runs} == {"push", "schedule"}
+        assert min(r.created_at for r in runs) >= "2026-08-01T00:00:00Z"
+
+    def test_the_limit_path_still_takes_one_page(self, monkeypatch):
+        """`--limit` is unchanged, and `TestListingRunsCostsTheSameForever` says
+        why. This says the new path did not quietly become the old one."""
+        asked = self._pages(monkeypatch, {"push": [[]], "schedule": [[]]})
+
+        github.list_runs(limit=25)
+
+        assert not any("&page=2" in endpoint for endpoint in asked)
+
+    def test_the_ingest_asks_by_date_when_it_is_given_one(self, tmp_path, monkeypatch):
+        """The two listings are alternatives, and the ingest picks between them
+        rather than asking for both and reconciling."""
+        from tools.ci_failures.ingest import ingest
+
+        asked: dict = {}
+        monkeypatch.setattr(
+            github,
+            "runs_since",
+            lambda cutoff, **kw: asked.setdefault("since", cutoff) and [],
+        )
+        monkeypatch.setattr(
+            github,
+            "list_runs",
+            lambda limit=25: asked.setdefault("limit", limit) and [],
+        )
+
+        ingest(
+            tmp_path / "ci.sqlite3", since="2026-08-01T00:00:00Z", report=lambda _: None
+        )
+
+        assert asked == {"since": "2026-08-01T00:00:00Z"}, "asked by count as well"
+
+    def test_the_ingest_still_asks_by_count_by_default(self, tmp_path, monkeypatch):
+        from tools.ci_failures.ingest import ingest
+
+        asked: dict = {}
+        monkeypatch.setattr(
+            github,
+            "list_runs",
+            lambda limit=25: asked.setdefault("limit", limit) and [],
+        )
+
+        ingest(tmp_path / "ci.sqlite3", limit=7, report=lambda _: None)
+
+        assert asked == {"limit": 7}

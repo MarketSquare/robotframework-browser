@@ -35,6 +35,9 @@ EVENTS = ("push", "schedule")
 # artifacts out of the run; what is in them is what gets stored.
 _TEST_RESULTS = re.compile(r"^Test results-")
 
+# One page of the GitHub listing endpoints, which is also their maximum.
+_PER_PAGE = 100
+
 
 class GhError(RuntimeError):
     pass
@@ -129,6 +132,56 @@ def _run(item: dict, event: str = "") -> Run:
 
 def get_run(run_id: int) -> Run:
     return _run(_api(f"repos/{REPO}/actions/runs/{run_id}"))
+
+
+def _pages_until(endpoint: str, key: str, older_than: str) -> list[dict]:
+    """Pages of `endpoint`, newest first, stopping once they predate `older_than`.
+
+    The bounded middle between `_first_page` and `_paginated`. `_first_page`
+    cannot answer a question deeper than one page and `_paginated` walks the
+    whole history of the workflow to answer any question at all; this walks
+    exactly as far back as was asked for and then stops.
+
+    Cost is therefore set by the window rather than by the age of the
+    repository, which is the property `_first_page` exists to protect. A short
+    page means there is no next one - GitHub sends a full page whenever more
+    remain - so the last request of a walk is the one that returns fewer than
+    `per_page`, not an extra empty one.
+    """
+    items: list[dict] = []
+    page = 1
+    while True:
+        batch = _api(f"{endpoint}&page={page}").get(key) or []
+        items.extend(batch)
+        oldest = min((item.get("created_at", "") for item in batch), default="")
+        if len(batch) < _PER_PAGE or oldest < older_than:
+            return items
+        page += 1
+
+
+def runs_since(cutoff: str, events: tuple[str, ...] = EVENTS) -> list[Run]:
+    """Finished CI runs on `main` created at or after `cutoff`, newest first.
+
+    The listing `--days` asks for. Each event is walked to the same date rather
+    than to the same count, which is the thing `list_runs` cannot do: above one
+    page it caps each event at 100, so the busier one runs out first and the
+    older half of the window silently becomes the quieter event only. A window
+    whose event mix changes halfway through has denominators that change shape
+    halfway through, and nothing in the report would say so.
+    """
+    runs = [
+        _run(item, event=event)
+        for event in events
+        for item in _pages_until(
+            f"repos/{REPO}/actions/workflows/{WORKFLOW_FILE}/runs"
+            f"?branch={BRANCH}&event={event}&status=completed"
+            f"&per_page={_PER_PAGE}",
+            "workflow_runs",
+            cutoff,
+        )
+    ]
+    runs.sort(key=lambda run: run.created_at, reverse=True)
+    return [run for run in runs if run.created_at >= cutoff]
 
 
 def list_runs(limit: int = 25) -> list[Run]:

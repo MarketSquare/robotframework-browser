@@ -34,7 +34,8 @@ one, so the tool says what it counted and over what.
 ```bash
 inv ci-ingest --dry-run           # how many legs an ingest would fetch
 inv ci-ingest --limit 25          # pull the newest 25 runs (incremental)
-inv ci-ingest --limit 100         # a deeper catch-up, or a rebuild (see Retention)
+inv ci-ingest --days 14           # ... or the last two weeks, however many runs that is
+inv ci-ingest --days 84           # a rebuild: as deep as retention allows (see Retention)
 
 inv ci-report                     # the page, at ci_failures/ci_report.html
 inv ci-report --open-it           # ... and open it
@@ -70,12 +71,16 @@ the repository is. Measured on 2026-09-03, on `main`, `push` and `schedule`:
 | 200 | 200 | ~14 weeks | **push runs stop at ~6 weeks**; older than that is `schedule` only |
 | 300 | 200 | ~14 weeks | no deeper — one page per event, 100 each, is the ceiling |
 
-So "rebuild it" and "restore what I had" are different requests. `--limit 100`
-buys about a month. Past roughly 100 runs the two events stop coming back in the
-same proportion, which changes the shape of every denominator halfway through
-the window, and past 200 there is nothing further to ask for. Neither is
-announced; `--dry-run` shows the span that will actually be fetched, and it is
-worth looking at before a long ingest.
+So "rebuild it" and "restore what I had" are different requests, and `--limit`
+can only answer the first. **Use `--days` for anything deeper than a catch-up.**
+It walks both events to the same date rather than to the same count, pages until
+it passes the cutoff, and so has no ceiling but retention: `--days 90` reaches
+227 runs where `--limit` stopped at 200, and reaches them without the event mix
+changing halfway through the window.
+
+`--limit` stays the incremental default, because "the newest 25" is exactly the
+right question when you are catching up and costs one request per event. The two
+are alternatives and passing both is refused rather than reconciled.
 
 Against 90-day retention that leaves a narrow band: a deep look backwards is
 possible while the artifacts live, and impossible afterwards. Losing the
@@ -142,10 +147,10 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 
 | file | lines | what it is |
 | --- | ---: | --- |
-| `github.py` | 242 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
+| `github.py` | 295 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `parse.py` | 588 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 444 | Drives the two above into the database, one leg at a time, each contained. |
+| `ingest.py` | 453 | Drives the two above into the database, one leg at a time, each contained. |
 | `db.py` | 83 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 137 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |

@@ -1927,29 +1927,47 @@ def demo_app(c):
 
 
 @task
-def ci_ingest(c, limit=25, db=None, dry_run=False):
+def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
     costs what is new. See `tools/ci_failures/README.md`.
 
     Args:
-        limit: How many runs to consider, newest first. Runs, not days - 25 is
-            about a week of this repository and 100 about a month, and the rate
-            moves with how busy it is. Above roughly 100 the two events stop
-            coming back in the same proportion and 200 is the ceiling; see
-            *Retention* in the tool's README. Artifacts live 90 days, so
-            anything older cannot be ingested at all.
+        limit: How many runs to consider, newest first. Defaults to 25. Runs,
+            not days - 25 is about a week of this repository and 100 about a
+            month, and the rate moves with how busy it is. Above roughly 100 the
+            two events stop coming back in the same proportion and 200 is the
+            ceiling, so a question deeper than that wants --days.
+        days: Consider runs from the last this-many whole local days instead,
+            the same span --days means on the report. This is the one that means
+            the same thing next month, and the one that can reach past a page of
+            listing: both events are walked to the same date rather than to the
+            same count. Artifacts live 90 days, so nothing older can be ingested
+            however it is asked for.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         dry_run: Say which legs would be fetched and fetch nothing. A full
             ingest is download-bound and can run for half an hour; the listing
             that says how much work it is costs a few requests.
     """
     from tools.ci_failures.ingest import ingest
+    from tools.ci_failures.window import of_days
+
+    if limit is not None and days is not None:
+        raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
+    since = None
+    if days is not None:
+        try:
+            since = of_days(int(days)).cutoff
+        except ValueError:
+            raise Exit(
+                f"--days wants a whole number of days, got {days!r}.", 2
+            ) from None
 
     totals = ingest(
         db_path=Path(db) if db else CI_FAILURES_DB,
-        limit=int(limit),
+        limit=25 if limit is None else int(limit),
+        since=since,
         dry_run=bool(dry_run),
     )
     if dry_run:
