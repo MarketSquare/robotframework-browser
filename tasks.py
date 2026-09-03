@@ -1926,6 +1926,30 @@ def demo_app(c):
     return zip_path
 
 
+def _window_of_days(days):
+    """`--days N` as a Window, or an Exit saying which part of N was wrong.
+
+    Shared by ci-ingest and ci-report so the flag means the same thing in both
+    and refuses the same way - it was written twice and the second copy was a
+    copy of the first, bug included.
+
+    The two conversions are caught separately on purpose. `int()` is what knows
+    about "seven" and `of_days` is what knows about 0, and one `except
+    ValueError` around both threw away whichever message was the true one:
+    `--days 0` used to be told it was not a whole number.
+    """
+    from tools.ci_failures.window import of_days
+
+    try:
+        whole_days = int(days)
+    except (TypeError, ValueError):
+        raise Exit(f"--days wants a whole number of days, got {days!r}.", 2) from None
+    try:
+        return of_days(whole_days)
+    except ValueError as refused:
+        raise Exit(str(refused), 2) from None
+
+
 @task
 def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     """Pulls CI test results into the local database.
@@ -1952,24 +1976,10 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             window and worth doing before a long ingest.
     """
     from tools.ci_failures.ingest import ingest
-    from tools.ci_failures.window import of_days
 
     if limit is not None and days is not None:
         raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
-    since = None
-    if days is not None:
-        try:
-            whole_days = int(days)
-        except ValueError:
-            raise Exit(
-                f"--days wants a whole number of days, got {days!r}.", 2
-            ) from None
-        # Caught separately so `of_days` can say what is wrong with the number
-        # rather than have this guess: 0 is a whole number and still refused.
-        try:
-            since = of_days(whole_days).cutoff
-        except ValueError as refused:
-            raise Exit(str(refused), 2) from None
+    since = _window_of_days(days).cutoff if days is not None else None
 
     totals = ingest(
         db_path=Path(db) if db else CI_FAILURES_DB,
@@ -2052,16 +2062,9 @@ def ci_report(
         build,
         snapshot_entries,
     )
-    from tools.ci_failures.window import ALL_HISTORY, of_days
+    from tools.ci_failures.window import ALL_HISTORY
 
-    window = ALL_HISTORY
-    if days is not None:
-        try:
-            window = of_days(int(days))
-        except ValueError:
-            raise Exit(
-                f"--days wants a whole number of days, got {days!r}.", 2
-            ) from None
+    window = _window_of_days(days) if days is not None else ALL_HISTORY
     db_path = Path(db) if db else CI_FAILURES_DB
 
     # Built once. Both renderings and the baseline are of the same Report, and
