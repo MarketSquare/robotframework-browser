@@ -383,6 +383,9 @@ class Control(LibraryComponent):
         | Click     //button
         | `Set Browser Timeout`    ${old_timeout}
 
+        `Close Browser` and `Close Context` are not shortened by this setting;
+        they always get at least 20 seconds.
+
         [https://forum.robotframework.org/t//4328|Comment >>]
         """
         old_timeout = self.millisecs_to_timestr(self.timeout)
