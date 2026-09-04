@@ -93,7 +93,10 @@ class KeywordCallObserver(LibraryComponent):
             entry = self.library.keyword_call_stack[-1]
             content = self._banner_content(name, entry["kwname"], entry["args"])
             if not self.is_secret_keyword(name):
-                content = BuiltIn().replace_variables(content)
+                # Robot Framework returns the value itself, not a string, when
+                # the text is exactly one variable. The banner content always
+                # starts with the keyword name, so this one is always a string.
+                content = str(BuiltIn().replace_variables(content))
             self.set_banner(content)
         except Exception as error:
             logger.trace(f"Keyword call banner could not be painted: {error}")
