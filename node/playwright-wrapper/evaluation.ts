@@ -463,25 +463,6 @@ type EvaluationOptions = {
     clr: string;
 };
 
-export class HighlightDisposableCache {
-    private disposables: Array<{ dispose: () => Promise<void> }>;
-
-    constructor() {
-        this.disposables = [];
-    }
-
-    add(disposable: { dispose: () => Promise<void> }) {
-        this.disposables.push(disposable);
-    }
-
-    async disposeAll() {
-        await Promise.all(this.disposables.map((d) => d.dispose()));
-        this.disposables = [];
-    }
-}
-
-export const highlightDisposableCache = new HighlightDisposableCache();
-
 export async function highlightAll(
     selector: string,
     duration: number,
@@ -502,7 +483,7 @@ export async function highlightAll(
     }
     if (selector === 'ROBOT_FRAMEWORK_BROWSER_NO_SET') {
         logger.info(`Dispose all highlights because ROBOT_FRAMEWORK_BROWSER_NO_SET selector was used.`);
-        await highlightDisposableCache.disposeAll();
+        await state.highlightDisposableCache.disposeAll();
         return 0;
     }
     logger.info(`Locator count is ${count}`);
@@ -510,7 +491,7 @@ export async function highlightAll(
         const highlight = await locator.highlight();
         if (duration === 0) {
             logger.info(`Adding highlight to cache without timeout, it will be disposed later.`);
-            highlightDisposableCache.add(highlight);
+            state.highlightDisposableCache.add(highlight);
         }
         if (duration !== 0) {
             setTimeout(() => {
