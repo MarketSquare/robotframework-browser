@@ -1,6 +1,8 @@
 import json
 import os
+import platform
 import random
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
@@ -175,6 +177,63 @@ def get_python_version() -> str:
 
 def get_robot_version() -> str:
     return str(version.VERSION)
+
+
+def get_node_version() -> str:
+    """The NodeJS actually running the library, for the result to record.
+
+    Which NodeJS ran matters when a failure only happens on one of them, and
+    output.xml is the only thing that survives a CI run long enough to be asked.
+    """
+    try:
+        completed = subprocess.run(
+            ["node", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return completed.stdout.strip() or "unknown"
+
+
+def get_os_release() -> str:
+    """More than sys.platform: "win32" does not distinguish two Windows runners."""
+    return platform.platform()
+
+
+def get_executor_count(pabot_processes: str = "") -> str:
+    """How many test executions ran at the same time.
+
+    A whole class of failure lives on this dimension and no other: anything
+    where one worker's state reaches another's happens only when there is
+    another worker, and gets rarer as there are fewer. It is not recorded
+    anywhere that outlives a run, and nobody chooses it per platform - tasks.py
+    derives it from the runner's CPU count, so a four-core Linux runner runs
+    three workers and a three-core macOS runner two, which is enough to make the
+    same defect look platform specific.
+
+    `${PABOTNUMBEROFPROCESSES}` is set by pabot as a Robot variable. Its absence
+    means this was not a pabot run at all, and one execution is the honest
+    answer for that.
+    """
+    processes = str(pabot_processes or "").strip()
+    return processes if processes.isdigit() else "1"
+
+
+def get_node_process_sharing() -> str:
+    """Whether every worker talks to one node process or starts its own.
+
+    tasks.py points every pabot worker at a single node process through
+    ROBOT_FRAMEWORK_BROWSER_NODE_PORT. Anything the node side keeps in a
+    module-level singleton is therefore shared between workers that have every
+    reason to believe they are isolated, and whether that was the case is a fact
+    about the run that only the run can record.
+    """
+    if os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT"):
+        return "shared"
+    return "per-process"
 
 
 def _parse_fi_date(date: str) -> datetime:

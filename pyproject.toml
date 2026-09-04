@@ -81,6 +81,7 @@ exclude = [
     "docs*",
     "node*",
     "browser_batteries*",
+    "tools*",
 ]
 
 [tool.setuptools.package-data]
@@ -150,6 +151,12 @@ select = [
 "bootstrap.py" = [
     "T201",
 ]
+# A standalone diagnostic run by hand against a playwright-log.txt, not part of
+# any package and not imported by anything.
+"tools/measure_highlight_theft.py" = [
+    "T201",
+    "INP001",
+]
 ".github/skills/parse-rf-results/scripts/parse_results.py" = [
     "T201",
 ]
@@ -183,14 +190,17 @@ configure = [
 
 [tool.pytest.ini_options]
 testpaths = ["utest"]
-addopts = "--cov=Browser --cov-report=term-missing"
+addopts = "--cov=Browser --cov=tools/ci_failures --cov-report=term-missing"
 pythonpath = [
   "src"
 ]
 
 
 [tool.coverage.run]
-source = ["Browser"]
+# The library, and the CI failure tool that ships beside it. The tool is
+# maintainers-only and excluded from the wheel, but it is 5,200 lines with 195
+# tests and nothing was reporting on any of it.
+source = ["Browser", "tools/ci_failures"]
 
 [tool.coverage.report]
 show_missing = true

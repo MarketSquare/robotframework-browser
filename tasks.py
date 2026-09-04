@@ -14,6 +14,7 @@ import tempfile
 import time
 import traceback
 import urllib.request
+import webbrowser
 import zipfile
 import signal
 
@@ -45,6 +46,8 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
+CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
+CI_REPORT_HTML = ROOT_DIR / "ci_failures" / "ci_report.html"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1433,6 +1436,7 @@ def lint_python(c, fix=False):
         "utest",
         "browser_batteries",
         ".github/skills/",
+        "tools/",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -1443,6 +1447,7 @@ def lint_python(c, fix=False):
         "browser_batteries/",
         "bootstrap.py",
         ".github/skills/",
+        "tools/",
     ]
     if fix:
         ruff_cmd_check.insert(2, "--fix")
@@ -1463,6 +1468,7 @@ def lint_python(c, fix=False):
         "bootstrap.py",
         "browser_batteries/",
         ".github/skills/",
+        "tools/",
     ]
     c.run(" ".join(mypy_cmd))
 
@@ -1918,3 +1924,216 @@ def demo_app(c):
         zip_file.write(file, arc_name)
     zip_file.close()
     return zip_path
+
+
+def _window_of_days(days):
+    """`--days N` as a Window, or an Exit saying which part of N was wrong.
+
+    Shared by ci-ingest and ci-report so the flag means the same thing in both
+    and refuses the same way - it was written twice and the second copy was a
+    copy of the first, bug included.
+
+    The two conversions are caught separately on purpose. `int()` is what knows
+    about "seven" and `of_days` is what knows about 0, and one `except
+    ValueError` around both threw away whichever message was the true one:
+    `--days 0` used to be told it was not a whole number.
+    """
+    from tools.ci_failures.window import of_days
+
+    try:
+        whole_days = int(days)
+    except (TypeError, ValueError):
+        raise Exit(f"--days wants a whole number of days, got {days!r}.", 2) from None
+    try:
+        return of_days(whole_days)
+    except ValueError as refused:
+        raise Exit(str(refused), 2) from None
+
+
+@task
+def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
+    """Pulls CI test results into the local database.
+
+    Incremental: legs already ingested are skipped, so running this often only
+    costs what is new. See `tools/ci_failures/README.md`.
+
+    Args:
+        limit: How many runs to consider, newest first. Defaults to 25. Runs,
+            not days - 25 is about a week of this repository and 100 about a
+            month, and the rate moves with how busy it is. Above roughly 100 the
+            two events stop coming back in the same proportion and 200 is the
+            ceiling, so a question deeper than that wants --days.
+        days: Consider runs from the last this-many whole local days instead,
+            the same span --days means on the report. This is the one that means
+            the same thing next month, and the one that can reach past a page of
+            listing: both events are walked to the same date rather than to the
+            same count. Artifacts live 90 days, so nothing older can be ingested
+            however it is asked for.
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        dry_run: Say which legs would be fetched and fetch nothing. A full
+            ingest is download-bound and can run for hours; this reads one
+            artifact listing per run instead, so it is minutes for a wide
+            window and worth doing before a long ingest.
+    """
+    from tools.ci_failures.ingest import ingest
+
+    if limit is not None and days is not None:
+        raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
+    since = _window_of_days(days).cutoff if days is not None else None
+
+    totals = ingest(
+        db_path=Path(db) if db else CI_FAILURES_DB,
+        limit=25 if limit is None else int(limit),
+        since=since,
+        dry_run=bool(dry_run),
+    )
+    if dry_run:
+        print(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
+        return
+    print(f"\n{totals.line()}")
+
+
+@task
+def ci_backfill_attempts(c, db=None):
+    """Resolves the attempt of legs ingested before it was being recorded.
+
+    Downloads nothing - a run says how many attempts it had and the artifact
+    listing says when each was created, which is all the resolution needs.
+
+    Run by hand rather than on every ingest, which is where it used to sit. Its
+    whole population is databases predating the column, so on any other it was a
+    connection opened and a query returning no rows, every time.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+    """
+    from tools.ci_failures.ingest import backfill_attempts
+
+    backfill_attempts(Path(db) if db else CI_FAILURES_DB)
+
+
+@task
+def ci_report(
+    c,
+    db=None,
+    html=None,
+    json=None,
+    limit=100,
+    open_it=False,
+    mark_seen=False,
+    days=None,
+):
+    """Shows which tests fail and on which error.
+
+    Two renderings of one report: a page to read, and a document for a language
+    model to read. There was a third, printed to the terminal, and it was the
+    worst of them - it showed 8 of the 24 fields the others show, cut every
+    message to 110 characters, and dropped the source locations, the versions,
+    the screenshots, the log lines and everything about what surrounded a
+    failure. Anyone reading it was reading less than the page for no gain.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        html: Write a self-contained HTML page here. Defaults to
+            ci_failures/ci_report.html.
+        json: Write the report as JSON here, for a language model to read.
+            Goes with --html: both are renderings of the one Report.
+        limit: How many test/error groups to show.
+        open_it: Open the HTML page in a browser once written.
+        mark_seen: Record what this report said, so the next one can say what
+            changed. Never done automatically: a report that moved its own
+            baseline would answer differently the second time it was run on
+            unchanged data.
+        days: Report only on the last this-many whole local days, today
+            included: 1 is today, 2 is today and yesterday. The window is a hard
+            scope - every count, rate and denominator comes from inside it, and
+            a test that did not fail inside it does not appear at all. That is
+            what makes it answer "did what I fixed come back", which no
+            all-history report can. It cannot reach further back than the
+            database does: ask for more days than have been ingested and the
+            answer covers what is there, so read `since` against the span the
+            label claims. Goes with everything except --mark-seen; see
+            `tools/ci_failures/window.py`.
+    """
+    from tools.ci_failures.report import (
+        NoDatabaseError,
+        UnanswerableError,
+        WindowedBaselineError,
+        build,
+        snapshot_entries,
+    )
+    from tools.ci_failures.window import ALL_HISTORY
+
+    window = _window_of_days(days) if days is not None else ALL_HISTORY
+    db_path = Path(db) if db else CI_FAILURES_DB
+
+    # Built once. Both renderings and the baseline are of the same Report, and
+    # the reasons there may not be one are the tool's to state, not this task's.
+    try:
+        report = build(db_path, limit=int(limit), window=window)
+    except NoDatabaseError as absent:
+        print(absent)
+        return
+    except UnanswerableError as why:
+        raise Exit(str(why), 1) from None
+
+    if mark_seen:
+        from tools.ci_failures.annotations import write_snapshot
+
+        try:
+            seen = snapshot_entries(report)
+        except WindowedBaselineError as why:
+            raise Exit(str(why), 2) from None
+        print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
+
+    written = []
+    if json:
+        from tools.ci_failures.render_json import write as write_json
+
+        written.append(write_json(report, Path(json)))
+    # The page unless only the document was asked for. Both used to be an
+    # either/or that silently dropped --html whenever --json was given.
+    if html or not json:
+        from tools.ci_failures.render_html import write as write_page
+
+        page_at = write_page(report, Path(html) if html else CI_REPORT_HTML)
+        written.append(page_at)
+        if open_it:
+            webbrowser.open(page_at.resolve().as_uri())
+    for destination in written:
+        print(f"Wrote {destination}")
+
+
+@task
+def ci_recompute(c, db=None, what="all"):
+    """Works the derived columns out again from what is already stored.
+
+    There is no re-parse: nothing is kept but the parsed rows, so changing what
+    is read out of output.xml costs the whole window again. That is not true of
+    a derived column whose source is itself in the database, and there are four
+    of those - none of these needs the network or the artifacts.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        what: `signatures` after changing the masking rules in `parse.py`;
+            `locations` after moving a keyword, after changing `locate._ROOTS`,
+            or after an ingest that reported a library it could not import -
+            that answer is cached for the whole run, so one failed import
+            leaves three columns null on every row it wrote. `all` does both.
+    """
+    from tools.ci_failures.ingest import (
+        recompute_keyword_locations,
+        recompute_signatures,
+    )
+
+    known = {"all", "signatures", "locations"}
+    if what not in known:
+        raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
+    db_path = Path(db) if db else CI_FAILURES_DB
+    if not db_path.exists():
+        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
+        return
+    if what in ("all", "signatures"):
+        recompute_signatures(db_path)
+    if what in ("all", "locations"):
+        recompute_keyword_locations(db_path)

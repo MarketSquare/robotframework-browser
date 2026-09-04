@@ -63,3 +63,8 @@ node/coverage/
 
 # linting
 .ruff_cache
+
+# CI failure analysis: the database, rebuilt from CI. Anchored to the root, or it
+# would also swallow tools/ci_failures, which is source.
+/ci_failures/
+/tools/ci_failures/known_causes.json
