@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-207-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-208-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -544,6 +544,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ElionSylwin"><img src="https://avatars.githubusercontent.com/u/75618976?v=4?s=100" width="100px;" alt="Jakub Wolf"/><br /><sub><b>Jakub Wolf</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AElionSylwin" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mvanhorn"><img src="https://avatars.githubusercontent.com/u/455140?v=4?s=100" width="100px;" alt="Matt Van Horn"/><br /><sub><b>Matt Van Horn</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=mvanhorn" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Alpha-Centauri-00"><img src="https://avatars.githubusercontent.com/u/56655042?v=4?s=100" width="100px;" alt="M.Kherki"/><br /><sub><b>M.Kherki</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAlpha-Centauri-00" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/msbt-saab"><img src="https://avatars.githubusercontent.com/u/192189929?v=4?s=100" width="100px;" alt="msbt-saab"/><br /><sub><b>msbt-saab</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amsbt-saab" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>
