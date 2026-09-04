@@ -148,7 +148,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | file | lines | what it is |
 | --- | ---: | --- |
 | `github.py` | 297 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
-| `parse.py` | 588 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `parse.py` | 615 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
 | `ingest.py` | 531 | Drives the two above into the database, one leg at a time, each contained. |
 | `db.py` | 83 | Opens the database, adds columns a database predating them has not got. |

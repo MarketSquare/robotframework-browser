@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from xml.etree.ElementTree import iterparse
 
 from robot.api import ExecutionResult
 
@@ -329,12 +330,38 @@ def _as_int(value: str | None) -> int | None:
     return int(value) if value and value.isdigit() else None
 
 
-def leg_info(result: Any) -> LegInfo:
-    """What output.xml says about the machine that produced it."""
+def generator_line(path: Path) -> str | None:
+    """The `generator` attribute of output.xml's root element.
+
+    Read from the file rather than from `Result.generator`, which does not
+    exist before Robot Framework 7.2 - and this CI runs 7.1.1 alongside 7.4.2,
+    so reading it off the object raised `AttributeError` on half the matrix and
+    took every test that parses an output.xml with it. The attribute itself has
+    been on the root element for as long as output.xml has had one.
+
+    Stops at the root, which is the first `start` event, so this costs the first
+    few hundred bytes of the file rather than a second parse of ten megabytes.
+    """
+    # The handle is opened here rather than left to `iterparse`, which would
+    # hold its own open until the iterator is exhausted or collected - and this
+    # one is abandoned at the root on purpose.
+    with path.open("rb") as handle:
+        for _, element in iterparse(handle, events=("start",)):
+            return element.get("generator")
+    return None
+
+
+def leg_info(result: Any, generator_string: str | None = None) -> LegInfo:
+    """What output.xml says about the machine that produced it.
+
+    `generator_string` comes from `generator_line`; `parse` passes it. It is an
+    argument rather than something read here because it is the one fact in this
+    function that is not on the `Result` in every supported version.
+    """
     metadata = {
         str(k).lower(): str(v) for k, v in (result.suite.metadata or {}).items()
     }
-    generator = _GENERATOR.match(result.generator or "")
+    generator = _GENERATOR.match(generator_string or "")
     return LegInfo(
         python_version=metadata.get("python version")
         or (generator["python"] if generator else None),
@@ -585,4 +612,4 @@ def parse(path: Path) -> tuple[LegInfo, list[TestResult]]:
             visit(child, fixtures)
 
     visit(result.suite, [])
-    return leg_info(result), results
+    return leg_info(result, generator_line(path)), results

@@ -333,6 +333,34 @@ class TestParse:
         assert info.platform in {"linux", "darwin", "win32"}
         assert info.python_version
 
+    def test_the_generator_is_read_from_the_file_not_off_the_result(self, tmp_path):
+        """`Result.generator` does not exist before Robot Framework 7.2, and
+        this CI runs 7.1.1 beside 7.4.2.
+
+        Reading it off the object raised AttributeError on every leg with the
+        older one - forty tests and five errors, all of them parsing an
+        output.xml - and passed everywhere anybody was likely to run it locally.
+        The stand-in below has no `generator`, so this fails on any version if
+        that reaches back into the Result rather than the file.
+        """
+        from types import SimpleNamespace
+
+        from tools.ci_failures.parse import generator_line, leg_info
+
+        line = generator_line(_run_robot(tmp_path, SUITE))
+        assert line and line.startswith(("Robot", "Rebot")), line
+
+        no_generator = SimpleNamespace(suite=SimpleNamespace(metadata={}))
+        assert not hasattr(no_generator, "generator")
+
+        info = leg_info(no_generator, "Robot 7.1.1 (Python 3.13.15 on linux)")
+
+        assert (info.rf_version, info.python_version, info.platform) == (
+            "7.1.1",
+            "3.13.15",
+            "linux",
+        )
+
     def test_how_much_ran_at_once_is_read_too(self, tmp_path):
         """The axis a cross-worker failure lives on, and nothing else records it."""
         info, _ = parse(
