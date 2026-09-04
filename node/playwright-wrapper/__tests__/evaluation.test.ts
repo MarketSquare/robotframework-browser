@@ -1,5 +1,3 @@
-/// <reference types="jest" />
-
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('../playwright-invoke', () => ({
@@ -15,13 +13,14 @@ jest.mock('../network', () => ({
     _waitForDownload: jest.fn(),
 }));
 
-import { highlightAll, HighlightDisposableCache, highlightDisposableCache } from '../evaluation';
+import { highlightAll } from '../evaluation';
+import { HighlightDisposableCache } from '../highlight-cache';
 import { findLocator } from '../playwright-invoke';
 
 const mockFindLocator = jest.mocked(findLocator);
 
 function makeMockState() {
-    return {} as any;
+    return { highlightDisposableCache: new HighlightDisposableCache() } as any;
 }
 
 function makeHighlight() {
@@ -43,43 +42,9 @@ function makeMockLocator(
     } as any;
 }
 
-describe('HighlightDisposableCache', () => {
-    describe('disposeAll', () => {
-        it('calls dispose on every added disposable', async () => {
-            const cache = new HighlightDisposableCache();
-            const dispose1 = jest.fn().mockResolvedValue(undefined);
-            const dispose2 = jest.fn().mockResolvedValue(undefined);
-            cache.add({ dispose: dispose1 });
-            cache.add({ dispose: dispose2 });
-
-            await cache.disposeAll();
-
-            expect(dispose1).toHaveBeenCalledTimes(1);
-            expect(dispose2).toHaveBeenCalledTimes(1);
-        });
-
-        it('clears the cache so a second disposeAll does not call dispose again', async () => {
-            const cache = new HighlightDisposableCache();
-            const dispose = jest.fn().mockResolvedValue(undefined);
-            cache.add({ dispose });
-
-            await cache.disposeAll();
-            await cache.disposeAll();
-
-            expect(dispose).toHaveBeenCalledTimes(1);
-        });
-
-        it('resolves without error when cache is empty', async () => {
-            const cache = new HighlightDisposableCache();
-            await expect(cache.disposeAll()).resolves.toBeUndefined();
-        });
-    });
-});
-
 describe('highlightAll', () => {
-    beforeEach(async () => {
+    beforeEach(() => {
         jest.clearAllMocks();
-        await highlightDisposableCache.disposeAll();
     });
 
     describe('error handling', () => {
@@ -98,7 +63,8 @@ describe('highlightAll', () => {
     describe('ROBOT_FRAMEWORK_BROWSER_NO_SET selector', () => {
         it('disposes all cached highlights and returns 0', async () => {
             const dispose = jest.fn().mockResolvedValue(undefined);
-            highlightDisposableCache.add({ dispose });
+            const state = makeMockState();
+            state.highlightDisposableCache.add({ dispose });
             const locator = makeMockLocator({ count: jest.fn().mockResolvedValue(0) });
             mockFindLocator.mockResolvedValue(locator);
 
@@ -109,7 +75,7 @@ describe('highlightAll', () => {
                 'dotted',
                 'blue',
                 false,
-                makeMockState(),
+                state,
             );
 
             expect(result).toBe(0);
@@ -168,8 +134,9 @@ describe('highlightAll', () => {
             const locator = makeMockLocator({ highlight: jest.fn().mockResolvedValue(highlight) });
             mockFindLocator.mockResolvedValue(locator);
 
-            await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
-            await highlightDisposableCache.disposeAll();
+            const state = makeMockState();
+            await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, state, 'playwright');
+            await state.highlightDisposableCache.disposeAll();
 
             expect(highlight.dispose).toHaveBeenCalledTimes(1);
         });
@@ -203,5 +170,24 @@ describe('highlightAll', () => {
 
             expect(result).toBe(2);
         });
+    });
+});
+
+describe('highlight isolation between PlaywrightStates', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('does not dispose a highlight belonging to another state', async () => {
+        const stateA = makeMockState();
+        const stateB = makeMockState();
+        const highlightOfA = makeHighlight();
+        mockFindLocator.mockResolvedValue(makeMockLocator({ highlight: jest.fn().mockResolvedValue(highlightOfA) }));
+        await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, stateA, 'playwright');
+
+        mockFindLocator.mockResolvedValue(makeMockLocator({ count: jest.fn().mockResolvedValue(0) }));
+        await highlightAll('ROBOT_FRAMEWORK_BROWSER_NO_SET', 0, '1px', 'dotted', 'blue', false, stateB, 'playwright');
+
+        expect(highlightOfA.dispose).not.toHaveBeenCalled();
     });
 });

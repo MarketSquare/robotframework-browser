@@ -69,6 +69,7 @@ import {
     Response_PageReportResponse,
     Response_String,
 } from './generated/playwright';
+import { HighlightDisposableCache } from './highlight-cache';
 import { exists } from './playwright-invoke';
 import {
     emptyWithLog,
@@ -357,10 +358,15 @@ export class PlaywrightState {
         this.browserStack = [];
         this.extensions = [];
         this.browserServer = [];
+        this.highlightDisposableCache = new HighlightDisposableCache();
     }
     extensions: Record<string, (...args: unknown[]) => unknown>[];
     public browserStack: BrowserState[];
     private browserServer: BrowserServer[];
+    /** Per peer, like the rest of this state. While it was module-level, any
+     * worker sharing this node process disposed every other worker's
+     * highlights along with its own; see issue #5211. */
+    public readonly highlightDisposableCache: HighlightDisposableCache;
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
