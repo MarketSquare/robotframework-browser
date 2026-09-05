@@ -366,3 +366,13 @@ class LibraryComponent:
         return self.library.evaluate_javascript(
             selector, f"{element_selector}.{function}"
         )
+
+    @property
+    def close_deadline(self) -> float:
+        """How long the closing calls may take, in seconds.
+
+        ``self.timeout`` is in milliseconds and gRPC deadlines are in seconds,
+        hence the conversion. The deadline is there so that a browser that
+        never finishes closing cannot hang the whole run, see issue #4124.
+        """
+        return max(self.library.close_deadline_floor_secs, self.timeout / 1000 * 2)
