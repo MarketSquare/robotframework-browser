@@ -340,7 +340,8 @@ def test_rfbrowser_translate_reads_the_documentation_of_unwrapped_methods(tmpdir
     translation = get_library_translation()
     library = Browser()
     documentation = {
-        keyword.__name__: keyword.__doc__ for keyword in library.keywords.values()
+        keyword.__name__: inspect.getdoc(keyword)
+        for keyword in library.keywords.values()
     }
     for name, entry in translation.items():
         if name in ["__init__", "__intro__"]:

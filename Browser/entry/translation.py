@@ -41,23 +41,12 @@ def get_library_translation(
         translation[function.__name__] = _translation_entry(
             function.__name__, inspect.getdoc(function)
         )
-    # Both entries describe the class docstring; see issue #5220.
     translation["__init__"] = _translation_entry("__init__", inspect.getdoc(browser))
     translation["__intro__"] = _translation_entry("__intro__", inspect.getdoc(browser))
     return translation
 
 
 def _translation_entry(name: str, doc: str | None) -> dict:
-    """Build one translation entry from a docstring, dedenting it first.
-
-    Python 3.13 strips leading indentation from docstrings, so the same
-    docstring reaches this function indented on Python 3.12 and dedented on
-    3.13. Hashing it as-is would produce a different checksum per Python
-    version and make a translation file valid only on one side of that
-    boundary. Normalising with ``inspect.cleandoc`` makes the stored
-    documentation and its checksum identical on every supported version.
-    See issue #5219.
-    """
     doc = inspect.cleandoc(doc) if doc else ""
     return {
         "name": name,
