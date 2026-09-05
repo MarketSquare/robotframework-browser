@@ -1043,7 +1043,7 @@ export async function switchPage(
     const id = request.id;
     if (id === 'CURRENT') {
         const previous = browserState.page?.id || 'NO PAGE OPEN';
-        void browserState.page?.p.bringToFront();
+        await browserState.page?.p.bringToFront();
         return stringResponse(previous, 'Returned active page id');
     }
     if (id === 'NEW') {
@@ -1108,7 +1108,7 @@ export async function switchBrowser(request: Request_Index, openBrowsers: Playwr
     if (id !== 'CURRENT') {
         openBrowsers.switchTo(id);
     }
-    void openBrowsers.getActivePage()?.bringToFront();
+    await openBrowsers.getActivePage()?.bringToFront();
     return stringResponse(
         previous?.id || 'NO BROWSER OPEN',
         id === 'CURRENT' ? 'Returned active browser id. ' + id : 'Successfully changed active browser: ' + id,
