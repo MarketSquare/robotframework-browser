@@ -25,11 +25,12 @@ Create Translation File With Python Plugin
     ${data} =    Verify Translation    ${OUTPUT_DIR}/translation.json
     Should Be True    ${data}[this_is_plugin_keyword]
     VAR    ${inro} =    ${data}[__intro__]
-    Should Start With    ${inro}[doc]    Browser library${SPACE}
+    Should Start With    ${inro}[doc]    Browser library is a browser automation library
     Should Be Equal    ${inro}[name]    __intro__
     VAR    ${init} =    ${data}[__init__]
-    Should Start With    ${init}[doc]    Browser library${SPACE}
+    Should Start With    ${init}[doc]    Browser library can be taken into use with optional arguments:
     Should Be Equal    ${init}[name]    __init__
+    Should Not Be Equal    ${init}[doc]    ${inro}[doc]
     [Teardown]    Remove File    ${OUTPUT_DIR}/translation.json
 
 Create Translation File With JS Plugin
