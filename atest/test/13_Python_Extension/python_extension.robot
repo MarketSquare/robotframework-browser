@@ -18,7 +18,7 @@ Context A Robot Framework Owns Browser
     [Documentation]    Robot Framework imports Browser and MyLibraryA sits alongside it. Everything
     ...    works, except that Browser keywords called from Python do not run `run_on_failure`.
     ${output} =    Run Child Suite    context_a    3
-    ${result} =    Get Child Result    ${output}/output.xml
+    ${result} =    Get Child Result    ${output}/child.xml
     Child Test Status Should Be    ${result}    Call Browser From Python    PASS
     Child Test Status Should Be    ${result}    Outputdir And Validate Work    PASS
     Child Test Status Should Be    ${result}    Set Test Scoped Timeout    PASS
@@ -54,7 +54,7 @@ Context B Your Library Owns Browser
     ...    registers it as a listener. Automatic closing and scope settings come back with it,
     ...    `run_on_failure` does not.
     ${output} =    Run Child Suite    context_b    1
-    ${result} =    Get Child Result    ${output}/output.xml
+    ${result} =    Get Child Result    ${output}/child.xml
     Child Should Not Use Library    ${result}    Browser
     Child Test Status Should Be    ${result}    Call Browser From Python    PASS
     Child Test Status Should Be    ${result}    Outputdir And Validate Work    PASS
@@ -81,7 +81,7 @@ Context B Without The Listener Registration
     ...    Framework run to exist. Automatic closing, scope settings and the Robot Framework
     ...    context on the node side are gone.
     ${output} =    Run Child Suite    context_b_no_listener    1
-    ${result} =    Get Child Result    ${output}/output.xml
+    ${result} =    Get Child Result    ${output}/child.xml
     Child Should Not Use Library    ${result}    Browser
     Child Test Status Should Be    ${result}    Call Browser From Python    PASS
     Child Test Status Should Be    ${result}    Outputdir And Validate Work    PASS
@@ -107,12 +107,17 @@ Run Child Suite
     [Documentation]    Runs one suite from _child/ as its own process, with its own output
     ...    directory, and verifies the exit code. Robot Framework returns the number of failed
     ...    tests, so the expected code is not always zero.
+    ...
+    ...    The result is called child.xml, not output.xml, because ${OUTPUT_DIR} is a pabot
+    ...    worker directory and pabot collects every output.xml under it as if it were a worker
+    ...    result. One with a different root suite name splits the merge into two groups, which
+    ...    drops the real `Test` root and renames it after all its children joined with ` & `.
     [Arguments]    ${suite}    ${expected_rc}
     VAR    ${output} =    ${OUTPUT_DIR}/${suite}
     ${robot_cmd} =    Get Robot Command
     ${env} =    Get Child Robot Environment
     ${process} =    Run Process
-    ...    ${robot_cmd} --outputdir ${output} --loglevel DEBUG --report NONE --log NONE --variable LOGIN_URL:${LOGIN_URL} ${CHILD_DIR}/${suite}.robot
+    ...    ${robot_cmd} --outputdir ${output} --output child.xml --loglevel DEBUG --report NONE --log NONE --variable LOGIN_URL:${LOGIN_URL} ${CHILD_DIR}/${suite}.robot
     ...    shell=True
     ...    env=${env}
     ...    timeout=150s
