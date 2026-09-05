@@ -591,6 +591,7 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
+        self.close_deadline_floor_secs = 20
 
     @property
     def presenter_mode(self) -> HighLightElement | bool:

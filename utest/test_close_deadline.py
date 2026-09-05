@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 import pytest
 
 import Browser
-from Browser.keywords.playwright_state import CLOSE_DEADLINE_FLOOR_SECS
 from Browser.utils.data_types import Scope
 
 
@@ -65,7 +64,7 @@ def test_closing_never_gets_less_than_the_floor(closing_keyword, browser_timeout
         closing_keyword(library)
     assert deadlines, f"{closing_keyword.__name__} made no closing call"
     rpc, deadline = deadlines[-1]
-    assert deadline == pytest.approx(CLOSE_DEADLINE_FLOOR_SECS), (
+    assert deadline == pytest.approx(library.close_deadline_floor_secs), (
         f"{rpc} asked for a {deadline} second deadline with a "
         f"{browser_timeout} Browser timeout"
     )
