@@ -1,3 +1,5 @@
+import hashlib
+
 from approvaltests import verify_all
 
 from Browser.entry.translation import (
@@ -7,6 +9,7 @@ from Browser.entry.translation import (
     NO_LIB_KEYWORD,
     _get_heading,
     _table_doc_updated,
+    _translation_entry,
 )
 
 
@@ -40,3 +43,31 @@ def test_full_long_kw_table():
     )
     lines.append(_table_doc_updated("close", 42, DOC_CHANGED))
     verify_all("all with long kw name", lines)
+
+
+# Docstring as it reaches the entry builder on Python <= 3.12 and on >= 3.13.
+# Python 3.13 strips the leading indentation at compile time, see issue #5219.
+INDENTED_DOC = "First line.\n\n        Indented body line.\n    "
+DEDENTED_DOC = "First line.\n\nIndented body line.\n"
+
+
+def test_translation_entry_dedents_documentation():
+    assert (
+        _translation_entry("kw", INDENTED_DOC)["doc"]
+        == "First line.\n\nIndented body line."
+    )
+
+
+def test_translation_entry_checksum_does_not_depend_on_python_version():
+    indented = _translation_entry("kw", INDENTED_DOC)
+    dedented = _translation_entry("kw", DEDENTED_DOC)
+    assert indented["sha256"] == dedented["sha256"]
+    assert indented["doc"] == dedented["doc"]
+
+
+def test_translation_entry_handles_missing_documentation():
+    assert _translation_entry("kw", None) == {
+        "name": "kw",
+        "doc": "",
+        "sha256": hashlib.sha256(b"\xff\xfe").hexdigest(),
+    }
