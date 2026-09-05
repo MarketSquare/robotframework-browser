@@ -41,7 +41,9 @@ def get_library_translation(
         translation[function.__name__] = _translation_entry(
             function.__name__, inspect.getdoc(function)
         )
-    translation["__init__"] = _translation_entry("__init__", inspect.getdoc(browser))
+    translation["__init__"] = _translation_entry(
+        "__init__", inspect.getdoc(type(browser).__init__)
+    )
     translation["__intro__"] = _translation_entry("__intro__", inspect.getdoc(browser))
     return translation
 
