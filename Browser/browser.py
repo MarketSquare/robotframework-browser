@@ -649,8 +649,20 @@ class Browser(DynamicCore):
         return self.scope_stack["highlight_on_failure"].get()
 
     @property
-    def timeout(self):
+    def timeout(self) -> float:
         return self.scope_stack["timeout"].get()
+
+    @property
+    def retry_assertions_for(self) -> float:
+        return self.scope_stack["retry_assertions_for"].get()
+
+    @property
+    def strict_mode(self) -> bool:
+        return self.scope_stack["strict_mode"].get()
+
+    @property
+    def selector_prefix(self) -> str:
+        return self.scope_stack["selector_prefix"].get()
 
     def _parse_run_on_failure_keyword(self, keyword: str | None) -> DelayedKeyword:
         if keyword is None or is_falsy(keyword):
