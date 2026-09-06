@@ -3195,7 +3195,7 @@ class TestTheColumnsThatNeedNoArtifact:
         run_sql(
             db,
             "UPDATE test_result SET keyword_owner = 'scope_logger', "
-            "failing_keyword = 'Assert Passed Duration'",
+            "failing_keyword = 'Log All Scopes'",
         )
 
         ingest.recompute_keyword_locations(db, report=lambda _: None)

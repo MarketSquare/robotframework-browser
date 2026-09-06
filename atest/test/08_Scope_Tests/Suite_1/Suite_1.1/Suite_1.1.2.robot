@@ -8,8 +8,8 @@ Test Setup     Go To    ${WAIT_URL_DIRECT}
 Test Suite Level Removed
     Log All Scopes    1000    1000    False    ${EMPTY}
     Strict Mode Should Be    False
-    Timeout Should Be Between    500    1500
-    Assertion Retry Should Be Between    500    1500
+    Timeout Should Be    1000
+    Assertion Retry Should Be    1000
 
 Set Global Scope
     Log All Scopes    1000    1000    False    ${EMPTY}

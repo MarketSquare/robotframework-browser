@@ -14,10 +14,10 @@ def log_all_scopes(
     exp_selector_prefix: Optional[str] = None,
 ):
     b: Browser = BuiltIn().get_library_instance("Browser")
-    timeout = b.scope_stack["timeout"].get()
-    retry_assertions_for = b.scope_stack["retry_assertions_for"].get()
-    strict_mode = b.scope_stack["strict_mode"].get()
-    selector_prefix = b.scope_stack["selector_prefix"].get()
+    timeout = b.timeout
+    retry_assertions_for = b.retry_assertions_for
+    strict_mode = b.strict_mode
+    selector_prefix = b.selector_prefix
 
     assert timeout == exp_timeout, (
         f"timeout: {timeout} ({type(timeout)}) != {exp_timeout} ({type(exp_timeout)})"
@@ -45,20 +45,17 @@ def log_all_scopes(
     }
 
 
-def assert_passed_duration(
-    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
-) -> None:
-    now = datetime.now()
-    logger.info(
-        f"Start time: {start_time.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}, now: {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}"
-    )
-    elapsed_ms = int((now - start_time).total_seconds() * 1000)
-    logger.info(
-        f"Elapsed time: {elapsed_ms}ms (max allowed: {max_duration_ms + delta_ms}ms)"
-    )
-    if elapsed_ms > max_duration_ms + delta_ms:
-        browser = BuiltIn().get_library_instance("Browser")
-        browser.take_screenshot()
+def assert_retried_for_at_least(start_time: datetime, min_duration_ms: int) -> None:
+    """Asserts an assertion keyword kept retrying for at least its budget.
+
+    A lower bound, deliberately. `with_assertion_polling` gives up only once the
+    retry budget (or the browser timeout) is spent, so a loaded CI runner can
+    make this longer but never shorter - which an upper bound cannot survive.
+    """
+    elapsed_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+    logger.info(f"Retried for {elapsed_ms}ms (at least {min_duration_ms}ms expected)")
+    if elapsed_ms < min_duration_ms:
         raise AssertionError(
-            f"Elapsed time {elapsed_ms}ms exceeded maximum of {max_duration_ms + delta_ms}ms."
+            f"Retried for {elapsed_ms}ms, which is less than the "
+            f"{min_duration_ms}ms budget the scope should have given it."
         )

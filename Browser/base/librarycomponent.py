@@ -60,7 +60,7 @@ class LibraryComponent:
 
     @property
     def keyword_call_banner_add_style(self) -> str:
-        return self.library.scope_stack["keyword_call_banner_add_style"].get()
+        return self.library.keyword_call_banner_add_style
 
     @property
     def keyword_call_banner_add_style_stack(self) -> SettingsStack:
@@ -72,7 +72,7 @@ class LibraryComponent:
 
     @property
     def show_keyword_call_banner(self) -> bool:
-        return self.library.scope_stack["show_keyword_call_banner"].get()
+        return self.library.show_keyword_call_banner
 
     @property
     def show_keyword_call_banner_stack(self) -> SettingsStack:
@@ -84,7 +84,7 @@ class LibraryComponent:
 
     @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
-        return self.library.scope_stack["run_on_failure"].get()
+        return self.library.run_on_failure_keyword
 
     @property
     def run_on_failure_keyword_stack(self) -> SettingsStack:
@@ -96,7 +96,7 @@ class LibraryComponent:
 
     @property
     def highlight_on_failure(self) -> bool:
-        return self.library.scope_stack["highlight_on_failure"].get()
+        return self.library.highlight_on_failure
 
     @property
     def highlight_on_failure_stack(self) -> SettingsStack:
@@ -122,7 +122,7 @@ class LibraryComponent:
 
     @property
     def timeout(self) -> float:
-        return self.library.scope_stack["timeout"].get()
+        return self.library.timeout
 
     @property
     def timeout_stack(self) -> SettingsStack:
@@ -134,7 +134,7 @@ class LibraryComponent:
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.scope_stack["retry_assertions_for"].get()
+        return self.library.retry_assertions_for
 
     @property
     def retry_assertions_for_stack(self) -> SettingsStack:
@@ -146,7 +146,7 @@ class LibraryComponent:
 
     @property
     def selector_prefix(self) -> str:
-        return self.library.scope_stack["selector_prefix"].get()
+        return self.library.selector_prefix
 
     @property
     def selector_prefix_stack(self) -> SettingsStack:
@@ -316,7 +316,7 @@ class LibraryComponent:
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.scope_stack["strict_mode"].get()
+        return self.library.strict_mode
 
     @property
     def strict_mode_stack(self) -> SettingsStack:
