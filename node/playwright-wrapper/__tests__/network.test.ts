@@ -9,7 +9,7 @@ jest.mock('uuid', () => ({
 }));
 
 import { logger } from '../browser_logger';
-import { waitForRequest } from '../network';
+import { _waitForDownload, waitForRequest } from '../network';
 
 const mockLogger = jest.mocked(logger);
 
@@ -220,5 +220,77 @@ describe('waitForRequest', () => {
         const result = await waitForRequest(makeRequest('.*', 10000), mockPage);
 
         expect(result.log).toContain('10000ms');
+    });
+});
+
+function makeMockDownload(
+    overrides: Partial<{
+        suggestedFilename: jest.Mock;
+        createReadStream: jest.Mock;
+        cancel: jest.Mock;
+        saveAs: jest.Mock;
+        path: jest.Mock;
+    }> = {},
+) {
+    return {
+        suggestedFilename: jest.fn().mockReturnValue('downloaded.txt'),
+        createReadStream: jest.fn().mockResolvedValue({}),
+        cancel: jest.fn().mockResolvedValue(undefined),
+        saveAs: jest.fn().mockResolvedValue(undefined),
+        path: jest.fn().mockResolvedValue('/tmp/downloaded.txt'),
+        ...overrides,
+    } as any;
+}
+
+function makeMockDownloadPage(waitForEvent: jest.Mock) {
+    return { waitForEvent } as any;
+}
+
+function makeMockDownloadState() {
+    return {
+        activeBrowser: {
+            browser: { _options: {} },
+            page: { activeDownloads: new Map() },
+        },
+    } as any;
+}
+
+describe('_waitForDownload', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('passes the download_timeout to waitForEvent so it is not bound by the page default timeout', async () => {
+        const downloadObject = makeMockDownload();
+        const waitForEvent = jest.fn().mockResolvedValue(downloadObject);
+        const mockPage = makeMockDownloadPage(waitForEvent);
+
+        await _waitForDownload(mockPage, makeMockDownloadState(), '', 30000, true);
+
+        expect(waitForEvent).toHaveBeenCalledWith('download', { timeout: 30000 });
+    });
+
+    it('disables the waitForEvent timeout when no download_timeout is given', async () => {
+        const downloadObject = makeMockDownload();
+        const waitForEvent = jest.fn().mockResolvedValue(downloadObject);
+        const mockPage = makeMockDownloadPage(waitForEvent);
+
+        await _waitForDownload(mockPage, makeMockDownloadState(), '', 0, true);
+
+        expect(waitForEvent).toHaveBeenCalledWith('download', { timeout: 0 });
+    });
+
+    it('cancels the download and throws when it does not finish within download_timeout', async () => {
+        expect.assertions(2);
+        const downloadObject = makeMockDownload({
+            createReadStream: jest.fn().mockImplementation(() => new Promise(() => {})),
+        });
+        const waitForEvent = jest.fn().mockResolvedValue(downloadObject);
+        const mockPage = makeMockDownloadPage(waitForEvent);
+
+        await expect(_waitForDownload(mockPage, makeMockDownloadState(), '', 1, true)).rejects.toThrow(
+            'Download failed, Timeout exceeded.',
+        );
+        expect(downloadObject.cancel).toHaveBeenCalledTimes(1);
     });
 });
