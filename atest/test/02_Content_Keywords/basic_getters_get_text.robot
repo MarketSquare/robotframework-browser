@@ -49,11 +49,10 @@ Get Text Assert Validate
 
 Get Text With No Matching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *TimeoutError: locator.evaluate: Timeout 50ms exceeded.*
     ...    Get Text    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Text With Text Type As InnerHTML
     ${text} =    Get Text    h1    ==    Login Page    text_type=innerHTML

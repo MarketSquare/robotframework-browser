@@ -56,10 +56,9 @@ Drag And Drop With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Drag And Drop    id=clickWithOptions    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Drag And Drop    id=clickWithOptions    //input
     Drag And Drop    //input    id=clickWithOptions
-    [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Coordinates
     [Tags]    slow
@@ -114,13 +113,12 @@ Hover And Drop To Hover
     Get Text    id=blue-box-y-value    ==    ${y}
 
 Hover With Strict
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Hover    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Hover    //input
-    [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Move Relative
     [Setup]    New Page    ${DRAGGAME_URL}
@@ -163,19 +161,17 @@ Get Boundingbox With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Boundingbox    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${x} =    Get Boundingbox    //input    x
     Should Be True    ${x}
-    [Teardown]    Set Strict Mode    True
 
 Mouse Move Relative To With Strict
     [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Mouse Move Relative To    //input    4    2
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Mouse Move Relative To    //input    4    2
-    [Teardown]    Set Strict Mode    True
 
 Scroll By Mouse Wheel
     [Setup]    New Page    ${TABLES_URL}

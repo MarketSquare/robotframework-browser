@@ -54,10 +54,9 @@ Get Client Size With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Client Size    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${size} =    Get Client Size    //input
     Should Be True    ${size}[width] > 0
-    [Teardown]    Set Strict Mode    True
 
 Get Client Size Element Default Error
     [Tags]    expect_error
@@ -85,9 +84,8 @@ Get Scroll Position With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Position    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Get Scroll Position    //input
-    [Teardown]    Set Strict Mode    True
 
 Get Scroll Position Element Default Error
     [Tags]    expect_error
@@ -118,10 +116,9 @@ Get Scroll Size With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Size    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${size} =    Get Scroll Size    //input
     Should Be True    ${size}[width] >= 0
-    [Teardown]    Set Strict Mode    True
 
 Get Scroll Size Element Default Error
     [Tags]    expect_error
@@ -187,11 +184,10 @@ Get Property Custom Error
 
 Get Property With Nonmatching Selector
     [Tags]    no-iframe
-    [Setup]    Set Browser Timeout    50ms
+    [Setup]    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Get Property    notamatch    attributeName
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute With Strict
     TRY
@@ -204,11 +200,10 @@ Get Attribute With Strict
     EXCEPT    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*    type=glob    AS    ${error}
         Log    ${error}
     END
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${id} =    Get Attribute    //input    id
     Should Be Equal    ${id}    username_field
     Get Attribute    //input    id    equal    username_field
-    [Teardown]    Set Strict Mode    True
 
 Get Attribute Custom Error
     Run Keyword And Expect Error    None, nonetype, True, bool    Get Attribute    id=login_button    disabled    ==

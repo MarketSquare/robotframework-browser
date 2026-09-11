@@ -144,9 +144,8 @@ Wait For Navigation Works With Regex
 Wait For Navigation Fails With Wrong Regex
     [Tags]    slow
     Go To    ${ROOT_URL}redirector.html
-    ${timeout} =    Set Browser Timeout    200ms
+    Set Browser Timeout    200ms    scope=Test
     Run Keyword And Expect Error    *Error*    Wait For Navigation    foobar
-    Set Browser Timeout    ${timeout}
     Get Url    not contains    foobar
 
 Wait For Navigation Fails With Wrong Wait_until
@@ -160,37 +159,33 @@ Wait For Navigation Fails With Wrong Wait_until
 
 Wait For Navigation Works With Wait_until
     [Tags]    slow
-    ${old timeout} =    Set Browser Timeout    4s
+    Set Browser Timeout    4s    scope=Test
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
         Go To    ${ROOT_URL}redirector.html
         Wait For Navigation    ${ROOT_URL}posted.html    wait_until=${wait_until}
         Get Url    contains    posted
     END
-    [Teardown]    Set Browser Timeout    ${old timeout}
 
 Go To Works With Wait_until
     [Tags]    slow
-    ${old timeout} =    Set Browser Timeout    4s
+    Set Browser Timeout    4s    scope=Test
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
         Go To    ${ROOT_URL}redirector.html    wait_until=${wait_until}
         Get Url    contains    posted
     END
-    [Teardown]    Set Browser Timeout    ${old timeout}
 
 New Page Works With Wait_until
     [Tags]    slow
     [Setup]    NONE
-    ${old timeout} =    Set Browser Timeout    4s
+    Set Browser Timeout    4s    scope=Test
     FOR    ${wait_until}    IN    domcontentloaded    networkidle    load    commit
         New Page    ${ROOT_URL}redirector.html    wait_until=${wait_until}
         Get Url    contains    posted
         Close Page
     END
-    [Teardown]    Set Browser Timeout    ${old timeout}
 
 Promise To Wait For Navigation With Wait_until
-    ${old timeout} =    Set Browser Timeout    4s
+    Set Browser Timeout    4s    scope=Test
     Go To    ${ROOT_URL}redirector.html
     ${page_navigation} =    Promise To    Wait For Navigation    url=${ROOT_URL}posted.html    wait_until=networkidle
     Wait For    ${page_navigation}
-    [Teardown]    Set Browser Timeout    ${old timeout}

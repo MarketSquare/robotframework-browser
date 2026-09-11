@@ -14,9 +14,8 @@ Normal With Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Click    //button
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Click    //button
-    [Teardown]    Set Strict Mode    True
 
 Frame With Strict Mode
     [Setup]    Go To    ${FRAMES_URL}
@@ -27,10 +26,9 @@ Frame With Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 2 elements:*
     ...    Click    iframe[name="left"] >>> //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Click    //iframe >>> "foo"
     Click    iframe[name="left"] >>> //input
-    [Teardown]    Set Strict Mode    True
 
 Nested Frame With Strict Mode
     [Setup]    Go To    ${DEEP_FRAMES_URL}
@@ -51,13 +49,13 @@ Get Element And Get Elements
 
 Click With Element ID
     ${element} =    Get Element    //tbody/tr[2] >> nth=0
-    ${Timeout} =    Set Browser Timeout    200ms
+    ${Timeout} =    Set Browser Timeout    200ms    scope=Test
     TRY
         Click    ${element} >> css=input#login_button
     EXCEPT    TimeoutError: locator.click: Timeout 200ms exceeded*    type=GLOB    AS    ${error}
         Log    ${error}
     END
-    Set Browser Timeout    ${Timeout}
+    Set Browser Timeout    ${Timeout}    scope=Test
     Get Text    text=Login Page
     ${element} =    Get Element    //tbody/tr[3] >> nth=0
     Click    ${element} >> css=input#login_button

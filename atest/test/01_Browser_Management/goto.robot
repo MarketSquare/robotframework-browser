@@ -35,13 +35,13 @@ Go To 404 URL
 
 Timeouting Go To
     New Page    ${LOGIN_URL}
-    ${timeout} =    Set Browser Timeout    2ms
+    Set Browser Timeout    2ms    scope=Test
     TRY
         Go To    ${WELCOME_URL}
     EXCEPT    TimeoutError: page.goto: Timeout 2ms exceeded*    type=GLOB    AS    ${error}
         Log    ${error}
     END
-    [Teardown]    Teardown For Timeouting Go To    ${timeout}
+    [Teardown]    Close Browser
 
 Timeouting Go To With Custom Timeout
     [Tags]    slow
@@ -52,9 +52,3 @@ Timeouting Go To With Custom Timeout
         Log    ${error}
     END
     [Teardown]    Close Context
-
-*** Keywords ***
-Teardown For Timeouting Go To
-    [Arguments]    ${timeout}
-    Set Browser Timeout    ${timeout}
-    Close Browser

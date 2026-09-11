@@ -42,33 +42,30 @@ Evaluate Multiline JavaScript With Singel Element
     Should Be Equal    ${texts}[-1]    Hello World
 
 Evaluate Multiline JavaScript With Strict Mode Disabled And All Elements
-    ${org} =    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${length} =    Evaluate JavaScript    button
     ...    (elements) => {
     ...    return elements.length
     ...    }
     ...    all_elements=True
     Should Be Equal    ${length}    ${BUTTON_ELEMENT_COUNT_IN_LOGIN}
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Enabled And All Elements
-    ${org} =    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     ${length} =    Evaluate JavaScript    button
     ...    (elements) => {
     ...    return elements.length
     ...    }
     ...    all_elements=True
     Should Be Equal    ${length}    ${BUTTON_ELEMENT_COUNT_IN_LOGIN}
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Disabled And Single Element
-    ${org} =    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${text} =    Evaluate JavaScript    button
     ...    (e) => {
     ...    return e.innerText
     ...    }
     Should Be Equal    ${text}    Visible
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript Strict Mode Error
     Run Keyword And Expect Error
@@ -97,19 +94,17 @@ Evaluate Multiline JavaScript On Page
 JS Execute Without Element On Strict Mode
     ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    [Teardown]    Set Strict Mode    True
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Evaluate JavaScript    //input    () => {return false;}
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${result} =    Evaluate JavaScript    //input    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    [Teardown]    Set Strict Mode    True
 
 Results From Page
     ${result} =    Evaluate JavaScript    ${None}    "hello from page "+location.href
@@ -136,9 +131,9 @@ Highlight Element On Page
     Get Element Count    .robotframework-browser-highlight    ==    1
     Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${count} =    Highlight Elements    .pure-button    duration=1000ms
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Get Element Count    .robotframework-browser-highlight    ==    5
     Should Be Equal    ${count}    ${5}
     Sleep    1500ms
@@ -150,9 +145,8 @@ Highlight Element With Invalid Selector
     Get Element Count    .robotframework-browser-highlight    ==    0
 
 Highlight Element With Strict
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Highlight Elements    //input    duration=200ms
-    [Teardown]    Set Strict Mode    True
 
 Highlight Element With Style
     [Tags]    slow

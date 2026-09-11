@@ -12,7 +12,7 @@ New Page Will Not Timeout
 
 New Page Will Timeout And Page Will Be Removed From Catalog
     [Tags]    slow
-    Set Browser Timeout    1s
+    Set Browser Timeout    1s    scope=Test
     New Context
     ${Catalog} =    Get Browser Catalog
     TRY

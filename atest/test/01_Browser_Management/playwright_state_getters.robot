@@ -14,7 +14,7 @@ Get Multiple Browsers
     New Page    ${LOGIN_URL}
     New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context
-    ${oldtimeout} =    Set Browser Timeout    15s
+    Set Browser Timeout    15s    scope=Test
     New Page    http://${SERVER}/dist/#
     ${browsers} =    Get Browser Catalog    then
     ...    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]

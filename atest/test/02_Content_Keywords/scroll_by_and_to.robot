@@ -9,18 +9,16 @@ Scroll By With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Scroll By    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Scroll By    //input
-    [Teardown]    Set Strict Mode    True
 
 Scroll To With Strict
     [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Scroll To    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Scroll To    //input
-    [Teardown]    Set Strict Mode    True
 
 Scroll To Elements
     [Setup]    New Page    ${TABLES_URL}
