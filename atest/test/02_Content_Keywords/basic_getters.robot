@@ -22,10 +22,9 @@ Get Property With Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Property    //input    id
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${property} =    Get Property    //input    id
     Should Not Be Empty    ${property}
-    [Teardown]    Set Strict Mode    True
 
 Get Property InnerText
     ${inner_text} =    Get Property    ${UserNameLabel}    innerText
@@ -76,10 +75,9 @@ Get Attribute Names With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Attribute Names    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${attrs} =    Get Attribute Names    //input
     Should Not Be Empty    ${attrs}
-    [Teardown]    Set Strict Mode    True
 
 Get Attribute Names And Assert Single And Multiple
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
@@ -102,10 +100,9 @@ Get Classes With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Classes    //button
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${classes} =    Get Classes    //button
     Should Be Equal    ${classes}    ${{[]}}
-    [Teardown]    Set Strict Mode    True
 
 Get Classes And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
@@ -250,10 +247,9 @@ Get Element States
 
 Get Element States Check Hidden And Retry
     [Tags]    slow
-    ${org} =    Set Retry Assertions For    2 sec
+    Set Retry Assertions For    2 sec    scope=Test
     Click    id=goes_hidden
     Get Element States    id=goes_hidden    *=    hidden
-    [Teardown]    Set Retry Assertions For    ${org}
 
 Get Element States Checkboxes And RadioButton Checked
     [Setup]    Ensure Location    ${FORM_URL}

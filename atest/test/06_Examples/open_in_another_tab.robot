@@ -12,7 +12,7 @@ Open PDF In Another Tab And Download It
     [Tags]    no-docker-pr
     [Setup]    New Browser    headless=${FALSE}    downloadsPath=${EXECDIR}
     New Context    acceptDownloads=${TRUE}
-    Set Browser Timeout    30s
+    Set Browser Timeout    30s    scope=Test
     New Page    ${WELCOME_URL}
     Click    text=Open pdf
     Switch Page    NEW

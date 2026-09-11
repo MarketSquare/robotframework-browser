@@ -21,9 +21,8 @@ Wait For Elements State Attached With Strict On WaitForElementsState
     Run Keyword And Expect Error
     ...    *strict mode violation*//div*resolved to 4 elements*
     ...    Wait For Elements State    //div    attached    1.5 sec
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Wait For Elements State    //div    attached    1.5 sec
-    [Teardown]    Set Strict Mode    True
 
 Wait For Elements State Enabled With Strict On Wait_for_function
     Select Options By    \#dropdown    value    True    enabled
@@ -31,9 +30,8 @@ Wait For Elements State Enabled With Strict On Wait_for_function
     Run Keyword And Expect Error
     ...    *strict mode violation*//div*resolved to 4 elements*
     ...    Wait For Elements State    //div    enabled    1.5 sec
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Wait For Elements State    //div    enabled    1.5 sec
-    [Teardown]    Set Strict Mode    True
 
 Wait For Elements State Detached
     Select Options By    \#dropdown    value    True    detached
@@ -51,20 +49,19 @@ Wait For Elements State Hidden
     Wait For Elements State    \#victim    hidden    1.5 sec
 
 Wait For Elements State Hidden Not Strict
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Select Options By    \#dropdown    value    True    hidden
     Click With Options    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    hidden    1.5 sec
 
 Wait For Elements State From Attached To Hidden Not Strict
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Select Options By    \#dropdown    value    True    attached
     Click With Options    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    attached    1.5 sec
     Select Options By    \#dropdown    value    True    detached
     Click With Options    \#submit    noWaitAfter=True
     Wait For Elements State    \#victim    hidden    1.5 sec
-    [Teardown]    Set Strict Mode    True
 
 Wait For Elements State Enabled
     Select Options By    \#dropdown    value    True    enabled
@@ -128,11 +125,10 @@ Wait For Elements State Fails On Too Short Timeout
     END
 
 Wait For Elements State Fails On Too Short Global Timeout
-    ${timeout} =    Set Browser Timeout    0.3 s
+    Set Browser Timeout    0.3 s    scope=Test
     Run Keyword And Expect Error    Custom Error ${SELECTOR_PREFIX_SPACED}#submit, hidden and 300 milliseconds
     ...    Wait For Elements State    \#submit    hidden    ${None}
     ...    Custom Error {selector}, {function} and {timeout}
-    [Teardown]    Set Browser Timeout    ${timeout}
 
 Wait For Elements State Fails On Too Short Timeout Custom Error With Formatting
     Select Options By    \#dropdown    value    True    unchecked

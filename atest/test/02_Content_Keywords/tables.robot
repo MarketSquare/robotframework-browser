@@ -77,10 +77,10 @@ Select Wrong Table Element
     ...    Get Table Cell Element    ${subtable_parent}    "two"    "1"
 
 Get Table Cell Element With Multiple Elements
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${e} =    Get Table Cell Element    table    "Babyhawk"    "Weight"
     Get Text    ${e}    ==    141g
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Run Keyword And Expect Error
     ...    *strict mode violation*
     ...    Get Table Cell Element

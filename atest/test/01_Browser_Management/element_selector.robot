@@ -9,27 +9,24 @@ Test Setup       Element Selector Setup
 *** Test Cases ***
 Get Element
     ${ref} =    Get Element    select[name="preferred_channel"]
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${option_value} =    Get Property    ${ref} >> option    value
     Should Be Equal    ${option_value}    email
-    [Teardown]    Set Strict Mode    True
 
 Get Element With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation:*//input*resolved to 12 elements*
     ...    Get Element    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${element} =    Get Element    //input
     Should Start With    ${element}    //input
-    [Teardown]    Set Strict Mode    True
 
 Get Element With Nonmatching Child Selector
     ${ref} =    Get Element    select[name="preferred_channel"]
-    ${timeout} =    Set Browser Timeout    100ms
+    Set Browser Timeout    100ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.elementHandle: Timeout 100ms exceeded.*    Get Property
     ...    ${ref}>> .notamatch    value
-    [Teardown]    Set Browser Timeout    ${timeout}
 
 Using Invalid Element Reference Fails
     Run Keyword And Expect Error
@@ -53,20 +50,18 @@ Using Element Handle Directly As Selector
 Get Elements When Only 1 Match
     ${refs} =    Get Elements    select[name="preferred_channel"]
     ${elem} =    Get From List    ${refs}    0
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${option_value} =    Get Property    ${elem} >> option    value
     Should Be Equal    ${option_value}    email
-    [Teardown]    Set Strict Mode    True
 
 Get Elements Include Hidden
     ${refs} =    Get Elements    input
     Should Be Equal As Integers    12    ${{ len(${refs}) }}
 
 Get Elements Should Not Fail If Element Is Not Found
-    ${timeout} =    Set Browser Timeout    100ms
+    Set Browser Timeout    100ms    scope=Test
     ${refs} =    Get Elements    xpath=//not_here
     Should Be Empty    ${refs}
-    [Teardown]    Set Browser Timeout    ${timeout}
 
 Get Elements Should Fail With Invalid Selector
     Run Keyword And Expect Error
@@ -111,12 +106,13 @@ Get Element By Role
     Should Be Empty    ${e}
     Run Keyword And Expect Error    *Error: strict mode violation: getByRole('textbox') resolved to 4 elements*
     ...    Get Element By Role    role=textbox
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${e} =    Get Element By Role    role=textbox
     Get Text    ${e}    ==    Prefilled Name
 
 Get Element By Role In Frame
     Go To    ${FRAMES_URL}
+    Set Browser Timeout    1s    scope=Test
     TRY
         Get Element By Role    textbox    name=right >>> name=searchbutton
     EXCEPT    TimeoutError:*    type=GLOB
@@ -161,17 +157,16 @@ Get Element By - Title
 
 Get Element By In Iframe
     [Setup]    Go To    ${FRAMES_URL}
-    Set Selector Prefix    id=left >>>
+    Set Selector Prefix    id=left >>>    scope=Test
     ${e} =    Get Element By    Text    Search
     Get Attribute    ${e}    name    ==    searchbutton
 
 Get Element By Role In Iframe
     [Setup]    Go To    ${FRAMES_URL}
-    Set Selector Prefix    id=left >>>
+    Set Selector Prefix    id=left >>>    scope=Test
     ${e} =    Get Element By Role    button    name=Search
     Get Attribute    ${e}    name    ==    searchbutton
 
 *** Keywords ***
 Element Selector Setup
     Go To    ${FORM_URL}
-    Set Browser Timeout    700ms    scope=Test

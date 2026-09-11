@@ -61,7 +61,7 @@ New Persistent Context Creates An Empty Page
     Get Url    ==    about:blank
 
 New Persistent Context Open New Pages
-    ${old} =    Set Retry Assertions For    5s
+    Set Retry Assertions For    5s    scope=Test
     Close Browser    ALL
     New Persistent Context    url=${WELCOME_URL}
     Click    "Open html"
@@ -69,7 +69,6 @@ New Persistent Context Open New Pages
     Get Url    ==    ${WELCOME_URL}
     Switch Page    NEW
     Get Url    ==    ${ERROR_URL}
-    [Teardown]    Set Retry Assertions For    ${old}
 
 New Persistent Context Cleaned Up After Timeout
     [Tags]    slow

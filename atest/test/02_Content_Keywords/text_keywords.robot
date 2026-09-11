@@ -15,11 +15,10 @@ Type Text With Clearing
 
 Type Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *    Error: locator.fill: Timeout 50ms exceeded.*waiting For Locator('notamatch')*
     ...    Type Text    notamatch    text
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
     Fill Text    input#username_field    Wrong Text
@@ -33,17 +32,15 @@ Clear Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Clear Text    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Clear Text    //input
-    [Teardown]    Set Strict Mode    True
 
 Clear Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Clear Text    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill With Css Selector
     Fill Text    css=input#username_field    username
@@ -55,19 +52,17 @@ Fill Text With Force
 
 Fill Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Fill Text    notamatch    text
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Fill Text    //input    something
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Fill Text    //input    something
-    [Teardown]    Set Strict Mode    True
 
 Fill Secret Direct Value
     TRY
@@ -87,17 +82,15 @@ Fill Secret With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Fill Secret    //input    $LOGIN_URL
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Fill Secret    //input    $LOGIN_URL
-    [Teardown]    Set Strict Mode    True
 
 Type Secret With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Type Secret    //input    $LOGIN_URL
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Type Secret    //input    $LOGIN_URL
-    [Teardown]    Set Strict Mode    True
 
 Fill Secret Placeholder-env-var
     [Documentation]    ...
@@ -271,11 +264,10 @@ Type Secret Local
 Fill Secret With Nonmatching Selector
     [Tags]    no-iframe
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text With Delay
     Type Text    input#username_field    username    delay=10 ms
@@ -285,9 +277,8 @@ Type Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation:*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Type Text    //input    username
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Type Text    //input    username
-    [Teardown]    Set Strict Mode    True
 
 Type And Fill Text With Text Selector
     Type Text    input#username_field    Text field
@@ -316,20 +307,18 @@ Fill Text With Clearing
     Get Text    css=input#username_field    ==    username
 
 Get Text Default Error
-    Set Retry Assertions For    100ms
+    Set Retry Assertions For    100ms    scope=Test
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Text 'Wrong Text' (str) should be 'username' (str)
     ...    Get Text    css=input#username_field    ==    username
-    [Teardown]    Set Retry Assertions For    1s
 
 Get Text Custom Error
-    Set Retry Assertions For    100ms
+    Set Retry Assertions For    100ms    scope=Test
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Text    css=input#username_field    ==    username    Tidii
-    [Teardown]    Set Retry Assertions For    1s
 
 Type Secret With CryptoLibrary
     Type Secret

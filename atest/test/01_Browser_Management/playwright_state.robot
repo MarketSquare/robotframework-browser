@@ -29,10 +29,9 @@ New Context Does Not Open A Page
 
 Open Browser Opens Everything
     [Tags]    slow    no-docker-pr
-    ${old_timeout} =    Set Browser Timeout    30 seconds
+    Set Browser Timeout    30 seconds    scope=Test
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Set Browser Timeout    ${old_timeout}
 
 Open Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
@@ -133,11 +132,10 @@ Switch New Page Fails When No New Pages
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${timeout} =    Set Browser Timeout    0.1s
+    Set Browser Timeout    0.1s    scope=Test
     Run Keyword And Expect Error
     ...    Error: Tried to activate a new page but no new pages were detected in context.    Switch Page    NEW
     Get Title    ==    prefilled_email_form.html
-    [Teardown]    Set Browser Timeout    ${timeout}
 
 Set Viewport Size
     New Page
@@ -256,10 +254,9 @@ Close Page With Page Id
 New Context With DefaultBrowserType Ff
     [Tags]    slow
     [Timeout]    80s    # Because FF is just slow sometimes
-    ${old_timeout} =    Set Browser Timeout    80s
+    Set Browser Timeout    80s    scope=Test
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
-    Set Browser Timeout    ${old_timeout}
 
 New Context With baseURL
     [Tags]    no-docker-pr

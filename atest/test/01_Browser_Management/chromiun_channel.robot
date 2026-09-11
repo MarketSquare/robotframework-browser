@@ -16,7 +16,5 @@ Use Chrome Stable With Channel Argument
     [Timeout]    60s    # Is slow in Windows OS.
     New Browser    chromium    headless=False    channel=chrome
     New Context
-    ${TIMEOUT} =    Set Browser Timeout    30 s
-    VAR    ${TIMEOUT} =    ${TIMEOUT}    scope=SUITE
+    Set Browser Timeout    30 s    scope=Test
     New Page    ${LOGIN_URL}
-    [Teardown]    Set Browser Timeout    ${TIMEOUT}

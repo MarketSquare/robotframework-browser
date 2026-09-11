@@ -11,11 +11,10 @@ Click Button
 
 Click Nonmatching Selector
     [Tags]    no-iframe
-    ${originaltimeout} =    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.click: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Click    css=notamatch
-    [Teardown]    Set Browser Timeout    ${originaltimeout}
 
 Click With Invalid Selector
     Run Keyword And Expect Error

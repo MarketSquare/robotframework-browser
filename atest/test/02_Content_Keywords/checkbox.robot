@@ -15,10 +15,9 @@ Get Checkbox State With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Checkbox State    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${state} =    Get Checkbox State    //input
     Should Not Be True    ${state}
-    [Teardown]    Set Strict Mode    True
 
 Get Checkbox State Default Error
     [Tags]    slow
@@ -51,9 +50,8 @@ Check Checkbox With Strict
     # TODO: Change: "*2" to correct value after PW update
     Run Keyword And Expect Error    *strict mode violation*//input[@type*resolved to 2 elements*    Check Checkbox
     ...    //input[@type="checkbox"]
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Check Checkbox    //input[@type="checkbox"]
-    [Teardown]    Set Strict Mode    True
 
 Uncheck Checkbox
     Get Checkbox State    [name=can_send_email]    ==    ${True}
@@ -70,19 +68,17 @@ Uncheck Checkbox With Strict
     Run Keyword And Expect Error
     ...    *Error: strict mode violation*//input*resolved to 12 elements*
     ...    Uncheck Checkbox    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Run Keyword And Expect Error
     ...    *Not a checkbox or radio button*
     ...    Uncheck Checkbox    //input
-    [Teardown]    Set Strict Mode    True
 
 Get Checkbox State With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('//notamatch')*
     ...    Get Checkbox State    xpath=//notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Check Checkbox With Waiting
     [Tags]    slow

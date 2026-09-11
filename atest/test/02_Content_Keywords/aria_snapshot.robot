@@ -22,15 +22,14 @@ Aria Snapshot Dict
     ${snapshot} =    Get Aria Snapshot    id=username_field    dict    ==    ${expected}
 
 Aria Snapshot Strict Mode
-    ${strict} =    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     TRY
         Get Aria Snapshot    //input
     EXCEPT    *strict mode violation*    type=glob
         Log    Caught expected PlaywrightError in strict mode.
     END
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${snapshot} =    Get Aria Snapshot    //input    yaml    ==    - textbox "User Name:"
-    [Teardown]    Set Strict Mode    ${strict}
 
 Aria Snapshot Non-existing Element
     TRY
