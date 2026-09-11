@@ -16,6 +16,8 @@ Take Screenshot
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/initial_screenshot.png
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/second_screenshot.png
     File Should Not Exist    ${OUTPUT DIR}/browser/screenshot/third_screenshot.png
+    # Wait For Elements State done because without it the first capture is fail randomly on mac
+    Wait For Elements State    ${SELECTOR_PREFIX_SPACED}id=table1    stable
     ${initial_screenshot} =    Take Screenshot    initial_screenshot    fullPage=True
     VAR    ${initial_screenshot} =    ${initial_screenshot}    scope=GLOBAL
     File Should Exist    ${initial_screenshot}

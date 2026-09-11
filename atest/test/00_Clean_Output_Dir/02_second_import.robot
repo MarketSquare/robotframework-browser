@@ -1,7 +1,11 @@
 *** Settings ***
-Library     Browser    retry_assertions_for=4 sec
-Library     OperatingSystem
-Resource    ../variables.resource
+Documentation
+...              If Variable \${initial_screenshot} not found, it means 01 failed before it could
+...              publish the path as global variable. Nothing is wrong in this file; look at 01.
+
+Library          Browser    retry_assertions_for=4 sec
+Library          OperatingSystem
+Resource         ../variables.resource
 
 *** Test Cases ***
 Take Screenshot
