@@ -158,7 +158,7 @@ class Promises(LibraryComponent):
         | =Arguments= | =Description= |
         | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
         | ``wait_for_finished`` | If true, promise will wait for download to finish. If false, promise will resolve immediately after download has started. |
-        | ``download_timeout`` | Maximum time to wait for the download to finish, if ``wait_for_finished`` is set to ``True``. If the download is not finished within this time, it is cancelled and the keyword fails. If not set, the keyword waits until the download is finished. |
+        | ``download_timeout`` | Maximum total time for the download to start and finish, counted from the moment the promise is created. If the download does not start within this time, the keyword fails. If it starts but does not finish, it is cancelled and the keyword fails. If ``wait_for_finished`` is ``False``, only the start is limited. If not set, the download must start within the browser timeout, see `Set Browser Timeout`, and there is no limit for it to finish. |
 
         Keyword returns dictionary of type `DownloadInfo` which contains downloaded file path
         and suggested filename as well as state and downloadID.
@@ -178,6 +178,9 @@ class Promises(LibraryComponent):
         If ``saveAs`` is set to a relative path, the file will be saved relative to the browser's ``downloadsPath`` setting or if that is not set, relative to the
         Playwright's working directory. If ``saveAs`` is set to an absolute path, the file will be saved to that absolute path independent of ``downloadsPath``.
 
+        Set ``download_timeout`` when the download can take longer than the browser timeout,
+        for example when the server generates the file before sending it.
+
         If the URL for the file to download shall be used, `Download` keyword may be a simpler alternative way to download the file.
 
         The waited promise returns a dictionary which contains saveAs and suggestedFilename as keys. The saveAs contains
@@ -189,7 +192,7 @@ class Promises(LibraryComponent):
         Example usage:
         | `New Context`            acceptDownloads=True
         | `New Page`               ${LOGIN_URL}
-        | ${dl_promise}          `Promise To Wait For Download`    /path/to/download/file.name
+        | ${dl_promise}          `Promise To Wait For Download`    /path/to/download/file.name    download_timeout=30s
         | `Click`                  id=file_download
         | ${file_obj}=           `Wait For`    ${dl_promise}
         | File Should Exist      ${file_obj}[saveAs]

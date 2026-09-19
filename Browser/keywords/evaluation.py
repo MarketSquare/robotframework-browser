@@ -187,7 +187,7 @@ class Evaluation(LibraryComponent):
         | ``url`` | URL to the file that shall be downloaded. |
         | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
         | ``wait_for_finished`` | If set to ``False`` keyword returns immediately after the download has started. Defaults to ``True``. |
-        | ``download_timeout`` | Timeout for the download itself if ``wait_for_finished`` is set to ``True``. By default no timeout is set. |
+        | ``download_timeout`` | Maximum total time for the file to be fetched and saved. If the file is not fetched within this time, the keyword fails. If it is fetched but not saved, the download is cancelled and the keyword fails. If ``wait_for_finished`` is ``False``, only the fetching is limited. If not set, the file must be fetched within the browser timeout, see `Set Browser Timeout`, and there is no limit for saving it. |
 
         Keyword returns dictionary of type `DownloadInfo`.
 
@@ -219,8 +219,12 @@ class Evaluation(LibraryComponent):
         authentication problems. Because of that, a relative ``url`` is resolved against the
         current page url and the page's cross-origin restrictions apply.
 
+        The whole file is fetched before the browser reports the download as started.
+        Set ``download_timeout`` when fetching the file can take longer than the browser timeout,
+        for example with large files or slow servers.
+
         Example:
-        | ${file_object}=    `Download`    ${url}
+        | ${file_object}=    `Download`    ${url}    download_timeout=2 minutes
         | ${actual_size}=    Get File Size    ${file_object.saveAs}
 
         Example 2:
