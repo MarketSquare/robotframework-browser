@@ -184,6 +184,25 @@ app.get('/slowpage.html', (req, res) => {
     }, 11000);
 });
 
+app.get('/api/download/slow', (req, res) => {
+    const startDelayMs = Number(req.query.startDelayMs ?? 0);
+    const transferMs = Number(req.query.transferMs ?? 0);
+    const totalBytes = 10;
+    setTimeout(() => {
+        res.attachment('slow_download.txt');
+        res.setHeader('Content-Length', totalBytes);
+        let sent = 0;
+        const timer = setInterval(() => {
+            res.write('x');
+            sent += 1;
+            if (sent === totalBytes) {
+                clearInterval(timer);
+                res.end();
+            }
+        }, transferMs / totalBytes);
+    }, startDelayMs);
+});
+
 app.get('/redirector.html', (req, res) => {
     setTimeout(() => {
         res.redirect('/redirector2.html');

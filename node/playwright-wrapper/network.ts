@@ -169,7 +169,8 @@ export async function _waitForDownload(
     downloadTimeout: number,
     waitForFinished: boolean,
 ): Promise<pb.Response_Json> {
-    const downloadObject = await page.waitForEvent('download');
+    const downloadWaitStartedAt = Date.now();
+    const downloadObject = await page.waitForEvent('download', { timeout: downloadTimeout || undefined });
 
     // @ts-ignore
     const downloadsPath = state.activeBrowser.browser?._options?.downloadsPath;
@@ -203,9 +204,10 @@ export async function _waitForDownload(
         }
     }
     if (downloadTimeout > 0) {
+        const remainingTimeout = Math.max(downloadTimeout - (Date.now() - downloadWaitStartedAt), 0);
         const readStream = await Promise.race([
             downloadObject.createReadStream(),
-            new Promise((resolve) => setTimeout(resolve, downloadTimeout)),
+            new Promise((resolve) => setTimeout(resolve, remainingTimeout)),
         ]);
         if (!readStream) {
             await downloadObject.cancel();
