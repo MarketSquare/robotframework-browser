@@ -13,14 +13,23 @@ jest.mock('../network', () => ({
     _waitForDownload: jest.fn(),
 }));
 
-import { highlightAll } from '../evaluation';
+import { download, highlightAll } from '../evaluation';
 import { HighlightDisposableCache } from '../highlight-cache';
+import { _waitForDownload } from '../network';
 import { findLocator } from '../playwright-invoke';
 
 const mockFindLocator = jest.mocked(findLocator);
+const mockWaitForDownload = jest.mocked(_waitForDownload);
 
 function makeMockState() {
     return { highlightDisposableCache: new HighlightDisposableCache() } as any;
+}
+
+function makeMockStateWithActivePage(page: any) {
+    return {
+        activeBrowser: { context: { options: { acceptDownloads: true } } },
+        getActivePage: () => page,
+    } as any;
 }
 
 function makeHighlight() {
@@ -189,5 +198,25 @@ describe('highlight isolation between PlaywrightStates', () => {
         await highlightAll('ROBOT_FRAMEWORK_BROWSER_NO_SET', 0, '1px', 'dotted', 'blue', false, stateB, 'playwright');
 
         expect(highlightOfA.dispose).not.toHaveBeenCalled();
+    });
+});
+
+describe('download', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('fails when the download does not start while the file is still being fetched', async () => {
+        expect.assertions(1);
+        const fetchStillRunning = new Promise(() => {});
+        const page = { url: () => 'http://localhost/', evaluate: jest.fn().mockReturnValue(fetchStillRunning) };
+        mockWaitForDownload.mockRejectedValue(new Error('Timeout 1000ms exceeded while waiting for event "download"'));
+
+        await expect(
+            download(
+                { url: 'http://localhost/file', path: '', downloadTimeout: 0, waitForFinish: true } as any,
+                makeMockStateWithActivePage(page),
+            ),
+        ).rejects.toThrow('Timeout 1000ms exceeded');
     });
 });

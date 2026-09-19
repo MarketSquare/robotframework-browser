@@ -155,6 +155,32 @@ Wait For Download With Custom Path
     Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_object.saveAs}
 
+Wait For Download That Starts Slower Than Browser Timeout
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    Set Browser Timeout    1s
+    ${dl_promise} =    Promise To Wait For Download    download_timeout=10s
+    Click    id=slow_start_download
+    ${file_object} =    Wait For    ${dl_promise}
+    File Should Exist    ${file_object}[saveAs]
+    Remove File    ${file_object}[saveAs]
+
+Wait For Download Fails At Browser Timeout By Default
+    New Context    acceptDownloads=True
+    New Page
+    Set Browser Timeout    1s
+    ${dl_promise} =    Promise To Wait For Download
+    Run Keyword And Expect Error    *Timeout 1000ms exceeded while waiting for event "download"*
+    ...    Wait For    ${dl_promise}
+
+Download Fails Without Crashing When File Is Not Fetched Within Download Timeout
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    Set Browser Timeout    1s
+    Run Keyword And Expect Error    *Timeout 500ms exceeded while waiting for event "download"*
+    ...    Download    ${ROOT_URL}api/download/slow?transferMs=2000    download_timeout=500ms
+    Get Title    ==    Downloads
+
 Wait For Download Relative To downloadsPath
     New Browser    ${BROWSER}    headless=${HEADLESS}    downloadsPath=${OUTPUT DIR}
     New Context    acceptDownloads=True

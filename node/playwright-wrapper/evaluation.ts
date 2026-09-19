@@ -572,8 +572,10 @@ export async function download(request: pb.Request_DownloadOptions, state: Playw
                 return a.download;
             });
     };
-    const downloadStarted = _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
     logger.info(`Starting download from ${urlString} to ${saveAs}`);
-    await page.evaluate(script, urlString);
-    return await downloadStarted;
+    const [downloadInfo] = await Promise.all([
+        _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish),
+        page.evaluate(script, urlString),
+    ]);
+    return downloadInfo;
 }
