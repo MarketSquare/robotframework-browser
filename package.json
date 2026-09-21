@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.15.0",
-    "@grpc/grpc-js": "^1.14.4",
+    "@grpc/grpc-js": "^1.14.5",
     "@medv/finder": "^4.0.2",
     "monocart-coverage-reports": "^2.13.0",
     "pino": "^10.3.1",
