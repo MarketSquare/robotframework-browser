@@ -24,7 +24,7 @@
     "jest": "^30.5.1",
     "lint-staged": "^17.5.1",
     "morgan": "^1.12.1",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.8",
     "react": "^19.2.8",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
