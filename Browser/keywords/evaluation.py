@@ -45,11 +45,22 @@ class Evaluation(LibraryComponent):
         available, but Robot Framework variables and Python objects are not. Only ``arg``
         and the resolved element(s) are passed into the page.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives if not ``${None}``. ``selector`` is optional and can be omitted. If given a selector, a function is necessary, with an argument to capture the element. For example ``(element) => document.activeElement === element`` See the `Finding elements` section for details about the selectors. |
-        | ``*function`` | A valid javascript function or a javascript function body. These arguments can be used to write readable multiline JavaScript. |
-        | ``arg`` | an additional argument that can be handed over to the JavaScript function. It is the second argument of the function when a ``selector`` is given, otherwise the first one. This argument must be JSON serializable. ElementHandles are not supported. |
-        | ``all_elements`` | defines if only the single element found by ``selector`` is handed over to the function or if set to ``True`` all found elements are handed over as array. |
+        *Arguments:*
+          - ``selector``: Selector to resolve and pass to the JavaScript function. This
+                will be the first argument the function receives if not ``${None}``.
+                ``selector`` is optional and can be omitted. If given a selector, a
+                function is necessary, with an argument to capture the element.
+
+                For example ``(element) => document.activeElement === element``
+          - ``*function``: A valid javascript function or a javascript function body.
+                These arguments can be used to write readable multiline JavaScript.
+          - ``arg``: an additional argument that can be handed over to the JavaScript
+                function. It is the second argument of the function when a ``selector``
+                is given, otherwise the first one. This argument must be JSON
+                serializable. ElementHandles are not supported.
+          - ``all_elements``: defines if only the single element found by ``selector``
+                is handed over to the function or if set to ``True`` all found elements
+                are handed over as array.
 
         The value returned by the JavaScript is transferred as JSON and must therefore be
         JSON serializable. DOM nodes and other non serializable objects can not be returned.
@@ -110,13 +121,21 @@ class Evaluation(LibraryComponent):
         elements in the page. Keyword does not scroll elements to viewport and highlighted element might be
         outside the viewport. Use `Scroll To Element` keyword to scroll element in viewport.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selectors which shall be highlighted. See the `Finding elements` section for details about the selectors. |
-        | ``duration`` | Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds. If set to 0 seconds, the highlighting is not deleted. |
-        | ``width`` | Sets the width of the highlight border. Defaults to 2px. |
-        | ``style`` | Sets the style of the border. Defaults to dotted. |
-        | ``color`` | Sets the color of the border. Valid colors i.e. are: ``red``, ``blue``, ``yellow``, ``pink``, ``black`` |
-        | ``mode`` | Sets the mode of the highlight. Valid modes are: ``border`` (classic mode), ``playwright`` (Playwright's native one) and ``both``. Defaults to ``border``. If ``playwright`` is used, ``width``, ``style`` and ``color`` are ignored and only one highlighting can happen at the same time. |
+        *Arguments:*
+          - ``selector``: Selectors which shall be highlighted. See the `Finding
+                elements` section for details about the selectors.
+          - ``duration``: Sets for how long the selector shall be highlighted. Defaults
+                to ``5s`` => 5 seconds. If set to 0 seconds, the highlighting is not
+                deleted.
+          - ``width``: Sets the width of the highlight border. Defaults to 2px.
+          - ``style``: Sets the style of the border. Defaults to dotted.
+          - ``color``: Sets the color of the border. Valid colors i.e. are: ``red``,
+                ``blue``, ``yellow``, ``pink``, ``black``
+          - ``mode``: Sets the mode of the highlight. Valid modes are: ``border``
+                (classic mode), ``playwright`` (Playwright's native one) and ``both``.
+                Defaults to ``border``. If ``playwright`` is used, ``width``, ``style``
+                and ``color`` are ignored and only one highlighting can happen at the
+                same time.
 
         Keyword does not fail if selector resolves to multiple elements.
 
@@ -161,8 +180,8 @@ class Evaluation(LibraryComponent):
         The tag is added to the currently active page and it is lost when the page is
         navigated to a new url.
 
-        | =Arguments= | =Description= |
-        | ``content`` | Raw CSS content to be injected into the current page. |
+        *Arguments:*
+          - ``content``: Raw CSS content to be injected into the current page.
 
         Example:
         | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
@@ -183,11 +202,19 @@ class Evaluation(LibraryComponent):
     ) -> DownloadInfo:
         """Download given url content.
 
-        | =Arguments= | =Description= |
-        | ``url`` | URL to the file that shall be downloaded. |
-        | ``saveAs`` | Path where the file shall be saved persistently. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
-        | ``wait_for_finished`` | If set to ``False`` keyword returns immediately after the download has started. Defaults to ``True``. |
-        | ``download_timeout`` | Maximum total time for the file to be fetched and saved. If the file is not fetched within this time, the keyword fails. If it is fetched but not saved, the download is cancelled and the keyword fails. If ``wait_for_finished`` is ``False``, only the fetching is limited. If not set, the file must be fetched within the browser timeout, see `Set Browser Timeout`, and there is no limit for saving it. |
+        *Arguments:*
+          - ``url``: URL to the file that shall be downloaded.
+          - ``saveAs``: Path where the file shall be saved persistently. If empty,
+                generated unique path (GUID) is used and file is deleted when the
+                context is closed.
+          - ``wait_for_finished``: If set to ``False`` keyword returns immediately after
+                the download has started. Defaults to ``True``.
+          - ``download_timeout``: Maximum total time for the file to be fetched and
+                saved. If the file is not fetched within this time, the keyword fails.
+                If it is fetched but not saved, the download is cancelled and the
+                keyword fails. If ``wait_for_finished`` is ``False``, only the fetching
+                is limited. If not set, the file must be fetched within the browser
+                timeout, see `Set Browser Timeout`, and there is no limit for saving it.
 
         Keyword returns dictionary of type `DownloadInfo`.
 

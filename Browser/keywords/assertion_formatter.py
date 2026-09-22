@@ -81,9 +81,16 @@ class Formatter(ASFormatter, LibraryComponent):
     ) -> dict[str, list[str]]:
         """Set keywords formatters for assertions.
 
-        | =Arguments= | =Description= |
-        | ``formatters`` | Dictionary of keywords and formatters, where the key is the name of the keyword where the formatters are applied. The dictionary value is a list of formatters which are applied. Formatters for a defined keyword are always overwritten. An empty list will clear all formatters for the keyword. If ``formatters`` is an empty dictionary, then all formatters are cleared from all keywords, in the Global scope, regardless of the ``scope`` argument. |
-        | ``scope`` | Defines the lifetime of the formatter, possible values are Global, Suite and Test. |
+        *Arguments:*
+          - ``formatters``: Dictionary of keywords and formatters, where the key is the
+                name of the keyword where the formatters are applied. The dictionary
+                value is a list of formatters which are applied. Formatters for a
+                defined keyword are always overwritten. An empty list will clear all
+                formatters for the keyword. If ``formatters`` is an empty dictionary,
+                then all formatters are cleared from all keywords, in the Global scope,
+                regardless of the ``scope`` argument.
+          - ``scope``: Defines the lifetime of the formatter, possible values are
+                Global, Suite and Test.
 
         Returns the formatters which were in use before this keyword was called.
         Formatters defined as lambda functions are not included in the returned value.

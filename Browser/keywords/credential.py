@@ -38,12 +38,14 @@ class Credential(LibraryComponent):
         pages that are created from that context. There must be an open context, otherwise
         the keyword fails.
 
-        | =Arguments= | =Description= |
-        | rpId | Relying party id (typically the site's effective domain). |
-        | id_ | Base64url-encoded credential id. Auto-generated if omitted. |
-        | privateKey | Base64url-encoded PKCS#8 (DER) private key. Auto-generated if omitted. |
-        | publicKey | Base64url-encoded SPKI (DER) public key. Auto-generated if omitted. |
-        | userHandle | Base64url-encoded user handle. Auto-generated if omitted. |
+        *Arguments:*
+          - ``rpId``: Relying party id (typically the site's effective domain).
+          - ``id_``: Base64url-encoded credential id. Auto-generated if omitted.
+          - ``privateKey``: Base64url-encoded PKCS#8 (DER) private key. Auto-generated
+                if omitted.
+          - ``publicKey``: Base64url-encoded SPKI (DER) public key. Auto-generated if
+                omitted.
+          - ``userHandle``: Base64url-encoded user handle. Auto-generated if omitted.
 
         Because ``privateKey`` and ``publicKey`` are sensitive information, it is recommended
         to wrap their values in the Secret type. The Secret type requires Robot Framework 7.4
@@ -146,9 +148,9 @@ class Credential(LibraryComponent):
         credential matches, the first match is returned. When no credential matches, the
         keyword fails.
 
-        | =Arguments= | =Description= |
-        | id_ | Base64url-encoded credential id. |
-        | rpId | Relying party id (typically the site's effective domain). |
+        *Arguments:*
+          - ``id_``: Base64url-encoded credential id.
+          - ``rpId``: Relying party id (typically the site's effective domain).
 
         The returned credential is a dictionary with the following keys:
         | =Key= | =Description= |
@@ -200,8 +202,8 @@ class Credential(LibraryComponent):
     def delete_credential(self, id_: str):
         """Deletes the credential with the given id.
 
-        | =Arguments= | =Description= |
-        | id_ | Base64url-encoded credential id. |
+        *Arguments:*
+          - ``id_``: Base64url-encoded credential id.
 
         Deleting a credential which does not exist does not fail. There must be an open
         context, otherwise the keyword fails.

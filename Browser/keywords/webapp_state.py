@@ -49,12 +49,15 @@ class WebAppState(LibraryComponent):
     ) -> Any:
         """Get saved data from the local storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | Named key of the item in the storage. |
-        | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
-        | ``assertion_expected`` | Expected value to compare with. |
-        | ``message`` | Custom error message to use. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: Named key of the item in the storage.
+          - ``assertion_operator``: Assertion operator to use. See `Assertions` for more
+                information.
+          - ``assertion_expected``: Expected value to compare with.
+          - ``message``: Custom error message to use.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the LocalStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
 
         See `Assertions` for further details about the assertion arguments. They default to ``None``.
@@ -87,10 +90,12 @@ class WebAppState(LibraryComponent):
     ):
         """Save data to the local storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | The name of the key under which it should be saved. |
-        | ``value`` | The value which shall be saved as a string. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: The name of the key under which it should be saved.
+          - ``value``: The value which shall be saved as a string.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the LocalStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
 
         Example:
@@ -108,9 +113,11 @@ class WebAppState(LibraryComponent):
     def local_storage_remove_item(self, key: str, frame_selector: str | None = None):
         """Remove saved data with key from the local storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | The name of the item which shall be deleted. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: The name of the item which shall be deleted.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the LocalStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         Example:
         | `LocalStorage Set Item`       Foo    bar
@@ -129,8 +136,10 @@ class WebAppState(LibraryComponent):
     def local_storage_clear(self, frame_selector: str | None = None):
         """Remove all saved data from the local storage.
 
-        | =Arguments= | =Description= |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the LocalStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the LocalStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         Example:
         | `LocalStorage Set Item`    Foo    bar
@@ -158,12 +167,15 @@ class WebAppState(LibraryComponent):
     ) -> Any:
         """Get saved data from the session storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | Named key of the item in the storage. |
-        | ``assertion_operator`` | Assertion operator to use. See `Assertions` for more information. |
-        | ``assertion_expected`` | Expected value to compare with. |
-        | ``message`` | Custom error message to use. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: Named key of the item in the storage.
+          - ``assertion_operator``: Assertion operator to use. See `Assertions` for more
+                information.
+          - ``assertion_expected``: Expected value to compare with.
+          - ``message``: Custom error message to use.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the SessionStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         See `Assertions` for further details about the assertion arguments. They default to ``None``.
 
@@ -196,10 +208,12 @@ class WebAppState(LibraryComponent):
     ):
         """Save data to session storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | The name of the key under which it should be saved. |
-        | ``value`` | The value which shall be saved as a string. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: The name of the key under which it should be saved.
+          - ``value``: The value which shall be saved as a string.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the SessionStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         Example:
         | `SessionStorage Set Item`    key2    value2
@@ -216,9 +230,11 @@ class WebAppState(LibraryComponent):
     def session_storage_remove_item(self, key: str, frame_selector: str | None = None):
         """Remove saved data with key from the session storage.
 
-        | =Arguments= | =Description= |
-        | ``key`` | The name of the item which shall be deleted. |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``key``: The name of the item which shall be deleted.
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the SessionStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         Example:
         | `SessionStorage Set Item`       mykey2    myvalue2
@@ -236,8 +252,10 @@ class WebAppState(LibraryComponent):
     def session_storage_clear(self, frame_selector: str | None = None):
         """Remove all saved data from the session storage.
 
-        | =Arguments= | =Description= |
-        | ``frame_selector`` | If this selector points to an element inside an iframe, the SessionStorage of that frame is used. Example: ``iframe[name="test"] >>> body`` |
+        *Arguments:*
+          - ``frame_selector``: If this selector points to an element inside an iframe,
+                the SessionStorage of that frame is used. Example: ``iframe[name="test"]
+                >>> body``
 
         Example:
         | `SessionStorage Set Item`    mykey3    myvalue3

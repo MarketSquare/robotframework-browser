@@ -31,10 +31,14 @@ class RunOnFailureKeywords(LibraryComponent):
     ) -> DelayedKeyword:
         """Sets the keyword to execute, when a Browser keyword fails.
 
-        | =Arguments= | =Description= |
-        | ``keyword`` | The name of a keyword that will be executed if a Browser keyword fails. It is possible to use any available keyword, including user keywords or keywords from other libraries. |
-        | ``*args`` | The arguments to the keyword if any. |
-        | ``scope`` | Scope defines the lifetime of this setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for more details. |
+        *Arguments:*
+          - ``keyword``: The name of a keyword that will be executed if a Browser
+                keyword fails. It is possible to use any available keyword, including
+                user keywords or keywords from other libraries.
+          - ``*args``: The arguments to the keyword if any.
+          - ``scope``: Scope defines the lifetime of this setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         The initial keyword to use is set when `importing` the library, and
         the keyword that is used by default is

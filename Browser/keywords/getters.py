@@ -78,15 +78,25 @@ class Getters(LibraryComponent):
     ) -> str | dict | list | tuple:
         """Returns the aria snapshot of the element found by ``selector``. See `AriaSnapshotReturnType` for more details and examples.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``return_type`` | Defines the return type. Possible values are ``yaml`` (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the returned value is a string in YAML format. If ``dict`` is selected, the returned value is a dictionary. If ``parsed`` is selected, the returned value is a tree of node dictionaries. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
-        | ``mode`` | Defines the snapshot mode. Possible values are ``default`` (default) and ``ai``. See `AriaSnapshotMode` for more details. |
-        | ``depth`` | Limits the snapshot to the given number of tree levels. Must be a positive integer. Defaults to ``None``, which does not limit the depth. |
-        | ``boxes`` | If ``True``, the bounding box of each element is appended to its line as ``[box=x,y,width,height]``. Coordinates are relative to the viewport, in CSS pixels. Defaults to ``False``. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``return_type``: Defines the return type. Possible values are ``yaml``
+                (default), ``dict`` and ``parsed``. If ``yaml`` is selected, the
+                returned value is a string in YAML format. If ``dict`` is selected, the
+                returned value is a dictionary. If ``parsed`` is selected, the returned
+                value is a tree of node dictionaries.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
+          - ``mode``: Defines the snapshot mode. Possible values are ``default``
+                (default) and ``ai``. See `AriaSnapshotMode` for more details.
+          - ``depth``: Limits the snapshot to the given number of tree levels. Must be a
+                positive integer. Defaults to ``None``, which does not limit the depth.
+          - ``boxes``: If ``True``, the bounding box of each element is appended to its
+                line as ``[box=x,y,width,height]``. Coordinates are relative to the
+                viewport, in CSS pixels. Defaults to ``False``.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -153,10 +163,11 @@ class Getters(LibraryComponent):
     ) -> str | dict | tuple:
         """Returns the current URL.
 
-        | =Arguments= | =Description= |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Optionally asserts that it matches the specified assertion. See `Assertions` for further details
         for the assertion arguments. By default assertion is not done.
@@ -183,10 +194,11 @@ class Getters(LibraryComponent):
     ) -> str | dict | tuple:
         """Gets the page's HTML source as a string.
 
-        | =Arguments= | =Description= |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Optionally does a string assertion. See `Assertions` for further details for
         the assertion arguments. By default assertion is not done.
@@ -225,10 +237,11 @@ class Getters(LibraryComponent):
     ) -> str | dict | tuple:
         """Returns the title of the current page.
 
-        | =Arguments= | =Description= |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Optionally asserts that title matches the specified assertion. See `Assertions`
         for further details for the assertion arguments. By default assertion is not done.
@@ -267,12 +280,17 @@ class Getters(LibraryComponent):
         Keyword can also return the value property text of ``input`` or ``textarea`` elements.
         See the `Finding elements` section for details about the selectors.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the text is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
-        | ``text_type`` | How text is returned. Possible values are ``allInnerTexts``, ``allTextContents``, ``innerText``, ``inputValue``, and ``innerHTML``. Defaults to ``None``, which returns the value of ``input`` and ``textarea`` elements and the inner text of all other elements. |
+        *Arguments:*
+          - ``selector``: Selector from which the text is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
+          - ``text_type``: How text is returned. Possible values are ``allInnerTexts``,
+                ``allTextContents``, ``innerText``, ``inputValue``, and ``innerHTML``.
+                Defaults to ``None``, which returns the value of ``input`` and
+                ``textarea`` elements and the inner text of all other elements.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
         The ``text_type`` argument determines how text is returned. The ``allInnerTexts`` and
@@ -336,12 +354,14 @@ class Getters(LibraryComponent):
     ) -> Any:
         """Returns the ``property`` of the element found by ``selector``.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``property`` | Requested property name. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``property``: Requested property name.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -396,12 +416,14 @@ class Getters(LibraryComponent):
     ) -> str | tuple | dict | None:
         """Returns the HTML ``attribute`` of the element found by ``selector``.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``attribute`` | Requested attribute name. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``attribute``: Requested attribute name.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -458,12 +480,13 @@ class Getters(LibraryComponent):
     ) -> list[str]:
         """Returns all HTML attribute names of an element as a list.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``*assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``*assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -511,12 +534,13 @@ class Getters(LibraryComponent):
     ) -> list[str]:
         """Returns all classes of an element as a list.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``*assertion_expected`` | Expected values for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``*assertion_expected``: Expected values for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -561,12 +585,13 @@ class Getters(LibraryComponent):
         Each returned dictionary has the keys
         "index", "value", "label" and "selected".
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -618,12 +643,15 @@ class Getters(LibraryComponent):
     ) -> list[str | int]:
         """Returns the specified attribute of selected options of the ``select`` element.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the info is to be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``option_attribute`` | Which attribute shall be returned/verified. Defaults to label. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``*assertion_expected`` | Expected value for the state |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector from which the info is to be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``option_attribute``: Which attribute shall be returned/verified. Defaults
+                to label.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``*assertion_expected``: Expected value for the state
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -684,14 +712,19 @@ class Getters(LibraryComponent):
         `Assertions` for further details for the assertion arguments. By default assertion
         is not done.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector which shall be examined. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | ``==`` and ``!=`` and equivalent are allowed on boolean values. Other operators are not accepted. |
-        | ``assertion_expected`` | Boolean value of expected state. Strings are interpreted as booleans. All strings are ``${True}`` except the following: ``FALSE, NO, OFF, 0, UNCHECKED, NONE, ${EMPTY}`` (case-insensitive). Defaults to ``Unchecked``. |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector which shall be examined. See the `Finding elements`
+                section for details about the selectors.
+          - ``assertion_operator``: ``==`` and ``!=`` and equivalent are allowed on
+                boolean values. Other operators are not accepted.
+          - ``assertion_expected``: Boolean value of expected state. Strings are
+                interpreted as booleans. All strings are ``${True}`` except the
+                following: ``FALSE``, ``NO``, ``OFF``, ``0``, ``UNCHECKED``, ``NONE``, ``${EMPTY}``
+                (case-insensitive). Defaults to ``UNCHECKED``.
+          - ``message``: overrides the default error message for assertion.
 
-        - ``checked`` => ``True``
-        - ``unchecked`` => ``False``
+        - ``CHECKED`` => ``True``
+        - ``UNCHECKED`` => ``False``
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -729,11 +762,13 @@ class Getters(LibraryComponent):
     ) -> int:
         """Returns the count of elements found with ``selector``.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector which shall be counted. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Selector which shall be counted. See the `Finding elements`
+                section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Optionally asserts that the count matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -769,11 +804,16 @@ class Getters(LibraryComponent):
     ) -> ViewportDimensions | None:
         """Returns the current viewport dimensions.
 
-        | =Arguments= | =Description= |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the viewport size as dictionary, otherwise it will just return the single value selected by the key. Note: If a single value is retrieved, an assertion does *not* need a ``validate`` combined with a cast of ``value``. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``key``: Optionally filters the returned values. If keys is set to ``ALL``
+                (default) it will return the viewport size as dictionary, otherwise it
+                will just return the single value selected by the key. Note: If a single
+                value is retrieved, an assertion does *not* need a ``validate`` combined
+                with a cast of ``value``.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default assertion
@@ -819,10 +859,13 @@ class Getters(LibraryComponent):
 
         The returned value is used like the one from `Get Element`.
 
-        | =Arguments= | =Description= |
-        | ``table`` | selector must select the ``<table>`` element that contains both selected elements |
-        | ``column`` | selector can select any ``<th>`` or ``<td>`` element or one of their descendants. |
-        | ``row`` | selector can select any ``<tr>`` element or one of their descendants like ``<td>`` elements. |
+        *Arguments:*
+          - ``table``: selector must select the ``<table>`` element that contains both
+                selected elements
+          - ``column``: selector can select any ``<th>`` or ``<td>`` element or one of
+                their descendants.
+          - ``row``: selector can select any ``<tr>`` element or one of their
+                descendants like ``<td>`` elements.
 
         ``column`` and ``row`` can also consume index numbers instead of selectors.
         Indexes are starting from ``0`` and ``-1`` is specific for the last element.
@@ -881,11 +924,14 @@ class Getters(LibraryComponent):
     ) -> int:
         """Returns the index (0 based) of a table cell within its row.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | can select any ``<th>`` or ``<td>`` element or one of their descendants. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: can select any ``<th>`` or ``<td>`` element or one of their
+                descendants. See the `Finding elements` section for details about the
+                selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Example:
         | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
@@ -924,12 +970,14 @@ class Getters(LibraryComponent):
     ) -> int:
         """Returns the index (0 based) of a table row.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | can select any ``<tr>``, ``<th>`` or ``<td>`` element or one of their descendants. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: can select any ``<tr>``, ``<th>`` or ``<td>`` element or one
+                of their descendants. See the `Finding elements` section for details
+                about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Example:
         | ${table}=    Set Variable    id=`Get Table Cell Element` >> div.kw-docs table   #Table of keyword `Get Table Cell Element`
@@ -966,9 +1014,9 @@ class Getters(LibraryComponent):
         selector, chained with ``>>``. Because it is a selector and not a captured
         DOM node, it is resolved again from the page on every use.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the element shall be retrieved. See the `Finding elements` section for details about the selectors. |
+        *Arguments:*
+          - ``selector``: Selector from which the element shall be retrieved. See the
+                `Finding elements` section for details about the selectors.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -994,9 +1042,9 @@ class Getters(LibraryComponent):
         Each string can be used as the *first* clause of another selector, chained
         with ``>>``, exactly like the value returned by `Get Element`.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the elements shall be retrieved. See the `Finding elements` section for details about the selectors. |
+        *Arguments:*
+          - ``selector``: Selector from which the elements shall be retrieved. See the
+                `Finding elements` section for details about the selectors.
 
         Keyword does not use strict mode and returns an empty list if the ``selector``
         does not match any element.
@@ -1067,18 +1115,26 @@ class Getters(LibraryComponent):
         | ${checkbox}   Get Element By Role    checkbox    name=Subscribe
         | ${button}     Get Element By Role    button    name=/submit/i
 
-        | =Arguments= | =Description= |
-        | ``all_elements`` | If True, returns all matched elements as a list. |
-        | ``role`` | Role from which shall be retrieved. |
-        | ``checked`` | An attribute that is usually set by aria-checked or native <input type=checkbox> controls. |
-        | ``disabled`` | An attribute that is usually set by aria-disabled or disabled. |
-        | ``exact`` | Whether name is matched exactly: case-sensitive and whole-string. Defaults to false. Ignored when name is a regular expression. Note that exact match still trims whitespace. |
-        | ``expanded`` | An attribute that is usually set by aria-expanded. |
-        | ``include_hidden`` | Option that controls whether hidden elements are matched. By default, only non-hidden elements, as defined by ARIA, are matched by role selector. |
-        | ``level`` | A number attribute that is usually present for roles heading, list item, row, treeitem, with default values for <h1>-<h6> elements. |
-        | ``name`` | Option to match the accessible name. By default, matching is case-insensitive and searches for a substring, use exact to control this behavior. |
-        | ``pressed`` | An attribute that is usually set by aria-pressed. |
-        | ``selected`` | An attribute that is usually set by aria-selected. |
+        *Arguments:*
+          - ``all_elements``: If True, returns all matched elements as a list.
+          - ``role``: Role from which shall be retrieved.
+          - ``checked``: An attribute that is usually set by aria-checked or native
+                <input type=checkbox> controls.
+          - ``disabled``: An attribute that is usually set by aria-disabled or disabled.
+          - ``exact``: Whether name is matched exactly: case-sensitive and whole-string.
+                Defaults to false. Ignored when name is a regular expression. Note that
+                exact match still trims whitespace.
+          - ``expanded``: An attribute that is usually set by aria-expanded.
+          - ``include_hidden``: Option that controls whether hidden elements are
+                matched. By default, only non-hidden elements, as defined by ARIA, are
+                matched by role selector.
+          - ``level``: A number attribute that is usually present for roles heading,
+                list item, row, treeitem, with default values for <h1>-<h6> elements.
+          - ``name``: Option to match the accessible name. By default, matching is
+                case-insensitive and searches for a substring, use exact to control this
+                behavior.
+          - ``pressed``: An attribute that is usually set by aria-pressed.
+          - ``selected``: An attribute that is usually set by aria-selected.
 
         If an element shall be fetched from an iframe, a selector prefix must be set using `Set Selector Prefix` keyword including ``>>>`` as ending.
 
@@ -1137,11 +1193,15 @@ class Getters(LibraryComponent):
         Selection strategies can be several Playwright strategies like AltText or Label.
         See [https://playwright.dev/docs/locators|Playwright Locators] for more information.
 
-        | =Arguments= | =Description= |
-        | ``selection_strategy`` | SelectionStrategy to be used. Refers to Playwrights ``page.getBy***`` functions. See https://playwright.dev/docs/locators |
-        | ``text`` | Text to locate the element for. |
-        | ``exact`` | Whether to find an exact match: case-sensitive and whole-string. Defaults to false. Ignored when locating by a regular expression. Note that exact match still trims whitespace. This has no effect if RegExp is used or if TestID is used as strategy. |
-        | ``all_elements`` | If True, returns all matched elements as a list. |
+        *Arguments:*
+          - ``selection_strategy``: SelectionStrategy to be used. Refers to Playwrights
+                ``page.getBy***`` functions. See https://playwright.dev/docs/locators
+          - ``text``: Text to locate the element for.
+          - ``exact``: Whether to find an exact match: case-sensitive and whole-string.
+                Defaults to false. Ignored when locating by a regular expression. Note
+                that exact match still trims whitespace. This has no effect if RegExp is
+                used or if TestID is used as strategy.
+          - ``all_elements``: If True, returns all matched elements as a list.
 
         This keywords implements the following Playwright functions:
         - [https://playwright.dev/docs/api/class-page#page-get-by-alt-text|page.getByAltText]
@@ -1198,14 +1258,17 @@ class Getters(LibraryComponent):
     ) -> dict[str, str] | str | tuple | dict:
         """Gets the computed style properties of the element selected by ``selector``.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the style shall be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Key of the requested CSS property. Retrieves "ALL" styles as dictionary by default. All css settings can be used as keys even if they are not all returned in the dictionary. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
-        | ``pseudo_element`` | Pseudo element to match. Defaults to None. |
+        *Arguments:*
+          - ``selector``: Selector from which the style shall be retrieved. See the
+                `Finding elements` section for details about the selectors.
+          - ``key``: Key of the requested CSS property. Retrieves "ALL" styles as
+                dictionary by default. All css settings can be used as keys even if they
+                are not all returned in the dictionary.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
+          - ``pseudo_element``: Pseudo element to match. Defaults to None.
 
         A [https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-elements|pseudo element] is a CSS functionality to add styles, for example ``::before`` or ``::after``.
 
@@ -1279,13 +1342,21 @@ class Getters(LibraryComponent):
         To allow also hidden elements without a bounding box, set ``allow_hidden`` to ``True``,
         which results in a return value of ``None`` in case of no bounding box.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector from which the bounding box shall be retrieved. See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the BoundingBox as Dictionary, otherwise it will just return the single value selected by the key. Note: If a single value is retrieved, an assertion does *not* need a ``validate`` combined with a cast of ``value``. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
-        | ``allow_hidden`` | (named only) If True, hidden elements are not causing a failure and will return ``None``. Otherwise a hidden element will fail. Defaults to False. |
+        *Arguments:*
+          - ``selector``: Selector from which the bounding box shall be retrieved. See
+                the `Finding elements` section for details about the selectors.
+          - ``key``: Optionally filters the returned values. If keys is set to ``ALL``
+                (default) it will return the BoundingBox as Dictionary, otherwise it
+                will just return the single value selected by the key. Note: If a single
+                value is retrieved, an assertion does *not* need a ``validate`` combined
+                with a cast of ``value``.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
+          - ``allow_hidden``: (named only) If True, hidden elements are not causing a
+                failure and will return ``None``. Otherwise a hidden element will fail.
+                Defaults to False.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1353,13 +1424,18 @@ class Getters(LibraryComponent):
     ) -> Dimensions | float | int:
         """Gets elements or pages scrollable size as object ``{width: float, height: float}``.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which the scroll size shall be retrieved. If no selector is given the scroll size of the page itself is used. See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the scroll size as dictionary, otherwise it will just return the single value selected by the key. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Optional selector from which the scroll size shall be
+                retrieved. If no selector is given the scroll size of the page itself is
+                used. See the `Finding elements` section for details about the
+                selectors.
+          - ``key``: Optionally filters the returned values. If keys is set to ``ALL``
+                (default) it will return the scroll size as dictionary, otherwise it
+                will just return the single value selected by the key.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1412,13 +1488,18 @@ class Getters(LibraryComponent):
         It describes the rectangle which is visible of the scrollable content of that element.
         All values are measured from position {top: 0, left: 0}.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which the scroll position shall be retrieved. If no selector is given the scroll position of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the scroll position as dictionary, otherwise it will just return the single value selected by the key. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Optional selector from which the scroll position shall be
+                retrieved. If no selector is given the scroll position of the page
+                itself is used (``document.scrollingElement``). See the `Finding
+                elements` section for details about the selectors.
+          - ``key``: Optionally filters the returned values. If keys is set to ``ALL``
+                (default) it will return the scroll position as dictionary, otherwise it
+                will just return the single value selected by the key.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1465,13 +1546,18 @@ class Getters(LibraryComponent):
     ) -> Dimensions | float:
         """Gets elements or pages client size (``clientHeight``, ``clientWidth``) as object {width: float, height: float}.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Optional selector from which the client size shall be retrieved. If no selector is given the client size of the page itself is used (``document.scrollingElement``). See the `Finding elements` section for details about the selectors. |
-        | ``key`` | Optionally filters the returned values. If keys is set to ``ALL`` (default) it will return the client size as dictionary, otherwise it will just return the single value selected by the key. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected value for the assertion |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``selector``: Optional selector from which the client size shall be
+                retrieved. If no selector is given the client size of the page itself is
+                used (``document.scrollingElement``). See the `Finding elements` section
+                for details about the selectors.
+          - ``key``: Optionally filters the returned values. If keys is set to ``ALL``
+                (default) it will return the client size as dictionary, otherwise it
+                will just return the single value selected by the key.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected value for the assertion
+          - ``message``: overrides the default error message for assertion.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -1517,13 +1603,16 @@ class Getters(LibraryComponent):
 
         This Keyword returns a list of states that are valid for the selected element.
 
-
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector of the corresponding object. See the `Finding elements` section for details about the selectors. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``*assertion_expected`` | Expected states |
-        | ``message`` | overrides the default error message for assertion. |
-        | ``return_names`` | If set to ``False`` the keyword does return an IntFlag object (`ElementState`) instead of a list. `ElementState` may contain multiple states at the same time. Defaults to ``True``. |
+        *Arguments:*
+          - ``selector``: Selector of the corresponding object. See the `Finding
+                elements` section for details about the selectors.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``*assertion_expected``: Expected states
+          - ``message``: overrides the default error message for assertion.
+          - ``return_names``: If set to ``False`` the keyword does return an IntFlag
+                object (`ElementState`) instead of a list. `ElementState` may contain
+                multiple states at the same time. Defaults to ``True``.
 
         Optionally asserts that the state matches the specified assertion. See
         `Assertions` for further details for the assertion arguments. By default, assertion
@@ -1605,11 +1694,14 @@ class Getters(LibraryComponent):
         |   downloadID: Optional[str]
         | }
 
-        | =Arguments= | =Description= |
-        | ``download`` | `DownloadInfo` dictionary returned from `Promise To Wait For Download` or download id as string. |
-        | ``assertion_operator`` | See `Assertions` for further details. Defaults to None. |
-        | ``assertion_expected`` | Expected state of the download. Be aware that the returned value is a dictionary |
-        | ``message`` | overrides the default error message for assertion. |
+        *Arguments:*
+          - ``download``: `DownloadInfo` dictionary returned from `Promise To Wait For
+                Download` or download id as string.
+          - ``assertion_operator``: See `Assertions` for further details. Defaults to
+                None.
+          - ``assertion_expected``: Expected state of the download. Be aware that the
+                returned value is a dictionary
+          - ``message``: overrides the default error message for assertion.
 
         [https://forum.robotframework.org/t//6479|Comment >>]
         """

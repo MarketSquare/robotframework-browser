@@ -62,11 +62,19 @@ class Waiter(LibraryComponent):
 
         If the selector doesn't satisfy the condition within the timeout the keyword will FAIL.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Selector of the corresponding object. See the `Finding elements` section for details about the selectors. |
-        | ``state`` | See `ElementState` for explanation. |
-        | ``timeout`` | uses default timeout from library if not set. |
-        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, ``{function}``, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. The ``{function}`` formatter is the ``state`` argument value for the states which are waited for by Playwright, that are ``attached``, ``detached``, ``visible``, ``hidden``, ``stable``, ``enabled``, ``disabled`` and ``editable``. For all other states, it is the JavaScript expression which is evaluated for the element. |
+        *Arguments:*
+          - ``selector``: Selector of the corresponding object. See the `Finding
+                elements` section for details about the selectors.
+          - ``state``: See `ElementState` for explanation.
+          - ``timeout``: uses default timeout from library if not set.
+          - ``message``: overrides the default error message. The ``message`` argument
+                accepts `{selector}`, ``{function}``, and `{timeout}`
+                [https://docs.python.org/3/library/stdtypes.html#str.format | format]
+                options. The ``{function}`` formatter is the ``state`` argument value
+                for the states which are waited for by Playwright, that are
+                ``attached``, ``detached``, ``visible``, ``hidden``, ``stable``,
+                ``enabled``, ``disabled`` and ``editable``. For all other states, it is
+                the JavaScript expression which is evaluated for the element.
 
         The states ``focused`` and ``defocused`` are not supported with iframe selectors,
         which contain ``>>>``. In that case the keyword raises an error and suggests to use
@@ -174,12 +182,23 @@ class Waiter(LibraryComponent):
     ):
         """Polls JavaScript expression or function in browser until it returns a (JavaScript) truthy value.
 
-        | =Arguments= | =Description= |
-        | ``function`` | A valid javascript function or a javascript function body. For example ``() => true`` and ``true`` will behave similarly. |
-        | ``selector`` | Selector to resolve and pass to the JavaScript function. This will be the first argument the function receives. If a selector is given, ``function`` must be a function with an argument which receives the element handle. For example ``(element) => document.activeElement === element``. See the `Finding elements` section for details about the selectors. |
-        | ``polling`` | Default polling value of ``raf`` polls in a callback for ``requestAnimationFrame``. Any other value for polling will be parsed as a Robot Framework time for the interval between polls. |
-        | ``timeout`` | Uses default timeout of the library if not set. |
-        | ``message`` | overrides the default error message. The ``message`` argument accepts `{selector}`, ``{function}``, and `{timeout}` [https://docs.python.org/3/library/stdtypes.html#str.format|format] options. |
+        *Arguments:*
+          - ``function``: A valid javascript function or a javascript function body. For
+                example ``() => true`` and ``true`` will behave similarly.
+          - ``selector``: Selector to resolve and pass to the JavaScript function. This
+                will be the first argument the function receives. If a selector is
+                given, ``function`` must be a function with an argument which receives
+                the element handle. For example ``(element) => document.activeElement
+                === element``. See the `Finding elements` section for details about the
+                selectors.
+          - ``polling``: Default polling value of ``raf`` polls in a callback for
+                ``requestAnimationFrame``. Any other value for polling will be parsed as
+                a Robot Framework time for the interval between polls.
+          - ``timeout``: Uses default timeout of the library if not set.
+          - ``message``: overrides the default error message. The ``message`` argument
+                accepts `{selector}`, ``{function}``, and `{timeout}`
+                [https://docs.python.org/3/library/stdtypes.html#str.format | format]
+                options.
 
         Keyword uses strict mode, see `Finding elements` for more details about strict mode.
 
@@ -255,11 +274,15 @@ class Waiter(LibraryComponent):
         In comparison to Robot Framework's ``Wait Until Keyword Succeeds`` this keyword is more
         readable and easier to use, but is limited to Browser library's assertion keywords.
 
-        | =Arguments= | =Description= |
-        | ``condition`` | A condition, defined with Browser getter keywords, without the word ``Get``. |
-        | ``*args`` | Arguments to pass to the condition keyword. |
-        | ``timeout`` | Timeout to wait for the condition to become True. Uses default timeout of the library if not set. As the other assertion keywords this timeout only influences the time the assertion is retried. The browser timeout is used to wait for the element to be found. |
-        | ``message`` | Overrides the default error message. |
+        *Arguments:*
+          - ``condition``: A condition, defined with Browser getter keywords, without
+                the word ``Get``.
+          - ``*args``: Arguments to pass to the condition keyword.
+          - ``timeout``: Timeout to wait for the condition to become True. Uses default
+                timeout of the library if not set. As the other assertion keywords this
+                timeout only influences the time the assertion is retried. The browser
+                timeout is used to wait for the element to be found.
+          - ``message``: Overrides the default error message.
 
 
         The easiest way to use this keyword is first starting with an assertion keyword with assertion like: `Get Text`
@@ -320,9 +343,11 @@ class Waiter(LibraryComponent):
         The navigation must have been committed when this method is called. If current document has already
         reached the required state, resolves immediately.
 
-        | =Arguments= | =Description= |
-        | ``state``   | State to wait for, defaults to ``load``. Possible values are ``load``, ``domcontentloaded``, ``networkidle`` and ``commit``. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses browser timeout if not set.                 |
+        *Arguments:*
+          - ``state``: State to wait for, defaults to ``load``. Possible values are
+                ``load``, ``domcontentloaded``, ``networkidle`` and ``commit``.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses browser
+                timeout if not set.
 
         If the state has been already reached while loading current document, the underlying Playwright will
         resolve immediately. Can be one of:

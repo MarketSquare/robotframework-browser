@@ -63,22 +63,35 @@ class Pdf(LibraryComponent):
         Saving a PDF is currently only supported in Chromium and only when the
         browser is running in headless mode.
 
-        | =Arguments= | =Description= |
-        | ``path`` | Where the PDF is saved. If the path is not absolute, the file is saved relative to ${OUTPUT_DIR}. |
-        | ``displayHeaderFooter`` | Display header and footer. Defaults to false. |
-        | ``footerTemplate`` | HTML template for the print footer. Should use the same format as the ``headerTemplate``. |
-        | ``format`` | Paper format. If set, takes priority over the ``width`` and ``height`` arguments. Defaults to ``Letter``. |
-        | ``headerTemplate`` | HTML template for the print header. Both templates are only rendered when ``displayHeaderFooter`` is true. See the detailed explanation below. |
-        | ``height`` | Paper height, accepts values labeled with units. |
-        | ``landscape`` | Paper orientation. Defaults to false. |
-        | ``margin`` | Defines the PDF margins, see `PdfMarging` for more details. Defaults to ``0px`` on all sides. |
-        | ``outline`` | Whether or not to embed the document outline into the PDF. Defaults to false. |
-        | ``pageRanges`` | Paper ranges to print, e.g. ``1-5, 8, 11-13``. Defaults to the empty string, which means print all pages. |
-        | ``preferCSSPageSize`` | Give any CSS ``@page`` size declared in the page priority over what is declared in the ``width`` and ``height`` or ``format`` arguments. Defaults to false, which will scale the content to fit the paper size. |
-        | ``printBackground`` | Print background graphics. Defaults to false. |
-        | ``scale`` | Scale of the webpage rendering. Defaults to 1. Scale amount must be between 0.1 and 2. |
-        | ``tagged`` | Whether or not to generate a tagged (accessible) PDF. Defaults to false. |
-        | ``width`` | Paper width, accepts values labeled with units. |
+        *Arguments:*
+          - ``path``: Where the PDF is saved. If the path is not absolute, the file is
+                saved relative to ${OUTPUT_DIR}.
+          - ``displayHeaderFooter``: Display header and footer. Defaults to false.
+          - ``footerTemplate``: HTML template for the print footer. Should use the same
+                format as the ``headerTemplate``.
+          - ``format``: Paper format. If set, takes priority over the ``width`` and
+                ``height`` arguments. Defaults to ``Letter``.
+          - ``headerTemplate``: HTML template for the print header. Both templates are
+                only rendered when ``displayHeaderFooter`` is true. See the detailed
+                explanation below.
+          - ``height``: Paper height, accepts values labeled with units.
+          - ``landscape``: Paper orientation. Defaults to false.
+          - ``margin``: Defines the PDF margins, see `PdfMarging` for more details.
+                Defaults to ``0px`` on all sides.
+          - ``outline``: Whether or not to embed the document outline into the PDF.
+                Defaults to false.
+          - ``pageRanges``: Paper ranges to print, e.g. ``1-5, 8, 11-13``. Defaults to
+                the empty string, which means print all pages.
+          - ``preferCSSPageSize``: Give any CSS ``@page`` size declared in the page
+                priority over what is declared in the ``width`` and ``height`` or
+                ``format`` arguments. Defaults to false, which will scale the content to
+                fit the paper size.
+          - ``printBackground``: Print background graphics. Defaults to false.
+          - ``scale``: Scale of the webpage rendering. Defaults to 1. Scale amount must
+                be between 0.1 and 2.
+          - ``tagged``: Whether or not to generate a tagged (accessible) PDF. Defaults
+                to false.
+          - ``width``: Paper width, accepts values labeled with units.
 
         ``headerTemplate`` and ``footerTemplate`` should be valid HTML markup. The following
         classes can be used to inject printing values into them:
@@ -167,11 +180,19 @@ class Pdf(LibraryComponent):
         This is useful to render the page in the correct format before using the
         `Save Page As Pdf` keyword.
 
-        | =Arguments= | =Description= |
-        | ``colorScheme`` | Emulates the ``prefers-color-scheme`` media feature, supported values are ``light`` and ``dark``. Passing ``null`` disables color scheme emulation. ``no-preference`` is deprecated. |
-        | ``forcedColors`` | Emulates the ``forced-colors`` media feature, supported values are ``active`` and ``none``. Passing ``null`` disables forced colors emulation. |
-        | ``media`` | Changes the CSS media type of the page. The only allowed values are ``screen``, ``print`` and ``null``. Passing ``null`` disables CSS media emulation. |
-        | ``reducedMotion`` | Emulates the ``prefers-reduced-motion`` media feature, supported values are ``reduce`` and ``no-preference``. Passing ``null`` disables reduced motion emulation. |
+        *Arguments:*
+          - ``colorScheme``: Emulates the ``prefers-color-scheme`` media feature,
+                supported values are ``light`` and ``dark``. Passing ``null`` disables
+                color scheme emulation. ``no-preference`` is deprecated.
+          - ``forcedColors``: Emulates the ``forced-colors`` media feature, supported
+                values are ``active`` and ``none``. Passing ``null`` disables forced
+                colors emulation.
+          - ``media``: Changes the CSS media type of the page. The only allowed values
+                are ``screen``, ``print`` and ``null``. Passing ``null`` disables CSS
+                media emulation.
+          - ``reducedMotion``: Emulates the ``prefers-reduced-motion`` media feature,
+                supported values are ``reduce`` and ``no-preference``. Passing ``null``
+                disables reduced motion emulation.
 
         Arguments which are left to their default value are not sent to Playwright at
         all and therefore the corresponding emulation is left unchanged.

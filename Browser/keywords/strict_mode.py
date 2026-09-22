@@ -20,9 +20,16 @@ class StrictMode(LibraryComponent):
     def set_strict_mode(self, mode: bool, scope: Scope = Scope.Suite):
         """Controls library strict mode.
 
-        | =Arguments= | =Description= |
-        | ``mode`` | When set to ``True``, keywords that search elements will use Playwright [https://playwright.dev/docs/api/class-page#page-query-selector|strict mode] and fail if the selector matches more than one element. When set to ``False``, such keywords do not fail but operate on the first matching element. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+        *Arguments:*
+          - ``mode``: When set to ``True``, keywords that search elements will use
+                Playwright
+                [https://playwright.dev/docs/api/class-page#page-query-selector | strict
+                mode] and fail if the selector matches more than one element. When set
+                to ``False``, such keywords do not fail but operate on the first
+                matching element.
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
+                details.
 
         The keyword returns the strict mode value which was in use before this keyword
         was called.

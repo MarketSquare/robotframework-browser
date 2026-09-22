@@ -45,14 +45,22 @@ class LocatorHandler(LibraryComponent):
         [https://playwright.dev/docs/api/class-page#page-add-locator-handler|addLocatorHandler]
         method.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Is the selector to the element which indicates that the locator handler should be called. |
-        | ``noWaitAfter`` | Defaults to ``True``, which means that the overlay may stay visible after the handler has run. If set to ``False``, Playwright waits until the overlay becomes hidden, and only then the library continues with the action/assertion that triggered the handler. |
-        | ``times`` | Is how many times the locator handler is called. ``None``, the default, means unlimited. |
-        | ``click_selector`` | Is the selector to the element to be clicked. |
-        | ``click_clickCount`` | Is the number of times to click the element. Defaults to 1. |
-        | ``click_delay`` | Time to wait between mousedown and mouseup in milliseconds. Defaults to 0. |
-        | ``click_force`` | Whether to bypass checks and dispatch the event directly. Defaults to false. |
+        *Arguments:*
+          - ``selector``: Is the selector to the element which indicates that the
+                locator handler should be called.
+          - ``noWaitAfter``: Defaults to ``True``, which means that the overlay may stay
+                visible after the handler has run. If set to ``False``, Playwright waits
+                until the overlay becomes hidden, and only then the library continues
+                with the action/assertion that triggered the handler.
+          - ``times``: Is how many times the locator handler is called. ``None``, the
+                default, means unlimited.
+          - ``click_selector``: Is the selector to the element to be clicked.
+          - ``click_clickCount``: Is the number of times to click the element. Defaults
+                to 1.
+          - ``click_delay``: Time to wait between mousedown and mouseup in milliseconds.
+                Defaults to 0.
+          - ``click_force``: Whether to bypass checks and dispatch the event directly.
+                Defaults to false.
 
         The arguments ``click_selector``, ``click_clickCount``, ``click_delay`` and ``click_force``
         correspond to the arguments of the `Click With Options` keyword, but ``click_delay`` is given
@@ -117,11 +125,17 @@ class LocatorHandler(LibraryComponent):
         When the element indicated by ``selector`` is visible, the handler will perform the actions
         specified in the ``handler_spec``.
 
-        | =Arguments= | =Description= |
-        | ``selector`` | Is the selector to the element which indicates that the locator handler should be called. |
-        | ``handler_spec`` | Is a list of dictionaries which defines the actions to be performed. |
-        | ``noWaitAfter`` | Defaults to ``True``, which means that the overlay may stay visible after the handler has run. If set to ``False``, Playwright waits until the overlay becomes hidden, and only then the library continues with the action/assertion that triggered the handler. |
-        | ``times`` | Is how many times the locator handler is called. ``None``, the default, means unlimited. |
+        *Arguments:*
+          - ``selector``: Is the selector to the element which indicates that the
+                locator handler should be called.
+          - ``handler_spec``: Is a list of dictionaries which defines the actions to be
+                performed.
+          - ``noWaitAfter``: Defaults to ``True``, which means that the overlay may stay
+                visible after the handler has run. If set to ``False``, Playwright waits
+                until the overlay becomes hidden, and only then the library continues
+                with the action/assertion that triggered the handler.
+          - ``times``: Is how many times the locator handler is called. ``None``, the
+                default, means unlimited.
 
         The ``handler_spec`` is a list of dictionaries, where each dictionary defines one action.
         The dictionary must contain the key ``action`` which defines the action to be
