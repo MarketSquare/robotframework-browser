@@ -101,17 +101,23 @@ class Cookie(LibraryComponent):
     ):
         """Adds a cookie to the currently active browser context.
 
-
-        | =Arguments= | =Description= |
-        | ``name`` | Name of the cookie. |
-        | ``value`` | Given value for the cookie. |
-        | ``url`` | Given url for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
-        | ``domain`` | Given domain for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
-        | ``path`` | Given path for the cookie. Defaults to None. Either ``url`` or the ``domain`` / ``path`` pair must be set, but not both. |
-        | ``expires`` | Given expiry for the cookie. Can be a date, a unix time or a datetime object. Supports the same formats as the [http://robotframework.org/robotframework/latest/libraries/DateTime.html|DateTime] library or an epoch timestamp. Example: 2027-09-28 16:21:35 |
-        | ``httpOnly`` | Sets the httpOnly token. |
-        | ``secure`` | Sets the secure token. |
-        | ``sameSite`` | Sets the sameSite mode. Can be ``Strict``, ``Lax`` or ``None``. |
+        *Arguments:*
+          - ``name``: Name of the cookie.
+          - ``value``: Given value for the cookie.
+          - ``url``: Given url for the cookie. Defaults to None. Either ``url`` or the
+                ``domain`` / ``path`` pair must be set, but not both.
+          - ``domain``: Given domain for the cookie. Defaults to None. Either ``url`` or
+                the ``domain`` / ``path`` pair must be set, but not both.
+          - ``path``: Given path for the cookie. Defaults to None. Either ``url`` or the
+                ``domain`` / ``path`` pair must be set, but not both.
+          - ``expires``: Given expiry for the cookie. Can be a date, a unix time or a
+                datetime object. Supports the same formats as the 
+                [http://robotframework.org/robotframework/latest/libraries/DateTime.html | DateTime]
+                library or an epoch timestamp. Example: ``2027-09-28 16:21:35``
+          - ``httpOnly``: Sets the httpOnly token.
+          - ``secure``: Sets the secure token.
+          - ``sameSite``: Sets the sameSite mode. Can be ``Strict``, ``Lax`` or
+                ``None``.
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
@@ -182,9 +188,10 @@ class Cookie(LibraryComponent):
     ) -> DotDict | str:
         """Returns information about the cookie named ``cookie`` as a Robot Framework dot dictionary or a string.
 
-        | =Arguments= | =Description= |
-        | ``cookie`` | Name of the cookie to be retrieved. |
-        | ``return_type`` | Type of the return value. Can be either ``dictionary`` or ``string``. Defaults to ``dictionary``. |
+        *Arguments:*
+          - ``cookie``: Name of the cookie to be retrieved.
+          - ``return_type``: Type of the return value. Can be either ``dictionary`` or
+                ``string``. Defaults to ``dictionary``.
 
         If ``return_type`` is ``dictionary`` or ``dict``, then the keyword returns a Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionary].

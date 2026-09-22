@@ -42,8 +42,9 @@ class Devices(LibraryComponent):
     def get_device(self, name: str) -> dict:
         """Returns a single device descriptor whose name matches ``name`` exactly.
 
-        | =Arguments= | =Description= |
-        | ``name`` | Name of the requested device. See Playwright's [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json] for a formatted list. |
+        *Arguments:*
+          - ``name``: Name of the requested device. See Playwright's
+            [https://github.com/microsoft/playwright/blob/master/packages/playwright-core/src/server/deviceDescriptorsSource.json|deviceDescriptorsSource.json] for a formatted list.
 
         The keyword fails if there is no device with that name. The matching is
         case sensitive.

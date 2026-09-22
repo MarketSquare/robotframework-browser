@@ -88,13 +88,16 @@ class PlaywrightState(LibraryComponent):
 
         Creates a new browser, context and page with specified settings.
 
-
-        | =Argument=          | =Description= |
-        | ``url``              | Navigates to URL if provided. Defaults to None. |
-        | ``browser``          | Specifies which browser to use. The supported browsers are listed in the table below. |
-        | ``headless``         | If set to False, a GUI is provided otherwise it is hidden. Defaults to False. |
-        | ``pause_on_failure`` | Stop execution when failure detected and leave browser open. Defaults to True. |
-        | ``bypassCSP``        | Defaults to bypassing CSP and enabling custom script attach to the page. |
+        *Arguments:*
+          - ``url``: Navigates to URL if provided. Defaults to None.
+          - ``browser``: Specifies which browser to use. The supported browsers are
+                listed in the table below.
+          - ``headless``: If set to False, a GUI is provided otherwise it is hidden.
+                Defaults to False.
+          - ``pause_on_failure``: Stop execution when failure detected and leave browser
+                open. Defaults to True.
+          - ``bypassCSP``: Defaults to bypassing CSP and enabling custom script attach
+                to the page.
 
         Browsers:
 
@@ -122,9 +125,10 @@ class PlaywrightState(LibraryComponent):
         to this browser. See `Browser, Context and Page` for more information about Browser and
         related concepts.
 
-
-        | =Argument=  | =Description= |
-        | ``browser`` | Browser to close. ``CURRENT`` selects the active browser. ``ALL`` closes all browsers. When a browser id is provided, that browser is closed. |
+        *Arguments:*
+          - ``browser``: Browser to close. ``CURRENT`` selects the active browser.
+                ``ALL`` closes all browsers. When a browser id is provided, that browser
+                is closed.
 
 
 
@@ -179,10 +183,16 @@ class PlaywrightState(LibraryComponent):
         Active context is set to the context that was active before this one. Closes pages belonging to this context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
-        | =Argument=  | =Description= |
-        | ``context`` | Context to close. ``CURRENT`` selects the active context. ``ALL`` selects all contexts. When a context id is provided, that context is closed. |
-        | ``browser`` | Browser in which contexts are closed. ``CURRENT`` selects the active browser. ``ALL`` selects all browsers. When a browser id is provided, contexts of that browser are closed. The browsers themselves are not closed. |
-        | ``save_trace`` | If set to ``False``, the trace of this context is not saved, even if it was enabled by `New Context`. Defaults to ``True``. |
+        *Arguments:*
+          - ``context``: Context to close. ``CURRENT`` selects the active context.
+                ``ALL`` selects all contexts. When a context id is provided, that
+                context is closed.
+          - ``browser``: Browser in which contexts are closed. ``CURRENT`` selects the
+                active browser. ``ALL`` selects all browsers. When a browser id is
+                provided, contexts of that browser are closed. The browsers themselves
+                are not closed.
+          - ``save_trace``: If set to ``False``, the trace of this context is not saved,
+                even if it was enabled by `New Context`. Defaults to ``True``.
 
         Example:
         | `Close Context`                          #  Closes the current context of the current browser
@@ -288,15 +298,20 @@ class PlaywrightState(LibraryComponent):
         Defaults to current for all three. Active page is set to the page that was active before this one.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
-        ``runBeforeUnload`` defines where to run the
-        [https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event|before unload]
-        page handlers. Defaults to false.
-
-
-        | =Argument=  | =Description= |
-        | ``page``    | Page to close. ``CURRENT`` selects the active page. ``ALL`` selects all pages. When a page id is provided, that page is closed. |
-        | ``context`` | Context in which pages are closed. ``CURRENT`` selects the active context. ``ALL`` selects all contexts. When a context id is provided, pages of that context are closed. The contexts themselves are not closed. |
-        | ``browser`` | Browser in which pages are closed. ``CURRENT`` selects the active browser. ``ALL`` selects all browsers. When a browser id is provided, pages of that browser are closed. The browsers themselves are not closed. |
+        *Arguments:*
+          - ``page``: Page to close. ``CURRENT`` selects the active page.``ALL``
+                selects all pages. When a page id is provided, that page is closed.
+          - ``context``: Context in which pages are closed. ``CURRENT`` selects the
+                active context. ``ALL`` selects all contexts. When a context id is
+                provided, pages of that context are closed. The contexts themselves are
+                not closed.
+          - ``browser``: Browser in which pages are closed. ``CURRENT`` selects the
+                active browser. ``ALL`` selects all browsers. When a browser id is
+                provided, pages of that browser are closed. The browsers themselves are
+                not closed.
+          - ``runBeforeUnload``: defines where to run the
+                [https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event|before unload]
+                page handlers. Defaults to false.
 
         If a page id is given, the ``context`` and ``browser`` arguments are ignored and the page
         is searched from all open browsers. Likewise, if a context id is given, the ``browser``
@@ -407,11 +422,15 @@ class PlaywrightState(LibraryComponent):
 
         Returns a stable identifier for the connected browser.
 
-        | =Argument=     | =Description= |
-        | ``wsEndpoint`` | Address to connect to. Either ``ws://`` or ``http://`` if cdp is used. |
-        | ``browser``    | Opens the specified browser. Defaults to ``chromium``. |
-        | ``use_cdp``    | Connect to browser via Chrome DevTools Protocol. Defaults to False. Works only with Chromium based browsers. |
-        | ``timeout``    | Maximum time in Robot Framework time format to wait for the connection to be established. Defaults to 30 seconds. The timeout can not be disabled; ``0`` also means 30 seconds. |
+        *Arguments:*
+          - ``wsEndpoint``: Address to connect to. Either ``ws://`` or ``http://`` if
+                cdp is used.
+          - ``browser``: Opens the specified browser. Defaults to ``chromium``.
+          - ``use_cdp``: Connect to browser via Chrome DevTools Protocol. Defaults to
+                False. Works only with Chromium based browsers.
+          - ``timeout``: Maximum time in Robot Framework time format to wait for the
+                connection to be established. Defaults to 30 seconds. The timeout can
+                not be disabled; ``0`` also means 30 seconds.
 
         To connect to a browser via Chrome DevTools Protocol, the browser must be started with this protocol enabled.
         This is typically done by starting a Chrome browser with the argument ``--remote-debugging-port=9222`` or similar.
@@ -463,25 +482,59 @@ class PlaywrightState(LibraryComponent):
 
         Returns a stable identifier for the created browser.
 
-        | =Arguments= | =Description= |
-        | ``browser`` | Opens the specified [#type-SupportedBrowsers|browser]. Defaults to chromium. |
-        | ``headless`` | Set to False if you want a GUI. Defaults to True. |
-        | ``args`` | Additional arguments to pass to the browser instance. The list of Chromium flags can be found [http://peter.sh/experiments/chromium-command-line-switches/|here]. Defaults to None. |
-        | ``channel`` | Allows operating against the stock Google Chrome and Microsoft Edge browsers. Can only be used together with the ``chromium`` browser, otherwise the keyword fails. For more details see: [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge|Playwright documentation]. |
-        | ``chromiumSandbox`` | Enable Chromium sandboxing. Defaults to False. |
-        | ``devtools`` | Chromium-only. Whether to auto-open a Developer Tools panel for each tab. Defaults to False. |
-        | ``downloadsPath`` | If specified, accepted downloads are downloaded into this folder. Otherwise, temporary folder is created and is deleted when browser is closed. Regarding file deletion, see the docs of `Download` and `Promise To Wait For Download`. |
-        | ``env`` | Specifies environment variables that will be visible to the browser. Dictionary keys are variable names, values are the content. Defaults to None. |
-        | ``executablePath`` | Path to a browser executable to run instead of the bundled one. If executablePath is a relative path, then it is resolved relative to current working directory. Note that Playwright only works with the bundled Chromium, Firefox or WebKit, use at your own risk. Defaults to None. |
-        | ``firefoxUserPrefs`` | Firefox user preferences. Learn more about the Firefox user preferences at [https://support.mozilla.org/en-US/kb/about-config-editor-firefox|about:config]. |
-        | ``handleSIGHUP`` | Close the browser process on SIGHUP. Defaults to True. |
-        | ``handleSIGINT`` | Close the browser process on Ctrl-C. Defaults to True. |
-        | ``handleSIGTERM`` | Close the browser process on SIGTERM. Defaults to True. |
-        | ``ignoreDefaultArgs`` | If True, Playwright does not pass its own configuration args and only uses the ones from ``args``. If a list is given, then the given default arguments are filtered out. Dangerous option; use with care. Defaults to None, which means Playwright's own default arguments are used. |
-        | ``proxy`` | Network [#type-Proxy|Proxy] settings. Structure: ``{'server': <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>, 'password': <Optional[str]>}``. Robot Framework 7.4 Secret type is supported.` |
-        | ``reuse_existing`` | If set to True, an existing browser instance that was created with the same arguments is reused. If no such browser exists, a new one is started. Defaults to True. |
-        | ``slowMo`` | Slows down Playwright operations by the given time, in Robot Framework time format. Useful so that you can see what is going on. Defaults to no delay. |
-        | ``timeout`` | Maximum time in Robot Framework time format to wait for the browser instance to start. Defaults to 30 seconds. Pass 0 to disable timeout. |
+        *Arguments:*
+          - ``browser``: Opens the specified [#type-SupportedBrowsers | browser].
+                Defaults to chromium.
+          - ``headless``: Set to False if you want a GUI. Defaults to True.
+          - ``args``: Additional arguments to pass to the browser instance. The list of
+                Chromium flags can be found
+                [http://peter.sh/experiments/chromium-command-line-switches/ | here].
+                Defaults to None.
+          - ``channel``: Allows operating against the stock Google Chrome and Microsoft
+                Edge browsers. Can only be used together with the ``chromium`` browser,
+                otherwise the keyword fails. For more details see:
+                [https://playwright.dev/docs/browsers#google-chrome--microsoft-edge |
+                Playwright documentation].
+          - ``chromiumSandbox``: Enable Chromium sandboxing. Defaults to False.
+          - ``devtools``: Chromium-only. Whether to auto-open a Developer Tools panel
+                for each tab. Defaults to False.
+          - ``downloadsPath``: If specified, accepted downloads are downloaded into this
+                folder. Otherwise, temporary folder is created and is deleted when
+                browser is closed. Regarding file deletion, see the docs of `Download`
+                and `Promise To Wait For Download`.
+          - ``env``: Specifies environment variables that will be visible to the
+                browser. Dictionary keys are variable names, values are the content.
+                Defaults to None.
+          - ``executablePath``: Path to a browser executable to run instead of the
+                bundled one. If executablePath is a relative path, then it is resolved
+                relative to current working directory. Note that Playwright only works
+                with the bundled Chromium, Firefox or WebKit, use at your own risk.
+                Defaults to None.
+          - ``firefoxUserPrefs``: Firefox user preferences. Learn more about the Firefox
+                user preferences at
+                [https://support.mozilla.org/en-US/kb/about-config-editor-firefox |
+                about:config].
+          - ``handleSIGHUP``: Close the browser process on SIGHUP. Defaults to True.
+          - ``handleSIGINT``: Close the browser process on Ctrl-C. Defaults to True.
+          - ``handleSIGTERM``: Close the browser process on SIGTERM. Defaults to True.
+          - ``ignoreDefaultArgs``: If True, Playwright does not pass its own
+                configuration args and only uses the ones from ``args``. If a list is
+                given, then the given default arguments are filtered out. Dangerous
+                option; use with care. Defaults to None, which means Playwright's own
+                default arguments are used.
+          - ``proxy``: Network [#type-Proxy | Proxy] settings. Structure: ``{'server':
+                <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>,
+                'password': <Optional[str]>}``. Robot Framework 7.4 Secret type is
+                supported.`
+          - ``reuse_existing``: If set to True, an existing browser instance that was
+                created with the same arguments is reused. If no such browser exists, a
+                new one is started. Defaults to True.
+          - ``slowMo``: Slows down Playwright operations by the given time, in Robot
+                Framework time format. Useful so that you can see what is going on.
+                Defaults to no delay.
+          - ``timeout``: Maximum time in Robot Framework time format to wait for the
+                browser instance to start. Defaults to 30 seconds. Pass 0 to disable
+                timeout.
 
 
         [https://forum.robotframework.org/t//4306|Comment >>]
@@ -534,9 +587,11 @@ class PlaywrightState(LibraryComponent):
 
         Returns a websocket endpoint (wsEndpoint) string that can be used to connect to the server.
 
-        | =Arguments= | =Description= |
-        | ``port`` | Port to use for the browser server. Defaults to 0, which results in a random free port being assigned. |
-        | ``wsPath`` | Path at which to serve the browser server. For security, this defaults to an unguessable string. |
+        *Arguments:*
+          - ``port``: Port to use for the browser server. Defaults to 0, which results
+                in a random free port being assigned.
+          - ``wsPath``: Path at which to serve the browser server. For security, this
+                defaults to an unguessable string.
 
         Check `New Browser` for the other argument docs.
 
@@ -564,8 +619,10 @@ class PlaywrightState(LibraryComponent):
 
         The wsEndpoint string is returned by `Launch Browser Server` and is also used by `Connect To Browser`.
 
-        | =Arguments=     | =Description= |
-        | ``wsEndpoint`` | Address of the browser server. Example: ``ws://127.0.0.1:63784/ca69bf0e9471391e8183d9ac1e90e1ba``|
+        *Arguments:*
+          - ``wsEndpoint``: Address of the browser server. Example:
+                ``ws://127.0.0.1:63784/ca69bf0e9471391e8183d9ac1e90e1ba``
+
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
@@ -636,37 +693,104 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the created context
         that can be used in `Switch Context`.
 
-
-        | =Arguments=              | =Description= |
-        | ``acceptDownloads``      | Whether to automatically download all the attachments. Defaults to True where all the downloads are accepted. |
-        | ``baseURL``              | When using `Go To`, `Wait For Request`, `Wait For Response` or `Wait For Navigation` it takes the base URL in consideration by using the URL() constructor for building the corresponding URL. Unset by default. Examples: ``baseURL=http://localhost:3000`` and navigating to ``/bar.html`` results in ``http://localhost:3000/bar.html``. ``baseURL=http://localhost:3000/foo/`` and navigating to ``./bar.html`` results in ``http://localhost:3000/foo/bar.html``. ``baseURL=http://localhost:3000/foo`` (without trailing slash) and navigating to ``./bar.html`` results in ``http://localhost:3000/bar.html``. |
-        | ``bypassCSP``            | Toggles bypassing page's Content-Security-Policy. Defaults to False. |
-        | ``clientCertificates``   | Specifies a client certificate for mTLS authentication, for example ``clientCertificates=[{'origin': 'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase': 'password'}]``. *NOTE:* The origin needs to be exact without any path. |
-        | ``colorScheme``          | Emulates the ``prefers-color-scheme`` media feature, supported values are ``light``, ``dark``, ``no-preference`` and ``null``. ``null`` disables the emulation. |
-        | ``defaultBrowserType``   | If no browser is open and `New Context` opens a new browser with defaults, this setting defines which browser is opened. Very useful together with the `Get Device` keyword. |
-        | ``deviceScaleFactor``    | Specify device scale factor (can be thought of as dpr). Defaults to ``1``. |
-        | ``extraHTTPHeaders``     | A dictionary containing additional HTTP headers to be sent with every request. All header values must be strings. |
-        | ``forcedColors``         | Emulates the ``forced-colors`` media feature, supported values are ``active``, ``none`` and ``null``. Defaults to ``none``. |
-        | ``geolocation``          | A dictionary containing ``latitude`` and ``longitude`` and optionally ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is not specified, the device geolocation won't be overridden. |
-        | ``hasTouch``             | Specifies if viewport supports touch events. Defaults to False. |
-        | ``httpCredentials``      | Credentials for [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication|HTTP authentication]. |
-        | ``ignoreHTTPSErrors``    | Whether to ignore HTTPS errors during navigation. Defaults to False. |
-        | ``isMobile``             | Whether the meta viewport tag is taken into account and touch events are enabled. Defaults to False. |
-        | ``javaScriptEnabled``    | Whether or not to enable JavaScript in the context. Defaults to True. |
-        | ``locale``               | Specify user locale, for example ``en-GB``, ``de-DE``, etc. |
-        | ``offline``              | Toggles browser's offline mode. Defaults to False. |
-        | ``permissions``          | A list containing permissions to grant to all pages in this context. All permissions that are not listed here will be automatically denied. |
-        | ``proxy``                | Network proxy settings to use with this context. Defaults to None. *NOTE:* For Chromium on Windows the browser needs to be launched with the global proxy for this option to work. If all contexts override the proxy, global proxy will be never used and can be any string, for example ``proxy={ server: 'http://per-context' }``. |
-        | ``recordHar``            | Enables [http://www.softwareishard.com/blog/har-12-spec/|HAR] recording for all pages into a file. The ``path`` key must be a path to a file, for example ``recordHar={'path': '${OUTPUT_DIR}/har.file'}``. If not specified, the HAR is not recorded. Make sure to close the context for the HAR to be saved. |
-        | ``recordVideo``          | Enables video recording for all pages into a folder. If not specified videos are not recorded. Make sure to close the context for videos to be saved. Video is not supported in remote browsers. |
-        | ``reducedMotion``        | Emulates the ``prefers-reduced-motion`` media feature, supported values are ``reduce`` and ``no-preference``. Defaults to ``no-preference``. |
-        | ``screen``               | Emulates consistent window screen size available inside web page via window.screen. Is only used when the viewport is set. Example {'width': 414, 'height': 896} |
-        | ``serviceWorkers``       | Whether to allow sites to register Service workers. Defaults to ``allow``. |
-        | ``storageState``         | Restores the storage state created by the `Save Storage State` keyword. Must be a path to an existing file, otherwise the keyword fails. Relative paths are resolved against the current working directory. |
-        | ``timezoneId``           | Changes the timezone of the context. See [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt|ICU`s metaZones.txt] for a list of supported timezone IDs. |
-        | ``tracing``              | Boolean ``True`` (recommendation) or file path or directory where the [https://playwright.dev/docs/api/class-tracing/|tracing] file is saved. The string ``{contextid}`` will be replaced with the context id. Path to *.zip files can be absolute or relative to ${OUTPUT_DIR}. Path to folders can be absolute or relative to ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is given, the trace file will automatically be named ``trace_{contextid}.zip``. Temporary trace files will be saved to ${OUTPUT_DIR}/browser/traces/temp. Tracing is automatically closed when context is closed. Temporary trace files will be automatically deleted at start of each test execution. Trace file can be opened after the test execution by running command from shell: ``rfbrowser show-trace /path/to/trace.zip``. Tracing can also be enabled by setting a Robot Framework variable or environment variable ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``. |
-        | ``userAgent``            | Specific user agent to use in this context. |
-        | ``viewport``             | A dictionary containing ``width`` and ``height``. Emulates consistent viewport for each page. Defaults to 1280x720. ``None`` disables the default viewport. If ``width`` and ``height`` are ``0``, the viewport will scale with the window. |
+        *Arguments:*
+          - ``acceptDownloads``: Whether to automatically download all the attachments.
+                Defaults to True where all the downloads are accepted.
+          - ``baseURL``: When using `Go To`, `Wait For Request`, `Wait For Response` or
+                `Wait For Navigation` it takes the base URL in consideration by using
+                the URL() constructor for building the corresponding URL. Unset by
+                default. Examples: ``baseURL=http://localhost:3000`` and navigating to
+                ``/bar.html`` results in ``http://localhost:3000/bar.html``.
+                ``baseURL=http://localhost:3000/foo/`` and navigating to ``./bar.html``
+                results in ``http://localhost:3000/foo/bar.html``.
+                ``baseURL=http://localhost:3000/foo`` (without trailing slash) and
+                navigating to ``./bar.html`` results in
+                ``http://localhost:3000/bar.html``.
+          - ``bypassCSP``: Toggles bypassing page's Content-Security-Policy. Defaults to
+                False.
+          - ``clientCertificates``: Specifies a client certificate for mTLS
+                authentication, for example ``clientCertificates=[{'origin':
+                'https://playwright.dev', 'pfxPath': 'certificate.p12', 'passphrase':
+                'password'}]``. *NOTE:* The origin needs to be exact without any path.
+          - ``colorScheme``: Emulates the ``prefers-color-scheme`` media feature,
+                supported values are ``light``, ``dark``, ``no-preference`` and
+                ``null``. ``null`` disables the emulation.
+          - ``defaultBrowserType``: If no browser is open and `New Context` opens a new
+                browser with defaults, this setting defines which browser is opened.
+                Very useful together with the `Get Device` keyword.
+          - ``deviceScaleFactor``: Specify device scale factor (can be thought of as
+                dpr). Defaults to ``1``.
+          - ``extraHTTPHeaders``: A dictionary containing additional HTTP headers to be
+                sent with every request. All header values must be strings.
+          - ``forcedColors``: Emulates the ``forced-colors`` media feature, supported
+                values are ``active``, ``none`` and ``null``. Defaults to ``none``.
+          - ``geolocation``: A dictionary containing ``latitude`` and ``longitude`` and
+                optionally ``accuracy`` to emulate. If ``latitude`` or ``longitude`` is
+                not specified, the device geolocation won't be overridden.
+          - ``hasTouch``: Specifies if viewport supports touch events. Defaults to
+                False.
+          - ``httpCredentials``: Credentials for
+                [https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication | HTTP
+                authentication].
+          - ``ignoreHTTPSErrors``: Whether to ignore HTTPS errors during navigation.
+                Defaults to False.
+          - ``isMobile``: Whether the meta viewport tag is taken into account and touch
+                events are enabled. Defaults to False.
+          - ``javaScriptEnabled``: Whether or not to enable JavaScript in the context.
+                Defaults to True.
+          - ``locale``: Specify user locale, for example ``en-GB``, ``de-DE``, etc.
+          - ``offline``: Toggles browser's offline mode. Defaults to False.
+          - ``permissions``: A list containing permissions to grant to all pages in this
+                context. All permissions that are not listed here will be automatically
+                denied.
+          - ``proxy``: Network proxy settings to use with this context. Defaults to
+                None. *NOTE:* For Chromium on Windows the browser needs to be launched
+                with the global proxy for this option to work. If all contexts override
+                the proxy, global proxy will be never used and can be any string, for
+                example ``proxy={ server: 'http://per-context' }``.
+          - ``recordHar``: Enables [http://www.softwareishard.com/blog/har-12-spec/ |
+                HAR] recording for all pages into a file. The ``path`` key must be a
+                path to a file, for example ``recordHar={'path':
+                '${OUTPUT_DIR}/har.file'}``. If not specified, the HAR is not recorded.
+                Make sure to close the context for the HAR to be saved.
+          - ``recordVideo``: Enables video recording for all pages into a folder. If not
+                specified videos are not recorded. Make sure to close the context for
+                videos to be saved. Video is not supported in remote browsers.
+          - ``reducedMotion``: Emulates the ``prefers-reduced-motion`` media feature,
+                supported values are ``reduce`` and ``no-preference``. Defaults to
+                ``no-preference``.
+          - ``screen``: Emulates consistent window screen size available inside web page
+                via window.screen. Is only used when the viewport is set. Example
+                {'width': 414, 'height': 896}
+          - ``serviceWorkers``: Whether to allow sites to register Service workers.
+                Defaults to ``allow``.
+          - ``storageState``: Restores the storage state created by the `Save Storage
+                State` keyword. Must be a path to an existing file, otherwise the
+                keyword fails. Relative paths are resolved against the current working
+                directory.
+          - ``timezoneId``: Changes the timezone of the context. See
+                [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt
+                | ICU`s metaZones.txt] for a list of supported timezone IDs.
+          - ``tracing``: Boolean ``True`` (recommendation) or file path or directory
+                where the [https://playwright.dev/docs/api/class-tracing/ | tracing]
+                file is saved. The string ``{contextid}`` will be replaced with the
+                context id. Path to *.zip files can be absolute or relative to
+                ${OUTPUT_DIR}. Path to folders can be absolute or relative to
+                ${OUTPUT_DIR}/browser/traces. If boolean ``True`` or a directory is
+                given, the trace file will automatically be named
+                ``trace_{contextid}.zip``. Temporary trace files will be saved to
+                ${OUTPUT_DIR}/browser/traces/temp. Tracing is automatically closed when
+                context is closed. Temporary trace files will be automatically deleted
+                at start of each test execution. Trace file can be opened after the test
+                execution by running command from shell: ``rfbrowser show-trace
+                /path/to/trace.zip``. Tracing can also be enabled by setting a Robot
+                Framework variable or environment variable
+                ``ROBOT_FRAMEWORK_BROWSER_TRACING`` to ``True``.
+          - ``userAgent``: Specific user agent to use in this context.
+          - ``viewport``: A dictionary containing ``width`` and ``height``. Emulates
+                consistent viewport for each page. Defaults to 1280x720. ``None``
+                disables the default viewport. If ``width`` and ``height`` are ``0``,
+                the viewport will scale with the window.
 
 
         Example:
@@ -782,11 +906,18 @@ class PlaywrightState(LibraryComponent):
 
         This keyword returns a tuple of browser id, context id and page details. (New in Browser 15.0.0)
 
-        | =Argument=               | =Description= |
-        | ``userDataDir``          | Path to a User Data Directory, which stores browser session data like cookies and local storage. Note that Chromium's user data directory is the parent directory of the "Profile Path" seen at chrome://version. Pass an empty string to use a temporary directory instead. |
-        | ``browser``              | Browser type to use. Default is Chromium. |
-        | ``headless``             | Whether to run browser in headless mode. Defaults to ``True``. |
-        | other arguments          | Please see `New Browser`, `New Context` and `New Page` for more information about the other arguments. |
+        *Arguments:*
+          - ``userDataDir``: Path to a User Data Directory, which stores browser session
+                data like cookies and local storage. Note that Chromium's user data
+                directory is the parent directory of the "Profile Path" seen at
+                chrome://version. Pass an empty string to use a temporary directory
+                instead.
+          - ``browser``: Browser type to use. Default is Chromium.
+          - ``headless``: Whether to run browser in headless mode. Defaults to ``True``.
+          - ``other``: Please see `New Browser`, `New Context` and `New Page` for more
+                information about the other arguments.
+          - ``arguments``: Please see `New Browser`, `New Context` and `New Page` for
+                more information about the other arguments.
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
 
@@ -1007,9 +1138,16 @@ class PlaywrightState(LibraryComponent):
         A Page is the Playwright equivalent to a tab. See `Browser, Context and Page`
         for more information about Page concept.
 
-        | =Arguments=    | =Description= |
-        | ``url``        | Optional URL to navigate the page to. The url should include the protocol, for example ``https://``. |
-        | ``wait_until`` | When to consider operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
+        *Arguments:*
+          - ``url``: Optional URL to navigate the page to. The url should include the
+                protocol, for example ``https://``.
+          - ``wait_until``: When to consider operation succeeded, defaults to load.
+                Events can be either: ``domcontentloaded`` - consider operation to be
+                finished when the DOMContentLoaded event is fired. ``load`` - consider
+                operation to be finished when the load event is fired. ``networkidle`` -
+                consider operation to be finished when there are no network connections
+                for at least 500 ms. ``commit`` - consider operation to be finished when
+                network response is received and the document started loading.
 
 
         Returns `NewPageDetails` as dictionary for created page.
@@ -1082,10 +1220,13 @@ class PlaywrightState(LibraryComponent):
 
         See `Browser, Context and Page` for more information about these concepts.
 
-        | =Arguments= | =Description= |
-        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
-        | assertion_expected | Optional expected value. See `Assertions` for more information. |
-        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
+        *Arguments:*
+          - ``assertion_operator``: Optional assertion operator. See `Assertions` for
+                more information.
+          - ``assertion_expected``: Optional expected value. See `Assertions` for more
+                information.
+          - ``message``: Optional custom message to use on failure. See `Assertions` for
+                more information.
 
         The data is parsed into a python list containing data representing the open Objects.
 
@@ -1187,12 +1328,17 @@ class PlaywrightState(LibraryComponent):
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
 
-        | =Arguments= | =Description= |
-        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
-        | assertion_expected | Optional expected value. See `Assertions` for more information. |
-        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
-        | full               | If true, returns the full console log. If false, returns only new entries that were added since last time. |
-        | last               | If set, returns only the last n entries. Can be an integer for the number of entries or a time period in Robot Framework time format. |
+        *Arguments:*
+          - ``assertion_operator``: Optional assertion operator. See `Assertions` for
+                more information.
+          - ``assertion_expected``: Optional expected value. See `Assertions` for more
+                information.
+          - ``message``: Optional custom message to use on failure. See `Assertions` for
+                more information.
+          - ``full``: If true, returns the full console log. If false, returns only new
+                entries that were added since last time.
+          - ``last``: If set, returns only the last n entries. Can be an integer for the
+                number of entries or a time period in Robot Framework time format.
 
         The returned data is a list of log messages.
 
@@ -1259,12 +1405,17 @@ class PlaywrightState(LibraryComponent):
 
         If assertions are used and fail, this keyword will fail immediately without retrying.
 
-        | =Arguments= | =Description= |
-        | assertion_operator | Optional assertion operator. See `Assertions` for more information. |
-        | assertion_expected | Optional expected value. See `Assertions` for more information. |
-        | message            | Optional custom message to use on failure. See `Assertions` for more information. |
-        | full               | If true, returns all page errors. If false, returns only new errors that were added since last time. |
-        | last               | If set, returns only the last n entries. Can be an integer for the number of entries or a time period in Robot Framework time format. |
+        *Arguments:*
+          - ``assertion_operator``: Optional assertion operator. See `Assertions` for
+                more information.
+          - ``assertion_expected``: Optional expected value. See `Assertions` for more
+                information.
+          - ``message``: Optional custom message to use on failure. See `Assertions` for
+                more information.
+          - ``full``: If true, returns all page errors. If false, returns only new
+                errors that were added since last time.
+          - ``last``: If set, returns only the last n entries. Can be an integer for the
+                number of entries or a time period in Robot Framework time format.
 
         The returned data is a list of error messages.
 
@@ -1328,8 +1479,11 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous browser.
         See `Browser, Context and Page` for more information about Browser and related concepts.
 
-        | =Arguments= | =Description= |
-        | id          | The id of the browser to switch to. Example: ``browser=96207191-8147-44e7-b9ac-5e04f2709c1d``. A browser id is returned by `New Browser` when it is started or can be fetched from the browser catalog when returned by `Get Browser Catalog`. |
+        *Arguments:*
+          - ``id``: The id of the browser to switch to. Example:
+                ``browser=96207191-8147-44e7-b9ac-5e04f2709c1d``. A browser id is
+                returned by `New Browser` when it is started or can be fetched from the
+                browser catalog when returned by `Get Browser Catalog`.
 
         [https://forum.robotframework.org/t//4334|Comment >>]
         """
@@ -1365,9 +1519,14 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier for the previous context.
         See `Browser, Context and Page` for more information about Context and related concepts.
 
-        | =Arguments= | =Description= |
-        | ``id``      | The id of the context to switch to. Example: ``context=525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089``. A context id is returned by `New Context` when it is started or can be fetched from the browser catalog when returned by `Get Browser Catalog`. |
-        | ``browser`` | The browser in which to search for that context. ``CURRENT`` for the currently active browser, ``ALL`` to search in all open browsers or the id of the browser where to switch context. |
+        *Arguments:*
+          - ``id``: The id of the context to switch to. Example:
+                ``context=525d8e5b-3c4e-4baa-bfd4-dfdbc6e86089``. A context id is
+                returned by `New Context` when it is started or can be fetched from the
+                browser catalog when returned by `Get Browser Catalog`.
+          - ``browser``: The browser in which to search for that context. ``CURRENT``
+                for the currently active browser, ``ALL`` to search in all open browsers
+                or the id of the browser where to switch context.
 
         Example:
         | ${first_context} =     `New Context`
@@ -1419,10 +1578,20 @@ class PlaywrightState(LibraryComponent):
         Returns a stable identifier ``id`` for the previous page.
         See `Browser, Context and Page` for more information about Page and related concepts.
 
-        | =Arguments= | =Description= |
-        | ``id``      | The id or alias of the page to switch to. Example: ``page=8baf2991-5eaf-444d-a318-8045f914e96a`` or ``NEW``. Can be a string or a dictionary returned by `New Page` Keyword. A page id can be fetched from the browser catalog when returned by `Get Browser Catalog`. ``NEW`` can be used to switch to a pop-up that just has been opened by the webpage, ``CURRENT`` can be used to switch to the active page of a different context or browser, identified by their id. |
-        | ``context`` | The context in which to search for that page. ``CURRENT`` for the currently active context, ``ALL`` to search in all open contexts or the id of the context where to switch page. |
-        | ``browser`` | The browser in which to search for that page. ``CURRENT`` for the currently active browser, ``ALL`` to search in all open browsers or the id of the browser where to switch page. |
+        *Arguments:*
+          - ``id``: The id or alias of the page to switch to. Example:
+                ``page=8baf2991-5eaf-444d-a318-8045f914e96a`` or ``NEW``. Can be a
+                string or a dictionary returned by `New Page` Keyword. A page id can be
+                fetched from the browser catalog when returned by `Get Browser Catalog`.
+                ``NEW`` can be used to switch to a pop-up that just has been opened by
+                the webpage, ``CURRENT`` can be used to switch to the active page of a
+                different context or browser, identified by their id.
+          - ``context``: The context in which to search for that page. ``CURRENT`` for
+                the currently active context, ``ALL`` to search in all open contexts or
+                the id of the context where to switch page.
+          - ``browser``: The browser in which to search for that page. ``CURRENT`` for
+                the currently active browser, ``ALL`` to search in all open browsers or
+                the id of the browser where to switch page.
 
         If a page id is given, the ``context`` and ``browser`` arguments are ignored and the page
         is searched from all open browsers.
@@ -1525,8 +1694,9 @@ class PlaywrightState(LibraryComponent):
         - ``ALL`` / ``ANY`` Returns all ids as a list.
         - ``ACTIVE`` / ``CURRENT`` Returns the id of the currently active browser as list.
 
-        | =Arguments= | =Description= |
-        | ``browser`` | The browser to get the ids from. ``ALL`` for all open browsers or ``ACTIVE`` for the currently active browser. |
+        *Arguments:*
+          - ``browser``: The browser to get the ids from. ``ALL`` for all open browsers
+                or ``ACTIVE`` for the currently active browser.
 
         The ACTIVE browser is a synonym for the CURRENT Browser.
 
@@ -1556,9 +1726,14 @@ class PlaywrightState(LibraryComponent):
         ``ALL`` and ``ANY`` are synonyms.
         ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
-        | =Arguments= | =Description= |
-        | ``context`` | The context to get the ids from. ``ALL`` will return all ids from selected browser(s), ``ACTIVE`` for the one active context of each selected browser. |
-        | ``browser`` | The browser id or selection to get the context ids from. ``ALL`` Context ids from all open browsers shall be fetched. ``ACTIVE`` Only context ids from the active browser shall be fetched. If a browser id is given and no browser with that id is open, the keyword fails. |
+        *Arguments:*
+          - ``context``: The context to get the ids from. ``ALL`` will return all ids
+                from selected browser(s), ``ACTIVE`` for the one active context of each
+                selected browser.
+          - ``browser``: The browser id or selection to get the context ids from.
+                ``ALL`` Context ids from all open browsers shall be fetched. ``ACTIVE``
+                Only context ids from the active browser shall be fetched. If a browser
+                id is given and no browser with that id is open, the keyword fails.
 
         The ACTIVE context of the ACTIVE Browser is the ``Current`` Context.
 
@@ -1641,10 +1816,15 @@ class PlaywrightState(LibraryComponent):
         ``ALL`` and ``ANY`` are synonyms.
         ``ACTIVE`` and ``CURRENT`` are also synonyms.
 
-        | =Arguments= | =Description= |
-        | ``page``    | The page to get the ids from. ``ALL`` Returns all page ids as a list. ``ACTIVE`` Returns the id of the active page as a list. |
-        | ``context`` | The context id or selection to get the page ids from. ``ALL`` Page ids from all contexts shall be fetched. ``ACTIVE`` Only page ids from the active context shall be fetched. |
-        | ``browser`` | The browser id or selection to get the page ids from. ``ALL`` Page ids from all open browsers shall be fetched. ``ACTIVE`` Only page ids from the active browser shall be fetched. |
+        *Arguments:*
+          - ``page``: The page to get the ids from. ``ALL`` Returns all page ids as a
+                list. ``ACTIVE`` Returns the id of the active page as a list.
+          - ``context``: The context id or selection to get the page ids from. ``ALL``
+                Page ids from all contexts shall be fetched. ``ACTIVE`` Only page ids
+                from the active context shall be fetched.
+          - ``browser``: The browser id or selection to get the page ids from. ``ALL``
+                Page ids from all open browsers shall be fetched. ``ACTIVE`` Only page
+                ids from the active browser shall be fetched.
 
 
         Example:
@@ -1716,10 +1896,18 @@ class PlaywrightState(LibraryComponent):
         Please note that the state file may contain secrets and should not be
         shared with people outside of your organisation.
 
-        | =Arguments= | =Description= |
-        | ``path`` | Where the state file is written. Relative paths are resolved against the current working directory and missing parent directories are created. If the file already exists, it is overwritten. If not given, a file with a generated name is created in ${OUTPUTDIR}/browser/state. The absolute path of the written file is returned. |
-        | ``indexedDB`` | Also save IndexedDB. Needed by applications, like Firebase, which store authentication tokens in IndexedDB. |
-        | ``credentials`` | Also save the context's virtual WebAuthn credentials, as created by `Create Credential`. This is not related to the ``httpCredentials`` argument of `New Context`, which is about HTTP authentication. |
+        *Arguments:*
+          - ``path``: Where the state file is written. Relative paths are resolved
+                against the current working directory and missing parent directories are
+                created. If the file already exists, it is overwritten. If not given, a
+                file with a generated name is created in ${OUTPUTDIR}/browser/state. The
+                absolute path of the written file is returned.
+          - ``indexedDB``: Also save IndexedDB. Needed by applications, like Firebase,
+                which store authentication tokens in IndexedDB.
+          - ``credentials``: Also save the context's virtual WebAuthn credentials, as
+                created by `Create Credential`. This is not related to the
+                ``httpCredentials`` argument of `New Context`, which is about HTTP
+                authentication.
 
         Files in ${OUTPUTDIR}/browser/state are automatically deleted when new
         test execution starts. To keep a state file over several executions,
@@ -1798,10 +1986,14 @@ class PlaywrightState(LibraryComponent):
         `Install Credential` does. Real authenticators do not work in that
         context afterwards.
 
-        | =Arguments= | =Description= |
-        | ``path`` | Path to a state file created by `Save Storage State`. Relative paths are resolved against the current working directory. The keyword fails if the file does not exist. |
-        | ``timeout`` | Time to wait for the state to be restored. If not defined, the library default timeout is used. Pass 0 to disable the timeout. |
-        | ``reload_pages`` | Which pages are reloaded while the state is restored, see `ReloadPages`. Only relevant when the state file contains IndexedDB. |
+        *Arguments:*
+          - ``path``: Path to a state file created by `Save Storage State`. Relative
+                paths are resolved against the current working directory. The keyword
+                fails if the file does not exist.
+          - ``timeout``: Time to wait for the state to be restored. If not defined, the
+                library default timeout is used. Pass 0 to disable the timeout.
+          - ``reload_pages``: Which pages are reloaded while the state is restored, see
+                `ReloadPages`. Only relevant when the state file contains IndexedDB.
 
         == Restoring IndexedDB ==
 
@@ -1871,8 +2063,8 @@ class PlaywrightState(LibraryComponent):
     def cancel_download(self, download: DownloadInfo | str):
         """Cancels an active download.
 
-        | =Arguments= | =Description= |
-        | download    | A `DownloadInfo` object or id of the download to be canceled. |
+        *Arguments:*
+          - ``download``: A `DownloadInfo` object or id of the download to be canceled.
 
         [https://forum.robotframework.org/t//6478|Comment >>]
         """

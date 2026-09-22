@@ -68,11 +68,15 @@ class Network(LibraryComponent):
         The request is sent with the browser's ``fetch`` from the currently active page,
         so a relative ``url`` is resolved against the URL of that page.
 
-        | =Arguments= | =Description= |
-        | ``url`` | The request url, e.g. ``/api/foo``. |
-        | ``method`` | The HTTP method for the request. Defaults to GET. |
-        | ``body`` | The request body. It is ignored for GET requests, because GET requests cannot have a body. If the body can be parsed as JSON, the ``Content-Type`` header for the request is automatically set to ``application/json``, unless ``headers`` already contains that header. Defaults to None. |
-        | ``headers`` | A dictionary of additional request headers. Defaults to None. |
+        *Arguments:*
+          - ``url``: The request url, e.g. ``/api/foo``.
+          - ``method``: The HTTP method for the request. Defaults to GET.
+          - ``body``: The request body. It is ignored for GET requests, because GET
+                requests cannot have a body. If the body can be parsed as JSON, the
+                ``Content-Type`` header for the request is automatically set to
+                ``application/json``, unless ``headers`` already contains that header.
+                Defaults to None.
+          - ``headers``: A dictionary of additional request headers. Defaults to None.
 
         The response is a Robot Framework dictionary with the following attributes:
           - ``status`` <int> The status code of the response.
@@ -163,9 +167,17 @@ class Network(LibraryComponent):
         ``headers`` is a dictionary of request headers. ``postData`` is ``None`` if the request has no body,
         a dictionary if the body is valid JSON and otherwise the body as a string.
 
-        | =Arguments= | =Description= |
-        | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), a JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a JavaScript arrow-function that receives the [https://playwright.dev/docs/api/class-request|Request] object and returns a boolean. By default (with an empty string) the first request is matched. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest] documentation. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+        *Arguments:*
+          - ``matcher``: Request URL matcher. Can be a string (Glob-Pattern), a
+                JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
+                JavaScript arrow-function that receives the
+                [https://playwright.dev/docs/api/class-request | Request] object and
+                returns a boolean. By default (with an empty string) the first request
+                is matched. For additional information, see the Playwright
+                [https://playwright.dev/docs/api/class-page#page-wait-for-request |
+                waitForRequest] documentation.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
 
         See `Wait For Response` for more details about the matcher.
 
@@ -203,9 +215,16 @@ class Network(LibraryComponent):
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
           - ``url`` <str> url of the response.
 
-        | =Arguments= | =Description= |
-        | ``matcher`` | Response URL matcher. Can be a string (Glob-Pattern), a JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a JavaScript arrow-function that receives the Response object and returns a boolean. By default (with an empty string) the first response is matched. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-response|page.waitForResponse] documentation. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+        *Arguments:*
+          - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
+                JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
+                JavaScript arrow-function that receives the Response object and returns
+                a boolean. By default (with an empty string) the first response is
+                matched. For additional information, see the Playwright
+                [https://playwright.dev/docs/api/class-page#page-wait-for-response |
+                page.waitForResponse] documentation.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
 
         *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
         But the regex did not need to be in slashes.
@@ -281,11 +300,19 @@ class Network(LibraryComponent):
     ):
         """Waits until the page has navigated to the given ``url``.
 
-
-        | =Arguments= | =Description= |
-        | ``url`` | Expected navigation target address, either a Glob-Pattern (a plain string without wildcards matches exactly) or a JavaScript-like regex wrapped in ``/`` symbols. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
-        | ``wait_until`` | When to consider the operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
+        *Arguments:*
+          - ``url``: Expected navigation target address, either a Glob-Pattern (a plain
+                string without wildcards matches exactly) or a JavaScript-like regex
+                wrapped in ``/`` symbols.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
+          - ``wait_until``: When to consider the operation succeeded, defaults to load.
+                Events can be either: ``domcontentloaded`` - consider operation to be
+                finished when the DOMContentLoaded event is fired. ``load`` - consider
+                operation to be finished when the load event is fired. ``networkidle`` -
+                consider operation to be finished when there are no network connections
+                for at least 500 ms. ``commit`` - consider operation to be finished when
+                network response is received and the document started loading.
 
 
         The keyword works only when the page is loaded and it does not work if only the URL fragment changes. Example: if

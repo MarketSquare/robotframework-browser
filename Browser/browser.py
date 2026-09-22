@@ -466,27 +466,90 @@ class Browser(DynamicCore):
         timeout: timedelta = timedelta(seconds=10),
         tracing_group_mode: TracingGroupMode = TracingGroupMode.Full,
     ):
-        """Browser library can be taken into use with optional arguments:
+        """Browser library can be taken into use with optional arguments.
 
-        | =Argument=                        | =Description= |
-        | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
-        | ``auto_delete_passed_tracing``    | If ``auto_closing_level`` is set to ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of passed tests or suites, depending on the context scope, not be saved. Also temp files will all be deleted after the whole execution ends. |
-        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
-        | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
-        | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
-        | ``highlight_on_failure``          | If set to ``True``, will highlight the element in the screenshot when a keyword fails, by highlighting the selector used in the failed keyword. If set to ``False``, will not highlight the element. |
-        | ``jsextension``                   | Path to JavaScript modules exposed as extra keywords. The modules must be in CommonJS format; exported functions become keywords and an ``fn.rfdoc`` string becomes a keyword's documentation. The argument names ``page``, ``context``, ``browser``, ``logger`` and ``playwright`` are filled in by the library rather than taken from the keyword call. Can be a single path, a comma-separated list of paths or a real list of strings. See https://robotframework-browser.org/docs/extending/javascript-extensions |
-        | ``language``                      | Defines language which is used to translate keyword names and documentation. |
-        | ``playwright_process_host``       | Hostname / Host address which should be used when spawning the Playwright process. Defaults to 127.0.0.1. |
-        | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
-        | ``plugins``                       | Allows extending the Browser library with external Python classes, which can add keywords and modify some internal behaviour without forking the library. Can be a single class/module, a comma-separated list or a real list of strings. See https://robotframework-browser.org/docs/extending/python-plugins |
-        | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
-        | ``run_on_failure``                | Sets the keyword to execute in case of a failing Browser keyword. It can be the name of any keyword. If the keyword has arguments those must be separated with two spaces for example ``My keyword \\ arg1 \\ arg2``. If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value. Run on failure is not applied when library methods are executed directly from Python. |
-        | ``selector_prefix``               | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
-        | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
-        | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ``Set Strict Mode`` keyword. |
-        | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
-        | ``tracing_group_mode``            | Defines how Robot Framework keyword calls are logged in Playwright trace log. Default is `Full`. For more details, see `TracingGroupMode`. |
+        *Arguments:*
+          - ``_``: Positional arguments are ignored. All arguments must be passed as named arguments.
+          - ``auto_closing_level``: Configure context and page automatic closing.
+                Default is ``TEST``, for more details, see `AutoClosingLevel`
+          - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
+                ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
+                passed tests or suites, depending on the context scope, not be saved.
+                Also temp files will all be deleted after the whole execution ends.
+          - ``enable_playwright_debug``: Enable low level debug information from the
+                playwright to playwright-log.txt file. For more details, see
+                `PlaywrightLogTypes`.
+          - ``enable_presenter_mode``: Automatic highlights the interacted components,
+                slowMo and a small pause at the end. Can be enabled by giving True or
+                can be customized by giving a dictionary: ``{"duration": "2 seconds",
+                "width": "2px", "style": "dotted", "color": "blue"}`` Where `duration` is
+                time format in Robot Framework format, defaults to 2 seconds. `width` is
+                width of the marker in pixels, defaults the ``2px``. ``style`` is the style
+                of border, defaults to ``dotted``. ``color`` is the color of the marker,
+                defaults to ``blue``. By default, the call banner keyword is also enabled
+                unless explicitly disabled.
+          - ``external_browser_executable``: Dict mapping name of browser to path of
+                executable of a browser. Will make opening new browsers of the given
+                type use the set executablePath. Currently only configuring of
+                ``chromium`` to a separate executable (chrome, chromium and Edge
+                executables all work with recent versions) works.
+          - ``highlight_on_failure``: If set to ``True``, will highlight the element in
+                the screenshot when a keyword fails, by highlighting the selector used
+                in the failed keyword. If set to ``False``, will not highlight the
+                element.
+          - ``jsextension``: Path to JavaScript modules exposed as extra keywords. The
+                modules must be in CommonJS format; exported functions become keywords
+                and an ``fn.rfdoc`` string becomes a keyword's documentation. The
+                argument names ``page``, ``context``, ``browser``, ``logger`` and
+                ``playwright`` are filled in by the library rather than taken from the
+                keyword call. Can be a single path, a comma-separated list of paths or a
+                real list of strings. See
+                https://robotframework-browser.org/docs/extending/javascript-extensions
+          - ``language``: Defines language which is used to translate keyword names and
+                documentation.
+          - ``playwright_process_host``: Hostname / Host address which should be used
+                when spawning the Playwright process. Defaults to 127.0.0.1.
+          - ``playwright_process_port``: Experimental reusing of playwright process.
+                ``playwright_process_port`` is preferred over environment variable
+                ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same
+                node process` for more details.
+          - ``plugins``: Allows extending the Browser library with external Python
+                classes, which can add keywords and modify some internal behaviour
+                without forking the library. Can be a single class/module, a
+                comma-separated list or a real list of strings. See
+                https://robotframework-browser.org/docs/extending/python-plugins
+          - ``retry_assertions_for``: Timeout for retrying assertions on keywords before
+                failing the keywords. This timeout starts counting from the first
+                failure. Global ``timeout`` will still be in effect. This allows
+                stopping execution faster to assertion failure when element is found
+                fast.
+          - ``run_on_failure``: Sets the keyword to execute in case of a failing Browser
+                keyword. It can be the name of any keyword. If the keyword has arguments
+                those must be separated with two spaces for example ``My keyword \\ arg1
+                \\ arg2``. If no extra action should be done after a failure, set it to
+                ``None`` or any other robot falsy value. Run on failure is not applied
+                when library methods are executed directly from Python.
+          - ``selector_prefix``: Prefix for all selectors. This is useful when you need
+                to use add an iframe selector before each selector.
+          - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
+                the keyword name and arguments before the keyword is executed at the
+                bottom of the page. If set to ``False``, will not show the banner. If
+                set to None, which is the default, will show the banner only if the
+                presenter mode is enabled. `Get Page Source` and `Take Screenshot` will
+                not show the banner, because that could negatively affect your test
+                cases/tasks. This feature may be super helpful when you are debugging
+                your tests and using tracing from `New Context` or `Video recording`
+                features.
+          - ``strict``: If keyword selector points multiple elements and keywords should
+                interact with one element, keyword will fail if ``strict`` mode is true.
+                Strict mode can be changed individually in keywords or by ``Set Strict
+                Mode`` keyword.
+          - ``timeout``: Timeout for keywords that operate on elements. The keywords
+                will wait for this time for the element to appear into the page.
+                Defaults to "10s" => 10 seconds.
+          - ``tracing_group_mode``: Defines how Robot Framework keyword calls are logged
+                in Playwright trace log. Default is ``Full``.
+
         """
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
