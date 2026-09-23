@@ -111,7 +111,7 @@ class Cookie(LibraryComponent):
           - ``path``: Given path for the cookie. Defaults to None. Either ``url`` or the
                 ``domain`` / ``path`` pair must be set, but not both.
           - ``expires``: Given expiry for the cookie. Can be a date, a unix time or a
-                datetime object. Supports the same formats as the 
+                datetime object. Supports the same formats as the
                 [http://robotframework.org/robotframework/latest/libraries/DateTime.html | DateTime]
                 library or an epoch timestamp. Example: ``2027-09-28 16:21:35``
           - ``httpOnly``: Sets the httpOnly token.
