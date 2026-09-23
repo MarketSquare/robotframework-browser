@@ -138,8 +138,8 @@ class WebAppState(LibraryComponent):
 
         *Arguments:*
           - ``frame_selector``: If this selector points to an element inside an iframe,
-                the LocalStorage of that frame is used. Example: ``iframe[name="test"]
-                >>> body``
+            the LocalStorage of that frame is used.
+            Example: ``iframe[name="test"] >>> body``
 
         Example:
         | `LocalStorage Set Item`    Foo    bar
@@ -254,8 +254,9 @@ class WebAppState(LibraryComponent):
 
         *Arguments:*
           - ``frame_selector``: If this selector points to an element inside an iframe,
-                the SessionStorage of that frame is used. Example: ``iframe[name="test"]
-                >>> body``
+            the SessionStorage of that frame is used.
+
+            Example: ``iframe[name="test"] >>> body``
 
         Example:
         | `SessionStorage Set Item`    mykey3    myvalue3

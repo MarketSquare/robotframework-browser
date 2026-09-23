@@ -81,7 +81,7 @@ class PlaywrightState(LibraryComponent):
         pause_on_failure: bool = True,
         bypassCSP=True,
     ):
-        """Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
+        """*DEPRECATED* Opens a new browser instance. Use this keyword for quick experiments or debugging sessions.
 
         Use `New Page` directly instead of `Open Browser` for production and automated execution.
         See `Browser, Context and Page` for more information about Browser and related concepts.
@@ -769,8 +769,8 @@ class PlaywrightState(LibraryComponent):
                 keyword fails. Relative paths are resolved against the current working
                 directory.
           - ``timezoneId``: Changes the timezone of the context. See
-                [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt
-                | ICU`s metaZones.txt] for a list of supported timezone IDs.
+                [https://source.chromium.org/chromium/chromium/src/+/master:third_party/icu/source/data/misc/metaZones.txt | ICU metaZones.txt]
+                for a list of supported timezone IDs.
           - ``tracing``: Boolean ``True`` (recommendation) or file path or directory
                 where the [https://playwright.dev/docs/api/class-tracing/ | tracing]
                 file is saved. The string ``{contextid}`` will be replaced with the
@@ -914,10 +914,10 @@ class PlaywrightState(LibraryComponent):
                 instead.
           - ``browser``: Browser type to use. Default is Chromium.
           - ``headless``: Whether to run browser in headless mode. Defaults to ``True``.
-          - ``other``: Please see `New Browser`, `New Context` and `New Page` for more
-                information about the other arguments.
-          - ``arguments``: Please see `New Browser`, `New Context` and `New Page` for
-                more information about the other arguments.
+
+
+        ``other Arguments``: Please see `New Browser`, `New Context` and `New Page` for more
+        information about the other arguments.
 
         If you want to use extensions you need to download the extension as a .zip, enable loading the extension, and load the extensions using chromium arguments like below. Extensions only work with chromium and with a headful browser.
 

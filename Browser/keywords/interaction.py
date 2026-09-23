@@ -1383,7 +1383,6 @@ class Interaction(LibraryComponent):
         *Arguments:*
           - ``selector``: Identifies the element whose center is the start-point.
           - ``x``: Coordinates relative to the center of the element's bounding box.
-          - ``&``: Coordinates relative to the center of the element's bounding box.
           - ``y``: Coordinates relative to the center of the element's bounding box.
           - ``steps``: Number of intermediate steps for the mouse event. Often it is
                 necessary to send more than one intermediate event to get the desired
@@ -1424,9 +1423,8 @@ class Interaction(LibraryComponent):
         The virtual mouse is left on the specified coordinates.
 
         *Arguments:*
-          - ``x``: Absolute coordinates starting at the top left of the page.
-          - ``&``: Absolute coordinates starting at the top left of the page.
-          - ``y``: Absolute coordinates starting at the top left of the page.
+          - ``x``: Absolute coordinate starting at the left border of the page.
+          - ``y``: Absolute coordinate down starting at the top border of the page.
           - ``steps``: Number of intermediate steps for the mouse event. Often it is
                 necessary to send more than one intermediate event to get the desired
                 result. Defaults to 1.
@@ -1447,9 +1445,8 @@ class Interaction(LibraryComponent):
         """Simulates the user rotation of a mouse wheel.
 
         *Arguments:*
-          - ``deltaX``: Pixels that are scrolled horizontally & vertically.
-          - ``&``: Pixels that are scrolled horizontally & vertically.
-          - ``deltaY``: Pixels that are scrolled horizontally & vertically.
+          - ``deltaX``: Pixels that are scrolled horizontally.
+          - ``deltaY``: Pixels that are scrolled vertically.
 
         Example:
         | # Before doing a mouse wheel interaction. A mouse needs to be positioned on the browser window.
