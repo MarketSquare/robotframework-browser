@@ -427,8 +427,7 @@ class Control(LibraryComponent):
         *Arguments:*
           - ``timeout``: The timeout is set for the current Playwright context and for
                 new contexts. Supports Robot Framework
-                [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format
-                | time format].
+                [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format | time format].
           - ``scope``: Scope defines the live time of that setting. Available values are
                 ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
                 more details.
