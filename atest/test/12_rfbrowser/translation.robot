@@ -28,7 +28,7 @@ Create Translation File With Python Plugin
     Should Start With    ${inro}[doc]    Browser library is a browser automation library
     Should Be Equal    ${inro}[name]    __intro__
     VAR    ${init} =    ${data}[__init__]
-    Should Start With    ${init}[doc]    Browser library can be taken into use with optional arguments:
+    Should Start With    ${init}[doc]    Browser library can be taken into use with optional arguments.
     Should Be Equal    ${init}[name]    __init__
     Should Not Be Equal    ${init}[doc]    ${inro}[doc]
     [Teardown]    Remove File    ${OUTPUT_DIR}/translation.json
