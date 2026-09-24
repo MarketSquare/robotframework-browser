@@ -154,19 +154,19 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | --- | ---: | --- |
 | `github.py` | 290 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
-| `parse.py` | 620 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 569 | Drives the two above into the database, one leg at a time, each contained. |
-| `db.py` | 106 | Opens the database, adds columns a database predating them has not got. |
-| `schema.sql` | 142 | The tables, with the reasoning for each column beside it. |
+| `ingest.py` | 586 | Drives the two above into the database, one leg at a time, each contained. |
+| `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
+| `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1189 | Every question asked of the database, and nothing else. |
-| `report.py` | 1113 | The Report, and what the numbers mean. |
+| `queries.py` | 1195 | Every question asked of the database, and nothing else. |
+| `report.py` | 1119 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `render_html.py` | 1219 | The page. |
-| `render_json.py` | 285 | The document. |
+| `render_html.py` | 1227 | The page. |
+| `render_json.py` | 287 | The document. |
 
 ## Layout
 
@@ -184,18 +184,20 @@ ci_failures/             # gitignored, at the repository root
 ├── ci_report.html       # the page, when you last rendered one
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 195 tests, about a second
+utest/test_tool_ci_failures.py   # 229 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything
 
-**1. There is no re-parse — except for five columns.** Nothing is kept but the
+**1. There is no re-parse — except for six columns.** Nothing is kept but the
 parsed rows, so changing *what* is read out of `output.xml` (the log-line rule,
 the screenshot cap, a new column) means deleting the database and downloading
-every artifact again. Four derived columns are the exception, because their
+every artifact again. Six derived columns are the exception, because their
 source is itself stored, and `inv ci-recompute` re-derives them with no network:
 `error_signature` from the message, `keyword_kind` / `keyword_source` /
-`keyword_lineno` from the keyword owner, and `install` from the artifact name.
+`keyword_lineno` from the keyword owner, `install` from the artifact name, and
+`platform` from the stored `os_release` (a full string that used to be stored in
+`platform` itself is moved there first).
 
 Note what "downloading every artifact again" buys, though: everything younger
 than 90 days and nothing older. A re-parse late in the database's life is not
@@ -217,12 +219,13 @@ reaches both renderings or joins that list.
 
 ## Where the rest of it is
 
-- **`CONTEXT.md`** — the vocabulary. Run, Leg, Attempt, Result, Subject, Group,
-  Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause,
+- **`CONTEXT.md`** — the vocabulary. Run, Leg, Install, Platform, OS Release,
+  Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause,
   Snapshot, Adjacent Run, Inconclusive Zero. Worth reading first; the code uses
   these words precisely and means something by each.
-- **`docs/adr/`** — why the Report is typed rather than a dict, and why only
-  runs where nobody was changing anything are ingested.
+- **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
+  where nobody was changing anything are ingested, why every test artifact of a
+  run is a Leg, and why a Leg's Platform is only its operating system.
 - **Module docstrings** — most of the real reasoning lives there, next to the
   code it explains, including the measurements behind several decisions and the
   wrong answers a few of them replaced.

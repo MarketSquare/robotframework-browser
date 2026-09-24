@@ -49,7 +49,13 @@ CREATE TABLE IF NOT EXISTS leg (
     -- How the library reached the machine: source | wheel | batteries | docker.
     -- Read from the artifact name, which is the one thing every job's upload
     -- has and the thing that selected the artifact; see `legs.py`.
-    install        TEXT
+    install        TEXT,
+    -- The full `platform.platform()` string, e.g.
+    -- "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39", where output.xml has it.
+    -- `platform` is only the operating system, because this string changes
+    -- with the Python version and with every runner image update, and counting
+    -- by it split one runner into several. Kept as detail on a failure.
+    os_release     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS test_result (

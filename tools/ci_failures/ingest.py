@@ -19,7 +19,7 @@ from pathlib import Path
 from robot.errors import DataError
 
 from . import github, locate
-from .db import connect, fill_installs, ingested_artifact_ids
+from .db import connect, fill_installs, fill_platforms, ingested_artifact_ids
 from .legs import install_of
 from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
@@ -84,8 +84,8 @@ def _insert_leg(
     cursor = connection.execute(
         "INSERT INTO leg (run_id, artifact_id, artifact_name, artifact_url, "
         "python_version, rf_version, platform, node_version, generated_at, "
-        "ingested_at, attempt, executors, node_process, install) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "ingested_at, attempt, executors, node_process, install, os_release) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             artifact.id,
@@ -101,6 +101,7 @@ def _insert_leg(
             info.executors,
             info.node_process,
             install_of(artifact.name),
+            info.os_release,
         ),
     )
     # `lastrowid` is Optional in the stubs; an INSERT that returned no
@@ -525,6 +526,21 @@ def recompute_installs(db_path: Path, report: Callable[[str], None] = print) -> 
     connection.commit()
     connection.close()
     report(f"recomputed the install of {legs} leg(s)")
+    return legs
+
+
+def recompute_platforms(db_path: Path, report: Callable[[str], None] = print) -> int:
+    """Reads every Leg's platform as its operating system again, keeping the
+    full string in `os_release`.
+
+    Worth running after changing `parse.platform_of`: what it reads is in
+    the database, so a Leg's platform never needs its artifact again.
+    """
+    connection = connect(db_path)
+    legs = fill_platforms(connection)
+    connection.commit()
+    connection.close()
+    report(f"recomputed the platform of {legs} leg(s)")
     return legs
 
 

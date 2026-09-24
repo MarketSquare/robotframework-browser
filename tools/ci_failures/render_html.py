@@ -717,6 +717,37 @@ def _evidence_html(occurrence: Occurrence) -> str:
     )
 
 
+def _occurrence_tags(occurrence: Occurrence) -> list[str]:
+    """The small facts about one execution that sit beside its leg."""
+    tags = []
+    if occurrence.attempt and occurrence.attempt > 1:
+        tags.append(f'<span class="otag">attempt {occurrence.attempt}</span>')
+    if occurrence.tests_marked:
+        tags.append(f'<span class="otag">marked {occurrence.tests_marked}</span>')
+    if occurrence.os_release:
+        tags.append(f'<span class="otag">{_e(occurrence.os_release)}</span>')
+    for label, neighbour in (
+        ("before", occurrence.previous_run_on_this_leg),
+        ("after", occurrence.next_run_on_this_leg),
+    ):
+        if not neighbour:
+            continue
+        bad = " is-bad" if neighbour.outcome in Outcome.BAD else ""
+        tags.append(f'<span class="otag{bad}">{label} {_e(neighbour.outcome)}</span>')
+    if occurrence.retry:
+        tags.append(
+            '<span class="otag is-rerun">re-run passed</span>'
+            if occurrence.retry.passed_on_another_attempt
+            else '<span class="otag is-bad">re-run failed again</span>'
+        )
+    if occurrence.artifact_url:
+        tags.append(
+            f'<a class="evidence" href="{_e(occurrence.artifact_url)}">'
+            "artifact &rarr;</a>"
+        )
+    return tags
+
+
 def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
     """Each individual failure, and what surrounded it.
 
@@ -741,32 +772,7 @@ def _occurrences_html(occurrences: tuple[Occurrence, ...]) -> str:
         return ""
     rows = []
     for occurrence in occurrences[:SHOWN_OCCURRENCES]:
-        tags = []
-        if occurrence.attempt and occurrence.attempt > 1:
-            tags.append(f'<span class="otag">attempt {occurrence.attempt}</span>')
-        if occurrence.tests_marked:
-            tags.append(f'<span class="otag">marked {occurrence.tests_marked}</span>')
-        for label, neighbour in (
-            ("before", occurrence.previous_run_on_this_leg),
-            ("after", occurrence.next_run_on_this_leg),
-        ):
-            if not neighbour:
-                continue
-            bad = " is-bad" if neighbour.outcome in Outcome.BAD else ""
-            tags.append(
-                f'<span class="otag{bad}">{label} {_e(neighbour.outcome)}</span>'
-            )
-        if occurrence.retry:
-            tags.append(
-                '<span class="otag is-rerun">re-run passed</span>'
-                if occurrence.retry.passed_on_another_attempt
-                else '<span class="otag is-bad">re-run failed again</span>'
-            )
-        if occurrence.artifact_url:
-            tags.append(
-                f'<a class="evidence" href="{_e(occurrence.artifact_url)}">'
-                "artifact &rarr;</a>"
-            )
+        tags = _occurrence_tags(occurrence)
         also = ""
         if occurrence.also_failed_in_this_leg:
             named = occurrence.also_failed_in_this_leg[:SHOWN_CO_FAILURES]

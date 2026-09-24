@@ -110,6 +110,7 @@ def _occurrence(occurrence: Occurrence, *, fixture: bool) -> dict:
         "rf": occurrence.rf,
         "node": occurrence.node,
         "install": occurrence.install,
+        "os_release": occurrence.os_release,
         "leg": occurrence.leg,
         "attempt": occurrence.attempt,
         "executors": occurrence.executors,

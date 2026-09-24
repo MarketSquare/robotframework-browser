@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from .legs import install_of
+from .parse import platform_of
 
 _SCHEMA = Path(__file__).parent / "schema.sql"
 
@@ -18,15 +19,18 @@ _SCHEMA = Path(__file__).parent / "schema.sql"
 # out of output.xml and cannot be backfilled at all: a leg ingested before the
 # metadata reached CI carries neither, permanently, and they stay NULL rather
 # than being invented. `install` is filled in the moment it is added, from the
-# artifact name every leg already has; see `fill_installs`. Adding a column still
-# means editing this and `schema.sql` both - here for the databases that exist,
-# there for the ones that do not - and nothing checks that the two agree.
+# artifact name every leg already has; see `fill_installs`. `os_release` is
+# moved out of `platform` the moment it is added; see `fill_platforms`. Adding a
+# column still means editing this and `schema.sql` both - here for the databases
+# that exist, there for the ones that do not - and nothing checks that the two
+# agree.
 _ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "leg": {
         "attempt": "INTEGER",
         "executors": "INTEGER",
         "node_process": "TEXT",
         "install": "TEXT",
+        "os_release": "TEXT",
     },
 }
 
@@ -69,6 +73,30 @@ def fill_installs(connection: sqlite3.Connection) -> int:
     return len(legs)
 
 
+def fill_platforms(connection: sqlite3.Connection) -> int:
+    """Every stored Leg's platform as its operating system, and the full string
+    it used to be stored as kept in `os_release`.
+
+    Moved rather than rewritten: before `os_release` existed, `platform` was the
+    only copy of that string. Safe to run again - a Leg whose `os_release` is
+    already set keeps it, and its platform is read from it afresh. Returns how
+    many Legs it read.
+    """
+    legs = connection.execute("SELECT id, platform, os_release FROM leg").fetchall()
+    updates = []
+    for row in legs:
+        release = row["os_release"]
+        if release is None and platform_of(row["platform"]) != row["platform"]:
+            release = row["platform"]
+        # From the full string where there is one: `platform` is only what an
+        # earlier rule made of it, and a changed rule has to see the original.
+        updates.append((platform_of(release or row["platform"]), release, row["id"]))
+    connection.executemany(
+        "UPDATE leg SET platform = ?, os_release = ? WHERE id = ?", updates
+    )
+    return len(legs)
+
+
 def connect(db_path: Path) -> sqlite3.Connection:
     """Opens the database, creating it and its schema if it is not there yet."""
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -84,8 +112,11 @@ def connect(db_path: Path) -> sqlite3.Connection:
     # Safe in the other order: on a database that does not exist yet there are
     # no tables to read, `_add_missing_columns` finds nothing and returns, and
     # `executescript` then creates everything including the indexes.
-    if ("leg", "install") in _add_missing_columns(connection):
+    added = _add_missing_columns(connection)
+    if ("leg", "install") in added:
         fill_installs(connection)
+    if ("leg", "os_release") in added:
+        fill_platforms(connection)
     connection.executescript(_SCHEMA.read_text(encoding="utf-8"))
     connection.commit()
     return connection
