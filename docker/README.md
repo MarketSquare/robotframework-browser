@@ -43,7 +43,7 @@ docker build --no-cache -t tidii --file Dockerfile.latest_release . > out.txt 2>
 
 Run test with locally build image
 ```bash
-docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot --outputdir /test/output /home/pwuser/test"
+docker run -v ./atest/:/home/pwuser/atest  -t tidii:latest bash -c "robot --outputdir /test/output /home/pwuser/atest/test"
 ````
 
 To start bash in container
@@ -65,7 +65,7 @@ to
 4. Run test with command below (starts the test app inside the container so `localhost:7272` is reachable):
 ```bash
 docker run \
-  -v ./atest/:/home/pwuser/test \
+  -v ./atest/:/home/pwuser/atest \
   -v ./node/:/home/pwuser/node \
   -t tidii:latest \
   bash -lc "
@@ -75,7 +75,7 @@ docker run \
       sleep 1
     done
     robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug \
-      --outputdir /home/pwuser/output /home/pwuser/test
+      --outputdir /home/pwuser/output /home/pwuser/atest/test
   "
 ```
 

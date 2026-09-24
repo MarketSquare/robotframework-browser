@@ -74,6 +74,7 @@ def _rate(rate: Rate, *, measurable: bool) -> dict:
         "python": rate.python,
         "rf": rate.rf,
         "node": rate.node,
+        "install": rate.install,
         "ran": rate.ran,
         "failed": rate.failed,
     }
@@ -108,6 +109,7 @@ def _occurrence(occurrence: Occurrence, *, fixture: bool) -> dict:
         "python": occurrence.python,
         "rf": occurrence.rf,
         "node": occurrence.node,
+        "install": occurrence.install,
         "leg": occurrence.leg,
         "attempt": occurrence.attempt,
         "executors": occurrence.executors,
@@ -262,6 +264,7 @@ def document(report: Report) -> dict:
         "platforms": [
             {
                 "platform": row.platform,
+                "install": row.install,
                 "legs": row.legs,
                 "failures": row.failures,
                 "per_leg": row.per_leg,

@@ -45,7 +45,11 @@ CREATE TABLE IF NOT EXISTS leg (
     -- per-attempt artifact endpoint, so it is resolved from when the artifact
     -- was created; see `github.with_attempts`. NULL means not yet resolved,
     -- never attempt 1 - `backfill_attempts` fills those in.
-    attempt        INTEGER
+    attempt        INTEGER,
+    -- How the library reached the machine: source | wheel | batteries | docker.
+    -- Read from the artifact name, which is the one thing every job's upload
+    -- has and the thing that selected the artifact; see `legs.py`.
+    install        TEXT
 );
 
 CREATE TABLE IF NOT EXISTS test_result (
@@ -120,11 +124,12 @@ CREATE INDEX IF NOT EXISTS idx_result_name   ON test_result(longname);
 CREATE INDEX IF NOT EXISTS idx_result_status ON test_result(status);
 CREATE INDEX IF NOT EXISTS idx_result_group  ON test_result(longname, error_signature);
 
--- An artifact that came down and turned out to hold no output.xml. There is
--- nothing to ingest and there never will be, so it is remembered rather than
--- fetched again on every future run: without this the incremental guarantee in
--- `ingest.py` did not hold for it, and it was counted in no total either, so it
--- cost ten megabytes a time and said nothing.
+-- An artifact that came down whole and turned out to hold nothing to ingest: no
+-- output.xml, one cut off mid-element by a job's timeout, or one whose root suite
+-- is not `atest/test`. There is nothing to ingest and there never will be, so it
+-- is remembered rather than fetched again on every future run: without this the
+-- incremental guarantee in `ingest.py` did not hold for it, and it was counted in
+-- no total either, so it cost ten megabytes a time and said nothing.
 --
 -- Only for what the artifact *is*. An artifact that would not download, or a
 -- zip that arrived truncated, is a fact about the network and gets retried.

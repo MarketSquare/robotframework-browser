@@ -2110,7 +2110,7 @@ def ci_recompute(c, db=None, what="all"):
 
     There is no re-parse: nothing is kept but the parsed rows, so changing what
     is read out of output.xml costs the whole window again. That is not true of
-    a derived column whose source is itself in the database, and there are four
+    a derived column whose source is itself in the database, and there are five
     of those - none of these needs the network or the artifacts.
 
     Args:
@@ -2119,14 +2119,17 @@ def ci_recompute(c, db=None, what="all"):
             `locations` after moving a keyword, after changing `locate._ROOTS`,
             or after an ingest that reported a library it could not import -
             that answer is cached for the whole run, so one failed import
-            leaves three columns null on every row it wrote. `all` does both.
+            leaves three columns null on every row it wrote; `installs` after
+            changing the artifact name patterns in `legs.py`. `all` does
+            every one.
     """
     from tools.ci_failures.ingest import (
+        recompute_installs,
         recompute_keyword_locations,
         recompute_signatures,
     )
 
-    known = {"all", "signatures", "locations"}
+    known = {"all", "signatures", "locations", "installs"}
     if what not in known:
         raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
     db_path = Path(db) if db else CI_FAILURES_DB
@@ -2137,3 +2140,5 @@ def ci_recompute(c, db=None, what="all"):
         recompute_signatures(db_path)
     if what in ("all", "locations"):
         recompute_keyword_locations(db_path)
+    if what in ("all", "installs"):
+        recompute_installs(db_path)
