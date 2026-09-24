@@ -138,6 +138,28 @@ Suite Level Cleanup
 """
 
 
+def leg_table_without(db: Path, column: str) -> None:
+    """The `leg` table as a database from before `column` was added had it.
+
+    Rebuilt rather than `DROP COLUMN`: older SQLite (3.40 and 3.45 do, 3.53 does
+    not) rewrites the table wrongly when a comment precedes the dropped column,
+    as every commented column in `schema.sql` does.
+    """
+    with closing(sqlite3.connect(db)) as connection:
+        kept = [
+            f"{row[1]} {row[2]}"
+            for row in connection.execute("PRAGMA table_info(leg)")
+            if row[1] != column
+        ]
+        names = ", ".join(definition.split()[0] for definition in kept)
+        connection.executescript(
+            f"CREATE TABLE old_leg ({', '.join(kept)});"
+            f"INSERT INTO old_leg SELECT {names} FROM leg;"
+            "DROP TABLE leg;"
+            "ALTER TABLE old_leg RENAME TO leg;"
+        )
+
+
 def one_row(db: Path, sql: str):
     """One row, with the connection closed behind it."""
     connection = connect_db(db)
@@ -325,7 +347,8 @@ class TestParse:
         info, _ = parse(output_xml)
 
         assert info.node_version == "v24.15.0"
-        assert info.platform == "Linux-6.8-x86_64"
+        assert info.platform == "linux"
+        assert info.os_release == "Linux-6.8-x86_64"
         assert info.python_version
         assert info.rf_version
 
@@ -335,6 +358,7 @@ class TestParse:
 
         assert info.node_version is None
         assert info.platform in {"linux", "darwin", "win32"}
+        assert info.os_release is None
         assert info.python_version
 
     def test_the_generator_is_read_from_the_file_not_off_the_result(self, tmp_path):
@@ -2169,7 +2193,8 @@ class TestWhichAttemptRanIt:
         connection = sqlite3.connect(db)
         connection.executescript(
             "CREATE TABLE leg (id INTEGER PRIMARY KEY, run_id INTEGER, "
-            "artifact_id INTEGER, artifact_name TEXT, ingested_at TEXT);"
+            "artifact_id INTEGER, artifact_name TEXT, platform TEXT, "
+            "ingested_at TEXT);"
         )
         connection.commit()
         connection.close()
@@ -3242,8 +3267,8 @@ class TestAddingAColumnToADatabaseThatExists:
         monkeypatch.setitem(db_module._ADDED_COLUMNS["leg"], "runner", "TEXT")
         schema.write_text(
             original.replace(
-                "    install        TEXT\n);",
-                "    install        TEXT,\n    runner         TEXT\n);",
+                "    os_release     TEXT\n);",
+                "    os_release     TEXT,\n    runner         TEXT\n);",
             )
             + "\nCREATE INDEX IF NOT EXISTS idx_leg_runner ON leg(runner);\n",
             encoding="utf-8",
@@ -4393,22 +4418,7 @@ class TestEveryTestArtifactOfARun:
         invented and nothing has to be downloaded again."""
         db = tmp_path / "ci.sqlite3"
         ingest.ingest(db, limit=5, report=lambda _: None)
-        # Rebuilt rather than `DROP COLUMN`: older SQLite (3.40 and 3.45 do,
-        # 3.53 does not) rewrites the table wrongly when a comment precedes the
-        # dropped column, as every commented column in `schema.sql` does.
-        with closing(sqlite3.connect(db)) as connection:
-            kept = [
-                f"{row[1]} {row[2]}"
-                for row in connection.execute("PRAGMA table_info(leg)")
-                if row[1] != "install"
-            ]
-            names = ", ".join(column.split()[0] for column in kept)
-            connection.executescript(
-                f"CREATE TABLE old_leg ({', '.join(kept)});"
-                f"INSERT INTO old_leg SELECT {names} FROM leg;"
-                "DROP TABLE leg;"
-                "ALTER TABLE old_leg RENAME TO leg;"
-            )
+        leg_table_without(db, "install")
 
         entry = self._failing_test(db)
 
@@ -4456,3 +4466,84 @@ class TestEveryTestArtifactOfARun:
             ("source", 2),
             ("wheel", 1),
         ]
+
+
+class TestOnePlatformPerOperatingSystem:
+    """`platform.platform()` names the same runner differently under each Python
+    version and after every runner image update, and it was stored in the same
+    column as the `sys.platform` the generator line gives. One runner read as up
+    to five platforms. See `docs/adr/0004-platform-is-the-operating-system.md`."""
+
+    @staticmethod
+    def _failing_test(db):
+        return next(
+            t
+            for t in build_json(db)["test_failures"]
+            if t["test"].endswith("Failing Test")
+        )
+
+    def test_failures_are_counted_by_platform_and_the_release_is_kept_on_each(
+        self, fake_ci, tmp_path
+    ):
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        entry = self._failing_test(db)
+
+        assert [r["platform"] for r in entry["rates"]] == ["linux"]
+        assert [o["platform"] for o in entry["occurrences"]] == ["linux"]
+        assert [o["os_release"] for o in entry["occurrences"]] == ["Linux-6.8-x86_64"]
+
+    def test_a_database_from_before_keeps_the_release_and_counts_by_platform(
+        self, fake_ci, tmp_path
+    ):
+        """What was stored as the platform is moved, not lost: it is the only
+        copy of it, and nothing has to be downloaded again."""
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+        leg_table_without(db, "os_release")
+        with closing(sqlite3.connect(db)) as connection:
+            connection.execute("UPDATE leg SET platform = 'Linux-6.8-x86_64'")
+            connection.commit()
+
+        entry = self._failing_test(db)
+
+        assert [r["platform"] for r in entry["rates"]] == ["linux"]
+        assert [o["os_release"] for o in entry["occurrences"]] == ["Linux-6.8-x86_64"]
+
+    def test_the_platform_is_recomputed_from_what_is_stored(self, fake_ci, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+        with closing(sqlite3.connect(db)) as connection:
+            connection.execute(
+                "UPDATE leg SET platform = 'Windows-10-10.0.26100-SP0', "
+                "os_release = NULL"
+            )
+            connection.commit()
+
+        recomputed = ingest.recompute_platforms(db, report=lambda _: None)
+
+        entry = self._failing_test(db)
+        assert recomputed == 1
+        assert [r["platform"] for r in entry["rates"]] == ["win32"]
+        assert [o["os_release"] for o in entry["occurrences"]] == [
+            "Windows-10-10.0.26100-SP0"
+        ]
+
+    def test_a_recompute_reads_the_release_rather_than_what_was_made_of_it(
+        self, fake_ci, tmp_path
+    ):
+        """Once migrated, `platform` holds only the reduced value. A changed rule
+        has to be applied to the full string or it can never change anything."""
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+        with closing(sqlite3.connect(db)) as connection:
+            connection.execute(
+                "UPDATE leg SET platform = 'linux', "
+                "os_release = 'macOS-26.6.2-arm64-arm-64bit'"
+            )
+            connection.commit()
+
+        ingest.recompute_platforms(db, report=lambda _: None)
+
+        assert [r["platform"] for r in self._failing_test(db)["rates"]] == ["darwin"]

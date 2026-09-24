@@ -345,6 +345,7 @@ class Occurrence:
     rf: str | None
     node: str | None
     install: str | None
+    os_release: str | None
     leg: str | None
     attempt: int | None
     executors: int | None
@@ -737,6 +738,7 @@ def _occurrence(
         rf=entry.rf_version,
         node=entry.node_version or None,
         install=entry.install,
+        os_release=entry.os_release,
         leg=leg_name(entry.artifact_name) if entry.artifact_name else None,
         attempt=entry.attempt,
         executors=entry.executors,

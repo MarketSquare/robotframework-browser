@@ -34,8 +34,21 @@ shards; the others each run a whole suite serially. `source` exists for historic
 from before there was a wheel to install, and is kept because it saves wall-clock time.
 _Avoid_: job (a job is what the workflow calls it, and jobs get renamed), kind, distribution
 
+**Platform**:
+The operating system a Leg ran on: `linux`, `win32` or `darwin`, and nothing finer. Not the
+processor architecture, which no Leg recorded before 2026-09-04 and which only two scheduled
+BrowserBatteries runners vary. Not the OS Release either, which moves under a runner that did not.
+_Avoid_: OS, runner (a runner is what the Leg's name shows, e.g. `macos-15-intel`)
+
+**OS Release**:
+The full string the suite recorded for the machine, e.g. `macOS-26.6.2-arm64-arm-64bit`. Detail
+for reading one Occurrence ("this began the day the runner image moved to 26.6.2"), never
+something failures are counted by: the same runner reports a different one under each Python
+version and after every image update.
+_Avoid_: platform, OS version
+
 **Configuration**:
-What a Leg ran on: its platform, Python, Robot Framework and Node versions, and its Install.
+What a Leg ran on: its Platform, Python, Robot Framework and Node versions, and its Install.
 Failures are counted per Configuration so that one failing only on, say, a wheel install or
 only on darwin shows as such rather than being diluted by the rest.
 _Avoid_: environment, setup, matrix point

@@ -131,6 +131,7 @@ class OccurrenceRow:
     rf_version: str | None
     node_version: str | None
     install: str | None
+    os_release: str | None
     artifact_name: str | None
     artifact_url: str | None
     attempt: int | None
@@ -421,7 +422,7 @@ def occurrences_by_test(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]:
                f.screenshots, f.screenshot_status,
                r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.install, l.artifact_name, l.artifact_url, l.attempt,
+               l.install, l.os_release, l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
         FROM test_failure f
         JOIN leg l ON l.id = f.leg_id
@@ -761,7 +762,7 @@ def occurrences_by_fixture(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]
                r.id AS run_id, r.head_sha, r.event, r.created_at,
                r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.install, l.artifact_name, l.artifact_url, l.attempt,
+               l.install, l.os_release, l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
         FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id

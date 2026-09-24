@@ -109,6 +109,9 @@ class LegInfo:
     # process. Both null for runs ingested from before the metadata reached CI.
     executors: int | None = None
     node_process: str | None = None
+    # The full `platform.platform()` string, when the suite recorded one. Why
+    # it is not the platform: see `os_release` in `schema.sql`.
+    os_release: str | None = None
     # The root suite's directory, relative to the repository. Every test's name
     # starts from here, so a Leg with a different root names every test
     # differently from every other Leg.
@@ -355,6 +358,24 @@ def generator_line(path: Path) -> str | None:
     return None
 
 
+# What `platform.platform()` starts with, as the `sys.platform` value the
+# generator line has always carried. The two had been stored side by side, so
+# one runner read as up to five platforms.
+_PLATFORMS = (("Linux-", "linux"), ("Windows-", "win32"), ("macOS-", "darwin"))
+
+
+def platform_of(platform: str | None) -> str | None:
+    """The operating system a Leg ran on, as `linux`, `win32` or `darwin`.
+
+    What failures are counted by. Anything this does not recognise comes back
+    unchanged rather than guessed at.
+    """
+    for prefix, name in _PLATFORMS:
+        if platform and platform.startswith(prefix):
+            return name
+    return platform
+
+
 def leg_info(result: Any, generator_string: str | None = None) -> LegInfo:
     """What output.xml says about the machine that produced it.
 
@@ -366,16 +387,20 @@ def leg_info(result: Any, generator_string: str | None = None) -> LegInfo:
         str(k).lower(): str(v) for k, v in (result.suite.metadata or {}).items()
     }
     generator = _GENERATOR.match(generator_string or "")
+    os_release = metadata.get("os")
     return LegInfo(
         python_version=metadata.get("python version")
         or (generator["python"] if generator else None),
         rf_version=metadata.get("robot framework version")
         or (generator["rf"] if generator else None),
-        platform=metadata.get("os") or (generator["platform"] if generator else None),
+        platform=platform_of(
+            os_release or (generator["platform"] if generator else None)
+        ),
         node_version=metadata.get("node version"),
         generated_at=metadata.get("generated"),
         executors=_as_int(metadata.get("executors")),
         node_process=metadata.get("node process"),
+        os_release=os_release,
         suite_source=repo_relative(getattr(result.suite, "source", None)),
     )
 
