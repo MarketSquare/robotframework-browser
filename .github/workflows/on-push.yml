@@ -596,7 +596,7 @@ jobs:
           uv pip install invoke robotframework-ghareports --python 3.14 --system
           set +e
           docker run \
-            -v ./atest/:/home/pwuser/test \
+            -v ./atest/:/home/pwuser/atest \
             -v ./node/:/home/pwuser/node \
             -t tidii:latest \
             bash -lc "
@@ -613,7 +613,7 @@ jobs:
                 cat /tmp/test-app.log
                 exit 1
               fi
-              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test
+              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
               robot_status=\$?
               kill \$app_pid || true
               wait \$app_pid 2>/dev/null || true

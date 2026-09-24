@@ -109,6 +109,10 @@ class LegInfo:
     # process. Both null for runs ingested from before the metadata reached CI.
     executors: int | None = None
     node_process: str | None = None
+    # The root suite's directory, relative to the repository. Every test's name
+    # starts from here, so a Leg with a different root names every test
+    # differently from every other Leg.
+    suite_source: str | None = None
 
 
 @dataclass
@@ -372,6 +376,7 @@ def leg_info(result: Any, generator_string: str | None = None) -> LegInfo:
         generated_at=metadata.get("generated"),
         executors=_as_int(metadata.get("executors")),
         node_process=metadata.get("node process"),
+        suite_source=repo_relative(getattr(result.suite, "source", None)),
     )
 
 

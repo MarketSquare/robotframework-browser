@@ -609,7 +609,7 @@ SHOWN_CO_FAILURES = 3
 
 def _configuration_label(rate: Rate) -> str:
     """Escaped here, because the separator between the parts is markup."""
-    parts = [rate.platform or "?"]
+    parts = [part for part in (rate.install, rate.platform or "?") if part]
     for label, value in (("rf", rate.rf), ("py", rate.python), ("node", rate.node)):
         if value:
             parts.append(f"{label} {value}")
@@ -1112,7 +1112,7 @@ def page(report: Report) -> str:
     busiest = max((p.per_leg for p in report.platforms), default=0)
     platform_rows = "".join(
         f"""      <div class="prow">
-        <span class="pname">{_e(p.platform)}</span>
+        <span class="pname">{_e(" · ".join(part for part in (p.install, p.platform) if part))}</span>
         <div class="ptrack"><div class="pfill" style="width: {(p.per_leg / busiest * 100) if busiest else 0:.1f}%"></div></div>
         <span class="pnum">{p.failures} in {p.legs} legs</span>
       </div>
@@ -1121,9 +1121,11 @@ def page(report: Report) -> str:
     )
     platform_section = (
         f"""  <section>
-    <h2>Failures per matrix leg, by platform</h2>
+    <h2>Failures per matrix leg, by platform and install</h2>
     <p class="section-note">Per leg, not in total: the matrix does not run the platforms an
-    equal number of times, so raw counts would describe the matrix rather than the platforms.</p>
+    equal number of times, so raw counts would describe the matrix rather than the platforms.
+    A source leg is one parallel shard and every other install runs a whole suite serially,
+    so the two are counted apart.</p>
     <div class="platforms">
 {platform_rows}    </div>
   </section>

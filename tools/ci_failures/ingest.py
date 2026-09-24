@@ -16,12 +16,20 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from robot.errors import DataError
+
 from . import github, locate
-from .db import connect, ingested_artifact_ids
+from .db import connect, fill_installs, ingested_artifact_ids
+from .legs import install_of
 from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
 
 OUTPUT_XML = "output.xml"
+
+# The root suite every Leg runs, which is what makes a test's name the same on
+# every Leg. The docker job ran `robot` one directory up for as long as it
+# existed, and every test it ran came out named as a different test.
+SUITE_ROOT = "atest/test"
 
 
 def _extract_output_xml(zip_path: Path, into: Path) -> Path | None:
@@ -76,8 +84,8 @@ def _insert_leg(
     cursor = connection.execute(
         "INSERT INTO leg (run_id, artifact_id, artifact_name, artifact_url, "
         "python_version, rf_version, platform, node_version, generated_at, "
-        "ingested_at, attempt, executors, node_process) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "ingested_at, attempt, executors, node_process, install) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.id,
             artifact.id,
@@ -92,6 +100,7 @@ def _insert_leg(
             artifact.attempt,
             info.executors,
             info.node_process,
+            install_of(artifact.name),
         ),
     )
     # `lastrowid` is Optional in the stubs; an INSERT that returned no
@@ -162,8 +171,10 @@ class Ingested:
     expired: int = 0
     skipped: int = 0
     unreachable: int = 0
-    #: Artifacts that came down and held no output.xml. Recorded so they are not
-    #: fetched again; see `unusable_artifact` in `schema.sql`.
+    #: Artifacts that came down whole and hold nothing to ingest: no output.xml,
+    #: one that does not parse, or one whose root suite is not `SUITE_ROOT`.
+    #: Recorded so they are not fetched again; see `unusable_artifact` in
+    #: `schema.sql`.
     unusable: int = 0
     #: Runs whose artifact listing could not be read. Nothing was lost - they
     #: are picked up next time - but the count says the window is incomplete.
@@ -184,7 +195,7 @@ class Ingested:
         return (
             f"Ingested {self.runs} run(s), {self.legs} leg(s), {self.tests} results, "
             f"{self.failures} failures. {self.skipped} run(s) already complete, "
-            f"{self.expired} artifact(s) expired, {self.unusable} without output.xml, "
+            f"{self.expired} artifact(s) expired, {self.unusable} unusable, "
             f"{self.unreachable} could not be downloaded, "
             f"{self.unlisted} run(s) could not be listed.{disagreed}"
         )
@@ -245,6 +256,14 @@ def _ingest_legs(
     report: Callable[[str], None],
 ) -> None:
     """Every Leg of one Run, each contained so one bad artifact costs one Leg."""
+
+    def refuse(artifact: github.Artifact, reason: str) -> None:
+        _mark_unusable(connection, run, artifact, reason)
+        connection.commit()
+        already.add(artifact.id)
+        totals["unusable"] += 1
+        report(f"        {reason} - will not be fetched again")
+
     for number, artifact in enumerate(pending, start=1):
         # Said before the download rather than after it. A leg is about ten
         # megabytes and the line used to appear only once it was parsed and
@@ -255,17 +274,23 @@ def _ingest_legs(
                 work = Path(work_dir)
                 zip_path = github.download_artifact(artifact.id, work / "artifact.zip")
                 output_xml = _extract_output_xml(zip_path, work / "unpacked")
+                # Each of these is a fact about the artifact, not about the
+                # network, so it is remembered. They used to be re-downloaded on
+                # every future ingest and counted in nothing.
                 if output_xml is None:
-                    # A fact about the artifact, not about the network, so
-                    # it is remembered. It used to be re-downloaded on every
-                    # future ingest and counted in nothing.
-                    _mark_unusable(connection, run, artifact, "no output.xml")
-                    connection.commit()
-                    already.add(artifact.id)
-                    totals["unusable"] += 1
-                    report("        no output.xml - will not be fetched again")
+                    refuse(artifact, "no output.xml")
                     continue
-                info, results = parse(output_xml)
+                try:
+                    info, results = parse(output_xml)
+                except DataError as error:
+                    # A job killed by its timeout leaves a whole zip with an
+                    # output.xml that stops mid-element.
+                    said = str(error).replace(str(output_xml), OUTPUT_XML)
+                    refuse(artifact, f"output.xml does not parse: {said}")
+                    continue
+                if info.suite_source != SUITE_ROOT:
+                    refuse(artifact, f"unexpected suite layout: {info.suite_source}")
+                    continue
                 leg_id = _insert_leg(connection, run, artifact, info)
                 tests, failures = _insert_results(connection, leg_id, results)
         except Exception as error:
@@ -487,6 +512,20 @@ def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -
     connection.close()
     report(f"recomputed {len(rows)} signature(s)")
     return len(rows)
+
+
+def recompute_installs(db_path: Path, report: Callable[[str], None] = print) -> int:
+    """Reads every Leg's Install from its stored artifact name again.
+
+    Worth running after changing the patterns in `legs.py`: the name is in the
+    database, so a Leg's Install never needs its artifact again.
+    """
+    connection = connect(db_path)
+    legs = fill_installs(connection)
+    connection.commit()
+    connection.close()
+    report(f"recomputed the install of {legs} leg(s)")
+    return legs
 
 
 def recompute_keyword_locations(

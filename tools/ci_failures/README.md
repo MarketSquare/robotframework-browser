@@ -105,11 +105,16 @@ flowchart TB
     class DB store
 ```
 
-Downloads one artifact at a time, reads `output.xml` out of it, and throws the
-zip away. Nothing but the parsed rows is kept — the artifact URL is stored so
+Every job of `on-push.yml` that runs the acceptance suite uploads a Leg: the
+parallel shards of `testing` and the serial whole-suite runs of the clean install,
+BrowserBatteries and docker checks, each recorded with its **Install**
+(`legs.py`; ADR `0003`). Downloads one artifact at a time, reads `output.xml`
+out of it, and throws the zip away. Nothing but the parsed rows is kept — the artifact URL is stored so
 screenshots, traces and `playwright-log.txt` can be fetched later for a failure
 that turns out to deserve it. One artifact that will not download, or will not
-unzip, or will not parse, costs that leg and nothing else.
+unzip, or will not parse, costs that leg and nothing else. One that came down
+whole and cannot be used — no `output.xml`, one cut off by a job's timeout, or a
+root suite other than `atest/test` — is remembered and never fetched again.
 
 `locate.py` is the one part that reads your working copy rather than the
 artifact: `output.xml` says which library owns a failing keyword but not where
@@ -147,20 +152,21 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 
 | file | lines | what it is |
 | --- | ---: | --- |
-| `github.py` | 297 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
-| `parse.py` | 615 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `github.py` | 290 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
+| `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
+| `parse.py` | 620 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 531 | Drives the two above into the database, one leg at a time, each contained. |
-| `db.py` | 83 | Opens the database, adds columns a database predating them has not got. |
-| `schema.sql` | 137 | The tables, with the reasoning for each column beside it. |
+| `ingest.py` | 569 | Drives the two above into the database, one leg at a time, each contained. |
+| `db.py` | 106 | Opens the database, adds columns a database predating them has not got. |
+| `schema.sql` | 142 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1183 | Every question asked of the database, and nothing else. |
-| `report.py` | 1120 | The Report, and what the numbers mean. |
+| `queries.py` | 1189 | Every question asked of the database, and nothing else. |
+| `report.py` | 1113 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `render_html.py` | 1219 | The page. |
-| `render_json.py` | 283 | The document. |
+| `render_json.py` | 285 | The document. |
 
 ## Layout
 
@@ -183,13 +189,13 @@ utest/test_tool_ci_failures.py   # 195 tests, about a second
 
 ## Three rules worth knowing before you change anything
 
-**1. There is no re-parse — except for four columns.** Nothing is kept but the
+**1. There is no re-parse — except for five columns.** Nothing is kept but the
 parsed rows, so changing *what* is read out of `output.xml` (the log-line rule,
 the screenshot cap, a new column) means deleting the database and downloading
 every artifact again. Four derived columns are the exception, because their
 source is itself stored, and `inv ci-recompute` re-derives them with no network:
-`error_signature` from the message, and `keyword_kind` / `keyword_source` /
-`keyword_lineno` from the keyword owner.
+`error_signature` from the message, `keyword_kind` / `keyword_source` /
+`keyword_lineno` from the keyword owner, and `install` from the artifact name.
 
 Note what "downloading every artifact again" buys, though: everything younger
 than 90 days and nothing older. A re-parse late in the database's life is not

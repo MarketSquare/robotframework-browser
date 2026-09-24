@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import reading
 from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
+from .legs import leg_name
 from .parse import screenshot_key
 from .queries import (
     NOTHING_AROUND,
@@ -181,9 +182,11 @@ ABOUT = {
         "suite, and the occurrence count of a raw message counts legs too."
     ),
     "failures_per_leg": (
-        "'platforms' counts failures per matrix leg, not in total. The matrix does "
-        "not run the platforms an equal number of times, so a raw count describes "
-        "the matrix rather than the platforms."
+        "'platforms' counts failures per matrix leg, not in total, for each "
+        "platform and Install. The matrix does not run the platforms an equal "
+        "number of times, so a raw count describes the matrix rather than the "
+        "platforms; and a 'source' leg is one parallel shard where every other "
+        "Install runs a whole suite serially, so their legs are counted apart."
     ),
     "latest_run": (
         "'window.latest_run' is the newest run in the window and how many "
@@ -272,6 +275,7 @@ class Rate:
     python: str | None
     rf: str | None
     node: str | None
+    install: str | None
     ran: int
     failed: int
     zero_is_inconclusive: InconclusiveZero | None = None
@@ -340,6 +344,7 @@ class Occurrence:
     python: str | None
     rf: str | None
     node: str | None
+    install: str | None
     leg: str | None
     attempt: int | None
     executors: int | None
@@ -472,10 +477,12 @@ class FixtureEntry:
 
 @dataclass(frozen=True)
 class PlatformRow:
-    """Failures per matrix Leg. Per leg, not in total: the matrix does not run
-    the platforms an equal number of times."""
+    """Failures per matrix Leg, by platform and Install. Per leg, not in total:
+    the matrix does not run the platforms an equal number of times. Per Install
+    too: a parallel shard and a whole suite run serially are not the same leg."""
 
     platform: str | None
+    install: str | None
     legs: int
     failures: int
     per_leg: float
@@ -668,6 +675,7 @@ def _rates(
                     entry.python_version,
                     entry.rf_version,
                     entry.node_version,
+                    entry.install,
                 )
             )
         rates.append(
@@ -676,6 +684,7 @@ def _rates(
                 python=entry.python_version,
                 rf=entry.rf_version,
                 node=entry.node_version or None,
+                install=entry.install,
                 ran=ran,
                 failed=failed,
                 zero_is_inconclusive=(
@@ -706,19 +715,6 @@ def _log_lines(rows: list[LogRow]) -> tuple[LogLine, ...]:
     )
 
 
-# The upload step names every artifact "Test results-<leg>". The prefix is a
-# fact about the upload rather than about the Leg, and leaving it on meant the
-# page stripped it while the document did not - one Leg reading as two strings.
-# Stripped once, here, so both Renderings say the same thing.
-_ARTIFACT_PREFIX = "Test results-"
-
-
-def _leg_name(artifact_name: str | None) -> str | None:
-    if not artifact_name:
-        return None
-    return artifact_name.removeprefix(_ARTIFACT_PREFIX)
-
-
 def _occurrence(
     entry: OccurrenceRow,
     around: Around,
@@ -740,7 +736,8 @@ def _occurrence(
         python=entry.python_version,
         rf=entry.rf_version,
         node=entry.node_version or None,
-        leg=_leg_name(entry.artifact_name),
+        install=entry.install,
+        leg=leg_name(entry.artifact_name) if entry.artifact_name else None,
         attempt=entry.attempt,
         executors=entry.executors,
         node_process=entry.node_process,
@@ -1108,7 +1105,7 @@ def _build(
         fixture_failures=tuple(fixtures),
         test_failures=tuple(tests),
         platforms=tuple(
-            PlatformRow(row.platform, row.legs, row.failures, row.per_leg)
+            PlatformRow(row.platform, row.install, row.legs, row.failures, row.per_leg)
             for row in platform_rows
         ),
     )

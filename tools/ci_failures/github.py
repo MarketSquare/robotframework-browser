@@ -5,11 +5,12 @@ token has to be handled here.
 """
 
 import json
-import re
 import subprocess
 import time
 from dataclasses import dataclass, replace
 from pathlib import Path
+
+from .legs import install_of
 
 # Not parameters. This tool reads this project's CI, imports this repository's
 # library to resolve where a keyword lives, and ships with the repository - so a
@@ -23,17 +24,9 @@ BRANCH = "main"
 # `docs/adr/0002-only-runs-nobody-was-changing.md`.
 EVENTS = ("push", "schedule")
 
-# `on-release.yml` also runs the suite and is deliberately not read. It would
-# need more than another event: it is a different workflow file, it uploads under
-# `Clean_install_results_*` rather than `Test results-*`, and its Linux legs run
-# `--smoke`, so its results are a different set of tests and would not share a
-# denominator with these. Releases are monthly besides, which is too few to
-# carry a rate.
-
-# The artifact of one matrix leg of the `testing` job, e.g.
-# "Test results-ubuntu-latest-3-3.13-22.x". Matched only to pick the right
-# artifacts out of the run; what is in them is what gets stored.
-_TEST_RESULTS = re.compile(r"^Test results-")
+# `on-release.yml` also runs the suite and is deliberately not read. It is a
+# separate workflow run about once a month, which is too few Runs to move a
+# rate. See `docs/adr/0003-every-test-artifact-of-a-run.md`.
 
 # One page of the GitHub listing endpoints, which is also their maximum.
 _PER_PAGE = 100
@@ -220,7 +213,7 @@ def list_test_artifacts(run_id: int) -> list[Artifact]:
         for item in _paginated(
             f"repos/{REPO}/actions/runs/{run_id}/artifacts?per_page=100", "artifacts"
         )
-        if _TEST_RESULTS.match(item["name"])
+        if install_of(item["name"]) is not None
     ]
 
 

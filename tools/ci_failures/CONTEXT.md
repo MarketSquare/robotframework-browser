@@ -18,10 +18,27 @@ One GitHub Actions workflow run on `main`, identified by its GitHub run id. Only
 _Avoid_: build, job, CI run
 
 **Leg**:
-One execution of the acceptance suite within a Run — one point of the matrix, one uploaded
-artifact, one `output.xml`. A Run has many Legs, each with its own platform, Python, Robot
-Framework and Node versions.
-_Avoid_: matrix job, matrix entry, shard
+One execution of acceptance tests within a Run — one uploaded artifact, one `output.xml`. A Run
+has many Legs, each with its own Configuration. A Leg is either one shard of the suite run in
+parallel, or a whole suite run serially: the serial ones take longer and miss what only
+parallel execution provokes, and in exchange they show what parallel execution hides. A whole
+suite may be the smoke selection, which leaves out the slow tests; a test's rate is counted
+over the Legs that ran it, so a Leg that did not run a test says nothing about it.
+_Avoid_: matrix job, matrix entry, shard (a shard is what some Legs run, not what a Leg is)
+
+**Install**:
+How the library reached the machine a Leg ran on: `source` (the working checkout, built in
+place), `wheel` (the built package, installed), `batteries` (the wheel with the bundled Node.js
+package) or `docker` (the container image). Legs from a `source` Install are the parallel
+shards; the others each run a whole suite serially. `source` exists for historical reasons,
+from before there was a wheel to install, and is kept because it saves wall-clock time.
+_Avoid_: job (a job is what the workflow calls it, and jobs get renamed), kind, distribution
+
+**Configuration**:
+What a Leg ran on: its platform, Python, Robot Framework and Node versions, and its Install.
+Failures are counted per Configuration so that one failing only on, say, a wheel install or
+only on darwin shows as such rather than being diluted by the rest.
+_Avoid_: environment, setup, matrix point
 
 **Attempt**:
 Which try of a Leg's job produced the artifact. Nothing in this CI retries automatically, so
@@ -151,6 +168,8 @@ _Avoid_: clean, passing, green
 
 ## Relationships
 
+- A **Run** has many **Legs**, and every **Leg** has exactly one **Configuration**, of which
+  its **Install** is part
 - A **Report** covers exactly one **Window** and is built of **Groups** and **Fixture Failures**
 - A **Group** and a **Fixture Failure** are each one **Subject** and one **Error Signature**,
   and differ in what their **Occurrences** are counted in: Results for a test, Legs for a fixture

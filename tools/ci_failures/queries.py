@@ -130,6 +130,7 @@ class OccurrenceRow:
     python_version: str | None
     rf_version: str | None
     node_version: str | None
+    install: str | None
     artifact_name: str | None
     artifact_url: str | None
     attempt: int | None
@@ -150,6 +151,7 @@ class CoverageRow:
     python_version: str | None
     rf_version: str | None
     node_version: str | None
+    install: str | None
     ran: int
     failed: int
 
@@ -236,9 +238,11 @@ class LogRow:
 
 @dataclass(frozen=True)
 class PlatformRow:
-    """How much of the window one platform ran, and how much of it failed."""
+    """How much of the window one platform ran with one Install, and how much
+    of it failed."""
 
     platform: str | None
+    install: str | None
     legs: int
     failures: int
     per_leg: float
@@ -417,7 +421,7 @@ def occurrences_by_test(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]:
                f.screenshots, f.screenshot_status,
                r.id AS run_id, r.head_sha, r.event, r.created_at, r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt,
+               l.install, l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
         FROM test_failure f
         JOIN leg l ON l.id = f.leg_id
@@ -450,7 +454,7 @@ def coverage_by_test(db: Reading) -> dict[str, list[CoverageRow]]:
     rows = db.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
-               l.node_version,
+               l.node_version, l.install,
                COUNT(*) AS ran,
                SUM(CASE WHEN f.status = 'FAIL'
                          AND IFNULL(f.failure_scope, 'test')
@@ -459,7 +463,7 @@ def coverage_by_test(db: Reading) -> dict[str, list[CoverageRow]]:
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         GROUP BY f.longname, l.platform, l.python_version, l.rf_version,
-                 l.node_version
+                 l.node_version, l.install
         ORDER BY failed DESC, ran DESC
         """
     ).fetchall()
@@ -471,6 +475,7 @@ def coverage_by_test(db: Reading) -> dict[str, list[CoverageRow]]:
                 python_version=row["python_version"],
                 rf_version=row["rf_version"],
                 node_version=row["node_version"],
+                install=row["install"],
                 ran=row["ran"],
                 failed=row["failed"] or 0,
             )
@@ -515,7 +520,7 @@ def pass_durations_by_test(db: Reading) -> dict[tuple, Spread]:
     rows = db.execute(
         """
         SELECT f.longname, l.platform, l.python_version, l.rf_version,
-               l.node_version, f.elapsed_ms
+               l.node_version, l.install, f.elapsed_ms
         FROM test_result f
         JOIN leg l ON l.id = f.leg_id
         WHERE f.status = 'PASS' AND f.elapsed_ms IS NOT NULL
@@ -530,6 +535,7 @@ def pass_durations_by_test(db: Reading) -> dict[tuple, Spread]:
             row["python_version"],
             row["rf_version"],
             row["node_version"],
+            row["install"],
         )
         grouped.setdefault(key, []).append(row["elapsed_ms"])
     return {key: _spread(sorted(values)) for key, values in grouped.items()}
@@ -719,7 +725,7 @@ def _fixture_legs(db, scope_owner: str, failure_scope: str) -> list:
     return db.execute(
         """
         SELECT l.id AS leg_id, l.artifact_name, l.platform, l.python_version,
-               l.rf_version, l.node_version, l.attempt,
+               l.rf_version, l.node_version, l.install, l.attempt,
                r.id AS run_id, r.head_sha, r.created_at,
                MAX(CASE WHEN f.status = 'FAIL' AND f.failure_scope = ?
                          AND f.scope_owner = ? THEN 1 ELSE 0 END) AS broke
@@ -755,7 +761,7 @@ def occurrences_by_fixture(db: Reading) -> dict[SubjectKey, list[OccurrenceRow]]
                r.id AS run_id, r.head_sha, r.event, r.created_at,
                r.url AS run_url,
                l.platform, l.python_version, l.rf_version, l.node_version,
-               l.artifact_name, l.artifact_url, l.attempt,
+               l.install, l.artifact_name, l.artifact_url, l.attempt,
                l.executors, l.node_process
         FROM fixture_failure f
         JOIN leg l ON l.id = f.leg_id
@@ -791,6 +797,7 @@ def coverage_by_fixture(db: Reading) -> dict[tuple, list[CoverageRow]]:
                 row["python_version"],
                 row["rf_version"],
                 row["node_version"],
+                row["install"],
             )
             tally = counts.setdefault(key, [0, 0])
             tally[0] += 1
@@ -802,6 +809,7 @@ def coverage_by_fixture(db: Reading) -> dict[tuple, list[CoverageRow]]:
                     python_version=configuration[1],
                     rf_version=configuration[2],
                     node_version=configuration[3],
+                    install=configuration[4],
                     ran=ran,
                     failed=failed,
                 )
@@ -1139,21 +1147,23 @@ def log_messages_by_result(db: Reading) -> dict[int, list[LogRow]]:
 
 
 def platform_breakdown(db: Reading) -> list[PlatformRow]:
-    """Failures per matrix leg, by platform.
+    """Failures per matrix leg, by platform and Install.
 
     Per leg rather than absolute, because the matrix does not run the platforms
     an equal number of times and the raw counts would say more about the matrix
-    than about the platforms.
+    than about the platforms. Per Install as well, because a `source` Leg is one
+    parallel shard and every other Leg a whole suite run serially, and a leg of
+    one is not comparable with a leg of the other.
     """
     rows = db.execute(
         """
-        SELECT l.platform,
+        SELECT l.platform, l.install,
                COUNT(DISTINCT l.id) AS legs,
                SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) AS failures
         FROM leg l
         LEFT JOIN test_result t ON t.leg_id = l.id
         WHERE l.platform IS NOT NULL
-        GROUP BY l.platform
+        GROUP BY l.platform, l.install
         ORDER BY SUM(CASE WHEN t.status = 'FAIL' THEN 1 ELSE 0 END) * 1.0
                  / COUNT(DISTINCT l.id) DESC
         """
@@ -1161,6 +1171,7 @@ def platform_breakdown(db: Reading) -> list[PlatformRow]:
     return [
         PlatformRow(
             platform=row["platform"],
+            install=row["install"],
             legs=row["legs"],
             failures=row["failures"] or 0,
             per_leg=(row["failures"] or 0) / row["legs"] if row["legs"] else 0.0,

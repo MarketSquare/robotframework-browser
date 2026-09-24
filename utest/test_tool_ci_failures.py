@@ -100,15 +100,19 @@ def _run_robot(directory: Path, suite: str, metadata: tuple[str, ...] = ()) -> P
     """A real output.xml from a real Robot Framework run.
 
     Written by Robot Framework rather than hand-rolled, so these tests keep
-    working against the format Robot Framework actually emits.
+    working against the format Robot Framework actually emits. Laid out as CI
+    lays it out, with `atest/test` as the root suite, because ingest refuses a
+    Leg whose root suite is anything else.
     """
-    (directory / "suite.robot").write_text(suite, encoding="utf-8")
+    suites = directory / "atest" / "test"
+    suites.mkdir(parents=True, exist_ok=True)
+    (suites / "suite.robot").write_text(suite, encoding="utf-8")
     # Closed rather than left to the collector: Robot Framework is run once per
     # test here, and an open handle per run surfaced as a ResourceWarning
     # against whatever frame happened to be executing when it was noticed.
     with open(directory / "stdout.txt", "w", encoding="utf-8") as captured:
         robot_run(
-            str(directory / "suite.robot"),
+            str(suites),
             outputdir=str(directory),
             output="output.xml",
             log=None,
@@ -698,7 +702,7 @@ class TestSuiteFixtureFailures:
         _, results = parse(broken_teardown_xml)
 
         assert {m.origin for m in results[0].log_messages} == {
-            "suite teardown of Suite"
+            "suite teardown of Test.Suite"
         }
 
     def test_the_keyword_that_logged_them_is_named(self, broken_teardown_xml):
@@ -744,7 +748,7 @@ class TestFailureScope:
         _, results = parse(broken_teardown_xml)
 
         assert results[0].failure_scope == "suite_teardown"
-        assert results[0].scope_owner == "Suite"
+        assert results[0].scope_owner == "Test.Suite"
 
     def test_an_ancestor_teardown_is_attributed_to_the_suite_that_broke(
         self, ancestor_teardown_xml
@@ -1896,7 +1900,7 @@ class TestWhatSurroundedTheFailure:
 
         durations = pass_durations_by_test(reading_of(db))
 
-        assert durations[("T", "linux", "3.13.15", "7.4.2", None)] == Spread(
+        assert durations[("T", "linux", "3.13.15", "7.4.2", None, None)] == Spread(
             min=1001, median=1400, p95=1853, max=1853
         )
 
@@ -2531,7 +2535,9 @@ class TestWhatThePageCanNowReach:
         platforms = build_json(db)["platforms"]
 
         assert platforms
-        assert {"platform", "legs", "failures", "per_leg"} == set(platforms[0])
+        assert {"platform", "install", "legs", "failures", "per_leg"} == set(
+            platforms[0]
+        )
 
 
 class TestWhatAFixtureMarkingIsNotEvidenceOf:
@@ -3236,8 +3242,8 @@ class TestAddingAColumnToADatabaseThatExists:
         monkeypatch.setitem(db_module._ADDED_COLUMNS["leg"], "runner", "TEXT")
         schema.write_text(
             original.replace(
-                "    attempt        INTEGER\n);",
-                "    attempt        INTEGER,\n    runner         TEXT\n);",
+                "    install        TEXT\n);",
+                "    install        TEXT,\n    runner         TEXT\n);",
             )
             + "\nCREATE INDEX IF NOT EXISTS idx_leg_runner ON leg(runner);\n",
             encoding="utf-8",
@@ -4148,3 +4154,305 @@ class TestTheListingIsNotTakenOnTrust:
         assert any("run 5" in line and "no test artifacts" in line for line in said), (
             said
         )
+
+
+class TestEveryTestArtifactOfARun:
+    """Only the `testing` job's artifacts used to be read. The clean install,
+    BrowserBatteries and docker checks upload a whole suite's output.xml from
+    the same Run, and a test failing only on an installed wheel was invisible.
+    See `docs/adr/0003-every-test-artifact-of-a-run.md`."""
+
+    @staticmethod
+    def _listing(monkeypatch, names):
+        import json as json_module
+
+        def fake_run(args, **kwargs):
+            class Result:
+                returncode = 0
+                stdout = json_module.dumps(
+                    [
+                        {
+                            "artifacts": [
+                                {"id": index, "name": name, "expired": False}
+                                for index, name in enumerate(names)
+                            ]
+                        }
+                    ]
+                )
+                stderr = ""
+
+            return Result()
+
+        monkeypatch.setattr(github.subprocess, "run", fake_run)
+
+    def test_every_install_is_listed_and_nothing_else(self, monkeypatch):
+        self._listing(
+            monkeypatch,
+            [
+                "Test results-ubuntu-latest-3-3.13-22.x",
+                "ubuntu-latest 3.13 24.x Clean install results",
+                "Clean_install_results_macos-latest",
+                "docker_results",
+                "Unit test results-ubuntu-latest-3.13-22.x",
+                "node-coverage-ubuntu-latest-3.14-22.x",
+                "demoapp-bb-test-macos-latest",
+                "rfbrowser-wheel",
+            ],
+        )
+
+        listed = [artifact.name for artifact in github.list_test_artifacts(1)]
+
+        assert listed == [
+            "Test results-ubuntu-latest-3-3.13-22.x",
+            "ubuntu-latest 3.13 24.x Clean install results",
+            "Clean_install_results_macos-latest",
+            "docker_results",
+        ]
+
+    @staticmethod
+    def _ingest_as(fake_ci, monkeypatch, db, name):
+        artifact = github.Artifact(**{**fake_ci["artifact"].__dict__, "name": name})
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id: [artifact]
+        )
+        return ingest.ingest(db, limit=5, report=lambda _: None)
+
+    @staticmethod
+    def _failing_test(db):
+        return next(
+            t
+            for t in build_json(db)["test_failures"]
+            if t["test"].endswith("Failing Test")
+        )
+
+    def test_a_failure_says_which_install_it_happened_on(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        db = tmp_path / "ci.sqlite3"
+        self._ingest_as(
+            fake_ci, monkeypatch, db, "ubuntu-latest 3.13 24.x Clean install results"
+        )
+
+        entry = self._failing_test(db)
+
+        assert [o["install"] for o in entry["occurrences"]] == ["wheel"]
+        assert [r["install"] for r in entry["rates"]] == ["wheel"]
+
+    def test_a_wheel_install_is_its_own_configuration(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """Same machine, same versions, different Install: two rates, so that a
+        test failing only on an installed wheel reads as such."""
+        artifacts = [
+            github.Artifact(**{**fake_ci["artifact"].__dict__, "id": id_, "name": name})
+            for id_, name in (
+                (1, "Test results-ubuntu-latest-1-3.13-24.x"),
+                (2, "ubuntu-latest 3.13 24.x Clean install results"),
+            )
+        ]
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id: artifacts
+        )
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        entry = self._failing_test(db)
+
+        assert sorted((r["install"], r["ran"]) for r in entry["rates"]) == [
+            ("source", 1),
+            ("wheel", 1),
+        ]
+
+    @pytest.mark.parametrize(
+        ("artifact_name", "leg"),
+        [
+            (
+                "Test results-ubuntu-latest-3-3.13-22.x",
+                "source · ubuntu-latest · shard 3 · 3.13 · 22.x",
+            ),
+            (
+                "ubuntu-latest 3.13 24.x Clean install results",
+                "wheel · ubuntu-latest · 3.13 · 24.x",
+            ),
+            ("Clean_install_results_macos-15-intel", "batteries · macos-15-intel"),
+            ("docker_results", "docker"),
+        ],
+    )
+    def test_a_leg_is_named_the_same_way_whichever_job_ran_it(
+        self, fake_ci, tmp_path, monkeypatch, artifact_name, leg
+    ):
+        db = tmp_path / "ci.sqlite3"
+        self._ingest_as(fake_ci, monkeypatch, db, artifact_name)
+
+        entry = self._failing_test(db)
+
+        assert [o["leg"] for o in entry["occurrences"]] == [leg]
+
+    @staticmethod
+    def _serve(monkeypatch, tmp_path, write):
+        """Every download is a zip that `write` fills; returns the ids fetched."""
+        zip_path = tmp_path / "served.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            write(archive)
+        downloads = []
+
+        def fake_download(artifact_id, destination):
+            downloads.append(artifact_id)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(zip_path.read_bytes())
+            return destination
+
+        monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
+        return downloads
+
+    def test_a_leg_whose_root_suite_is_not_atest_test_is_refused_for_good(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """What the docker job uploaded until it was fixed: `robot` run on the
+        directory `atest/` was mounted at, which put every test one suite level
+        deeper and made each of them a different test from the same one on
+        every other Leg."""
+        mounted = tmp_path / "home" / "pwuser" / "test"
+        (mounted / "test").mkdir(parents=True)
+        (mounted / "test" / "suite.robot").write_text(SUITE, encoding="utf-8")
+        with open(tmp_path / "stdout.txt", "w", encoding="utf-8") as captured:
+            robot_run(
+                str(mounted),
+                outputdir=str(tmp_path),
+                output="docker.xml",
+                log=None,
+                report=None,
+                stdout=captured,
+            )
+        downloads = self._serve(
+            monkeypatch,
+            tmp_path,
+            lambda archive: archive.write(tmp_path / "docker.xml", "output.xml"),
+        )
+        db = tmp_path / "ci.sqlite3"
+
+        said: list[str] = []
+        first = self._ingest_as(fake_ci, monkeypatch, db, "docker_results")
+        second = ingest.ingest(db, limit=5, report=said.append)
+
+        assert (first.unusable, first.legs) == (1, 0)
+        assert len(downloads) == 1, "refused once, not fetched again"
+        assert second.unusable == 0
+        reason = one_row(db, "SELECT reason FROM unusable_artifact")["reason"]
+        assert "suite layout" in reason and "pwuser/test" in reason
+
+    def test_an_output_xml_cut_off_by_a_timeout_is_not_fetched_again(
+        self, fake_ci, output_xml, tmp_path, monkeypatch
+    ):
+        """What a job killed by its timeout leaves: the zip is whole and the
+        output.xml in it stops mid-element. It never parses, however often it is
+        downloaded, and it is twenty megabytes a time."""
+        whole = output_xml.read_bytes()
+        downloads = self._serve(
+            monkeypatch,
+            tmp_path,
+            lambda archive: archive.writestr("output.xml", whole[: len(whole) // 2]),
+        )
+        db = tmp_path / "ci.sqlite3"
+
+        first = ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert (first.unusable, first.unreachable, first.legs) == (1, 0, 0)
+        assert len(downloads) == 1
+        reason = one_row(db, "SELECT reason FROM unusable_artifact")["reason"]
+        assert reason.startswith("output.xml does not parse")
+        assert str(tmp_path) not in reason and "/tmp" not in reason
+
+    def test_a_zip_that_will_not_open_is_still_tried_again(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """That one is the download's fault, and the next may be whole."""
+        downloads = []
+
+        def truncated(artifact_id, destination):
+            downloads.append(artifact_id)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(b"not a zip")
+            return destination
+
+        monkeypatch.setattr(ingest.github, "download_artifact", truncated)
+        db = tmp_path / "ci.sqlite3"
+
+        ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert (second.unreachable, second.unusable) == (1, 0)
+        assert len(downloads) == 2
+
+    def test_legs_ingested_before_installs_were_recorded_are_source(
+        self, fake_ci, tmp_path
+    ):
+        """Everything ingested before this came from the `testing` job, which is
+        the `source` Install. Known from the stored artifact name, so nothing is
+        invented and nothing has to be downloaded again."""
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+        # Rebuilt rather than `DROP COLUMN`: older SQLite (3.40 and 3.45 do,
+        # 3.53 does not) rewrites the table wrongly when a comment precedes the
+        # dropped column, as every commented column in `schema.sql` does.
+        with closing(sqlite3.connect(db)) as connection:
+            kept = [
+                f"{row[1]} {row[2]}"
+                for row in connection.execute("PRAGMA table_info(leg)")
+                if row[1] != "install"
+            ]
+            names = ", ".join(column.split()[0] for column in kept)
+            connection.executescript(
+                f"CREATE TABLE old_leg ({', '.join(kept)});"
+                f"INSERT INTO old_leg SELECT {names} FROM leg;"
+                "DROP TABLE leg;"
+                "ALTER TABLE old_leg RENAME TO leg;"
+            )
+
+        entry = self._failing_test(db)
+
+        assert [r["install"] for r in entry["rates"]] == ["source"]
+
+    def test_the_install_is_recomputed_from_the_stored_artifact_name(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        db = tmp_path / "ci.sqlite3"
+        self._ingest_as(
+            fake_ci, monkeypatch, db, "Clean_install_results_windows-latest"
+        )
+        with closing(sqlite3.connect(db)) as connection:
+            connection.execute("UPDATE leg SET install = 'stale'")
+            connection.commit()
+
+        recomputed = ingest.recompute_installs(db, report=lambda _: None)
+
+        assert recomputed == 1
+        assert [r["install"] for r in self._failing_test(db)["rates"]] == ["batteries"]
+
+    def test_failures_per_leg_are_counted_per_install_too(
+        self, fake_ci, tmp_path, monkeypatch
+    ):
+        """A serial whole-suite Leg runs about four times the tests a parallel
+        shard does, so counting both as one leg each made "per leg" mean a
+        different thing on every platform."""
+        artifacts = [
+            github.Artifact(**{**fake_ci["artifact"].__dict__, "id": id_, "name": name})
+            for id_, name in (
+                (1, "Test results-ubuntu-latest-1-3.13-24.x"),
+                (2, "Test results-ubuntu-latest-2-3.13-24.x"),
+                (3, "ubuntu-latest 3.13 24.x Clean install results"),
+            )
+        ]
+        monkeypatch.setattr(
+            ingest.github, "list_test_artifacts", lambda run_id: artifacts
+        )
+        db = tmp_path / "ci.sqlite3"
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        platforms = build_json(db)["platforms"]
+
+        assert sorted((p["install"], p["legs"]) for p in platforms) == [
+            ("source", 2),
+            ("wheel", 1),
+        ]
