@@ -1,6 +1,7 @@
 """Tests for tools/ci_failures. See that package's README.md and CONTEXT.md."""
 
 import json
+from datetime import datetime, timedelta, timezone
 import sqlite3
 from contextlib import closing
 import zipfile
@@ -472,13 +473,16 @@ class TestExecutorMetadata:
 
 @pytest.fixture
 def fake_ci(monkeypatch, tmp_path, output_xml):
-    """A one-run, two-leg CI so ingest and grouping work without the network."""
+    """A one-run, two-leg CI so ingest and grouping work without the network.
+
+    Dated yesterday, so the ingest's own pruning never takes it."""
+    yesterday = datetime.now(timezone.utc) - timedelta(days=1)
     run = github.Run(
         id=111,
         event="push",
         head_sha="abc123",
         head_branch="main",
-        created_at="2026-08-20T10:00:00Z",
+        created_at=yesterday.strftime("%Y-%m-%dT%H:%M:%SZ"),
         conclusion="failure",
         url="https://example.invalid/runs/111",
     )
@@ -1387,6 +1391,110 @@ class TestOneBadArtifactCostsOneLeg:
 
         assert (result.runs, result.legs) == (1, 1)
         assert one_row(db, "SELECT COUNT(*) AS n FROM leg")["n"] == 0
+
+
+class TestPruning:
+    """The archive keeps 120 days; see ADR 0005."""
+
+    # 120 days after this is 2026-08-21T00:00:00Z: `seed` dates its first Run
+    # 2026-08-20 and its second 2026-08-21, one either side.
+    NOW = datetime(2026, 12, 19, tzinfo=timezone.utc)
+
+    def test_a_run_older_than_120_days_goes_with_everything_under_it(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "T", "status": "PASS"},
+                {"test": "U", "status": "FAIL", "logs": [("INFO", "K", "m")]},
+            ],
+        )
+        run_sql(
+            db,
+            "INSERT INTO unusable_artifact (artifact_id, run_id, name, reason, "
+            "noticed_at) VALUES (99, 1, 'n', 'no output.xml', 'now')",
+        )
+
+        with closing(connect_db(db)) as connection:
+            pruned = ingest.prune(connection, now=self.NOW)
+
+        assert pruned == 1
+        for table in ("run", "leg", "test_result", "log_message", "unusable_artifact"):
+            assert one_row(db, f"SELECT COUNT(*) AS n FROM {table}")["n"] == 0, table
+
+    def test_a_run_younger_than_120_days_is_kept_whole(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "T", "status": "PASS", "sha": "old"},
+                {"test": "T", "status": "PASS", "sha": "young"},
+                {
+                    "test": "U",
+                    "status": "FAIL",
+                    "sha": "young",
+                    "logs": [("INFO", "K", "m")],
+                },
+            ],
+        )
+
+        with closing(connect_db(db)) as connection:
+            ingest.prune(connection, now=self.NOW)
+
+        assert (
+            one_row(db, "SELECT group_concat(head_sha) AS s FROM run")["s"] == "young"
+        )
+        assert one_row(db, "SELECT COUNT(*) AS n FROM test_result")["n"] == 2
+        assert one_row(db, "SELECT COUNT(*) AS n FROM log_message")["n"] == 1
+
+    def test_an_ingest_ends_by_pruning_and_says_so(self, fake_ci, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "PASS", "sha": "old"}])
+        run_sql(db, "UPDATE run SET created_at = '2026-01-01T10:00:00Z'")
+
+        result = ingest.ingest(
+            db,
+            limit=5,
+            report=lambda _: None,
+            now=datetime(2026, 8, 21, tzinfo=timezone.utc),
+        )
+
+        assert result.pruned == 1
+        assert "1 run(s) older than 120 days pruned" in result.line()
+        assert one_row(db, "SELECT group_concat(id) AS ids FROM run")["ids"] == "111"
+
+    def test_a_listing_that_fails_still_prunes(self, tmp_path, monkeypatch):
+        def unreachable(**kwargs):
+            raise github.GhError("gh: not logged in")
+
+        monkeypatch.setattr(ingest.github, "list_runs", unreachable)
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "PASS"}])
+
+        with pytest.raises(github.GhError):
+            ingest.ingest(db, limit=5, report=lambda _: None, now=self.NOW)
+
+        assert one_row(db, "SELECT COUNT(*) AS n FROM run")["n"] == 0
+
+    def test_a_dry_run_says_what_it_would_prune_and_deletes_nothing(
+        self, fake_ci, tmp_path
+    ):
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "PASS", "sha": "old"}])
+        run_sql(db, "UPDATE run SET created_at = '2026-01-01T10:00:00Z'")
+        said: list[str] = []
+
+        result = ingest.ingest(
+            db,
+            limit=5,
+            report=said.append,
+            dry_run=True,
+            now=datetime(2026, 8, 21, tzinfo=timezone.utc),
+        )
+
+        assert result.pruned == 1
+        assert "would prune 1 run(s) older than 2026-04-23" in said
+        assert one_row(db, "SELECT COUNT(*) AS n FROM test_result")["n"] == 1
 
 
 class TestTransientDownloadFailures:
@@ -2304,7 +2412,12 @@ class TestWhichAttemptRanIt:
         monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
 
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(
+            db,
+            limit=5,
+            report=lambda _: None,
+            now=datetime(2026, 8, 20, tzinfo=timezone.utc),
+        )
 
         connection = connect_db(db)
         assert [
