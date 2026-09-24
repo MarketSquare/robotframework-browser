@@ -6,6 +6,9 @@ disk except the database - the artifact is downloaded, output.xml is read out of
 it, and the zip is thrown away. The artifact's URL is stored so that whatever
 else is in it can be fetched later, if a particular failure turns out to deserve
 it.
+
+Every ingest ends by pruning: each Run older than `KEEP_DAYS` goes, with
+everything under it, so the database never grows past that; see ADR 0005.
 """
 
 import sqlite3
@@ -13,7 +16,7 @@ import tempfile
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from robot.errors import DataError
@@ -157,6 +160,74 @@ def _insert_results(
     return len(results), failures
 
 
+# Past the 90 days GitHub keeps artifacts, so a pruned Leg can never be
+# offered again and downloaded a second time; see ADR 0005.
+KEEP_DAYS = 120
+
+
+def _prune_cutoff(now: datetime) -> str:
+    cutoff = (now - timedelta(days=KEEP_DAYS)).astimezone(timezone.utc)
+    return cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# The one statement of which Runs are old, so what a dry run counts and what
+# a prune deletes cannot disagree.
+_OLD_RUN_IDS = "SELECT id FROM run WHERE created_at < ?"
+_OLD_LEG_IDS = f"SELECT id FROM leg WHERE run_id IN ({_OLD_RUN_IDS})"
+
+
+def _prunable(connection: sqlite3.Connection, now: datetime) -> int:
+    return connection.execute(
+        f"SELECT COUNT(*) FROM ({_OLD_RUN_IDS})", (_prune_cutoff(now),)
+    ).fetchone()[0]
+
+
+def prune(connection: sqlite3.Connection, now: datetime) -> int:
+    """Deletes every Run older than `KEEP_DAYS`, and everything under it.
+
+    Children first: the foreign keys do not cascade. Returns how many Runs went.
+    """
+    params = (_prune_cutoff(now),)
+    connection.execute(
+        "DELETE FROM log_message WHERE test_result_id IN "
+        f"(SELECT id FROM test_result WHERE leg_id IN ({_OLD_LEG_IDS}))",
+        params,
+    )
+    connection.execute(
+        f"DELETE FROM test_result WHERE leg_id IN ({_OLD_LEG_IDS})", params
+    )
+    connection.execute(f"DELETE FROM leg WHERE run_id IN ({_OLD_RUN_IDS})", params)
+    connection.execute(
+        f"DELETE FROM unusable_artifact WHERE run_id IN ({_OLD_RUN_IDS})", params
+    )
+    pruned = connection.execute(
+        f"DELETE FROM run WHERE id IN ({_OLD_RUN_IDS})", params
+    ).rowcount
+    connection.commit()
+    return pruned
+
+
+def _prune_or_say_what_would_go(
+    connection: sqlite3.Connection,
+    now: datetime,
+    *,
+    dry_run: bool,
+    report: Callable[[str], None],
+) -> int:
+    if dry_run:
+        prunable = _prunable(connection, now)
+        if prunable:
+            report(
+                f"would prune {prunable} run(s) older than {_prune_cutoff(now)[:10]}"
+            )
+        return prunable
+    pruned = prune(connection, now)
+    if pruned:
+        # Deleting frees pages inside the file; only this gives them back.
+        connection.execute("VACUUM")
+    return pruned
+
+
 @dataclass(frozen=True)
 class Ingested:
     """What one ingest did.
@@ -185,6 +256,9 @@ class Ingested:
     #: about it: it says the page disagreed with what is already known, which is
     #: the only handle there is on a listing that varies between calls.
     unoffered: int = 0
+    #: Runs older than `KEEP_DAYS`, deleted at the end with everything under
+    #: them. On a dry run, how many would have been.
+    pruned: int = 0
 
     def line(self) -> str:
         disagreed = (
@@ -198,7 +272,8 @@ class Ingested:
             f"{self.failures} failures. {self.skipped} run(s) already complete, "
             f"{self.expired} artifact(s) expired, {self.unusable} unusable, "
             f"{self.unreachable} could not be downloaded, "
-            f"{self.unlisted} run(s) could not be listed.{disagreed}"
+            f"{self.unlisted} run(s) could not be listed, "
+            f"{self.pruned} run(s) older than {KEEP_DAYS} days pruned.{disagreed}"
         )
 
 
@@ -319,8 +394,9 @@ def ingest(
     since: str | None = None,
     report: Callable[[str], None] = print,
     dry_run: bool = False,
+    now: datetime | None = None,
 ) -> Ingested:
-    """Ingests runs newest first, skipping what is already in.
+    """Ingests runs newest first, skipping what is already in, then prunes.
 
     Two ways to say how much history, and they are alternatives rather than
     filters on each other: ``limit`` counts runs and ``since`` is a UTC instant
@@ -334,6 +410,11 @@ def ingest(
     window is read before anything can be said about it, so the cost is one
     request per run and `--days 90` is a couple of hundred of them. What it
     saves is the ten megabytes per leg.
+
+    Last, whatever happened above - even a listing that failed - every Run
+    older than `KEEP_DAYS` before `now` is pruned, and the file vacuumed if
+    anything went. `now` is this machine's
+    clock unless a test says otherwise.
     """
     connection = connect(db_path)
     already = ingested_artifact_ids(connection)
@@ -349,11 +430,24 @@ def ingest(
             "unreachable",
             "unusable",
             "unlisted",
+            "pruned",
         ),
         0,
     )
 
-    runs = github.runs_since(since) if since else github.list_runs(limit=limit)
+    try:
+        runs = github.runs_since(since) if since else github.list_runs(limit=limit)
+    except github.GhError:
+        # Pruning needs no network, so a listing that failed is no reason to
+        # let the database grow.
+        _prune_or_say_what_would_go(
+            connection,
+            now or datetime.now(timezone.utc),
+            dry_run=dry_run,
+            report=report,
+        )
+        connection.close()
+        raise
     asked_for = f"since {since[:10]}" if since else f"newest {limit}"
     spanned = (
         f", {min(r.created_at for r in runs)[:10]} to "
@@ -428,6 +522,9 @@ def ingest(
         )
 
     connection.commit()
+    totals["pruned"] = _prune_or_say_what_would_go(
+        connection, now or datetime.now(timezone.utc), dry_run=dry_run, report=report
+    )
     connection.close()
     return Ingested(**totals)
 

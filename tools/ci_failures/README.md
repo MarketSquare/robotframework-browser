@@ -23,7 +23,8 @@ one, so the tool says what it counted and over what.
 - **The database is written to `ci_failures/ci_failures.sqlite3`** at the
   repository root, gitignored. It is derived and rebuildable — but only as far
   back as GitHub still has the artifacts, and rebuilding what it does have is
-  hours and gigabytes of downloads. See *Retention* and *Three rules* below.
+  hours and gigabytes of downloads. It holds at most 120 days: every ingest
+  prunes older Runs (ADR `0005`). See *Retention* and *Three rules* below.
 - **Artifacts live 90 days.** That is the whole horizon: a run older than that
   cannot be ingested, re-ingested or checked, and `inv ci-ingest` says so —
   `N artifact(s) expired, unrecoverable`. Everything younger can be fetched
@@ -82,10 +83,12 @@ changing halfway through the window.
 right question when you are catching up and costs one request per event. The two
 are alternatives and passing both is refused rather than reconciled.
 
-Against 90-day retention that leaves a narrow band: a deep look backwards is
-possible while the artifacts live, and impossible afterwards. Losing the
-database is therefore losing history, not just time — which is a choice to make
-deliberately rather than a cost to be surprised by.
+Against 90-day retention that leaves a narrow band: a rebuild reaches 90 days
+and no further. The database itself keeps 120. Every `inv ci-ingest` ends by
+pruning each Run older than that, with everything under it, and vacuums the
+file when anything went. `--dry-run` only says what would go. Losing the
+database therefore costs the 30 days between the two, which is accepted: CI
+changes fast and data that old is rarely read (ADR `0005`).
 
 ## Architecture
 
@@ -156,7 +159,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
 | `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 586 | Drives the two above into the database, one leg at a time, each contained. |
+| `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
 | `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
@@ -184,7 +187,7 @@ ci_failures/             # gitignored, at the repository root
 ├── ci_report.html       # the page, when you last rendered one
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 229 tests, about a second
+utest/test_tool_ci_failures.py   # 234 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything
@@ -221,11 +224,12 @@ reaches both renderings or joins that list.
 
 - **`CONTEXT.md`** — the vocabulary. Run, Leg, Install, Platform, OS Release,
   Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause,
-  Snapshot, Adjacent Run, Inconclusive Zero. Worth reading first; the code uses
+  Snapshot, Adjacent Run, Inconclusive Zero, Pruning. Worth reading first; the code uses
   these words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
   where nobody was changing anything are ingested, why every test artifact of a
-  run is a Leg, and why a Leg's Platform is only its operating system.
+  run is a Leg, why a Leg's Platform is only its operating system, and why the
+  archive is pruned at 120 days.
 - **Module docstrings** — most of the real reasoning lives there, next to the
   code it explains, including the measurements behind several decisions and the
   wrong answers a few of them replaced.

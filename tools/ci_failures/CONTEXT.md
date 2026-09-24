@@ -64,6 +64,12 @@ One test's outcome in one Leg: pass, fail or skip. Passing Results are stored to
 failure count without a run count is not a rate.
 _Avoid_: test run, execution
 
+**Pruning**:
+Removing every Run older than 120 days, and everything recorded under it, from the archive.
+It is what stops the archive from growing forever. 120 is past the 90 days GitHub keeps
+artifacts, so a pruned Run can never be ingested again.
+_Avoid_: retention (GitHub's 90 days), cleanup, expiry
+
 ### What a failure is
 
 **Error Signature**:
@@ -192,6 +198,8 @@ _Avoid_: clean, passing, green
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed
 - A **Report** is built from exactly one **Reading**, and a **Reading** carries exactly one
   **Window**
+- **Pruning** keeps the archive at most 120 days deep, so a **Window** asking for more is a
+  **Short Window**
 
 ## Flagged ambiguities
 
