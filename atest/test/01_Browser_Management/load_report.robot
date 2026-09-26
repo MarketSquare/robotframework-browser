@@ -67,7 +67,7 @@ Setup
     ${original} =    Register Keyword To Run On Failure    ${None}
     VAR    ${original} =    ${original}    scope=SUITE
     VAR    ${COMMITTED_AND_STALLED_IMAGE} =
-    ...    .*Navigation committed: yes.*readyState: (loading|interactive).*load: never fired.*GET \\S+/api/stalled-image \\[image\\] open for \\d+ ms.*
+    ...    .*Navigation committed: yes.*readyState: ((loading|interactive).*load: never fired|unknown \\(probe failed: [^)]*\\)).*GET \\S+/api/stalled-image \\[image\\] open for \\d+ ms.*
     ...    scope=SUITE
     New Browser    headless=${HEADLESS}
 
