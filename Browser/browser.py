@@ -21,7 +21,7 @@ import sys
 import threading
 import time
 import types
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
@@ -557,7 +557,7 @@ class Browser(DynamicCore):
         self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
-        self._failure_cleanup_local = threading.local()
+        self._failed_page_tokens_local = threading.local()
         self.pause_on_failure: set[str] = set()
         self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
@@ -975,7 +975,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def run_keyword(self, name, args, kwargs=None):
         is_secret_keyword = self._keyword_call.is_secret_keyword(name)
-        self._failure_cleanup_stack.append([])
+        self._failed_page_tokens.append([])
         try:
             if is_secret_keyword:
                 self._keyword_call.suppress_logging()
@@ -1001,7 +1001,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
         finally:
-            self._run_failure_cleanups(self._failure_cleanup_stack.pop())
+            self._remove_failed_pages(self._failed_page_tokens.pop())
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
@@ -1011,28 +1011,28 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self._keyword_call.restore_logging()
 
     @property
-    def _failure_cleanup_stack(self) -> list[list[Callable[[], None]]]:
-        if not hasattr(self._failure_cleanup_local, "stack"):
-            self._failure_cleanup_local.stack = []
-        return self._failure_cleanup_local.stack
+    def _failed_page_tokens(self) -> list[list[str]]:
+        if not hasattr(self._failed_page_tokens_local, "stack"):
+            self._failed_page_tokens_local.stack = []
+        return self._failed_page_tokens_local.stack
 
-    def run_after_failure_handling(self, cleanup: Callable[[], None]):
-        """Runs ``cleanup`` once the failing keyword's failure handling is done.
+    def _remove_failed_page_after_failure_handling(self, token: str):
+        """Removes the failed page once the failing keyword's failure handling is done.
 
         On the Python path, and in a `Promise To` thread, there is no failure
-        handling, so ``cleanup`` runs at once.
+        handling, so the page is removed at once.
         """
-        if self._failure_cleanup_stack:
-            self._failure_cleanup_stack[-1].append(cleanup)
+        if self._failed_page_tokens:
+            self._failed_page_tokens[-1].append(token)
         else:
-            self._run_failure_cleanups([cleanup])
+            self._remove_failed_pages([token])
 
-    def _run_failure_cleanups(self, cleanups: list[Callable[[], None]]):
-        for cleanup in cleanups:
+    def _remove_failed_pages(self, tokens: list[str]):
+        for token in tokens:
             try:
-                cleanup()
+                self._playwright_state._remove_failed_page(token)
             except Exception as error:
-                logger.warn(f"Cleanup after a failed keyword failed: {error}")
+                logger.warn(f"Removing a failed page failed: {error}")
 
     def _get_selector_value_from_keyword_call(self, name, args, kwargs):
         selector = kwargs.get("selector")

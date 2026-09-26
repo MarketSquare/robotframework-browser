@@ -1043,9 +1043,7 @@ class PlaywrightState(LibraryComponent):
                     )
                 )
         except Exception:
-            self.library.run_after_failure_handling(
-                lambda: self._remove_failed_page(failed_page_token)
-            )
+            self.library._remove_failed_page_after_failure_handling(failed_page_token)
             raise
         logger.info(response.log)
         if response.newBrowser:

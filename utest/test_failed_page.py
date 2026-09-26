@@ -13,44 +13,54 @@ def browser() -> Browser:
 
 
 @pytest.fixture
-def events() -> list:
-    return []
+def events(browser: Browser, monkeypatch) -> list:
+    events: list = []
+    monkeypatch.setattr(
+        browser._playwright_state,
+        "_remove_failed_page",
+        lambda token: events.append(f"remove {token}"),
+    )
+    return events
 
 
-def failing_keyword(browser: Browser, events: list, name: str):
+def failing_new_page(browser: Browser, events: list, token: str):
     def keyword(*args):
-        events.append(f"{name} fails")
-        browser.run_after_failure_handling(lambda: events.append(f"{name} cleanup"))
-        raise AssertionError(f"{name} failed")
+        events.append(f"{token} fails")
+        browser._remove_failed_page_after_failure_handling(token)
+        raise AssertionError(f"{token} failed")
 
     return keyword
 
 
-def test_cleanup_runs_after_failure_handling(browser: Browser, monkeypatch, events):
+def test_failed_page_is_removed_after_failure_handling(
+    browser: Browser, monkeypatch, events
+):
     monkeypatch.setattr(
         browser, "keyword_error", lambda selector: events.append("keyword_error")
     )
     monkeypatch.setitem(
-        browser.keywords, "new_page", failing_keyword(browser, events, "new_page")
+        browser.keywords, "new_page", failing_new_page(browser, events, "page")
     )
-    with pytest.raises(AssertionError, match="new_page failed"):
+    with pytest.raises(AssertionError, match="page failed"):
         browser.run_keyword("new_page", [], {})
-    assert events == ["new_page fails", "keyword_error", "new_page cleanup"]
+    assert events == ["page fails", "keyword_error", "remove page"]
 
 
-def test_cleanup_runs_after_pause_on_failure(browser: Browser, monkeypatch, events):
+def test_failed_page_is_removed_after_pause_on_failure(
+    browser: Browser, monkeypatch, events
+):
     browser.pause_on_failure.add("pause")
     monkeypatch.setattr("builtins.input", lambda: events.append("pause"))
     monkeypatch.setattr(browser, "keyword_error", lambda selector: None)
     monkeypatch.setitem(
-        browser.keywords, "new_page", failing_keyword(browser, events, "new_page")
+        browser.keywords, "new_page", failing_new_page(browser, events, "page")
     )
     with pytest.raises(AssertionError):
         browser.run_keyword("new_page", [], {})
-    assert events == ["new_page fails", "pause", "new_page cleanup"]
+    assert events == ["page fails", "pause", "remove page"]
 
 
-def test_cleanup_runs_when_failure_handling_raises(
+def test_failed_page_is_removed_when_failure_handling_raises(
     browser: Browser, monkeypatch, events
 ):
     def broken_keyword_error(selector):
@@ -58,14 +68,14 @@ def test_cleanup_runs_when_failure_handling_raises(
 
     monkeypatch.setattr(browser, "keyword_error", broken_keyword_error)
     monkeypatch.setitem(
-        browser.keywords, "new_page", failing_keyword(browser, events, "new_page")
+        browser.keywords, "new_page", failing_new_page(browser, events, "page")
     )
     with pytest.raises(RuntimeError):
         browser.run_keyword("new_page", [], {})
-    assert events == ["new_page fails", "new_page cleanup"]
+    assert events == ["page fails", "remove page"]
 
 
-def test_nested_keyword_runs_only_its_own_cleanup(
+def test_nested_keyword_removes_only_its_own_failed_page(
     browser: Browser, monkeypatch, events
 ):
     def on_failure(selector):
@@ -77,34 +87,34 @@ def test_nested_keyword_runs_only_its_own_cleanup(
 
     monkeypatch.setattr(browser, "keyword_error", on_failure)
     monkeypatch.setitem(
-        browser.keywords, "outer", failing_keyword(browser, events, "outer")
+        browser.keywords, "outer", failing_new_page(browser, events, "outer")
     )
     monkeypatch.setitem(
-        browser.keywords, "inner", failing_keyword(browser, events, "inner")
+        browser.keywords, "inner", failing_new_page(browser, events, "inner")
     )
     with pytest.raises(AssertionError, match="outer failed"):
         browser.run_keyword("outer", [], {})
     assert events == [
         "outer fails",
         "inner fails",
-        "inner cleanup",
+        "remove inner",
         "outer keyword_error done",
-        "outer cleanup",
+        "remove outer",
     ]
 
 
-def test_cleanup_runs_immediately_on_python_path(browser: Browser, events):
-    browser.run_after_failure_handling(lambda: events.append("cleanup"))
-    assert events == ["cleanup"]
+def test_failed_page_is_removed_immediately_on_python_path(browser: Browser, events):
+    browser._remove_failed_page_after_failure_handling("page")
+    assert events == ["remove page"]
 
 
-def test_cleanup_from_a_promise_thread_runs_immediately(
+def test_failed_page_from_a_promise_thread_is_removed_immediately(
     browser: Browser, monkeypatch, events
 ):
     def keyword_running_while_a_promise_fails(*args):
         promise = threading.Thread(
-            target=browser.run_after_failure_handling,
-            args=(lambda: events.append("promise cleanup"),),
+            target=browser._remove_failed_page_after_failure_handling,
+            args=("promised page",),
         )
         promise.start()
         promise.join()
@@ -114,31 +124,37 @@ def test_cleanup_from_a_promise_thread_runs_immediately(
         browser.keywords, "wait_for", keyword_running_while_a_promise_fails
     )
     browser.run_keyword("wait_for", [], {})
-    assert events == ["promise cleanup", "keyword done"]
+    assert events == ["remove promised page", "keyword done"]
 
 
-def test_failing_cleanup_is_logged_and_original_error_raised(
-    browser: Browser, monkeypatch, events
+def test_failing_removal_is_logged_and_original_error_raised(
+    browser: Browser, monkeypatch
 ):
+    removed = []
+
+    def remove_failed_page(token):
+        if token == "unreachable":
+            raise ConnectionError("connection lost")
+        removed.append(token)
+
     warnings = []
     monkeypatch.setattr("Browser.browser.logger.warn", warnings.append)
     monkeypatch.setattr(browser, "keyword_error", lambda selector: None)
+    monkeypatch.setattr(
+        browser._playwright_state, "_remove_failed_page", remove_failed_page
+    )
 
     def keyword(*args):
-        browser.run_after_failure_handling(lambda: events.append("first cleanup"))
-        browser.run_after_failure_handling(_raise_connection_error)
+        browser._remove_failed_page_after_failure_handling("page")
+        browser._remove_failed_page_after_failure_handling("unreachable")
         raise AssertionError("original")
 
     monkeypatch.setitem(browser.keywords, "new_page", keyword)
     with pytest.raises(AssertionError, match="original"):
         browser.run_keyword("new_page", [], {})
-    assert events == ["first cleanup"]
+    assert removed == ["page"]
     assert len(warnings) == 1
     assert "connection lost" in warnings[0]
-
-
-def _raise_connection_error():
-    raise ConnectionError("connection lost")
 
 
 @contextmanager

@@ -25,16 +25,21 @@ page that failed, whatever that keyword is.
 - **Keep the early close, only log honestly** that the failed page was gone. Rejected as the
   fix: it discards the only evidence of the failure. It remains the fallback when the
   screenshot itself fails.
-- **Let `run_keyword` special-case `New Page` by name.** Rejected in favour of a cleanup
-  queue owned by `Browser`: the keyword that created the failed page asks for its removal, and
-  `Browser` decides when.
+- **Let `run_keyword` special-case `New Page` by name.** Rejected: the keyword that created
+  the failed page asks `Browser` to remove it (`_remove_failed_page_after_failure_handling`),
+  and `Browser` decides when.
+- **A general "run this after failure handling" queue of callables.** Rejected: it would have
+  one caller, would run at the end of every keyword call whether that call failed or not, and
+  would invite unrelated "run this later" hooks. `Browser` keeps failed page tokens instead,
+  and the method is private so plugins do not come to rely on it.
 - **Close the current page afterwards.** Rejected: the on-failure keyword may have switched
   or opened pages.
 
 ## Consequences
 
-- **Removal is scoped per `run_keyword` call.** `Browser` keeps a stack of cleanup queues; each
-  `run_keyword` drains only what was queued during its own call, in `finally`, so a failing
+- **Removal is scoped per `run_keyword` call.** `Browser` keeps a stack with one list of
+  failed page tokens per `run_keyword` call; each call removes only the failed pages
+  registered during it, in `finally`, so a failing
   `New Page` inside a user's on-failure keyword never removes the outer failed page early.
 - **An empty stack means the Python path.** With no `run_keyword` in flight there is no
   failure handling to wait for, so `new_page` removes the failed page immediately.
