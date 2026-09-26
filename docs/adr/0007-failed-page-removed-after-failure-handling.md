@@ -11,6 +11,14 @@ page that failed, whatever that keyword is.
 
 ## Considered options
 
+- **Never remove the failed page**, as a failed `Go To` leaves its page. Rejected: `Go To`
+  acts on a page the caller already holds, but a failing `New Page` never returns the page
+  id, so the caller could not close or switch away from a page it never received. The page
+  would stay in the catalog as the active page, with no id the caller ever received, and
+  every later keyword would act on it. `New Page Will Timeout And Page Will Be Removed From
+  Catalog` has asserted this contract since before #5261: after a failed `New Page` the
+  catalog is unchanged. Keeping that contract while still letting failure handling see the
+  page is what the RPC, the token, the Node map and the Python stack exist for.
 - **Screenshot inside the Node catch**, as #5261 first proposed. Rejected: `run_on_failure`
   can be any keyword with any arguments, or `None`. Node would bypass the user's setting and
   have to duplicate `_failure_screenshot_path()` naming.
