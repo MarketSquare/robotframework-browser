@@ -50,16 +50,17 @@ import {
     Request_CoverageMerge,
     Request_CoverageStart,
     Request_Empty,
+    Request_FailedPage,
     Request_FilePath,
     Request_IdWithTimeout,
     Request_Index,
     Request_KeywordCall,
+    Request_NewPage,
     Request_PersistentContext,
     Request_RFContext,
     Request_SetStorageState,
     Request_StorageState,
     Request_TraceGroup,
-    Request_UrlOptions,
     Response_Empty,
     Response_Json,
     Response_Keywords,
@@ -367,6 +368,7 @@ export class PlaywrightState {
      * worker sharing this node process disposed every other worker's
      * highlights along with its own; see issue #5211. */
     public readonly highlightDisposableCache: HighlightDisposableCache;
+    private failedPages = new Map<string, FailedPage>();
     get activeBrowser() {
         return lastItem(this.browserStack);
     }
@@ -539,6 +541,16 @@ export class PlaywrightState {
         return this.activeBrowser?.page?.coverage;
     };
 
+    public recordFailedPage = (token: string, failedPage: FailedPage): void => {
+        this.failedPages.set(token, failedPage);
+    };
+
+    public takeFailedPage = (token: string): FailedPage | undefined => {
+        const failed = this.failedPages.get(token);
+        this.failedPages.delete(token);
+        return failed;
+    };
+
     public addCoverageOptions = (coverage: CoverageOptions): void => {
         if (this.activeBrowser?.page) {
             this.activeBrowser.page.coverage = coverage;
@@ -615,6 +627,11 @@ export type IndexedPage = {
 };
 
 type Uuid = string;
+
+type FailedPage = {
+    context: IndexedContext;
+    page: IndexedPage;
+};
 
 /*
  * contextStacks's last item should be the current active page and the first item should be the lastly added page.
@@ -791,7 +808,7 @@ export async function closePage(
 }
 
 export async function newPage(
-    request: Request_UrlOptions,
+    request: Request_NewPage,
     openBrowsers: PlaywrightState,
 ): Promise<Response_NewPageResponse> {
     const defaultTimeout = request.url?.defaultTimeout;
@@ -828,9 +845,31 @@ export async function newPage(
             newContext: context.newContext,
         };
     } catch (e) {
-        void browserState.browser.popPage()?.p.close();
+        openBrowsers.recordFailedPage(request.failedPageToken, { context: context.context, page });
         throw e;
     }
+}
+
+export async function removeFailedPage(
+    request: Request_FailedPage,
+    openBrowsers: PlaywrightState,
+): Promise<Response_Empty> {
+    const failed = openBrowsers.takeFailedPage(request.token);
+    if (failed === undefined) {
+        return emptyWithLog('No failed page to remove');
+    }
+    const { context, page } = failed;
+    context.pageStack = context.pageStack.filter((p) => p.p !== page.p);
+    const wasOpen = !page.p.isClosed();
+    if (wasOpen) {
+        page.p.close().catch((e: unknown) => logger.info(`Closing failed page ${page.id} failed: ${String(e)}`));
+    }
+    const activePageId = openBrowsers.getActivePageId();
+    const active = activePageId ? `, active page is now ${activePageId}` : '';
+    const removed = wasOpen
+        ? `Removed failed page ${page.id} after failure handling`
+        : `Failed page ${page.id} was already closed during failure handling`;
+    return emptyWithLog(`${removed}${active}`);
 }
 
 export async function newContext(

@@ -1020,23 +1020,31 @@ class PlaywrightState(LibraryComponent):
         When a `New Page` is called without an open browser, `New Browser`
         and `New Context` are executed with default values first.
 
-        If navigating to ``url`` fails, the newly created page is closed again
-        and the keyword fails.
+        If navigating to ``url`` fails, the keyword fails and the newly created
+        page is closed again. The page is closed only after the keyword set with
+        `Register Keyword To Run On Failure` has run, so the failure screenshot
+        shows the page that failed to load.
 
         [https://forum.robotframework.org/t//4308|Comment >>]
         """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.NewPage(
-                # '' will be treated as falsy on .ts side.
-                # TODO: Use optional url field instead once it stabilizes at upstream
-                # https://stackoverflow.com/a/62566052
-                Request().UrlOptions(
-                    url=Request().Url(
-                        url=(url or ""), defaultTimeout=int(self.timeout)
-                    ),
-                    waitUntil=wait_until.name,
+        failed_page_token = str(uuid4())
+        try:
+            with self.playwright.grpc_channel() as stub:
+                response = stub.NewPage(
+                    # '' will be treated as falsy on .ts side.
+                    # TODO: Use optional url field instead once it stabilizes at upstream
+                    # https://stackoverflow.com/a/62566052
+                    Request().NewPage(
+                        url=Request().Url(
+                            url=(url or ""), defaultTimeout=int(self.timeout)
+                        ),
+                        waitUntil=wait_until.name,
+                        failedPageToken=failed_page_token,
+                    )
                 )
-            )
+        except Exception:
+            self.library._remove_failed_page_after_failure_handling(failed_page_token)
+            raise
         logger.info(response.log)
         if response.newBrowser:
             logger.info(
@@ -1050,6 +1058,11 @@ class PlaywrightState(LibraryComponent):
             )
         video_path = self._embed_video(json.loads(response.video))
         return NewPageDetails(page_id=response.body, video_path=video_path)
+
+    def _remove_failed_page(self, token: str):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RemoveFailedPage(Request().FailedPage(token=token))
+        logger.info(response.log)
 
     def _embed_video(self, video: dict) -> str:
         if not video.get("video_path"):

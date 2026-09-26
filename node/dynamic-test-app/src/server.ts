@@ -184,6 +184,19 @@ app.get('/slowpage.html', (req, res) => {
     }, 11000);
 });
 
+app.get('/stalledpage.html', (req, res) => {
+    res.send(
+        '<html lang="en"><head><title>Stalled page</title></head>' +
+            '<body>HELLO<img src="/api/stalled-image" alt="never loads"></body></html>',
+    );
+});
+
+app.get('/api/stalled-image', (req, res) => {
+    setTimeout(() => {
+        res.status(204).send();
+    }, 11000);
+});
+
 app.get('/api/download/slow', (req, res) => {
     const startDelayMs = Number(req.query.startDelayMs ?? 0);
     const transferMs = Number(req.query.transferMs ?? 0);

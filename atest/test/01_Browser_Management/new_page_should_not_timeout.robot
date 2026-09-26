@@ -24,7 +24,41 @@ New Page Will Timeout And Page Will Be Removed From Catalog
         Fail    Expected timeout
     END
 
+Failure Handling Sees The Page That Stalled While Loading
+    [Tags]    slow
+    Set Browser Timeout    1s    scope=Test
+    New Context
+    New Page    about:blank
+    ${catalog} =    Get Browser Catalog
+    Register Keyword To Run On Failure    Remember Active Page    scope=Test
+    TRY
+        New Page    ${STALLED_PAGE}
+    EXCEPT    *Timeout*    type=glob
+        Should Be Equal    ${URL_ON_FAILURE}    ${STALLED_PAGE}
+        Should Be Equal    ${TITLE_ON_FAILURE}    Stalled page
+        ${catalog_after_failure} =    Get Browser Catalog
+        Should Be Equal    ${catalog}    ${catalog_after_failure}
+    ELSE
+        Fail    Expected timeout
+    END
+
+Default Failure Screenshot Is Taken Of The Page That Stalled While Loading
+    [Tags]    slow
+    Set Browser Timeout    1s    scope=Test
+    New Context
+    Register Keyword To Run On Failure    Take Screenshot    fail-screenshot-{index}    scope=Test
+    ${screenshots_before} =    Glob Files Count    ${OUTPUT_DIR}/browser/screenshot
+    Run Keyword And Expect Error    *Timeout*    New Page    ${STALLED_PAGE}
+    ${screenshots_after} =    Glob Files Count    ${OUTPUT_DIR}/browser/screenshot
+    Should Be Equal As Integers    ${screenshots_after}    ${screenshots_before + 1}
+
 *** Keywords ***
+Remember Active Page
+    ${url} =    Get Url
+    ${title} =    Get Title
+    VAR    ${URL_ON_FAILURE} =    ${url}    scope=TEST
+    VAR    ${TITLE_ON_FAILURE} =    ${title}    scope=TEST
+
 Setup
     Set Browser Timeout    15s    scope=Suite
     ${original} =    Register Keyword To Run On Failure    ${None}

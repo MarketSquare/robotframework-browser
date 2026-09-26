@@ -177,6 +177,7 @@ export class PlaywrightServer {
     closeAllBrowsers = this.wrappingState(playwrightState.closeAllBrowsers);
     closeContext = this.wrapping(playwrightState.closeContext);
     closePage = this.wrapping(playwrightState.closePage);
+    removeFailedPage = this.wrapping(playwrightState.removeFailedPage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
     setRfContext = this.wrappingDebug(playwrightState.setRFContext);

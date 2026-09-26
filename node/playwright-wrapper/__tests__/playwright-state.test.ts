@@ -17,7 +17,9 @@ import {
     closeBrowser,
     closeBrowserServer,
     locatorCache,
+    newPage,
     PlaywrightState,
+    removeFailedPage,
 } from '../playwright-state';
 
 function makeBrowserState(id: string): BrowserState {
@@ -326,5 +328,155 @@ describe('close helpers', () => {
         await expect(closeBrowserServer({ url: 'ws://missing' } as any, state)).rejects.toThrow(
             'BrowserServer with endpoint ws://missing not found.',
         );
+    });
+});
+
+function makePlaywrightPage(goto: jest.Mock) {
+    return {
+        on: jest.fn(),
+        video: jest.fn().mockReturnValue(null),
+        goto,
+        close: jest.fn().mockResolvedValue(undefined),
+        isClosed: jest.fn().mockReturnValue(false),
+    };
+}
+
+function stateWithOpenPage(openPageId = 'page=open') {
+    const state = new PlaywrightState();
+    const browser = makeBrowserState('browser=1');
+    const openPage = makeIndexedPage(openPageId);
+    const context = {
+        c: { newPage: jest.fn() },
+        id: 'context=1',
+        traceFile: '',
+        pageStack: [openPage],
+        options: {},
+    } as any;
+    browser.pushContext(context);
+    state.browserStack.push(browser);
+    return { state, browser, context, openPage };
+}
+
+const navigationTimeout = new Error('page.goto: Timeout 5000ms exceeded');
+
+function newPageThatFailsNavigation(context: any) {
+    const failedPage = makePlaywrightPage(jest.fn().mockRejectedValue(navigationTimeout));
+    context.c.newPage.mockResolvedValueOnce(failedPage);
+    return failedPage;
+}
+
+function newPageRequest(failedPageToken = 'token-1') {
+    return { url: { url: 'http://slow', defaultTimeout: 5000 }, waitUntil: '', failedPageToken } as any;
+}
+
+async function failNewPage(state: PlaywrightState, context: any, failedPageToken = 'token-1') {
+    const failedPage = newPageThatFailsNavigation(context);
+    await newPage(newPageRequest(failedPageToken), state).catch(() => undefined);
+    return failedPage;
+}
+
+describe('newPage', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('rethrows the navigation error', async () => {
+        expect.assertions(1);
+        const { state, browser } = stateWithOpenPage();
+        newPageThatFailsNavigation(browser.context);
+
+        await expect(newPage(newPageRequest(), state)).rejects.toBe(navigationTimeout);
+    });
+
+    it('keeps the failed page open and active when navigation fails', async () => {
+        const { state, browser } = stateWithOpenPage();
+
+        const failedPage = await failNewPage(state, browser.context);
+
+        expect(browser.page?.p).toBe(failedPage);
+        expect(failedPage.close).not.toHaveBeenCalled();
+    });
+});
+
+describe('removeFailedPage', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('closes the failed page and reactivates the page below it', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).toHaveBeenCalledTimes(1);
+        expect(browser.page?.id).toBe('page=open');
+        expect(browser.context?.pageStack).toHaveLength(1);
+    });
+
+    it('leaves the active page alone when the failed page is not active', async () => {
+        const { state, browser, openPage } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+        browser.pushPage(openPage);
+
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).toHaveBeenCalledTimes(1);
+        expect(browser.page?.id).toBe('page=open');
+        expect(browser.context?.pageStack).toHaveLength(1);
+    });
+
+    it('removes only the page recorded under its token', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const outer = await failNewPage(state, browser.context, 'outer');
+        const inner = await failNewPage(state, browser.context, 'inner');
+
+        await removeFailedPage({ token: 'outer' }, state);
+
+        expect(outer.close).toHaveBeenCalledTimes(1);
+        expect(inner.close).not.toHaveBeenCalled();
+        expect(browser.page?.p).toBe(inner);
+    });
+
+    it('does not close a failed page that is already closed', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+        failedPage.isClosed.mockReturnValue(true);
+
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).not.toHaveBeenCalled();
+        expect(browser.page?.id).toBe('page=open');
+    });
+
+    it('returns without waiting for the failed page to close', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+        failedPage.close.mockReturnValue(new Promise(() => undefined));
+
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).toHaveBeenCalledTimes(1);
+        expect(browser.page?.id).toBe('page=open');
+    });
+
+    it('does not fail when closing the failed page fails, and forgets the page', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+        failedPage.close.mockRejectedValue(new Error('Target closed'));
+
+        await removeFailedPage({ token: 'token-1' }, state);
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).toHaveBeenCalledTimes(1);
+        expect(browser.page?.id).toBe('page=open');
+    });
+
+    it('does nothing for an unknown token', async () => {
+        const { state, browser } = stateWithOpenPage();
+
+        await removeFailedPage({ token: 'unknown' }, state);
+
+        expect(browser.page?.id).toBe('page=open');
     });
 });

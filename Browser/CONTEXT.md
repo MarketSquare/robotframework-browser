@@ -29,6 +29,12 @@ Turning a plain value into the keyword's declared type using Robot Framework's o
 converters — `"middle"` into `MouseButton.middle`, `"1.5s"` into a `timedelta`.
 _Avoid_: coercion, casting, parsing
 
+**Failed page**:
+A page that a keyword opened and that the library will remove because that keyword failed.
+It still exists while the keyword's failure is being handled, so the failure screenshot shows
+it; it is gone by the time the failure reaches the test.
+_Avoid_: broken page, dead page
+
 ## Relationships
 
 - Both tables hold the *same* keyword methods, stored twice by PythonLibCore. They are
@@ -37,6 +43,8 @@ _Avoid_: coercion, casting, parsing
   table, and inside the **attribute table** for the **Python path**.
 - Trace groups and failure screenshots exist only on the **Robot Framework path**. This is a
   known, accepted difference, not a defect.
+- A **failed page** outlives its keyword only on the **Robot Framework path**, where failure
+  handling runs; on the **Python path** it is removed as soon as the keyword fails.
 
 ## Example dialogue
 
