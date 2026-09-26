@@ -18,6 +18,7 @@ import re
 import shutil
 import string
 import sys
+import threading
 import time
 import types
 from collections.abc import Callable, Iterator
@@ -556,7 +557,7 @@ class Browser(DynamicCore):
         self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
-        self._failure_cleanup_stack: list[list[Callable[[], None]]] = []
+        self._failure_cleanup_local = threading.local()
         self.pause_on_failure: set[str] = set()
         self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
@@ -1000,7 +1001,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
         finally:
-            self._run_failure_cleanup_stack(self._failure_cleanup_stack.pop())
+            self._run_failure_cleanups(self._failure_cleanup_stack.pop())
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
@@ -1009,17 +1010,24 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             if is_secret_keyword:
                 self._keyword_call.restore_logging()
 
+    @property
+    def _failure_cleanup_stack(self) -> list[list[Callable[[], None]]]:
+        if not hasattr(self._failure_cleanup_local, "stack"):
+            self._failure_cleanup_local.stack = []
+        return self._failure_cleanup_local.stack
+
     def run_after_failure_handling(self, cleanup: Callable[[], None]):
         """Runs ``cleanup`` once the failing keyword's failure handling is done.
 
-        On the Python path there is no failure handling, so ``cleanup`` runs at once.
+        On the Python path, and in a `Promise To` thread, there is no failure
+        handling, so ``cleanup`` runs at once.
         """
         if self._failure_cleanup_stack:
             self._failure_cleanup_stack[-1].append(cleanup)
         else:
-            self._run_failure_cleanup_stack([cleanup])
+            self._run_failure_cleanups([cleanup])
 
-    def _run_failure_cleanup_stack(self, cleanups: list[Callable[[], None]]):
+    def _run_failure_cleanups(self, cleanups: list[Callable[[], None]]):
         for cleanup in cleanups:
             try:
                 cleanup()

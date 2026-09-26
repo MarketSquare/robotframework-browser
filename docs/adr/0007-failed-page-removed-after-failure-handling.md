@@ -30,6 +30,12 @@ page that failed, whatever that keyword is.
   `New Page` inside a user's on-failure keyword never removes the outer failed page early.
 - **An empty stack means the Python path.** With no `run_keyword` in flight there is no
   failure handling to wait for, so `new_page` removes the failed page immediately.
+- **The stack is per thread.** `Promise To` runs its keyword in an executor thread, outside
+  `run_keyword`, while the main thread goes on with other keywords. With a shared stack a
+  promised `New Page` would queue its removal on whatever keyword the main thread happened to
+  be in, and could race that keyword's drain: lose the removal and leave the failed page
+  active, or raise in place of the real error. A promise has no failure handling of its own,
+  so its thread sees an empty stack and removes the failed page at once.
 - **Removal always happens**, even when `run_on_failure` is `None`, `keyword_error` returns
   early, or the on-failure keyword raises. A failing removal is logged at `warn`; the
   original `New Page` error is what is raised. The browser catalog after a failed `New Page`

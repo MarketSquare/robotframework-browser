@@ -1,3 +1,4 @@
+import threading
 from contextlib import contextmanager
 from unittest.mock import MagicMock
 
@@ -95,6 +96,25 @@ def test_nested_keyword_runs_only_its_own_cleanup(
 def test_cleanup_runs_immediately_on_python_path(browser: Browser, events):
     browser.run_after_failure_handling(lambda: events.append("cleanup"))
     assert events == ["cleanup"]
+
+
+def test_cleanup_from_a_promise_thread_runs_immediately(
+    browser: Browser, monkeypatch, events
+):
+    def keyword_running_while_a_promise_fails(*args):
+        promise = threading.Thread(
+            target=browser.run_after_failure_handling,
+            args=(lambda: events.append("promise cleanup"),),
+        )
+        promise.start()
+        promise.join()
+        events.append("keyword done")
+
+    monkeypatch.setitem(
+        browser.keywords, "wait_for", keyword_running_while_a_promise_fails
+    )
+    browser.run_keyword("wait_for", [], {})
+    assert events == ["promise cleanup", "keyword done"]
 
 
 def test_failing_cleanup_is_logged_and_original_error_raised(
