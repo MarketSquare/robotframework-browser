@@ -41,6 +41,13 @@ page that failed, whatever that keyword is.
   then remove the outer one early.
 - **The failed page is removed by identity.** If it was still the active page, the page below
   it becomes active again; otherwise the active page is left as the on-failure keyword set it.
+- **A keyword that swallows a `New Page` failure keeps the failed page until it returns.** A
+  plugin keyword calling `new_page` runs inside the plugin keyword's own `run_keyword` call,
+  so the removal waits for that call to finish. If the plugin catches the error and carries
+  on, its later steps run against the failed page. Accepted: it needs a plugin that swallows a
+  `New Page` failure, and such a plugin can switch back itself. This belongs in the plugin
+  author documentation, not the `New Page` keyword documentation, which is for direct use of
+  the library.
 - **During failure handling the failed page is visible** in `Get Browser Catalog` and
   `Get Page Ids`. That is the point, not a leak.
 - **Only the page is removed.** A browser or context that `New Page` created stays, since they
