@@ -25,7 +25,7 @@ type RequestTracker = {
     outstanding: Map<Request, OpenRequest>;
     requestCount: number;
     document?: Request;
-    documentOrder: number;
+    documentAnsweredAt: number;
     navigation: 'committed' | 'pending' | 'failed';
 };
 
@@ -42,42 +42,80 @@ export function trackRequests(page: Page): void {
     const tracker: RequestTracker = {
         outstanding: new Map(),
         requestCount: 0,
-        documentOrder: 0,
+        documentAnsweredAt: 0,
         navigation: 'committed',
     };
-    page.on('request', (request) => {
-        tracker.requestCount += 1;
-        tracker.outstanding.set(request, { startedAt: Date.now(), order: tracker.requestCount });
-        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
-            tracker.document = request;
-            tracker.documentOrder = tracker.requestCount;
-            tracker.navigation = 'pending';
-        }
-    });
-    page.on('response', (response) => {
-        if (response.request() === tracker.document) {
-            tracker.navigation = 'committed';
-        }
-    });
-    page.on('requestfinished', (request) => tracker.outstanding.delete(request));
-    page.on('requestfailed', (request) => {
-        tracker.outstanding.delete(request);
-        if (request === tracker.document && tracker.navigation === 'pending') {
-            tracker.navigation = 'failed';
-        }
-    });
-    // Chromium drops the requests of the document it leaves without Playwright firing requestfailed.
-    page.on('framenavigated', (frame) => {
-        if (frame !== page.mainFrame() || tracker.navigation !== 'committed') {
-            return;
-        }
-        for (const [request, { order }] of tracker.outstanding) {
-            if (order < tracker.documentOrder) {
-                tracker.outstanding.delete(request);
+    page.on(
+        'request',
+        guarded((request) => {
+            tracker.requestCount += 1;
+            tracker.outstanding.set(request, { startedAt: Date.now(), order: tracker.requestCount });
+            if (isPageDocument(page, request)) {
+                tracker.document = request;
+                tracker.navigation = 'pending';
             }
-        }
-    });
+        }),
+    );
+    page.on(
+        'response',
+        guarded((response) => {
+            if (response.request() === tracker.document) {
+                tracker.navigation = 'committed';
+                tracker.documentAnsweredAt = tracker.requestCount;
+            }
+        }),
+    );
+    page.on(
+        'requestfinished',
+        guarded((request) => tracker.outstanding.delete(request)),
+    );
+    page.on(
+        'requestfailed',
+        guarded((request) => {
+            tracker.outstanding.delete(request);
+            if (request === tracker.document) {
+                tracker.navigation = 'failed';
+            }
+        }),
+    );
+    // Chromium drops the requests of the document it leaves without Playwright firing requestfailed.
+    page.on(
+        'framenavigated',
+        guarded((frame) => {
+            if (frame !== page.mainFrame() || tracker.navigation !== 'committed') {
+                return;
+            }
+            for (const [request, { order }] of tracker.outstanding) {
+                if (order <= tracker.documentAnsweredAt && request !== tracker.document) {
+                    tracker.outstanding.delete(request);
+                }
+            }
+        }),
+    );
     trackers.set(page, tracker);
+}
+
+// Playwright cannot tell the frame of a navigation request issued before its frame exists.
+function isPageDocument(page: Page, request: Request): boolean {
+    if (!request.isNavigationRequest()) {
+        return false;
+    }
+    try {
+        return request.frame() === page.mainFrame();
+    } catch {
+        return false;
+    }
+}
+
+// A listener that throws would crash the Node process, and these run on every page.
+function guarded<T>(listener: (event: T) => void): (event: T) => void {
+    return (event) => {
+        try {
+            listener(event);
+        } catch (e) {
+            logger.info(`Load report request tracking failed: ${String(e)}`);
+        }
+    };
 }
 
 export async function withLoadReport<T>(page: Page, wait: () => Promise<T>): Promise<T> {

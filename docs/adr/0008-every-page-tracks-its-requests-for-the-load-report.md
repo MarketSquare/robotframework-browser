@@ -4,8 +4,8 @@ When a keyword's wait for a page to load times out, the error alone cannot tell 
 loaded" from "the wait missed the event" (#5272). The **load report** that answers this is
 logged by all seven keywords that wait for a page to load: `New Page`, `Go To`, `Reload`,
 `Go Back`, `Go Forward`, `Wait For Navigation` and `Wait For Load State`. To name the requests
-still outstanding, every page listens to Playwright's `request`, `requestfinished` and
-`requestfailed` events from the moment it is created, for its whole life.
+still outstanding, every page listens to Playwright's `request`, `response`, `requestfinished`,
+`requestfailed` and `framenavigated` events from the moment it is created, for its whole life.
 
 ## Considered options
 
@@ -26,8 +26,21 @@ still outstanding, every page listens to Playwright's `request`, `requestfinishe
   on one making ~4000.
 - **A page forgets the requests of the document it left.** Chromium drops them when the main
   frame commits a new document, without Playwright firing `requestfailed`, so once the main
-  frame navigates to a committed document, requests that started before its document request
-  are no longer counted as outstanding.
+  frame navigates to a committed document, requests that started before its document answered
+  are no longer counted as outstanding. The old document may keep polling after the new
+  document is requested, so the cut is at the answer, not at the request.
+- **A navigation that never produced a document counts as failed**, even when its request got
+  an answer first, as a download does. The page stays on its old document, so that document's
+  requests are kept and it is still asked for its `readyState`.
+- **Tracking never takes the Node process down.** A listener that throws would crash it, and
+  every page carries these listeners, so a failure inside one is logged in the Node log and
+  that event is skipped. A navigation request whose frame Playwright cannot tell is still
+  listed, but never taken for the page's document.
+- **Two races are accepted.** `framenavigated` names the frame, not the navigation, so a
+  same-document navigation of the old page can be taken for a commit: between a download's
+  answer and its failure, it prunes requests the old page still has open; and when a second
+  navigation starts before the first one commits, the first commit does not prune. Both
+  windows last milliseconds and cost at most some wrong lines in one report.
 - **A page adopted from an already running browser** (`Connect To Browser`) is tracked from
   the moment the library indexes it; requests that were already running then are not seen.
 - **A page that never committed is not asked anything.** `evaluate` blocks while the main

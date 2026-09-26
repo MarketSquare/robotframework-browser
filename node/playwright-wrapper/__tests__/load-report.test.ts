@@ -187,6 +187,81 @@ describe('load report', () => {
         });
     });
 
+    describe('when the old document keeps loading while the next one is requested', () => {
+        it('forgets what the old document started before the next one answered', async () => {
+            const document = documentRequest(page, 'http://localhost/slow-b.html');
+            page.emit('request', document);
+            page.emit('request', makePlaywrightRequest(page, 'http://localhost/api/poll'));
+            page.emit('response', { request: () => document });
+            page.emit('framenavigated', page.mainFrame());
+            page.emit('request', makePlaywrightRequest(page, 'http://localhost/api/stalled-image'));
+            page.evaluate.mockResolvedValue({ readyState: 'loading', domContentLoaded: 0, load: 0 });
+
+            const report = await reportOfTimeout(page);
+
+            expect(report).not.toContain('api/poll');
+            expect(report).toContain('slow-b.html [document]');
+            expect(report).toContain('stalled-image');
+        });
+    });
+
+    describe('when the navigation ends in a download', () => {
+        beforeEach(() => {
+            page.emit('request', makePlaywrightRequest(page, 'http://localhost/api/stalled-image'));
+            const download = documentRequest(page, 'http://localhost/file.zip');
+            page.emit('request', download);
+            page.emit('response', { request: () => download });
+            page.emit('requestfailed', download);
+            page.evaluate.mockResolvedValue({ readyState: 'complete', domContentLoaded: 3, load: 5 });
+        });
+
+        it('reports that no document came of it', async () => {
+            const report = await reportOfTimeout(page);
+
+            expect(report).toContain('Navigation committed: no (document request failed)');
+            expect(report).toContain('readyState: complete');
+        });
+
+        it('keeps the requests of the page it stayed on when that page navigates within itself', async () => {
+            page.emit('framenavigated', page.mainFrame());
+
+            const report = await reportOfTimeout(page);
+
+            expect(report).toContain('stalled-image');
+        });
+    });
+
+    describe('when Playwright cannot tell the frame of a request', () => {
+        it('lists the request but does not take it for the page document', async () => {
+            const frameless = {
+                ...documentRequest(page, 'http://localhost/popup.html'),
+                frame: () => {
+                    throw new Error('Frame for this navigation request is not available');
+                },
+            } as unknown as Request;
+            page.evaluate.mockResolvedValue({ readyState: 'complete', domContentLoaded: 3, load: 5 });
+            page.emit('request', frameless);
+
+            const report = await reportOfTimeout(page);
+
+            expect(report).toContain('Navigation committed: yes');
+            expect(report).toContain('popup.html [document]');
+        });
+    });
+
+    describe('when reading a request fails', () => {
+        it('does not let the failure escape the page event', () => {
+            const broken = {
+                ...makePlaywrightRequest(page, 'http://localhost/broken'),
+                isNavigationRequest: () => {
+                    throw new Error('Target page, context or browser has been closed');
+                },
+            } as unknown as Request;
+
+            expect(() => page.emit('request', broken)).not.toThrow();
+        });
+    });
+
     describe('when the page navigates away', () => {
         let document: Request;
 
