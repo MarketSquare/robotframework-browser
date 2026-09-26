@@ -77,10 +77,18 @@ class Control(LibraryComponent):
     ):
         """Navigates to the given ``url``.
 
-        | =Arguments= | =Description= |
-        | ``url`` | URL to be navigated to. |
-        | ``timeout`` | Time to wait for the page to load. If not defined, the library default timeout is used. |
-        | ``wait_until`` | When to consider the operation succeeded, defaults to ``load``. The event can be either: ``domcontentloaded`` - consider the operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider the operation to be finished when the load event is fired. ``networkidle`` - consider the operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider the operation to be finished when the network response is received and the document started loading. |
+        *Arguments:*
+          - ``url``: URL to be navigated to.
+          - ``timeout``: Time to wait for the page to load. If not defined, the library
+                default timeout is used.
+          - ``wait_until``: When to consider the operation succeeded, defaults to
+                ``load``. The event can be either: ``domcontentloaded`` - consider the
+                operation to be finished when the DOMContentLoaded event is fired.
+                ``load`` - consider the operation to be finished when the load event is
+                fired. ``networkidle`` - consider the operation to be finished when
+                there are no network connections for at least 500 ms. ``commit`` -
+                consider the operation to be finished when the network response is
+                received and the document started loading.
 
 
         Returns the HTTP status code of the navigation request as an integer, or 0 if no response was received.
@@ -155,22 +163,66 @@ class Control(LibraryComponent):
     ) -> str | bytes | Path | None:
         """Takes a screenshot of the current window or element and saves it to disk.
 
-        | =Arguments= | =Description= |
-        | ``filename`` | Filename into which to save. The file will be saved into the Robot Framework ${OUTPUTDIR}/browser/screenshot directory by default, but it can be overwritten by providing a custom path or filename. String ``{index}`` in the filename will be replaced with a rolling number. Use this to not overwrite filenames. If filename equals to UUID (case insensitive), then the filename is created by Python uuid; https://docs.python.org/3/library/uuid.html. If filename equals to EMBED (case insensitive) or ${NONE}, then the screenshot is embedded as a Base64 image into the log.html. The image is saved temporarily to the disk and a warning is displayed if removing the temporary file fails. The ${OUTPUTDIR}/browser/screenshot directory is removed at the first suite startup. |
-        | ``selector`` | Take a screenshot of the element matched by selector. See the `Finding elements` section for details about the selectors. If not provided, take a screenshot of the current viewport. |
-        | ``crop`` | Crops the taken screenshot to the given box. It takes the same dictionary as returned from `Get BoundingBox`. Cropping only works on a page screenshot, so when no selector is given. |
-        | ``disableAnimations`` | When set to ``True``, stops CSS animations, CSS transitions and Web Animations. Animations get different treatment depending on their duration:  - finite animations are fast-forwarded to completion, so they'll fire the transitionend event.  - infinite animations are cancelled to initial state, and then played over after the screenshot. |
-        | ``fileType`` | ``png`` or ``jpeg``. Specifies the screenshot type, defaults to ``png``. |
-        | ``fullPage`` | When ``True``, takes a screenshot of the full scrollable page, instead of the currently visible viewport. Defaults to ``False``. |
-        | ``highlight_selector`` | Highlights elements while taking the screenshot. Highlight method is ``playwright``. This highlighting also automatically happens if the Robot Framework variable ``${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}`` is set to a selector string and is available on page. This is the case if ``highlight_on_failure`` has been set to ``True`` when importing Browser library. |
-        | ``log_screenshot`` | When set to ``False`` the screenshot is taken but not logged into log.html. |
-        | ``mask`` | Specify selectors that should be masked when the screenshot is taken. Masked elements will be overlaid with a pink box ``#FF00FF`` that completely covers their bounding box. The argument can take a single selector string or a list of selector strings if multiple different elements should be masked. |
-        | ``maskColor`` | Specify the color of the overlay box for masked elements, in CSS color format. Default color is pink #FF00FF. |
-        | ``omitBackground`` | Hides the default white background and allows capturing screenshots with transparency. Not applicable to jpeg images. |
-        | ``quality`` | The quality of the image, between 0-100. Not applicable to png images. |
-        | ``scale`` | ``css`` or ``device``. ``css`` will reduce the image size and ``device`` keeps the image in its original size. Defaults to ``device``. |
-        | ``return_as`` | Defines what this keyword returns. Possible values are documented in `ScreenshotReturnType`. It can be either a path to the screenshot file as string or Path object, or the image data as bytes or base64 encoded string. When the screenshot is embedded into the log, ``path_string`` returns the string ``EMBED``. |
-        | ``timeout`` | Maximum time how long taking the screenshot can last, defaults to the library timeout. Supports Robot Framework time format, like 10s or 1 min, pass 0 to disable the timeout. The default value can be changed by using the `Set Browser Timeout` keyword. |
+        *Arguments:*
+          - ``filename``: Filename into which to save. The file will be saved into the
+                Robot Framework ${OUTPUTDIR}/browser/screenshot directory by default,
+                but it can be overwritten by providing a custom path or filename. String
+                ``{index}`` in the filename will be replaced with a rolling number. Use
+                this to not overwrite filenames. If filename equals to UUID (case
+                insensitive), then the filename is created by Python uuid;
+                https://docs.python.org/3/library/uuid.html. If filename equals to EMBED
+                (case insensitive) or ${NONE}, then the screenshot is embedded as a
+                Base64 image into the log.html. The image is saved temporarily to the
+                disk and a warning is displayed if removing the temporary file fails.
+                The ${OUTPUTDIR}/browser/screenshot directory is removed at the first
+                suite startup.
+          - ``selector``: Take a screenshot of the element matched by selector. See the
+                `Finding elements` section for details about the selectors. If not
+                provided, take a screenshot of the current viewport.
+          - ``crop``: Crops the taken screenshot to the given box. It takes the same
+                dictionary as returned from `Get BoundingBox`. Cropping only works on a
+                page screenshot, so when no selector is given.
+          - ``disableAnimations``: When set to ``True``, stops CSS animations, CSS
+                transitions and Web Animations. Animations get different treatment
+                depending on their duration:  - finite animations are fast-forwarded to
+                completion, so they'll fire the transitionend event.  - infinite
+                animations are cancelled to initial state, and then played over after
+                the screenshot.
+          - ``fileType``: ``png`` or ``jpeg``. Specifies the screenshot type, defaults
+                to ``png``.
+          - ``fullPage``: When ``True``, takes a screenshot of the full scrollable page,
+                instead of the currently visible viewport. Defaults to ``False``.
+          - ``highlight_selector``: Highlights elements while taking the screenshot.
+                Highlight method is ``playwright``. This highlighting also automatically
+                happens if the Robot Framework variable
+                ``${ROBOT_FRAMEWORK_BROWSER_FAILING_SELECTOR}`` is set to a selector
+                string and is available on page. This is the case if
+                ``highlight_on_failure`` has been set to ``True`` when importing Browser
+                library.
+          - ``log_screenshot``: When set to ``False`` the screenshot is taken but not
+                logged into log.html.
+          - ``mask``: Specify selectors that should be masked when the screenshot is
+                taken. Masked elements will be overlaid with a pink box ``#FF00FF`` that
+                completely covers their bounding box. The argument can take a single
+                selector string or a list of selector strings if multiple different
+                elements should be masked.
+          - ``maskColor``: Specify the color of the overlay box for masked elements, in
+                CSS color format. Default color is pink #FF00FF.
+          - ``omitBackground``: Hides the default white background and allows capturing
+                screenshots with transparency. Not applicable to jpeg images.
+          - ``quality``: The quality of the image, between 0-100. Not applicable to png
+                images.
+          - ``scale``: ``css`` or ``device``. ``css`` will reduce the image size and
+                ``device`` keeps the image in its original size. Defaults to ``device``.
+          - ``return_as``: Defines what this keyword returns. Possible values are
+                documented in `ScreenshotReturnType`. It can be either a path to the
+                screenshot file as string or Path object, or the image data as bytes or
+                base64 encoded string. When the screenshot is embedded into the log,
+                ``path_string`` returns the string ``EMBED``.
+          - ``timeout``: Maximum time how long taking the screenshot can last, defaults
+                to the library timeout. Supports Robot Framework time format, like 10s
+                or 1 min, pass 0 to disable the timeout. The default value can be
+                changed by using the `Set Browser Timeout` keyword.
 
         Keyword uses strict mode if selector is defined. See `Finding elements` for more details
         about strict mode.
@@ -372,9 +424,13 @@ class Control(LibraryComponent):
     ) -> str:
         """Sets the timeout used by most input and getter keywords.
 
-        | =Arguments= | =Description= |
-        | ``timeout`` | The timeout is set for the current Playwright context and for new contexts. Supports Robot Framework [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format|time format]. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for more details. |
+        *Arguments:*
+          - ``timeout``: The timeout is set for the current Playwright context and for
+                new contexts. Supports Robot Framework
+                [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#time-format | time format].
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         Returns the previous value of the timeout.
 
@@ -409,9 +465,12 @@ class Control(LibraryComponent):
     ) -> str:
         """Sets the timeout used in retrying assertions when they fail.
 
-        | =Arguments= | =Description= |
-        | ``timeout`` | Assertion retry timeout will determine how long Browser library will retry an assertion to be true. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+        *Arguments:*
+          - ``timeout``: Assertion retry timeout will determine how long Browser library
+                will retry an assertion to be true.
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
+                details.
 
         The other keyword `Set Browser Timeout` controls how long Playwright
         will wait on the node side for elements to fulfill the
@@ -440,9 +499,13 @@ class Control(LibraryComponent):
     ) -> str:
         """Sets the prefix for all selectors in the given scope.
 
-        | =Arguments= | =Description= |
-        | ``prefix``   | Prefix for all selectors. Prefix and selector will be separated by a single space. Use ``${None}`` or ``${EMPTY}`` to disable the prefix. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+        *Arguments:*
+          - ``prefix``: Prefix for all selectors. Prefix and selector will be separated
+                by a single space. Use ``${None}`` or ``${EMPTY}`` to disable the
+                prefix.
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
+                details.
 
         Returns the previous value of the prefix.
 
@@ -473,9 +536,13 @@ class Control(LibraryComponent):
     ) -> bool:
         """Controls if the element is highlighted on failure.
 
-        | =Arguments= | =Description= |
-        | ``highlight`` | If ``True``, the element is highlighted when a screenshot is taken on failure. If ``False``, the element is not highlighted in the screenshot. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+        *Arguments:*
+          - ``highlight``: If ``True``, the element is highlighted when a screenshot is
+                taken on failure. If ``False``, the element is not highlighted in the
+                screenshot.
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
+                details.
 
         Returns the previous value of the setting.
 
@@ -500,10 +567,15 @@ class Control(LibraryComponent):
 
         The banner can also be controlled by an import setting of the Browser library. (see `Importing` section)
 
-        | =Arguments= | =Description= |
-        | ``show`` | If ``True``, the banner is shown on the page. If ``False``, the banner is not shown on the page. If ``${None}``, the banner is shown on the page only when running in presenter mode. |
-        | ``style`` | Additional CSS styles to be applied to the banner. These styles may override the existing ones for the banner. |
-        | ``scope``   | Scope defines the live time of that setting. Available values are ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more details. |
+        *Arguments:*
+          - ``show``: If ``True``, the banner is shown on the page. If ``False``, the
+                banner is not shown on the page. If ``${None}``, the banner is shown on
+                the page only when running in presenter mode.
+          - ``style``: Additional CSS styles to be applied to the banner. These styles
+                may override the existing ones for the banner.
+          - ``scope``: Scope defines the live time of that setting. Available values are
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
+                details.
 
         Returns the previous settings as a dictionary with the keys ``show`` and ``style``.
 
@@ -535,9 +607,9 @@ class Control(LibraryComponent):
         so you should set the viewport size with `New Context`
         before opening the page itself.
 
-        | =Arguments= | =Description= |
-        | ``width`` | Sets the width in pixels. |
-        | ``height`` | Sets the height in pixels. |
+        *Arguments:*
+          - ``width``: Sets the width in pixels.
+          - ``height``: Sets the height in pixels.
 
         [https://forum.robotframework.org/t//4333|Comment >>]
         """
@@ -551,8 +623,9 @@ class Control(LibraryComponent):
     def set_offline(self, offline: bool = True):
         """Toggles the current context's offline emulation.
 
-        | =Arguments= | =Description= |
-        | ``offline`` | Toggles the offline mode. Set to ``False`` to switch back to online mode. Defaults to ``True``. |
+        *Arguments:*
+          - ``offline``: Toggles the offline mode. Set to ``False`` to switch back to
+                online mode. Defaults to ``True``.
 
         [https://forum.robotframework.org/t//4330|Comment >>]
         """
@@ -570,10 +643,10 @@ class Control(LibraryComponent):
         The accuracy of the location must be a non-negative number and defaults to 0. When
         creating the context, grant the ``geolocation`` permission so that pages can read the geolocation.
 
-        | =Arguments= | =Description= |
-        | ``latitude`` | Latitude between -90 and 90. |
-        | ``longitude`` | Longitude between -180 and 180. |
-        | ``accuracy`` | Non-negative accuracy value. Defaults to 0. |
+        *Arguments:*
+          - ``latitude``: Latitude between -90 and 90.
+          - ``longitude``: Longitude between -180 and 180.
+          - ``accuracy``: Non-negative accuracy value. Defaults to 0.
 
         Example:
         | ${permissions} =    Create List    geolocation
@@ -599,9 +672,11 @@ class Control(LibraryComponent):
     ):
         """Reloads current active page.
 
-        | =Arguments= | =Description= |
-        | ``timeout`` | Maximum time for the reload to succeed. If not given, the currently set browser timeout is used. |
-        | ``waitUntil`` | When to consider the operation succeeded, defaults to ``load``. |
+        *Arguments:*
+          - ``timeout``: Maximum time for the reload to succeed. If not given, the
+                currently set browser timeout is used.
+          - ``waitUntil``: When to consider the operation succeeded, defaults to
+                ``load``.
 
         ``waitUntil`` events can be either:
         ``domcontentloaded`` - consider the operation to be finished when the DOMContentLoaded event is fired.
@@ -622,9 +697,13 @@ class Control(LibraryComponent):
     def grant_permissions(self, *permissions: Permission, origin: str | None = None):
         """Grants permissions to the current context.
 
-        | =Arguments= | =Description= |
-        | ``permissions`` | Permissions to grant, given as separate arguments. See `Permission` for the available values, for example ``geolocation``, ``notifications``, ``camera`` or ``microphone``. |
-        | ``origin`` | The origin to grant the permissions to, e.g. "https://example.com". If not given, the permissions are granted for all origins. |
+        *Arguments:*
+          - ``permissions``: Permissions to grant, given as separate arguments. See
+                `Permission` for the available values, for example ``geolocation``,
+                ``notifications``, ``camera`` or ``microphone``.
+          - ``origin``: The origin to grant the permissions to, e.g.
+                "https://example.com". If not given, the permissions are granted for all
+                origins.
 
         Example:
         | `New Context`
@@ -660,8 +739,13 @@ class Control(LibraryComponent):
         When enabled, the element is scrolled into view and highlighted with a border for a while
         to visually show what the keyword found.
 
-        | =Arguments= | =Description= |
-        | ``mode`` | When set to ``True``, enables presenter mode with default settings. When set to ``False``, disables presenter mode. Can also be a dictionary containing the highlighting configuration options as defined in `HighLightElement`. Fields which are not given use their default values: ``duration`` 2 seconds, ``width`` 2px, ``style`` dotted and ``color`` blue. |
+        *Arguments:*
+          - ``mode``: When set to ``True``, enables presenter mode with default
+                settings. When set to ``False``, disables presenter mode. Can also be a
+                dictionary containing the highlighting configuration options as defined
+                in `HighLightElement`. Fields which are not given use their default
+                values: ``duration`` 2 seconds, ``width`` 2px, ``style`` dotted and
+                ``color`` blue.
 
         The keyword returns the previous presenter mode value, allowing you to restore it later.
 

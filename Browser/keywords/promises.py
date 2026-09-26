@@ -50,9 +50,9 @@ class Promises(LibraryComponent):
         Only Browser library keywords can be promised, any other keyword name
         fails the keyword.
 
-        | =Arguments= | =Description= |
-        | ``kw`` | Keyword that will run asynchronously in the background. |
-        | ``*args`` | Keyword arguments as normally used. |
+        *Arguments:*
+          - ``kw``: Keyword that will run asynchronously in the background.
+          - ``*args``: Keyword arguments as normally used.
 
         Example:
         | ${promise}=     `Promise To`            Wait For Response     matcher=     timeout=3
@@ -155,10 +155,20 @@ class Promises(LibraryComponent):
 
         If browser is connected remotely with `Connect To Browser` then ``saveAs`` must be set to store it locally where the browser runs!
 
-        | =Arguments= | =Description= |
-        | ``saveAs`` | Defines path where the file is saved persistently. File will also temporarily be saved in playwright context's default download location. If empty, generated unique path (GUID) is used and file is deleted when the context is closed. |
-        | ``wait_for_finished`` | If true, promise will wait for download to finish. If false, promise will resolve immediately after download has started. |
-        | ``download_timeout`` | Maximum total time for the download to start and finish, counted from the moment the promise is created. If the download does not start within this time, the keyword fails. If it starts but does not finish, it is cancelled and the keyword fails. If ``wait_for_finished`` is ``False``, only the start is limited. If not set, the download must start within the browser timeout, see `Set Browser Timeout`, and there is no limit for it to finish. |
+        *Arguments:*
+          - ``saveAs``: Defines path where the file is saved persistently. File will
+                also temporarily be saved in playwright context's default download
+                location. If empty, generated unique path (GUID) is used and file is
+                deleted when the context is closed.
+          - ``wait_for_finished``: If true, promise will wait for download to finish. If
+                false, promise will resolve immediately after download has started.
+          - ``download_timeout``: Maximum total time for the download to start and
+                finish, counted from the moment the promise is created. If the download
+                does not start within this time, the keyword fails. If it starts but
+                does not finish, it is cancelled and the keyword fails. If
+                ``wait_for_finished`` is ``False``, only the start is limited. If not
+                set, the download must start within the browser timeout, see `Set
+                Browser Timeout`, and there is no limit for it to finish.
 
         Keyword returns dictionary of type `DownloadInfo` which contains downloaded file path
         and suggested filename as well as state and downloadID.
@@ -248,8 +258,8 @@ class Promises(LibraryComponent):
 
         For general waiting of elements please see `Implicit waiting`.
 
-        | =Arguments= | =Description= |
-        | ``promises`` | Promises to wait for. |
+        *Arguments:*
+          - ``promises``: Promises to wait for.
 
         Example:
         | ${promise}=    `Promise To`            `Wait For Response`     matcher=     timeout=3
@@ -288,8 +298,8 @@ class Promises(LibraryComponent):
         The keyword fails immediately if ``path`` does not point to an existing file.
         The promise fails if no file chooser dialog is opened within the timeout.
 
-        | =Arguments= | =Description= |
-        | ``path`` | Path to file to be uploaded. |
+        *Arguments:*
+          - ``path``: Path to file to be uploaded.
 
         Example use:
 

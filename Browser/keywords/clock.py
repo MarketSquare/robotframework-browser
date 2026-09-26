@@ -23,9 +23,9 @@ class Clock(LibraryComponent):
     def set_time(self, time: datetime, clock_type: ClockType = ClockType.install):
         """Sets the time of the browser's internal clock.
 
-        | =Arguments= | =Description= |
-        | time     | The time to set. Supports Robot Framework date and time format |
-        | clock_type | The clock type to set. Default is ``install``. |
+        *Arguments:*
+          - ``time``: The time to set. Supports Robot Framework date and time format
+          - ``clock_type``: The clock type to set. Default is ``install``.
 
         ``fixed`` makes ``Date.now`` and ``new Date()`` always return the same
         fake time, while all timers keep running.
@@ -69,8 +69,8 @@ class Clock(LibraryComponent):
     def pause_at(self, time: datetime):
         """Advances the clock by jumping forward in time and pauses it.
 
-        | =Arguments= | =Description= |
-        | time     | The time to pause the clock at. |
+        *Arguments:*
+          - ``time``: The time to pause the clock at.
 
         Fires due timers at most once. This is equivalent to a user
         closing the laptop lid for a while and reopening it at the specified
@@ -99,9 +99,9 @@ class Clock(LibraryComponent):
     ):
         """Advances the clock by a specified amount of time.
 
-        | =Arguments= | =Description= |
-        | time     | The time to advance. Supports Robot Framework time format |
-        | advance_type | The type of advance. Default is ``fast_forward``. |
+        *Arguments:*
+          - ``time``: The time to advance. Supports Robot Framework time format
+          - ``advance_type``: The type of advance. Default is ``fast_forward``.
 
         ``run_for`` advances the clock by firing all the time-related callbacks.
 

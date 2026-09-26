@@ -37,13 +37,19 @@ class Coverage(LibraryComponent):
     ) -> str:
         """Starts the coverage for the current page.
 
-        | =Arguments= | =Description= |
-        | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file]. If the file does not exist, it is ignored. |
-        | ``coverage_type`` | Type of coverage to start. Default is ``all``. |
-        | ``path`` | Absolute or relative directory path (relative to ``${OUTPUT_DIR}/browser/coverage/``) where the coverage is stored in a directory with the page id name. |
-        | ``raw`` | Whether to save raw coverage data. Default is ``False``. |
-        | ``reportAnonymousScripts`` | Whether to report anonymous scripts. Default is ``False``. Only valid for JS coverage. |
-        | ``resetOnNavigation`` | Whether to reset coverage on navigation. Default is ``True``. |
+        *Arguments:*
+          - ``config_file``: Optional path to
+                [https://www.npmjs.com/package/monocart-coverage-reports#options |
+                options file]. If the file does not exist, it is ignored.
+          - ``coverage_type``: Type of coverage to start. Default is ``all``.
+          - ``path``: Absolute or relative directory path (relative to
+                ``${OUTPUT_DIR}/browser/coverage/``) where the coverage is stored in a
+                directory with the page id name.
+          - ``raw``: Whether to save raw coverage data. Default is ``False``.
+          - ``reportAnonymousScripts``: Whether to report anonymous scripts. Default is
+                ``False``. Only valid for JS coverage.
+          - ``resetOnNavigation``: Whether to reset coverage on navigation. Default is
+                ``True``.
 
         The ``coverage_type`` can be one of the following:
         - ``all``: Both [https://playwright.dev/docs/api/class-coverage/#coverage-start-css-coverage|CSS] and [https://playwright.dev/docs/api/class-coverage/#coverage-start-js-coverage|JS].
@@ -135,12 +141,15 @@ class Coverage(LibraryComponent):
     ) -> Path:
         """Combines multiple raw coverage reports into a single report.
 
-        | =Arguments= | =Description= |
-        | ``input_folder`` | Path to the base folder where the raw coverage reports are located. |
-        | ``output_folder`` | Path to the folder where the combined report is stored. |
-        | ``config_file`` | Optional path to [https://www.npmjs.com/package/monocart-coverage-reports#options|options file] |
-        | ``name`` | Optional name for the combined report. |
-        | ``reports`` | Optional list of reporters to create. Default is ``v8``. |
+        *Arguments:*
+          - ``input_folder``: Path to the base folder where the raw coverage reports are
+                located.
+          - ``output_folder``: Path to the folder where the combined report is stored.
+          - ``config_file``: Optional path to
+                [https://www.npmjs.com/package/monocart-coverage-reports#options |
+                options file]
+          - ``name``: Optional name for the combined report.
+          - ``reports``: Optional list of reporters to create. Default is ``v8``.
 
         Returns the path to the ``output_folder``.
 
