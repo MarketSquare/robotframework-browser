@@ -24,17 +24,18 @@ New Page Will Timeout And Page Will Be Removed From Catalog
         Fail    Expected timeout
     END
 
-Failure Handling Sees The Page That Failed To Load
+Failure Handling Sees The Page That Stalled While Loading
     [Tags]    slow
     Set Browser Timeout    1s    scope=Test
     New Context
-    ${open_page} =    New Page    about:blank
+    New Page    about:blank
     ${catalog} =    Get Browser Catalog
     Register Keyword To Run On Failure    Remember Active Page    scope=Test
     TRY
-        New Page    ${SLOW_PAGE}
+        New Page    ${STALLED_PAGE}
     EXCEPT    *Timeout*    type=glob
-        Should Not Be Equal    ${ACTIVE_PAGE_ON_FAILURE}    ${open_page}[page_id]
+        Should Be Equal    ${URL_ON_FAILURE}    ${STALLED_PAGE}
+        Should Be Equal    ${TITLE_ON_FAILURE}    Stalled page
         ${catalog_after_failure} =    Get Browser Catalog
         Should Be Equal    ${catalog}    ${catalog_after_failure}
     ELSE
@@ -43,8 +44,10 @@ Failure Handling Sees The Page That Failed To Load
 
 *** Keywords ***
 Remember Active Page
-    ${active_page} =    Get Page Ids    page=Active    context=Active    browser=Active
-    VAR    ${ACTIVE_PAGE_ON_FAILURE} =    ${active_page}[0]    scope=TEST
+    ${url} =    Get Url
+    ${title} =    Get Title
+    VAR    ${URL_ON_FAILURE} =    ${url}    scope=TEST
+    VAR    ${TITLE_ON_FAILURE} =    ${title}    scope=TEST
 
 Setup
     Set Browser Timeout    15s    scope=Suite
