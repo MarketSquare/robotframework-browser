@@ -50,9 +50,14 @@ page that failed, whatever that keyword is.
   active, or raise in place of the real error. A promise has no failure handling of its own,
   so its thread sees an empty stack and removes the failed page at once.
 - **Removal always happens**, even when `run_on_failure` is `None`, `keyword_error` returns
-  early, or the on-failure keyword raises. A failing removal is logged at `warn`; the
-  original `New Page` error is what is raised. The browser catalog after a failed `New Page`
-  is unchanged, as before.
+  early, or the on-failure keyword raises. A failing `RemoveFailedPage` call is logged at
+  `warn`; the original `New Page` error is what is raised. The browser catalog after a
+  failed `New Page` is unchanged, as before.
+- **The failed page is closed without waiting for it.** Node takes the page out of the page
+  stack at once, then closes it fire-and-forget and logs a failed close only in the Node log,
+  as the pre-#5261 code did. Awaiting `close()` hung in CI: a page closed milliseconds into
+  its navigation, as with a 1 ms timeout, never finished closing, and the keyword ran into
+  the test timeout.
 - **Each `New Page` call names its failed page with a token.** Python sends a fresh token in
   the `NewPage` request; Node records a failed page under it, and `RemoveFailedPage` removes
   only the page recorded under that token. Without it, a nested `New Page` that fails before

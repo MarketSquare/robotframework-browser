@@ -862,7 +862,7 @@ export async function removeFailedPage(
     context.pageStack = context.pageStack.filter((p) => p.p !== page.p);
     const wasOpen = !page.p.isClosed();
     if (wasOpen) {
-        await page.p.close();
+        page.p.close().catch((e: unknown) => logger.info(`Closing failed page ${page.id} failed: ${String(e)}`));
     }
     const activePageId = openBrowsers.getActivePageId();
     const active = activePageId ? `, active page is now ${activePageId}` : '';

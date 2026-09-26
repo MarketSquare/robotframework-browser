@@ -449,13 +449,23 @@ describe('removeFailedPage', () => {
         expect(browser.page?.id).toBe('page=open');
     });
 
-    it('fails when closing the failed page fails, and forgets the page anyway', async () => {
-        expect.assertions(3);
+    it('returns without waiting for the failed page to close', async () => {
+        const { state, browser } = stateWithOpenPage();
+        const failedPage = await failNewPage(state, browser.context);
+        failedPage.close.mockReturnValue(new Promise(() => undefined));
+
+        await removeFailedPage({ token: 'token-1' }, state);
+
+        expect(failedPage.close).toHaveBeenCalledTimes(1);
+        expect(browser.page?.id).toBe('page=open');
+    });
+
+    it('does not fail when closing the failed page fails, and forgets the page', async () => {
         const { state, browser } = stateWithOpenPage();
         const failedPage = await failNewPage(state, browser.context);
         failedPage.close.mockRejectedValue(new Error('Target closed'));
 
-        await expect(removeFailedPage({ token: 'token-1' }, state)).rejects.toThrow('Target closed');
+        await removeFailedPage({ token: 'token-1' }, state);
         await removeFailedPage({ token: 'token-1' }, state);
 
         expect(failedPage.close).toHaveBeenCalledTimes(1);
