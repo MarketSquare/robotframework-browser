@@ -20,7 +20,7 @@ import string
 import sys
 import time
 import types
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
@@ -556,6 +556,7 @@ class Browser(DynamicCore):
         self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
+        self._failure_cleanup_stack: list[list[Callable[[], None]]] = []
         self.pause_on_failure: set[str] = set()
         self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
@@ -973,6 +974,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     def run_keyword(self, name, args, kwargs=None):
         is_secret_keyword = self._keyword_call.is_secret_keyword(name)
+        self._failure_cleanup_stack.append([])
         try:
             if is_secret_keyword:
                 self._keyword_call.suppress_logging()
@@ -998,6 +1000,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
         finally:
+            self._run_failure_cleanup_stack(self._failure_cleanup_stack.pop())
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
@@ -1005,6 +1008,23 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 self._playwright_state.close_trace_group()
             if is_secret_keyword:
                 self._keyword_call.restore_logging()
+
+    def run_after_failure_handling(self, cleanup: Callable[[], None]):
+        """Runs ``cleanup`` once the failing keyword's failure handling is done.
+
+        On the Python path there is no failure handling, so ``cleanup`` runs at once.
+        """
+        if self._failure_cleanup_stack:
+            self._failure_cleanup_stack[-1].append(cleanup)
+        else:
+            self._run_failure_cleanup_stack([cleanup])
+
+    def _run_failure_cleanup_stack(self, cleanups: list[Callable[[], None]]):
+        for cleanup in cleanups:
+            try:
+                cleanup()
+            except Exception as error:
+                logger.warn(f"Cleanup after a failed keyword failed: {error}")
 
     def _get_selector_value_from_keyword_call(self, name, args, kwargs):
         selector = kwargs.get("selector")

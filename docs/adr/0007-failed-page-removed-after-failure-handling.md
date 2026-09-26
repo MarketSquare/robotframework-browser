@@ -34,6 +34,11 @@ page that failed, whatever that keyword is.
   early, or the on-failure keyword raises. A failing removal is logged at `warn`; the
   original `New Page` error is what is raised. The browser catalog after a failed `New Page`
   is unchanged, as before.
+- **Each `New Page` call names its failed page with a token.** Python sends a fresh token in
+  the `NewPage` request; Node records a failed page under it, and `RemoveFailedPage` removes
+  only the page recorded under that token. Without it, a nested `New Page` that fails before
+  its page even exists would still queue a removal, and "remove the last failed page" would
+  then remove the outer one early.
 - **The failed page is removed by identity.** If it was still the active page, the page below
   it becomes active again; otherwise the active page is left as the on-failure keyword set it.
 - **During failure handling the failed page is visible** in `Get Browser Catalog` and

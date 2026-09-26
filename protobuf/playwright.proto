@@ -231,6 +231,16 @@ message Request {
     string waitUntil = 2;
   }
 
+  message NewPage {
+    Url url = 1;
+    string waitUntil = 2;
+    string failedPageToken = 3;
+  }
+
+  message FailedPage {
+    string token = 1;
+  }
+
   message PageLoadState {
     string state = 1;
     int32 timeout = 2;
@@ -637,7 +647,7 @@ service  Playwright {
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
-  rpc NewPage(Request.UrlOptions) returns (Response.NewPageResponse);
+  rpc NewPage(Request.NewPage) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc LaunchBrowserServer(Request.Browser) returns (Response.String);
@@ -648,6 +658,7 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Bool) returns (Response.Empty);
   rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
+  rpc RemoveFailedPage(Request.FailedPage) returns (Response.Empty);
   rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
   rpc SetRFContext(Request.RFContext) returns (Response.Empty);
