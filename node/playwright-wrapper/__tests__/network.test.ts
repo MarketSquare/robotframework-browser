@@ -278,6 +278,15 @@ describe('_waitForDownload', () => {
         expect(JSON.parse(result.json).state).toBe('in_progress');
     });
 
+    it('leaves no download timeout timer running after the download finishes', async () => {
+        jest.useFakeTimers();
+        const mockPage = makeMockPage();
+
+        await _waitForDownload(mockPage, makeMockDownloadState(), '', 30000, true);
+
+        expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('cancels the download and fails when it does not finish within the download timeout', async () => {
         expect.assertions(2);
         const download = makeMockDownload({ createReadStream: jest.fn().mockReturnValue(new Promise(() => {})) });
