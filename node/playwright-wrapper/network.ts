@@ -205,10 +205,13 @@ export async function _waitForDownload(
     }
     if (downloadTimeout > 0) {
         const remainingTimeout = Math.max(downloadTimeout - (Date.now() - downloadWaitStartedAt), 0);
+        let timer: NodeJS.Timeout | undefined;
         const readStream = await Promise.race([
             downloadObject.createReadStream(),
-            new Promise((resolve) => setTimeout(resolve, remainingTimeout)),
-        ]);
+            new Promise((resolve) => {
+                timer = setTimeout(resolve, remainingTimeout);
+            }),
+        ]).finally(() => clearTimeout(timer));
         if (!readStream) {
             await downloadObject.cancel();
             throw new Error('Download failed, Timeout exceeded.');
