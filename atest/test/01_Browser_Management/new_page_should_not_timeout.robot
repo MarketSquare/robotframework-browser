@@ -42,6 +42,16 @@ Failure Handling Sees The Page That Stalled While Loading
         Fail    Expected timeout
     END
 
+Default Failure Screenshot Is Taken Of The Page That Stalled While Loading
+    [Tags]    slow
+    Set Browser Timeout    1s    scope=Test
+    New Context
+    Register Keyword To Run On Failure    Take Screenshot    fail-screenshot-{index}    scope=Test
+    ${screenshots_before} =    Glob Files Count    ${OUTPUT_DIR}/browser/screenshot
+    Run Keyword And Expect Error    *Timeout*    New Page    ${STALLED_PAGE}
+    ${screenshots_after} =    Glob Files Count    ${OUTPUT_DIR}/browser/screenshot
+    Should Be Equal As Integers    ${screenshots_after}    ${screenshots_before + 1}
+
 *** Keywords ***
 Remember Active Page
     ${url} =    Get Url

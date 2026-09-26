@@ -54,6 +54,17 @@ page that failed, whatever that keyword is.
   `New Page` failure, and such a plugin can switch back itself. This belongs in the plugin
   author documentation, not the `New Page` keyword documentation, which is for direct use of
   the library.
+- **A page that never committed costs one more timeout and gives no screenshot.** When the
+  server never answers, the failed page is still `about:blank` mid-navigation, and the default
+  `Take Screenshot` waits for fonts until its own timeout, which `keyword_error` logs at
+  `info`. So such a `New Page` fails after about twice the browser timeout, where it used to
+  fail fast with a screenshot of another page or "no page open". Accepted: it only slows
+  tests that are already failing, and the lost screenshot would have been blank anyway.
+  Capping the failure screenshot's timeout would change failure screenshots for every
+  keyword, and closing uncommitted pages at once would bring back the wrong-page screenshot.
+  Stopping the navigation with `window.stop()` does not help: `evaluate` waits for the
+  pending navigation. The load-state log line from #5272 will say why the screenshot is
+  missing. When the page commits and then stalls, the screenshot is taken without delay.
 - **During failure handling the failed page is visible** in `Get Browser Catalog` and
   `Get Page Ids`. That is the point, not a leak.
 - **Only the page is removed.** A browser or context that `New Page` created stays, since they
