@@ -1025,6 +1025,10 @@ class PlaywrightState(LibraryComponent):
         `Register Keyword To Run On Failure` has run, so the failure screenshot
         shows the page that failed to load.
 
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
+
         [https://forum.robotframework.org/t//4308|Comment >>]
         """
         failed_page_token = str(uuid4())

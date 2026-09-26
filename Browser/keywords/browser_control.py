@@ -52,6 +52,10 @@ class Control(LibraryComponent):
     def go_forward(self):
         """Navigates to the next page in history.
 
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
+
         [https://forum.robotframework.org/t//4290|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
@@ -61,6 +65,10 @@ class Control(LibraryComponent):
     @keyword(tags=("Setter", "BrowserControl"))
     def go_back(self):
         """Navigates to the previous page in history.
+
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
 
         [https://forum.robotframework.org/t//4289|Comment >>]
         """
@@ -84,6 +92,10 @@ class Control(LibraryComponent):
 
 
         Returns the HTTP status code of the navigation request as an integer, or 0 if no response was received.
+
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
 
         [https://forum.robotframework.org/t//4291|Comment >>]
         """
@@ -608,6 +620,10 @@ class Control(LibraryComponent):
         ``load`` - consider the operation to be finished when the load event is fired.
         ``networkidle`` - consider the operation to be finished when there are no network connections for at least 500 ms.
         ``commit`` - consider the operation to be finished when the network response is received and the document started loading.
+
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
 
         [https://forum.robotframework.org/t//4317|Comment >>]
         """

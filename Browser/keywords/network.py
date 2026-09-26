@@ -297,6 +297,10 @@ class Network(LibraryComponent):
         | `Go To`                  ${ROOT_URL}/redirector.html
         | `Wait for navigation`    ${ROOT_URL}/posted.html    wait_until=${wait_until}
 
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
+
         [https://forum.robotframework.org/t//4347|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:

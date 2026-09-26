@@ -16,6 +16,7 @@ import { BrowserContext, Page } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
+import { withLoadReport } from './load-report';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, stringResponse } from './response-util';
@@ -73,7 +74,7 @@ export async function goTo(request: pb.Request_UrlOptions, page: Page): Promise<
     if (waitUntil) {
         goToOptions.waitUntil = waitUntil;
     }
-    const response = await page.goto(url, goToOptions);
+    const response = await withLoadReport(page, () => page.goto(url, goToOptions));
     return stringResponse(response?.status().toString() || '', `Successfully opened URL ${url}`);
 }
 
@@ -131,7 +132,7 @@ export async function setOffline(request: pb.Request_Bool, context?: BrowserCont
 export async function reload(page: Page, body: string): Promise<pb.Response_Empty> {
     const options = JSON.parse(body);
     logger.info(`Reload page with options: ${body}`);
-    await page.reload(options);
+    await withLoadReport(page, () => page.reload(options));
     return emptyWithLog(`Reloaded page with options: ${body}`);
 }
 

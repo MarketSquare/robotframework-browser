@@ -71,6 +71,7 @@ import {
     Response_String,
 } from './generated/playwright';
 import { HighlightDisposableCache } from './highlight-cache';
+import { trackRequests, withLoadReport } from './load-report';
 import { exists } from './playwright-invoke';
 import {
     emptyWithLog,
@@ -301,6 +302,7 @@ async function _createIndexedContext(
 }
 
 function indexedPage(newPage: Page): IndexedPage {
+    trackRequests(newPage);
     const timestamp = new Date().getTime() / 1000;
     const pageErrors: TimedError[] = [];
     const consoleMessages: TimedConsoleMessage[] = [];
@@ -835,7 +837,7 @@ export async function newPage(
         if (waitUntil) {
             goToOptions.waitUntil = waitUntil;
         }
-        await page.p.goto(url, goToOptions);
+        await withLoadReport(page.p, () => page.p.goto(url, goToOptions));
         const video = { video_path: videoPath || null, contextUuid: context.context.id };
         return {
             body: page.id,
