@@ -143,6 +143,8 @@ async function buildLoadReport(page: Page): Promise<string> {
         throw Error('The page requests are not tracked');
     }
     const now = Date.now();
+    // The page keeps loading while it is probed, so the report is built from the tracker as it was at the timeout.
+    const outstanding = [...tracker.outstanding];
     const lines = ['Load report of the page when the wait timed out:', `URL: ${page.url()}`];
     if (tracker.navigation === 'pending') {
         lines.push(`Navigation committed: no (waiting for ${cutUrl(tracker.document?.url() ?? '')})`);
@@ -151,13 +153,13 @@ async function buildLoadReport(page: Page): Promise<string> {
     } else {
         lines.push('Navigation committed: yes', ...(await documentProgress(page)));
     }
-    lines.push(`Outstanding requests: ${tracker.outstanding.size}`);
-    for (const [request, { startedAt }] of [...tracker.outstanding].slice(0, MAX_REQUESTS)) {
+    lines.push(`Outstanding requests: ${outstanding.length}`);
+    for (const [request, { startedAt }] of outstanding.slice(0, MAX_REQUESTS)) {
         const url = cutUrl(request.url());
         lines.push(`${request.method()} ${url} [${request.resourceType()}] open for ${now - startedAt} ms`);
     }
-    if (tracker.outstanding.size > MAX_REQUESTS) {
-        lines.push(`... and ${tracker.outstanding.size - MAX_REQUESTS} more`);
+    if (outstanding.length > MAX_REQUESTS) {
+        lines.push(`... and ${outstanding.length - MAX_REQUESTS} more`);
     }
     return withinMaxBytes(lines);
 }

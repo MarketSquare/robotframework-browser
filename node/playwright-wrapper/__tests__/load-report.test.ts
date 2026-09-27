@@ -331,6 +331,35 @@ describe('load report', () => {
         });
     });
 
+    describe('when the page changes while it is being asked', () => {
+        it('does not list a request that started after the timeout', async () => {
+            page.evaluate.mockImplementation(async () => {
+                page.emit('request', documentRequest(page, 'http://localhost/slowpage.html'));
+                throw new Error('Execution context was destroyed');
+            });
+
+            const report = await reportOfTimeout(page);
+
+            expect(report).toContain('Navigation committed: yes');
+            expect(report).toContain('Outstanding requests: 0');
+            expect(report).not.toContain('slowpage.html');
+        });
+
+        it('lists a request that was open at the timeout and finished after it', async () => {
+            const stalled = makePlaywrightRequest(page, 'http://localhost/api/stalled-image');
+            page.emit('request', stalled);
+            page.evaluate.mockImplementation(async () => {
+                page.emit('requestfinished', stalled);
+                return { readyState: 'interactive', domContentLoaded: 12, load: 0 };
+            });
+
+            const report = await reportOfTimeout(page);
+
+            expect(report).toContain('Outstanding requests: 1');
+            expect(report).toMatch(/GET http:\/\/localhost\/api\/stalled-image \[image\] open for \d+ ms/);
+        });
+    });
+
     describe('when there is a lot to report', () => {
         it('names the first 20 open requests and counts the rest', async () => {
             for (let i = 0; i < 23; i++) {
