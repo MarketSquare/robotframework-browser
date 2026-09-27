@@ -81,11 +81,11 @@ page that failed, whatever that keyword is.
   Capping the failure screenshot's timeout would change failure screenshots for every
   keyword, and closing uncommitted pages at once would bring back the wrong-page screenshot.
   Stopping the navigation with `window.stop()` does not help: `evaluate` waits for the
-  pending navigation. The load-state log line from #5272 will say why the screenshot is
+  pending navigation. The load report from #5272 (ADR 0008) says why the screenshot is
   missing. When the page commits and then stalls, the screenshot is taken without delay.
 - **During failure handling the failed page is visible** in `Get Browser Catalog` and
   `Get Page Ids`. That is the point, not a leak.
 - **Only the page is removed.** A browser or context that `New Page` created stays, since they
   are reusable.
-- **Load-state diagnostics** (`readyState`, navigation and resource timings) are a separate
-  concern and not part of this decision.
+- **The load report** (`readyState`, navigation timing and outstanding requests) is a separate
+  concern and not part of this decision; see ADR 0008.

@@ -27,6 +27,7 @@ import * as pb from './generated/playwright';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import { class_async_logger } from './keyword-decorators';
+import { withLoadReport } from './load-report';
 import * as locatorHandler from './locator-handler';
 import * as network from './network';
 import * as pdf from './pdf';
@@ -304,7 +305,8 @@ export class PlaywrightServer {
         callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage(call).goBack();
+            const page = this.getActivePage(call);
+            await withLoadReport(page, () => page.goBack());
             callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -316,7 +318,8 @@ export class PlaywrightServer {
         callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage(call).goForward();
+            const page = this.getActivePage(call);
+            await withLoadReport(page, () => page.goForward());
             callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);

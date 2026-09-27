@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { status } from '@grpc/grpc-js';
+import { Metadata, status } from '@grpc/grpc-js';
 import { errors } from 'playwright';
 
 import { errorType, logger } from './browser_logger';
@@ -27,6 +27,7 @@ import {
     Response_PageReportResponse,
     Response_String,
 } from './generated/playwright';
+import { loadReportOf } from './load-report';
 import { IndexedPage } from './playwright-state';
 
 export function emptyWithLog(text: string): Response_Empty {
@@ -104,7 +105,13 @@ export function errorResponse(e: unknown) {
     if (e instanceof errors.TimeoutError) {
         errorCode = status.DEADLINE_EXCEEDED;
     }
-    return { code: errorCode, message: errorMessage };
+    const loadReport = loadReportOf(e);
+    if (loadReport === undefined) {
+        return { code: errorCode, message: errorMessage };
+    }
+    const metadata = new Metadata();
+    metadata.set('load-report-bin', Buffer.from(loadReport, 'utf8'));
+    return { code: errorCode, message: errorMessage, metadata };
 }
 
 export function keywordsResponse(

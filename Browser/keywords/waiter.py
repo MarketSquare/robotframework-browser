@@ -332,6 +332,10 @@ class Waiter(LibraryComponent):
         | ``networkidle`` - DISCOURAGED wait until there are no network connections for at least 500 ms.
         | ``commit`` - not supported by this keyword, the keyword returns immediately without waiting.
 
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
+
         Example:
         | `Go To`                         ${URL}
         | `Wait For Load State`    domcontentloaded    timeout=3s

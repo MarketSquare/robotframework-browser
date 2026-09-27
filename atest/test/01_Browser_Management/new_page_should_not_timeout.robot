@@ -25,6 +25,8 @@ New Page Will Timeout And Page Will Be Removed From Catalog
     END
 
 Failure Handling Sees The Page That Stalled While Loading
+    [Documentation]
+    ...    LOG 6.1:*    INFO    REGEXP: .*Navigation committed: yes.*GET \\S+/api/stalled-image \\[image\\] open for \\d+ ms.*
     [Tags]    slow
     Set Browser Timeout    1s    scope=Test
     New Context

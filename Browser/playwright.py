@@ -73,6 +73,13 @@ def grpc_channel_options(host: str | None) -> tuple[tuple[str, int], ...]:
     return NO_HTTP_PROXY_OPTIONS if is_local_host(host) else ()
 
 
+def _log_load_report(error: grpc.RpcError):
+    trailing_metadata = getattr(error, "trailing_metadata", lambda: None)
+    for key, value in trailing_metadata() or ():
+        if key == "load-report-bin":
+            logger.info(value.decode("utf-8", errors="replace"))
+
+
 def batteries_grpc_server():
     try:
         from BrowserBatteries import start_grpc_server  # noqa: PLC0415
@@ -356,6 +363,7 @@ class Playwright(LibraryComponent):
         try:
             yield playwright_pb2_grpc.PlaywrightStub(self._channel)
         except grpc.RpcError as error:
+            _log_load_report(error)
             if original_error:
                 raise error
             raise AssertionError(error.details())

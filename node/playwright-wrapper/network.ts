@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import * as pb from './generated/playwright';
+import { withLoadReport } from './load-report';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
@@ -139,7 +140,7 @@ export async function waitForNavigation(request: pb.Request_UrlOptions, page: Pa
     const url = parseRegExpOrKeepString(<string>request.url?.url);
     const timeout = request.url?.defaultTimeout;
     const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit' | undefined>request.waitUntil;
-    await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
+    await withLoadReport(page, () => page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil }));
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
@@ -147,7 +148,7 @@ export async function WaitForPageLoadState(request: pb.Request_PageLoadState, pa
     const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.state;
     const timeout = request.timeout;
     logger.info(`timeout: ${timeout} state: ${state}`);
-    await page.waitForLoadState(state, { timeout });
+    await withLoadReport(page, () => page.waitForLoadState(state, { timeout }));
     return emptyWithLog(`Load state ${state} got in ${timeout}`);
 }
 

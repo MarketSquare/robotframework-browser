@@ -35,6 +35,12 @@ It still exists while the keyword's failure is being handled, so the failure scr
 it; it is gone by the time the failure reaches the test.
 _Avoid_: broken page, dead page
 
+**Load report**:
+What a page had and had not loaded at the moment a keyword's wait for it to load timed out:
+whether its navigation committed, how far the document got, and which requests were still
+outstanding. It answers "did the page never load, or did the wait miss it?"
+_Avoid_: load state (that is the `waitUntil` value a keyword waits for), load diagnostics
+
 ## Relationships
 
 - Both tables hold the *same* keyword methods, stored twice by PythonLibCore. They are
@@ -45,6 +51,9 @@ _Avoid_: broken page, dead page
   known, accepted difference, not a defect.
 - A **failed page** outlives its keyword only on the **Robot Framework path**, where failure
   handling runs; on the **Python path** it is removed as soon as the keyword fails.
+- A **load report** belongs to a page, not to a keyword: every keyword that waits for a page to
+  load gives one when that wait times out. When `New Page` times out, it is the report of the
+  **failed page**.
 
 ## Example dialogue
 
