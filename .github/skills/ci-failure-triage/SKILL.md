@@ -55,7 +55,7 @@ Record one only when all three hold: the cause is proven (step 3), the signature
 - `reference` — the issue URL, or `null` for an on-the-spot fix
 - `recorded` — today's date
 - `fixed_by` — a bare commit SHA: the fix commit, or the PR's merge commit once it lands; `null` until then
-- `fix_verified` — `null`; triage never fills it
+- `fix_verified` — `null`; triage never fills it. `inv ci-verify-fixes --mark` does, once the fix has held for seven days
 
 ### 6. Act on the route
 

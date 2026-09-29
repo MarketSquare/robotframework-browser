@@ -4928,3 +4928,292 @@ class TestFetchingOneLegsArtifact:
 
         assert found.output_xml is None
         assert found.screenshots == ()
+
+
+class FakeHistory:
+    """Commits in the order they were made; a commit contains every one before it."""
+
+    def __init__(self, *commits: str):
+        self.commits = list(commits)
+
+    def resolves(self, sha: str) -> bool:
+        return sha in self.commits
+
+    def contains(self, commit: str, fix: str) -> bool | None:
+        if commit not in self.commits:
+            return None
+        return self.commits.index(commit) >= self.commits.index(fix)
+
+
+class TestVerifyingAFix:
+    """A fix is Verified once seven days of runs containing it saw no recurrence.
+
+    `seed` puts one Run on each commit, a day apart from 2026-08-20, in the
+    order the commits first appear.
+    """
+
+    TEST = "S.Flaky"
+    SIGNATURE = "Timeout <duration> exceeded"
+
+    def _known(self, tmp_path, **entry):
+        entry.setdefault("test", self.TEST)
+        entry.setdefault("signature", self.SIGNATURE)
+        entry.setdefault("cause", "a race")
+        entry.setdefault("fixed_by", "f1c5000")
+        path = tmp_path / "known.json"
+        path.write_text(json.dumps([entry], indent=2), encoding="utf-8")
+        return path
+
+    def _fail(self, sha, signature=None, **row):
+        return {
+            "test": self.TEST,
+            "status": "FAIL",
+            "signature": signature or self.SIGNATURE,
+            "sha": sha,
+            **row,
+        }
+
+    def _pass(self, sha, **row):
+        return {"test": self.TEST, "status": "PASS", "sha": sha, **row}
+
+    def _check(self, tmp_path, rows, history, today, **entry):
+        from datetime import date
+
+        from tools.ci_failures.verify import check
+
+        db = tmp_path / "db.sqlite3"
+        seed(db, rows)
+        return check(
+            db,
+            self._known(tmp_path, **entry),
+            history=history,
+            today=date.fromisoformat(today),
+        )
+
+    def test_a_fix_younger_than_seven_days_is_waiting(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-24",
+        )
+
+        assert entry.status == "waiting"
+        assert entry.line() == "waiting 3/7 days, 2 runs, 0 recurrences"
+
+    def test_seven_days_without_a_recurrence_is_ready(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-28",
+        )
+
+        assert entry.status == "ready"
+        assert entry.line() == "ready: 7 days, 2 runs, 0 recurrences"
+
+    def test_the_same_error_after_the_fix_is_a_recurrence(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._fail("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "recurred"
+        assert entry.line() == "recurred: 1 after fix"
+        assert [run for run, _ in entry.recurred_in] == [3]
+
+    def test_a_later_run_on_an_older_commit_does_not_contain_the_fix(self, tmp_path):
+        """Dates are the wrong test: a run on a commit from before the fix can
+        be created after it, and its failure says nothing about the fix."""
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._fail("stale")],
+            FakeHistory("sha1", "stale", "f1c5000"),
+            today="2026-08-24",
+        )
+
+        assert entry.status == "waiting"
+        assert (entry.runs, entry.recurrences) == (1, 0)
+
+    def test_a_fix_in_no_ingested_run_has_no_runs_yet(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("sha2")],
+            FakeHistory("sha1", "sha2", "f1c5000"),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "no runs yet"
+
+    def test_a_fixed_by_that_is_not_a_commit_is_no_sha(self, tmp_path):
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        [prose] = self._check(
+            tmp_path, rows, history, "2026-09-10", fixed_by="fix - rewrote the test"
+        )
+        [unknown] = self._check(
+            tmp_path / "again", rows, history, "2026-09-10", fixed_by="abc1234"
+        )
+
+        assert prose.status == unknown.status == "no SHA"
+        assert prose.line() == "no SHA: fixed_by is prose, not a commit SHA"
+        assert unknown.line() == "no SHA: abc1234 is not a commit in this clone"
+
+    def test_an_issue_reference_names_the_issue_to_close(self, tmp_path):
+        from tools.ci_failures.verify import Verification
+
+        def entry(reference):
+            return Verification("S.T", None, "ready", reference=reference)
+
+        assert entry("https://github.com/o/r/issues/5223").issue == "5223"
+        assert entry(None).issue is None
+
+    def test_an_entry_matching_no_group_is_an_orphan_whatever_its_state(self, tmp_path):
+        """A mistyped signature would otherwise read as zero recurrences."""
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        [mistyped] = self._check(
+            tmp_path, rows, history, "2026-09-10", signature="Timeout exceeded"
+        )
+        [verified] = self._check(
+            tmp_path / "v",
+            rows,
+            history,
+            "2026-09-10",
+            signature="Timeout exceeded",
+            fix_verified="2026-09-01",
+        )
+        [unfixed] = self._check(
+            tmp_path / "u",
+            rows,
+            history,
+            "2026-09-10",
+            signature="Timeout exceeded",
+            fixed_by=None,
+        )
+
+        assert mistyped.status == verified.status == unfixed.status == "orphan"
+
+    def test_verified_and_unfixed_entries_are_not_checked(self, tmp_path):
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        assert (
+            self._check(
+                tmp_path, rows, history, "2026-09-10", fix_verified="2026-09-01"
+            )
+            == []
+        )
+        assert (
+            self._check(tmp_path / "u", rows, history, "2026-09-10", fixed_by=None)
+            == []
+        )
+
+    def test_another_error_after_the_fix_is_a_note_not_a_recurrence(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1"),
+                self._pass("f1c5000"),
+                self._fail("sha3", signature="Browser crashed"),
+            ],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-28",
+        )
+
+        assert entry.status == "ready"
+        assert [(o.signature, o.occurrences) for o in entry.other_failures] == [
+            ("Browser crashed", 1)
+        ]
+
+    def test_a_suite_fixture_is_verified_over_the_runs_of_its_suite(self, tmp_path):
+        teardown = {"scope": "suite_teardown", "owner": "S", "suite": "S"}
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1", **teardown),
+                self._pass("f1c5000", suite="S"),
+                self._pass("sha3", suite="S.Child"),
+            ],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-24",
+            test=None,
+            suite="S",
+        )
+
+        assert entry.line() == "waiting 3/7 days, 2 runs, 0 recurrences"
+
+    def test_runs_on_commits_this_clone_lacks_are_counted_apart(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("unfetched")],
+            FakeHistory("sha1", "f1c5000"),
+            today="2026-08-24",
+        )
+
+        assert (entry.runs, entry.unknown_commits) == (1, 1)
+
+
+class TestMarkingAFixVerified:
+    def test_only_the_named_entries_are_marked_and_the_rest_is_kept(self, tmp_path):
+        from tools.ci_failures.annotations import load_known_causes, mark_verified
+
+        path = tmp_path / "known.json"
+        path.write_text(
+            json.dumps(
+                [
+                    {"test": "S.A", "signature": "Box <n>", "fixed_by": "abc"},
+                    {"test": "S.B", "signature": "Box <n>", "fixed_by": "def"},
+                    {"suite": "S", "signature": "Gone", "fix_verified": "2026-01-01"},
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        marked = mark_verified({("S.A", "box <n>"), ("S", "gone")}, "2026-09-29", path)
+
+        known = load_known_causes(path)
+        assert marked == 1, "an entry already verified keeps its date"
+        assert known[("S.A", "box <n>")]["fix_verified"] == "2026-09-29"
+        assert known[("S.B", "box <n>")]["fix_verified"] is None
+        assert known[("S", "gone")]["fix_verified"] == "2026-01-01"
+        assert json.loads(path.read_text(encoding="utf-8"))[1]["fixed_by"] == "def"
+
+
+class TestGitHistory:
+    @pytest.fixture
+    def repo(self, tmp_path):
+        import subprocess
+
+        def git(*args):
+            return subprocess.run(
+                ["git", "-C", str(tmp_path), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+        git("init", "-q")
+        git("config", "user.email", "t@example.com")
+        git("config", "user.name", "t")
+        commits = []
+        for n in range(3):
+            git("commit", "-q", "--allow-empty", "-m", f"c{n}")
+            commits.append(git("rev-parse", "HEAD"))
+        return tmp_path, commits
+
+    def test_a_commit_contains_its_ancestors_and_not_its_descendants(self, repo):
+        from tools.ci_failures.verify import Git
+
+        root, (first, fix, last) = repo
+        git = Git(root)
+
+        assert git.resolves(fix[:8])
+        assert not git.resolves("0" * 40)
+        assert git.contains(last, fix) is True
+        assert git.contains(first, fix) is False
+        assert git.contains("0" * 40, fix) is None

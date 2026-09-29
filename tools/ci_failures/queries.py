@@ -1,4 +1,4 @@
-"""Every question the Report asks of the database, and nothing else.
+"""Every question asked of the database, and nothing else.
 
 Which tests fail, and on which error. A test that fails twice on one error and
 four times on another is two problems, not one, so the pair is the unit - not the
@@ -1198,3 +1198,87 @@ def totals(db: Reading) -> Totals:
         "(SELECT MAX(created_at) FROM run) AS until"
     ).fetchone()
     return Totals(**dict(row))
+
+
+# --- What verifying a fix asks -----------------------------------------------
+#
+# Not part of the Report: `verify.py` asks these of an unwindowed Reading, one
+# Subject at a time, to decide whether a Known Cause's fix held.
+
+
+@dataclass(frozen=True)
+class SubjectRun:
+    """A Run in which a Subject ran, whatever it did there."""
+
+    run_id: int
+    head_sha: str | None
+    created_at: str | None
+    run_url: str | None
+
+
+@dataclass(frozen=True)
+class SubjectFailure:
+    """How often a Subject failed in one Run on one Error Signature."""
+
+    run_id: int
+    head_sha: str | None
+    run_url: str | None
+    signature_key: str
+    error_signature: str | None
+    occurrences: int
+
+
+def failing_subjects(db: Reading) -> set[tuple[str, str]]:
+    """Every (Subject, case-folded signature) with a Group or Fixture Failure."""
+    rows = db.execute(
+        """
+        SELECT subject_owner, signature_key FROM test_failure
+        UNION
+        SELECT subject_owner, signature_key FROM fixture_failure
+        WHERE subject_owner IS NOT NULL
+        """
+    ).fetchall()
+    return {(row["subject_owner"], row["signature_key"]) for row in rows}
+
+
+def runs_of_subject(db: Reading, subject: str) -> list[SubjectRun]:
+    """Every Run a test ran in, or a suite ran in - child suites included,
+    which is where a suite fixture's failures land."""
+    rows = db.execute(
+        """
+        SELECT DISTINCT r.id AS run_id, r.head_sha, r.created_at, r.url AS run_url
+        FROM test_result t
+        JOIN leg l ON l.id = t.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE t.longname = ? OR t.suite_longname = ?
+              OR t.suite_longname LIKE ? || '.%'
+        ORDER BY r.created_at, r.id
+        """,
+        (subject, subject, subject),
+    ).fetchall()
+    return [SubjectRun(**dict(row)) for row in rows]
+
+
+def failures_of_subject(db: Reading, subject: str) -> list[SubjectFailure]:
+    """A Subject's Occurrences per Run and signature, on any signature."""
+    rows = db.execute(
+        """
+        SELECT r.id AS run_id, r.head_sha, r.url AS run_url, f.signature_key,
+               MIN(f.error_signature) AS error_signature,
+               COUNT(DISTINCT f.occurrence_id) AS occurrences
+        FROM (
+            SELECT leg_id, subject_owner, signature_key, error_signature,
+                   occurrence_id FROM test_failure
+            UNION ALL
+            SELECT leg_id, subject_owner, signature_key, error_signature,
+                   occurrence_id FROM fixture_failure
+        ) f
+        JOIN leg l ON l.id = f.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE f.subject_owner = ?
+        GROUP BY r.id, f.signature_key
+        ORDER BY r.created_at, r.id
+        """,
+        (subject,),
+    ).fetchall()
+    return [SubjectFailure(**dict(row)) for row in rows]

@@ -49,6 +49,9 @@ inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
 inv ci-artifact --run <id> --leg "<leg>" [--attempt 2]  # one Leg's artifact again, and its paths
 inv ci-artifact --clean                  # remove every fetched artifact
 
+inv ci-verify-fixes               # has each Known Cause's fix held? read-only
+inv ci-verify-fixes --mark        # ... and mark the ready ones Verified
+
 inv ci-recompute                  # re-derive what the database can already answer
 inv ci-backfill-attempts          # fill in the attempt of very old legs
 ```
@@ -66,6 +69,22 @@ carries `run`, `leg` and `attempt`, which are what `inv ci-artifact` takes to br
 screenshots, `log.html` and `playwright-log.txt` that ingest threw away. They
 unpack under `ci_failures/artifacts/` and are not kept: `--clean` removes them
 when the triage is done, and `inv ci-ingest` removes any left behind.
+
+Once a fix has landed, `inv ci-verify-fixes` says whether it held. For every
+Known Cause with a `fixed_by` commit and no `fix_verified` date, it finds the
+ingested Runs whose commit contains the fix — asked of git with `merge-base
+--is-ancestor`, never of the calendar, because a Run on an older commit can be
+created after the fix — and counts the days since the first of them, the Runs of
+the test since, and how often its Group came back. One line each: `waiting 3/7
+days`, `ready` after seven days with no recurrence, `recurred` with the Runs it
+came back in, `no runs yet` when no ingested Run has the fix, `no SHA` when
+`fixed_by` is not a commit in this clone. The same test failing on another error
+is listed as a note, not a recurrence. Every entry, verified or not, is also
+checked for being an `orphan` — matching no Group at all, which a mistyped
+signature or a change to the masking rules would otherwise pass off as zero
+recurrences. It changes nothing unless `--mark` is given, which writes today's
+date into `fix_verified` for the `ready` entries only and names the issues that
+can now be closed; it closes none.
 
 `--days` is the question you ask *after* fixing something: the failures from
 before the fix are exactly the ones that must not be counted. It cannot conjure
@@ -179,9 +198,10 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1200 | Every question asked of the database, and nothing else. |
+| `queries.py` | 1284 | Every question asked of the database, and nothing else. |
 | `report.py` | 1152 | The Report, and what the numbers mean. |
-| `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
+| `annotations.py` | 211 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
+| `verify.py` | 204 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 290 | The document. |
 
@@ -202,7 +222,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 246 tests, about a second
+utest/test_tool_ci_failures.py   # 260 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything
@@ -238,7 +258,7 @@ reaches both renderings or joins that list.
 ## Where the rest of it is
 
 - **`CONTEXT.md`** — the vocabulary. Run, Leg, Install, Platform, OS Release,
-  Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause,
+  Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause, Route, Verified,
   Snapshot, Adjacent Run, Inconclusive Zero, Pruning. Worth reading first; the code uses
   these words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs

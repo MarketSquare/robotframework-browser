@@ -2047,6 +2047,69 @@ def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
 
 
 @task
+def ci_verify_fixes(c, db=None, mark=False):
+    """Says whether each Known Cause's fix held.
+
+    For every entry with `fixed_by` set and `fix_verified` empty: the days since
+    the first ingested run containing the fix, the runs of the test since, and
+    how often its Group came back. A fix is ready to mark Verified after seven
+    days with no recurrence. Every entry is also checked for matching no Group
+    at all. Read-only unless --mark; see `tools/ci_failures/verify.py`.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        mark: Write today's date into `fix_verified` of the entries that are
+            ready, and only those. Never done automatically: Verified is agreed,
+            like the Known Cause itself.
+    """
+    from datetime import datetime, timezone
+
+    from tools.ci_failures.annotations import mark_verified
+    from tools.ci_failures.verify import Git, Status, check
+
+    db_path = Path(db) if db else CI_FAILURES_DB
+    if not db_path.exists():
+        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
+        return
+    # UTC, like the created_at of the Runs the days are counted from.
+    today = datetime.now(timezone.utc).date()
+    checked = check(db_path, history=Git(ROOT_DIR), today=today)
+    if not checked:
+        print("No fixed Known Cause is waiting to be verified, and none is an orphan.")
+    for entry in checked:
+        print(f"{entry.status:<12} {entry.subject}")
+        print(f"{'':<12} {entry.signature}")
+        print(f"{'':<12} {entry.line()}")
+        for run, url in entry.recurred_in:
+            print(f"{'':<12} recurred in run {run}: {url}")
+        for other in entry.other_failures:
+            print(
+                f"{'':<12} note: {other.occurrences}x on another error, "
+                f"not a recurrence: {other.signature}"
+            )
+        if entry.unknown_commits:
+            print(
+                f"{'':<12} note: {entry.unknown_commits} run(s) on commits this "
+                "clone lacks were not counted; `git fetch origin main`"
+            )
+        print()
+
+    ready = [entry for entry in checked if entry.status == Status.READY]
+    if not mark:
+        if ready:
+            print(f"{len(ready)} ready. Mark them with --mark.")
+        return
+    if not ready:
+        print("Nothing is ready to mark.")
+        return
+    marked = mark_verified({entry.key for entry in ready}, today.isoformat())
+    print(f"Marked {marked} fix(es) Verified on {today.isoformat()}.")
+    for entry in ready:
+        if entry.issue:
+            print(f"issue #{entry.issue} can be closed")
+
+
+@task
 def ci_backfill_attempts(c, db=None):
     """Resolves the attempt of legs ingested before it was being recorded.
 

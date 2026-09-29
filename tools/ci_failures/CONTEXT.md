@@ -158,6 +158,24 @@ that matters is acted on rather than filed. It is therefore the only thing here 
 and no download can restore — which is accepted, not overlooked.
 _Avoid_: annotation, note, triage
 
+**Route**:
+Where a triaged failure goes next, decided by where its fix has to land and not by how big it
+is: a change to the library is a GitHub issue of type Bug or Feature; a change to a test or the
+test app is fixed on the spot, with the cause in the commit message, or when it cannot be, a
+GitHub issue of type Task. The issue type rather than a label, because release notes pick up
+Bug and Feature only.
+_Avoid_: fix size, severity, priority, label
+
+**Verified**:
+A Known Cause whose fix held: seven days, counted from the first ingested Run whose commit
+contains `fixed_by`, with no recurrence of its Group. Containment is asked of git, never of
+dates, since a Run on an older commit can be created after the fix. Recorded as `fix_verified`
+by the maintainer with `inv ci-verify-fixes --mark`, never automatically. The same test failing
+on another Error Signature after the fix is not a recurrence: it is another Group. An entry that
+matches no Group at all is an orphan - a mistyped signature, or one the masking has since
+changed - and is never Verified, because matching nothing reads as zero recurrences.
+_Avoid_: fixed, resolved, closed (which is what happens to the issue afterwards)
+
 **Snapshot**:
 What the last report said, written beside the database so the next report can say what is new,
 gone or changed. Entirely derived and worth nothing once stale. Never taken from a windowed
@@ -195,6 +213,8 @@ _Avoid_: clean, passing, green
 - A **Group** has one or more **Occurrences**; a **Fixture Failure**'s Occurrence is one **Leg**
 - A **Report** has many **Renderings**, and every **Rendering** shows the same Report
 - An **Occurrence** may have an **Adjacent Run** either side of it, on its own **Leg**
+- A **Known Cause** may have a fix, and a fix is **Verified** or not; the triage that
+  recorded it chose one **Route**
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed
 - A **Report** is built from exactly one **Reading**, and a **Reading** carries exactly one
   **Window**
