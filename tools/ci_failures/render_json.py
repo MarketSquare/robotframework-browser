@@ -278,10 +278,13 @@ def document(report: Report) -> dict:
     }
 
 
+def text(report: Report) -> str:
+    """The document for a Report, as the text `write` saves."""
+    return json.dumps(document(report), indent=2) + "\n"
+
+
 def write(report: Report, destination: Path) -> Path:
     """Writes the document for a Report somebody else built."""
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        json.dumps(document(report), indent=2) + "\n", encoding="utf-8"
-    )
+    destination.write_text(text(report), encoding="utf-8")
     return destination

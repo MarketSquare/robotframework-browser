@@ -901,7 +901,8 @@ def of_test(report: Report, test: str) -> Report:
 
     Keeps the Fixture Failures of every suite enclosing the test too: a broken
     suite setup fails the test without the test being at fault, and it is filed
-    under the suite rather than the test.
+    under the suite rather than the test. The window summary and the platform
+    rows stay whole: they are the context the test's rates are read against.
     """
 
     def concerns(subject: str | None) -> bool:

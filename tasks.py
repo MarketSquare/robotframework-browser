@@ -1999,7 +1999,7 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
 
 
 @task
-def ci_artifact(c, run=None, leg=None, clean=False):
+def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
     """Fetches one Leg's artifact again, for triaging a failure in it.
 
     Ingest keeps only the parsed rows. This brings back the rest - log.html,
@@ -2011,10 +2011,12 @@ def ci_artifact(c, run=None, leg=None, clean=False):
     Args:
         run: The run id, as an Occurrence in `inv ci-report` gives it.
         leg: The Leg, as an Occurrence names it, or the artifact's own name.
+        attempt: The Occurrence's attempt. A Leg re-run by hand uploaded once
+            per attempt, and only the one that failed holds the failure.
         clean: Remove every fetched artifact instead of fetching one.
     """
-    from tools.ci_failures.artifacts import NoSuchLegError, clean as clean_artifacts
-    from tools.ci_failures.artifacts import fetch
+    from tools.ci_failures.artifacts import NoSuchLegError, fetch
+    from tools.ci_failures.artifacts import clean as clean_artifacts
     from tools.ci_failures.github import GhError
 
     if clean:
@@ -2024,10 +2026,10 @@ def ci_artifact(c, run=None, leg=None, clean=False):
     if run is None or leg is None:
         raise Exit("Pass --run and --leg, or --clean.", 2)
     try:
-        found = fetch(int(run), leg, CI_ARTIFACTS)
+        found = fetch(int(run), leg, CI_ARTIFACTS, attempt=int(attempt))
     except NoSuchLegError as missing:
         raise Exit(str(missing), 1) from None
-    except GhError as unreachable:
+    except (GhError, OSError, zipfile.BadZipFile) as unreachable:
         raise Exit(
             f"Could not fetch the artifact from GitHub - the network, `gh auth "
             f"status`, or an artifact past its 90 days:\n{unreachable}",
@@ -2145,12 +2147,9 @@ def ci_report(
         if not report.test_failures and not report.fixture_failures:
             raise Exit(f"{test!r} did not fail in {report.window.label}.", 1)
         if not json and not html:
-            # `json` is this task's option, which hides the module.
-            import json as json_module
+            from tools.ci_failures.render_json import text
 
-            from tools.ci_failures.render_json import document
-
-            print(json_module.dumps(document(report), indent=2))
+            print(text(report), end="")
             return
 
     if mark_seen:

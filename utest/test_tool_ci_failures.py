@@ -4792,6 +4792,19 @@ class TestFetchingOneLegsArtifact:
             github, "list_test_artifacts", lambda run_id: [other, artifact]
         )
         monkeypatch.setattr(github, "download_artifact", fake_download)
+        monkeypatch.setattr(
+            github,
+            "get_run",
+            lambda run_id: github.Run(
+                id=run_id,
+                event="push",
+                head_sha="s",
+                head_branch="main",
+                created_at="2026-09-27T10:00:00Z",
+                conclusion="failure",
+                url="u",
+            ),
+        )
         return downloads
 
     def test_the_legs_files_are_unpacked_and_named(self, one_leg, tmp_path):
@@ -4867,3 +4880,51 @@ class TestFetchingOneLegsArtifact:
         assert clean(root) is True
         assert not root.exists()
         assert clean(root) is False, "nothing to clean is not an error"
+
+    def test_a_rerun_legs_attempt_is_the_one_fetched(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        """A flake that passed on the re-run uploaded the same Leg twice, and
+        the failure is in the first."""
+        from tools.ci_failures.artifacts import fetch
+
+        name = "Test results-macos-latest-3-3.10-22.x"
+        failed = github.Artifact(
+            id=11, name=name, expired=False, url="u", created_at="2026-09-27T10:30Z"
+        )
+        passed = github.Artifact(
+            id=12, name=name, expired=False, url="u", created_at="2026-09-27T12:30Z"
+        )
+        monkeypatch.setattr(
+            github, "list_test_artifacts", lambda run_id: [passed, failed]
+        )
+        monkeypatch.setattr(
+            github,
+            "attempt_starts",
+            lambda run: [(1, "2026-09-27T10:00Z"), (2, "2026-09-27T12:00Z")],
+        )
+        root = tmp_path / "artifacts"
+
+        first = fetch(self.RUN, self.LEG, root, attempt=1)
+        second = fetch(self.RUN, self.LEG, root, attempt=2)
+
+        assert one_leg == [11, 12]
+        assert first.directory != second.directory
+
+    def test_an_empty_artifact_unpacks_to_an_empty_leg(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        from tools.ci_failures.artifacts import fetch
+
+        def empty(artifact_id, destination):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(destination, "w"):
+                pass
+            return destination
+
+        monkeypatch.setattr(github, "download_artifact", empty)
+
+        found = fetch(self.RUN, self.LEG, tmp_path / "artifacts")
+
+        assert found.output_xml is None
+        assert found.screenshots == ()

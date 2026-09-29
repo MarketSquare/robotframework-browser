@@ -35,9 +35,9 @@ class NoSuchLegError(LookupError):
     """The run has no test artifact for that Leg."""
 
 
-def _directory(root: Path, run: int, leg: str) -> Path:
+def _directory(root: Path, run: int, leg: str, attempt: int) -> Path:
     slug = re.sub(r"[^A-Za-z0-9.]+", "-", leg_name(leg)).strip("-")
-    return root / f"{run}-{slug}"
+    return root / f"{run}-{slug}-attempt-{attempt}"
 
 
 def _found(directory: Path) -> Unpacked:
@@ -51,26 +51,38 @@ def _found(directory: Path) -> Unpacked:
     )
 
 
-def fetch(run: int, leg: str, root: Path) -> Unpacked:
+def fetch(run: int, leg: str, root: Path, attempt: int = 1) -> Unpacked:
     """One Leg's artifact, unpacked under `root`.
 
-    `leg` is the Leg as the report names it, or the artifact's own name. Raises
-    `NoSuchLegError` when the run has no such Leg, and `github.GhError` when GitHub
-    cannot be reached.
+    `leg` is the Leg as the report names it, or the artifact's own name.
+    `attempt` is the Occurrence's: a Leg re-run by hand uploaded once per
+    attempt under the same name, and a flake's failure is in the attempt that
+    failed, not the one that passed. Raises `NoSuchLegError` when the run has no
+    such Leg, and `github.GhError` when GitHub cannot be reached.
     """
-    directory = _directory(root, run, leg)
+    directory = _directory(root, run, leg, attempt)
     if directory.is_dir():
         return _found(directory)
     wanted = leg_name(leg)
-    artifacts = github.list_test_artifacts(run)
-    artifact = next((a for a in artifacts if leg_name(a.name) == wanted), None)
+    artifacts = github.with_attempts(
+        github.list_test_artifacts(run), github.attempt_starts(github.get_run(run))
+    )
+    artifact = next(
+        (a for a in artifacts if leg_name(a.name) == wanted and a.attempt == attempt),
+        None,
+    )
     if artifact is None:
-        known = "\n  ".join(sorted(leg_name(a.name) for a in artifacts))
-        raise NoSuchLegError(f"Run {run} has no leg {leg!r}. It has:\n  {known}")
+        known = "\n  ".join(
+            sorted(f"{leg_name(a.name)} (attempt {a.attempt})" for a in artifacts)
+        )
+        raise NoSuchLegError(
+            f"Run {run} has no leg {leg!r} on attempt {attempt}. It has:\n  {known}"
+        )
     root.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=root) as work_dir:
         work = Path(work_dir)
         zip_path = github.download_artifact(artifact.id, work / "artifact.zip")
+        (work / "unpacked").mkdir()
         with zipfile.ZipFile(zip_path) as archive:
             archive.extractall(work / "unpacked")
         # Moved into place only once whole, so a download cut off halfway is
