@@ -893,6 +893,38 @@ def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
     ]
 
 
+def of_test(report: Report, test: str) -> Report:
+    """The Report narrowed to one test, for `inv ci-report --test`.
+
+    Filtered rather than asked for again, so a one-test document cannot
+    disagree with the page it was cut from.
+
+    Keeps the Fixture Failures of every suite enclosing the test too: a broken
+    suite setup fails the test without the test being at fault, and it is filed
+    under the suite rather than the test.
+    """
+
+    def concerns(subject: str | None) -> bool:
+        return bool(subject) and (subject == test or test.startswith(f"{subject}."))
+
+    changes = report.since_last_report
+    if changes is not None:
+        changes = {
+            key: (
+                [c for c in value if concerns(c["subject"])]
+                if isinstance(value, list)
+                else value
+            )
+            for key, value in changes.items()
+        }
+    return replace(
+        report,
+        since_last_report=changes,
+        test_failures=tuple(e for e in report.test_failures if e.test == test),
+        fixture_failures=tuple(e for e in report.fixture_failures if concerns(e.suite)),
+    )
+
+
 class UnanswerableError(Exception):
     """The question cannot be answered, and this says why.
 
@@ -937,7 +969,7 @@ def _nothing_ran(db_path: Path, window: Window) -> str:
 
 def build(
     db_path: Path,
-    limit: int = 100,
+    limit: int | None = 100,
     window: Window = ALL_HISTORY,
     known_causes: Path | None = None,
 ) -> Report:
@@ -960,7 +992,7 @@ def build(
 
 def _build(
     db: reading.Reading,
-    limit: int,
+    limit: int | None,
     window: Window,
     db_path: Path,
     known_causes: Path | None = None,

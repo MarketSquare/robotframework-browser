@@ -303,7 +303,12 @@ class FailureGroup:
         return (self.error_signature or "").lower()
 
 
-def failure_groups(db: Reading, limit: int = 100) -> list[FailureGroup]:
+def _no_limit(limit: int | None) -> int:
+    """`LIMIT -1` is SQLite for no limit, which is what None asks for."""
+    return -1 if limit is None else limit
+
+
+def failure_groups(db: Reading, limit: int | None = 100) -> list[FailureGroup]:
     """Every (test, error) pair that has failed, most failures first."""
     rows = db.execute(
         """
@@ -333,7 +338,7 @@ def failure_groups(db: Reading, limit: int = 100) -> list[FailureGroup]:
         ORDER BY failures DESC, f.longname
         LIMIT ?
         """,
-        (limit,),
+        (_no_limit(limit),),
     ).fetchall()
     return [FailureGroup(**dict(row)) for row in rows]
 
@@ -374,7 +379,7 @@ class FixtureFailure:
         return (self.error_signature or "").lower()
 
 
-def fixture_failures(db: Reading, limit: int = 50) -> list[FixtureFailure]:
+def fixture_failures(db: Reading, limit: int | None = 50) -> list[FixtureFailure]:
     """Suite setup and teardown failures, one row per fixture and error."""
     rows = db.execute(
         """
@@ -403,7 +408,7 @@ def fixture_failures(db: Reading, limit: int = 50) -> list[FixtureFailure]:
         ORDER BY occurrences DESC, f.scope_owner
         LIMIT ?
         """,
-        (limit,),
+        (_no_limit(limit),),
     ).fetchall()
     return [FixtureFailure(**dict(row)) for row in rows]
 

@@ -44,6 +44,10 @@ inv ci-report --days 3            # only the last three whole local days
 inv ci-report --json out.json     # the same report, for a language model
 inv ci-report --json a --html b   # both, from one build
 inv ci-report --mark-seen         # baseline this report, so the next can diff
+inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
+
+inv ci-artifact --run <id> --leg "<leg>" # fetch one Leg's artifact again, print its paths
+inv ci-artifact --clean                  # remove every fetched artifact
 
 inv ci-recompute                  # re-derive what the database can already answer
 inv ci-backfill-attempts          # fill in the attempt of very old legs
@@ -53,6 +57,15 @@ A typical session: `inv ci-ingest` to catch up, `inv ci-report --open-it` to
 read the page, then follow the artifact link on whichever occurrence looks worth
 opening. Ingest is incremental — legs already stored are never fetched again —
 so running it often only costs what is new.
+
+To triage one test, `inv ci-report --test` prints that test's part of the
+Report: its Groups, the Fixture Failures of the suites around it, and its Known
+Cause. It is the same Report the page is built from, filtered after it is built,
+so the two cannot disagree; `--limit` does not apply to it. Each Occurrence
+carries `run` and `leg`, which are what `inv ci-artifact` takes to bring back the
+screenshots, `log.html` and `playwright-log.txt` that ingest threw away. They
+unpack under `ci_failures/artifacts/` and are not kept: `--clean` removes them
+when the triage is done, and `inv ci-ingest` removes any left behind.
 
 `--days` is the question you ask *after* fixing something: the failures from
 before the fix are exactly the ones that must not be counted. It cannot conjure
@@ -159,14 +172,15 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
 | `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
+| `artifacts.py` | 87 | One Leg's artifact fetched again for triage, unpacked, and cleaned up after. |
 | `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
 | `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1195 | Every question asked of the database, and nothing else. |
-| `report.py` | 1119 | The Report, and what the numbers mean. |
+| `queries.py` | 1200 | Every question asked of the database, and nothing else. |
+| `report.py` | 1151 | The Report, and what the numbers mean. |
 | `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 287 | The document. |
@@ -185,9 +199,10 @@ tools/ci_failures/
 ci_failures/             # gitignored, at the repository root
 ├── ci_failures.sqlite3  # the database
 ├── ci_report.html       # the page, when you last rendered one
+├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 234 tests, about a second
+utest/test_tool_ci_failures.py   # 244 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything

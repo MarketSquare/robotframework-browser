@@ -48,6 +48,7 @@ ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
 CI_REPORT_HTML = ROOT_DIR / "ci_failures" / "ci_report.html"
+CI_ARTIFACTS = ROOT_DIR / "ci_failures" / "artifacts"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1975,6 +1976,7 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             artifact listing per run instead, so it is minutes for a wide
             window and worth doing before a long ingest.
     """
+    from tools.ci_failures.artifacts import clean
     from tools.ci_failures.ingest import ingest
 
     if limit is not None and days is not None:
@@ -1991,6 +1993,55 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
         print(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
         return
     print(f"\n{totals.line()}")
+    # Left behind by a triage that ended before its `inv ci-artifact --clean`.
+    if clean(CI_ARTIFACTS):
+        print(f"Removed leftover triage artifacts in {CI_ARTIFACTS}")
+
+
+@task
+def ci_artifact(c, run=None, leg=None, clean=False):
+    """Fetches one Leg's artifact again, for triaging a failure in it.
+
+    Ingest keeps only the parsed rows. This brings back the rest - log.html,
+    playwright-log.txt, the screenshots - unpacked under ci_failures/artifacts/,
+    and prints where each is. A Leg already fetched is reused. Remove them all
+    with --clean once the triage is done; `inv ci-ingest` also removes any left
+    behind.
+
+    Args:
+        run: The run id, as an Occurrence in `inv ci-report` gives it.
+        leg: The Leg, as an Occurrence names it, or the artifact's own name.
+        clean: Remove every fetched artifact instead of fetching one.
+    """
+    from tools.ci_failures.artifacts import NoSuchLegError, clean as clean_artifacts
+    from tools.ci_failures.artifacts import fetch
+    from tools.ci_failures.github import GhError
+
+    if clean:
+        if clean_artifacts(CI_ARTIFACTS):
+            print(f"Removed {CI_ARTIFACTS}")
+        return
+    if run is None or leg is None:
+        raise Exit("Pass --run and --leg, or --clean.", 2)
+    try:
+        found = fetch(int(run), leg, CI_ARTIFACTS)
+    except NoSuchLegError as missing:
+        raise Exit(str(missing), 1) from None
+    except GhError as unreachable:
+        raise Exit(
+            f"Could not fetch the artifact from GitHub - the network, `gh auth "
+            f"status`, or an artifact past its 90 days:\n{unreachable}",
+            3,
+        ) from None
+    print(f"directory:  {found.directory}")
+    print(f"output.xml: {found.output_xml or '(none in this artifact)'}")
+    for label, paths in (
+        ("log", found.logs),
+        ("node log", found.node_logs),
+        ("screenshot", found.screenshots),
+    ):
+        for path in paths:
+            print(f"{label + ':':<11} {path}")
 
 
 @task
@@ -2022,6 +2073,7 @@ def ci_report(
     open_it=False,
     mark_seen=False,
     days=None,
+    test=None,
 ):
     """Shows which tests fail and on which error.
 
@@ -2054,28 +2106,52 @@ def ci_report(
             answer covers what is there, so read `since` against the span the
             label claims. Goes with everything except --mark-seen; see
             `tools/ci_failures/window.py`.
+        test: Report on this one test only, by its full name as the report
+            spells it: its Groups, the Fixture Failures of the suites around it,
+            and its Known Cause. Printed as JSON unless --json or --html names
+            a file. --limit does not apply; --mark-seen is refused.
     """
     from tools.ci_failures.report import (
         NoDatabaseError,
         UnanswerableError,
         WindowedBaselineError,
         build,
+        of_test,
         snapshot_entries,
     )
     from tools.ci_failures.window import ALL_HISTORY
 
+    if test and mark_seen:
+        raise Exit(
+            "A baseline of one test would record every other group as gone; "
+            "take it without --test.",
+            2,
+        )
     window = _window_of_days(days) if days is not None else ALL_HISTORY
     db_path = Path(db) if db else CI_FAILURES_DB
 
     # Built once. Both renderings and the baseline are of the same Report, and
     # the reasons there may not be one are the tool's to state, not this task's.
     try:
-        report = build(db_path, limit=int(limit), window=window)
+        report = build(db_path, limit=None if test else int(limit), window=window)
     except NoDatabaseError as absent:
         print(absent)
         return
     except UnanswerableError as why:
         raise Exit(str(why), 1) from None
+
+    if test:
+        report = of_test(report, test)
+        if not report.test_failures and not report.fixture_failures:
+            raise Exit(f"{test!r} did not fail in {report.window.label}.", 1)
+        if not json and not html:
+            # `json` is this task's option, which hides the module.
+            import json as json_module
+
+            from tools.ci_failures.render_json import document
+
+            print(json_module.dumps(document(report), indent=2))
+            return
 
     if mark_seen:
         from tools.ci_failures.annotations import write_snapshot

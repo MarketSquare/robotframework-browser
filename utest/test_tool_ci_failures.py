@@ -4660,3 +4660,210 @@ class TestOnePlatformPerOperatingSystem:
         ingest.recompute_platforms(db, report=lambda _: None)
 
         assert [r["platform"] for r in self._failing_test(db)["rates"]] == ["darwin"]
+
+
+class TestOneTestsReport:
+    """`inv ci-report --test`: the Report for one test, taken from the whole
+    Report rather than asked for again, so it cannot disagree with the page."""
+
+    def test_only_the_named_tests_groups_are_kept(self, tmp_path):
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Timeout"},
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Box <n>"},
+                {"test": "S.Other", "status": "FAIL", "signature": "Timeout"},
+            ],
+        )
+
+        report = of_test(build_report(db), "S.Wanted")
+
+        assert sorted(e.signature for e in report.test_failures) == [
+            "Box <n>",
+            "Timeout",
+        ]
+        assert {e.test for e in report.test_failures} == {"S.Wanted"}
+
+    def test_a_broken_fixture_of_an_enclosing_suite_is_kept(self, tmp_path):
+        """A suite setup that broke fails the test without the test being
+        at fault, and that is the first thing to rule out."""
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        fixture = {"status": "FAIL", "signature": "setup broke"}
+        seed(
+            db,
+            [
+                {
+                    **fixture,
+                    "test": "Outer.Inner.Wanted",
+                    "scope": "suite_setup",
+                    "owner": "Outer",
+                },
+                {
+                    **fixture,
+                    "test": "Outermost.Other",
+                    "scope": "suite_setup",
+                    "owner": "Outermost",
+                },
+            ],
+        )
+
+        report = of_test(build_report(db), "Outer.Inner.Wanted")
+
+        assert [e.suite for e in report.fixture_failures] == ["Outer"]
+
+    def test_what_changed_is_said_only_about_this_test(self, tmp_path):
+        from tools.ci_failures.annotations import write_snapshot
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Timeout"},
+                {"test": "S.Other", "status": "FAIL", "signature": "Timeout"},
+            ],
+        )
+        write_snapshot(db, [("S.Unrelated", "Timeout", 1)])
+
+        changes = of_test(build_report(db), "S.Wanted").since_last_report
+
+        assert changes is not None
+        assert [c["subject"] for c in changes["new"]] == ["S.Wanted"]
+        assert changes["gone"] == []
+
+    def test_a_test_ranked_past_the_page_limit_is_still_found(self, tmp_path):
+        """`--limit` is how many Groups the page shows; the one test asked for
+        can rank anywhere."""
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Often", "status": "FAIL", "signature": "e", "sha": sha}
+                for sha in ("a", "b")
+            ]
+            + [{"test": "S.Rarely", "status": "FAIL", "signature": "e"}],
+        )
+
+        report = of_test(build_report(db, limit=None), "S.Rarely")
+
+        assert [e.test for e in report.test_failures] == ["S.Rarely"]
+
+
+class TestFetchingOneLegsArtifact:
+    """`inv ci-artifact`: the files ingest threw away, fetched again for one
+    failure that turned out to deserve them."""
+
+    RUN = 36044928092
+    LEG = "source · macos-latest · shard 3 · 3.10 · 22.x"
+
+    @pytest.fixture
+    def one_leg(self, monkeypatch, tmp_path):
+        artifact = github.Artifact(
+            id=10828316847,
+            name="Test results-macos-latest-3-3.10-22.x",
+            expired=False,
+            url="u",
+        )
+        other = github.Artifact(
+            id=1, name="Test results-ubuntu-latest-1-3.14-22.x", expired=False, url="u"
+        )
+        zip_path = tmp_path / "artifact.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr("output.xml", "<robot/>")
+            archive.writestr("log.html", "")
+            archive.writestr("playwright-log.txt", "")
+            archive.writestr("pabot_results/4/browser/screenshot/fail-1.png", "")
+        downloads = []
+
+        def fake_download(artifact_id, destination):
+            downloads.append(artifact_id)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(zip_path.read_bytes())
+            return destination
+
+        monkeypatch.setattr(
+            github, "list_test_artifacts", lambda run_id: [other, artifact]
+        )
+        monkeypatch.setattr(github, "download_artifact", fake_download)
+        return downloads
+
+    def test_the_legs_files_are_unpacked_and_named(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+
+        found = fetch(self.RUN, self.LEG, root)
+
+        assert one_leg == [10828316847]
+        assert found.directory.parent == root
+        assert found.output_xml == found.directory / "output.xml"
+        assert found.logs == (found.directory / "log.html",)
+        assert found.node_logs == (found.directory / "playwright-log.txt",)
+        assert found.screenshots == (
+            found.directory / "pabot_results/4/browser/screenshot/fail-1.png",
+        )
+
+    def test_a_leg_already_fetched_is_not_fetched_again(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+        first = fetch(self.RUN, self.LEG, root)
+
+        again = fetch(self.RUN, self.LEG, root)
+
+        assert one_leg == [10828316847], "one download, not two"
+        assert again == first
+
+    def test_the_artifacts_own_name_finds_the_same_leg(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+
+        by_name = fetch(self.RUN, "Test results-macos-latest-3-3.10-22.x", root)
+
+        assert by_name == fetch(self.RUN, self.LEG, root)
+        assert one_leg == [10828316847]
+
+    def test_an_unknown_leg_is_refused_with_the_legs_the_run_has(
+        self, one_leg, tmp_path
+    ):
+        from tools.ci_failures.artifacts import NoSuchLegError, fetch
+
+        with pytest.raises(NoSuchLegError, match="source · ubuntu-latest · shard 1"):
+            fetch(self.RUN, "source · windows-latest", tmp_path / "artifacts")
+
+        assert one_leg == []
+
+    def test_a_failed_download_leaves_nothing_to_be_mistaken_for_the_leg(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        """A half-unpacked directory would be reused next time as if whole."""
+        from tools.ci_failures.artifacts import fetch
+
+        def unreachable(artifact_id, destination):
+            raise github.GhError("could not resolve host")
+
+        monkeypatch.setattr(github, "download_artifact", unreachable)
+        root = tmp_path / "artifacts"
+
+        with pytest.raises(github.GhError):
+            fetch(self.RUN, self.LEG, root)
+
+        assert list(root.iterdir()) == []
+
+    def test_clean_removes_every_fetched_leg(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import clean, fetch
+
+        root = tmp_path / "artifacts"
+        fetch(self.RUN, self.LEG, root)
+
+        assert clean(root) is True
+        assert not root.exists()
+        assert clean(root) is False, "nothing to clean is not an error"
