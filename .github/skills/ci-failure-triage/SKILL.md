@@ -8,7 +8,7 @@ argument-hint: 'The full test name, as `inv ci-report` spells it'
 
 Takes one test the maintainer chose and ends on a **verdict**: the cause, the evidence that proves it, and the **route** it takes. Triage only — the fix itself belongs to this skill only when the route says "fix on the spot".
 
-The words below — Group, Occurrence, Leg, Attempt, Fixture Failure, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag.
+The words below — Group, Occurrence, Leg, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
 
 ## Steps
 
@@ -18,9 +18,9 @@ The words below — Group, Occurrence, Leg, Attempt, Fixture Failure, Configurat
 inv ci-report --test "<full test name>" --days <n>
 ```
 
-Start with `--days 7`; widen when the Group is rare. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's adjacent runs, `retry`, `log` and `also_failed_in_this_leg`. A Group that already has a Known Cause with `fixed_by` set is a **recurrence** — say so first; that changes the question from "why" to "why did the fix not hold".
+Start with `--days 7`; widen when the Group is rare. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's Adjacent Runs, `retry`, `log` and `also_failed_in_this_leg`. When the Group already has a Known Cause with `fixed_by` set, check each Occurrence's `commit` with `git merge-base --is-ancestor <fixed_by> <commit>`: a failure on a commit that contains the fix means the fix did not hold — say so first, it changes the question. Failures on commits without the fix are the old cause.
 
-Done when you can state, with numbers: how often it fails and over what, on which Configurations, whether retries pass, and which class below it most resembles.
+Done when you can state, with numbers: how often it fails and over what, on which Configurations, whether later Attempts pass, and which class below it most resembles.
 
 ### 2. Fetch artifacts, when the report is not enough
 
@@ -28,7 +28,7 @@ Done when you can state, with numbers: how often it fails and over what, on whic
 inv ci-artifact --run <run> --leg "<leg>" --attempt <attempt>
 ```
 
-Pass all three from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the paths of `output.xml`, `log.html`, `playwright-log.txt` and the screenshots. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
+Pass all three from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the paths of `output.xml`, `log.html`, `playwright-log.txt` and the screenshots; done when the failing Attempt's files are local. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
 
 ### 3. Prove the cause
 
@@ -48,7 +48,7 @@ The route follows from where the change lands, not from how big it is.
 
 ### 5. Propose the Known Cause, and wait for agreement
 
-Record one only when all three hold: the cause is proven (step 3), the signature matches the Group, and the maintainer agrees. Add it to `tools/ci_failures/known_causes.json` (gitignored) in the shape of the existing entries:
+Record one only when all three hold: the cause is proven (step 3), the signature matches the Group, and it is agreed — either side proposes, the other accepts. Add it to `tools/ci_failures/known_causes.json` (gitignored) in the shape of the existing entries:
 
 - `test`, `signature` — exactly as the report gives them
 - `cause` — short; the full reasoning lives in the commit message or the issue
@@ -60,7 +60,7 @@ Record one only when all three hold: the cause is proven (step 3), the signature
 ### 6. Act on the route
 
 - **Fix on the spot**: make the change, run the test locally, commit with the cause and evidence in the message; then put the SHA in `fixed_by`.
-- **Issue**: draft title and body (cause, evidence, run links) and show it to the maintainer. File only on approval: `gh issue create --type <Bug|Feature|Task>`. Implementing it is a separate task for other skills.
+- **Issue**: draft title and body (cause, evidence, run links) and show it to the maintainer. File only on approval: `gh issue create --type <Bug|Feature|Task>`. The issue type field is what keeps Task out of the release notes, so it carries the classification on its own, with no label. Implementing it is a separate task for other skills.
 
 Then `inv ci-artifact --clean`. Done when the route is acted on, the Known Cause is agreed or declined, and the artifacts are gone.
 
@@ -68,11 +68,11 @@ The Known Cause plus the commit message or issue is the whole record — the tri
 
 ## Classes, and where to look for each
 
-- **Shared node process state** — pabot workers share one node process (`tasks.py`), so module-level state in `node/playwright-wrapper` leaks between workers. Everything meant to be per-worker is keyed by gRPC peer in `grpc-service.ts`. Seen twice: `highlightDisposableCache` (fixed per peer in #5211) and the logger's RF context (#5260).
+- **Shared node process state** — pabot workers share one node process (`tasks.py`), so module-level state in `node/playwright-wrapper` leaks between workers. Everything meant to be per-worker is keyed by gRPC peer in `grpc-service.ts`. Seen twice: `highlightDisposableCache` in `playwright-state.ts` (fixed per peer in #5211) and the logger's RF context (#5260).
 - **Timing limits in tests** — a wall-clock ceiling measures runner speed, not the library. Examples: `atest/library/event_delay.py` (key timings), `08_Scope_Tests` (#5223).
-- **Fixture failures** — one broken suite setup or teardown looks like many flaky tests. The report lists the Fixture Failures of the enclosing suites, counted per Leg.
+- **Fixture failures** — one broken suite setup or teardown looks like many flaky tests. The report lists the Fixture Failures of the enclosing suites, counted per Leg (Failure Scope in `CONTEXT.md`).
 - **Platform-only failures** — read the per-Configuration rates and the Inconclusive Zeros before calling any platform healthy.
-- **Chromium protocol flakes** — e.g. `Page.captureScreenshot` refusing the first capture on macOS (#5237, closed as wontfix, worked around in the test).
+- **Chromium protocol flakes** — e.g. `Page.captureScreenshot` refusing the first capture on `darwin` (#5237, closed as wontfix, worked around in the test).
 
 ## Reproducing CI timing locally
 
