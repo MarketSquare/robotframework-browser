@@ -78,7 +78,9 @@ created after the fix — and counts the days since the first of them, the Runs 
 the test since, and how often its Group came back. One line each: `waiting 3/7
 days`, `ready` after seven days with no recurrence, `recurred` with the Runs it
 came back in, `no runs yet` when no ingested Run has the fix, `no SHA` when
-`fixed_by` is not a commit in this clone. The same test failing on another error
+`fixed_by` is not a commit in this clone, `not on main` when it is a commit but
+not on `origin/main` — a branch SHA that a rebase or squash replaced, which would
+otherwise wait for Runs forever. The same test failing on another error
 is listed as a note, not a recurrence. Every entry, verified or not, is also
 checked for being an `orphan` — matching no Group at all, which a mistyped
 signature or a change to the masking rules would otherwise pass off as zero
@@ -201,7 +203,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `queries.py` | 1284 | Every question asked of the database, and nothing else. |
 | `report.py` | 1152 | The Report, and what the numbers mean. |
 | `annotations.py` | 211 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `verify.py` | 204 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
+| `verify.py` | 222 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 290 | The document. |
 
@@ -222,7 +224,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 260 tests, about a second
+utest/test_tool_ci_failures.py   # 262 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything

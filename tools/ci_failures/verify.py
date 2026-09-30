@@ -5,7 +5,9 @@ more. Counted from the first ingested Run whose commit contains `fixed_by`, and
 "contains" is asked of git rather than of the calendar: a Run on a commit from
 before the fix can be created after it, and its failure says nothing about the
 fix. So `fixed_by` has to be a commit SHA; prose there is reported as `no SHA`
-rather than guessed at.
+rather than guessed at. And the SHA on `main`: a rebase or squash gives the fix
+another one there, and the branch commit, contained in no Run, would read as
+`no runs yet` forever. That is reported as `not on main`.
 
 Read-only. Writing `fix_verified` is `annotations.mark_verified`, run by the
 maintainer with `inv ci-verify-fixes --mark` and never as a side effect.
@@ -44,10 +46,16 @@ class Status:
     NO_RUNS = "no runs yet"
     ORPHAN = "orphan"
     NO_SHA = "no SHA"
+    NOT_ON_MAIN = "not on main"
+
+
+MAIN = "origin/main"
 
 
 class History(Protocol):
     def resolves(self, sha: str) -> bool: ...
+
+    def on_main(self, sha: str) -> bool: ...
 
     def contains(self, commit: str, fix: str) -> bool | None:
         """None when the commit is not in this clone, so nobody can tell."""
@@ -68,6 +76,9 @@ class Git:
 
     def resolves(self, sha: str) -> bool:
         return self._git("cat-file", "-e", f"{sha}^{{commit}}") == 0
+
+    def on_main(self, sha: str) -> bool:
+        return self._git("merge-base", "--is-ancestor", sha, MAIN) == 0
 
     def contains(self, commit: str, fix: str) -> bool | None:
         key = (commit, fix)
@@ -109,6 +120,11 @@ class Verification:
             if _SHA.fullmatch(self.fixed_by or ""):
                 return f"no SHA: {self.fixed_by} is not a commit in this clone"
             return "no SHA: fixed_by is prose, not a commit SHA"
+        if self.status == Status.NOT_ON_MAIN:
+            return (
+                f"not on main: {self.fixed_by} is not on {MAIN}; record the SHA "
+                "the fix has on main, or `git fetch origin main`"
+            )
         counted = f"{self.runs} runs, {self.recurrences} recurrences"
         return {
             Status.WAITING: f"waiting {self.days}/{DAYS} days, {counted}",
@@ -152,6 +168,8 @@ def check(
                 continue
             elif not _SHA.fullmatch(fix) or not history.resolves(fix):
                 checked.append(replace(base, status=Status.NO_SHA))
+            elif not history.on_main(fix):
+                checked.append(replace(base, status=Status.NOT_ON_MAIN))
             else:
                 checked.append(_since_fix(db, base, fix, history, today))
     return checked

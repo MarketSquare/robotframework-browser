@@ -28,7 +28,7 @@ Done when you can state, with numbers: how often it fails and over what, on whic
 inv ci-artifact --run <run> --leg "<leg>" --attempt <attempt>
 ```
 
-Pass all three from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the paths of `output.xml`, `log.html`, `playwright-log.txt` and the screenshots; done when the failing Attempt's files are local. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
+Pass all three from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the paths of `output.xml`, `log.html`, `playwright-log.txt` and the screenshots; done when the failing Attempt's files are local. No screenshot is normal when the failing keyword's `keyword_kind` is not `library` — an assertion in `atest/library`, say — because only the Browser library takes one on failure; it does not mean the artifact is broken. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
 
 ### 3. Prove the cause
 
@@ -51,15 +51,15 @@ The route follows from where the change lands, not from how big it is.
 Record one only when all three hold: the cause is proven (step 3), the signature matches the Group, and it is agreed — either side proposes, the other accepts. Add it to `tools/ci_failures/known_causes.json` (gitignored) in the shape of the existing entries:
 
 - `test`, `signature` — exactly as the report gives them
-- `cause` — short; the full reasoning lives in the commit message or the issue
+- `cause` — one line and a pointer, e.g. `Timing ceiling measured runner speed; fixed in #1234`. The PR is the best pointer: it explains what was done, references the issue, and everything else can be traced from it
 - `reference` — the issue URL, or `null` for an on-the-spot fix
 - `recorded` — today's date
-- `fixed_by` — a bare commit SHA: the fix commit, or the PR's merge commit once it lands; `null` until then
+- `fixed_by` — a bare commit SHA **on `main`**, filled only once the fix has landed there; `null` until then. Never the branch commit: a rebase or squash gives the fix another SHA on `main`, and `inv ci-verify-fixes` reports a SHA that is not on `origin/main` as `not on main` rather than counting it
 - `fix_verified` — `null`; triage never fills it. `inv ci-verify-fixes --mark` does, once the fix has held for seven days
 
 ### 6. Act on the route
 
-- **Fix on the spot**: make the change, run the test locally, commit with the cause and evidence in the message; then put the SHA in `fixed_by`.
+- **Fix on the spot**: make the change, run the test locally, commit with the cause and evidence in the message. Leave `fixed_by` `null`; once the change is on `main`, put the SHA it has there.
 - **Issue**: draft title and body (cause, evidence, run links) and show it to the maintainer. File only on approval: `gh issue create --type <Bug|Feature|Task>`. The issue type field is what keeps Task out of the release notes, so it carries the classification on its own, with no label. Implementing it is a separate task for other skills.
 
 Then `inv ci-artifact --clean`. Done when the route is acted on, the Known Cause is agreed or declined, and the artifacts are gone.

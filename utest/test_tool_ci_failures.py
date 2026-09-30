@@ -4931,13 +4931,20 @@ class TestFetchingOneLegsArtifact:
 
 
 class FakeHistory:
-    """Commits in the order they were made; a commit contains every one before it."""
+    """Commits in the order they were made; a commit contains every one before it.
 
-    def __init__(self, *commits: str):
+    All of them are on main, except those named in `off_main`.
+    """
+
+    def __init__(self, *commits: str, off_main: tuple[str, ...] = ()):
         self.commits = list(commits)
+        self.off_main = off_main
 
     def resolves(self, sha: str) -> bool:
         return sha in self.commits
+
+    def on_main(self, sha: str) -> bool:
+        return sha in self.commits and sha not in self.off_main
 
     def contains(self, commit: str, fix: str) -> bool | None:
         if commit not in self.commits:
@@ -5061,6 +5068,22 @@ class TestVerifyingAFix:
         assert prose.status == unknown.status == "no SHA"
         assert prose.line() == "no SHA: fixed_by is prose, not a commit SHA"
         assert unknown.line() == "no SHA: abc1234 is not a commit in this clone"
+
+    def test_a_fixed_by_that_is_not_on_main_is_not_counted(self, tmp_path):
+        """A rebase or squash gives the fix another SHA on main, and the branch
+        one would read as `no runs yet` forever."""
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("sha2")],
+            FakeHistory("sha1", "f1c5000", "sha2", off_main=("f1c5000",)),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "not on main"
+        assert entry.line() == (
+            "not on main: f1c5000 is not on origin/main; record the SHA the fix "
+            "has on main, or `git fetch origin main`"
+        )
 
     def test_an_issue_reference_names_the_issue_to_close(self, tmp_path):
         from tools.ci_failures.verify import Verification
@@ -5204,6 +5227,7 @@ class TestGitHistory:
         for n in range(3):
             git("commit", "-q", "--allow-empty", "-m", f"c{n}")
             commits.append(git("rev-parse", "HEAD"))
+        git("update-ref", "refs/remotes/origin/main", commits[1])
         return tmp_path, commits
 
     def test_a_commit_contains_its_ancestors_and_not_its_descendants(self, repo):
@@ -5217,3 +5241,12 @@ class TestGitHistory:
         assert git.contains(last, fix) is True
         assert git.contains(first, fix) is False
         assert git.contains("0" * 40, fix) is None
+
+    def test_on_main_is_asked_of_origin_main(self, repo):
+        from tools.ci_failures.verify import Git
+
+        root, (first, fix, last) = repo
+        git = Git(root)
+
+        assert git.on_main(first) and git.on_main(fix[:8])
+        assert not git.on_main(last)
