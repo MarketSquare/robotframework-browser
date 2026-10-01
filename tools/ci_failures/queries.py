@@ -1282,3 +1282,36 @@ def failures_of_subject(db: Reading, subject: str) -> list[SubjectFailure]:
         (subject,),
     ).fetchall()
     return [SubjectFailure(**dict(row)) for row in rows]
+
+
+@dataclass(frozen=True)
+class TestOutcomes:
+    """How a test's Results came out, however many Groups it has."""
+
+    ran: int
+    failed: int
+    skipped: int
+    last_ran: str | None
+
+
+def outcomes_of_test(db: Reading, test: str) -> TestOutcomes:
+    """Every Result of one Test Name, Groups or none."""
+    row = db.execute(
+        """
+        SELECT COUNT(*) AS ran,
+               COALESCE(SUM(t.status = 'FAIL'), 0) AS failed,
+               COALESCE(SUM(t.status = 'SKIP'), 0) AS skipped,
+               MAX(r.created_at) AS last_ran
+        FROM test_result t
+        JOIN leg l ON l.id = t.leg_id
+        JOIN run r ON r.id = l.run_id
+        WHERE t.longname = ?
+        """,
+        (test,),
+    ).fetchone()
+    return TestOutcomes(**dict(row))
+
+
+def test_names(db: Reading) -> list[str]:
+    """Every Test Name with a Result in the Reading."""
+    return [row[0] for row in db.execute("SELECT DISTINCT longname FROM test_result")]

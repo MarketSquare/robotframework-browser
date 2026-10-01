@@ -4756,6 +4756,99 @@ class TestOneTestsReport:
         assert [e.test for e in report.test_failures] == ["S.Rarely"]
 
 
+class TestATestWithNoFailures:
+    """`inv ci-report --test` on a test with no Groups: a typo, a test outside
+    the Window and a healthy test used to read alike, as "did not fail"."""
+
+    def test_one_that_ran_and_never_failed_says_how_often_it_ran(self, tmp_path):
+        from tools.ci_failures.one_test import never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.S.Healthy", "status": "PASS", "sha": "a"},
+                {"test": "Test.S.Healthy", "status": "PASS", "sha": "b"},
+                {"test": "Test.S.Healthy", "status": "SKIP", "sha": "c"},
+            ],
+        )
+
+        assert never_failed(db, "Test.S.Healthy").line() == (
+            "'Test.S.Healthy' ran 3 times in all history: 0 failures, 1 skip."
+        )
+
+    def test_a_name_in_no_result_is_refused_with_every_name_ending_in_it(
+        self, tmp_path
+    ):
+        """A short name is shared across suites, and naming one of them
+        would be a guess."""
+        from tools.ci_failures.one_test import NoSuchTestError, never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.Http.GET Text", "status": "PASS"},
+                {"test": "Test.Http With Waiting.GET Text", "status": "PASS"},
+                {"test": "Test.Http.GET Json", "status": "PASS"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestError) as refused:
+            never_failed(db, "GET Text")
+
+        assert refused.value.suggestions == (
+            "Test.Http With Waiting.GET Text",
+            "Test.Http.GET Text",
+        )
+        assert str(refused.value) == (
+            "No test named 'GET Text' in the archive. Did you mean:\n"
+            "  Test.Http With Waiting.GET Text\n"
+            "  Test.Http.GET Text"
+        )
+
+    def test_a_misspelt_name_is_matched_by_similarity(self, tmp_path):
+        from tools.ci_failures.one_test import NoSuchTestError, never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.Credentials.Add Valid Credential", "status": "PASS"},
+                {"test": "Test.Http.GET Text", "status": "PASS"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestError) as refused:
+            never_failed(db, "Test.Credentials.Add Valid Credentail")
+
+        assert refused.value.suggestions == ("Test.Credentials.Add Valid Credential",)
+
+    def test_one_that_ran_only_before_the_window_says_when_it_last_ran(self, tmp_path):
+        from datetime import datetime
+
+        from tools.ci_failures.one_test import NotInWindowError, never_failed
+        from tools.ci_failures.window import of_days
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.S.Removed", "status": "PASS", "sha": "a"},
+                {"test": "Test.S.Kept", "status": "PASS", "sha": "b"},
+            ],
+        )
+        window = of_days(1, datetime(2026, 8, 21, 12).astimezone())
+
+        with pytest.raises(NotInWindowError) as refused:
+            never_failed(db, "Test.S.Removed", window)
+
+        assert str(refused.value) == (
+            f"'Test.S.Removed' did not run in {window.label}; it last ran on "
+            "2026-08-20. Widen --days."
+        )
+
+
 class TestFetchingOneLegsArtifact:
     """`inv ci-artifact`: the files ingest threw away, fetched again for one
     failure that turned out to deserve them."""
@@ -5120,6 +5213,20 @@ class TestVerifyingAFix:
         )
 
         assert mistyped.status == verified.status == unfixed.status == "orphan"
+        assert mistyped.line() == "orphan: matches no Group in the database"
+
+    def test_an_orphan_naming_no_test_says_so_and_what_was_meant(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000")],
+            FakeHistory("sha1", "f1c5000"),
+            "2026-09-10",
+            test="Flaky",
+        )
+
+        assert entry.status == "orphan"
+        assert entry.line() == "orphan: no test named 'Flaky' in the archive"
+        assert entry.suggestions == ("S.Flaky",)
 
     def test_verified_and_unfixed_entries_are_not_checked(self, tmp_path):
         rows = [self._fail("sha1"), self._pass("f1c5000")]

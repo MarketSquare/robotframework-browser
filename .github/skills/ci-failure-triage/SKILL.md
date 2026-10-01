@@ -1,24 +1,24 @@
 ---
 name: ci-failure-triage
 description: 'Triage one failing CI acceptance test to a verdict: cause, evidence, route. Use when the maintainer names a test from `inv ci-report` to triage.'
-argument-hint: 'The full test name, as `inv ci-report` spells it'
+argument-hint: 'The Test Name, as `inv ci-report` spells it'
 ---
 
 # CI failure triage
 
 Takes one test the maintainer chose and ends on a **verdict**: the cause, the evidence that proves it, and the **route** it takes. Triage only — the fix itself belongs to this skill only when the route says "fix on the spot".
 
-The words below — Group, Occurrence, Leg, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
+The words below — Test Name, Group, Occurrence, Leg, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
 
 ## Steps
 
 ### 1. Read the report
 
 ```bash
-inv ci-report --test "<full test name>" --days <n>
+inv ci-report --test "<Test Name>" --days <n>
 ```
 
-Start with `--days 7`; widen when the Group is rare. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's Adjacent Runs, `retry`, `log` and `also_failed_in_this_leg`. When the Group already has a Known Cause with `fixed_by` set, check each Occurrence's `commit` with `git merge-base --is-ancestor <fixed_by> <commit>`: a failure on a commit that contains the fix means the fix did not hold — say so first, it changes the question. Failures on commits without the fix are the old cause.
+Start with `--days 7`; widen when the Group is rare. A name in no Result is refused with the Test Names it may mean; use one of those. A test that ran without failing gets one line saying how often it ran. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's Adjacent Runs, `retry`, `log` and `also_failed_in_this_leg`. When the Group already has a Known Cause with `fixed_by` set, check each Occurrence's `commit` with `git merge-base --is-ancestor <fixed_by> <commit>`: a failure on a commit that contains the fix means the fix did not hold — say so first, it changes the question. Failures on commits without the fix are the old cause.
 
 Done when you can state, with numbers: how often it fails and over what, on which Configurations, whether later Attempts pass, and which class below it most resembles.
 

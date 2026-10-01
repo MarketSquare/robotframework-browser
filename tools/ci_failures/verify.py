@@ -16,6 +16,8 @@ Every entry is also checked for being an **orphan** - matching no Group or
 Fixture Failure in the archive - whatever its state. A mistyped signature, or
 one the masking rules in `parse.py` have since changed, matches nothing, and an
 entry that matches nothing would otherwise read as a fix with zero recurrences.
+An orphan whose test is in no Result at all says so, with the Test Names it
+may have meant, since there the name is wrong rather than the signature.
 """
 
 import re
@@ -27,11 +29,13 @@ from typing import Protocol
 
 from . import reading
 from .annotations import cause_key, known_cause_entries
+from .one_test import close_to
 from .queries import (
     SubjectFailure,
     failing_subjects,
     failures_of_subject,
     runs_of_subject,
+    test_names,
 )
 
 DAYS = 7
@@ -113,6 +117,9 @@ class Verification:
     other_failures: tuple[OtherFailure, ...] = ()
     #: Runs on commits this clone does not have, so neither in nor out.
     unknown_commits: int = 0
+    #: For an orphan naming a test in no Result: the Test Names it may mean.
+    no_such_test: bool = False
+    suggestions: tuple[str, ...] = ()
     key: tuple = field(default=(), compare=False)
 
     def line(self) -> str:
@@ -125,6 +132,8 @@ class Verification:
                 f"not on main: {self.fixed_by} is not on {MAIN}; record the SHA "
                 "the fix has on main, or `git fetch origin main`"
             )
+        if self.no_such_test:
+            return f"orphan: no test named {self.subject!r} in the archive"
         counted = f"{self.runs} runs, {self.recurrences} recurrences"
         return {
             Status.WAITING: f"waiting {self.days}/{DAYS} days, {counted}",
@@ -152,6 +161,7 @@ def check(
     checked = []
     with reading.of(db_path) as db:
         present = failing_subjects(db)
+        names = test_names(db)
         for subject, entry in known_cause_entries(known_causes):
             fix = entry.get("fixed_by")
             base = Verification(
@@ -163,6 +173,12 @@ def check(
                 key=cause_key(subject, entry.get("signature")),
             )
             if base.key not in present:
+                if entry.get("test") and subject not in names:
+                    base = replace(
+                        base,
+                        no_such_test=True,
+                        suggestions=close_to(subject, names),
+                    )
                 checked.append(base)
             elif not fix or entry.get("fix_verified"):
                 continue

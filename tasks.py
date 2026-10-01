@@ -2080,6 +2080,8 @@ def ci_verify_fixes(c, db=None, mark=False):
         print(f"{entry.status:<12} {entry.subject}")
         print(f"{'':<12} {entry.signature}")
         print(f"{'':<12} {entry.line()}")
+        for name in entry.suggestions:
+            print(f"{'':<12} did you mean: {name}")
         for run, url in entry.recurred_in:
             print(f"{'':<12} recurred in run {run}: {url}")
         for other in entry.other_failures:
@@ -2171,10 +2173,13 @@ def ci_report(
             answer covers what is there, so read `since` against the span the
             label claims. Goes with everything except --mark-seen; see
             `tools/ci_failures/window.py`.
-        test: Report on this one test only, by its full name as the report
-            spells it: its Groups, the Fixture Failures of the suites around it,
+        test: Report on this one test only, by its Test Name, from `Test.`
+            down: its Groups, the Fixture Failures of the suites around it,
             and its Known Cause. Printed as JSON unless --json or --html names
-            a file. --limit does not apply; --mark-seen is refused.
+            a file. A test with no Groups gets one line saying how often it
+            ran; a name in no Result is refused with the names it may mean,
+            and one with no Result in the window says when it last ran.
+            --limit does not apply; --mark-seen is refused.
     """
     from tools.ci_failures.report import (
         NoDatabaseError,
@@ -2184,6 +2189,7 @@ def ci_report(
         of_test,
         snapshot_entries,
     )
+    from tools.ci_failures.one_test import never_failed
     from tools.ci_failures.window import ALL_HISTORY
 
     if test and mark_seen:
@@ -2208,7 +2214,11 @@ def ci_report(
     if test:
         report = of_test(report, test)
         if not report.test_failures and not report.fixture_failures:
-            raise Exit(f"{test!r} did not fail in {report.window.label}.", 1)
+            try:
+                print(never_failed(db_path, test, window).line())
+            except UnanswerableError as why:
+                raise Exit(str(why), 1) from None
+            return
         if not json and not html:
             from tools.ci_failures.render_json import text
 

@@ -64,6 +64,15 @@ One test's outcome in one Leg: pass, fail or skip. Passing Results are stored to
 failure count without a run count is not a rate.
 _Avoid_: test run, execution
 
+**Test Name**:
+The full dotted name a test is addressed by, from the top suite `Test` down, e.g.
+`Test.02 Content Keywords.Credentials.Add Valid Credential With Secret`. What a Result, a Group
+and a Known Cause are keyed on, and what `--test` asks for. Never the test's own name alone:
+about one in six of those is shared by tests in different suites. A name that does not begin
+at `Test` comes from a Leg that ran under another top suite, as two did on 2026-09-05, and is
+the same test spelled another way.
+_Avoid_: longname, short name, test id
+
 **Pruning**:
 Removing every Run older than 120 days, and everything recorded under it, from the archive.
 It is what stops the archive from growing forever. 120 is past the 90 days GitHub keeps

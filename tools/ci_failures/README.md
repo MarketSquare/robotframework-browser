@@ -64,7 +64,10 @@ so running it often only costs what is new.
 To triage one test, `inv ci-report --test` prints that test's part of the
 Report: its Groups, the Fixture Failures of the suites around it, and its Known
 Cause. It is the same Report the page is built from, filtered after it is built,
-so the two cannot disagree; `--limit` does not apply to it. Each Occurrence
+so the two cannot disagree; `--limit` does not apply to it. The test is named
+by its Test Name, from `Test.` down. A test with no Groups gets one line saying
+how often it ran instead; a name in no Result is refused with the Test Names it
+may mean, and one with no Result in the Window says when it last ran. Each Occurrence
 carries `run`, `leg` and `attempt`, which are what `inv ci-artifact` takes to bring back the
 screenshots, `log.html` and `playwright-log.txt` that ingest threw away. They
 unpack under `ci_failures/artifacts/` and are not kept: `--clean` removes them
@@ -202,6 +205,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
 | `queries.py` | 1284 | Every question asked of the database, and nothing else. |
 | `report.py` | 1152 | The Report, and what the numbers mean. |
+| `one_test.py` | 94 | A test asked for by Test Name when the Report has no Group for it: a typo, a test outside the Window, or one that never failed. |
 | `annotations.py` | 211 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `verify.py` | 222 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
@@ -224,7 +228,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 262 tests, about a second
+utest/test_tool_ci_failures.py   # 267 tests, about a second
 ```
 
 ## Three rules worth knowing before you change anything
