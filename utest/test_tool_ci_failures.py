@@ -195,8 +195,10 @@ def seed(db: Path, rows: list[dict]) -> None:
     Keys, all optional but `test` and `status`:
 
         test suite status signature message elapsed scope owner
-        sha platform python rf node executors node_process attempt
+        sha platform python rf node executors node_process attempt artifact
         screenshots screenshot_status logs
+
+    `artifact` is the Leg's artifact name, and its Install is read from it.
 
     `logs` is a list of (level, keyword, message). There were eight seeders
     before this one, agreeing about the four columns they happened to share and
@@ -204,6 +206,7 @@ def seed(db: Path, rows: list[dict]) -> None:
     very nearly the set of things nothing tested.
     """
     from tools.ci_failures.db import connect
+    from tools.ci_failures.legs import install_of
 
     connection = connect(db)
     runs: dict[str, int] = {}
@@ -221,19 +224,21 @@ def seed(db: Path, rows: list[dict]) -> None:
         platform = row.get("platform", "linux")
         python = row.get("python", "3.13.15")
         attempt = row.get("attempt", 1)
-        key = (sha, platform, python, attempt)
+        artifact = row.get("artifact", f"leg-{platform}-{python}")
+        key = (sha, platform, python, attempt, artifact)
         if key not in legs:
             legs[key] = len(legs) + 1
             connection.execute(
                 "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
                 "artifact_url, platform, python_version, rf_version, "
-                "node_version, executors, node_process, ingested_at, attempt) "
-                "VALUES (?, ?, ?, ?, 'a-url', ?, ?, ?, ?, ?, ?, 'now', ?)",
+                "node_version, executors, node_process, ingested_at, attempt, "
+                "install) "
+                "VALUES (?, ?, ?, ?, 'a-url', ?, ?, ?, ?, ?, ?, 'now', ?, ?)",
                 (
                     legs[key],
                     runs[sha],
                     legs[key],
-                    f"leg-{platform}-{python}",
+                    artifact,
                     platform,
                     python,
                     row.get("rf", "7.4.2"),
@@ -241,6 +246,7 @@ def seed(db: Path, rows: list[dict]) -> None:
                     row.get("executors"),
                     row.get("node_process"),
                     attempt,
+                    install_of(artifact),
                 ),
             )
         cursor = connection.execute(
@@ -4847,6 +4853,171 @@ class TestATestWithNoFailures:
         assert str(refused.value) == (
             f"'Test.S.Removed' did not run in {window.label}; it last ran on "
             "2026-08-20. Widen --days."
+        )
+
+
+class TestTheControlsOfARun:
+    """`inv ci-artifact --run --test` without `--leg`: which Legs of the Run ran
+    the test, and which of them passed it - read from the database, so the
+    choice of a Control costs no download. See **Control** in CONTEXT.md and
+    ADR 0006."""
+
+    TEST = "Test.Credentials.Add Valid Credential With Secret"
+    BATTERIES = "Clean_install_results_windows-latest"
+    WHEEL = "windows-latest 3.13 24.x Clean install results"
+    SOURCE = "Test results-ubuntu-latest-2-3.13-24.x"
+
+    def test_every_leg_that_ran_the_test_is_listed_by_install_and_passes_are_controls(
+        self, tmp_path
+    ):
+        from tools.ci_failures.controls import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.WHEEL,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.BATTERIES,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.BATTERIES,
+                    "attempt": 2,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.SOURCE,
+                },
+                {
+                    "test": "Test.Other.Elsewhere",
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": "Test results-ubuntu-latest-1-3.13-24.x",
+                },
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "sha": "next",
+                    "artifact": self.WHEEL,
+                },
+            ],
+        )
+
+        assert of_run(db, 1, self.TEST).lines() == [
+            f"Run 1 · commit 1a2b3c4 · {self.TEST}",
+            "batteries",
+            "  fail     batteries · windows-latest                       --attempt 1",
+            "  control  batteries · windows-latest                       --attempt 2",
+            "source",
+            "  control  source · ubuntu-latest · shard 2 · 3.13 · 24.x   --attempt 1",
+            "wheel",
+            "  control  wheel · windows-latest · 3.13 · 24.x             --attempt 1",
+            f'fetch one: inv ci-artifact --run 1 --leg "<leg>" --attempt <n> '
+            f'--test "{self.TEST}"',
+        ]
+
+    def test_a_listed_leg_is_what_the_fetch_takes_as_leg(self):
+        """The listing prints `leg_name`, and the fetch matches `--leg` by
+        `leg_name` of it - so a printed name has to come back unchanged."""
+        from tools.ci_failures.legs import leg_name
+
+        for artifact in (self.BATTERIES, self.WHEEL, self.SOURCE, "docker_results"):
+            assert leg_name(leg_name(artifact)) == leg_name(artifact)
+
+    def test_a_failure_its_suite_fixture_marked_is_not_called_a_failure(self, tmp_path):
+        from tools.ci_failures.controls import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "scope": "suite_setup",
+                    "owner": "Test.Credentials",
+                    "artifact": self.BATTERIES,
+                },
+            ],
+        )
+
+        assert of_run(db, 1, self.TEST).lines()[2] == (
+            "  suite broke  batteries · windows-latest   --attempt 1"
+        )
+
+    def test_a_leg_whose_attempt_is_unknown_is_shown_not_dropped(self, tmp_path):
+        from tools.ci_failures.controls import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "artifact": self.WHEEL,
+                    "attempt": None,
+                },
+            ],
+        )
+
+        lines = of_run(db, 1, self.TEST).lines()
+
+        assert lines[2] == (
+            "  control  wheel · windows-latest · 3.13 · 24.x   --attempt ?"
+        )
+        assert lines[-1] == (
+            "attempt ? is not yet resolved: try --attempt 1, or "
+            "`inv ci-backfill-attempts` first."
+        )
+
+    def test_a_run_not_in_the_database_is_refused_not_looked_up_on_github(
+        self, tmp_path, monkeypatch
+    ):
+        from tools.ci_failures.controls import NotIngestedError, of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": self.TEST, "status": "PASS"}])
+        monkeypatch.setattr(github, "list_test_artifacts", pytest.fail)
+
+        with pytest.raises(NotIngestedError) as refused:
+            of_run(db, 99, self.TEST)
+
+        assert str(refused.value) == (
+            "Run 99 is not in the database; `inv ci-ingest` first."
+        )
+
+    def test_a_name_the_run_did_not_run_is_refused_with_its_names(self, tmp_path):
+        from tools.ci_failures.controls import NoSuchTestInRunError, of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": self.TEST, "status": "PASS"},
+                {"test": "Test.Http.GET Text", "status": "PASS", "sha": "other"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestInRunError) as refused:
+            of_run(db, 1, "Add Valid Credential With Secret")
+
+        assert str(refused.value) == (
+            "'Add Valid Credential With Secret' did not run in Run 1. Did you mean:\n"
+            f"  {self.TEST}"
         )
 
 

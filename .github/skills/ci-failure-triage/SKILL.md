@@ -8,7 +8,7 @@ argument-hint: 'The Test Name, as `inv ci-report` spells it'
 
 Takes one test the maintainer chose and ends on a **verdict**: the cause, the evidence that proves it, and the **route** it takes. Triage only — the fix itself belongs to this skill only when the route says "fix on the spot".
 
-The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
+The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjacent Run, Control, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
 
 ## Steps
 
@@ -35,9 +35,9 @@ Pass all four from the same Occurrence — a re-run Leg uploads once per Attempt
 - `(the Leg's shared node process)` — every Executor's node lines in one log; narrow it to the test's start and end times.
 - `also:` — the files not listed, counted by extension; they are all in `directory:` to open.
 
-When the failure is limited to one Configuration, fetch a **control**: a Leg of the same Run where the test passed, with the same `--test`, and compare the same log line in both. A `--leg` the Run does not have prints every Leg and Attempt it does have.
+When the failure is limited to one Configuration, fetch a **Control**: a Leg of the same Run where the test passed, with the same `--test`, and compare the same log line in both. `inv ci-artifact --run <run> --test "<Test Name>"` without `--leg` lists the Legs of the Run that ran the test, by Install, with each one's outcome and `--attempt`, Controls marked; fetching nothing. Pick the Control closest to the failing Leg — the same Platform on another Install, or the same Install on another Platform.
 
-Done when the failing Attempt's files are local, and for a failure limited to one Configuration, a control's too.
+Done when the failing Attempt's files are local, and for a failure limited to one Configuration, a Control's too.
 
 Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
 

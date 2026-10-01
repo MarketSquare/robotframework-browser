@@ -2011,6 +2011,9 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     Args:
         run: The run id, as an Occurrence in `inv ci-report` gives it.
         leg: The Leg, as an Occurrence names it, or the artifact's own name.
+            Left out, with --test: lists the Legs of the Run that ran the test,
+            by Install, the passes marked as Controls, from the database and
+            with nothing fetched.
         attempt: The Occurrence's attempt. A Leg re-run by hand uploaded once
             per attempt, and only the one that failed holds the failure.
         test: The Test Name, from `Test.` down. Lists the files that bear on
@@ -2028,14 +2031,27 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
         shortlist,
     )
     from tools.ci_failures.artifacts import clean as clean_artifacts
+    from tools.ci_failures.controls import (
+        NoSuchTestInRunError,
+        NotIngestedError,
+        of_run,
+    )
     from tools.ci_failures.github import GhError
 
     if clean:
         if clean_artifacts(CI_ARTIFACTS):
             print(f"Removed {CI_ARTIFACTS}")
         return
+    if run is not None and leg is None and test is not None:
+        try:
+            listing = of_run(CI_FAILURES_DB, int(run), test)
+        except (NotIngestedError, NoSuchTestInRunError) as refused:
+            raise Exit(str(refused), 1) from None
+        for line in listing.lines():
+            print(line)
+        return
     if run is None or leg is None:
-        raise Exit("Pass --run and --leg, or --clean.", 2)
+        raise Exit("Pass --run and --leg, --run and --test, or --clean.", 2)
     try:
         directory = fetch(int(run), leg, CI_ARTIFACTS, attempt=int(attempt))
     except NoSuchLegError as missing:

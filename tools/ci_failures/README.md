@@ -47,6 +47,7 @@ inv ci-report --mark-seen         # baseline this report, so the next can diff
 inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
 
 inv ci-artifact --run <id> --leg "<leg>" [--attempt 2] [--test "<Test Name>"]  # one Leg's artifact again, and the files worth opening
+inv ci-artifact --run <id> --test "<Test Name>"  # the Run's Legs that ran it, Controls marked, nothing fetched
 inv ci-artifact --clean                  # remove every fetched artifact
 
 inv ci-verify-fixes               # has each Known Cause's fix held? read-only
@@ -75,7 +76,10 @@ it, the log of each test app its suite setups started, and every file its
 log links to, `MISSING` when the artifact lacks one. The rest are counted
 by extension. They unpack under `ci_failures/artifacts/` and are not kept:
 `--clean` removes them when the triage is done, and `inv ci-ingest` removes any
-left behind.
+left behind. With `--test` and no `--leg`, it fetches nothing and lists the Legs
+of the Run that ran the test, by Install, each with its outcome and Attempt, the
+passes marked as **Controls**. That listing is read from the database only, so a
+Run not yet ingested is refused rather than listed from GitHub (ADR `0006`).
 
 Once a fix has landed, `inv ci-verify-fixes` says whether it held. For every
 Known Cause with a `fixed_by` commit and no `fix_verified` date, it finds the
@@ -207,8 +211,9 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1284 | Every question asked of the database, and nothing else. |
+| `queries.py` | 1386 | Every question asked of the database, and nothing else. |
 | `report.py` | 1152 | The Report, and what the numbers mean. |
+| `controls.py` | 110 | The Legs of one Run that ran a test, for choosing a Control. Database only. |
 | `one_test.py` | 94 | A test asked for by Test Name when the Report has no Group for it: a typo, a test outside the Window, or one that never failed. |
 | `annotations.py` | 211 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
 | `verify.py` | 222 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
@@ -232,7 +237,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 279 tests, about three seconds
+utest/test_tool_ci_failures.py   # 285 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything

@@ -214,6 +214,14 @@ value is for.
 _Avoid_: neighbouring, surrounding, nearby - and never for the keywords before a failure inside
 one test, which is a different question this tool does not answer.
 
+**Control**:
+A Leg of the same Run as an Occurrence, where the same test ran and passed. It holds the commit
+constant and varies the Configuration - the opposite of an **Adjacent Run** - so the same log
+line compared in both separates "this Configuration" from "this commit". Only a pass is a
+Control; the other Legs of the Run that ran the test are listed beside it, because a second
+failure in the same Run is evidence too.
+_Avoid_: baseline, reference run, neighbour
+
 **Inconclusive Zero**:
 A configuration that has failed nothing yet, where a configuration exactly as broken as the
 others would also have shown nothing this often. The distinction between evidence of health
@@ -233,6 +241,8 @@ _Avoid_: clean, passing, green
 - A **Group** has one or more **Occurrences**; a **Fixture Failure**'s Occurrence is one **Leg**
 - A **Report** has many **Renderings**, and every **Rendering** shows the same Report
 - An **Occurrence** may have an **Adjacent Run** either side of it, on its own **Leg**
+- An **Occurrence** may have **Controls**: the other **Legs** of its own **Run** where the
+  test passed
 - A **Known Cause** may have a fix, and a fix is **Verified** or not; the triage that
   recorded it chose one **Route**
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed

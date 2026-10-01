@@ -13,8 +13,9 @@ run none. `_subject_key` and `_row_without_key` shape a row on its way out;
 `_spread` picks four order statistics out of a sorted list; `_verdict` reads a
 Leg's statuses and says what the Subject did in that Run - and that last one is
 a judgement by any reading. It is here because it is called from inside the lane
-walk in `runs_either_side` and its fixture twin, where moving it would mean
-handing `report.py` raw status tuples instead of an answer. Worth knowing about
+walk in `runs_either_side` and its fixture twin, and from `legs_of_run`, where
+moving it would mean handing `report.py` and `controls.py` raw status tuples
+instead of an answer. Worth knowing about
 rather than worth pretending away.
 """
 
@@ -1315,3 +1316,71 @@ def outcomes_of_test(db: Reading, test: str) -> TestOutcomes:
 def test_names(db: Reading) -> list[str]:
     """Every Test Name with a Result in the Reading."""
     return [row[0] for row in db.execute("SELECT DISTINCT longname FROM test_result")]
+
+
+@dataclass(frozen=True)
+class IngestedRun:
+    """A Run the database holds, and its commit."""
+
+    run: int
+    commit: str | None
+
+
+def ingested_run(db: Reading, run: int) -> IngestedRun | None:
+    """The Run, or None when the database does not hold it."""
+    row = db.execute("SELECT head_sha FROM run WHERE id = ?", (run,)).fetchone()
+    return IngestedRun(run, row["head_sha"]) if row else None
+
+
+def test_names_of_run(db: Reading, run: int) -> list[str]:
+    """Every Test Name with a Result in one Run."""
+    return [
+        row[0]
+        for row in db.execute(
+            "SELECT DISTINCT t.longname FROM test_result t "
+            "JOIN leg l ON l.id = t.leg_id WHERE l.run_id = ?",
+            (run,),
+        )
+    ]
+
+
+@dataclass(frozen=True)
+class RunLeg:
+    """One Leg of a Run that ran a test, and what the test did there."""
+
+    artifact_name: str
+    install: str | None
+    attempt: int | None
+    outcome: str
+
+
+def legs_of_run(db: Reading, run: int, test: str) -> list[RunLeg]:
+    """The Legs of one Run that ran this test, each with the test's outcome.
+
+    The Legs a **Control** is chosen from. A Leg of another shard has no Result
+    for the test and is not here, which is the point: those are most of a Run.
+    """
+    rows = db.execute(
+        """
+        SELECT l.id AS leg_id, l.artifact_name, l.install, l.attempt,
+               t.status, t.failure_scope
+        FROM test_result t
+        JOIN leg l ON l.id = t.leg_id
+        WHERE l.run_id = ? AND t.longname = ?
+        ORDER BY l.id
+        """,
+        (run, test),
+    ).fetchall()
+    legs: dict[int, dict] = {}
+    for row in rows:
+        leg = legs.setdefault(row["leg_id"], {"row": row, "statuses": []})
+        leg["statuses"].append((row["status"], row["failure_scope"]))
+    return [
+        RunLeg(
+            artifact_name=leg["row"]["artifact_name"],
+            install=leg["row"]["install"],
+            attempt=leg["row"]["attempt"],
+            outcome=_verdict(leg["statuses"]),
+        )
+        for leg in legs.values()
+    ]
