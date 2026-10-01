@@ -25,10 +25,10 @@ Done when you can state, with numbers: how often it fails and over what, on whic
 ### 2. Fetch artifacts, when the report is not enough
 
 ```bash
-inv ci-artifact --run <run> --leg "<leg>" --attempt <attempt>
+inv ci-artifact --run <run> --leg "<leg>" --attempt <attempt> --test "<Test Name>"
 ```
 
-Pass all three from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the paths of `output.xml`, `log.html`, `playwright-log.txt` and the screenshots; done when the failing Attempt's files are local. No screenshot is normal when the failing keyword's `keyword_kind` is not `library` — an assertion in `atest/library`, say — because only the Browser library takes one on failure; it does not mean the artifact is broken. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
+Pass all four from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the files that bear on the test, by path inside the artifact: `output.xml` and `log.html`, the Executor's own files, the `test-app` log of each test app the test's suite setups started (`responseTimeMs` per request), and every file the test's log links to — screenshots, the node log — with `MISSING` for any the artifact lacks. Everything else is counted on the `also:` line. Done when the failing Attempt's files are local. The same call on a Leg where the test passed gives the control to compare against. No screenshot is normal when the failing keyword's `keyword_kind` is not `library` — an assertion in `atest/library`, say — because only the Browser library takes one on failure; it does not mean the artifact is broken. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
 
 ### 3. Prove the cause
 

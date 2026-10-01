@@ -1999,13 +1999,13 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
 
 
 @task
-def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
+def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     """Fetches one Leg's artifact again, for triaging a failure in it.
 
-    Ingest keeps only the parsed rows. This brings back the rest - log.html,
-    playwright-log.txt, the screenshots - unpacked under ci_failures/artifacts/,
-    and prints where each is. A Leg already fetched is reused. Remove them all
-    with --clean once the triage is done; `inv ci-ingest` also removes any left
+    Ingest keeps only the parsed rows. This brings back the rest, unpacked
+    under ci_failures/artifacts/, and prints the files worth opening, by their
+    path inside it. A Leg already fetched is reused. Remove them all with
+    --clean once the triage is done; `inv ci-ingest` also removes any left
     behind.
 
     Args:
@@ -2013,9 +2013,20 @@ def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
         leg: The Leg, as an Occurrence names it, or the artifact's own name.
         attempt: The Occurrence's attempt. A Leg re-run by hand uploaded once
             per attempt, and only the one that failed holds the failure.
+        test: The Test Name, from `Test.` down. Lists the files that bear on
+            that test instead of only the Leg's: the Executor that ran it, the
+            log of each test app its suite setups started, and every file its
+            log links to, MISSING when the artifact lacks it. Works on
+            a Leg where the test passed, as a control. A name the Leg did not
+            run is refused with the names it may mean.
         clean: Remove every fetched artifact instead of fetching one.
     """
-    from tools.ci_failures.artifacts import NoSuchLegError, fetch
+    from tools.ci_failures.artifacts import (
+        NoSuchLegError,
+        NoSuchTestInLegError,
+        fetch,
+        shortlist,
+    )
     from tools.ci_failures.artifacts import clean as clean_artifacts
     from tools.ci_failures.github import GhError
 
@@ -2026,7 +2037,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
     if run is None or leg is None:
         raise Exit("Pass --run and --leg, or --clean.", 2)
     try:
-        found = fetch(int(run), leg, CI_ARTIFACTS, attempt=int(attempt))
+        directory = fetch(int(run), leg, CI_ARTIFACTS, attempt=int(attempt))
     except NoSuchLegError as missing:
         raise Exit(str(missing), 1) from None
     except (GhError, OSError, zipfile.BadZipFile) as unreachable:
@@ -2035,15 +2046,16 @@ def ci_artifact(c, run=None, leg=None, attempt=1, clean=False):
             f"status`, or an artifact past its 90 days:\n{unreachable}",
             3,
         ) from None
-    print(f"directory:  {found.directory}")
-    print(f"output.xml: {found.output_xml or '(none in this artifact)'}")
-    for label, paths in (
-        ("log", found.logs),
-        ("node log", found.node_logs),
-        ("screenshot", found.screenshots),
-    ):
-        for path in paths:
-            print(f"{label + ':':<11} {path}")
+    if not (directory / "output.xml").is_file():
+        print(f"directory:  {directory}")
+        print("output.xml: (none in this artifact)")
+        return
+    try:
+        listed = shortlist(directory, test)
+    except NoSuchTestInLegError as unknown:
+        raise Exit(str(unknown), 1) from None
+    for line in listed.lines():
+        print(line)
 
 
 @task

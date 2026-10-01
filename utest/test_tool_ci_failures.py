@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime, timedelta, timezone
+import shutil
 import sqlite3
 from contextlib import closing
 import zipfile
@@ -4900,21 +4901,17 @@ class TestFetchingOneLegsArtifact:
         )
         return downloads
 
-    def test_the_legs_files_are_unpacked_and_named(self, one_leg, tmp_path):
+    def test_the_legs_files_are_unpacked_under_root(self, one_leg, tmp_path):
         from tools.ci_failures.artifacts import fetch
 
         root = tmp_path / "artifacts"
 
-        found = fetch(self.RUN, self.LEG, root)
+        directory = fetch(self.RUN, self.LEG, root)
 
         assert one_leg == [10828316847]
-        assert found.directory.parent == root
-        assert found.output_xml == found.directory / "output.xml"
-        assert found.logs == (found.directory / "log.html",)
-        assert found.node_logs == (found.directory / "playwright-log.txt",)
-        assert found.screenshots == (
-            found.directory / "pabot_results/4/browser/screenshot/fail-1.png",
-        )
+        assert directory.parent == root
+        assert (directory / "output.xml").is_file()
+        assert (directory / "pabot_results/4/browser/screenshot/fail-1.png").is_file()
 
     def test_a_leg_already_fetched_is_not_fetched_again(self, one_leg, tmp_path):
         from tools.ci_failures.artifacts import fetch
@@ -5002,7 +4999,7 @@ class TestFetchingOneLegsArtifact:
         second = fetch(self.RUN, self.LEG, root, attempt=2)
 
         assert one_leg == [11, 12]
-        assert first.directory != second.directory
+        assert first != second
 
     def test_an_empty_artifact_unpacks_to_an_empty_leg(
         self, one_leg, monkeypatch, tmp_path
@@ -5017,10 +5014,325 @@ class TestFetchingOneLegsArtifact:
 
         monkeypatch.setattr(github, "download_artifact", empty)
 
-        found = fetch(self.RUN, self.LEG, tmp_path / "artifacts")
+        directory = fetch(self.RUN, self.LEG, tmp_path / "artifacts")
 
-        assert found.output_xml is None
-        assert found.screenshots == ()
+        assert list(directory.iterdir()) == []
+
+
+FAKE_COMMON = """\
+def start_test_server(port):
+    return port
+
+
+def start_test_https_server(port):
+    return port
+"""
+
+
+def _run_executor(
+    output_dir: Path, suites: dict[str, str], port: str, metadata: tuple[str, ...] = ()
+) -> Path:
+    """An Executor's output.xml, from a real Robot Framework run.
+
+    `common.py` stands in for `atest/library/common.py`: its keywords are what
+    the shortlist reads the test-app ports from, by library and keyword name.
+    """
+    root = output_dir / "atest" / "test"
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "common.py").write_text(FAKE_COMMON, encoding="utf-8")
+    (root / "__init__.robot").write_text(
+        "*** Settings ***\n"
+        "Library    common.py\n"
+        "Suite Setup    Start Test Application\n\n"
+        "*** Keywords ***\n"
+        "Start Test Application\n"
+        f"    ${{port}} =    Start Test Server    {port}\n",
+        encoding="utf-8",
+    )
+    for name, text in suites.items():
+        (root / name).write_text(text, encoding="utf-8")
+    with open(output_dir / "stdout.txt", "w", encoding="utf-8") as captured:
+        robot_run(
+            str(root),
+            outputdir=str(output_dir),
+            output="output.xml",
+            log=None,
+            report=None,
+            metadata=list(metadata),
+            stdout=captured,
+            stderr=captured,
+        )
+    shutil.rmtree(output_dir / "atest")
+    (output_dir / "stdout.txt").unlink()
+    return output_dir / "output.xml"
+
+
+CREDENTIALS_SUITE = """\
+*** Test Cases ***
+Add Valid Credential
+    Fail    Text 'Waiting for action...' (str) should be 'Success' (str)
+"""
+
+
+class TestShortlistingOneOccurrence:
+    """`inv ci-artifact --test`: of everything in a Leg's artifact, the files
+    that bear on one test."""
+
+    def test_a_serial_leg_names_the_test_app_log_its_setup_started(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        (tmp_path / "test-app").mkdir()
+        (tmp_path / "test-app" / "test-app-7001.log").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert (
+            Entry("test-app", "test-app/test-app-7001.log", "Start Test Server in Test")
+            in listed.entries
+        )
+
+    def test_a_test_app_log_not_in_the_artifact_is_marked_missing(self, tmp_path):
+        from tools.ci_failures.artifacts import shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        [test_app] = [e for e in listed.entries if e.label == "test-app"]
+        assert test_app.missing
+
+    def test_the_files_the_tests_log_links_to_are_listed_once_each(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = r"file://D:\\a\\robotframework-browser\\atest\\output"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            '    Log    <a href="browser/screenshot/fail-1.png">x</a>    html=True\n'
+            f'    Log    <a href="{runner}\\\\browser\\\\screenshot\\\\fail-1.png">x</a>'
+            "    html=True\n"
+            '    Log    <a href="browser/screenshot/fail-97.png">x</a>    html=True\n'
+            '    Log    <a href="https://example.invalid/page.png">x</a>    html=True\n'
+            "    Log    See also file:///D:/a/robotframework-browser/atest/output/"
+            "playwright-log-123.txt for additional details.\n"
+            "    Fail    Text 'Waiting for action...' (str) should be 'Success' (str)\n"
+        )
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001")
+        (tmp_path / "browser" / "screenshot").mkdir(parents=True)
+        (tmp_path / "browser" / "screenshot" / "fail-1.png").write_bytes(b"")
+        (tmp_path / "playwright-log-123.txt").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        linked = [e for e in listed.entries if e.label in ("screenshot", "node log")]
+        assert linked == [
+            Entry("screenshot", "browser/screenshot/fail-1.png"),
+            Entry("screenshot", "browser/screenshot/fail-97.png", missing=True),
+            Entry("node log", "playwright-log-123.txt"),
+        ]
+
+    def test_a_pabot_executors_file_is_found_under_its_merged_name(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = "file:///home/runner/work/rfb/rfb/atest/output/pabot_results/4"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            f'    Log    <a href="{runner}/browser/screenshot/fail-1.png">x</a>'
+            "    html=True\n"
+            "    Fail    no\n"
+        )
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001")
+        _run_executor(
+            tmp_path / "pabot_results" / "4", {"credentials.robot": suite}, "7001"
+        )
+        merged = tmp_path / "browser" / "screenshot"
+        merged.mkdir(parents=True)
+        (merged / "20260928_181043-3-fail-1.png").write_bytes(b"")
+        (merged / "20260928_181043-4-fail-1.png").write_bytes(b"")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert (
+            Entry("screenshot", "browser/screenshot/20260928_181043-4-fail-1.png")
+            in listed.entries
+        )
+
+    def test_a_shared_node_process_log_is_found_where_it_was_written(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = "file:///home/runner/work/rfb/rfb/atest/output/pabot_results/5"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            f"    Log    See also {runner}/playwright-log.txt for additional details.\n"
+            "    Fail    no\n"
+        )
+        shared = ("Node Process:shared",)
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001", shared)
+        _run_executor(
+            tmp_path / "pabot_results" / "5",
+            {"credentials.robot": suite},
+            "7001",
+            shared,
+        )
+        (tmp_path / "playwright-log.txt").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert [e for e in listed.entries if e.label == "node log"] == [
+            Entry("node log", "playwright-log.txt", "the Leg's shared node process")
+        ]
+
+    def test_a_test_naming_no_node_log_gets_the_executors_default(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        for name in ("playwright-log.txt", "playwright-log-1790619542210617400.txt"):
+            (tmp_path / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert [e for e in listed.entries if e.label == "node log"] == [
+            Entry("node log", "playwright-log.txt", "not named by the test")
+        ]
+
+    def test_a_test_not_in_the_leg_is_refused_with_the_names_it_may_mean(
+        self, tmp_path
+    ):
+        from tools.ci_failures.artifacts import NoSuchTestInLegError, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+
+        with pytest.raises(NoSuchTestInLegError) as refused:
+            shortlist(tmp_path, "Credentials.Add Valid Credential")
+
+        assert refused.value.suggestions == ("Test.Credentials.Add Valid Credential",)
+        assert "did not run in this Leg" in str(refused.value)
+
+    def test_the_shortlist_prints_one_line_per_file_and_counts_the_rest(self):
+        from tools.ci_failures.artifacts import Entry, Shortlist
+
+        listed = Shortlist(
+            directory=Path("/a/36463000327-batteries-windows-latest-attempt-1"),
+            test="Test.Credentials.Add Valid Credential",
+            entries=(
+                Entry("output.xml", "output.xml"),
+                Entry("executor", ".", "serial"),
+                Entry(
+                    "test-app",
+                    "test-app/test-app-60666.log",
+                    "Start Test Server in Test",
+                ),
+                Entry("screenshot", "browser/screenshot/fail-97.png", missing=True),
+                Entry("node log", "playwright-log.txt", "not named by the test"),
+            ),
+            others=((".png", 74), (".txt", 18), (".log", 2)),
+        )
+
+        assert listed.lines() == [
+            "directory:  /a/36463000327-batteries-windows-latest-attempt-1",
+            "output.xml: output.xml",
+            "executor:   . (serial)",
+            "test-app:   test-app/test-app-60666.log (Start Test Server in Test)",
+            "screenshot: browser/screenshot/fail-97.png MISSING",
+            "node log:   playwright-log.txt (not named by the test)",
+            "also:       94 more files: 74 .png, 18 .txt, 2 .log",
+        ]
+
+    def test_without_a_test_only_the_legs_own_files_are_listed(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        (tmp_path / "log.html").write_text("", encoding="utf-8")
+        (tmp_path / "browser" / "screenshot").mkdir(parents=True)
+        for n in (1, 2):
+            (tmp_path / "browser" / "screenshot" / f"fail-{n}.png").write_bytes(b"")
+
+        listed = shortlist(tmp_path, None)
+
+        assert listed.entries == (
+            Entry("output.xml", "output.xml"),
+            Entry("log", "log.html"),
+        )
+        assert listed.others == ((".png", 2),)
+
+    def test_a_serial_leg_is_its_own_executor(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        for name in ("log.html", "syslog.txt"):
+            (tmp_path / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert listed.entries[:4] == (
+            Entry("output.xml", "output.xml"),
+            Entry("log", "log.html"),
+            Entry("executor", ".", "serial"),
+            Entry("syslog", "syslog.txt"),
+        )
+
+    def test_a_suite_setup_below_the_top_adds_its_own_test_app(self, tmp_path):
+        from tools.ci_failures.artifacts import shortlist
+
+        certificates = (
+            "*** Settings ***\n"
+            "Library    common.py\n"
+            "Suite Setup    Setup\n\n"
+            "*** Test Cases ***\n"
+            "Client Certificate Is Sent\n"
+            "    Fail    no certificate\n\n"
+            "*** Keywords ***\n"
+            "Setup\n"
+            "    ${port} =    Start Test Https Server    7002\n"
+        )
+        _run_executor(tmp_path, {"client_certificates.robot": certificates}, "7001")
+
+        listed = shortlist(
+            tmp_path, "Test.Client Certificates.Client Certificate Is Sent"
+        )
+
+        assert [(e.path, e.note) for e in listed.entries if e.label == "test-app"] == [
+            ("test-app/test-app-7001.log", "Start Test Server in Test"),
+            (
+                "test-app/test-app-7002.log",
+                "Start Test Https Server in Test.Client Certificates",
+            ),
+        ]
+
+    def test_a_pabot_leg_answers_from_the_executor_that_ran_the_test(self, tmp_path):
+        """The merged output.xml puts every Executor's setup under one top
+        suite, so the port there could be any of them."""
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        orders = "*** Test Cases ***\nOrder Is Placed\n    Fail    no order\n"
+        both = {"credentials.robot": CREDENTIALS_SUITE, "orders.robot": orders}
+        _run_executor(tmp_path, both, "7001")
+        _run_executor(
+            tmp_path / "pabot_results" / "0",
+            {"credentials.robot": CREDENTIALS_SUITE},
+            "7001",
+        )
+        executor = tmp_path / "pabot_results" / "1"
+        _run_executor(executor, {"orders.robot": orders}, "7002")
+        for name in ("syslog.txt", "robot_stdout.out", "robot_stderr.out"):
+            (executor / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Orders.Order Is Placed")
+
+        start = listed.entries.index(Entry("executor", "pabot_results/1"))
+        assert listed.entries[start : start + 5] == (
+            Entry("executor", "pabot_results/1"),
+            Entry("output.xml", "pabot_results/1/output.xml"),
+            Entry("syslog", "pabot_results/1/syslog.txt"),
+            Entry("stdout", "pabot_results/1/robot_stdout.out"),
+            Entry("stderr", "pabot_results/1/robot_stderr.out"),
+        )
+        assert [e.path for e in listed.entries if e.label == "test-app"] == [
+            "test-app/test-app-7002.log"
+        ]
 
 
 class FakeHistory:

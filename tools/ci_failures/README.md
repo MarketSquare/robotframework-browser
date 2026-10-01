@@ -46,7 +46,7 @@ inv ci-report --json a --html b   # both, from one build
 inv ci-report --mark-seen         # baseline this report, so the next can diff
 inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
 
-inv ci-artifact --run <id> --leg "<leg>" [--attempt 2]  # one Leg's artifact again, and its paths
+inv ci-artifact --run <id> --leg "<leg>" [--attempt 2] [--test "<Test Name>"]  # one Leg's artifact again, and the files worth opening
 inv ci-artifact --clean                  # remove every fetched artifact
 
 inv ci-verify-fixes               # has each Known Cause's fix held? read-only
@@ -69,9 +69,13 @@ by its Test Name, from `Test.` down. A test with no Groups gets one line saying
 how often it ran instead; a name in no Result is refused with the Test Names it
 may mean, and one with no Result in the Window says when it last ran. Each Occurrence
 carries `run`, `leg` and `attempt`, which are what `inv ci-artifact` takes to bring back the
-screenshots, `log.html` and `playwright-log.txt` that ingest threw away. They
-unpack under `ci_failures/artifacts/` and are not kept: `--clean` removes them
-when the triage is done, and `inv ci-ingest` removes any left behind.
+files ingest threw away; with the test's name as `--test` it lists only those
+that bear on it, read from the artifact's own output.xml: the Executor that ran
+it, the log of each test app its suite setups started, and every file its
+log links to, `MISSING` when the artifact lacks one. The rest are counted
+by extension. They unpack under `ci_failures/artifacts/` and are not kept:
+`--clean` removes them when the triage is done, and `inv ci-ingest` removes any
+left behind.
 
 Once a fix has landed, `inv ci-verify-fixes` says whether it held. For every
 Known Cause with a `fixed_by` commit and no `fix_verified` date, it finds the
@@ -196,7 +200,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
 | `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `artifacts.py` | 99 | One Leg's artifact fetched again for triage, unpacked, and cleaned up after. |
+| `artifacts.py` | 399 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
 | `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
 | `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
@@ -228,7 +232,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 267 tests, about a second
+utest/test_tool_ci_failures.py   # 279 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything

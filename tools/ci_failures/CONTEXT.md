@@ -26,6 +26,14 @@ suite may be the smoke selection, which leaves out the slow tests; a test's rate
 over the Legs that ran it, so a Leg that did not run a test says nothing about it.
 _Avoid_: matrix job, matrix entry, shard (a shard is what some Legs run, not what a Leg is)
 
+**Executor**:
+One Robot Framework process within a Leg, in pabot's sense of the word. A serial Leg has one; a
+parallel Leg has as many as its `executors` metadata says. Every test runs in exactly one, and
+each Executor starts its own test app, so what a test talked to is that Executor's, not the
+Leg's. A parallel Leg's merged `output.xml` loses which Executor ran which test; the Executor's
+own `output.xml` keeps it.
+_Avoid_: worker, process, shard (a shard is the Leg's slice of the suite, not a process)
+
 **Install**:
 How the library reached the machine a Leg ran on: `source` (the working checkout, built in
 place), `wheel` (the built package, installed), `batteries` (the wheel with the bundled Node.js
@@ -218,6 +226,7 @@ _Avoid_: clean, passing, green
 
 - A **Run** has many **Legs**, and every **Leg** has exactly one **Configuration**, of which
   its **Install** is part
+- A **Leg** has one or more **Executors**, and every **Result** comes from exactly one of them
 - A **Report** covers exactly one **Window** and is built of **Groups** and **Fixture Failures**
 - A **Group** and a **Fixture Failure** are each one **Subject** and one **Error Signature**,
   and differ in what their **Occurrences** are counted in: Results for a test, Legs for a fixture
