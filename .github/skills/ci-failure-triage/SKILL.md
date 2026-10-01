@@ -8,7 +8,7 @@ argument-hint: 'The Test Name, as `inv ci-report` spells it'
 
 Takes one test the maintainer chose and ends on a **verdict**: the cause, the evidence that proves it, and the **route** it takes. Triage only — the fix itself belongs to this skill only when the route says "fix on the spot".
 
-The words below — Test Name, Group, Occurrence, Leg, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
+The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjacent Run, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
 
 ## Steps
 
@@ -28,7 +28,18 @@ Done when you can state, with numbers: how often it fails and over what, on whic
 inv ci-artifact --run <run> --leg "<leg>" --attempt <attempt> --test "<Test Name>"
 ```
 
-Pass all four from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. It prints the files that bear on the test, by path inside the artifact: `output.xml` and `log.html`, the Executor's own files, the `test-app` log of each test app the test's suite setups started (`responseTimeMs` per request), and every file the test's log links to — screenshots, the node log — with `MISSING` for any the artifact lacks. Everything else is counted on the `also:` line. Done when the failing Attempt's files are local. The same call on a Leg where the test passed gives the control to compare against. No screenshot is normal when the failing keyword's `keyword_kind` is not `library` — an assertion in `atest/library`, say — because only the Browser library takes one on failure; it does not mean the artifact is broken. Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
+Pass all four from the same Occurrence — a re-run Leg uploads once per Attempt, and the wrong one holds a pass. The printout names each file's role; read its markers this way:
+
+- `MISSING` — the test's log named the file and the artifact lacks it. Note it and carry on; the file is gone. A screenshot `MISSING` is a known gap in the artifact, not evidence about this failure. No screenshot line at all is normal when the failing keyword's `keyword_kind` is not `library` — an assertion in `atest/library`, say — because only the Browser library takes one on failure.
+- `(not named by the test)` — the likeliest node log, a guess rather than proof that it is the test's.
+- `(the Leg's shared node process)` — every Executor's node lines in one log; narrow it to the test's start and end times.
+- `also:` — the files not listed, counted by extension; they are all in `directory:` to open.
+
+When the failure is limited to one Configuration, fetch a **control**: a Leg of the same Run where the test passed, with the same `--test`, and compare the same log line in both. A `--leg` the Run does not have prints every Leg and Attempt it does have.
+
+Done when the failing Attempt's files are local, and for a failure limited to one Configuration, a control's too.
+
+Exit code 3 means the download failed: **ask** the maintainer whether to retry or continue from the report alone — they are sometimes on a limited connection.
 
 ### 3. Prove the cause
 
@@ -70,6 +81,7 @@ The Known Cause plus the commit message or issue is the whole record — the tri
 
 - **Shared node process state** — pabot workers share one node process (`tasks.py`), so module-level state in `node/playwright-wrapper` leaks between workers. Everything meant to be per-worker is keyed by gRPC peer in `grpc-service.ts`. Seen twice: `highlightDisposableCache` in `playwright-state.ts` (fixed per peer in #5211) and the logger's RF context (#5260).
 - **Timing limits in tests** — a wall-clock ceiling measures runner speed, not the library. Examples: `atest/library/event_delay.py` (key timings), `08_Scope_Tests` (#5223).
+- **Test app** — `node/dynamic-test-app` is slow or wrong, not the library. Look first at the `test-app:` log from step 2: `responseTimeMs` per request and the gaps between events. Seen once: the first `/login-challenge` stalled 1–8 s on `batteries · windows-latest` (Credentials).
 - **Fixture failures** — one broken suite setup or teardown looks like many flaky tests. The report lists the Fixture Failures of the enclosing suites, counted per Leg (Failure Scope in `CONTEXT.md`).
 - **Platform-only failures** — read the per-Configuration rates and the Inconclusive Zeros before calling any platform healthy.
 - **Chromium protocol flakes** — e.g. `Page.captureScreenshot` refusing the first capture on `darwin` (#5237, closed as wontfix, worked around in the test).
