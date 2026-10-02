@@ -5760,6 +5760,25 @@ class TestVerifyingAFix:
 
         assert entry.line() == "waiting 3/7 days, 2 runs, 0 recurrences"
 
+    def test_a_suite_whose_name_only_looks_alike_is_not_enclosed(self, tmp_path):
+        suite = "Test.My_Suite"
+        teardown = {"scope": "suite_teardown", "owner": suite, "suite": suite}
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1", **teardown),
+                self._pass("f1c5000", suite=f"{suite}.Child"),
+                self._pass("wildcard", suite="Test.MyXSuite.Child"),
+                self._pass("case", suite="test.my_suite.Child"),
+            ],
+            FakeHistory("sha1", "f1c5000", "wildcard", "case"),
+            today="2026-08-24",
+            test=None,
+            suite=suite,
+        )
+
+        assert entry.runs == 1
+
     def test_runs_on_commits_this_clone_lacks_are_counted_apart(self, tmp_path):
         [entry] = self._check(
             tmp_path,

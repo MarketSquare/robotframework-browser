@@ -123,6 +123,20 @@ The suite or test owning the fixture named by a Failure Scope. For a suite fixtu
 an ancestor rather than the parent suite.
 _Avoid_: parent, suite
 
+**Enclosing Suite**:
+A suite whose Test Name, followed by a dot, begins a test's Test Name, compared exactly and with
+case. Its fixtures' failures are failures of every test beneath it, so they belong to that test's
+history and to whether a fix for it held.
+_Avoid_: parent suite (only the nearest one), ancestor
+
+**Subject History**:
+Everything the archive recorded about one Subject: its Results, its Occurrences and the Runs it
+ran in, the Fixture Failures of its Enclosing Suites, and the Legs of a Run that ran it. What
+triaging one test and verifying one fix both read. A Test Name typed for it is resolved against
+the archive, a Run or a Leg; a different top suite is the same test, and anything looser is
+offered, never assumed.
+_Avoid_: test report, test details
+
 **Fixture Failure**:
 A suite setup or teardown that broke, counted once per Leg it broke in rather than once per
 test it marked. Its denominator is Legs that ran the suite, never test rows.

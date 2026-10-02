@@ -1251,11 +1251,11 @@ def runs_of_subject(db: Reading, subject: str) -> list[SubjectRun]:
         FROM test_result t
         JOIN leg l ON l.id = t.leg_id
         JOIN run r ON r.id = l.run_id
-        WHERE t.longname = ? OR t.suite_longname = ?
-              OR t.suite_longname LIKE ? || '.%'
+        WHERE t.longname = ?1 OR t.suite_longname = ?1
+              OR substr(t.suite_longname, 1, length(?1) + 1) = ?1 || '.'
         ORDER BY r.created_at, r.id
         """,
-        (subject, subject, subject),
+        (subject,),
     ).fetchall()
     return [SubjectRun(**dict(row)) for row in rows]
 
