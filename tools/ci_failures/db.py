@@ -109,6 +109,10 @@ def fill_platforms(connection: sqlite3.Connection) -> int:
     return len(legs)
 
 
+#: An empty database that is never written anywhere.
+IN_MEMORY = Path(":memory:")
+
+
 def connect(db_path: Path, *, create: bool = False) -> sqlite3.Connection:
     """Opens the database, bringing its schema up to date.
 
@@ -119,7 +123,8 @@ def connect(db_path: Path, *, create: bool = False) -> sqlite3.Connection:
     """
     if not create and not db_path.exists():
         raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
-    db_path.parent.mkdir(parents=True, exist_ok=True)
+    if db_path != IN_MEMORY:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")

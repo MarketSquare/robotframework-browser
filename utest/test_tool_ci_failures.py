@@ -547,6 +547,14 @@ class TestIngest:
         assert not workspace.artifacts(db).exists()
         assert workspace.artifacts(other).exists()
 
+    def test_a_dry_run_on_no_database_creates_none(self, fake_ci, tmp_path):
+        db = tmp_path / "fresh" / "ci.sqlite3"
+
+        totals = ingest.ingest(db, limit=5, dry_run=True, report=lambda _: None)
+
+        assert totals.legs == 1
+        assert not db.parent.exists()
+
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
 
@@ -4837,9 +4845,6 @@ class TestOneTestsReport:
 
 
 class TestTheWorkspace:
-    """Everything derived from a database lives in the directory it is in, so
-    another --db is another Workspace. See **Workspace** in CONTEXT.md."""
-
     def test_what_is_derived_from_a_database_lives_beside_it(self, tmp_path):
         from tools.ci_failures import workspace
 
@@ -4857,7 +4862,17 @@ class TestTheWorkspace:
         assert workspace.database(None) == root / "ci_failures" / "ci_failures.sqlite3"
         assert workspace.database("x/y.sqlite3") == Path("x/y.sqlite3")
 
-    def test_known_causes_are_not_in_any_workspace(self):
+    def test_the_snapshot_is_taken_into_the_databases_workspace(self, tmp_path):
+        from tools.ci_failures.annotations import write_snapshot
+
+        db = tmp_path / "scratch" / "ci.sqlite3"
+        seed(db, [{"test": "S.T", "status": "FAIL", "signature": "e"}])
+
+        written = write_snapshot(db, [("S.T", "e", 1)])
+
+        assert written.parent == db.parent
+
+    def test_known_causes_are_not_in_the_default_workspace(self):
         from tools.ci_failures.annotations import KNOWN_CAUSES
         from tools.ci_failures import workspace
 

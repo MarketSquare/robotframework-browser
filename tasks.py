@@ -1953,7 +1953,8 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
-    costs what is new. See `tools/ci_failures/README.md`.
+    costs what is new. Afterwards, the artifacts a triage left behind beside
+    this database are removed. See `tools/ci_failures/README.md`.
 
     Args:
         limit: How many runs to consider, newest first. Defaults to 25. Runs,
@@ -1968,22 +1969,21 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             same count. Artifacts live 90 days, so nothing older can be ingested
             however it is asked for.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
-        dry_run: Say which legs would be fetched and fetch nothing. A full
+        dry_run: Say which legs would be fetched; fetch, write and remove
+            nothing, not even a database that is not there yet. A full
             ingest is download-bound and can run for hours; this reads one
             artifact listing per run instead, so it is minutes for a wide
             window and worth doing before a long ingest.
     """
+    from tools.ci_failures import workspace
     from tools.ci_failures.ingest import ingest
 
     if limit is not None and days is not None:
         raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
     since = _window_of_days(days).cutoff if days is not None else None
 
-    from tools.ci_failures import workspace
-
-    db_path = workspace.database(db)
     totals = ingest(
-        db_path=db_path,
+        db_path=workspace.database(db),
         limit=25 if limit is None else int(limit),
         since=since,
         dry_run=bool(dry_run),
@@ -1999,10 +1999,10 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=Non
     """Fetches one Leg's artifact again, for triaging a failure in it.
 
     Ingest keeps only the parsed rows. This brings back the rest, unpacked
-    under `artifacts/` beside the database, and prints the files worth opening, by their
-    path inside it. A Leg already fetched is reused. Remove them all with
-    --clean once the triage is done; `inv ci-ingest` also removes any left
-    behind.
+    under `artifacts/` beside the database, and prints the files worth
+    opening, by their path inside it. A Leg already fetched is reused. Remove
+    them with --clean once the triage is done; an `inv ci-ingest` of the same
+    database also removes any left behind.
 
     Args:
         run: The run id, as an Occurrence in `inv ci-report` gives it.
@@ -2020,7 +2020,8 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=Non
             top suite, as a Leg that ran several suite directories at once
             spells its tests, it is the same test. Any other name the Leg or
             Run did not run is refused with the names it may mean.
-        clean: Remove every fetched artifact instead of fetching one.
+        clean: Remove the artifacts fetched beside the database instead of
+            fetching one.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3. The
             artifacts are fetched into, and cleaned from, the directory it is in.
     """
@@ -2089,7 +2090,7 @@ def ci_verify_fixes(c, db=None, mark=False):
 
     from tools.ci_failures import workspace
     from tools.ci_failures.annotations import mark_verified
-    from tools.ci_failures.db import NoDatabaseError
+    from tools.ci_failures.db import UnanswerableError
     from tools.ci_failures.verify import Git, Status, check
 
     db_path = workspace.database(db)
@@ -2097,8 +2098,8 @@ def ci_verify_fixes(c, db=None, mark=False):
     today = datetime.now(timezone.utc).date()
     try:
         checked = check(db_path, history=Git(ROOT_DIR), today=today)
-    except NoDatabaseError as absent:
-        raise Exit(str(absent), 1) from None
+    except UnanswerableError as why:
+        raise Exit(str(why), 1) from None
     if not checked:
         print("No fixed Known Cause is waiting to be verified, and none is an orphan.")
     for entry in checked:
@@ -2151,13 +2152,13 @@ def ci_backfill_attempts(c, db=None):
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
     """
     from tools.ci_failures import workspace
-    from tools.ci_failures.db import NoDatabaseError
+    from tools.ci_failures.db import UnanswerableError
     from tools.ci_failures.ingest import backfill_attempts
 
     try:
         backfill_attempts(workspace.database(db))
-    except NoDatabaseError as absent:
-        raise Exit(str(absent), 1) from None
+    except UnanswerableError as why:
+        raise Exit(str(why), 1) from None
 
 
 @task
@@ -2304,7 +2305,7 @@ def ci_recompute(c, db=None, what="all"):
             changing `parse.platform_of`. `all` does every one.
     """
     from tools.ci_failures import workspace
-    from tools.ci_failures.db import NoDatabaseError
+    from tools.ci_failures.db import UnanswerableError
     from tools.ci_failures.ingest import (
         recompute_installs,
         recompute_keyword_locations,
@@ -2325,5 +2326,5 @@ def ci_recompute(c, db=None, what="all"):
             recompute_installs(db_path)
         if what in ("all", "platforms"):
             recompute_platforms(db_path)
-    except NoDatabaseError as absent:
-        raise Exit(str(absent), 1) from None
+    except UnanswerableError as why:
+        raise Exit(str(why), 1) from None

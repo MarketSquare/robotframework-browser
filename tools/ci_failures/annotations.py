@@ -11,9 +11,9 @@ over a week or two of CI at a time, and a cause worth recording is a cause worth
 fixing - an annotation that quietly excuses a failure is worth less than the
 fix, and the fix is in the git history anyway.
 
-The snapshot of the last report is the opposite case - entirely derived, worth
-nothing once it is stale, and beside the database for that reason rather than
-for any reason about version control.
+The Snapshot of the last report is the opposite case - entirely derived, worth
+nothing once it is stale, and in the Workspace for that reason rather than for
+any reason about version control.
 """
 
 import json

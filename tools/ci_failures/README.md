@@ -51,7 +51,7 @@ inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
 
 inv ci-artifact --run <id> --leg "<leg>" [--attempt 2] [--test "<Test Name>"]  # one Leg's artifact again, and the files worth opening
 inv ci-artifact --run <id> --test "<Test Name>"  # the Run's Legs that ran it, Controls marked, nothing fetched
-inv ci-artifact --clean                  # remove every fetched artifact
+inv ci-artifact --clean                  # remove the artifacts fetched beside the database
 
 inv ci-verify-fixes               # has each Known Cause's fix held? read-only
 inv ci-verify-fixes --mark        # ... and mark the ready ones Verified
@@ -77,9 +77,9 @@ files ingest threw away; with the test's name as `--test` it lists only those
 that bear on it, read from the artifact's own output.xml: the Executor that ran
 it, the log of each test app its suite setups started, and every file its
 log links to, `MISSING` when the artifact lacks one. The rest are counted
-by extension. They unpack under `ci_failures/artifacts/` and are not kept:
-`--clean` removes them when the triage is done, and `inv ci-ingest` removes any
-left behind. With `--test` and no `--leg`, it fetches nothing and lists the Legs
+by extension. They unpack under `artifacts/` in the database's Workspace and
+are not kept: `--clean` removes them when the triage is done, and an
+`inv ci-ingest` of the same database removes any left behind. With `--test` and no `--leg`, it fetches nothing and lists the Legs
 of the Run that ran the test, by Install, each with its outcome and Attempt, the
 passes marked as **Controls**. That listing is read from the database only, so a
 Run not yet ingested is refused rather than listed from GitHub (ADR `0006`).
@@ -208,12 +208,12 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `parse.py` | 645 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
 | `artifacts.py` | 387 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
-| `ingest.py` | 688 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
-| `db.py` | 157 | Opens the database, adds columns a database predating them has not got. |
+| `ingest.py` | 696 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
+| `db.py` | 162 | Opens the database, adds columns a database predating them has not got, and refuses one that is not there unless an ingest is creating it. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
-| `reading.py` | 108 | The database as one Report reads it. The only thing queries accept, and never opened on a database that is not there. |
+| `reading.py` | 108 | The database as one Report reads it. The only thing queries accept. |
 | `queries.py` | 1214 | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
 | `report.py` | 1139 | The Report, and what the numbers mean. |
 | `workspace.py` | 30 | Where a database's Snapshot, page and fetched artifacts live: beside it. |
@@ -240,7 +240,7 @@ ci_failures/             # the default Workspace: gitignored, at the repository 
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 303 tests, about three seconds
+utest/test_tool_ci_failures.py   # 305 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything

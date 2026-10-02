@@ -23,7 +23,13 @@ from robot.errors import DataError
 
 from . import github, locate, workspace
 from .artifacts import clean
-from .db import connect, fill_installs, fill_platforms, ingested_artifact_ids
+from .db import (
+    IN_MEMORY,
+    connect,
+    fill_installs,
+    fill_platforms,
+    ingested_artifact_ids,
+)
 from .legs import install_of
 from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
@@ -406,19 +412,21 @@ def ingest(
     whose exchange rate moves with how busy the repository is, and above one
     page of listing it stops being able to reach further at all.
 
-    `dry_run` says what would be fetched and fetches nothing, which is minutes
-    against hours rather than free: the artifact listing of every run in the
-    window is read before anything can be said about it, so the cost is one
-    request per run and `--days 90` is a couple of hundred of them. What it
-    saves is the ten megabytes per leg.
+    `dry_run` says what would be fetched, and fetches and writes nothing: of a
+    database that is not there yet, everything would be fetched, and it stays
+    not there. That is minutes against hours rather than free: the artifact
+    listing of every run in the window is read before anything can be said
+    about it, so the cost is one request per run and `--days 90` is a couple of
+    hundred of them. What it saves is the ten megabytes per leg.
 
     Last, whatever happened above - even a listing that failed - every Run
     older than `KEEP_DAYS` before `now` is pruned, and the file vacuumed if
-    anything went. `now` is this machine's
-    clock unless a test says otherwise. And the artifacts a triage left behind
-    in this Workspace, without its `inv ci-artifact --clean`, are removed.
+    anything went. `now` is this machine's clock unless a test says otherwise.
+    Then, unless the listing failed or this is a dry run, the artifacts a
+    triage left behind in this Workspace are removed.
     """
-    connection = connect(db_path, create=True)
+    fresh_dry_run = dry_run and not db_path.exists()
+    connection = connect(IN_MEMORY if fresh_dry_run else db_path, create=True)
     already = ingested_artifact_ids(connection)
     totals = dict.fromkeys(
         (
