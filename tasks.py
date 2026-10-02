@@ -2067,55 +2067,9 @@ def ci_verify_fixes(c, db=None, mark=False):
             ready, and only those. Never done automatically: Verified is agreed,
             like the Known Cause itself.
     """
-    from datetime import datetime, timezone
+    from tools.ci_failures import commands
 
-    from tools.ci_failures import workspace
-    from tools.ci_failures.annotations import mark_verified
-    from tools.ci_failures.db import UnanswerableError
-    from tools.ci_failures.verify import Git, Status, check
-
-    db_path = workspace.database(db)
-    # UTC, like the created_at of the Runs the days are counted from.
-    today = datetime.now(timezone.utc).date()
-    try:
-        checked = check(db_path, history=Git(ROOT_DIR), today=today)
-    except UnanswerableError as why:
-        raise Exit(str(why), 1) from None
-    if not checked:
-        print("No fixed Known Cause is waiting to be verified, and none is an orphan.")
-    for entry in checked:
-        print(f"{entry.status:<12} {entry.subject}")
-        print(f"{'':<12} {entry.signature}")
-        print(f"{'':<12} {entry.line()}")
-        for name in entry.suggestions:
-            print(f"{'':<12} did you mean: {name}")
-        for run, url in entry.recurred_in:
-            print(f"{'':<12} recurred in run {run}: {url}")
-        for other in entry.other_failures:
-            print(
-                f"{'':<12} note: {other.occurrences}x on another error, "
-                f"not a recurrence: {other.signature}"
-            )
-        if entry.unknown_commits:
-            print(
-                f"{'':<12} note: {entry.unknown_commits} run(s) on commits this "
-                "clone lacks were not counted; `git fetch origin main`"
-            )
-        print()
-
-    ready = [entry for entry in checked if entry.status == Status.READY]
-    if not mark:
-        if ready:
-            print(f"{len(ready)} ready. Mark them with --mark.")
-        return
-    if not ready:
-        print("Nothing is ready to mark.")
-        return
-    marked = mark_verified({entry.key for entry in ready}, today.isoformat())
-    print(f"Marked {marked} fix(es) Verified on {today.isoformat()}.")
-    for entry in ready:
-        if entry.issue:
-            print(f"issue #{entry.issue} can be closed")
+    _refusing(commands.verify_fixes, db=db, mark=mark)
 
 
 @task

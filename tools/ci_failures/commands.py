@@ -10,16 +10,20 @@ the task.
 
 import webbrowser
 from collections.abc import Callable
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from . import render_html, render_json, workspace
-from .annotations import write_snapshot
+from .annotations import mark_verified, write_snapshot
 from .artifacts import clean as clean_artifacts
 from .artifacts import fetch, shortlist
 from .history import in_archive, never_failed, of_run
 from .refusal import MisaskedError
 from .report import build, of_test, snapshot_entries
+from .verify import Git, History, Status, Verification, check
 from .window import ALL_HISTORY, Window, of_days
+
+_CHECKOUT = Path(__file__).resolve().parents[2]
 
 Out = Callable[[str], None]
 
@@ -140,3 +144,70 @@ def report(
             open_page(page_at)
     for destination in written:
         out(f"Wrote {destination}")
+
+
+def _verification_lines(entry: Verification) -> list[str]:
+    indent = f"{'':<12}"
+    lines = [
+        f"{entry.status:<12} {entry.subject}",
+        f"{indent} {entry.signature}",
+        f"{indent} {entry.line()}",
+    ]
+    lines += [f"{indent} did you mean: {name}" for name in entry.suggestions]
+    lines += [
+        f"{indent} recurred in run {run}: {url}" for run, url in entry.recurred_in
+    ]
+    lines += [
+        f"{indent} note: {other.occurrences}x on another error, "
+        f"not a recurrence: {other.signature}"
+        for other in entry.other_failures
+    ]
+    if entry.unknown_commits:
+        lines.append(
+            f"{indent} note: {entry.unknown_commits} run(s) on commits this "
+            "clone lacks were not counted; `git fetch origin main`"
+        )
+    return [*lines, ""]
+
+
+def verify_fixes(
+    *,
+    db: str | Path | None = None,
+    mark=False,
+    out: Out = print,
+    history: History | None = None,
+    today: date | None = None,
+    known_causes: Path | None = None,
+) -> None:
+    """What `inv ci-verify-fixes` does; flags as its task documents them.
+
+    `history` defaults to the checkout's git, `today` to the UTC date - UTC like
+    the `created_at` of the Runs the days are counted from - and `known_causes`
+    to the checkout's file, which `--mark` writes.
+    """
+    db_path = workspace.database(db)
+    today = today or datetime.now(timezone.utc).date()
+    checked = check(
+        db_path, known_causes, history=history or Git(_CHECKOUT), today=today
+    )
+    if not checked:
+        out("No fixed Known Cause is waiting to be verified, and none is an orphan.")
+    for entry in checked:
+        for line in _verification_lines(entry):
+            out(line)
+
+    ready = [entry for entry in checked if entry.status == Status.READY]
+    if not mark:
+        if ready:
+            out(f"{len(ready)} ready. Mark them with --mark.")
+        return
+    if not ready:
+        out("Nothing is ready to mark.")
+        return
+    marked = mark_verified(
+        {entry.key for entry in ready}, today.isoformat(), known_causes
+    )
+    out(f"Marked {marked} fix(es) Verified on {today.isoformat()}.")
+    for entry in ready:
+        if entry.issue:
+            out(f"issue #{entry.issue} can be closed")

@@ -3,6 +3,7 @@ which exit code it refuses with. See ADR 0007."""
 
 import json
 import zipfile
+from datetime import date
 
 import pytest
 
@@ -10,7 +11,7 @@ from tools.ci_failures import commands, github, workspace
 from tools.ci_failures.db import UnanswerableError
 from tools.ci_failures.refusal import MisaskedError, UnreachableError
 
-from .test_tool_ci_failures import seed
+from .test_tool_ci_failures import FakeHistory, seed
 
 LEG = "source · ubuntu-latest · shard 1 · 3.14 · 22.x"
 ARTIFACT = "Test results-ubuntu-latest-1-3.14-22.x"
@@ -236,3 +237,90 @@ class TestReport:
 
         assert said[0].startswith("Baseline recorded at ")
         assert said[1:] == [f"Wrote {workspace.page(db)}"]
+
+
+class TestVerifyFixes:
+    def test_no_database_is_unanswerable(self, tmp_path):
+        with pytest.raises(UnanswerableError):
+            commands.verify_fixes(
+                db=tmp_path / "ci.sqlite3",
+                out=print,
+                history=FakeHistory(),
+                today=date(2026, 8, 28),
+                known_causes=tmp_path / "known.json",
+            )
+
+    SIGNATURE = "Timeout <duration> exceeded"
+
+    def _verify(self, tmp_path, entries, mark=False):
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Flaky", "status": "FAIL", "signature": self.SIGNATURE},
+                {"test": "S.Flaky", "status": "PASS", "sha": "f1c5000"},
+                {"test": "S.Flaky", "status": "PASS", "sha": "sha3"},
+            ],
+        )
+        known = tmp_path / "known.json"
+        known.write_text(json.dumps(entries), encoding="utf-8")
+        said: list[str] = []
+        commands.verify_fixes(
+            db=db,
+            mark=mark,
+            out=said.append,
+            history=FakeHistory("sha1", "f1c5000", "sha3"),
+            today=date(2026, 8, 28),
+            known_causes=known,
+        )
+        return said, json.loads(known.read_text(encoding="utf-8"))
+
+    def _fixed(self, **entry):
+        return {
+            "test": "S.Flaky",
+            "signature": self.SIGNATURE,
+            "cause": "a race",
+            "fixed_by": "f1c5000",
+            "reference": "https://github.com/o/r/issues/12",
+            **entry,
+        }
+
+    def test_a_ready_fix_is_listed_and_left_unmarked(self, tmp_path):
+        said, entries = self._verify(tmp_path, [self._fixed()])
+
+        assert said == [
+            "ready        S.Flaky",
+            f"             {self.SIGNATURE}",
+            "             ready: 7 days, 2 runs, 0 recurrences",
+            "",
+            "1 ready. Mark them with --mark.",
+        ]
+        assert "fix_verified" not in entries[0]
+
+    def test_mark_writes_the_date_and_names_the_issue_to_close(self, tmp_path):
+        said, entries = self._verify(tmp_path, [self._fixed()], mark=True)
+
+        assert said[-2:] == [
+            "Marked 1 fix(es) Verified on 2026-08-28.",
+            "issue #12 can be closed",
+        ]
+        assert entries[0]["fix_verified"] == "2026-08-28"
+
+    def test_an_orphan_is_listed_with_what_its_test_may_mean(self, tmp_path):
+        said, _ = self._verify(tmp_path, [self._fixed(test="S.Flaky Test")], mark=True)
+
+        assert said == [
+            "orphan       S.Flaky Test",
+            f"             {self.SIGNATURE}",
+            "             orphan: no test named 'S.Flaky Test' in the archive",
+            "             did you mean: S.Flaky",
+            "",
+            "Nothing is ready to mark.",
+        ]
+
+    def test_nothing_to_verify_says_so(self, tmp_path):
+        said, _ = self._verify(tmp_path, [])
+
+        assert said == [
+            "No fixed Known Cause is waiting to be verified, and none is an orphan."
+        ]
