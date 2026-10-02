@@ -365,7 +365,9 @@ class TestIngest:
 
         commands.ingest(limit="5", db=tmp_path / "ci.sqlite3", out=said.append)
 
-        assert said[-1].startswith("\nIngested 1 run(s), 1 leg(s), 4 results, 2 failures.")
+        assert said[-1].startswith(
+            "\nIngested 1 run(s), 1 leg(s), 4 results, 2 failures."
+        )
 
 
 class TestBackfillAttempts:
