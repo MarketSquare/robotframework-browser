@@ -2194,76 +2194,19 @@ def ci_report(
             Result in the window says when it last ran.
             --limit does not apply; --mark-seen is refused.
     """
-    from tools.ci_failures import workspace
-    from tools.ci_failures.db import UnanswerableError
-    from tools.ci_failures.history import in_archive, never_failed
-    from tools.ci_failures.report import (
-        WindowedBaselineError,
-        build,
-        of_test,
-        snapshot_entries,
+    from tools.ci_failures import commands
+
+    _refusing(
+        commands.report,
+        db=db,
+        html=html,
+        json=json,
+        limit=limit,
+        open_it=open_it,
+        mark_seen=mark_seen,
+        days=days,
+        test=test,
     )
-    from tools.ci_failures.window import ALL_HISTORY
-
-    if test and mark_seen:
-        raise Exit(
-            "A baseline of one test would record every other group as gone; "
-            "take it without --test.",
-            2,
-        )
-    window = _window_of_days(days) if days is not None else ALL_HISTORY
-    db_path = workspace.database(db)
-
-    # Built once. Both renderings and the baseline are of the same Report, and
-    # the reasons there may not be one are the tool's to state, not this task's.
-    try:
-        report = build(db_path, limit=None if test else int(limit), window=window)
-    except UnanswerableError as why:
-        raise Exit(str(why), 1) from None
-
-    if test:
-        try:
-            test = in_archive(db_path, test)
-        except UnanswerableError as why:
-            raise Exit(str(why), 1) from None
-        report = of_test(report, test)
-        if not report.test_failures and not report.fixture_failures:
-            try:
-                print(never_failed(db_path, test, window).line())
-            except UnanswerableError as why:
-                raise Exit(str(why), 1) from None
-            return
-        if not json and not html:
-            from tools.ci_failures.render_json import text
-
-            print(text(report), end="")
-            return
-
-    if mark_seen:
-        from tools.ci_failures.annotations import write_snapshot
-
-        try:
-            seen = snapshot_entries(report)
-        except WindowedBaselineError as why:
-            raise Exit(str(why), 2) from None
-        print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
-
-    written = []
-    if json:
-        from tools.ci_failures.render_json import write as write_json
-
-        written.append(write_json(report, Path(json)))
-    # The page unless only the document was asked for. Both used to be an
-    # either/or that silently dropped --html whenever --json was given.
-    if html or not json:
-        from tools.ci_failures.render_html import write as write_page
-
-        page_at = write_page(report, Path(html) if html else workspace.page(db_path))
-        written.append(page_at)
-        if open_it:
-            webbrowser.open(page_at.resolve().as_uri())
-    for destination in written:
-        print(f"Wrote {destination}")
 
 
 @task

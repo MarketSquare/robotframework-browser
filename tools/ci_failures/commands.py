@@ -8,14 +8,18 @@ the task's exit code (ADR 0007). The flags themselves are documented once, on
 the task.
 """
 
+import webbrowser
 from collections.abc import Callable
 from pathlib import Path
 
-from . import workspace
+from . import render_html, render_json, workspace
+from .annotations import write_snapshot
 from .artifacts import clean as clean_artifacts
 from .artifacts import fetch, shortlist
-from .history import of_run
+from .history import in_archive, never_failed, of_run
 from .refusal import MisaskedError
+from .report import build, of_test, snapshot_entries
+from .window import ALL_HISTORY, Window, of_days
 
 Out = Callable[[str], None]
 
@@ -25,6 +29,24 @@ def _whole(flag: str, value) -> int:
         return int(value)
     except (TypeError, ValueError):
         raise MisaskedError(f"{flag} wants a whole number, got {value!r}.") from None
+
+
+def _window_of_days(days) -> Window:
+    """`--days N` as a Window, or a refusal saying which part of N was wrong.
+
+    `int()` knows about "seven" and `of_days` knows about 0, so they are asked
+    separately: one `except ValueError` around both told `--days 0` it was not a
+    whole number.
+    """
+    whole_days = _whole("--days", days)
+    try:
+        return of_days(whole_days)
+    except ValueError as refused:
+        raise MisaskedError(str(refused)) from None
+
+
+def _open_in_browser(page: Path) -> None:
+    webbrowser.open(page.resolve().as_uri())
 
 
 def artifact(
@@ -59,3 +81,62 @@ def artifact(
         return
     for line in shortlist(directory, test).lines():
         out(line)
+
+
+def report(
+    *,
+    db: str | Path | None = None,
+    html=None,
+    json=None,
+    limit=100,
+    open_it=False,
+    mark_seen=False,
+    days=None,
+    test=None,
+    out: Out = print,
+    open_page: Callable[[Path], None] = _open_in_browser,
+) -> None:
+    """What `inv ci-report` does; flags as its task documents them.
+
+    `open_page` is what `--open-it` hands the written page to.
+    """
+    if test and mark_seen:
+        raise MisaskedError(
+            "A baseline of one test would record every other group as gone; "
+            "take it without --test."
+        )
+    window = _window_of_days(days) if days is not None else ALL_HISTORY
+    db_path = workspace.database(db)
+
+    # Built once. Both Renderings and the baseline are of the same Report.
+    built = build(
+        db_path, limit=None if test else _whole("--limit", limit), window=window
+    )
+
+    if test:
+        test = in_archive(db_path, test)
+        built = of_test(built, test)
+        if not built.test_failures and not built.fixture_failures:
+            out(never_failed(db_path, test, window).line())
+            return
+        if not json and not html:
+            out(render_json.text(built).removesuffix("\n"))
+            return
+
+    if mark_seen:
+        seen = snapshot_entries(built)
+        out(f"Baseline recorded at {write_snapshot(db_path, seen)}")
+
+    written = []
+    if json:
+        written.append(render_json.write(built, Path(json)))
+    # The page unless only the document was asked for.
+    if html or not json:
+        page_at = render_html.write(
+            built, Path(html) if html else workspace.page(db_path)
+        )
+        written.append(page_at)
+        if open_it:
+            open_page(page_at)
+    for destination in written:
+        out(f"Wrote {destination}")
