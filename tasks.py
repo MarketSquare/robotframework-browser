@@ -2020,8 +2020,10 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
             that test instead of only the Leg's: the Executor that ran it, the
             log of each test app its suite setups started, and every file its
             log links to, MISSING when the artifact lacks it. Works on
-            a Leg where the test passed, as a control. A name the Leg did not
-            run is refused with the names it may mean.
+            a Leg where the test passed, as a control. Spelt under another
+            top suite, as a Leg that ran several suite directories at once
+            spells its tests, it is the same test. Any other name the Leg or
+            Run did not run is refused with the names it may mean.
         clean: Remove every fetched artifact instead of fetching one.
     """
     from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
@@ -2196,14 +2198,14 @@ def ci_report(
         test: Report on this one test only, by its Test Name, from `Test.`
             down: its Groups, the Fixture Failures of the suites around it,
             and its Known Cause. Printed as JSON unless --json or --html names
-            a file. A test with no Groups gets one line saying how often it
-            ran; a name in no Result is refused with the names it may mean,
-            and one with no Result in the window says when it last ran.
+            a file. Spelt under another top suite, it is the same test. A test
+            with no Groups gets one line saying how often it ran; a name in no
+            Result is refused with the names it may mean, and one with no
+            Result in the window says when it last ran.
             --limit does not apply; --mark-seen is refused.
     """
-    from tools.ci_failures.reading import NoDatabaseError
+    from tools.ci_failures.reading import NoDatabaseError, UnanswerableError
     from tools.ci_failures.report import (
-        UnanswerableError,
         WindowedBaselineError,
         build,
         of_test,

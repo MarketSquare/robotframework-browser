@@ -3051,21 +3051,25 @@ class TestWhenThereIsNoReportToGive:
 
         assert not missing.exists(), "asking must not create the archive"
 
-    @pytest.mark.parametrize("question", ["controls of a run", "never failed"])
-    def test_one_tests_questions_refuse_an_absent_database_too(
-        self, tmp_path, question
-    ):
-        from tools.ci_failures.history import never_failed, of_run
+    def test_the_controls_of_a_run_refuse_an_absent_database_too(self, tmp_path):
+        from tools.ci_failures.history import of_run
         from tools.ci_failures.reading import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
-        ask = {
-            "controls of a run": lambda: of_run(missing, 1, "Test.S.T"),
-            "never failed": lambda: never_failed(missing, "Test.S.T"),
-        }[question]
 
         with pytest.raises(NoDatabaseError):
-            ask()
+            of_run(missing, 1, "Test.S.T")
+
+        assert not missing.exists()
+
+    def test_a_test_that_never_failed_refuses_an_absent_database_too(self, tmp_path):
+        from tools.ci_failures.history import never_failed
+        from tools.ci_failures.reading import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            never_failed(missing, "Test.S.T")
 
         assert not missing.exists()
 
@@ -4741,6 +4745,31 @@ class TestOneTestsReport:
 
         assert [e.suite for e in report.fixture_failures] == ["Outer"]
 
+    @pytest.mark.parametrize("lookalike", ["Outer_Suite", "outer.suite"])
+    def test_a_suite_whose_name_only_looks_alike_is_not_enclosing(
+        self, tmp_path, lookalike
+    ):
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": f"{lookalike}.Other",
+                    "status": "FAIL",
+                    "signature": "setup broke",
+                    "scope": "suite_setup",
+                    "owner": lookalike,
+                },
+                {"test": "Outer.Suite.Wanted", "status": "FAIL", "signature": "e"},
+            ],
+        )
+
+        report = of_test(build_report(db), "Outer.Suite.Wanted")
+
+        assert report.fixture_failures == ()
+
     def test_what_changed_is_said_only_about_this_test(self, tmp_path):
         from tools.ci_failures.annotations import write_snapshot
         from tools.ci_failures.report import of_test
@@ -4805,6 +4834,19 @@ class TestResolvingATestName:
         assert resolve("Test.05 JS Tests.Js.Run Js", self.NAMES, "this Leg") == (
             f"{self.COMBINED}.05 JS Tests.Js.Run Js"
         )
+
+    def test_every_other_top_suite_is_the_same_test(self):
+        from tools.ci_failures.history import resolve
+
+        names = ("A & B.Js.Run Js", "C & D.Js.Run Js")
+
+        assert resolve("Test.Js.Run Js", names, "the archive") == "A & B.Js.Run Js"
+
+    def test_a_suite_that_also_appears_below_the_top_is_not_a_top_suite(self):
+        from tools.ci_failures.history import NoSuchTestError, resolve
+
+        with pytest.raises(NoSuchTestError):
+            resolve("Http.Http.GET", ("Http.Http.GET2", "Test.Http.GET"), "Run 7")
 
     def test_a_path_below_the_top_suite_is_offered_not_assumed(self):
         from tools.ci_failures.history import NoSuchTestError, resolve
@@ -5783,6 +5825,20 @@ class TestVerifyingAFix:
 
         assert entry.status == "orphan"
         assert entry.line() == "orphan: no test named 'Flaky' in the archive"
+        assert entry.suggestions == ("S.Flaky",)
+
+    def test_an_orphan_spelt_under_another_top_suite_is_told_the_spelling(
+        self, tmp_path
+    ):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000")],
+            FakeHistory("sha1", "f1c5000"),
+            "2026-09-10",
+            test="Test.Flaky",
+        )
+
+        assert entry.line() == "orphan: no test named 'Test.Flaky' in the archive"
         assert entry.suggestions == ("S.Flaky",)
 
     def test_verified_and_unfixed_entries_are_not_checked(self, tmp_path):

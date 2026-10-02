@@ -969,9 +969,8 @@ def build(
     One Reading, opened here and shared by every query below. They used to open
     one each, which meant materialising the Window once per question.
 
-    Raises `UnanswerableError` rather than returning something empty. The database is
-    checked before it is opened, because opening it would create it and an
-    absent archive would render as a clean one.
+    Raises `UnanswerableError` rather than returning something empty, as
+    `reading.of` does for a database that is not there.
     """
     with reading.of(db_path, window) as db:
         if window.bounded and not totals(db).runs:

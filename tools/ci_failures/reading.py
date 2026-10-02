@@ -57,10 +57,8 @@ _SUBJECT_VIEWS = frozenset({"test_failure", "fixture_failure"})
 class UnanswerableError(Exception):
     """The question cannot be answered, and this says why.
 
-    These are the conditions a caller has to have handled to use `build`
-    correctly. They lived in the invoke task, which meant they were the caller's
-    to remember, were checked nowhere else, and could only be exercised by
-    typing `inv`.
+    Raised by the tool rather than checked by each invoke task, so the reasons
+    are stated once and can be tested without typing `inv`.
     """
 
 

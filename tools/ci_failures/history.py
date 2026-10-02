@@ -67,18 +67,23 @@ def _below_top(name: str) -> str:
     return name.partition(".")[2]
 
 
+def _top_suites(names: list[str]) -> set[str]:
+    """`Test`, and every first segment of `names` that is never found below it."""
+    below = {segment for name in names for segment in name.split(".")[1:]}
+    return {CANONICAL_TOP_SUITE} | {_top(name) for name in names} - below
+
+
 def resolve(test: str, names: Iterable[str], where: str) -> str:
     """The name in `names` that `test` is. Raises `NoSuchTestError` with the
-    names it may mean when there is none, or more than one."""
+    names it may mean when there is none."""
     known = sorted(set(names))
     if test in known:
         return test
-    same: list[str] = []
-    if _top(test) in {CANONICAL_TOP_SUITE, *map(_top, known)}:
+    if _top(test) in _top_suites(known):
         same = [name for name in known if _below_top(name) == _below_top(test)]
-        if len(same) == 1:
+        if same:
             return same[0]
-    raise NoSuchTestError(test, where, tuple(same) or _close_to(test, known))
+    raise NoSuchTestError(test, where, _close_to(test, known))
 
 
 def encloses(suite: str, test: str) -> bool:

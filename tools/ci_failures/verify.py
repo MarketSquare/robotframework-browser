@@ -174,13 +174,14 @@ def check(
                 key=cause_key(subject, entry.get("signature")),
             )
             if base.key not in present:
-                if entry.get("test"):
+                if entry.get("test") and subject not in names:
                     try:
-                        resolve(subject, names, "the archive")
-                    except NoSuchTestError as unknown:
-                        base = replace(
-                            base, no_such_test=True, suggestions=unknown.suggestions
+                        suggestions: tuple[str, ...] = (
+                            resolve(subject, names, "the archive"),
                         )
+                    except NoSuchTestError as unknown:
+                        suggestions = unknown.suggestions
+                    base = replace(base, no_such_test=True, suggestions=suggestions)
                 checked.append(base)
             elif not fix or entry.get("fix_verified"):
                 continue

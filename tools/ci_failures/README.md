@@ -236,7 +236,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 292 tests, about three seconds
+utest/test_tool_ci_failures.py   # 297 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything
