@@ -143,6 +143,13 @@ changes fast and data that old is rarely read (ADR `0005`).
 Two halves that meet at the database. One talks to the network and runs once per
 ingest; the other never touches it and runs once per report.
 
+Every `inv ci-*` task is a flag parser in front of a function in `commands.py`,
+which does the work, writes its lines through an `out` callable and refuses by
+raising a `RefusalError` (`refusal.py`). The task turns a refusal into its exit
+code in one place: 1 when the archive cannot answer, 2 when the flags were asked
+wrong, 3 when GitHub could not be reached (ADR `0007`). The tests start at
+`commands`, so the modes, the exit codes and the printed lines are all reached.
+
 ### Ingest — needs the network
 
 ```mermaid
@@ -207,21 +214,23 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
 | `parse.py` | 645 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `artifacts.py` | 387 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
-| `ingest.py` | 696 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
-| `db.py` | 162 | Opens the database, adds columns a database predating them has not got, and refuses one that is not there unless an ingest is creating it. |
+| `artifacts.py` | 399 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
+| `ingest.py` | 697 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
+| `db.py` | 161 | Opens the database, adds columns a database predating them has not got, and refuses one that is not there unless an ingest is creating it. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
 | `reading.py` | 108 | The database as one Report reads it. The only thing queries accept. |
 | `queries.py` | 1214 | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
-| `report.py` | 1139 | The Report, and what the numbers mean. |
+| `report.py` | 1140 | The Report, and what the numbers mean. |
 | `workspace.py` | 30 | Where a database's Snapshot, page and fetched artifacts live: beside it. |
 | `history.py` | 394 | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
 | `annotations.py` | 210 | Known Causes (by hand, gitignored) and the Snapshot (in the Workspace). |
 | `verify.py` | 241 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 290 | The document. |
+| `commands.py` | 265 | What each `inv ci-*` task does: flags in, lines out, a refusal for the exit code. |
+| `refusal.py` | 23 | The three refusals, Unanswerable, Misasked and Unreachable, and the exit code each carries. |
 
 ## Layout
 
@@ -240,7 +249,8 @@ ci_failures/             # the default Workspace: gitignored, at the repository 
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 305 tests, about three seconds
+utest/test_tool_ci_failures.py            # 306 tests, about three seconds
+utest/test_tool_ci_failures_commands.py   # 36 tests: what each task prints and exits with
 ```
 
 ## Three rules worth knowing before you change anything
@@ -281,8 +291,9 @@ reaches both renderings or joins that list.
   these words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
   where nobody was changing anything are ingested, why every test artifact of a
-  run is a Leg, why a Leg's Platform is only its operating system, and why the
-  archive is pruned at 120 days.
+  run is a Leg, why a Leg's Platform is only its operating system, why the
+  archive is pruned at 120 days, why a Run's Controls come from the database,
+  and why a task exits 1, 2 or 3.
 - **Module docstrings** — most of the real reasoning lives there, next to the
   code it explains, including the measurements behind several decisions and the
   wrong answers a few of them replaced.
@@ -291,7 +302,7 @@ reaches both renderings or joins that list.
 
 ```bash
 inv lint-python                          # ruff format, ruff check, mypy
-pytest utest/test_tool_ci_failures.py    # the tool's own tests
+pytest utest/test_tool_ci_failures.py utest/test_tool_ci_failures_commands.py
 ```
 
 All three cover `tools/`, and coverage measures it. The tests need no network
