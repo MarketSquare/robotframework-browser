@@ -2898,7 +2898,7 @@ class TestWhatChangedSinceLastTime:
     def test_rendering_does_not_move_the_baseline(self, tmp_path):
         """A report that moved its own baseline would answer differently the
         second time it was run on unchanged data."""
-        from tools.ci_failures.annotations import snapshot_path
+        from tools.ci_failures import workspace
         from tools.ci_failures.report import build
 
         db = tmp_path / "ci.sqlite3"
@@ -2907,7 +2907,7 @@ class TestWhatChangedSinceLastTime:
         build(db)
         build(db)
 
-        assert not snapshot_path(db).exists()
+        assert not workspace.snapshot(db).exists()
 
 
 # Fields the page deliberately does not show. ADR 0001 says a Rendering may show
@@ -4819,6 +4819,34 @@ class TestOneTestsReport:
         report = of_test(build_report(db, limit=None), "S.Rarely")
 
         assert [e.test for e in report.test_failures] == ["S.Rarely"]
+
+
+class TestTheWorkspace:
+    """Everything derived from a database lives in the directory it is in, so
+    another --db is another Workspace. See **Workspace** in CONTEXT.md."""
+
+    def test_what_is_derived_from_a_database_lives_beside_it(self, tmp_path):
+        from tools.ci_failures import workspace
+
+        db = tmp_path / "scratch" / "ci.sqlite3"
+
+        assert workspace.artifacts(db) == tmp_path / "scratch" / "artifacts"
+        assert workspace.page(db) == tmp_path / "scratch" / "ci_report.html"
+        assert workspace.snapshot(db) == tmp_path / "scratch" / "last_report.json"
+
+    def test_no_database_named_is_the_one_at_the_repository_root(self):
+        from tools.ci_failures import workspace
+
+        root = Path(__file__).resolve().parents[1]
+
+        assert workspace.database(None) == root / "ci_failures" / "ci_failures.sqlite3"
+        assert workspace.database("x/y.sqlite3") == Path("x/y.sqlite3")
+
+    def test_known_causes_are_not_in_any_workspace(self):
+        from tools.ci_failures.annotations import KNOWN_CAUSES
+        from tools.ci_failures import workspace
+
+        assert workspace.database(None).parent not in KNOWN_CAUSES.parents
 
 
 class TestResolvingATestName:

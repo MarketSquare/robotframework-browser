@@ -46,9 +46,6 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
-CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
-CI_REPORT_HTML = ROOT_DIR / "ci_failures" / "ci_report.html"
-CI_ARTIFACTS = ROOT_DIR / "ci_failures" / "artifacts"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1983,8 +1980,11 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
         raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
     since = _window_of_days(days).cutoff if days is not None else None
 
+    from tools.ci_failures import workspace
+
+    db_path = workspace.database(db)
     totals = ingest(
-        db_path=Path(db) if db else CI_FAILURES_DB,
+        db_path=db_path,
         limit=25 if limit is None else int(limit),
         since=since,
         dry_run=bool(dry_run),
@@ -1994,16 +1994,16 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
         return
     print(f"\n{totals.line()}")
     # Left behind by a triage that ended before its `inv ci-artifact --clean`.
-    if clean(CI_ARTIFACTS):
-        print(f"Removed leftover triage artifacts in {CI_ARTIFACTS}")
+    if clean(workspace.artifacts(db_path)):
+        print(f"Removed leftover triage artifacts in {workspace.artifacts(db_path)}")
 
 
 @task
-def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
+def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=None):
     """Fetches one Leg's artifact again, for triaging a failure in it.
 
     Ingest keeps only the parsed rows. This brings back the rest, unpacked
-    under ci_failures/artifacts/, and prints the files worth opening, by their
+    under `artifacts/` beside the database, and prints the files worth opening, by their
     path inside it. A Leg already fetched is reused. Remove them all with
     --clean once the triage is done; `inv ci-ingest` also removes any left
     behind.
@@ -2025,20 +2025,25 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
             spells its tests, it is the same test. Any other name the Leg or
             Run did not run is refused with the names it may mean.
         clean: Remove every fetched artifact instead of fetching one.
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3. The
+            artifacts are fetched into, and cleaned from, the directory it is in.
     """
+    from tools.ci_failures import workspace
     from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
     from tools.ci_failures.artifacts import clean as clean_artifacts
-    from tools.ci_failures.history import of_run
-    from tools.ci_failures.github import GhError
     from tools.ci_failures.db import UnanswerableError
+    from tools.ci_failures.github import GhError
+    from tools.ci_failures.history import of_run
 
+    db_path = workspace.database(db)
+    artifacts = workspace.artifacts(db_path)
     if clean:
-        if clean_artifacts(CI_ARTIFACTS):
-            print(f"Removed {CI_ARTIFACTS}")
+        if clean_artifacts(artifacts):
+            print(f"Removed {artifacts}")
         return
     if run is not None and leg is None and test is not None:
         try:
-            listing = of_run(CI_FAILURES_DB, int(run), test)
+            listing = of_run(db_path, int(run), test)
         except UnanswerableError as refused:
             raise Exit(str(refused), 1) from None
         for line in listing.lines():
@@ -2047,7 +2052,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     if run is None or leg is None:
         raise Exit("Pass --run and --leg, --run and --test, or --clean.", 2)
     try:
-        directory = fetch(int(run), leg, CI_ARTIFACTS, attempt=int(attempt))
+        directory = fetch(int(run), leg, artifacts, attempt=int(attempt))
     except NoSuchLegError as missing:
         raise Exit(str(missing), 1) from None
     except (GhError, OSError, zipfile.BadZipFile) as unreachable:
@@ -2086,11 +2091,12 @@ def ci_verify_fixes(c, db=None, mark=False):
     """
     from datetime import datetime, timezone
 
+    from tools.ci_failures import workspace
     from tools.ci_failures.annotations import mark_verified
     from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.verify import Git, Status, check
 
-    db_path = Path(db) if db else CI_FAILURES_DB
+    db_path = workspace.database(db)
     # UTC, like the created_at of the Runs the days are counted from.
     today = datetime.now(timezone.utc).date()
     try:
@@ -2148,11 +2154,12 @@ def ci_backfill_attempts(c, db=None):
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
     """
+    from tools.ci_failures import workspace
     from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.ingest import backfill_attempts
 
     try:
-        backfill_attempts(Path(db) if db else CI_FAILURES_DB)
+        backfill_attempts(workspace.database(db))
     except NoDatabaseError as absent:
         raise Exit(str(absent), 1) from None
 
@@ -2181,7 +2188,7 @@ def ci_report(
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         html: Write a self-contained HTML page here. Defaults to
-            ci_failures/ci_report.html.
+            ci_report.html beside the database.
         json: Write the report as JSON here, for a language model to read.
             Goes with --html: both are renderings of the one Report.
         limit: How many test/error groups to show.
@@ -2209,14 +2216,15 @@ def ci_report(
             Result in the window says when it last ran.
             --limit does not apply; --mark-seen is refused.
     """
+    from tools.ci_failures import workspace
     from tools.ci_failures.db import UnanswerableError
+    from tools.ci_failures.history import in_archive, never_failed
     from tools.ci_failures.report import (
         WindowedBaselineError,
         build,
         of_test,
         snapshot_entries,
     )
-    from tools.ci_failures.history import in_archive, never_failed
     from tools.ci_failures.window import ALL_HISTORY
 
     if test and mark_seen:
@@ -2226,7 +2234,7 @@ def ci_report(
             2,
         )
     window = _window_of_days(days) if days is not None else ALL_HISTORY
-    db_path = Path(db) if db else CI_FAILURES_DB
+    db_path = workspace.database(db)
 
     # Built once. Both renderings and the baseline are of the same Report, and
     # the reasons there may not be one are the tool's to state, not this task's.
@@ -2272,7 +2280,7 @@ def ci_report(
     if html or not json:
         from tools.ci_failures.render_html import write as write_page
 
-        page_at = write_page(report, Path(html) if html else CI_REPORT_HTML)
+        page_at = write_page(report, Path(html) if html else workspace.page(db_path))
         written.append(page_at)
         if open_it:
             webbrowser.open(page_at.resolve().as_uri())
@@ -2299,6 +2307,7 @@ def ci_recompute(c, db=None, what="all"):
             changing the artifact name patterns in `legs.py`; `platforms` after
             changing `parse.platform_of`. `all` does every one.
     """
+    from tools.ci_failures import workspace
     from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.ingest import (
         recompute_installs,
@@ -2310,7 +2319,7 @@ def ci_recompute(c, db=None, what="all"):
     known = {"all", "signatures", "locations", "installs", "platforms"}
     if what not in known:
         raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
-    db_path = Path(db) if db else CI_FAILURES_DB
+    db_path = workspace.database(db)
     try:
         if what in ("all", "signatures"):
             recompute_signatures(db_path)

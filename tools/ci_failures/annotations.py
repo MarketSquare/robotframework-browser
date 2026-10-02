@@ -21,11 +21,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-KNOWN_CAUSES = Path(__file__).parent / "known_causes.json"
+from . import workspace
 
-# Beside the database, not in the repository: a snapshot is derived and worth
-# nothing to anyone but the next run of the report.
-SNAPSHOT_NAME = "last_report.json"
+KNOWN_CAUSES = Path(__file__).parent / "known_causes.json"
 
 
 def cause_key(test: str | None, signature: str | None) -> tuple:
@@ -122,13 +120,9 @@ class Change:
         return "shrank"
 
 
-def snapshot_path(db_path: Path) -> Path:
-    return db_path.parent / SNAPSHOT_NAME
-
-
 def read_snapshot(db_path: Path) -> dict | None:
     try:
-        data = json.loads(snapshot_path(db_path).read_text(encoding="utf-8"))
+        data = json.loads(workspace.snapshot(db_path).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     return data if isinstance(data, dict) else None
@@ -142,7 +136,7 @@ def write_snapshot(db_path: Path, entries: list[tuple[str, str | None, int]]) ->
     run on unchanged data, and "what changed" would then mean "what changed
     since I last looked at this", which is not a question about CI.
     """
-    destination = snapshot_path(db_path)
+    destination = workspace.snapshot(db_path)
     destination.write_text(
         json.dumps(
             {
