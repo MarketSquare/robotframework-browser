@@ -1948,6 +1948,19 @@ def _window_of_days(days):
         raise Exit(str(refused), 2) from None
 
 
+def _refusing(command, **flags):
+    """Runs a `tools.ci_failures.commands` function, its refusal as the exit.
+
+    The one place a refusal becomes an exit code; ADR 0007 says what each means.
+    """
+    from tools.ci_failures.refusal import RefusalError
+
+    try:
+        command(**flags)
+    except RefusalError as refused:
+        raise Exit(str(refused), refused.code) from None
+
+
 @task
 def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     """Pulls CI test results into the local database.
@@ -2025,43 +2038,17 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=Non
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3. The
             artifacts are fetched into, and cleaned from, the directory it is in.
     """
-    from tools.ci_failures import workspace
-    from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
-    from tools.ci_failures.artifacts import clean as clean_artifacts
-    from tools.ci_failures.db import UnanswerableError
-    from tools.ci_failures.history import of_run
-    from tools.ci_failures.refusal import UnreachableError
+    from tools.ci_failures import commands
 
-    db_path = workspace.database(db)
-    artifacts = workspace.artifacts(db_path)
-    if clean:
-        if clean_artifacts(artifacts):
-            print(f"Removed {artifacts}")
-        return
-    if run is not None and leg is None and test is not None:
-        try:
-            listing = of_run(db_path, int(run), test)
-        except UnanswerableError as refused:
-            raise Exit(str(refused), 1) from None
-        for line in listing.lines():
-            print(line)
-        return
-    if run is None or leg is None:
-        raise Exit("Pass --run and --leg, --run and --test, or --clean.", 2)
-    try:
-        directory = fetch(int(run), leg, artifacts, attempt=int(attempt))
-    except (NoSuchLegError, UnreachableError) as refused:
-        raise Exit(str(refused), refused.code) from None
-    if not (directory / "output.xml").is_file():
-        print(f"directory:  {directory}")
-        print("output.xml: (none in this artifact)")
-        return
-    try:
-        listed = shortlist(directory, test)
-    except UnanswerableError as unknown:
-        raise Exit(str(unknown), 1) from None
-    for line in listed.lines():
-        print(line)
+    _refusing(
+        commands.artifact,
+        run=run,
+        leg=leg,
+        attempt=attempt,
+        test=test,
+        clean=clean,
+        db=db,
+    )
 
 
 @task

@@ -225,9 +225,7 @@ def _prune_or_say_what_would_go(
     if dry_run:
         prunable = _prunable(connection, now)
         if prunable:
-            out(
-                f"would prune {prunable} run(s) older than {_prune_cutoff(now)[:10]}"
-            )
+            out(f"would prune {prunable} run(s) older than {_prune_cutoff(now)[:10]}")
         return prunable
     pruned = prune(connection, now)
     if pruned:
@@ -458,7 +456,9 @@ def ingest(
             out=out,
         )
         connection.close()
-        raise UnreachableError(f"Could not list the runs on GitHub:\n{error}") from error
+        raise UnreachableError(
+            f"Could not list the runs on GitHub:\n{error}"
+        ) from error
     asked_for = f"since {since[:10]}" if since else f"newest {limit}"
     spanned = (
         f", {min(r.created_at for r in runs)[:10]} to "
