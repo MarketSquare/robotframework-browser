@@ -5589,8 +5589,9 @@ class TestShortlistingOneOccurrence:
     def test_the_shortlist_prints_one_line_per_file_and_counts_the_rest(self):
         from tools.ci_failures.artifacts import Entry, Shortlist
 
+        directory = Path("/a/36463000327-batteries-windows-latest-attempt-1")
         listed = Shortlist(
-            directory=Path("/a/36463000327-batteries-windows-latest-attempt-1"),
+            directory=directory,
             test="Test.Credentials.Add Valid Credential",
             entries=(
                 Entry("output.xml", "output.xml"),
@@ -5607,7 +5608,7 @@ class TestShortlistingOneOccurrence:
         )
 
         assert listed.lines() == [
-            "directory:  /a/36463000327-batteries-windows-latest-attempt-1",
+            f"directory:  {directory}",
             "output.xml: output.xml",
             "executor:   . (serial)",
             "test-app:   test-app/test-app-60666.log (Start Test Server in Test)",
