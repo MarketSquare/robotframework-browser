@@ -4782,6 +4782,61 @@ class TestOneTestsReport:
         assert [e.test for e in report.test_failures] == ["S.Rarely"]
 
 
+class TestResolvingATestName:
+    """A Test Name typed for a test, resolved against the names where it was
+    looked for: the archive, one Run, or one Leg's output.xml."""
+
+    COMBINED = "03 Waiting & 05 JS Tests"
+    NAMES = (
+        f"{COMBINED}.05 JS Tests.Js.Run Js",
+        "Test.Http.GET Text",
+        "Test.Http With Waiting.GET Text",
+    )
+
+    def test_a_name_that_is_there_is_itself(self):
+        from tools.ci_failures.history import resolve
+
+        assert resolve("Test.Http.GET Text", self.NAMES, "the archive") == (
+            "Test.Http.GET Text"
+        )
+
+    def test_another_top_suite_is_the_same_test(self):
+        from tools.ci_failures.history import resolve
+
+        assert resolve("Test.05 JS Tests.Js.Run Js", self.NAMES, "this Leg") == (
+            f"{self.COMBINED}.05 JS Tests.Js.Run Js"
+        )
+
+    def test_a_path_below_the_top_suite_is_offered_not_assumed(self):
+        from tools.ci_failures.history import NoSuchTestError, resolve
+
+        with pytest.raises(NoSuchTestError) as refused:
+            resolve("Js.Run Js", self.NAMES, "Run 7")
+
+        assert str(refused.value) == (
+            "No test named 'Js.Run Js' in Run 7. Did you mean:\n"
+            f"  {self.COMBINED}.05 JS Tests.Js.Run Js"
+        )
+
+    def test_the_fetch_does_not_load_the_report(self):
+        import subprocess
+        import sys
+
+        loaded = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys, tools.ci_failures.artifacts; "
+                "print('tools.ci_failures.report' in sys.modules)",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        assert loaded == "False"
+
+
 class TestATestWithNoFailures:
     """`inv ci-report --test` on a test with no Groups: a typo, a test outside
     the Window and a healthy test used to read alike, as "did not fail"."""
@@ -4808,7 +4863,8 @@ class TestATestWithNoFailures:
     ):
         """A short name is shared across suites, and naming one of them
         would be a guess."""
-        from tools.ci_failures.one_test import NoSuchTestError, never_failed
+        from tools.ci_failures.history import NoSuchTestError
+        from tools.ci_failures.one_test import never_failed
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -4834,7 +4890,8 @@ class TestATestWithNoFailures:
         )
 
     def test_a_misspelt_name_is_matched_by_similarity(self, tmp_path):
-        from tools.ci_failures.one_test import NoSuchTestError, never_failed
+        from tools.ci_failures.history import NoSuchTestError
+        from tools.ci_failures.one_test import never_failed
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -5020,7 +5077,8 @@ class TestTheControlsOfARun:
         )
 
     def test_a_name_the_run_did_not_run_is_refused_with_its_names(self, tmp_path):
-        from tools.ci_failures.controls import NoSuchTestInRunError, of_run
+        from tools.ci_failures.controls import of_run
+        from tools.ci_failures.history import NoSuchTestError
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -5031,11 +5089,11 @@ class TestTheControlsOfARun:
             ],
         )
 
-        with pytest.raises(NoSuchTestInRunError) as refused:
+        with pytest.raises(NoSuchTestError) as refused:
             of_run(db, 1, "Add Valid Credential With Secret")
 
         assert str(refused.value) == (
-            "'Add Valid Credential With Secret' did not run in Run 1. Did you mean:\n"
+            "No test named 'Add Valid Credential With Secret' in Run 1. Did you mean:\n"
             f"  {self.TEST}"
         )
 
@@ -5391,15 +5449,16 @@ class TestShortlistingOneOccurrence:
     def test_a_test_not_in_the_leg_is_refused_with_the_names_it_may_mean(
         self, tmp_path
     ):
-        from tools.ci_failures.artifacts import NoSuchTestInLegError, shortlist
+        from tools.ci_failures.artifacts import shortlist
+        from tools.ci_failures.history import NoSuchTestError
 
         _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
 
-        with pytest.raises(NoSuchTestInLegError) as refused:
+        with pytest.raises(NoSuchTestError) as refused:
             shortlist(tmp_path, "Credentials.Add Valid Credential")
 
         assert refused.value.suggestions == ("Test.Credentials.Add Valid Credential",)
-        assert "did not run in this Leg" in str(refused.value)
+        assert "in this Leg" in str(refused.value)
 
     def test_the_shortlist_prints_one_line_per_file_and_counts_the_rest(self):
         from tools.ci_failures.artifacts import Entry, Shortlist

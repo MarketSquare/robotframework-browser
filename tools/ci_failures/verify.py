@@ -29,7 +29,7 @@ from typing import Protocol
 
 from . import reading
 from .annotations import cause_key, known_cause_entries
-from .one_test import close_to
+from .history import NoSuchTestError, resolve
 from .queries import (
     SubjectFailure,
     failing_subjects,
@@ -173,12 +173,13 @@ def check(
                 key=cause_key(subject, entry.get("signature")),
             )
             if base.key not in present:
-                if entry.get("test") and subject not in names:
-                    base = replace(
-                        base,
-                        no_such_test=True,
-                        suggestions=close_to(subject, names),
-                    )
+                if entry.get("test"):
+                    try:
+                        resolve(subject, names, "the archive")
+                    except NoSuchTestError as unknown:
+                        base = replace(
+                            base, no_such_test=True, suggestions=unknown.suggestions
+                        )
                 checked.append(base)
             elif not fix or entry.get("fix_verified"):
                 continue

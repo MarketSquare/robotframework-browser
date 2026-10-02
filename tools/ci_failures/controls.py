@@ -13,8 +13,8 @@ from itertools import groupby
 from pathlib import Path
 
 from . import reading
+from .history import resolve
 from .legs import leg_name
-from .one_test import close_to
 from .queries import (
     SUITE_BROKE,
     RunLeg,
@@ -22,27 +22,17 @@ from .queries import (
     legs_of_run,
     test_names_of_run,
 )
+from .reading import UnanswerableError
 
 # Failures first: they are what the Controls are compared against.
 _ORDER = ("fail", "mixed", SUITE_BROKE, "skip", "pass")
 
 
-class NotIngestedError(LookupError):
+class NotIngestedError(UnanswerableError):
     """The database holds no Run with this id."""
 
     def __init__(self, run: int):
         super().__init__(f"Run {run} is not in the database; `inv ci-ingest` first.")
-
-
-class NoSuchTestInRunError(LookupError):
-    """The Run has no Result for this Test Name."""
-
-    def __init__(self, test: str, run: int, suggestions: tuple[str, ...]):
-        self.suggestions = suggestions
-        message = f"{test!r} did not run in Run {run}."
-        if suggestions:
-            message += " Did you mean:" + "".join(f"\n  {s}" for s in suggestions)
-        super().__init__(message)
 
 
 def _label(outcome: str) -> str:
@@ -97,14 +87,11 @@ class RunListing:
 
 def of_run(db_path: Path, run: int, test: str) -> RunListing:
     """The Legs of `run` that ran `test`. Raises `NotIngestedError` for a Run
-    the database lacks, and `NoSuchTestInRunError` for a test the Run lacks."""
+    the database lacks, and `NoSuchTestError` for a test the Run lacks."""
     with reading.of(db_path) as db:
         found = ingested_run(db, run)
         if found is None:
             raise NotIngestedError(run)
+        test = resolve(test, test_names_of_run(db, run), f"Run {run}")
         legs = legs_of_run(db, run, test)
-        if not legs:
-            raise NoSuchTestInRunError(
-                test, run, close_to(test, test_names_of_run(db, run))
-            )
     return RunListing(run, found.commit, test, tuple(legs))

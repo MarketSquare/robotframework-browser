@@ -25,24 +25,13 @@ from pathlib import Path
 from robot.api import ExecutionResult
 
 from . import github
+from .history import resolve
 from .legs import leg_name
 from .locate import artifact_relative
-from .one_test import close_to
 
 
 class NoSuchLegError(LookupError):
     """The run has no test artifact for that Leg."""
-
-
-class NoSuchTestInLegError(LookupError):
-    """The Leg's output.xml has no test by that Test Name."""
-
-    def __init__(self, test: str, suggestions: tuple[str, ...]):
-        self.suggestions = suggestions
-        message = f"{test!r} did not run in this Leg."
-        if suggestions:
-            message += " Did you mean:" + "".join(f"\n  {s}" for s in suggestions)
-        super().__init__(message)
 
 
 def _directory(root: Path, run: int, leg: str, attempt: int) -> Path:
@@ -356,8 +345,8 @@ def shortlist(directory: Path, test_name: str | None) -> Shortlist:
     """The files in an unpacked artifact worth opening for `test_name`.
 
     Without a test, only the Leg's own files: which Executor and which links
-    matter is a question about one test. Raises `NoSuchTestInLegError` for a
-    Test Name the Leg did not run.
+    matter is a question about one test. Raises `NoSuchTestError` for a Test
+    Name the Leg did not run.
     """
     if test_name is None:
         entries = _leg_entries(directory)
@@ -368,8 +357,7 @@ def shortlist(directory: Path, test_name: str | None) -> Shortlist:
             directory / "output.xml", include_keywords=False
         ).suite.all_tests
     ]
-    if test_name not in names:
-        raise NoSuchTestInLegError(test_name, close_to(test_name, names))
+    test_name = resolve(test_name, names, "this Leg")
     executor = _executor_of(directory, test_name)
     test = _find(ExecutionResult(executor / "output.xml").suite, test_name)
     entries = (

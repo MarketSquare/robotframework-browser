@@ -2024,19 +2024,11 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
             run is refused with the names it may mean.
         clean: Remove every fetched artifact instead of fetching one.
     """
-    from tools.ci_failures.artifacts import (
-        NoSuchLegError,
-        NoSuchTestInLegError,
-        fetch,
-        shortlist,
-    )
+    from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
     from tools.ci_failures.artifacts import clean as clean_artifacts
-    from tools.ci_failures.controls import (
-        NoSuchTestInRunError,
-        NotIngestedError,
-        of_run,
-    )
+    from tools.ci_failures.controls import of_run
     from tools.ci_failures.github import GhError
+    from tools.ci_failures.reading import UnanswerableError
 
     if clean:
         if clean_artifacts(CI_ARTIFACTS):
@@ -2045,7 +2037,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     if run is not None and leg is None and test is not None:
         try:
             listing = of_run(CI_FAILURES_DB, int(run), test)
-        except (NotIngestedError, NoSuchTestInRunError) as refused:
+        except UnanswerableError as refused:
             raise Exit(str(refused), 1) from None
         for line in listing.lines():
             print(line)
@@ -2068,7 +2060,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
         return
     try:
         listed = shortlist(directory, test)
-    except NoSuchTestInLegError as unknown:
+    except UnanswerableError as unknown:
         raise Exit(str(unknown), 1) from None
     for line in listed.lines():
         print(line)
@@ -2217,7 +2209,7 @@ def ci_report(
         of_test,
         snapshot_entries,
     )
-    from tools.ci_failures.one_test import never_failed
+    from tools.ci_failures.one_test import in_archive, never_failed
     from tools.ci_failures.window import ALL_HISTORY
 
     if test and mark_seen:
@@ -2240,6 +2232,10 @@ def ci_report(
         raise Exit(str(why), 1) from None
 
     if test:
+        try:
+            test = in_archive(db_path, test)
+        except UnanswerableError as why:
+            raise Exit(str(why), 1) from None
         report = of_test(report, test)
         if not report.test_failures and not report.fixture_failures:
             try:

@@ -5,30 +5,17 @@ Window, and for a test that ran and never failed, and those used to read alike
 as "did not fail". Only the last is an answer; the other two say why there is
 none.
 
-A Test Name runs from the top suite down, and the name typed is often less of
-it: the test's own name, or the path without `Test.`. Every Test Name ending in
-what was typed is offered, all of them, since about one in six test names is
-shared by tests in different suites and offering one would be a guess. Only
-when none ends in it is it taken for a typo and matched by similarity.
+The name typed is resolved as `history.resolve` describes.
 """
 
 from dataclasses import dataclass
-from difflib import get_close_matches
 from pathlib import Path
 
 from . import reading
+from .history import resolve
 from .queries import outcomes_of_test, test_names
 from .reading import UnanswerableError
 from .window import ALL_HISTORY, Window
-
-MOST_SUGGESTIONS = 5
-
-
-def close_to(name: str, names: list[str]) -> tuple[str, ...]:
-    ending = sorted(known for known in names if known.endswith(f".{name}"))
-    if ending:
-        return tuple(ending)
-    return tuple(get_close_matches(name, names, n=MOST_SUGGESTIONS))
 
 
 def _plural(count: int, noun: str) -> str:
@@ -52,19 +39,14 @@ class NeverFailed:
         )
 
 
-class NoSuchTestError(UnanswerableError):
-    """No Result anywhere in the archive has this Test Name."""
-
-    def __init__(self, test: str, suggestions: tuple[str, ...]):
-        self.suggestions = suggestions
-        message = f"No test named {test!r} in the archive."
-        if suggestions:
-            message += " Did you mean:" + "".join(f"\n  {s}" for s in suggestions)
-        super().__init__(message)
-
-
 class NotInWindowError(UnanswerableError):
     """The test is in the archive and has no Result inside the Window."""
+
+
+def in_archive(db_path: Path, test: str) -> str:
+    """The Test Name `test` is in the archive. Raises `NoSuchTestError`."""
+    with reading.of(db_path) as everything:
+        return resolve(test, test_names(everything), "the archive")
 
 
 def never_failed(db_path: Path, test: str, window: Window = ALL_HISTORY) -> NeverFailed:
@@ -73,11 +55,9 @@ def never_failed(db_path: Path, test: str, window: Window = ALL_HISTORY) -> Neve
     Raises rather than answering when the name is in no Result at all, or in
     none inside the Window, since either would otherwise read as a healthy test.
     """
+    test = in_archive(db_path, test)
     with reading.of(db_path) as everything:
-        names = test_names(everything)
         last_ran = outcomes_of_test(everything, test).last_ran
-    if test not in names:
-        raise NoSuchTestError(test, close_to(test, names))
     with reading.of(db_path, window) as db:
         outcomes = outcomes_of_test(db, test)
     if not outcomes.ran:
