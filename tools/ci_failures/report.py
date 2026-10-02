@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import reading
 from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
+from .db import UnanswerableError
 from .history import encloses
 from .legs import leg_name
 from .parse import screenshot_key
@@ -73,7 +74,6 @@ from .queries import (
 from .queries import (
     Retry as QueryRetry,
 )
-from .reading import UnanswerableError
 from .window import ALL_HISTORY, Window
 
 # A leg with more failures than this in it is itself the finding, and listing

@@ -12,7 +12,7 @@ import pytest
 from robot import run as robot_run
 
 from tools.ci_failures import github, ingest, render_html
-from tools.ci_failures.db import connect as connect_db
+from tools.ci_failures.db import connect
 from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.queries import Spread, VariantRow
 from tools.ci_failures import reading
@@ -33,6 +33,11 @@ from tools.ci_failures.queries import (
     signature_variants,
     totals,
 )
+
+
+def connect_db(db_path: Path):
+    """`db.connect`, allowed to create the database: these tests start from nothing."""
+    return connect(db_path, create=True)
 
 
 def build_json(db_path: Path, limit: int = 100) -> dict:
@@ -205,10 +210,9 @@ def seed(db: Path, rows: list[dict]) -> None:
     unable between them to write `executors`, `node_process` or a screenshot -
     very nearly the set of things nothing tested.
     """
-    from tools.ci_failures.db import connect
     from tools.ci_failures.legs import install_of
 
-    connection = connect(db)
+    connection = connect_db(db)
     runs: dict[str, int] = {}
     legs: dict[tuple, int] = {}
     for row in rows:
@@ -629,11 +633,10 @@ class TestLogMessages:
         assert len(lines) == 2
 
     def test_no_messages_is_not_an_error(self, tmp_path):
-        from tools.ci_failures.db import connect
         from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         assert log_messages_by_result(reading_of(db)) == {}
 
@@ -879,9 +882,7 @@ class TestFixtureFailureGrouping:
     """One broken fixture is one row, however many tests it marked."""
 
     def _seed(self, db: Path, rows: list[tuple]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for run_id in (1, 2):
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -979,9 +980,7 @@ class TestTheFixtureRuleReachesEveryNumber:
         case that bites: masking is what makes two unrelated failures share a
         key, so the fixture's message lands under the test's own Group.
         """
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         rows = [
             (1, "test", None, "the test itself broke", "boom"),
             (2, "suite_teardown", "S", "the teardown broke", "boom"),
@@ -1050,9 +1049,7 @@ class TestVersionsOnAFailure:
     question the report answers rather than one it raises."""
 
     def _seed(self, db: Path, legs: list[tuple]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for index, (rf, python, node, platform) in enumerate(legs, start=1):
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -1115,10 +1112,8 @@ class TestVersionsOnAFailure:
 
     def test_a_fixture_failure_counts_legs_not_the_rows_it_marked(self, tmp_path):
         """One broken teardown marking four tests is one occurrence, not four."""
-        from tools.ci_failures.db import connect
-
         db = tmp_path / "ci.sqlite3"
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
             "conclusion, url) VALUES (1, 'push', 'sha', 'main', '2026-08-20', 'x', 'u')"
@@ -1605,9 +1600,7 @@ class TestGrouping:
     """The one behaviour this proof of concept exists to show."""
 
     def _seed(self, db: Path, rows: list[tuple[str, str, str | None]]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "INSERT INTO run (id, event, head_sha, head_branch, created_at, conclusion, url) "
             "VALUES (1, 'push', 'sha', 'main', '2026-08-20T10:00:00Z', 'failure', 'u')"
@@ -1884,9 +1877,7 @@ class TestPayloadForALanguageModel:
     def test_where_to_look_survives_into_the_document(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "UPDATE test_result SET test_source = 'a.robot', test_lineno = 237, "
             "keyword_source = 'b.py', keyword_lineno = 27, keyword_kind = 'project'"
@@ -2550,11 +2541,10 @@ class TestTheDenominatorAndTheRerun:
 
 class TestHtmlReport:
     def test_it_renders_a_self_contained_page(self, tmp_path):
-        from tools.ci_failures.db import connect
         from tools.ci_failures.render_html import write as write_page
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         page = write_page(build_report(db), tmp_path / "report.html")
 
@@ -2692,9 +2682,7 @@ class TestWhatAFixtureMarkingIsNotEvidenceOf:
 
     def _seed(self, db: Path, runs: list[tuple[int, list[tuple]]]) -> None:
         """runs of (run_id, [(longname, status, failure_scope, scope_owner)])."""
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for run_id, rows in runs:
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -2911,11 +2899,10 @@ class TestWhatChangedSinceLastTime:
         """A report that moved its own baseline would answer differently the
         second time it was run on unchanged data."""
         from tools.ci_failures.annotations import snapshot_path
-        from tools.ci_failures.db import connect
         from tools.ci_failures.report import build
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         build(db)
         build(db)
@@ -3042,7 +3029,7 @@ class TestWhenThereIsNoReportToGive:
     def test_an_absent_database_is_refused_rather_than_created(self, tmp_path):
         """Opening it would create it, and an empty archive renders as a clean
         one - a page saying nothing has ever failed."""
-        from tools.ci_failures.reading import NoDatabaseError
+        from tools.ci_failures.db import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
 
@@ -3051,9 +3038,33 @@ class TestWhenThereIsNoReportToGive:
 
         assert not missing.exists(), "asking must not create the archive"
 
+    def test_backfilling_an_absent_database_is_refused_rather_than_created(
+        self, tmp_path
+    ):
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            ingest.backfill_attempts(missing, report=lambda _: None)
+
+        assert not missing.exists()
+
+    def test_recomputing_an_absent_database_is_refused_rather_than_created(
+        self, tmp_path
+    ):
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            ingest.recompute_signatures(missing, report=lambda _: None)
+
+        assert not missing.exists()
+
     def test_the_controls_of_a_run_refuse_an_absent_database_too(self, tmp_path):
         from tools.ci_failures.history import of_run
-        from tools.ci_failures.reading import NoDatabaseError
+        from tools.ci_failures.db import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
 
@@ -3064,7 +3075,7 @@ class TestWhenThereIsNoReportToGive:
 
     def test_a_test_that_never_failed_refuses_an_absent_database_too(self, tmp_path):
         from tools.ci_failures.history import never_failed
-        from tools.ci_failures.reading import NoDatabaseError
+        from tools.ci_failures.db import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
 

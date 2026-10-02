@@ -2030,7 +2030,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     from tools.ci_failures.artifacts import clean as clean_artifacts
     from tools.ci_failures.history import of_run
     from tools.ci_failures.github import GhError
-    from tools.ci_failures.reading import UnanswerableError
+    from tools.ci_failures.db import UnanswerableError
 
     if clean:
         if clean_artifacts(CI_ARTIFACTS):
@@ -2087,15 +2087,16 @@ def ci_verify_fixes(c, db=None, mark=False):
     from datetime import datetime, timezone
 
     from tools.ci_failures.annotations import mark_verified
+    from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.verify import Git, Status, check
 
     db_path = Path(db) if db else CI_FAILURES_DB
-    if not db_path.exists():
-        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
-        return
     # UTC, like the created_at of the Runs the days are counted from.
     today = datetime.now(timezone.utc).date()
-    checked = check(db_path, history=Git(ROOT_DIR), today=today)
+    try:
+        checked = check(db_path, history=Git(ROOT_DIR), today=today)
+    except NoDatabaseError as absent:
+        raise Exit(str(absent), 1) from None
     if not checked:
         print("No fixed Known Cause is waiting to be verified, and none is an orphan.")
     for entry in checked:
@@ -2147,9 +2148,13 @@ def ci_backfill_attempts(c, db=None):
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
     """
+    from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.ingest import backfill_attempts
 
-    backfill_attempts(Path(db) if db else CI_FAILURES_DB)
+    try:
+        backfill_attempts(Path(db) if db else CI_FAILURES_DB)
+    except NoDatabaseError as absent:
+        raise Exit(str(absent), 1) from None
 
 
 @task
@@ -2204,7 +2209,7 @@ def ci_report(
             Result in the window says when it last ran.
             --limit does not apply; --mark-seen is refused.
     """
-    from tools.ci_failures.reading import NoDatabaseError, UnanswerableError
+    from tools.ci_failures.db import UnanswerableError
     from tools.ci_failures.report import (
         WindowedBaselineError,
         build,
@@ -2227,9 +2232,6 @@ def ci_report(
     # the reasons there may not be one are the tool's to state, not this task's.
     try:
         report = build(db_path, limit=None if test else int(limit), window=window)
-    except NoDatabaseError as absent:
-        print(absent)
-        return
     except UnanswerableError as why:
         raise Exit(str(why), 1) from None
 
@@ -2297,6 +2299,7 @@ def ci_recompute(c, db=None, what="all"):
             changing the artifact name patterns in `legs.py`; `platforms` after
             changing `parse.platform_of`. `all` does every one.
     """
+    from tools.ci_failures.db import NoDatabaseError
     from tools.ci_failures.ingest import (
         recompute_installs,
         recompute_keyword_locations,
@@ -2308,14 +2311,14 @@ def ci_recompute(c, db=None, what="all"):
     if what not in known:
         raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
     db_path = Path(db) if db else CI_FAILURES_DB
-    if not db_path.exists():
-        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
-        return
-    if what in ("all", "signatures"):
-        recompute_signatures(db_path)
-    if what in ("all", "locations"):
-        recompute_keyword_locations(db_path)
-    if what in ("all", "installs"):
-        recompute_installs(db_path)
-    if what in ("all", "platforms"):
-        recompute_platforms(db_path)
+    try:
+        if what in ("all", "signatures"):
+            recompute_signatures(db_path)
+        if what in ("all", "locations"):
+            recompute_keyword_locations(db_path)
+        if what in ("all", "installs"):
+            recompute_installs(db_path)
+        if what in ("all", "platforms"):
+            recompute_platforms(db_path)
+    except NoDatabaseError as absent:
+        raise Exit(str(absent), 1) from None

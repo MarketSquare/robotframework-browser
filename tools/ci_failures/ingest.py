@@ -416,7 +416,7 @@ def ingest(
     anything went. `now` is this machine's
     clock unless a test says otherwise.
     """
-    connection = connect(db_path)
+    connection = connect(db_path, create=True)
     already = ingested_artifact_ids(connection)
     totals = dict.fromkeys(
         (

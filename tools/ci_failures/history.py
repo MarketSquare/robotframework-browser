@@ -28,9 +28,10 @@ from itertools import groupby
 from pathlib import Path
 
 from . import reading
+from .db import UnanswerableError
 from .legs import leg_name
 from .queries import SUITE_BROKE, verdict
-from .reading import Reading, UnanswerableError
+from .reading import Reading
 from .window import ALL_HISTORY, Window
 
 MOST_SUGGESTIONS = 5

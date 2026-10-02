@@ -81,6 +81,13 @@ at `Test` comes from a Leg that ran under another top suite, as two did on 2026-
 the same test spelled another way.
 _Avoid_: longname, short name, test id
 
+**Workspace**:
+The directory a database is in, and everything derived from it that lives there with it: the
+Snapshot, the page, the artifacts fetched for triage. All of it is safe to delete, and a rebuild
+is deleting it; that is why a Known Cause is not in it. Choosing another database chooses
+another Workspace.
+_Avoid_: data dir, output folder, cache
+
 **Pruning**:
 Removing every Run older than 120 days, and everything recorded under it, from the archive.
 It is what stops the archive from growing forever. 120 is past the 90 days GitHub keeps
@@ -186,7 +193,9 @@ A conclusion someone reached by reading the artifacts, recorded by hand in `know
 and matched against a Group at report time. The one thing here not derived from the database,
 and gitignored all the same: this tool is run by one maintainer on one machine, and a conclusion
 that matters is acted on rather than filed. It is therefore the only thing here that no rebuild
-and no download can restore — which is accepted, not overlooked.
+and no download can restore — which is accepted, not overlooked. It belongs to the checkout, not
+to a Workspace, so deleting a Workspace never deletes it and every archive is read with the same
+conclusions.
 _Avoid_: annotation, note, triage
 
 **Route**:
@@ -210,7 +219,7 @@ changed - and is never Verified, because matching nothing reads as zero recurren
 _Avoid_: fixed, resolved, closed (which is what happens to the issue afterwards)
 
 **Snapshot**:
-What the last report said, written beside the database so the next report can say what is new,
+What the last report said, written into the Workspace so the next report can say what is new,
 gone or changed. Entirely derived and worth nothing once stale. Never taken from a windowed
 report, and never read by one: a baseline that covered less data would make every Group look as
 though it had grown, and one that covered more — after a rebuild shortened the archive — would

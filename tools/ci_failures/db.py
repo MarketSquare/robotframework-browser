@@ -9,6 +9,18 @@ from .parse import platform_of
 _SCHEMA = Path(__file__).parent / "schema.sql"
 
 
+class UnanswerableError(Exception):
+    """The question cannot be answered, and this says why.
+
+    Raised by the tool rather than checked by each invoke task, so the reasons
+    are stated once and can be tested without typing `inv`.
+    """
+
+
+class NoDatabaseError(UnanswerableError):
+    """Nothing has been ingested here yet."""
+
+
 # Columns added after databases existed. `CREATE TABLE IF NOT EXISTS` does
 # nothing to a table that is already there, so they are added in place. The
 # database is derived and rebuildable, but rebuilding it is three gigabytes of
@@ -97,8 +109,16 @@ def fill_platforms(connection: sqlite3.Connection) -> int:
     return len(legs)
 
 
-def connect(db_path: Path) -> sqlite3.Connection:
-    """Opens the database, creating it and its schema if it is not there yet."""
+def connect(db_path: Path, *, create: bool = False) -> sqlite3.Connection:
+    """Opens the database, bringing its schema up to date.
+
+    Only an ingest creates one. Anything else asked of a database that is not
+    there raises `NoDatabaseError`: an empty archive answers every question as
+    though nothing had ever failed, and a backfill or a recompute of one is a
+    mistake rather than a start.
+    """
+    if not create and not db_path.exists():
+        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
     db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
