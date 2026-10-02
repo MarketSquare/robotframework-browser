@@ -202,21 +202,20 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | --- | ---: | --- |
 | `github.py` | 290 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
-| `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `parse.py` | 645 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `artifacts.py` | 399 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
+| `artifacts.py` | 387 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
 | `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
-| `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
+| `db.py` | 137 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
-| `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1386 | Every question asked of the database, and nothing else. |
-| `report.py` | 1152 | The Report, and what the numbers mean. |
-| `controls.py` | 110 | The Legs of one Run that ran a test, for choosing a Control. Database only. |
-| `one_test.py` | 94 | A test asked for by Test Name when the Report has no Group for it: a typo, a test outside the Window, or one that never failed. |
-| `annotations.py` | 211 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `verify.py` | 222 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
+| `reading.py` | 124 | The database as one Report reads it. The only thing queries accept, and never opened on a database that is not there. |
+| `queries.py` | 1214 | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
+| `report.py` | 1140 | The Report, and what the numbers mean. |
+| `history.py` | 388 | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
+| `annotations.py` | 216 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
+| `verify.py` | 240 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 290 | The document. |
 
@@ -237,7 +236,7 @@ ci_failures/             # gitignored, at the repository root
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 285 tests, about three seconds
+utest/test_tool_ci_failures.py   # 292 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything
