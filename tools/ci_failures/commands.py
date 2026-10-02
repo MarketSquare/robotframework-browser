@@ -13,6 +13,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from . import ingest as ingesting
 from . import render_html, render_json, workspace
 from .annotations import mark_verified, write_snapshot
 from .artifacts import clean as clean_artifacts
@@ -211,3 +212,54 @@ def verify_fixes(
     for entry in ready:
         if entry.issue:
             out(f"issue #{entry.issue} can be closed")
+
+
+def ingest(
+    *,
+    limit=None,
+    days=None,
+    db: str | Path | None = None,
+    dry_run=False,
+    out: Out = print,
+) -> None:
+    """What `inv ci-ingest` does; flags as its task documents them."""
+    if limit is not None and days is not None:
+        raise MisaskedError(
+            "--limit and --days ask the same question two ways; pass one."
+        )
+    since = _window_of_days(days).cutoff if days is not None else None
+    totals = ingesting.ingest(
+        workspace.database(db),
+        limit=25 if limit is None else _whole("--limit", limit),
+        since=since,
+        dry_run=bool(dry_run),
+        out=out,
+    )
+    if dry_run:
+        out(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
+        return
+    out(f"\n{totals.line()}")
+
+
+def backfill_attempts(*, db: str | Path | None = None, out: Out = print) -> None:
+    """What `inv ci-backfill-attempts` does; flags as its task documents them."""
+    ingesting.backfill_attempts(workspace.database(db), out=out)
+
+
+_RECOMPUTED: dict[str, Callable[..., int]] = {
+    "signatures": ingesting.recompute_signatures,
+    "locations": ingesting.recompute_keyword_locations,
+    "installs": ingesting.recompute_installs,
+    "platforms": ingesting.recompute_platforms,
+}
+
+
+def recompute(*, db: str | Path | None = None, what="all", out: Out = print) -> None:
+    """What `inv ci-recompute` does; flags as its task documents them."""
+    known = {"all", *_RECOMPUTED}
+    if what not in known:
+        raise MisaskedError(f"--what wants one of {sorted(known)}, got {what!r}.")
+    db_path = workspace.database(db)
+    for name, recomputed in _RECOMPUTED.items():
+        if what in ("all", name):
+            recomputed(db_path, out=out)

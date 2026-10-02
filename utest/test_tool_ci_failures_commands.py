@@ -11,7 +11,12 @@ from tools.ci_failures import commands, github, workspace
 from tools.ci_failures.db import UnanswerableError
 from tools.ci_failures.refusal import MisaskedError, UnreachableError
 
-from .test_tool_ci_failures import FakeHistory, seed
+from .test_tool_ci_failures import (  # noqa: F401 - fake_ci and output_xml are fixtures
+    FakeHistory,
+    fake_ci,
+    output_xml,
+    seed,
+)
 
 LEG = "source · ubuntu-latest · shard 1 · 3.14 · 22.x"
 ARTIFACT = "Test results-ubuntu-latest-1-3.14-22.x"
@@ -324,3 +329,65 @@ class TestVerifyFixes:
         assert said == [
             "No fixed Known Cause is waiting to be verified, and none is an orphan."
         ]
+
+
+class TestIngest:
+    def test_limit_and_days_together_are_misasked(self, tmp_path):
+        with pytest.raises(MisaskedError, match="pass one"):
+            commands.ingest(limit="5", days="7", db=tmp_path / "ci.sqlite3", out=print)
+
+    def test_days_that_are_not_a_number_are_misasked(self, tmp_path):
+        with pytest.raises(MisaskedError, match="whole number"):
+            commands.ingest(days="seven", db=tmp_path / "ci.sqlite3", out=print)
+
+    def test_a_listing_github_refuses_is_unreachable(self, monkeypatch, tmp_path):
+        def offline(**kwargs):
+            raise github.GhError("gh: not logged in")
+
+        monkeypatch.setattr(github, "list_runs", offline)
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "PASS"}])
+
+        with pytest.raises(UnreachableError, match="not logged in") as refused:
+            commands.ingest(db=db, out=lambda _: None)
+
+        assert refused.value.code == 3
+
+    def test_a_dry_run_ends_with_what_it_would_fetch(self, fake_ci, tmp_path):
+        said: list[str] = []
+
+        commands.ingest(dry_run=True, db=tmp_path / "ci.sqlite3", out=said.append)
+
+        assert said[-1] == "\nWould fetch 1 leg(s) across 1 run(s)."
+
+    def test_an_ingest_ends_with_its_totals(self, fake_ci, tmp_path):
+        said: list[str] = []
+
+        commands.ingest(limit="5", db=tmp_path / "ci.sqlite3", out=said.append)
+
+        assert said[-1].startswith("\nIngested 1 run(s), 1 leg(s), 4 results, 2 failures.")
+
+
+class TestBackfillAttempts:
+    def test_no_database_is_unanswerable(self, tmp_path):
+        with pytest.raises(UnanswerableError):
+            commands.backfill_attempts(db=tmp_path / "ci.sqlite3", out=print)
+
+
+class TestRecompute:
+    def test_what_it_does_not_know_is_misasked(self, tmp_path):
+        with pytest.raises(MisaskedError, match="'everything'"):
+            commands.recompute(what="everything", db=tmp_path / "ci.sqlite3", out=print)
+
+    def test_no_database_is_unanswerable(self, tmp_path):
+        with pytest.raises(UnanswerableError):
+            commands.recompute(db=tmp_path / "ci.sqlite3", out=print)
+
+    def test_one_column_is_recomputed_alone(self, tmp_path):
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": "T", "status": "PASS"}])
+        said: list[str] = []
+
+        commands.recompute(what="platforms", db=db, out=said.append)
+
+        assert said == ["recomputed the platform of 1 leg(s)"]
