@@ -532,6 +532,21 @@ class TestIngest:
         assert result.tests == 4
         assert result.failures == 2
 
+    def test_artifacts_a_triage_left_behind_are_removed_from_its_own_workspace_only(
+        self, fake_ci, tmp_path
+    ):
+        from tools.ci_failures import workspace
+
+        db = tmp_path / "ingested" / "ci.sqlite3"
+        other = tmp_path / "other" / "ci.sqlite3"
+        for leftover in (workspace.artifacts(db), workspace.artifacts(other)):
+            leftover.mkdir(parents=True)
+
+        ingest.ingest(db, limit=5, report=lambda _: None)
+
+        assert not workspace.artifacts(db).exists()
+        assert workspace.artifacts(other).exists()
+
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
 

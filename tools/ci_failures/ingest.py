@@ -21,7 +21,8 @@ from pathlib import Path
 
 from robot.errors import DataError
 
-from . import github, locate
+from . import github, locate, workspace
+from .artifacts import clean
 from .db import connect, fill_installs, fill_platforms, ingested_artifact_ids
 from .legs import install_of
 from .locate import keyword_location, owner_kind
@@ -414,7 +415,8 @@ def ingest(
     Last, whatever happened above - even a listing that failed - every Run
     older than `KEEP_DAYS` before `now` is pruned, and the file vacuumed if
     anything went. `now` is this machine's
-    clock unless a test says otherwise.
+    clock unless a test says otherwise. And the artifacts a triage left behind
+    in this Workspace, without its `inv ci-artifact --clean`, are removed.
     """
     connection = connect(db_path, create=True)
     already = ingested_artifact_ids(connection)
@@ -526,6 +528,9 @@ def ingest(
         connection, now or datetime.now(timezone.utc), dry_run=dry_run, report=report
     )
     connection.close()
+    leftover = workspace.artifacts(db_path)
+    if not dry_run and clean(leftover):
+        report(f"Removed leftover triage artifacts in {leftover}")
     return Ingested(**totals)
 
 

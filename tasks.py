@@ -1973,7 +1973,6 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             artifact listing per run instead, so it is minutes for a wide
             window and worth doing before a long ingest.
     """
-    from tools.ci_failures.artifacts import clean
     from tools.ci_failures.ingest import ingest
 
     if limit is not None and days is not None:
@@ -1993,9 +1992,6 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
         print(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
         return
     print(f"\n{totals.line()}")
-    # Left behind by a triage that ended before its `inv ci-artifact --clean`.
-    if clean(workspace.artifacts(db_path)):
-        print(f"Removed leftover triage artifacts in {workspace.artifacts(db_path)}")
 
 
 @task
