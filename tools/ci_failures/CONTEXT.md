@@ -155,7 +155,8 @@ _Avoid_: setup failure, teardown error
 Everything one run of the tool has to say about a Window: every Group, every Fixture Failure,
 every Occurrence and the rules they were counted under, complete and independent of how it is
 displayed. One question asked of the database, answered once.
-_Avoid_: document, payload, output, the page, the JSON
+_Avoid_: document, payload, output, the page, the JSON - and never for the lines a task prints
+while it works
 
 **Rendering**:
 One display of a Report — the page a person reads, or the plain-data document an agent reads.

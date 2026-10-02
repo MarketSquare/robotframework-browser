@@ -525,7 +525,7 @@ class TestIngest:
     def test_a_run_becomes_rows(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert result.runs == 1
         assert result.legs == 1
@@ -542,7 +542,7 @@ class TestIngest:
         for leftover in (workspace.artifacts(db), workspace.artifacts(other)):
             leftover.mkdir(parents=True)
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert not workspace.artifacts(db).exists()
         assert workspace.artifacts(other).exists()
@@ -550,7 +550,7 @@ class TestIngest:
     def test_a_dry_run_on_no_database_creates_none(self, fake_ci, tmp_path):
         db = tmp_path / "fresh" / "ci.sqlite3"
 
-        totals = ingest.ingest(db, limit=5, dry_run=True, report=lambda _: None)
+        totals = ingest.ingest(db, limit=5, dry_run=True, out=lambda _: None)
 
         assert totals.legs == 1
         assert not db.parent.exists()
@@ -558,7 +558,7 @@ class TestIngest:
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert [p.name for p in db.parent.iterdir()] == ["ci.sqlite3"]
 
@@ -567,7 +567,7 @@ class TestIngest:
     ):
         db = tmp_path / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         with closing(sqlite3.connect(db)) as connection:
             connection.row_factory = sqlite3.Row
@@ -579,9 +579,9 @@ class TestIngest:
 
     def test_running_again_ingests_nothing_twice(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert second.legs == 0
         assert second.skipped == 1
@@ -597,7 +597,7 @@ class TestIngest:
         gone = github.Artifact(**{**fake_ci["artifact"].__dict__, "expired": True})
         monkeypatch.setattr(ingest.github, "list_test_artifacts", lambda run_id: [gone])
 
-        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
+        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, out=lambda _: None)
 
         assert result.expired == 1
         assert result.legs == 0
@@ -643,7 +643,7 @@ class TestLogMessages:
         from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         lines = log_messages_by_result(reading_of(db))
 
@@ -1355,7 +1355,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "list_test_artifacts", refuse)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (result.unlisted, result.legs) == (1, 0)
 
@@ -1372,7 +1372,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", truncated)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (result.unreachable, result.legs) == (1, 0)
 
@@ -1396,8 +1396,8 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
         db = tmp_path / "ci.sqlite3"
 
-        first = ingest.ingest(db, limit=5, report=lambda _: None)
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        first = ingest.ingest(db, limit=5, out=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert first.unusable == 1
         assert len(downloads) == 1, "the second ingest downloaded nothing"
@@ -1412,7 +1412,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", refuse)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None, dry_run=True)
+        result = ingest.ingest(db, limit=5, out=lambda _: None, dry_run=True)
 
         assert (result.runs, result.legs) == (1, 1)
         assert one_row(db, "SELECT COUNT(*) AS n FROM leg")["n"] == 0
@@ -1480,7 +1480,7 @@ class TestPruning:
         result = ingest.ingest(
             db,
             limit=5,
-            report=lambda _: None,
+            out=lambda _: None,
             now=datetime(2026, 8, 21, tzinfo=timezone.utc),
         )
 
@@ -1497,7 +1497,7 @@ class TestPruning:
         seed(db, [{"test": "T", "status": "PASS"}])
 
         with pytest.raises(github.GhError):
-            ingest.ingest(db, limit=5, report=lambda _: None, now=self.NOW)
+            ingest.ingest(db, limit=5, out=lambda _: None, now=self.NOW)
 
         assert one_row(db, "SELECT COUNT(*) AS n FROM run")["n"] == 0
 
@@ -1512,7 +1512,7 @@ class TestPruning:
         result = ingest.ingest(
             db,
             limit=5,
-            report=said.append,
+            out=said.append,
             dry_run=True,
             now=datetime(2026, 8, 21, tzinfo=timezone.utc),
         )
@@ -1545,7 +1545,7 @@ class TestTransientDownloadFailures:
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
 
-        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
+        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, out=lambda _: None)
 
         assert result.unreachable == 1
         assert result.legs == 1, "the good artifact still went in"
@@ -1572,10 +1572,10 @@ class TestTransientDownloadFailures:
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         broken["still"] = False
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert second.legs == 1
         assert second.unreachable == 0
@@ -2379,7 +2379,7 @@ class TestWhichAttemptRanIt:
             ],
         )
 
-        filled = ingest.backfill_attempts(db, report=lambda _: None)
+        filled = ingest.backfill_attempts(db, out=lambda _: None)
 
         connection = connect_db(db)
         assert filled == 2
@@ -2436,7 +2436,7 @@ class TestWhichAttemptRanIt:
         ingest.ingest(
             db,
             limit=5,
-            report=lambda _: None,
+            out=lambda _: None,
             now=datetime(2026, 8, 20, tzinfo=timezone.utc),
         )
 
@@ -2467,7 +2467,7 @@ class TestWhichAttemptRanIt:
 
         monkeypatch.setattr(github, "get_run", gone)
 
-        ingest.backfill_attempts(db, report=lambda _: None)
+        ingest.backfill_attempts(db, out=lambda _: None)
 
         connection = connect_db(db)
         assert connection.execute("SELECT attempt FROM leg").fetchone()[0] is None
@@ -3069,7 +3069,7 @@ class TestWhenThereIsNoReportToGive:
         missing = tmp_path / "nothing-here.sqlite3"
 
         with pytest.raises(NoDatabaseError):
-            ingest.backfill_attempts(missing, report=lambda _: None)
+            ingest.backfill_attempts(missing, out=lambda _: None)
 
         assert not missing.exists()
 
@@ -3081,7 +3081,7 @@ class TestWhenThereIsNoReportToGive:
         missing = tmp_path / "nothing-here.sqlite3"
 
         with pytest.raises(NoDatabaseError):
-            ingest.recompute_signatures(missing, report=lambda _: None)
+            ingest.recompute_signatures(missing, out=lambda _: None)
 
         assert not missing.exists()
 
@@ -3385,7 +3385,7 @@ class TestTheColumnsThatNeedNoArtifact:
             "keyword_kind = 'unknown', keyword_lineno = 1",
         )
 
-        resolved = ingest.recompute_keyword_locations(db, report=lambda _: None)
+        resolved = ingest.recompute_keyword_locations(db, out=lambda _: None)
 
         row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert resolved == 1
@@ -3405,7 +3405,7 @@ class TestTheColumnsThatNeedNoArtifact:
             "failing_keyword = 'Log All Scopes'",
         )
 
-        ingest.recompute_keyword_locations(db, report=lambda _: None)
+        ingest.recompute_keyword_locations(db, out=lambda _: None)
 
         row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert row["keyword_kind"] == "project"
@@ -3484,7 +3484,7 @@ class TestRegroupingWithoutTheArtifacts:
             ],
         )
 
-        changed = ingest.recompute_signatures(db, report=lambda _: None)
+        changed = ingest.recompute_signatures(db, out=lambda _: None)
 
         after = one_row(db, "SELECT error_signature FROM test_result")[0]
         assert changed == 1
@@ -4195,7 +4195,7 @@ class TestListingRunsByDate:
         )
 
         ingest(
-            tmp_path / "ci.sqlite3", since="2026-08-01T00:00:00Z", report=lambda _: None
+            tmp_path / "ci.sqlite3", since="2026-08-01T00:00:00Z", out=lambda _: None
         )
 
         assert asked == {"since": "2026-08-01T00:00:00Z"}, "asked by count as well"
@@ -4210,7 +4210,7 @@ class TestListingRunsByDate:
             lambda limit=25: asked.setdefault("limit", limit) and [],
         )
 
-        ingest(tmp_path / "ci.sqlite3", limit=7, report=lambda _: None)
+        ingest(tmp_path / "ci.sqlite3", limit=7, out=lambda _: None)
 
         assert asked == {"limit": 7}
 
@@ -4267,7 +4267,7 @@ class TestTheListingIsNotTakenOnTrust:
 
         self._listing(monkeypatch, runs)
         said: list[str] = []
-        ingest(db, limit=25, report=said.append, dry_run=True)
+        ingest(db, limit=25, out=said.append, dry_run=True)
         return said
 
     def test_it_says_what_the_listing_actually_spanned(self, tmp_path, monkeypatch):
@@ -4327,7 +4327,7 @@ class TestTheListingIsNotTakenOnTrust:
             conclusion=None,
         )
         said: list[str] = []
-        ingest(db, limit=25, report=said.append, dry_run=True)
+        ingest(db, limit=25, out=said.append, dry_run=True)
 
         assert not any("not offered" in line for line in said), said
 
@@ -4416,7 +4416,7 @@ class TestEveryTestArtifactOfARun:
         monkeypatch.setattr(
             ingest.github, "list_test_artifacts", lambda run_id: [artifact]
         )
-        return ingest.ingest(db, limit=5, report=lambda _: None)
+        return ingest.ingest(db, limit=5, out=lambda _: None)
 
     @staticmethod
     def _failing_test(db):
@@ -4455,7 +4455,7 @@ class TestEveryTestArtifactOfARun:
             ingest.github, "list_test_artifacts", lambda run_id: artifacts
         )
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         entry = self._failing_test(db)
 
@@ -4534,7 +4534,7 @@ class TestEveryTestArtifactOfARun:
 
         said: list[str] = []
         first = self._ingest_as(fake_ci, monkeypatch, db, "docker_results")
-        second = ingest.ingest(db, limit=5, report=said.append)
+        second = ingest.ingest(db, limit=5, out=said.append)
 
         assert (first.unusable, first.legs) == (1, 0)
         assert len(downloads) == 1, "refused once, not fetched again"
@@ -4556,8 +4556,8 @@ class TestEveryTestArtifactOfARun:
         )
         db = tmp_path / "ci.sqlite3"
 
-        first = ingest.ingest(db, limit=5, report=lambda _: None)
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        first = ingest.ingest(db, limit=5, out=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (first.unusable, first.unreachable, first.legs) == (1, 0, 0)
         assert len(downloads) == 1
@@ -4580,8 +4580,8 @@ class TestEveryTestArtifactOfARun:
         monkeypatch.setattr(ingest.github, "download_artifact", truncated)
         db = tmp_path / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (second.unreachable, second.unusable) == (1, 0)
         assert len(downloads) == 2
@@ -4593,7 +4593,7 @@ class TestEveryTestArtifactOfARun:
         the `source` Install. Known from the stored artifact name, so nothing is
         invented and nothing has to be downloaded again."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         leg_table_without(db, "install")
 
         entry = self._failing_test(db)
@@ -4611,7 +4611,7 @@ class TestEveryTestArtifactOfARun:
             connection.execute("UPDATE leg SET install = 'stale'")
             connection.commit()
 
-        recomputed = ingest.recompute_installs(db, report=lambda _: None)
+        recomputed = ingest.recompute_installs(db, out=lambda _: None)
 
         assert recomputed == 1
         assert [r["install"] for r in self._failing_test(db)["rates"]] == ["batteries"]
@@ -4634,7 +4634,7 @@ class TestEveryTestArtifactOfARun:
             ingest.github, "list_test_artifacts", lambda run_id: artifacts
         )
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         platforms = build_json(db)["platforms"]
 
@@ -4662,7 +4662,7 @@ class TestOnePlatformPerOperatingSystem:
         self, fake_ci, tmp_path
     ):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         entry = self._failing_test(db)
 
@@ -4676,7 +4676,7 @@ class TestOnePlatformPerOperatingSystem:
         """What was stored as the platform is moved, not lost: it is the only
         copy of it, and nothing has to be downloaded again."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         leg_table_without(db, "os_release")
         with closing(sqlite3.connect(db)) as connection:
             connection.execute("UPDATE leg SET platform = 'Linux-6.8-x86_64'")
@@ -4689,7 +4689,7 @@ class TestOnePlatformPerOperatingSystem:
 
     def test_the_platform_is_recomputed_from_what_is_stored(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         with closing(sqlite3.connect(db)) as connection:
             connection.execute(
                 "UPDATE leg SET platform = 'Windows-10-10.0.26100-SP0', "
@@ -4697,7 +4697,7 @@ class TestOnePlatformPerOperatingSystem:
             )
             connection.commit()
 
-        recomputed = ingest.recompute_platforms(db, report=lambda _: None)
+        recomputed = ingest.recompute_platforms(db, out=lambda _: None)
 
         entry = self._failing_test(db)
         assert recomputed == 1
@@ -4712,7 +4712,7 @@ class TestOnePlatformPerOperatingSystem:
         """Once migrated, `platform` holds only the reduced value. A changed rule
         has to be applied to the full string or it can never change anything."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         with closing(sqlite3.connect(db)) as connection:
             connection.execute(
                 "UPDATE leg SET platform = 'linux', "
@@ -4720,7 +4720,7 @@ class TestOnePlatformPerOperatingSystem:
             )
             connection.commit()
 
-        ingest.recompute_platforms(db, report=lambda _: None)
+        ingest.recompute_platforms(db, out=lambda _: None)
 
         assert [r["platform"] for r in self._failing_test(db)["rates"]] == ["darwin"]
 
