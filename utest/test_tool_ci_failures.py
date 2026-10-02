@@ -3055,8 +3055,7 @@ class TestWhenThereIsNoReportToGive:
     def test_one_tests_questions_refuse_an_absent_database_too(
         self, tmp_path, question
     ):
-        from tools.ci_failures.controls import of_run
-        from tools.ci_failures.one_test import never_failed
+        from tools.ci_failures.history import never_failed, of_run
         from tools.ci_failures.reading import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
@@ -4842,7 +4841,7 @@ class TestATestWithNoFailures:
     the Window and a healthy test used to read alike, as "did not fail"."""
 
     def test_one_that_ran_and_never_failed_says_how_often_it_ran(self, tmp_path):
-        from tools.ci_failures.one_test import never_failed
+        from tools.ci_failures.history import never_failed
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -4863,8 +4862,7 @@ class TestATestWithNoFailures:
     ):
         """A short name is shared across suites, and naming one of them
         would be a guess."""
-        from tools.ci_failures.history import NoSuchTestError
-        from tools.ci_failures.one_test import never_failed
+        from tools.ci_failures.history import NoSuchTestError, never_failed
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -4890,8 +4888,7 @@ class TestATestWithNoFailures:
         )
 
     def test_a_misspelt_name_is_matched_by_similarity(self, tmp_path):
-        from tools.ci_failures.history import NoSuchTestError
-        from tools.ci_failures.one_test import never_failed
+        from tools.ci_failures.history import NoSuchTestError, never_failed
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -4910,7 +4907,7 @@ class TestATestWithNoFailures:
     def test_one_that_ran_only_before_the_window_says_when_it_last_ran(self, tmp_path):
         from datetime import datetime
 
-        from tools.ci_failures.one_test import NotInWindowError, never_failed
+        from tools.ci_failures.history import NotInWindowError, never_failed
         from tools.ci_failures.window import of_days
 
         db = tmp_path / "ci.sqlite3"
@@ -4946,7 +4943,7 @@ class TestTheControlsOfARun:
     def test_every_leg_that_ran_the_test_is_listed_by_install_and_passes_are_controls(
         self, tmp_path
     ):
-        from tools.ci_failures.controls import of_run
+        from tools.ci_failures.history import of_run
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -5014,7 +5011,7 @@ class TestTheControlsOfARun:
             assert leg_name(leg_name(artifact)) == leg_name(artifact)
 
     def test_a_failure_its_suite_fixture_marked_is_not_called_a_failure(self, tmp_path):
-        from tools.ci_failures.controls import of_run
+        from tools.ci_failures.history import of_run
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -5035,7 +5032,7 @@ class TestTheControlsOfARun:
         )
 
     def test_a_leg_whose_attempt_is_unknown_is_shown_not_dropped(self, tmp_path):
-        from tools.ci_failures.controls import of_run
+        from tools.ci_failures.history import of_run
 
         db = tmp_path / "ci.sqlite3"
         seed(
@@ -5063,7 +5060,7 @@ class TestTheControlsOfARun:
     def test_a_run_not_in_the_database_is_refused_not_looked_up_on_github(
         self, tmp_path, monkeypatch
     ):
-        from tools.ci_failures.controls import NotIngestedError, of_run
+        from tools.ci_failures.history import NotIngestedError, of_run
 
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": self.TEST, "status": "PASS"}])
@@ -5077,8 +5074,7 @@ class TestTheControlsOfARun:
         )
 
     def test_a_name_the_run_did_not_run_is_refused_with_its_names(self, tmp_path):
-        from tools.ci_failures.controls import of_run
-        from tools.ci_failures.history import NoSuchTestError
+        from tools.ci_failures.history import NoSuchTestError, of_run
 
         db = tmp_path / "ci.sqlite3"
         seed(

@@ -10,11 +10,11 @@ numbers mean.
 This used to be written as "if a function here does not run SQL it is in the
 wrong file", which is a sharper rule than the one actually kept. Four functions
 run none. `_subject_key` and `_row_without_key` shape a row on its way out;
-`_spread` picks four order statistics out of a sorted list; `_verdict` reads a
+`_spread` picks four order statistics out of a sorted list; `verdict` reads a
 Leg's statuses and says what the Subject did in that Run - and that last one is
 a judgement by any reading. It is here because it is called from inside the lane
-walk in `runs_either_side` and its fixture twin, and from `legs_of_run`, where
-moving it would mean handing `report.py` and `controls.py` raw status tuples
+walk in `runs_either_side` and its fixture twin, and from `history.py`'s Legs of a Run, where
+moving it would mean handing `report.py` and `history.py` raw status tuples
 instead of an answer. Worth knowing about
 rather than worth pretending away.
 """
@@ -555,7 +555,7 @@ def pass_durations_by_test(db: Reading) -> dict[tuple, Spread]:
 SUITE_BROKE = "suite broke"
 
 
-def _verdict(statuses: list[tuple[str, str | None]]) -> str:
+def verdict(statuses: list[tuple[str, str | None]]) -> str:
     """The outcome of one Subject in one Run on one Leg.
 
     Rows a suite fixture marked are set aside first. They are the fixture's
@@ -638,7 +638,7 @@ def runs_either_side(db: Reading) -> dict[int, Around]:
             run=run["run"],
             commit=run["commit"],
             at=run["at"],
-            outcome=_verdict(run["statuses"]),
+            outcome=verdict(run["statuses"]),
         )
 
     outcomes: dict[int, Around] = {}
@@ -860,7 +860,7 @@ def fixture_runs_either_side(db: Reading) -> dict[FixtureLegKey, Around]:
                 run=run["run"],
                 commit=run["commit"],
                 at=run["at"],
-                outcome=_verdict(run["statuses"]),
+                outcome=verdict(run["statuses"]),
             )
 
         for row in rows:
@@ -1201,34 +1201,6 @@ def totals(db: Reading) -> Totals:
     return Totals(**dict(row))
 
 
-# --- What verifying a fix asks -----------------------------------------------
-#
-# Not part of the Report: `verify.py` asks these of an unwindowed Reading, one
-# Subject at a time, to decide whether a Known Cause's fix held.
-
-
-@dataclass(frozen=True)
-class SubjectRun:
-    """A Run in which a Subject ran, whatever it did there."""
-
-    run_id: int
-    head_sha: str | None
-    created_at: str | None
-    run_url: str | None
-
-
-@dataclass(frozen=True)
-class SubjectFailure:
-    """How often a Subject failed in one Run on one Error Signature."""
-
-    run_id: int
-    head_sha: str | None
-    run_url: str | None
-    signature_key: str
-    error_signature: str | None
-    occurrences: int
-
-
 def failing_subjects(db: Reading) -> set[tuple[str, str]]:
     """Every (Subject, case-folded signature) with a Group or Fixture Failure."""
     rows = db.execute(
@@ -1240,147 +1212,3 @@ def failing_subjects(db: Reading) -> set[tuple[str, str]]:
         """
     ).fetchall()
     return {(row["subject_owner"], row["signature_key"]) for row in rows}
-
-
-def runs_of_subject(db: Reading, subject: str) -> list[SubjectRun]:
-    """Every Run a test ran in, or a suite ran in - child suites included,
-    which is where a suite fixture's failures land."""
-    rows = db.execute(
-        """
-        SELECT DISTINCT r.id AS run_id, r.head_sha, r.created_at, r.url AS run_url
-        FROM test_result t
-        JOIN leg l ON l.id = t.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE t.longname = ?1 OR t.suite_longname = ?1
-              OR substr(t.suite_longname, 1, length(?1) + 1) = ?1 || '.'
-        ORDER BY r.created_at, r.id
-        """,
-        (subject,),
-    ).fetchall()
-    return [SubjectRun(**dict(row)) for row in rows]
-
-
-def failures_of_subject(db: Reading, subject: str) -> list[SubjectFailure]:
-    """A Subject's Occurrences per Run and signature, on any signature."""
-    rows = db.execute(
-        """
-        SELECT r.id AS run_id, r.head_sha, r.url AS run_url, f.signature_key,
-               MIN(f.error_signature) AS error_signature,
-               COUNT(DISTINCT f.occurrence_id) AS occurrences
-        FROM (
-            SELECT leg_id, subject_owner, signature_key, error_signature,
-                   occurrence_id FROM test_failure
-            UNION ALL
-            SELECT leg_id, subject_owner, signature_key, error_signature,
-                   occurrence_id FROM fixture_failure
-        ) f
-        JOIN leg l ON l.id = f.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE f.subject_owner = ?
-        GROUP BY r.id, f.signature_key
-        ORDER BY r.created_at, r.id
-        """,
-        (subject,),
-    ).fetchall()
-    return [SubjectFailure(**dict(row)) for row in rows]
-
-
-@dataclass(frozen=True)
-class TestOutcomes:
-    """How a test's Results came out, however many Groups it has."""
-
-    ran: int
-    failed: int
-    skipped: int
-    last_ran: str | None
-
-
-def outcomes_of_test(db: Reading, test: str) -> TestOutcomes:
-    """Every Result of one Test Name, Groups or none."""
-    row = db.execute(
-        """
-        SELECT COUNT(*) AS ran,
-               COALESCE(SUM(t.status = 'FAIL'), 0) AS failed,
-               COALESCE(SUM(t.status = 'SKIP'), 0) AS skipped,
-               MAX(r.created_at) AS last_ran
-        FROM test_result t
-        JOIN leg l ON l.id = t.leg_id
-        JOIN run r ON r.id = l.run_id
-        WHERE t.longname = ?
-        """,
-        (test,),
-    ).fetchone()
-    return TestOutcomes(**dict(row))
-
-
-def test_names(db: Reading) -> list[str]:
-    """Every Test Name with a Result in the Reading."""
-    return [row[0] for row in db.execute("SELECT DISTINCT longname FROM test_result")]
-
-
-@dataclass(frozen=True)
-class IngestedRun:
-    """A Run the database holds, and its commit."""
-
-    run: int
-    commit: str | None
-
-
-def ingested_run(db: Reading, run: int) -> IngestedRun | None:
-    """The Run, or None when the database does not hold it."""
-    row = db.execute("SELECT head_sha FROM run WHERE id = ?", (run,)).fetchone()
-    return IngestedRun(run, row["head_sha"]) if row else None
-
-
-def test_names_of_run(db: Reading, run: int) -> list[str]:
-    """Every Test Name with a Result in one Run."""
-    return [
-        row[0]
-        for row in db.execute(
-            "SELECT DISTINCT t.longname FROM test_result t "
-            "JOIN leg l ON l.id = t.leg_id WHERE l.run_id = ?",
-            (run,),
-        )
-    ]
-
-
-@dataclass(frozen=True)
-class RunLeg:
-    """One Leg of a Run that ran a test, and what the test did there."""
-
-    artifact_name: str
-    install: str | None
-    attempt: int | None
-    outcome: str
-
-
-def legs_of_run(db: Reading, run: int, test: str) -> list[RunLeg]:
-    """The Legs of one Run that ran this test, each with the test's outcome.
-
-    The Legs a **Control** is chosen from. A Leg of another shard has no Result
-    for the test and is not here, which is the point: those are most of a Run.
-    """
-    rows = db.execute(
-        """
-        SELECT l.id AS leg_id, l.artifact_name, l.install, l.attempt,
-               t.status, t.failure_scope
-        FROM test_result t
-        JOIN leg l ON l.id = t.leg_id
-        WHERE l.run_id = ? AND t.longname = ?
-        ORDER BY l.id
-        """,
-        (run, test),
-    ).fetchall()
-    legs: dict[int, dict] = {}
-    for row in rows:
-        leg = legs.setdefault(row["leg_id"], {"row": row, "statuses": []})
-        leg["statuses"].append((row["status"], row["failure_scope"]))
-    return [
-        RunLeg(
-            artifact_name=leg["row"]["artifact_name"],
-            install=leg["row"]["install"],
-            attempt=leg["row"]["attempt"],
-            outcome=_verdict(leg["statuses"]),
-        )
-        for leg in legs.values()
-    ]

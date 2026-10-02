@@ -29,14 +29,15 @@ from typing import Protocol
 
 from . import reading
 from .annotations import cause_key, known_cause_entries
-from .history import NoSuchTestError, resolve
-from .queries import (
+from .history import (
+    NoSuchTestError,
     SubjectFailure,
-    failing_subjects,
     failures_of_subject,
+    resolve,
     runs_of_subject,
     test_names,
 )
+from .queries import failing_subjects
 
 DAYS = 7
 

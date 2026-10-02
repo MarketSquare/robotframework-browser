@@ -23,6 +23,7 @@ from pathlib import Path
 
 from . import reading
 from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
+from .history import encloses
 from .legs import leg_name
 from .parse import screenshot_key
 from .queries import (
@@ -36,7 +37,7 @@ from .queries import (
     OccurrenceRow,
     # Re-exported deliberately. `outcome` is a Report field, so a Rendering
     # reads the vocabulary for it here rather than reaching into `queries`.
-    # It is produced there because `_verdict` is, and `_verdict` is there
+    # It is produced there because `verdict` is, and `verdict` is there
     # because it is called from inside a lane walk; `queries.py`'s own docstring
     # now says so rather than claiming no such function exists.
     Outcome,  # noqa: F401
@@ -907,7 +908,9 @@ def of_test(report: Report, test: str) -> Report:
     """
 
     def concerns(subject: str | None) -> bool:
-        return bool(subject) and (subject == test or test.startswith(f"{subject}."))
+        if not subject:
+            return False
+        return subject == test or encloses(subject, test)
 
     changes = report.since_last_report
     if changes is not None:

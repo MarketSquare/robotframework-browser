@@ -2026,7 +2026,7 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False):
     """
     from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
     from tools.ci_failures.artifacts import clean as clean_artifacts
-    from tools.ci_failures.controls import of_run
+    from tools.ci_failures.history import of_run
     from tools.ci_failures.github import GhError
     from tools.ci_failures.reading import UnanswerableError
 
@@ -2209,7 +2209,7 @@ def ci_report(
         of_test,
         snapshot_entries,
     )
-    from tools.ci_failures.one_test import in_archive, never_failed
+    from tools.ci_failures.history import in_archive, never_failed
     from tools.ci_failures.window import ALL_HISTORY
 
     if test and mark_seen:
