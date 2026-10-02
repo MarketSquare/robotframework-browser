@@ -1496,7 +1496,9 @@ class TestPruning:
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "PASS"}])
 
-        with pytest.raises(github.GhError):
+        from tools.ci_failures.refusal import UnreachableError
+
+        with pytest.raises(UnreachableError, match="not logged in"):
             ingest.ingest(db, limit=5, out=lambda _: None, now=self.NOW)
 
         assert one_row(db, "SELECT COUNT(*) AS n FROM run")["n"] == 0
@@ -5311,10 +5313,27 @@ class TestFetchingOneLegsArtifact:
         monkeypatch.setattr(github, "download_artifact", unreachable)
         root = tmp_path / "artifacts"
 
-        with pytest.raises(github.GhError):
+        from tools.ci_failures.refusal import UnreachableError
+
+        with pytest.raises(UnreachableError, match="could not resolve host"):
             fetch(self.RUN, self.LEG, root)
 
         assert list(root.iterdir()) == []
+
+    def test_a_download_that_is_not_a_zip_is_unreachable_too(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        from tools.ci_failures.artifacts import fetch
+        from tools.ci_failures.refusal import UnreachableError
+
+        def truncated(artifact_id, destination):
+            destination.write_bytes(b"PK\x03\x04 cut off")
+            return destination
+
+        monkeypatch.setattr(github, "download_artifact", truncated)
+
+        with pytest.raises(UnreachableError):
+            fetch(self.RUN, self.LEG, tmp_path / "artifacts")
 
     def test_clean_removes_every_fetched_leg(self, one_leg, tmp_path):
         from tools.ci_failures.artifacts import clean, fetch

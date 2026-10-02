@@ -33,6 +33,7 @@ from .db import (
 from .legs import install_of
 from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
+from .refusal import UnreachableError
 
 OUTPUT_XML = "output.xml"
 
@@ -447,7 +448,7 @@ def ingest(
 
     try:
         runs = github.runs_since(since) if since else github.list_runs(limit=limit)
-    except github.GhError:
+    except github.GhError as error:
         # Pruning needs no network, so a listing that failed is no reason to
         # let the database grow.
         _prune_or_say_what_would_go(
@@ -457,7 +458,7 @@ def ingest(
             out=out,
         )
         connection.close()
-        raise
+        raise UnreachableError(f"Could not list the runs on GitHub:\n{error}") from error
     asked_for = f"since {since[:10]}" if since else f"newest {limit}"
     spanned = (
         f", {min(r.created_at for r in runs)[:10]} to "

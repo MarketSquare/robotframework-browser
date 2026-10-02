@@ -74,6 +74,7 @@ from .queries import (
 from .queries import (
     Retry as QueryRetry,
 )
+from .refusal import MisaskedError
 from .window import ALL_HISTORY, Window
 
 # A leg with more failures than this in it is itself the finding, and listing
@@ -938,7 +939,7 @@ class NothingInWindowError(UnanswerableError):
     """
 
 
-class WindowedBaselineError(UnanswerableError):
+class WindowedBaselineError(MisaskedError):
     """A Snapshot was asked for from a windowed Report. See `snapshot_entries`."""
 
 

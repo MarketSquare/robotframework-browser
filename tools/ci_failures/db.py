@@ -5,16 +5,15 @@ from pathlib import Path
 
 from .legs import install_of
 from .parse import platform_of
+from .refusal import RefusalError
 
 _SCHEMA = Path(__file__).parent / "schema.sql"
 
 
-class UnanswerableError(Exception):
-    """The question cannot be answered, and this says why.
+class UnanswerableError(RefusalError):
+    """The question was well asked, and the archive cannot answer it. Exit 1."""
 
-    Raised by the tool rather than checked by each invoke task, so the reasons
-    are stated once and can be tested without typing `inv`.
-    """
+    code = 1
 
 
 class NoDatabaseError(UnanswerableError):

@@ -2029,8 +2029,8 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=Non
     from tools.ci_failures.artifacts import NoSuchLegError, fetch, shortlist
     from tools.ci_failures.artifacts import clean as clean_artifacts
     from tools.ci_failures.db import UnanswerableError
-    from tools.ci_failures.github import GhError
     from tools.ci_failures.history import of_run
+    from tools.ci_failures.refusal import UnreachableError
 
     db_path = workspace.database(db)
     artifacts = workspace.artifacts(db_path)
@@ -2050,14 +2050,8 @@ def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=Non
         raise Exit("Pass --run and --leg, --run and --test, or --clean.", 2)
     try:
         directory = fetch(int(run), leg, artifacts, attempt=int(attempt))
-    except NoSuchLegError as missing:
-        raise Exit(str(missing), 1) from None
-    except (GhError, OSError, zipfile.BadZipFile) as unreachable:
-        raise Exit(
-            f"Could not fetch the artifact from GitHub - the network, `gh auth "
-            f"status`, or an artifact past its 90 days:\n{unreachable}",
-            3,
-        ) from None
+    except (NoSuchLegError, UnreachableError) as refused:
+        raise Exit(str(refused), refused.code) from None
     if not (directory / "output.xml").is_file():
         print(f"directory:  {directory}")
         print("output.xml: (none in this artifact)")

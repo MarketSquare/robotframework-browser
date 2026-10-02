@@ -25,12 +25,14 @@ from pathlib import Path
 from robot.api import ExecutionResult
 
 from . import github
+from .db import UnanswerableError
 from .history import resolve
 from .legs import leg_name
 from .locate import artifact_relative
+from .refusal import UnreachableError
 
 
-class NoSuchLegError(LookupError):
+class NoSuchLegError(UnanswerableError):
     """The run has no test artifact for that Leg."""
 
 
@@ -46,11 +48,21 @@ def fetch(run: int, leg: str, root: Path, attempt: int = 1) -> Path:
     `attempt` is the Occurrence's: a Leg re-run by hand uploaded once per
     attempt under the same name, and a flake's failure is in the attempt that
     failed, not the one that passed. Raises `NoSuchLegError` when the run has no
-    such Leg, and `github.GhError` when GitHub cannot be reached.
+    such Leg, and `UnreachableError` when GitHub cannot be reached.
     """
     directory = _directory(root, run, leg, attempt)
     if directory.is_dir():
         return directory
+    try:
+        return _download(run, leg, root, attempt, directory)
+    except (github.GhError, OSError, zipfile.BadZipFile) as unreachable:
+        raise UnreachableError(
+            f"Could not fetch the artifact from GitHub - the network, `gh auth "
+            f"status`, or an artifact past its 90 days:\n{unreachable}"
+        ) from unreachable
+
+
+def _download(run: int, leg: str, root: Path, attempt: int, directory: Path) -> Path:
     wanted = leg_name(leg)
     artifacts = github.with_attempts(
         github.list_test_artifacts(run), github.attempt_starts(github.get_run(run))
