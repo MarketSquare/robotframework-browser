@@ -166,7 +166,7 @@ def _verification_lines(entry: Verification) -> list[str]:
     if entry.unknown_commits:
         lines.append(
             f"{indent} note: {entry.unknown_commits} run(s) on commits this "
-            "clone lacks were not counted; `git fetch origin main`"
+            f"clone lacks were not counted; {entry.fetch}"
         )
     return [*lines, ""]
 

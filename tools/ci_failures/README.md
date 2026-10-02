@@ -93,8 +93,11 @@ the test since, and how often its Group came back. One line each: `waiting 3/7
 days`, `ready` after seven days with no recurrence, `recurred` with the Runs it
 came back in, `no runs yet` when no ingested Run has the fix, `no SHA` when
 `fixed_by` is not a commit in this clone, `not on main` when it is a commit but
-not on `origin/main` — a branch SHA that a rebase or squash replaced, which would
-otherwise wait for Runs forever. The same test failing on another error
+not on `main` of `MarketSquare/robotframework-browser` — a branch SHA that a rebase
+or squash replaced, which would otherwise wait for Runs forever. That `main` is
+found by remote URL, not by name: in a fork's clone it is `upstream/main`, since
+`origin` is the fork, and a clone with no remote pointing at the repository is
+refused. The same test failing on another error
 is listed as a note, not a recurrence. Every entry, verified or not, is also
 checked for being an `orphan` — matching no Group at all, which a mistyped
 signature or a change to the masking rules would otherwise pass off as zero

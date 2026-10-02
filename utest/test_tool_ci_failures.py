@@ -5716,6 +5716,8 @@ class FakeHistory:
     All of them are on main, except those named in `off_main`.
     """
 
+    main = "upstream/main"
+
     def __init__(self, *commits: str, off_main: tuple[str, ...] = ()):
         self.commits = list(commits)
         self.off_main = off_main
@@ -5861,8 +5863,8 @@ class TestVerifyingAFix:
 
         assert entry.status == "not on main"
         assert entry.line() == (
-            "not on main: f1c5000 is not on origin/main; record the SHA the fix "
-            "has on main, or `git fetch origin main`"
+            "not on main: f1c5000 is not on upstream/main; record the SHA the fix "
+            "has on main, or `git fetch upstream main`"
         )
 
     def test_an_issue_reference_names_the_issue_to_close(self, tmp_path):
@@ -6006,6 +6008,7 @@ class TestVerifyingAFix:
         )
 
         assert (entry.runs, entry.unknown_commits) == (1, 1)
+        assert entry.fetch == "`git fetch upstream main`"
 
 
 class TestMarkingAFixVerified:
@@ -6054,13 +6057,17 @@ class TestGitHistory:
         for n in range(3):
             git("commit", "-q", "--allow-empty", "-m", f"c{n}")
             commits.append(git("rev-parse", "HEAD"))
-        git("update-ref", "refs/remotes/origin/main", commits[1])
-        return tmp_path, commits
+        # A fork's clone: origin is the fork, behind; upstream has the fix.
+        git("remote", "add", "origin", "https://github.com/someone/fork.git")
+        git("update-ref", "refs/remotes/origin/main", commits[0])
+        git("remote", "add", "upstream", f"https://github.com/{github.REPO}.git")
+        git("update-ref", "refs/remotes/upstream/main", commits[1])
+        return tmp_path, commits, git
 
     def test_a_commit_contains_its_ancestors_and_not_its_descendants(self, repo):
         from tools.ci_failures.verify import Git
 
-        root, (first, fix, last) = repo
+        root, (first, fix, last), _ = repo
         git = Git(root)
 
         assert git.resolves(fix[:8])
@@ -6069,11 +6076,34 @@ class TestGitHistory:
         assert git.contains(first, fix) is False
         assert git.contains("0" * 40, fix) is None
 
-    def test_on_main_is_asked_of_origin_main(self, repo):
+    def test_on_main_is_asked_of_the_repository_ci_runs_on_not_a_fork(self, repo):
+        """The fork's origin/main is behind the fix; upstream/main has it."""
         from tools.ci_failures.verify import Git
 
-        root, (first, fix, last) = repo
+        root, (first, fix, last), _ = repo
         git = Git(root)
 
+        assert git.main == "upstream/main"
         assert git.on_main(first) and git.on_main(fix[:8])
         assert not git.on_main(last)
+
+    def test_a_clone_of_the_repository_itself_asks_origin(self, repo):
+        from tools.ci_failures.verify import Git
+
+        root, (_, fix, _), git = repo
+        git("remote", "remove", "upstream")
+        git("remote", "set-url", "origin", f"git@github.com:{github.REPO}.git")
+        git("update-ref", "refs/remotes/origin/main", fix)
+
+        assert Git(root).main == "origin/main"
+        assert Git(root).on_main(fix)
+
+    def test_a_clone_with_no_remote_at_the_repository_is_unanswerable(self, repo):
+        from tools.ci_failures.verify import Git, NoMainError
+
+        root, _, git = repo
+        git("remote", "remove", "upstream")
+
+        with pytest.raises(NoMainError, match="No remote of this clone") as refused:
+            Git(root).main
+        assert refused.value.code == 1

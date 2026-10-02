@@ -211,8 +211,8 @@ _Avoid_: fix size, severity, priority, label
 A Known Cause whose fix held: seven days, counted from the first ingested Run whose commit
 contains `fixed_by`, with no recurrence of its Group. Containment is asked of git, never of
 dates, since a Run on an older commit can be created after the fix. `fixed_by` is the fix's
-commit on `main`: a rebase or squash gives it another SHA there, and a branch commit is
-contained in no Run. Recorded as `fix_verified`
+commit on `main` of the repository CI runs on, never of a fork: a rebase or squash gives it
+another SHA there, and a branch commit is contained in no Run. Recorded as `fix_verified`
 by the maintainer with `inv ci-verify-fixes --mark`, never automatically. The same test failing
 on another Error Signature after the fix is not a recurrence: it is another Group. An entry that
 matches no Group at all is an orphan - a mistyped signature, or one the masking has since

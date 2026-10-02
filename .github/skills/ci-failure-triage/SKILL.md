@@ -18,7 +18,7 @@ The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjace
 inv ci-report --test "<Test Name>" --days <n>
 ```
 
-Start with `--days 7`; widen when the Group is rare. A name in no Result is refused with the Test Names it may mean; use one of those. A test that ran without failing gets one line saying how often it ran. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's Adjacent Runs, `retry`, `log` and `also_failed_in_this_leg`. When the Group already has a Known Cause with `fixed_by` set, check each Occurrence's `commit` with `git merge-base --is-ancestor <fixed_by> <commit>`: a failure on a commit that contains the fix means the fix did not hold — say so first, it changes the question. Failures on commits without the fix are the old cause.
+Start with `--days 7`; widen when the Group is rare. A name in no Result is refused with the Test Names it may mean; use one of those. A test that ran without failing gets one line saying how often it ran. Read every Group of the test, its `known_cause`, `where_to_look`, the per-Configuration `rates`, and each Occurrence's Adjacent Runs, `retry`, `log` and `also_failed_in_this_leg`. When the Group already has a Known Cause with `fixed_by` set, check each Occurrence's `commit` with `git merge-base --is-ancestor <fixed_by> <commit>`, after fetching `main` from the remote that points at `MarketSquare/robotframework-browser` (exit 128 means the commit is not in this clone): a failure on a commit that contains the fix means the fix did not hold — say so first, it changes the question. Failures on commits without the fix are the old cause.
 
 Done when you can state, with numbers: how often it fails and over what, on which Configurations, whether later Attempts pass, and which class below it most resembles.
 
@@ -65,7 +65,7 @@ Record one only when all three hold: the cause is proven (step 3), the signature
 - `cause` — one line and a pointer, e.g. `Timing ceiling measured runner speed; fixed in #1234`. The PR is the best pointer: it explains what was done, references the issue, and everything else can be traced from it
 - `reference` — the issue URL, or `null` for an on-the-spot fix
 - `recorded` — today's date
-- `fixed_by` — a bare commit SHA **on `main`**, filled only once the fix has landed there; `null` until then. Never the branch commit: a rebase or squash gives the fix another SHA on `main`, and `inv ci-verify-fixes` reports a SHA that is not on `origin/main` as `not on main` rather than counting it
+- `fixed_by` — a bare commit SHA **on `main`**, filled only once the fix has landed there; `null` until then. Never the branch commit: a rebase or squash gives the fix another SHA on `main`, and `inv ci-verify-fixes` reports a SHA that is not on `main` of `MarketSquare/robotframework-browser` (the `upstream` remote in a fork's clone) as `not on main` rather than counting it
 - `fix_verified` — `null`; triage never fills it. `inv ci-verify-fixes --mark` does, once the fix has held for seven days
 
 ### 6. Act on the route

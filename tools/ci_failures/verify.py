@@ -24,11 +24,13 @@ import re
 import subprocess
 from dataclasses import dataclass, field, replace
 from datetime import date
+from functools import cached_property
 from pathlib import Path
 from typing import Protocol
 
-from . import reading
+from . import github, reading
 from .annotations import cause_key, known_cause_entries
+from .db import UnanswerableError
 from .history import (
     NoSuchTestError,
     SubjectFailure,
@@ -54,10 +56,21 @@ class Status:
     NOT_ON_MAIN = "not on main"
 
 
-MAIN = "origin/main"
+_REPO_URL = re.compile(
+    rf"github\.com[/:]{re.escape(github.REPO)}(\.git)?/?$", re.IGNORECASE
+)
+
+
+class NoMainError(UnanswerableError):
+    """No remote of this clone is the repository CI runs on, so it has no `main`."""
 
 
 class History(Protocol):
+    @property
+    def main(self) -> str:
+        """The remote-tracking ref of `main`, e.g. `upstream/main`."""
+        ...
+
     def resolves(self, sha: str) -> bool: ...
 
     def on_main(self, sha: str) -> bool: ...
@@ -68,22 +81,53 @@ class History(Protocol):
 
 
 class Git:
-    """The history of the working copy the tool runs from."""
+    """The history of the working copy the tool runs from.
+
+    `main` is `github.BRANCH` of `github.REPO`, under whatever name this clone
+    gives that remote: in a fork's clone `origin` is the fork, whose `main` may
+    not have the fix yet, and the repository is `upstream`. Found by URL rather
+    than by name, so a clone of the repository itself, where it is `origin`,
+    works too. A clone with no such remote is refused: no fix can be checked.
+    """
 
     def __init__(self, root: Path):
         self.root = root
         self._contains: dict[tuple[str, str], bool | None] = {}
 
-    def _git(self, *args: str) -> int:
+    def _run(self, *args: str) -> subprocess.CompletedProcess:
         return subprocess.run(
-            ["git", "-C", str(self.root), *args], capture_output=True, check=False
-        ).returncode
+            ["git", "-C", str(self.root), *args],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+
+    def _git(self, *args: str) -> int:
+        return self._run(*args).returncode
+
+    @cached_property
+    def main(self) -> str:
+        found = self._run("config", "--get-regexp", r"^remote\..*\.url$").stdout
+        remotes = []
+        for line in found.splitlines():
+            key, _, url = line.partition(" ")
+            if _REPO_URL.search(url.strip()):
+                remotes.append(key.removeprefix("remote.").removesuffix(".url"))
+        if not remotes:
+            raise NoMainError(
+                f"No remote of this clone points at {github.REPO}, so no fix can "
+                "be checked against its main. Add one: `git remote add upstream "
+                f"https://github.com/{github.REPO}.git`, then "
+                f"`git fetch upstream {github.BRANCH}`."
+            )
+        remote = "upstream" if "upstream" in remotes else sorted(remotes)[0]
+        return f"{remote}/{github.BRANCH}"
 
     def resolves(self, sha: str) -> bool:
         return self._git("cat-file", "-e", f"{sha}^{{commit}}") == 0
 
     def on_main(self, sha: str) -> bool:
-        return self._git("merge-base", "--is-ancestor", sha, MAIN) == 0
+        return self._git("merge-base", "--is-ancestor", sha, self.main) == 0
 
     def contains(self, commit: str, fix: str) -> bool | None:
         key = (commit, fix)
@@ -121,7 +165,15 @@ class Verification:
     #: For an orphan naming a test in no Result: the Test Names it may mean.
     no_such_test: bool = False
     suggestions: tuple[str, ...] = ()
+    #: The ref `fixed_by` was checked against, once it got that far.
+    main: str | None = None
     key: tuple = field(default=(), compare=False)
+
+    @property
+    def fetch(self) -> str:
+        """The command that brings this clone's `main` up to date."""
+        remote, _, branch = (self.main or "").rpartition("/")
+        return f"`git fetch {remote} {branch}`"
 
     def line(self) -> str:
         if self.status == Status.NO_SHA:
@@ -130,8 +182,8 @@ class Verification:
             return "no SHA: fixed_by is prose, not a commit SHA"
         if self.status == Status.NOT_ON_MAIN:
             return (
-                f"not on main: {self.fixed_by} is not on {MAIN}; record the SHA "
-                "the fix has on main, or `git fetch origin main`"
+                f"not on main: {self.fixed_by} is not on {self.main}; record the "
+                f"SHA the fix has on main, or {self.fetch}"
             )
         if self.no_such_test:
             return f"orphan: no test named {self.subject!r} in the archive"
@@ -187,10 +239,12 @@ def check(
                 continue
             elif not _SHA.fullmatch(fix) or not history.resolves(fix):
                 checked.append(replace(base, status=Status.NO_SHA))
-            elif not history.on_main(fix):
-                checked.append(replace(base, status=Status.NOT_ON_MAIN))
             else:
-                checked.append(_since_fix(db, base, fix, history, today))
+                base = replace(base, main=history.main)
+                if not history.on_main(fix):
+                    checked.append(replace(base, status=Status.NOT_ON_MAIN))
+                else:
+                    checked.append(_since_fix(db, base, fix, history, today))
     return checked
 
 
