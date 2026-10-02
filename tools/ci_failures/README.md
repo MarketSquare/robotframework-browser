@@ -25,6 +25,9 @@ one, so the tool says what it counted and over what.
   back as GitHub still has the artifacts, and rebuilding what it does have is
   hours and gigabytes of downloads. It holds at most 120 days: every ingest
   prunes older Runs (ADR `0005`). See *Retention* and *Three rules* below.
+  Every task takes `--db` for another one, and the page, the Snapshot and
+  fetched artifacts follow it: they live in the database's directory, its
+  **Workspace**. `known_causes.json` does not; it stays with the checkout.
 - **Artifacts live 90 days.** That is the whole horizon: a run older than that
   cannot be ingested, re-ingested or checked, and `inv ci-ingest` says so —
   `N artifact(s) expired, unrecoverable`. Everything younger can be fetched
@@ -44,6 +47,14 @@ inv ci-report --days 3            # only the last three whole local days
 inv ci-report --json out.json     # the same report, for a language model
 inv ci-report --json a --html b   # both, from one build
 inv ci-report --mark-seen         # baseline this report, so the next can diff
+inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
+
+inv ci-artifact --run <id> --leg "<leg>" [--attempt 2] [--test "<Test Name>"]  # one Leg's artifact again, and the files worth opening
+inv ci-artifact --run <id> --test "<Test Name>"  # the Run's Legs that ran it, Controls marked, nothing fetched
+inv ci-artifact --clean                  # remove the artifacts fetched beside the database
+
+inv ci-verify-fixes               # has each Known Cause's fix held? read-only
+inv ci-verify-fixes --mark        # ... and mark the ready ones Verified
 
 inv ci-recompute                  # re-derive what the database can already answer
 inv ci-backfill-attempts          # fill in the attempt of very old legs
@@ -53,6 +64,46 @@ A typical session: `inv ci-ingest` to catch up, `inv ci-report --open-it` to
 read the page, then follow the artifact link on whichever occurrence looks worth
 opening. Ingest is incremental — legs already stored are never fetched again —
 so running it often only costs what is new.
+
+To triage one test, `inv ci-report --test` prints that test's part of the
+Report: its Groups, the Fixture Failures of the suites around it, and its Known
+Cause. It is the same Report the page is built from, filtered after it is built,
+so the two cannot disagree; `--limit` does not apply to it. The test is named
+by its Test Name, from `Test.` down. A test with no Groups gets one line saying
+how often it ran instead; a name in no Result is refused with the Test Names it
+may mean, and one with no Result in the Window says when it last ran. Each Occurrence
+carries `run`, `leg` and `attempt`, which are what `inv ci-artifact` takes to bring back the
+files ingest threw away; with the test's name as `--test` it lists only those
+that bear on it, read from the artifact's own output.xml: the Executor that ran
+it, the log of each test app its suite setups started, and every file its
+log links to, `MISSING` when the artifact lacks one. The rest are counted
+by extension. They unpack under `artifacts/` in the database's Workspace and
+are not kept: `--clean` removes them when the triage is done, and an
+`inv ci-ingest` of the same database removes any left behind. With `--test` and no `--leg`, it fetches nothing and lists the Legs
+of the Run that ran the test, by Install, each with its outcome and Attempt, the
+passes marked as **Controls**. That listing is read from the database only, so a
+Run not yet ingested is refused rather than listed from GitHub (ADR `0006`).
+
+Once a fix has landed, `inv ci-verify-fixes` says whether it held. For every
+Known Cause with a `fixed_by` commit and no `fix_verified` date, it finds the
+ingested Runs whose commit contains the fix — asked of git with `merge-base
+--is-ancestor`, never of the calendar, because a Run on an older commit can be
+created after the fix — and counts the days since the first of them, the Runs of
+the test since, and how often its Group came back. One line each: `waiting 3/7
+days`, `ready` after seven days with no recurrence, `recurred` with the Runs it
+came back in, `no runs yet` when no ingested Run has the fix, `no SHA` when
+`fixed_by` is not a commit in this clone, `not on main` when it is a commit but
+not on `main` of `MarketSquare/robotframework-browser` — a branch SHA that a rebase
+or squash replaced, which would otherwise wait for Runs forever. That `main` is
+found by remote URL, not by name: in a fork's clone it is `upstream/main`, since
+`origin` is the fork, and a clone with no remote pointing at the repository is
+refused. The same test failing on another error
+is listed as a note, not a recurrence. Every entry, verified or not, is also
+checked for being an `orphan` — matching no Group at all, which a mistyped
+signature or a change to the masking rules would otherwise pass off as zero
+recurrences. It changes nothing unless `--mark` is given, which writes today's
+date into `fix_verified` for the `ready` entries only and names the issues that
+can now be closed; it closes none.
 
 `--days` is the question you ask *after* fixing something: the failures from
 before the fix are exactly the ones that must not be counted. It cannot conjure
@@ -94,6 +145,13 @@ changes fast and data that old is rarely read (ADR `0005`).
 
 Two halves that meet at the database. One talks to the network and runs once per
 ingest; the other never touches it and runs once per report.
+
+Every `inv ci-*` task is a flag parser in front of a function in `commands.py`,
+which does the work, writes its lines through an `out` callable and refuses by
+raising a `RefusalError` (`refusal.py`). The task turns a refusal into its exit
+code in one place: 1 when the archive cannot answer, 2 when the flags were asked
+wrong, 3 when GitHub could not be reached (ADR `0007`). The tests start at
+`commands`, so the modes, the exit codes and the printed lines are all reached.
 
 ### Ingest — needs the network
 
@@ -157,19 +215,25 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | --- | ---: | --- |
 | `github.py` | 290 | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
 | `legs.py` | 75 | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
-| `parse.py` | 646 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `parse.py` | 645 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
-| `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
-| `db.py` | 135 | Opens the database, adds columns a database predating them has not got. |
+| `artifacts.py` | 399 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
+| `ingest.py` | 697 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
+| `db.py` | 161 | Opens the database, adds columns a database predating them has not got, and refuses one that is not there unless an ingest is creating it. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
-| `reading.py` | 104 | The database as one Report reads it. The only thing queries accept. |
-| `queries.py` | 1195 | Every question asked of the database, and nothing else. |
-| `report.py` | 1119 | The Report, and what the numbers mean. |
-| `annotations.py` | 183 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
+| `reading.py` | 108 | The database as one Report reads it. The only thing queries accept. |
+| `queries.py` | 1214 | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
+| `report.py` | 1140 | The Report, and what the numbers mean. |
+| `workspace.py` | 30 | Where a database's Snapshot, page and fetched artifacts live: beside it. |
+| `history.py` | 394 | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
+| `annotations.py` | 210 | Known Causes (by hand, gitignored) and the Snapshot (in the Workspace). |
+| `verify.py` | 241 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
-| `render_json.py` | 287 | The document. |
+| `render_json.py` | 290 | The document. |
+| `commands.py` | 265 | What each `inv ci-*` task does: flags in, lines out, a refusal for the exit code. |
+| `refusal.py` | 23 | The three refusals, Unanswerable, Misasked and Unreachable, and the exit code each carries. |
 
 ## Layout
 
@@ -182,12 +246,14 @@ tools/ci_failures/
 ├── schema.sql
 └── *.py                 # see the table above
 
-ci_failures/             # gitignored, at the repository root
+ci_failures/             # the default Workspace: gitignored, at the repository root
 ├── ci_failures.sqlite3  # the database
 ├── ci_report.html       # the page, when you last rendered one
+├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 234 tests, about a second
+utest/test_tool_ci_failures.py            # 306 tests, about three seconds
+utest/test_tool_ci_failures_commands.py   # 36 tests: what each task prints and exits with
 ```
 
 ## Three rules worth knowing before you change anything
@@ -223,13 +289,14 @@ reaches both renderings or joins that list.
 ## Where the rest of it is
 
 - **`CONTEXT.md`** — the vocabulary. Run, Leg, Install, Platform, OS Release,
-  Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause,
+  Configuration, Attempt, Result, Test Name, Workspace, Subject, Enclosing Suite, Subject History, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause, Route, Verified,
   Snapshot, Adjacent Run, Inconclusive Zero, Pruning. Worth reading first; the code uses
   these words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
   where nobody was changing anything are ingested, why every test artifact of a
-  run is a Leg, why a Leg's Platform is only its operating system, and why the
-  archive is pruned at 120 days.
+  run is a Leg, why a Leg's Platform is only its operating system, why the
+  archive is pruned at 120 days, why a Run's Controls come from the database,
+  and why a task exits 1, 2 or 3.
 - **Module docstrings** — most of the real reasoning lives there, next to the
   code it explains, including the measurements behind several decisions and the
   wrong answers a few of them replaced.
@@ -238,7 +305,7 @@ reaches both renderings or joins that list.
 
 ```bash
 inv lint-python                          # ruff format, ruff check, mypy
-pytest utest/test_tool_ci_failures.py    # the tool's own tests
+pytest utest/test_tool_ci_failures.py utest/test_tool_ci_failures_commands.py
 ```
 
 All three cover `tools/`, and coverage measures it. The tests need no network

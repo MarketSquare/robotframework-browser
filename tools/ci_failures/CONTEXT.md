@@ -26,6 +26,14 @@ suite may be the smoke selection, which leaves out the slow tests; a test's rate
 over the Legs that ran it, so a Leg that did not run a test says nothing about it.
 _Avoid_: matrix job, matrix entry, shard (a shard is what some Legs run, not what a Leg is)
 
+**Executor**:
+One Robot Framework process within a Leg, in pabot's sense of the word. A serial Leg has one; a
+parallel Leg has as many as its `executors` metadata says. Every test runs in exactly one, and
+each Executor starts its own test app, so what a test talked to is that Executor's, not the
+Leg's. A parallel Leg's merged `output.xml` loses which Executor ran which test; the Executor's
+own `output.xml` keeps it.
+_Avoid_: worker, process, shard (a shard is the Leg's slice of the suite, not a process)
+
 **Install**:
 How the library reached the machine a Leg ran on: `source` (the working checkout, built in
 place), `wheel` (the built package, installed), `batteries` (the wheel with the bundled Node.js
@@ -63,6 +71,22 @@ _Avoid_: retry, rerun (as nouns for the number)
 One test's outcome in one Leg: pass, fail or skip. Passing Results are stored too, because a
 failure count without a run count is not a rate.
 _Avoid_: test run, execution
+
+**Test Name**:
+The full dotted name a test is addressed by, from the top suite `Test` down, e.g.
+`Test.02 Content Keywords.Credentials.Add Valid Credential With Secret`. What a Result, a Group
+and a Known Cause are keyed on, and what `--test` asks for. Never the test's own name alone:
+about one in six of those is shared by tests in different suites. A name that does not begin
+at `Test` comes from a Leg that ran under another top suite, as two did on 2026-09-05, and is
+the same test spelled another way.
+_Avoid_: longname, short name, test id
+
+**Workspace**:
+The directory a database is in, and everything derived from it that lives there with it: the
+Snapshot, the page, the artifacts fetched for triage. All of it is safe to delete, and a rebuild
+is deleting it; that is why a Known Cause is not in it. Choosing another database chooses
+another Workspace.
+_Avoid_: data dir, output folder, cache
 
 **Pruning**:
 Removing every Run older than 120 days, and everything recorded under it, from the archive.
@@ -106,6 +130,20 @@ The suite or test owning the fixture named by a Failure Scope. For a suite fixtu
 an ancestor rather than the parent suite.
 _Avoid_: parent, suite
 
+**Enclosing Suite**:
+A suite whose Test Name, followed by a dot, begins a test's Test Name, compared exactly and with
+case. Its fixtures' failures are failures of every test beneath it, so they belong to that test's
+history and to whether a fix for it held.
+_Avoid_: parent suite (only the nearest one), ancestor
+
+**Subject History**:
+Everything the archive recorded about one Subject: its Results, its Occurrences and the Runs it
+ran in, the Fixture Failures of its Enclosing Suites, and the Legs of a Run that ran it. What
+triaging one test and verifying one fix both read. A Test Name typed for it is resolved against
+the archive, a Run or a Leg; a different top suite is the same test, and anything looser is
+offered, never assumed.
+_Avoid_: test report, test details
+
 **Fixture Failure**:
 A suite setup or teardown that broke, counted once per Leg it broke in rather than once per
 test it marked. Its denominator is Legs that ran the suite, never test rows.
@@ -117,7 +155,8 @@ _Avoid_: setup failure, teardown error
 Everything one run of the tool has to say about a Window: every Group, every Fixture Failure,
 every Occurrence and the rules they were counted under, complete and independent of how it is
 displayed. One question asked of the database, answered once.
-_Avoid_: document, payload, output, the page, the JSON
+_Avoid_: document, payload, output, the page, the JSON - and never for the lines a task prints
+while it works
 
 **Rendering**:
 One display of a Report — the page a person reads, or the plain-data document an agent reads.
@@ -155,11 +194,33 @@ A conclusion someone reached by reading the artifacts, recorded by hand in `know
 and matched against a Group at report time. The one thing here not derived from the database,
 and gitignored all the same: this tool is run by one maintainer on one machine, and a conclusion
 that matters is acted on rather than filed. It is therefore the only thing here that no rebuild
-and no download can restore — which is accepted, not overlooked.
+and no download can restore — which is accepted, not overlooked. It belongs to the checkout, not
+to a Workspace, so deleting a Workspace never deletes it and every archive is read with the same
+conclusions.
 _Avoid_: annotation, note, triage
 
+**Route**:
+Where a triaged failure goes next, decided by where its fix has to land and not by how big it
+is: a change to the library is a GitHub issue of type Bug or Feature; a change to a test or the
+test app is fixed on the spot, with the cause in the commit message, or when it cannot be, a
+GitHub issue of type Task. The issue type rather than a label, because release notes pick up
+Bug and Feature only.
+_Avoid_: fix size, severity, priority, label
+
+**Verified**:
+A Known Cause whose fix held: seven days, counted from the first ingested Run whose commit
+contains `fixed_by`, with no recurrence of its Group. Containment is asked of git, never of
+dates, since a Run on an older commit can be created after the fix. `fixed_by` is the fix's
+commit on `main` of the repository CI runs on, never of a fork: a rebase or squash gives it
+another SHA there, and a branch commit is contained in no Run. Recorded as `fix_verified`
+by the maintainer with `inv ci-verify-fixes --mark`, never automatically. The same test failing
+on another Error Signature after the fix is not a recurrence: it is another Group. An entry that
+matches no Group at all is an orphan - a mistyped signature, or one the masking has since
+changed - and is never Verified, because matching nothing reads as zero recurrences.
+_Avoid_: fixed, resolved, closed (which is what happens to the issue afterwards)
+
 **Snapshot**:
-What the last report said, written beside the database so the next report can say what is new,
+What the last report said, written into the Workspace so the next report can say what is new,
 gone or changed. Entirely derived and worth nothing once stale. Never taken from a windowed
 report, and never read by one: a baseline that covered less data would make every Group look as
 though it had grown, and one that covered more — after a rebuild shortened the archive — would
@@ -177,6 +238,14 @@ value is for.
 _Avoid_: neighbouring, surrounding, nearby - and never for the keywords before a failure inside
 one test, which is a different question this tool does not answer.
 
+**Control**:
+A Leg of the same Run as an Occurrence, where the same test ran and passed. It holds the commit
+constant and varies the Configuration - the opposite of an **Adjacent Run** - so the same log
+line compared in both separates "this Configuration" from "this commit". Only a pass is a
+Control; the other Legs of the Run that ran the test are listed beside it, because a second
+failure in the same Run is evidence too.
+_Avoid_: baseline, reference run, neighbour
+
 **Inconclusive Zero**:
 A configuration that has failed nothing yet, where a configuration exactly as broken as the
 others would also have shown nothing this often. The distinction between evidence of health
@@ -189,12 +258,17 @@ _Avoid_: clean, passing, green
 
 - A **Run** has many **Legs**, and every **Leg** has exactly one **Configuration**, of which
   its **Install** is part
+- A **Leg** has one or more **Executors**, and every **Result** comes from exactly one of them
 - A **Report** covers exactly one **Window** and is built of **Groups** and **Fixture Failures**
 - A **Group** and a **Fixture Failure** are each one **Subject** and one **Error Signature**,
   and differ in what their **Occurrences** are counted in: Results for a test, Legs for a fixture
 - A **Group** has one or more **Occurrences**; a **Fixture Failure**'s Occurrence is one **Leg**
 - A **Report** has many **Renderings**, and every **Rendering** shows the same Report
 - An **Occurrence** may have an **Adjacent Run** either side of it, on its own **Leg**
+- An **Occurrence** may have **Controls**: the other **Legs** of its own **Run** where the
+  test passed
+- A **Known Cause** may have a fix, and a fix is **Verified** or not; the triage that
+  recorded it chose one **Route**
 - A **Snapshot** is what one **Report** said, kept so the next one can say what changed
 - A **Report** is built from exactly one **Reading**, and a **Reading** carries exactly one
   **Window**

@@ -5,8 +5,19 @@ from pathlib import Path
 
 from .legs import install_of
 from .parse import platform_of
+from .refusal import RefusalError
 
 _SCHEMA = Path(__file__).parent / "schema.sql"
+
+
+class UnanswerableError(RefusalError):
+    """The question was well asked, and the archive cannot answer it. Exit 1."""
+
+    code = 1
+
+
+class NoDatabaseError(UnanswerableError):
+    """Nothing has been ingested here yet."""
 
 
 # Columns added after databases existed. `CREATE TABLE IF NOT EXISTS` does
@@ -97,9 +108,22 @@ def fill_platforms(connection: sqlite3.Connection) -> int:
     return len(legs)
 
 
-def connect(db_path: Path) -> sqlite3.Connection:
-    """Opens the database, creating it and its schema if it is not there yet."""
-    db_path.parent.mkdir(parents=True, exist_ok=True)
+#: An empty database that is never written anywhere.
+IN_MEMORY = Path(":memory:")
+
+
+def connect(db_path: Path, *, create: bool = False) -> sqlite3.Connection:
+    """Opens the database, bringing its schema up to date.
+
+    Only an ingest creates one. Anything else asked of a database that is not
+    there raises `NoDatabaseError`: an empty archive answers every question as
+    though nothing had ever failed, and a backfill or a recompute of one is a
+    mistake rather than a start.
+    """
+    if not create and not db_path.exists():
+        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
+    if db_path != IN_MEMORY:
+        db_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")

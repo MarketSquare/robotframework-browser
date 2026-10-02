@@ -21,11 +21,19 @@ from pathlib import Path
 
 from robot.errors import DataError
 
-from . import github, locate
-from .db import connect, fill_installs, fill_platforms, ingested_artifact_ids
+from . import github, locate, workspace
+from .artifacts import clean
+from .db import (
+    IN_MEMORY,
+    connect,
+    fill_installs,
+    fill_platforms,
+    ingested_artifact_ids,
+)
 from .legs import install_of
 from .locate import keyword_location, owner_kind
 from .parse import LegInfo, TestResult, error_signature, parse
+from .refusal import UnreachableError
 
 OUTPUT_XML = "output.xml"
 
@@ -212,14 +220,12 @@ def _prune_or_say_what_would_go(
     now: datetime,
     *,
     dry_run: bool,
-    report: Callable[[str], None],
+    out: Callable[[str], None],
 ) -> int:
     if dry_run:
         prunable = _prunable(connection, now)
         if prunable:
-            report(
-                f"would prune {prunable} run(s) older than {_prune_cutoff(now)[:10]}"
-            )
+            out(f"would prune {prunable} run(s) older than {_prune_cutoff(now)[:10]}")
         return prunable
     pruned = prune(connection, now)
     if pruned:
@@ -329,7 +335,7 @@ def _ingest_legs(
     *,
     already: set[int],
     totals: dict[str, int],
-    report: Callable[[str], None],
+    out: Callable[[str], None],
 ) -> None:
     """Every Leg of one Run, each contained so one bad artifact costs one Leg."""
 
@@ -338,13 +344,13 @@ def _ingest_legs(
         connection.commit()
         already.add(artifact.id)
         totals["unusable"] += 1
-        report(f"        {reason} - will not be fetched again")
+        out(f"        {reason} - will not be fetched again")
 
     for number, artifact in enumerate(pending, start=1):
         # Said before the download rather than after it. A leg is about ten
         # megabytes and the line used to appear only once it was parsed and
         # inserted, so a long ingest showed nothing at all in between.
-        report(f"    [{number}/{len(pending)}] {artifact.name}")
+        out(f"    [{number}/{len(pending)}] {artifact.name}")
         try:
             with tempfile.TemporaryDirectory() as work_dir:
                 work = Path(work_dir)
@@ -376,7 +382,7 @@ def _ingest_legs(
             # output.xml ending the run. Ingest is incremental, so the next
             # run picks this leg up and nothing committed is lost.
             totals["unreachable"] += 1
-            report(f"        {type(error).__name__}: {error}")
+            out(f"        {type(error).__name__}: {error}")
             connection.rollback()
             continue
         totals["legs"] += 1
@@ -384,7 +390,7 @@ def _ingest_legs(
         totals["failures"] += failures
         already.add(artifact.id)
         connection.commit()
-        report(f"        {tests} tests, {failures} failed")
+        out(f"        {tests} tests, {failures} failed")
 
 
 def ingest(
@@ -392,7 +398,7 @@ def ingest(
     *,
     limit: int = 25,
     since: str | None = None,
-    report: Callable[[str], None] = print,
+    out: Callable[[str], None] = print,
     dry_run: bool = False,
     now: datetime | None = None,
 ) -> Ingested:
@@ -405,18 +411,21 @@ def ingest(
     whose exchange rate moves with how busy the repository is, and above one
     page of listing it stops being able to reach further at all.
 
-    `dry_run` says what would be fetched and fetches nothing, which is minutes
-    against hours rather than free: the artifact listing of every run in the
-    window is read before anything can be said about it, so the cost is one
-    request per run and `--days 90` is a couple of hundred of them. What it
-    saves is the ten megabytes per leg.
+    `dry_run` says what would be fetched, and fetches and writes nothing: of a
+    database that is not there yet, everything would be fetched, and it stays
+    not there. That is minutes against hours rather than free: the artifact
+    listing of every run in the window is read before anything can be said
+    about it, so the cost is one request per run and `--days 90` is a couple of
+    hundred of them. What it saves is the ten megabytes per leg.
 
     Last, whatever happened above - even a listing that failed - every Run
     older than `KEEP_DAYS` before `now` is pruned, and the file vacuumed if
-    anything went. `now` is this machine's
-    clock unless a test says otherwise.
+    anything went. `now` is this machine's clock unless a test says otherwise.
+    Then, unless the listing failed or this is a dry run, the artifacts a
+    triage left behind in this Workspace are removed.
     """
-    connection = connect(db_path)
+    fresh_dry_run = dry_run and not db_path.exists()
+    connection = connect(IN_MEMORY if fresh_dry_run else db_path, create=True)
     already = ingested_artifact_ids(connection)
     totals = dict.fromkeys(
         (
@@ -437,17 +446,19 @@ def ingest(
 
     try:
         runs = github.runs_since(since) if since else github.list_runs(limit=limit)
-    except github.GhError:
+    except github.GhError as error:
         # Pruning needs no network, so a listing that failed is no reason to
         # let the database grow.
         _prune_or_say_what_would_go(
             connection,
             now or datetime.now(timezone.utc),
             dry_run=dry_run,
-            report=report,
+            out=out,
         )
         connection.close()
-        raise
+        raise UnreachableError(
+            f"Could not list the runs on GitHub:\n{error}"
+        ) from error
     asked_for = f"since {since[:10]}" if since else f"newest {limit}"
     spanned = (
         f", {min(r.created_at for r in runs)[:10]} to "
@@ -455,13 +466,13 @@ def ingest(
         if runs
         else ""
     )
-    report(
+    out(
         f"{len(runs)} run(s) to consider on {github.BRANCH} "
         f"({', '.join(github.EVENTS)}, {asked_for}{spanned})"
     )
     for unoffered in _stored_but_not_offered(connection, runs):
         totals["unoffered"] += 1
-        report(
+        out(
             f"  run {unoffered} is in the database and inside the span above, "
             "but was not offered by the listing"
         )
@@ -479,13 +490,13 @@ def ingest(
             # summary. Nothing is lost by skipping the run: it is picked up next
             # time, and the count says the window is short.
             totals["unlisted"] += 1
-            report(f"  run {run.id}: cannot list artifacts: {error}")
+            out(f"  run {run.id}: cannot list artifacts: {error}")
             continue
         expired = [a for a in artifacts if a.expired]
         pending = [a for a in artifacts if not a.expired]
         totals["expired"] += len(expired)
         if expired:
-            report(f"  run {run.id}: {len(expired)} artifact(s) expired, unrecoverable")
+            out(f"  run {run.id}: {len(expired)} artifact(s) expired, unrecoverable")
         if not pending:
             totals["skipped"] += 1
             # Named rather than only counted. One bucket used to hold both "the
@@ -493,12 +504,12 @@ def ingest(
             # test results at all", which are different findings - the first is
             # the incremental ingest working and the second is a hole.
             if not offered:
-                report(f"  run {run.id} ({run.created_at}): no test artifacts")
+                out(f"  run {run.id} ({run.created_at}): no test artifacts")
             continue
         if dry_run:
             totals["runs"] += 1
             totals["legs"] += len(pending)
-            report(
+            out(
                 f"  run {run.id} ({run.event}, {run.created_at}): "
                 f"would fetch {len(pending)} leg(s)"
             )
@@ -510,7 +521,7 @@ def ingest(
         # the same run with nothing to point at.
         connection.commit()
         totals["runs"] += 1
-        report(f"  run {run.id} ({run.event}, {run.created_at}): {len(pending)} leg(s)")
+        out(f"  run {run.id} ({run.event}, {run.created_at}): {len(pending)} leg(s)")
 
         _ingest_legs(
             connection,
@@ -518,21 +529,24 @@ def ingest(
             pending,
             already=already,
             totals=totals,
-            report=report,
+            out=out,
         )
 
     connection.commit()
     totals["pruned"] = _prune_or_say_what_would_go(
-        connection, now or datetime.now(timezone.utc), dry_run=dry_run, report=report
+        connection, now or datetime.now(timezone.utc), dry_run=dry_run, out=out
     )
     connection.close()
+    leftover = workspace.artifacts(db_path)
+    if not dry_run and clean(leftover):
+        out(f"Removed leftover triage artifacts in {leftover}")
     return Ingested(**totals)
 
 
 def backfill_attempts(
     db_path: Path,
     *,
-    report: Callable[[str], None] = print,
+    out: Callable[[str], None] = print,
 ) -> int:
     """Fills in the attempt of legs ingested before it was being recorded.
 
@@ -554,9 +568,9 @@ def backfill_attempts(
     ]
     if not run_ids:
         connection.close()
-        report("every leg already carries the attempt that produced it")
+        out("every leg already carries the attempt that produced it")
         return 0
-    report(f"resolving the attempt of legs in {len(run_ids)} run(s)")
+    out(f"resolving the attempt of legs in {len(run_ids)} run(s)")
     filled = 0
     for run_id in run_ids:
         try:
@@ -566,7 +580,7 @@ def backfill_attempts(
                 github.attempt_starts(run),
             )
         except github.GhError as error:
-            report(f"  run {run_id}: {error}")
+            out(f"  run {run_id}: {error}")
             continue
         cursor = connection.executemany(
             "UPDATE leg SET attempt = ? WHERE artifact_id = ? AND attempt IS NULL",
@@ -578,7 +592,7 @@ def backfill_attempts(
         "SELECT COUNT(*) FROM leg WHERE attempt IS NULL"
     ).fetchone()[0]
     connection.close()
-    report(f"  filled {filled} leg(s), {unresolved} still unresolved")
+    out(f"  filled {filled} leg(s), {unresolved} still unresolved")
     return filled
 
 
@@ -592,7 +606,7 @@ def backfill_attempts(
 # a door; these are the rest of the family and they are as cheap as it is.
 
 
-def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -> int:
+def recompute_signatures(db_path: Path, out: Callable[[str], None] = print) -> int:
     """Recomputes every error signature from the messages already stored.
 
     The masking rules change as more failures are seen, and the message itself is
@@ -608,11 +622,11 @@ def recompute_signatures(db_path: Path, report: Callable[[str], None] = print) -
     )
     connection.commit()
     connection.close()
-    report(f"recomputed {len(rows)} signature(s)")
+    out(f"recomputed {len(rows)} signature(s)")
     return len(rows)
 
 
-def recompute_installs(db_path: Path, report: Callable[[str], None] = print) -> int:
+def recompute_installs(db_path: Path, out: Callable[[str], None] = print) -> int:
     """Reads every Leg's Install from its stored artifact name again.
 
     Worth running after changing the patterns in `legs.py`: the name is in the
@@ -622,11 +636,11 @@ def recompute_installs(db_path: Path, report: Callable[[str], None] = print) -> 
     legs = fill_installs(connection)
     connection.commit()
     connection.close()
-    report(f"recomputed the install of {legs} leg(s)")
+    out(f"recomputed the install of {legs} leg(s)")
     return legs
 
 
-def recompute_platforms(db_path: Path, report: Callable[[str], None] = print) -> int:
+def recompute_platforms(db_path: Path, out: Callable[[str], None] = print) -> int:
     """Reads every Leg's platform as its operating system again, keeping the
     full string in `os_release`.
 
@@ -637,12 +651,12 @@ def recompute_platforms(db_path: Path, report: Callable[[str], None] = print) ->
     legs = fill_platforms(connection)
     connection.commit()
     connection.close()
-    report(f"recomputed the platform of {legs} leg(s)")
+    out(f"recomputed the platform of {legs} leg(s)")
     return legs
 
 
 def recompute_keyword_locations(
-    db_path: Path, report: Callable[[str], None] = print
+    db_path: Path, out: Callable[[str], None] = print
 ) -> int:
     """Re-resolves where each failing keyword lives, and which side it is on.
 
@@ -677,7 +691,7 @@ def recompute_keyword_locations(
     connection.commit()
     located = sum(1 for _, source, _, _ in updates if source)
     connection.close()
-    report(f"resolved {len(updates)} keyword(s), {located} with a location")
+    out(f"resolved {len(updates)} keyword(s), {located} with a location")
     for owner, why in locate.unimportable().items():
-        report(f"  {owner} could not be imported, so its keywords have none: {why}")
+        out(f"  {owner} could not be imported, so its keywords have none: {why}")
     return len(updates)

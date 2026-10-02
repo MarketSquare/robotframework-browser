@@ -2,6 +2,7 @@
 
 import json
 from datetime import datetime, timedelta, timezone
+import shutil
 import sqlite3
 from contextlib import closing
 import zipfile
@@ -11,7 +12,7 @@ import pytest
 from robot import run as robot_run
 
 from tools.ci_failures import github, ingest, render_html
-from tools.ci_failures.db import connect as connect_db
+from tools.ci_failures.db import connect
 from tools.ci_failures.parse import error_signature, parse
 from tools.ci_failures.queries import Spread, VariantRow
 from tools.ci_failures import reading
@@ -32,6 +33,11 @@ from tools.ci_failures.queries import (
     signature_variants,
     totals,
 )
+
+
+def connect_db(db_path: Path):
+    """`db.connect`, allowed to create the database: these tests start from nothing."""
+    return connect(db_path, create=True)
 
 
 def build_json(db_path: Path, limit: int = 100) -> dict:
@@ -194,17 +200,19 @@ def seed(db: Path, rows: list[dict]) -> None:
     Keys, all optional but `test` and `status`:
 
         test suite status signature message elapsed scope owner
-        sha platform python rf node executors node_process attempt
+        sha platform python rf node executors node_process attempt artifact
         screenshots screenshot_status logs
+
+    `artifact` is the Leg's artifact name, and its Install is read from it.
 
     `logs` is a list of (level, keyword, message). There were eight seeders
     before this one, agreeing about the four columns they happened to share and
     unable between them to write `executors`, `node_process` or a screenshot -
     very nearly the set of things nothing tested.
     """
-    from tools.ci_failures.db import connect
+    from tools.ci_failures.legs import install_of
 
-    connection = connect(db)
+    connection = connect_db(db)
     runs: dict[str, int] = {}
     legs: dict[tuple, int] = {}
     for row in rows:
@@ -220,19 +228,21 @@ def seed(db: Path, rows: list[dict]) -> None:
         platform = row.get("platform", "linux")
         python = row.get("python", "3.13.15")
         attempt = row.get("attempt", 1)
-        key = (sha, platform, python, attempt)
+        artifact = row.get("artifact", f"leg-{platform}-{python}")
+        key = (sha, platform, python, attempt, artifact)
         if key not in legs:
             legs[key] = len(legs) + 1
             connection.execute(
                 "INSERT INTO leg (id, run_id, artifact_id, artifact_name, "
                 "artifact_url, platform, python_version, rf_version, "
-                "node_version, executors, node_process, ingested_at, attempt) "
-                "VALUES (?, ?, ?, ?, 'a-url', ?, ?, ?, ?, ?, ?, 'now', ?)",
+                "node_version, executors, node_process, ingested_at, attempt, "
+                "install) "
+                "VALUES (?, ?, ?, ?, 'a-url', ?, ?, ?, ?, ?, ?, 'now', ?, ?)",
                 (
                     legs[key],
                     runs[sha],
                     legs[key],
-                    f"leg-{platform}-{python}",
+                    artifact,
                     platform,
                     python,
                     row.get("rf", "7.4.2"),
@@ -240,6 +250,7 @@ def seed(db: Path, rows: list[dict]) -> None:
                     row.get("executors"),
                     row.get("node_process"),
                     attempt,
+                    install_of(artifact),
                 ),
             )
         cursor = connection.execute(
@@ -514,17 +525,40 @@ class TestIngest:
     def test_a_run_becomes_rows(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert result.runs == 1
         assert result.legs == 1
         assert result.tests == 4
         assert result.failures == 2
 
+    def test_artifacts_a_triage_left_behind_are_removed_from_its_own_workspace_only(
+        self, fake_ci, tmp_path
+    ):
+        from tools.ci_failures import workspace
+
+        db = tmp_path / "ingested" / "ci.sqlite3"
+        other = tmp_path / "other" / "ci.sqlite3"
+        for leftover in (workspace.artifacts(db), workspace.artifacts(other)):
+            leftover.mkdir(parents=True)
+
+        ingest.ingest(db, limit=5, out=lambda _: None)
+
+        assert not workspace.artifacts(db).exists()
+        assert workspace.artifacts(other).exists()
+
+    def test_a_dry_run_on_no_database_creates_none(self, fake_ci, tmp_path):
+        db = tmp_path / "fresh" / "ci.sqlite3"
+
+        totals = ingest.ingest(db, limit=5, dry_run=True, out=lambda _: None)
+
+        assert totals.legs == 1
+        assert not db.parent.exists()
+
     def test_nothing_is_written_to_disk_except_the_database(self, fake_ci, tmp_path):
         db = tmp_path / "sub" / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert [p.name for p in db.parent.iterdir()] == ["ci.sqlite3"]
 
@@ -533,7 +567,7 @@ class TestIngest:
     ):
         db = tmp_path / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         with closing(sqlite3.connect(db)) as connection:
             connection.row_factory = sqlite3.Row
@@ -545,9 +579,9 @@ class TestIngest:
 
     def test_running_again_ingests_nothing_twice(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert second.legs == 0
         assert second.skipped == 1
@@ -563,7 +597,7 @@ class TestIngest:
         gone = github.Artifact(**{**fake_ci["artifact"].__dict__, "expired": True})
         monkeypatch.setattr(ingest.github, "list_test_artifacts", lambda run_id: [gone])
 
-        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
+        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, out=lambda _: None)
 
         assert result.expired == 1
         assert result.legs == 0
@@ -609,7 +643,7 @@ class TestLogMessages:
         from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         lines = log_messages_by_result(reading_of(db))
 
@@ -622,11 +656,10 @@ class TestLogMessages:
         assert len(lines) == 2
 
     def test_no_messages_is_not_an_error(self, tmp_path):
-        from tools.ci_failures.db import connect
         from tools.ci_failures.queries import log_messages_by_result
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         assert log_messages_by_result(reading_of(db)) == {}
 
@@ -872,9 +905,7 @@ class TestFixtureFailureGrouping:
     """One broken fixture is one row, however many tests it marked."""
 
     def _seed(self, db: Path, rows: list[tuple]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for run_id in (1, 2):
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -972,9 +1003,7 @@ class TestTheFixtureRuleReachesEveryNumber:
         case that bites: masking is what makes two unrelated failures share a
         key, so the fixture's message lands under the test's own Group.
         """
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         rows = [
             (1, "test", None, "the test itself broke", "boom"),
             (2, "suite_teardown", "S", "the teardown broke", "boom"),
@@ -1043,9 +1072,7 @@ class TestVersionsOnAFailure:
     question the report answers rather than one it raises."""
 
     def _seed(self, db: Path, legs: list[tuple]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for index, (rf, python, node, platform) in enumerate(legs, start=1):
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -1108,10 +1135,8 @@ class TestVersionsOnAFailure:
 
     def test_a_fixture_failure_counts_legs_not_the_rows_it_marked(self, tmp_path):
         """One broken teardown marking four tests is one occurrence, not four."""
-        from tools.ci_failures.db import connect
-
         db = tmp_path / "ci.sqlite3"
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
             "conclusion, url) VALUES (1, 'push', 'sha', 'main', '2026-08-20', 'x', 'u')"
@@ -1330,7 +1355,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "list_test_artifacts", refuse)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (result.unlisted, result.legs) == (1, 0)
 
@@ -1347,7 +1372,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", truncated)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None)
+        result = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (result.unreachable, result.legs) == (1, 0)
 
@@ -1371,8 +1396,8 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", fake_download)
         db = tmp_path / "ci.sqlite3"
 
-        first = ingest.ingest(db, limit=5, report=lambda _: None)
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        first = ingest.ingest(db, limit=5, out=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert first.unusable == 1
         assert len(downloads) == 1, "the second ingest downloaded nothing"
@@ -1387,7 +1412,7 @@ class TestOneBadArtifactCostsOneLeg:
         monkeypatch.setattr(ingest.github, "download_artifact", refuse)
         db = tmp_path / "ci.sqlite3"
 
-        result = ingest.ingest(db, limit=5, report=lambda _: None, dry_run=True)
+        result = ingest.ingest(db, limit=5, out=lambda _: None, dry_run=True)
 
         assert (result.runs, result.legs) == (1, 1)
         assert one_row(db, "SELECT COUNT(*) AS n FROM leg")["n"] == 0
@@ -1455,7 +1480,7 @@ class TestPruning:
         result = ingest.ingest(
             db,
             limit=5,
-            report=lambda _: None,
+            out=lambda _: None,
             now=datetime(2026, 8, 21, tzinfo=timezone.utc),
         )
 
@@ -1471,8 +1496,10 @@ class TestPruning:
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "PASS"}])
 
-        with pytest.raises(github.GhError):
-            ingest.ingest(db, limit=5, report=lambda _: None, now=self.NOW)
+        from tools.ci_failures.refusal import UnreachableError
+
+        with pytest.raises(UnreachableError, match="not logged in"):
+            ingest.ingest(db, limit=5, out=lambda _: None, now=self.NOW)
 
         assert one_row(db, "SELECT COUNT(*) AS n FROM run")["n"] == 0
 
@@ -1487,7 +1514,7 @@ class TestPruning:
         result = ingest.ingest(
             db,
             limit=5,
-            report=said.append,
+            out=said.append,
             dry_run=True,
             now=datetime(2026, 8, 21, tzinfo=timezone.utc),
         )
@@ -1520,7 +1547,7 @@ class TestTransientDownloadFailures:
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
 
-        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, report=lambda _: None)
+        result = ingest.ingest(tmp_path / "ci.sqlite3", limit=5, out=lambda _: None)
 
         assert result.unreachable == 1
         assert result.legs == 1, "the good artifact still went in"
@@ -1547,10 +1574,10 @@ class TestTransientDownloadFailures:
 
         monkeypatch.setattr(ingest.github, "download_artifact", flaky)
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         broken["still"] = False
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert second.legs == 1
         assert second.unreachable == 0
@@ -1598,9 +1625,7 @@ class TestGrouping:
     """The one behaviour this proof of concept exists to show."""
 
     def _seed(self, db: Path, rows: list[tuple[str, str, str | None]]) -> None:
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "INSERT INTO run (id, event, head_sha, head_branch, created_at, conclusion, url) "
             "VALUES (1, 'push', 'sha', 'main', '2026-08-20T10:00:00Z', 'failure', 'u')"
@@ -1877,9 +1902,7 @@ class TestPayloadForALanguageModel:
     def test_where_to_look_survives_into_the_document(self, tmp_path):
         db = tmp_path / "ci.sqlite3"
         seed(db, [{"test": "T", "status": "FAIL", "signature": "boom"}])
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         connection.execute(
             "UPDATE test_result SET test_source = 'a.robot', test_lineno = 237, "
             "keyword_source = 'b.py', keyword_lineno = 27, keyword_kind = 'project'"
@@ -2358,7 +2381,7 @@ class TestWhichAttemptRanIt:
             ],
         )
 
-        filled = ingest.backfill_attempts(db, report=lambda _: None)
+        filled = ingest.backfill_attempts(db, out=lambda _: None)
 
         connection = connect_db(db)
         assert filled == 2
@@ -2415,7 +2438,7 @@ class TestWhichAttemptRanIt:
         ingest.ingest(
             db,
             limit=5,
-            report=lambda _: None,
+            out=lambda _: None,
             now=datetime(2026, 8, 20, tzinfo=timezone.utc),
         )
 
@@ -2446,7 +2469,7 @@ class TestWhichAttemptRanIt:
 
         monkeypatch.setattr(github, "get_run", gone)
 
-        ingest.backfill_attempts(db, report=lambda _: None)
+        ingest.backfill_attempts(db, out=lambda _: None)
 
         connection = connect_db(db)
         assert connection.execute("SELECT attempt FROM leg").fetchone()[0] is None
@@ -2543,11 +2566,10 @@ class TestTheDenominatorAndTheRerun:
 
 class TestHtmlReport:
     def test_it_renders_a_self_contained_page(self, tmp_path):
-        from tools.ci_failures.db import connect
         from tools.ci_failures.render_html import write as write_page
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         page = write_page(build_report(db), tmp_path / "report.html")
 
@@ -2685,9 +2707,7 @@ class TestWhatAFixtureMarkingIsNotEvidenceOf:
 
     def _seed(self, db: Path, runs: list[tuple[int, list[tuple]]]) -> None:
         """runs of (run_id, [(longname, status, failure_scope, scope_owner)])."""
-        from tools.ci_failures.db import connect
-
-        connection = connect(db)
+        connection = connect_db(db)
         for run_id, rows in runs:
             connection.execute(
                 "INSERT INTO run (id, event, head_sha, head_branch, created_at, "
@@ -2903,17 +2923,16 @@ class TestWhatChangedSinceLastTime:
     def test_rendering_does_not_move_the_baseline(self, tmp_path):
         """A report that moved its own baseline would answer differently the
         second time it was run on unchanged data."""
-        from tools.ci_failures.annotations import snapshot_path
-        from tools.ci_failures.db import connect
+        from tools.ci_failures import workspace
         from tools.ci_failures.report import build
 
         db = tmp_path / "ci.sqlite3"
-        connect(db).close()
+        connect_db(db).close()
 
         build(db)
         build(db)
 
-        assert not snapshot_path(db).exists()
+        assert not workspace.snapshot(db).exists()
 
 
 # Fields the page deliberately does not show. ADR 0001 says a Rendering may show
@@ -3035,7 +3054,7 @@ class TestWhenThereIsNoReportToGive:
     def test_an_absent_database_is_refused_rather_than_created(self, tmp_path):
         """Opening it would create it, and an empty archive renders as a clean
         one - a page saying nothing has ever failed."""
-        from tools.ci_failures.report import NoDatabaseError
+        from tools.ci_failures.db import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
 
@@ -3043,6 +3062,52 @@ class TestWhenThereIsNoReportToGive:
             build_report(missing)
 
         assert not missing.exists(), "asking must not create the archive"
+
+    def test_backfilling_an_absent_database_is_refused_rather_than_created(
+        self, tmp_path
+    ):
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            ingest.backfill_attempts(missing, out=lambda _: None)
+
+        assert not missing.exists()
+
+    def test_recomputing_an_absent_database_is_refused_rather_than_created(
+        self, tmp_path
+    ):
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            ingest.recompute_signatures(missing, out=lambda _: None)
+
+        assert not missing.exists()
+
+    def test_the_controls_of_a_run_refuse_an_absent_database_too(self, tmp_path):
+        from tools.ci_failures.history import of_run
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            of_run(missing, 1, "Test.S.T")
+
+        assert not missing.exists()
+
+    def test_a_test_that_never_failed_refuses_an_absent_database_too(self, tmp_path):
+        from tools.ci_failures.history import never_failed
+        from tools.ci_failures.db import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+
+        with pytest.raises(NoDatabaseError):
+            never_failed(missing, "Test.S.T")
+
+        assert not missing.exists()
 
     def test_a_window_with_no_runs_is_refused(self, tmp_path):
         """An empty page cannot say whether nothing ran or nothing failed, and
@@ -3322,7 +3387,7 @@ class TestTheColumnsThatNeedNoArtifact:
             "keyword_kind = 'unknown', keyword_lineno = 1",
         )
 
-        resolved = ingest.recompute_keyword_locations(db, report=lambda _: None)
+        resolved = ingest.recompute_keyword_locations(db, out=lambda _: None)
 
         row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert resolved == 1
@@ -3342,7 +3407,7 @@ class TestTheColumnsThatNeedNoArtifact:
             "failing_keyword = 'Log All Scopes'",
         )
 
-        ingest.recompute_keyword_locations(db, report=lambda _: None)
+        ingest.recompute_keyword_locations(db, out=lambda _: None)
 
         row = one_row(db, "SELECT keyword_kind, keyword_source FROM test_result")
         assert row["keyword_kind"] == "project"
@@ -3421,7 +3486,7 @@ class TestRegroupingWithoutTheArtifacts:
             ],
         )
 
-        changed = ingest.recompute_signatures(db, report=lambda _: None)
+        changed = ingest.recompute_signatures(db, out=lambda _: None)
 
         after = one_row(db, "SELECT error_signature FROM test_result")[0]
         assert changed == 1
@@ -4132,7 +4197,7 @@ class TestListingRunsByDate:
         )
 
         ingest(
-            tmp_path / "ci.sqlite3", since="2026-08-01T00:00:00Z", report=lambda _: None
+            tmp_path / "ci.sqlite3", since="2026-08-01T00:00:00Z", out=lambda _: None
         )
 
         assert asked == {"since": "2026-08-01T00:00:00Z"}, "asked by count as well"
@@ -4147,7 +4212,7 @@ class TestListingRunsByDate:
             lambda limit=25: asked.setdefault("limit", limit) and [],
         )
 
-        ingest(tmp_path / "ci.sqlite3", limit=7, report=lambda _: None)
+        ingest(tmp_path / "ci.sqlite3", limit=7, out=lambda _: None)
 
         assert asked == {"limit": 7}
 
@@ -4204,7 +4269,7 @@ class TestTheListingIsNotTakenOnTrust:
 
         self._listing(monkeypatch, runs)
         said: list[str] = []
-        ingest(db, limit=25, report=said.append, dry_run=True)
+        ingest(db, limit=25, out=said.append, dry_run=True)
         return said
 
     def test_it_says_what_the_listing_actually_spanned(self, tmp_path, monkeypatch):
@@ -4264,7 +4329,7 @@ class TestTheListingIsNotTakenOnTrust:
             conclusion=None,
         )
         said: list[str] = []
-        ingest(db, limit=25, report=said.append, dry_run=True)
+        ingest(db, limit=25, out=said.append, dry_run=True)
 
         assert not any("not offered" in line for line in said), said
 
@@ -4353,7 +4418,7 @@ class TestEveryTestArtifactOfARun:
         monkeypatch.setattr(
             ingest.github, "list_test_artifacts", lambda run_id: [artifact]
         )
-        return ingest.ingest(db, limit=5, report=lambda _: None)
+        return ingest.ingest(db, limit=5, out=lambda _: None)
 
     @staticmethod
     def _failing_test(db):
@@ -4392,7 +4457,7 @@ class TestEveryTestArtifactOfARun:
             ingest.github, "list_test_artifacts", lambda run_id: artifacts
         )
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         entry = self._failing_test(db)
 
@@ -4471,7 +4536,7 @@ class TestEveryTestArtifactOfARun:
 
         said: list[str] = []
         first = self._ingest_as(fake_ci, monkeypatch, db, "docker_results")
-        second = ingest.ingest(db, limit=5, report=said.append)
+        second = ingest.ingest(db, limit=5, out=said.append)
 
         assert (first.unusable, first.legs) == (1, 0)
         assert len(downloads) == 1, "refused once, not fetched again"
@@ -4493,8 +4558,8 @@ class TestEveryTestArtifactOfARun:
         )
         db = tmp_path / "ci.sqlite3"
 
-        first = ingest.ingest(db, limit=5, report=lambda _: None)
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        first = ingest.ingest(db, limit=5, out=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (first.unusable, first.unreachable, first.legs) == (1, 0, 0)
         assert len(downloads) == 1
@@ -4517,8 +4582,8 @@ class TestEveryTestArtifactOfARun:
         monkeypatch.setattr(ingest.github, "download_artifact", truncated)
         db = tmp_path / "ci.sqlite3"
 
-        ingest.ingest(db, limit=5, report=lambda _: None)
-        second = ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
+        second = ingest.ingest(db, limit=5, out=lambda _: None)
 
         assert (second.unreachable, second.unusable) == (1, 0)
         assert len(downloads) == 2
@@ -4530,7 +4595,7 @@ class TestEveryTestArtifactOfARun:
         the `source` Install. Known from the stored artifact name, so nothing is
         invented and nothing has to be downloaded again."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         leg_table_without(db, "install")
 
         entry = self._failing_test(db)
@@ -4548,7 +4613,7 @@ class TestEveryTestArtifactOfARun:
             connection.execute("UPDATE leg SET install = 'stale'")
             connection.commit()
 
-        recomputed = ingest.recompute_installs(db, report=lambda _: None)
+        recomputed = ingest.recompute_installs(db, out=lambda _: None)
 
         assert recomputed == 1
         assert [r["install"] for r in self._failing_test(db)["rates"]] == ["batteries"]
@@ -4571,7 +4636,7 @@ class TestEveryTestArtifactOfARun:
             ingest.github, "list_test_artifacts", lambda run_id: artifacts
         )
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         platforms = build_json(db)["platforms"]
 
@@ -4599,7 +4664,7 @@ class TestOnePlatformPerOperatingSystem:
         self, fake_ci, tmp_path
     ):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
 
         entry = self._failing_test(db)
 
@@ -4613,7 +4678,7 @@ class TestOnePlatformPerOperatingSystem:
         """What was stored as the platform is moved, not lost: it is the only
         copy of it, and nothing has to be downloaded again."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         leg_table_without(db, "os_release")
         with closing(sqlite3.connect(db)) as connection:
             connection.execute("UPDATE leg SET platform = 'Linux-6.8-x86_64'")
@@ -4626,7 +4691,7 @@ class TestOnePlatformPerOperatingSystem:
 
     def test_the_platform_is_recomputed_from_what_is_stored(self, fake_ci, tmp_path):
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         with closing(sqlite3.connect(db)) as connection:
             connection.execute(
                 "UPDATE leg SET platform = 'Windows-10-10.0.26100-SP0', "
@@ -4634,7 +4699,7 @@ class TestOnePlatformPerOperatingSystem:
             )
             connection.commit()
 
-        recomputed = ingest.recompute_platforms(db, report=lambda _: None)
+        recomputed = ingest.recompute_platforms(db, out=lambda _: None)
 
         entry = self._failing_test(db)
         assert recomputed == 1
@@ -4649,7 +4714,7 @@ class TestOnePlatformPerOperatingSystem:
         """Once migrated, `platform` holds only the reduced value. A changed rule
         has to be applied to the full string or it can never change anything."""
         db = tmp_path / "ci.sqlite3"
-        ingest.ingest(db, limit=5, report=lambda _: None)
+        ingest.ingest(db, limit=5, out=lambda _: None)
         with closing(sqlite3.connect(db)) as connection:
             connection.execute(
                 "UPDATE leg SET platform = 'linux', "
@@ -4657,6 +4722,1389 @@ class TestOnePlatformPerOperatingSystem:
             )
             connection.commit()
 
-        ingest.recompute_platforms(db, report=lambda _: None)
+        ingest.recompute_platforms(db, out=lambda _: None)
 
         assert [r["platform"] for r in self._failing_test(db)["rates"]] == ["darwin"]
+
+
+class TestOneTestsReport:
+    """`inv ci-report --test`: the Report for one test, taken from the whole
+    Report rather than asked for again, so it cannot disagree with the page."""
+
+    def test_only_the_named_tests_groups_are_kept(self, tmp_path):
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Timeout"},
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Box <n>"},
+                {"test": "S.Other", "status": "FAIL", "signature": "Timeout"},
+            ],
+        )
+
+        report = of_test(build_report(db), "S.Wanted")
+
+        assert sorted(e.signature for e in report.test_failures) == [
+            "Box <n>",
+            "Timeout",
+        ]
+        assert {e.test for e in report.test_failures} == {"S.Wanted"}
+
+    def test_a_broken_fixture_of_an_enclosing_suite_is_kept(self, tmp_path):
+        """A suite setup that broke fails the test without the test being
+        at fault, and that is the first thing to rule out."""
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        fixture = {"status": "FAIL", "signature": "setup broke"}
+        seed(
+            db,
+            [
+                {
+                    **fixture,
+                    "test": "Outer.Inner.Wanted",
+                    "scope": "suite_setup",
+                    "owner": "Outer",
+                },
+                {
+                    **fixture,
+                    "test": "Outermost.Other",
+                    "scope": "suite_setup",
+                    "owner": "Outermost",
+                },
+            ],
+        )
+
+        report = of_test(build_report(db), "Outer.Inner.Wanted")
+
+        assert [e.suite for e in report.fixture_failures] == ["Outer"]
+
+    @pytest.mark.parametrize("lookalike", ["Outer_Suite", "outer.suite"])
+    def test_a_suite_whose_name_only_looks_alike_is_not_enclosing(
+        self, tmp_path, lookalike
+    ):
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": f"{lookalike}.Other",
+                    "status": "FAIL",
+                    "signature": "setup broke",
+                    "scope": "suite_setup",
+                    "owner": lookalike,
+                },
+                {"test": "Outer.Suite.Wanted", "status": "FAIL", "signature": "e"},
+            ],
+        )
+
+        report = of_test(build_report(db), "Outer.Suite.Wanted")
+
+        assert report.fixture_failures == ()
+
+    def test_what_changed_is_said_only_about_this_test(self, tmp_path):
+        from tools.ci_failures.annotations import write_snapshot
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Wanted", "status": "FAIL", "signature": "Timeout"},
+                {"test": "S.Other", "status": "FAIL", "signature": "Timeout"},
+            ],
+        )
+        write_snapshot(db, [("S.Unrelated", "Timeout", 1)])
+
+        changes = of_test(build_report(db), "S.Wanted").since_last_report
+
+        assert changes is not None
+        assert [c["subject"] for c in changes["new"]] == ["S.Wanted"]
+        assert changes["gone"] == []
+
+    def test_a_test_ranked_past_the_page_limit_is_still_found(self, tmp_path):
+        """`--limit` is how many Groups the page shows; the one test asked for
+        can rank anywhere."""
+        from tools.ci_failures.report import of_test
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "S.Often", "status": "FAIL", "signature": "e", "sha": sha}
+                for sha in ("a", "b")
+            ]
+            + [{"test": "S.Rarely", "status": "FAIL", "signature": "e"}],
+        )
+
+        report = of_test(build_report(db, limit=None), "S.Rarely")
+
+        assert [e.test for e in report.test_failures] == ["S.Rarely"]
+
+
+class TestTheWorkspace:
+    def test_what_is_derived_from_a_database_lives_beside_it(self, tmp_path):
+        from tools.ci_failures import workspace
+
+        db = tmp_path / "scratch" / "ci.sqlite3"
+
+        assert workspace.artifacts(db) == tmp_path / "scratch" / "artifacts"
+        assert workspace.page(db) == tmp_path / "scratch" / "ci_report.html"
+        assert workspace.snapshot(db) == tmp_path / "scratch" / "last_report.json"
+
+    def test_no_database_named_is_the_one_at_the_repository_root(self):
+        from tools.ci_failures import workspace
+
+        root = Path(__file__).resolve().parents[1]
+
+        assert workspace.database(None) == root / "ci_failures" / "ci_failures.sqlite3"
+        assert workspace.database("x/y.sqlite3") == Path("x/y.sqlite3")
+
+    def test_the_snapshot_is_taken_into_the_databases_workspace(self, tmp_path):
+        from tools.ci_failures.annotations import write_snapshot
+
+        db = tmp_path / "scratch" / "ci.sqlite3"
+        seed(db, [{"test": "S.T", "status": "FAIL", "signature": "e"}])
+
+        written = write_snapshot(db, [("S.T", "e", 1)])
+
+        assert written.parent == db.parent
+
+    def test_known_causes_are_not_in_the_default_workspace(self):
+        from tools.ci_failures.annotations import KNOWN_CAUSES
+        from tools.ci_failures import workspace
+
+        assert workspace.database(None).parent not in KNOWN_CAUSES.parents
+
+
+class TestResolvingATestName:
+    """A Test Name typed for a test, resolved against the names where it was
+    looked for: the archive, one Run, or one Leg's output.xml."""
+
+    COMBINED = "03 Waiting & 05 JS Tests"
+    NAMES = (
+        f"{COMBINED}.05 JS Tests.Js.Run Js",
+        "Test.Http.GET Text",
+        "Test.Http With Waiting.GET Text",
+    )
+
+    def test_a_name_that_is_there_is_itself(self):
+        from tools.ci_failures.history import resolve
+
+        assert resolve("Test.Http.GET Text", self.NAMES, "the archive") == (
+            "Test.Http.GET Text"
+        )
+
+    def test_another_top_suite_is_the_same_test(self):
+        from tools.ci_failures.history import resolve
+
+        assert resolve("Test.05 JS Tests.Js.Run Js", self.NAMES, "this Leg") == (
+            f"{self.COMBINED}.05 JS Tests.Js.Run Js"
+        )
+
+    def test_every_other_top_suite_is_the_same_test(self):
+        from tools.ci_failures.history import resolve
+
+        names = ("A & B.Js.Run Js", "C & D.Js.Run Js")
+
+        assert resolve("Test.Js.Run Js", names, "the archive") == "A & B.Js.Run Js"
+
+    def test_a_suite_that_also_appears_below_the_top_is_not_a_top_suite(self):
+        from tools.ci_failures.history import NoSuchTestError, resolve
+
+        with pytest.raises(NoSuchTestError):
+            resolve("Http.Http.GET", ("Http.Http.GET2", "Test.Http.GET"), "Run 7")
+
+    def test_a_path_below_the_top_suite_is_offered_not_assumed(self):
+        from tools.ci_failures.history import NoSuchTestError, resolve
+
+        with pytest.raises(NoSuchTestError) as refused:
+            resolve("Js.Run Js", self.NAMES, "Run 7")
+
+        assert str(refused.value) == (
+            "No test named 'Js.Run Js' in Run 7. Did you mean:\n"
+            f"  {self.COMBINED}.05 JS Tests.Js.Run Js"
+        )
+
+    def test_the_fetch_does_not_load_the_report(self):
+        import subprocess
+        import sys
+
+        loaded = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys, tools.ci_failures.artifacts; "
+                "print('tools.ci_failures.report' in sys.modules)",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+        assert loaded == "False"
+
+
+class TestATestWithNoFailures:
+    """`inv ci-report --test` on a test with no Groups: a typo, a test outside
+    the Window and a healthy test used to read alike, as "did not fail"."""
+
+    def test_one_that_ran_and_never_failed_says_how_often_it_ran(self, tmp_path):
+        from tools.ci_failures.history import never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.S.Healthy", "status": "PASS", "sha": "a"},
+                {"test": "Test.S.Healthy", "status": "PASS", "sha": "b"},
+                {"test": "Test.S.Healthy", "status": "SKIP", "sha": "c"},
+            ],
+        )
+
+        assert never_failed(db, "Test.S.Healthy").line() == (
+            "'Test.S.Healthy' ran 3 times in all history: 0 failures, 1 skip."
+        )
+
+    def test_a_name_in_no_result_is_refused_with_every_name_ending_in_it(
+        self, tmp_path
+    ):
+        """A short name is shared across suites, and naming one of them
+        would be a guess."""
+        from tools.ci_failures.history import NoSuchTestError, never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.Http.GET Text", "status": "PASS"},
+                {"test": "Test.Http With Waiting.GET Text", "status": "PASS"},
+                {"test": "Test.Http.GET Json", "status": "PASS"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestError) as refused:
+            never_failed(db, "GET Text")
+
+        assert refused.value.suggestions == (
+            "Test.Http With Waiting.GET Text",
+            "Test.Http.GET Text",
+        )
+        assert str(refused.value) == (
+            "No test named 'GET Text' in the archive. Did you mean:\n"
+            "  Test.Http With Waiting.GET Text\n"
+            "  Test.Http.GET Text"
+        )
+
+    def test_a_misspelt_name_is_matched_by_similarity(self, tmp_path):
+        from tools.ci_failures.history import NoSuchTestError, never_failed
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.Credentials.Add Valid Credential", "status": "PASS"},
+                {"test": "Test.Http.GET Text", "status": "PASS"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestError) as refused:
+            never_failed(db, "Test.Credentials.Add Valid Credentail")
+
+        assert refused.value.suggestions == ("Test.Credentials.Add Valid Credential",)
+
+    def test_one_that_ran_only_before_the_window_says_when_it_last_ran(self, tmp_path):
+        from datetime import datetime
+
+        from tools.ci_failures.history import NotInWindowError, never_failed
+        from tools.ci_failures.window import of_days
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": "Test.S.Removed", "status": "PASS", "sha": "a"},
+                {"test": "Test.S.Kept", "status": "PASS", "sha": "b"},
+            ],
+        )
+        window = of_days(1, datetime(2026, 8, 21, 12).astimezone())
+
+        with pytest.raises(NotInWindowError) as refused:
+            never_failed(db, "Test.S.Removed", window)
+
+        assert str(refused.value) == (
+            f"'Test.S.Removed' did not run in {window.label}; it last ran on "
+            "2026-08-20. Widen --days."
+        )
+
+
+class TestTheControlsOfARun:
+    """`inv ci-artifact --run --test` without `--leg`: which Legs of the Run ran
+    the test, and which of them passed it - read from the database, so the
+    choice of a Control costs no download. See **Control** in CONTEXT.md and
+    ADR 0006."""
+
+    TEST = "Test.Credentials.Add Valid Credential With Secret"
+    BATTERIES = "Clean_install_results_windows-latest"
+    WHEEL = "windows-latest 3.13 24.x Clean install results"
+    SOURCE = "Test results-ubuntu-latest-2-3.13-24.x"
+
+    def test_every_leg_that_ran_the_test_is_listed_by_install_and_passes_are_controls(
+        self, tmp_path
+    ):
+        from tools.ci_failures.history import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.WHEEL,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.BATTERIES,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.BATTERIES,
+                    "attempt": 2,
+                },
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": self.SOURCE,
+                },
+                {
+                    "test": "Test.Other.Elsewhere",
+                    "status": "PASS",
+                    "sha": "1a2b3c4d5e",
+                    "artifact": "Test results-ubuntu-latest-1-3.13-24.x",
+                },
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "sha": "next",
+                    "artifact": self.WHEEL,
+                },
+            ],
+        )
+
+        assert of_run(db, 1, self.TEST).lines() == [
+            f"Run 1 · commit 1a2b3c4 · {self.TEST}",
+            "batteries",
+            "  fail     batteries · windows-latest                       --attempt 1",
+            "  control  batteries · windows-latest                       --attempt 2",
+            "source",
+            "  control  source · ubuntu-latest · shard 2 · 3.13 · 24.x   --attempt 1",
+            "wheel",
+            "  control  wheel · windows-latest · 3.13 · 24.x             --attempt 1",
+            f'fetch one: inv ci-artifact --run 1 --leg "<leg>" --attempt <n> '
+            f'--test "{self.TEST}"',
+        ]
+
+    def test_a_listed_leg_is_what_the_fetch_takes_as_leg(self):
+        """The listing prints `leg_name`, and the fetch matches `--leg` by
+        `leg_name` of it - so a printed name has to come back unchanged."""
+        from tools.ci_failures.legs import leg_name
+
+        for artifact in (self.BATTERIES, self.WHEEL, self.SOURCE, "docker_results"):
+            assert leg_name(leg_name(artifact)) == leg_name(artifact)
+
+    def test_a_failure_its_suite_fixture_marked_is_not_called_a_failure(self, tmp_path):
+        from tools.ci_failures.history import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "FAIL",
+                    "scope": "suite_setup",
+                    "owner": "Test.Credentials",
+                    "artifact": self.BATTERIES,
+                },
+            ],
+        )
+
+        assert of_run(db, 1, self.TEST).lines()[2] == (
+            "  suite broke  batteries · windows-latest   --attempt 1"
+        )
+
+    def test_a_leg_whose_attempt_is_unknown_is_shown_not_dropped(self, tmp_path):
+        from tools.ci_failures.history import of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {
+                    "test": self.TEST,
+                    "status": "PASS",
+                    "artifact": self.WHEEL,
+                    "attempt": None,
+                },
+            ],
+        )
+
+        lines = of_run(db, 1, self.TEST).lines()
+
+        assert lines[2] == (
+            "  control  wheel · windows-latest · 3.13 · 24.x   --attempt ?"
+        )
+        assert lines[-1] == (
+            "attempt ? is not yet resolved: try --attempt 1, or "
+            "`inv ci-backfill-attempts` first."
+        )
+
+    def test_a_run_not_in_the_database_is_refused_not_looked_up_on_github(
+        self, tmp_path, monkeypatch
+    ):
+        from tools.ci_failures.history import NotIngestedError, of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(db, [{"test": self.TEST, "status": "PASS"}])
+        monkeypatch.setattr(github, "list_test_artifacts", pytest.fail)
+
+        with pytest.raises(NotIngestedError) as refused:
+            of_run(db, 99, self.TEST)
+
+        assert str(refused.value) == (
+            "Run 99 is not in the database; `inv ci-ingest` first."
+        )
+
+    def test_a_name_the_run_did_not_run_is_refused_with_its_names(self, tmp_path):
+        from tools.ci_failures.history import NoSuchTestError, of_run
+
+        db = tmp_path / "ci.sqlite3"
+        seed(
+            db,
+            [
+                {"test": self.TEST, "status": "PASS"},
+                {"test": "Test.Http.GET Text", "status": "PASS", "sha": "other"},
+            ],
+        )
+
+        with pytest.raises(NoSuchTestError) as refused:
+            of_run(db, 1, "Add Valid Credential With Secret")
+
+        assert str(refused.value) == (
+            "No test named 'Add Valid Credential With Secret' in Run 1. Did you mean:\n"
+            f"  {self.TEST}"
+        )
+
+
+class TestFetchingOneLegsArtifact:
+    """`inv ci-artifact`: the files ingest threw away, fetched again for one
+    failure that turned out to deserve them."""
+
+    RUN = 36044928092
+    LEG = "source · macos-latest · shard 3 · 3.10 · 22.x"
+
+    @pytest.fixture
+    def one_leg(self, monkeypatch, tmp_path):
+        artifact = github.Artifact(
+            id=10828316847,
+            name="Test results-macos-latest-3-3.10-22.x",
+            expired=False,
+            url="u",
+        )
+        other = github.Artifact(
+            id=1, name="Test results-ubuntu-latest-1-3.14-22.x", expired=False, url="u"
+        )
+        zip_path = tmp_path / "artifact.zip"
+        with zipfile.ZipFile(zip_path, "w") as archive:
+            archive.writestr("output.xml", "<robot/>")
+            archive.writestr("log.html", "")
+            archive.writestr("playwright-log.txt", "")
+            archive.writestr("pabot_results/4/browser/screenshot/fail-1.png", "")
+        downloads = []
+
+        def fake_download(artifact_id, destination):
+            downloads.append(artifact_id)
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(zip_path.read_bytes())
+            return destination
+
+        monkeypatch.setattr(
+            github, "list_test_artifacts", lambda run_id: [other, artifact]
+        )
+        monkeypatch.setattr(github, "download_artifact", fake_download)
+        monkeypatch.setattr(
+            github,
+            "get_run",
+            lambda run_id: github.Run(
+                id=run_id,
+                event="push",
+                head_sha="s",
+                head_branch="main",
+                created_at="2026-09-27T10:00:00Z",
+                conclusion="failure",
+                url="u",
+            ),
+        )
+        return downloads
+
+    def test_the_legs_files_are_unpacked_under_root(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+
+        directory = fetch(self.RUN, self.LEG, root)
+
+        assert one_leg == [10828316847]
+        assert directory.parent == root
+        assert (directory / "output.xml").is_file()
+        assert (directory / "pabot_results/4/browser/screenshot/fail-1.png").is_file()
+
+    def test_a_leg_already_fetched_is_not_fetched_again(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+        first = fetch(self.RUN, self.LEG, root)
+
+        again = fetch(self.RUN, self.LEG, root)
+
+        assert one_leg == [10828316847], "one download, not two"
+        assert again == first
+
+    def test_the_artifacts_own_name_finds_the_same_leg(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import fetch
+
+        root = tmp_path / "artifacts"
+
+        by_name = fetch(self.RUN, "Test results-macos-latest-3-3.10-22.x", root)
+
+        assert by_name == fetch(self.RUN, self.LEG, root)
+        assert one_leg == [10828316847]
+
+    def test_an_unknown_leg_is_refused_with_the_legs_the_run_has(
+        self, one_leg, tmp_path
+    ):
+        from tools.ci_failures.artifacts import NoSuchLegError, fetch
+
+        with pytest.raises(NoSuchLegError, match="source · ubuntu-latest · shard 1"):
+            fetch(self.RUN, "source · windows-latest", tmp_path / "artifacts")
+
+        assert one_leg == []
+
+    def test_a_failed_download_leaves_nothing_to_be_mistaken_for_the_leg(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        """A half-unpacked directory would be reused next time as if whole."""
+        from tools.ci_failures.artifacts import fetch
+
+        def unreachable(artifact_id, destination):
+            raise github.GhError("could not resolve host")
+
+        monkeypatch.setattr(github, "download_artifact", unreachable)
+        root = tmp_path / "artifacts"
+
+        from tools.ci_failures.refusal import UnreachableError
+
+        with pytest.raises(UnreachableError, match="could not resolve host"):
+            fetch(self.RUN, self.LEG, root)
+
+        assert list(root.iterdir()) == []
+
+    def test_a_download_that_is_not_a_zip_is_unreachable_too(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        from tools.ci_failures.artifacts import fetch
+        from tools.ci_failures.refusal import UnreachableError
+
+        def truncated(artifact_id, destination):
+            destination.write_bytes(b"PK\x03\x04 cut off")
+            return destination
+
+        monkeypatch.setattr(github, "download_artifact", truncated)
+
+        with pytest.raises(UnreachableError):
+            fetch(self.RUN, self.LEG, tmp_path / "artifacts")
+
+    def test_clean_removes_every_fetched_leg(self, one_leg, tmp_path):
+        from tools.ci_failures.artifacts import clean, fetch
+
+        root = tmp_path / "artifacts"
+        fetch(self.RUN, self.LEG, root)
+
+        assert clean(root) is True
+        assert not root.exists()
+        assert clean(root) is False, "nothing to clean is not an error"
+
+    def test_a_rerun_legs_attempt_is_the_one_fetched(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        """A flake that passed on the re-run uploaded the same Leg twice, and
+        the failure is in the first."""
+        from tools.ci_failures.artifacts import fetch
+
+        name = "Test results-macos-latest-3-3.10-22.x"
+        failed = github.Artifact(
+            id=11, name=name, expired=False, url="u", created_at="2026-09-27T10:30Z"
+        )
+        passed = github.Artifact(
+            id=12, name=name, expired=False, url="u", created_at="2026-09-27T12:30Z"
+        )
+        monkeypatch.setattr(
+            github, "list_test_artifacts", lambda run_id: [passed, failed]
+        )
+        monkeypatch.setattr(
+            github,
+            "attempt_starts",
+            lambda run: [(1, "2026-09-27T10:00Z"), (2, "2026-09-27T12:00Z")],
+        )
+        root = tmp_path / "artifacts"
+
+        first = fetch(self.RUN, self.LEG, root, attempt=1)
+        second = fetch(self.RUN, self.LEG, root, attempt=2)
+
+        assert one_leg == [11, 12]
+        assert first != second
+
+    def test_an_empty_artifact_unpacks_to_an_empty_leg(
+        self, one_leg, monkeypatch, tmp_path
+    ):
+        from tools.ci_failures.artifacts import fetch
+
+        def empty(artifact_id, destination):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            with zipfile.ZipFile(destination, "w"):
+                pass
+            return destination
+
+        monkeypatch.setattr(github, "download_artifact", empty)
+
+        directory = fetch(self.RUN, self.LEG, tmp_path / "artifacts")
+
+        assert list(directory.iterdir()) == []
+
+
+FAKE_COMMON = """\
+def start_test_server(port):
+    return port
+
+
+def start_test_https_server(port):
+    return port
+"""
+
+
+def _run_executor(
+    output_dir: Path, suites: dict[str, str], port: str, metadata: tuple[str, ...] = ()
+) -> Path:
+    """An Executor's output.xml, from a real Robot Framework run.
+
+    `common.py` stands in for `atest/library/common.py`: its keywords are what
+    the shortlist reads the test-app ports from, by library and keyword name.
+    """
+    root = output_dir / "atest" / "test"
+    root.mkdir(parents=True, exist_ok=True)
+    (root / "common.py").write_text(FAKE_COMMON, encoding="utf-8")
+    (root / "__init__.robot").write_text(
+        "*** Settings ***\n"
+        "Library    common.py\n"
+        "Suite Setup    Start Test Application\n\n"
+        "*** Keywords ***\n"
+        "Start Test Application\n"
+        f"    ${{port}} =    Start Test Server    {port}\n",
+        encoding="utf-8",
+    )
+    for name, text in suites.items():
+        (root / name).write_text(text, encoding="utf-8")
+    with open(output_dir / "stdout.txt", "w", encoding="utf-8") as captured:
+        robot_run(
+            str(root),
+            outputdir=str(output_dir),
+            output="output.xml",
+            log=None,
+            report=None,
+            metadata=list(metadata),
+            stdout=captured,
+            stderr=captured,
+        )
+    shutil.rmtree(output_dir / "atest")
+    (output_dir / "stdout.txt").unlink()
+    return output_dir / "output.xml"
+
+
+CREDENTIALS_SUITE = """\
+*** Test Cases ***
+Add Valid Credential
+    Fail    Text 'Waiting for action...' (str) should be 'Success' (str)
+"""
+
+
+class TestShortlistingOneOccurrence:
+    """`inv ci-artifact --test`: of everything in a Leg's artifact, the files
+    that bear on one test."""
+
+    def test_a_serial_leg_names_the_test_app_log_its_setup_started(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        (tmp_path / "test-app").mkdir()
+        (tmp_path / "test-app" / "test-app-7001.log").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert (
+            Entry("test-app", "test-app/test-app-7001.log", "Start Test Server in Test")
+            in listed.entries
+        )
+
+    def test_a_test_app_log_not_in_the_artifact_is_marked_missing(self, tmp_path):
+        from tools.ci_failures.artifacts import shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        [test_app] = [e for e in listed.entries if e.label == "test-app"]
+        assert test_app.missing
+
+    def test_the_files_the_tests_log_links_to_are_listed_once_each(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = r"file://D:\\a\\robotframework-browser\\atest\\output"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            '    Log    <a href="browser/screenshot/fail-1.png">x</a>    html=True\n'
+            f'    Log    <a href="{runner}\\\\browser\\\\screenshot\\\\fail-1.png">x</a>'
+            "    html=True\n"
+            '    Log    <a href="browser/screenshot/fail-97.png">x</a>    html=True\n'
+            '    Log    <a href="https://example.invalid/page.png">x</a>    html=True\n'
+            "    Log    See also file:///D:/a/robotframework-browser/atest/output/"
+            "playwright-log-123.txt for additional details.\n"
+            "    Fail    Text 'Waiting for action...' (str) should be 'Success' (str)\n"
+        )
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001")
+        (tmp_path / "browser" / "screenshot").mkdir(parents=True)
+        (tmp_path / "browser" / "screenshot" / "fail-1.png").write_bytes(b"")
+        (tmp_path / "playwright-log-123.txt").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        linked = [e for e in listed.entries if e.label in ("screenshot", "node log")]
+        assert linked == [
+            Entry("screenshot", "browser/screenshot/fail-1.png"),
+            Entry("screenshot", "browser/screenshot/fail-97.png", missing=True),
+            Entry("node log", "playwright-log-123.txt"),
+        ]
+
+    def test_a_pabot_executors_file_is_found_under_its_merged_name(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = "file:///home/runner/work/rfb/rfb/atest/output/pabot_results/4"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            f'    Log    <a href="{runner}/browser/screenshot/fail-1.png">x</a>'
+            "    html=True\n"
+            "    Fail    no\n"
+        )
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001")
+        _run_executor(
+            tmp_path / "pabot_results" / "4", {"credentials.robot": suite}, "7001"
+        )
+        merged = tmp_path / "browser" / "screenshot"
+        merged.mkdir(parents=True)
+        (merged / "20260928_181043-3-fail-1.png").write_bytes(b"")
+        (merged / "20260928_181043-4-fail-1.png").write_bytes(b"")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert (
+            Entry("screenshot", "browser/screenshot/20260928_181043-4-fail-1.png")
+            in listed.entries
+        )
+
+    def test_a_shared_node_process_log_is_found_where_it_was_written(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        runner = "file:///home/runner/work/rfb/rfb/atest/output/pabot_results/5"
+        suite = (
+            "*** Test Cases ***\n"
+            "Add Valid Credential\n"
+            f"    Log    See also {runner}/playwright-log.txt for additional details.\n"
+            "    Fail    no\n"
+        )
+        shared = ("Node Process:shared",)
+        _run_executor(tmp_path, {"credentials.robot": suite}, "7001", shared)
+        _run_executor(
+            tmp_path / "pabot_results" / "5",
+            {"credentials.robot": suite},
+            "7001",
+            shared,
+        )
+        (tmp_path / "playwright-log.txt").write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert [e for e in listed.entries if e.label == "node log"] == [
+            Entry("node log", "playwright-log.txt", "the Leg's shared node process")
+        ]
+
+    def test_a_test_naming_no_node_log_gets_the_executors_default(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        for name in ("playwright-log.txt", "playwright-log-1790619542210617400.txt"):
+            (tmp_path / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert [e for e in listed.entries if e.label == "node log"] == [
+            Entry("node log", "playwright-log.txt", "not named by the test")
+        ]
+
+    def test_a_test_not_in_the_leg_is_refused_with_the_names_it_may_mean(
+        self, tmp_path
+    ):
+        from tools.ci_failures.artifacts import shortlist
+        from tools.ci_failures.history import NoSuchTestError
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+
+        with pytest.raises(NoSuchTestError) as refused:
+            shortlist(tmp_path, "Credentials.Add Valid Credential")
+
+        assert refused.value.suggestions == ("Test.Credentials.Add Valid Credential",)
+        assert "in this Leg" in str(refused.value)
+
+    def test_the_shortlist_prints_one_line_per_file_and_counts_the_rest(self):
+        from tools.ci_failures.artifacts import Entry, Shortlist
+
+        directory = Path("/a/36463000327-batteries-windows-latest-attempt-1")
+        listed = Shortlist(
+            directory=directory,
+            test="Test.Credentials.Add Valid Credential",
+            entries=(
+                Entry("output.xml", "output.xml"),
+                Entry("executor", ".", "serial"),
+                Entry(
+                    "test-app",
+                    "test-app/test-app-60666.log",
+                    "Start Test Server in Test",
+                ),
+                Entry("screenshot", "browser/screenshot/fail-97.png", missing=True),
+                Entry("node log", "playwright-log.txt", "not named by the test"),
+            ),
+            others=((".png", 74), (".txt", 18), (".log", 2)),
+        )
+
+        assert listed.lines() == [
+            f"directory:  {directory}",
+            "output.xml: output.xml",
+            "executor:   . (serial)",
+            "test-app:   test-app/test-app-60666.log (Start Test Server in Test)",
+            "screenshot: browser/screenshot/fail-97.png MISSING",
+            "node log:   playwright-log.txt (not named by the test)",
+            "also:       94 more files: 74 .png, 18 .txt, 2 .log",
+        ]
+
+    def test_without_a_test_only_the_legs_own_files_are_listed(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        (tmp_path / "log.html").write_text("", encoding="utf-8")
+        (tmp_path / "browser" / "screenshot").mkdir(parents=True)
+        for n in (1, 2):
+            (tmp_path / "browser" / "screenshot" / f"fail-{n}.png").write_bytes(b"")
+
+        listed = shortlist(tmp_path, None)
+
+        assert listed.entries == (
+            Entry("output.xml", "output.xml"),
+            Entry("log", "log.html"),
+        )
+        assert listed.others == ((".png", 2),)
+
+    def test_a_serial_leg_is_its_own_executor(self, tmp_path):
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(tmp_path, {"credentials.robot": CREDENTIALS_SUITE}, "7001")
+        for name in ("log.html", "syslog.txt"):
+            (tmp_path / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert listed.entries[:4] == (
+            Entry("output.xml", "output.xml"),
+            Entry("log", "log.html"),
+            Entry("executor", ".", "serial"),
+            Entry("syslog", "syslog.txt"),
+        )
+
+    def test_a_suite_setup_below_the_top_adds_its_own_test_app(self, tmp_path):
+        from tools.ci_failures.artifacts import shortlist
+
+        certificates = (
+            "*** Settings ***\n"
+            "Library    common.py\n"
+            "Suite Setup    Setup\n\n"
+            "*** Test Cases ***\n"
+            "Client Certificate Is Sent\n"
+            "    Fail    no certificate\n\n"
+            "*** Keywords ***\n"
+            "Setup\n"
+            "    ${port} =    Start Test Https Server    7002\n"
+        )
+        _run_executor(tmp_path, {"client_certificates.robot": certificates}, "7001")
+
+        listed = shortlist(
+            tmp_path, "Test.Client Certificates.Client Certificate Is Sent"
+        )
+
+        assert [(e.path, e.note) for e in listed.entries if e.label == "test-app"] == [
+            ("test-app/test-app-7001.log", "Start Test Server in Test"),
+            (
+                "test-app/test-app-7002.log",
+                "Start Test Https Server in Test.Client Certificates",
+            ),
+        ]
+
+    def test_a_pabot_leg_answers_from_the_executor_that_ran_the_test(self, tmp_path):
+        """The merged output.xml puts every Executor's setup under one top
+        suite, so the port there could be any of them."""
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        orders = "*** Test Cases ***\nOrder Is Placed\n    Fail    no order\n"
+        both = {"credentials.robot": CREDENTIALS_SUITE, "orders.robot": orders}
+        _run_executor(tmp_path, both, "7001")
+        _run_executor(
+            tmp_path / "pabot_results" / "0",
+            {"credentials.robot": CREDENTIALS_SUITE},
+            "7001",
+        )
+        executor = tmp_path / "pabot_results" / "1"
+        _run_executor(executor, {"orders.robot": orders}, "7002")
+        for name in ("syslog.txt", "robot_stdout.out", "robot_stderr.out"):
+            (executor / name).write_text("", encoding="utf-8")
+
+        listed = shortlist(tmp_path, "Test.Orders.Order Is Placed")
+
+        start = listed.entries.index(Entry("executor", "pabot_results/1"))
+        assert listed.entries[start : start + 5] == (
+            Entry("executor", "pabot_results/1"),
+            Entry("output.xml", "pabot_results/1/output.xml"),
+            Entry("syslog", "pabot_results/1/syslog.txt"),
+            Entry("stdout", "pabot_results/1/robot_stdout.out"),
+            Entry("stderr", "pabot_results/1/robot_stderr.out"),
+        )
+        assert [e.path for e in listed.entries if e.label == "test-app"] == [
+            "test-app/test-app-7002.log"
+        ]
+
+
+class FakeHistory:
+    """Commits in the order they were made; a commit contains every one before it.
+
+    All of them are on main, except those named in `off_main`.
+    """
+
+    main = "upstream/main"
+
+    def __init__(self, *commits: str, off_main: tuple[str, ...] = ()):
+        self.commits = list(commits)
+        self.off_main = off_main
+
+    def resolves(self, sha: str) -> bool:
+        return sha in self.commits
+
+    def on_main(self, sha: str) -> bool:
+        return sha in self.commits and sha not in self.off_main
+
+    def contains(self, commit: str, fix: str) -> bool | None:
+        if commit not in self.commits:
+            return None
+        return self.commits.index(commit) >= self.commits.index(fix)
+
+
+class TestVerifyingAFix:
+    """A fix is Verified once seven days of runs containing it saw no recurrence.
+
+    `seed` puts one Run on each commit, a day apart from 2026-08-20, in the
+    order the commits first appear.
+    """
+
+    TEST = "S.Flaky"
+    SIGNATURE = "Timeout <duration> exceeded"
+
+    def _known(self, tmp_path, **entry):
+        entry.setdefault("test", self.TEST)
+        entry.setdefault("signature", self.SIGNATURE)
+        entry.setdefault("cause", "a race")
+        entry.setdefault("fixed_by", "f1c5000")
+        path = tmp_path / "known.json"
+        path.write_text(json.dumps([entry], indent=2), encoding="utf-8")
+        return path
+
+    def _fail(self, sha, signature=None, **row):
+        return {
+            "test": self.TEST,
+            "status": "FAIL",
+            "signature": signature or self.SIGNATURE,
+            "sha": sha,
+            **row,
+        }
+
+    def _pass(self, sha, **row):
+        return {"test": self.TEST, "status": "PASS", "sha": sha, **row}
+
+    def _check(self, tmp_path, rows, history, today, **entry):
+        from datetime import date
+
+        from tools.ci_failures.verify import check
+
+        db = tmp_path / "db.sqlite3"
+        seed(db, rows)
+        return check(
+            db,
+            self._known(tmp_path, **entry),
+            history=history,
+            today=date.fromisoformat(today),
+        )
+
+    def test_a_fix_younger_than_seven_days_is_waiting(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-24",
+        )
+
+        assert entry.status == "waiting"
+        assert entry.line() == "waiting 3/7 days, 2 runs, 0 recurrences"
+
+    def test_seven_days_without_a_recurrence_is_ready(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-28",
+        )
+
+        assert entry.status == "ready"
+        assert entry.line() == "ready: 7 days, 2 runs, 0 recurrences"
+
+    def test_the_same_error_after_the_fix_is_a_recurrence(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._fail("sha3")],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "recurred"
+        assert entry.line() == "recurred: 1 after fix"
+        assert [run for run, _ in entry.recurred_in] == [3]
+
+    def test_a_later_run_on_an_older_commit_does_not_contain_the_fix(self, tmp_path):
+        """Dates are the wrong test: a run on a commit from before the fix can
+        be created after it, and its failure says nothing about the fix."""
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._fail("stale")],
+            FakeHistory("sha1", "stale", "f1c5000"),
+            today="2026-08-24",
+        )
+
+        assert entry.status == "waiting"
+        assert (entry.runs, entry.recurrences) == (1, 0)
+
+    def test_a_fix_in_no_ingested_run_has_no_runs_yet(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("sha2")],
+            FakeHistory("sha1", "sha2", "f1c5000"),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "no runs yet"
+
+    def test_a_fixed_by_that_is_not_a_commit_is_no_sha(self, tmp_path):
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        [prose] = self._check(
+            tmp_path, rows, history, "2026-09-10", fixed_by="fix - rewrote the test"
+        )
+        [unknown] = self._check(
+            tmp_path / "again", rows, history, "2026-09-10", fixed_by="abc1234"
+        )
+
+        assert prose.status == unknown.status == "no SHA"
+        assert prose.line() == "no SHA: fixed_by is prose, not a commit SHA"
+        assert unknown.line() == "no SHA: abc1234 is not a commit in this clone"
+
+    def test_a_fixed_by_that_is_not_on_main_is_not_counted(self, tmp_path):
+        """A rebase or squash gives the fix another SHA on main, and the branch
+        one would read as `no runs yet` forever."""
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("sha2")],
+            FakeHistory("sha1", "f1c5000", "sha2", off_main=("f1c5000",)),
+            today="2026-09-10",
+        )
+
+        assert entry.status == "not on main"
+        assert entry.line() == (
+            "not on main: f1c5000 is not on upstream/main; record the SHA the fix "
+            "has on main, or `git fetch upstream main`"
+        )
+
+    def test_an_issue_reference_names_the_issue_to_close(self, tmp_path):
+        from tools.ci_failures.verify import Verification
+
+        def entry(reference):
+            return Verification("S.T", None, "ready", reference=reference)
+
+        assert entry("https://github.com/o/r/issues/5223").issue == "5223"
+        assert entry(None).issue is None
+
+    def test_an_entry_matching_no_group_is_an_orphan_whatever_its_state(self, tmp_path):
+        """A mistyped signature would otherwise read as zero recurrences."""
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        [mistyped] = self._check(
+            tmp_path, rows, history, "2026-09-10", signature="Timeout exceeded"
+        )
+        [verified] = self._check(
+            tmp_path / "v",
+            rows,
+            history,
+            "2026-09-10",
+            signature="Timeout exceeded",
+            fix_verified="2026-09-01",
+        )
+        [unfixed] = self._check(
+            tmp_path / "u",
+            rows,
+            history,
+            "2026-09-10",
+            signature="Timeout exceeded",
+            fixed_by=None,
+        )
+
+        assert mistyped.status == verified.status == unfixed.status == "orphan"
+        assert mistyped.line() == "orphan: matches no Group in the database"
+
+    def test_an_orphan_naming_no_test_says_so_and_what_was_meant(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000")],
+            FakeHistory("sha1", "f1c5000"),
+            "2026-09-10",
+            test="Flaky",
+        )
+
+        assert entry.status == "orphan"
+        assert entry.line() == "orphan: no test named 'Flaky' in the archive"
+        assert entry.suggestions == ("S.Flaky",)
+
+    def test_an_orphan_spelt_under_another_top_suite_is_told_the_spelling(
+        self, tmp_path
+    ):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000")],
+            FakeHistory("sha1", "f1c5000"),
+            "2026-09-10",
+            test="Test.Flaky",
+        )
+
+        assert entry.line() == "orphan: no test named 'Test.Flaky' in the archive"
+        assert entry.suggestions == ("S.Flaky",)
+
+    def test_verified_and_unfixed_entries_are_not_checked(self, tmp_path):
+        rows = [self._fail("sha1"), self._pass("f1c5000")]
+        history = FakeHistory("sha1", "f1c5000")
+
+        assert (
+            self._check(
+                tmp_path, rows, history, "2026-09-10", fix_verified="2026-09-01"
+            )
+            == []
+        )
+        assert (
+            self._check(tmp_path / "u", rows, history, "2026-09-10", fixed_by=None)
+            == []
+        )
+
+    def test_another_error_after_the_fix_is_a_note_not_a_recurrence(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1"),
+                self._pass("f1c5000"),
+                self._fail("sha3", signature="Browser crashed"),
+            ],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-28",
+        )
+
+        assert entry.status == "ready"
+        assert [(o.signature, o.occurrences) for o in entry.other_failures] == [
+            ("Browser crashed", 1)
+        ]
+
+    def test_a_suite_fixture_is_verified_over_the_runs_of_its_suite(self, tmp_path):
+        teardown = {"scope": "suite_teardown", "owner": "S", "suite": "S"}
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1", **teardown),
+                self._pass("f1c5000", suite="S"),
+                self._pass("sha3", suite="S.Child"),
+            ],
+            FakeHistory("sha1", "f1c5000", "sha3"),
+            today="2026-08-24",
+            test=None,
+            suite="S",
+        )
+
+        assert entry.line() == "waiting 3/7 days, 2 runs, 0 recurrences"
+
+    def test_a_suite_whose_name_only_looks_alike_is_not_enclosed(self, tmp_path):
+        suite = "Test.My_Suite"
+        teardown = {"scope": "suite_teardown", "owner": suite, "suite": suite}
+        [entry] = self._check(
+            tmp_path,
+            [
+                self._fail("sha1", **teardown),
+                self._pass("f1c5000", suite=f"{suite}.Child"),
+                self._pass("wildcard", suite="Test.MyXSuite.Child"),
+                self._pass("case", suite="test.my_suite.Child"),
+            ],
+            FakeHistory("sha1", "f1c5000", "wildcard", "case"),
+            today="2026-08-24",
+            test=None,
+            suite=suite,
+        )
+
+        assert entry.runs == 1
+
+    def test_runs_on_commits_this_clone_lacks_are_counted_apart(self, tmp_path):
+        [entry] = self._check(
+            tmp_path,
+            [self._fail("sha1"), self._pass("f1c5000"), self._pass("unfetched")],
+            FakeHistory("sha1", "f1c5000"),
+            today="2026-08-24",
+        )
+
+        assert (entry.runs, entry.unknown_commits) == (1, 1)
+        assert entry.fetch == "`git fetch upstream main`"
+
+
+class TestMarkingAFixVerified:
+    def test_only_the_named_entries_are_marked_and_the_rest_is_kept(self, tmp_path):
+        from tools.ci_failures.annotations import load_known_causes, mark_verified
+
+        path = tmp_path / "known.json"
+        path.write_text(
+            json.dumps(
+                [
+                    {"test": "S.A", "signature": "Box <n>", "fixed_by": "abc"},
+                    {"test": "S.B", "signature": "Box <n>", "fixed_by": "def"},
+                    {"suite": "S", "signature": "Gone", "fix_verified": "2026-01-01"},
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        marked = mark_verified({("S.A", "box <n>"), ("S", "gone")}, "2026-09-29", path)
+
+        known = load_known_causes(path)
+        assert marked == 1, "an entry already verified keeps its date"
+        assert known[("S.A", "box <n>")]["fix_verified"] == "2026-09-29"
+        assert known[("S.B", "box <n>")]["fix_verified"] is None
+        assert known[("S", "gone")]["fix_verified"] == "2026-01-01"
+        assert json.loads(path.read_text(encoding="utf-8"))[1]["fixed_by"] == "def"
+
+
+class TestGitHistory:
+    @pytest.fixture
+    def repo(self, tmp_path):
+        import subprocess
+
+        def git(*args):
+            return subprocess.run(
+                ["git", "-C", str(tmp_path), *args],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+
+        git("init", "-q")
+        git("config", "user.email", "t@example.com")
+        git("config", "user.name", "t")
+        commits = []
+        for n in range(3):
+            git("commit", "-q", "--allow-empty", "-m", f"c{n}")
+            commits.append(git("rev-parse", "HEAD"))
+        # A fork's clone: origin is the fork, behind; upstream has the fix.
+        git("remote", "add", "origin", "https://github.com/someone/fork.git")
+        git("update-ref", "refs/remotes/origin/main", commits[0])
+        git("remote", "add", "upstream", f"https://github.com/{github.REPO}.git")
+        git("update-ref", "refs/remotes/upstream/main", commits[1])
+        return tmp_path, commits, git
+
+    def test_a_commit_contains_its_ancestors_and_not_its_descendants(self, repo):
+        from tools.ci_failures.verify import Git
+
+        root, (first, fix, last), _ = repo
+        git = Git(root)
+
+        assert git.resolves(fix[:8])
+        assert not git.resolves("0" * 40)
+        assert git.contains(last, fix) is True
+        assert git.contains(first, fix) is False
+        assert git.contains("0" * 40, fix) is None
+
+    def test_on_main_is_asked_of_the_repository_ci_runs_on_not_a_fork(self, repo):
+        """The fork's origin/main is behind the fix; upstream/main has it."""
+        from tools.ci_failures.verify import Git
+
+        root, (first, fix, last), _ = repo
+        git = Git(root)
+
+        assert git.main == "upstream/main"
+        assert git.on_main(first) and git.on_main(fix[:8])
+        assert not git.on_main(last)
+
+    def test_a_clone_of_the_repository_itself_asks_origin(self, repo):
+        from tools.ci_failures.verify import Git
+
+        root, (_, fix, _), git = repo
+        git("remote", "remove", "upstream")
+        git("remote", "set-url", "origin", f"git@github.com:{github.REPO}.git")
+        git("update-ref", "refs/remotes/origin/main", fix)
+
+        assert Git(root).main == "origin/main"
+        assert Git(root).on_main(fix)
+
+    def test_a_clone_with_no_remote_at_the_repository_is_unanswerable(self, repo):
+        from tools.ci_failures.verify import Git, NoMainError
+
+        root, _, git = repo
+        git("remote", "remove", "upstream")
+
+        with pytest.raises(NoMainError, match="No remote of this clone") as refused:
+            Git(root).main
+        assert refused.value.code == 1

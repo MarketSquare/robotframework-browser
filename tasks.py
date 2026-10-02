@@ -14,7 +14,6 @@ import tempfile
 import time
 import traceback
 import urllib.request
-import webbrowser
 import zipfile
 import signal
 
@@ -46,8 +45,6 @@ except ModuleNotFoundError:
 ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
-CI_FAILURES_DB = ROOT_DIR / "ci_failures" / "ci_failures.sqlite3"
-CI_REPORT_HTML = ROOT_DIR / "ci_failures" / "ci_report.html"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
@@ -1926,28 +1923,17 @@ def demo_app(c):
     return zip_path
 
 
-def _window_of_days(days):
-    """`--days N` as a Window, or an Exit saying which part of N was wrong.
+def _refusing(command, **flags):
+    """Runs a `tools.ci_failures.commands` function, its refusal as the exit.
 
-    Shared by ci-ingest and ci-report so the flag means the same thing in both
-    and refuses the same way - it was written twice and the second copy was a
-    copy of the first, bug included.
-
-    The two conversions are caught separately on purpose. `int()` is what knows
-    about "seven" and `of_days` is what knows about 0, and one `except
-    ValueError` around both threw away whichever message was the true one:
-    `--days 0` used to be told it was not a whole number.
+    The one place a refusal becomes an exit code; ADR 0007 says what each means.
     """
-    from tools.ci_failures.window import of_days
+    from tools.ci_failures.refusal import RefusalError
 
     try:
-        whole_days = int(days)
-    except (TypeError, ValueError):
-        raise Exit(f"--days wants a whole number of days, got {days!r}.", 2) from None
-    try:
-        return of_days(whole_days)
-    except ValueError as refused:
-        raise Exit(str(refused), 2) from None
+        command(**flags)
+    except RefusalError as refused:
+        raise Exit(str(refused), refused.code) from None
 
 
 @task
@@ -1955,7 +1941,8 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
     """Pulls CI test results into the local database.
 
     Incremental: legs already ingested are skipped, so running this often only
-    costs what is new. See `tools/ci_failures/README.md`.
+    costs what is new. Afterwards, the artifacts a triage left behind beside
+    this database are removed. See `tools/ci_failures/README.md`.
 
     Args:
         limit: How many runs to consider, newest first. Defaults to 25. Runs,
@@ -1970,27 +1957,80 @@ def ci_ingest(c, limit=None, days=None, db=None, dry_run=False):
             same count. Artifacts live 90 days, so nothing older can be ingested
             however it is asked for.
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
-        dry_run: Say which legs would be fetched and fetch nothing. A full
+        dry_run: Say which legs would be fetched; fetch, write and remove
+            nothing, not even a database that is not there yet. A full
             ingest is download-bound and can run for hours; this reads one
             artifact listing per run instead, so it is minutes for a wide
             window and worth doing before a long ingest.
     """
-    from tools.ci_failures.ingest import ingest
+    from tools.ci_failures import commands
 
-    if limit is not None and days is not None:
-        raise Exit("--limit and --days ask the same question two ways; pass one.", 2)
-    since = _window_of_days(days).cutoff if days is not None else None
+    _refusing(commands.ingest, limit=limit, days=days, db=db, dry_run=dry_run)
 
-    totals = ingest(
-        db_path=Path(db) if db else CI_FAILURES_DB,
-        limit=25 if limit is None else int(limit),
-        since=since,
-        dry_run=bool(dry_run),
+
+@task
+def ci_artifact(c, run=None, leg=None, attempt=1, test=None, clean=False, db=None):
+    """Fetches one Leg's artifact again, for triaging a failure in it.
+
+    Ingest keeps only the parsed rows. This brings back the rest, unpacked
+    under `artifacts/` beside the database, and prints the files worth
+    opening, by their path inside it. A Leg already fetched is reused. Remove
+    them with --clean once the triage is done; an `inv ci-ingest` of the same
+    database also removes any left behind.
+
+    Args:
+        run: The run id, as an Occurrence in `inv ci-report` gives it.
+        leg: The Leg, as an Occurrence names it, or the artifact's own name.
+            Left out, with --test: lists the Legs of the Run that ran the test,
+            by Install, the passes marked as Controls, from the database and
+            with nothing fetched.
+        attempt: The Occurrence's attempt. A Leg re-run by hand uploaded once
+            per attempt, and only the one that failed holds the failure.
+        test: The Test Name, from `Test.` down. Lists the files that bear on
+            that test instead of only the Leg's: the Executor that ran it, the
+            log of each test app its suite setups started, and every file its
+            log links to, MISSING when the artifact lacks it. Works on
+            a Leg where the test passed, as a control. Spelt under another
+            top suite, as a Leg that ran several suite directories at once
+            spells its tests, it is the same test. Any other name the Leg or
+            Run did not run is refused with the names it may mean.
+        clean: Remove the artifacts fetched beside the database instead of
+            fetching one.
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3. The
+            artifacts are fetched into, and cleaned from, the directory it is in.
+    """
+    from tools.ci_failures import commands
+
+    _refusing(
+        commands.artifact,
+        run=run,
+        leg=leg,
+        attempt=attempt,
+        test=test,
+        clean=clean,
+        db=db,
     )
-    if dry_run:
-        print(f"\nWould fetch {totals.legs} leg(s) across {totals.runs} run(s).")
-        return
-    print(f"\n{totals.line()}")
+
+
+@task
+def ci_verify_fixes(c, db=None, mark=False):
+    """Says whether each Known Cause's fix held.
+
+    For every entry with `fixed_by` set and `fix_verified` empty: the days since
+    the first ingested run containing the fix, the runs of the test since, and
+    how often its Group came back. A fix is ready to mark Verified after seven
+    days with no recurrence. Every entry is also checked for matching no Group
+    at all. Read-only unless --mark; see `tools/ci_failures/verify.py`.
+
+    Args:
+        db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
+        mark: Write today's date into `fix_verified` of the entries that are
+            ready, and only those. Never done automatically: Verified is agreed,
+            like the Known Cause itself.
+    """
+    from tools.ci_failures import commands
+
+    _refusing(commands.verify_fixes, db=db, mark=mark)
 
 
 @task
@@ -2007,9 +2047,9 @@ def ci_backfill_attempts(c, db=None):
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
     """
-    from tools.ci_failures.ingest import backfill_attempts
+    from tools.ci_failures import commands
 
-    backfill_attempts(Path(db) if db else CI_FAILURES_DB)
+    _refusing(commands.backfill_attempts, db=db)
 
 
 @task
@@ -2022,6 +2062,7 @@ def ci_report(
     open_it=False,
     mark_seen=False,
     days=None,
+    test=None,
 ):
     """Shows which tests fail and on which error.
 
@@ -2035,7 +2076,7 @@ def ci_report(
     Args:
         db: Database file. Defaults to ci_failures/ci_failures.sqlite3.
         html: Write a self-contained HTML page here. Defaults to
-            ci_failures/ci_report.html.
+            ci_report.html beside the database.
         json: Write the report as JSON here, for a language model to read.
             Goes with --html: both are renderings of the one Report.
         limit: How many test/error groups to show.
@@ -2054,54 +2095,28 @@ def ci_report(
             answer covers what is there, so read `since` against the span the
             label claims. Goes with everything except --mark-seen; see
             `tools/ci_failures/window.py`.
+        test: Report on this one test only, by its Test Name, from `Test.`
+            down: its Groups, the Fixture Failures of the suites around it,
+            and its Known Cause. Printed as JSON unless --json or --html names
+            a file. Spelt under another top suite, it is the same test. A test
+            with no Groups gets one line saying how often it ran; a name in no
+            Result is refused with the names it may mean, and one with no
+            Result in the window says when it last ran.
+            --limit does not apply; --mark-seen is refused.
     """
-    from tools.ci_failures.report import (
-        NoDatabaseError,
-        UnanswerableError,
-        WindowedBaselineError,
-        build,
-        snapshot_entries,
+    from tools.ci_failures import commands
+
+    _refusing(
+        commands.report,
+        db=db,
+        html=html,
+        json=json,
+        limit=limit,
+        open_it=open_it,
+        mark_seen=mark_seen,
+        days=days,
+        test=test,
     )
-    from tools.ci_failures.window import ALL_HISTORY
-
-    window = _window_of_days(days) if days is not None else ALL_HISTORY
-    db_path = Path(db) if db else CI_FAILURES_DB
-
-    # Built once. Both renderings and the baseline are of the same Report, and
-    # the reasons there may not be one are the tool's to state, not this task's.
-    try:
-        report = build(db_path, limit=int(limit), window=window)
-    except NoDatabaseError as absent:
-        print(absent)
-        return
-    except UnanswerableError as why:
-        raise Exit(str(why), 1) from None
-
-    if mark_seen:
-        from tools.ci_failures.annotations import write_snapshot
-
-        try:
-            seen = snapshot_entries(report)
-        except WindowedBaselineError as why:
-            raise Exit(str(why), 2) from None
-        print(f"Baseline recorded at {write_snapshot(db_path, seen)}")
-
-    written = []
-    if json:
-        from tools.ci_failures.render_json import write as write_json
-
-        written.append(write_json(report, Path(json)))
-    # The page unless only the document was asked for. Both used to be an
-    # either/or that silently dropped --html whenever --json was given.
-    if html or not json:
-        from tools.ci_failures.render_html import write as write_page
-
-        page_at = write_page(report, Path(html) if html else CI_REPORT_HTML)
-        written.append(page_at)
-        if open_it:
-            webbrowser.open(page_at.resolve().as_uri())
-    for destination in written:
-        print(f"Wrote {destination}")
 
 
 @task
@@ -2123,25 +2138,6 @@ def ci_recompute(c, db=None, what="all"):
             changing the artifact name patterns in `legs.py`; `platforms` after
             changing `parse.platform_of`. `all` does every one.
     """
-    from tools.ci_failures.ingest import (
-        recompute_installs,
-        recompute_keyword_locations,
-        recompute_platforms,
-        recompute_signatures,
-    )
+    from tools.ci_failures import commands
 
-    known = {"all", "signatures", "locations", "installs", "platforms"}
-    if what not in known:
-        raise Exit(f"--what wants one of {sorted(known)}, got {what!r}.", 2)
-    db_path = Path(db) if db else CI_FAILURES_DB
-    if not db_path.exists():
-        print(f"No database at {db_path}. Run `inv ci-ingest` first.")
-        return
-    if what in ("all", "signatures"):
-        recompute_signatures(db_path)
-    if what in ("all", "locations"):
-        recompute_keyword_locations(db_path)
-    if what in ("all", "installs"):
-        recompute_installs(db_path)
-    if what in ("all", "platforms"):
-        recompute_platforms(db_path)
+    _refusing(commands.recompute, db=db, what=what)

@@ -23,6 +23,8 @@ from pathlib import Path
 
 from . import reading
 from .annotations import compare, known_cause_for, load_known_causes, read_snapshot
+from .db import UnanswerableError
+from .history import encloses
 from .legs import leg_name
 from .parse import screenshot_key
 from .queries import (
@@ -36,7 +38,7 @@ from .queries import (
     OccurrenceRow,
     # Re-exported deliberately. `outcome` is a Report field, so a Rendering
     # reads the vocabulary for it here rather than reaching into `queries`.
-    # It is produced there because `_verdict` is, and `_verdict` is there
+    # It is produced there because `verdict` is, and `verdict` is there
     # because it is called from inside a lane walk; `queries.py`'s own docstring
     # now says so rather than claiming no such function exists.
     Outcome,  # noqa: F401
@@ -72,6 +74,7 @@ from .queries import (
 from .queries import (
     Retry as QueryRetry,
 )
+from .refusal import MisaskedError
 from .window import ALL_HISTORY, Window
 
 # A leg with more failures than this in it is itself the finding, and listing
@@ -893,18 +896,39 @@ def snapshot_entries(report: Report) -> list[tuple[str, str | None, int]]:
     ]
 
 
-class UnanswerableError(Exception):
-    """The question cannot be answered, and this says why.
+def of_test(report: Report, test: str) -> Report:
+    """The Report narrowed to one test, for `inv ci-report --test`.
 
-    These are the conditions a caller has to have handled to use `build`
-    correctly. They lived in the invoke task, which meant they were the caller's
-    to remember, were checked nowhere else, and could only be exercised by
-    typing `inv`.
+    Filtered rather than asked for again, so a one-test document cannot
+    disagree with the page it was cut from.
+
+    Keeps the Fixture Failures of every suite enclosing the test too: a broken
+    suite setup fails the test without the test being at fault, and it is filed
+    under the suite rather than the test. The window summary and the platform
+    rows stay whole: they are the context the test's rates are read against.
     """
 
+    def concerns(subject: str | None) -> bool:
+        if not subject:
+            return False
+        return subject == test or encloses(subject, test)
 
-class NoDatabaseError(UnanswerableError):
-    """Nothing has been ingested here yet."""
+    changes = report.since_last_report
+    if changes is not None:
+        changes = {
+            key: (
+                [c for c in value if concerns(c["subject"])]
+                if isinstance(value, list)
+                else value
+            )
+            for key, value in changes.items()
+        }
+    return replace(
+        report,
+        since_last_report=changes,
+        test_failures=tuple(e for e in report.test_failures if e.test == test),
+        fixture_failures=tuple(e for e in report.fixture_failures if concerns(e.suite)),
+    )
 
 
 class NothingInWindowError(UnanswerableError):
@@ -915,7 +939,7 @@ class NothingInWindowError(UnanswerableError):
     """
 
 
-class WindowedBaselineError(UnanswerableError):
+class WindowedBaselineError(MisaskedError):
     """A Snapshot was asked for from a windowed Report. See `snapshot_entries`."""
 
 
@@ -937,7 +961,7 @@ def _nothing_ran(db_path: Path, window: Window) -> str:
 
 def build(
     db_path: Path,
-    limit: int = 100,
+    limit: int | None = 100,
     window: Window = ALL_HISTORY,
     known_causes: Path | None = None,
 ) -> Report:
@@ -946,12 +970,9 @@ def build(
     One Reading, opened here and shared by every query below. They used to open
     one each, which meant materialising the Window once per question.
 
-    Raises `UnanswerableError` rather than returning something empty. The database is
-    checked before it is opened, because opening it would create it and an
-    absent archive would render as a clean one.
+    Raises `UnanswerableError` rather than returning something empty, as
+    `reading.of` does for a database that is not there.
     """
-    if not db_path.exists():
-        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
     with reading.of(db_path, window) as db:
         if window.bounded and not totals(db).runs:
             raise NothingInWindowError(_nothing_ran(db_path, window))
@@ -960,7 +981,7 @@ def build(
 
 def _build(
     db: reading.Reading,
-    limit: int,
+    limit: int | None,
     window: Window,
     db_path: Path,
     known_causes: Path | None = None,

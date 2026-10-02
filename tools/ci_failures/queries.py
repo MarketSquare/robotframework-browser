@@ -1,4 +1,4 @@
-"""Every question the Report asks of the database, and nothing else.
+"""Every question asked of the database, and nothing else.
 
 Which tests fail, and on which error. A test that fails twice on one error and
 four times on another is two problems, not one, so the pair is the unit - not the
@@ -10,11 +10,12 @@ numbers mean.
 This used to be written as "if a function here does not run SQL it is in the
 wrong file", which is a sharper rule than the one actually kept. Four functions
 run none. `_subject_key` and `_row_without_key` shape a row on its way out;
-`_spread` picks four order statistics out of a sorted list; `_verdict` reads a
+`_spread` picks four order statistics out of a sorted list; `verdict` reads a
 Leg's statuses and says what the Subject did in that Run - and that last one is
 a judgement by any reading. It is here because it is called from inside the lane
-walk in `runs_either_side` and its fixture twin, where moving it would mean
-handing `report.py` raw status tuples instead of an answer. Worth knowing about
+walk in `runs_either_side` and its fixture twin, and from `history.py`'s Legs of a Run, where
+moving it would mean handing `report.py` and `history.py` raw status tuples
+instead of an answer. Worth knowing about
 rather than worth pretending away.
 """
 
@@ -303,7 +304,12 @@ class FailureGroup:
         return (self.error_signature or "").lower()
 
 
-def failure_groups(db: Reading, limit: int = 100) -> list[FailureGroup]:
+def _no_limit(limit: int | None) -> int:
+    """`LIMIT -1` is SQLite for no limit, which is what None asks for."""
+    return -1 if limit is None else limit
+
+
+def failure_groups(db: Reading, limit: int | None = 100) -> list[FailureGroup]:
     """Every (test, error) pair that has failed, most failures first."""
     rows = db.execute(
         """
@@ -333,7 +339,7 @@ def failure_groups(db: Reading, limit: int = 100) -> list[FailureGroup]:
         ORDER BY failures DESC, f.longname
         LIMIT ?
         """,
-        (limit,),
+        (_no_limit(limit),),
     ).fetchall()
     return [FailureGroup(**dict(row)) for row in rows]
 
@@ -374,7 +380,7 @@ class FixtureFailure:
         return (self.error_signature or "").lower()
 
 
-def fixture_failures(db: Reading, limit: int = 50) -> list[FixtureFailure]:
+def fixture_failures(db: Reading, limit: int | None = 50) -> list[FixtureFailure]:
     """Suite setup and teardown failures, one row per fixture and error."""
     rows = db.execute(
         """
@@ -403,7 +409,7 @@ def fixture_failures(db: Reading, limit: int = 50) -> list[FixtureFailure]:
         ORDER BY occurrences DESC, f.scope_owner
         LIMIT ?
         """,
-        (limit,),
+        (_no_limit(limit),),
     ).fetchall()
     return [FixtureFailure(**dict(row)) for row in rows]
 
@@ -549,7 +555,7 @@ def pass_durations_by_test(db: Reading) -> dict[tuple, Spread]:
 SUITE_BROKE = "suite broke"
 
 
-def _verdict(statuses: list[tuple[str, str | None]]) -> str:
+def verdict(statuses: list[tuple[str, str | None]]) -> str:
     """The outcome of one Subject in one Run on one Leg.
 
     Rows a suite fixture marked are set aside first. They are the fixture's
@@ -632,7 +638,7 @@ def runs_either_side(db: Reading) -> dict[int, Around]:
             run=run["run"],
             commit=run["commit"],
             at=run["at"],
-            outcome=_verdict(run["statuses"]),
+            outcome=verdict(run["statuses"]),
         )
 
     outcomes: dict[int, Around] = {}
@@ -854,7 +860,7 @@ def fixture_runs_either_side(db: Reading) -> dict[FixtureLegKey, Around]:
                 run=run["run"],
                 commit=run["commit"],
                 at=run["at"],
-                outcome=_verdict(run["statuses"]),
+                outcome=verdict(run["statuses"]),
             )
 
         for row in rows:
@@ -1193,3 +1199,16 @@ def totals(db: Reading) -> Totals:
         "(SELECT MAX(created_at) FROM run) AS until"
     ).fetchone()
     return Totals(**dict(row))
+
+
+def failing_subjects(db: Reading) -> set[tuple[str, str]]:
+    """Every (Subject, case-folded signature) with a Group or Fixture Failure."""
+    rows = db.execute(
+        """
+        SELECT subject_owner, signature_key FROM test_failure
+        UNION
+        SELECT subject_owner, signature_key FROM fixture_failure
+        WHERE subject_owner IS NOT NULL
+        """
+    ).fetchall()
+    return {(row["subject_owner"], row["signature_key"]) for row in rows}

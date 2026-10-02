@@ -95,7 +95,11 @@ class Reading:
 
 
 def of(db_path: Path, window: Window = ALL_HISTORY) -> Reading:
-    """Opens the database and restricts it, in the order the restriction needs."""
+    """Opens the database and restricts it, in the order the restriction needs.
+
+    Raises `NoDatabaseError` for a database that is not there, as `connect`
+    does for everything but an ingest.
+    """
     connection = connect(db_path)
     window.apply(connection)
     # After the Window, never before: these read the shadowed table names, so
