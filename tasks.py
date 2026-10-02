@@ -2209,8 +2209,8 @@ def ci_report(
             and one with no Result in the window says when it last ran.
             --limit does not apply; --mark-seen is refused.
     """
+    from tools.ci_failures.reading import NoDatabaseError
     from tools.ci_failures.report import (
-        NoDatabaseError,
         UnanswerableError,
         WindowedBaselineError,
         build,

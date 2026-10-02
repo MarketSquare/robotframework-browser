@@ -54,6 +54,20 @@ from .window import ALL_HISTORY, Window
 _SUBJECT_VIEWS = frozenset({"test_failure", "fixture_failure"})
 
 
+class UnanswerableError(Exception):
+    """The question cannot be answered, and this says why.
+
+    These are the conditions a caller has to have handled to use `build`
+    correctly. They lived in the invoke task, which meant they were the caller's
+    to remember, were checked nowhere else, and could only be exercised by
+    typing `inv`.
+    """
+
+
+class NoDatabaseError(UnanswerableError):
+    """Nothing has been ingested here yet."""
+
+
 @dataclass(frozen=True)
 class Reading:
     """A connection that can only see the Window, and knows what a Subject is."""
@@ -95,7 +109,13 @@ class Reading:
 
 
 def of(db_path: Path, window: Window = ALL_HISTORY) -> Reading:
-    """Opens the database and restricts it, in the order the restriction needs."""
+    """Opens the database and restricts it, in the order the restriction needs.
+
+    Refuses a database that is not there rather than creating it: an empty
+    archive answers every question as though nothing had ever failed.
+    """
+    if not db_path.exists():
+        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
     connection = connect(db_path)
     window.apply(connection)
     # After the Window, never before: these read the shadowed table names, so

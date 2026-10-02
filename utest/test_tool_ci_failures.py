@@ -3042,7 +3042,7 @@ class TestWhenThereIsNoReportToGive:
     def test_an_absent_database_is_refused_rather_than_created(self, tmp_path):
         """Opening it would create it, and an empty archive renders as a clean
         one - a page saying nothing has ever failed."""
-        from tools.ci_failures.report import NoDatabaseError
+        from tools.ci_failures.reading import NoDatabaseError
 
         missing = tmp_path / "nothing-here.sqlite3"
 
@@ -3050,6 +3050,25 @@ class TestWhenThereIsNoReportToGive:
             build_report(missing)
 
         assert not missing.exists(), "asking must not create the archive"
+
+    @pytest.mark.parametrize("question", ["controls of a run", "never failed"])
+    def test_one_tests_questions_refuse_an_absent_database_too(
+        self, tmp_path, question
+    ):
+        from tools.ci_failures.controls import of_run
+        from tools.ci_failures.one_test import never_failed
+        from tools.ci_failures.reading import NoDatabaseError
+
+        missing = tmp_path / "nothing-here.sqlite3"
+        ask = {
+            "controls of a run": lambda: of_run(missing, 1, "Test.S.T"),
+            "never failed": lambda: never_failed(missing, "Test.S.T"),
+        }[question]
+
+        with pytest.raises(NoDatabaseError):
+            ask()
+
+        assert not missing.exists()
 
     def test_a_window_with_no_runs_is_refused(self, tmp_path):
         """An empty page cannot say whether nothing ran or nothing failed, and

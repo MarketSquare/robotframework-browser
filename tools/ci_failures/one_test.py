@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import reading
 from .queries import outcomes_of_test, test_names
-from .report import UnanswerableError
+from .reading import UnanswerableError
 from .window import ALL_HISTORY, Window
 
 MOST_SUGGESTIONS = 5

@@ -72,6 +72,7 @@ from .queries import (
 from .queries import (
     Retry as QueryRetry,
 )
+from .reading import UnanswerableError
 from .window import ALL_HISTORY, Window
 
 # A leg with more failures than this in it is itself the finding, and listing
@@ -926,20 +927,6 @@ def of_test(report: Report, test: str) -> Report:
     )
 
 
-class UnanswerableError(Exception):
-    """The question cannot be answered, and this says why.
-
-    These are the conditions a caller has to have handled to use `build`
-    correctly. They lived in the invoke task, which meant they were the caller's
-    to remember, were checked nowhere else, and could only be exercised by
-    typing `inv`.
-    """
-
-
-class NoDatabaseError(UnanswerableError):
-    """Nothing has been ingested here yet."""
-
-
 class NothingInWindowError(UnanswerableError):
     """The Window holds no Runs, so there is no report to render.
 
@@ -983,8 +970,6 @@ def build(
     checked before it is opened, because opening it would create it and an
     absent archive would render as a clean one.
     """
-    if not db_path.exists():
-        raise NoDatabaseError(f"No database at {db_path}. Run `inv ci-ingest` first.")
     with reading.of(db_path, window) as db:
         if window.bounded and not totals(db).runs:
             raise NothingInWindowError(_nothing_ran(db_path, window))
