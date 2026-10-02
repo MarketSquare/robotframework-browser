@@ -25,6 +25,9 @@ one, so the tool says what it counted and over what.
   back as GitHub still has the artifacts, and rebuilding what it does have is
   hours and gigabytes of downloads. It holds at most 120 days: every ingest
   prunes older Runs (ADR `0005`). See *Retention* and *Three rules* below.
+  Every task takes `--db` for another one, and the page, the Snapshot and
+  fetched artifacts follow it: they live in the database's directory, its
+  **Workspace**. `known_causes.json` does not; it stays with the checkout.
 - **Artifacts live 90 days.** That is the whole horizon: a run older than that
   cannot be ingested, re-ingested or checked, and `inv ci-ingest` says so —
   `N artifact(s) expired, unrecoverable`. Everything younger can be fetched
@@ -205,17 +208,18 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 | `parse.py` | 645 | Reads an `output.xml` into rows. Everything the database holds comes from here. |
 | `locate.py` | 145 | Where a failing keyword is defined, resolved against your working copy. |
 | `artifacts.py` | 387 | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
-| `ingest.py` | 683 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
-| `db.py` | 137 | Opens the database, adds columns a database predating them has not got. |
+| `ingest.py` | 688 | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
+| `db.py` | 157 | Opens the database, adds columns a database predating them has not got. |
 | `schema.sql` | 148 | The tables, with the reasoning for each column beside it. |
 | `window.py` | 168 | `--days`, as shadowing temp views so no query can forget it. |
 | `subject.py` | 87 | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
-| `reading.py` | 124 | The database as one Report reads it. The only thing queries accept, and never opened on a database that is not there. |
+| `reading.py` | 108 | The database as one Report reads it. The only thing queries accept, and never opened on a database that is not there. |
 | `queries.py` | 1214 | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
-| `report.py` | 1140 | The Report, and what the numbers mean. |
-| `history.py` | 388 | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
-| `annotations.py` | 216 | Known Causes (by hand, gitignored) and the Snapshot (beside the database). |
-| `verify.py` | 240 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
+| `report.py` | 1139 | The Report, and what the numbers mean. |
+| `workspace.py` | 30 | Where a database's Snapshot, page and fetched artifacts live: beside it. |
+| `history.py` | 394 | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
+| `annotations.py` | 210 | Known Causes (by hand, gitignored) and the Snapshot (in the Workspace). |
+| `verify.py` | 241 | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
 | `render_html.py` | 1227 | The page. |
 | `render_json.py` | 290 | The document. |
 
@@ -230,13 +234,13 @@ tools/ci_failures/
 ├── schema.sql
 └── *.py                 # see the table above
 
-ci_failures/             # gitignored, at the repository root
+ci_failures/             # the default Workspace: gitignored, at the repository root
 ├── ci_failures.sqlite3  # the database
 ├── ci_report.html       # the page, when you last rendered one
 ├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
 └── last_report.json     # the Snapshot, when you last took one
 
-utest/test_tool_ci_failures.py   # 297 tests, about three seconds
+utest/test_tool_ci_failures.py   # 303 tests, about three seconds
 ```
 
 ## Three rules worth knowing before you change anything
@@ -272,7 +276,7 @@ reaches both renderings or joins that list.
 ## Where the rest of it is
 
 - **`CONTEXT.md`** — the vocabulary. Run, Leg, Install, Platform, OS Release,
-  Configuration, Attempt, Result, Subject, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause, Route, Verified,
+  Configuration, Attempt, Result, Test Name, Workspace, Subject, Enclosing Suite, Subject History, Group, Occurrence, Fixture Failure, Report, Rendering, Window, Reading, Known Cause, Route, Verified,
   Snapshot, Adjacent Run, Inconclusive Zero, Pruning. Worth reading first; the code uses
   these words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
