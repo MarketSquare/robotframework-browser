@@ -51,6 +51,15 @@ Python stub file.
 
 Run `inv -l` to get list of current build commands.
 
+### Coding agent skills
+
+Skills for coding agents live in `.claude/skills/`. Claude Code and GitHub Copilot pick them up from there.
+
+The maintainers also use the general-purpose skills from [mattpocock/skills](https://github.com/mattpocock/skills),
+such as `grilling`, `domain-modeling` (the format of the `CONTEXT.md` files and `docs/adr/`) and `tdd`. They are optional.
+Install them in Claude Code with `claude plugin install mattpocock-skills@claude-plugins-official`, or for other
+agents with `npx skills@latest add mattpocock/skills`.
+
 ## Testing
 
 ### Python unit tests

@@ -157,7 +157,7 @@ select = [
     "T201",
     "INP001",
 ]
-".github/skills/parse-rf-results/scripts/parse_results.py" = [
+".claude/skills/parse-rf-results/scripts/parse_results.py" = [
     "T201",
 ]
 

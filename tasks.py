@@ -1432,7 +1432,7 @@ def lint_python(c, fix=False):
         "tasks.py",
         "utest",
         "browser_batteries",
-        ".github/skills/",
+        ".claude/skills/",
         "tools/",
     ]
     ruff_cmd_check = [
@@ -1443,7 +1443,7 @@ def lint_python(c, fix=False):
         "Browser/",
         "browser_batteries/",
         "bootstrap.py",
-        ".github/skills/",
+        ".claude/skills/",
         "tools/",
     ]
     if fix:
@@ -1464,7 +1464,7 @@ def lint_python(c, fix=False):
         "Browser/",
         "bootstrap.py",
         "browser_batteries/",
-        ".github/skills/",
+        ".claude/skills/",
         "tools/",
     ]
     c.run(" ".join(mypy_cmd))
