@@ -1479,6 +1479,7 @@ def lint_node(c: Context):
     else:
         c.run("npm run format")
         c.run("npm run lint")
+    c.run("npm run typecheck")
 
 
 @task
