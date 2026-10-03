@@ -38,7 +38,9 @@ These are gitignored and regenerated; edit their sources instead.
 ## Build and test
 
 Set up once with `python bootstrap.py`, activate `.venv`, then `inv build`. `inv build` installs
-the Python and Node dependencies and the Playwright browsers before building, so it is slow.
+the Python dependencies on every run, but the Node dependencies and Playwright browsers only when
+`package-lock.json` changed since the last install. `inv deps --force` reinstalls them, for
+example after a broken browser install. `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` skips the browsers.
 
 After a change to the proto, the TypeScript wrapper, or a keyword signature or docstring, run
 `inv node-build`. It regenerates protobuf, the wrapper and `browser.pyi`. `inv atest` and
