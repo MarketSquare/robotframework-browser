@@ -7,9 +7,13 @@ argument-hint: 'The keyword, and what should change'
 # Change a keyword
 
 A keyword spans three layers: a Python method in `Browser/keywords/`, an rpc in
-`protobuf/playwright.proto`, and a Node handler in `node/playwright-wrapper/`. `Get Title` is a
-small, complete example to copy: `Getters.get_title` → `rpc GetTitle` → `getTitle` in
-`grpc-service.ts` → `getters.getTitle`.
+`protobuf/playwright.proto`, and a Node handler in `node/playwright-wrapper/`. Copy the example
+that matches the keyword:
+
+- **Takes a selector**, as most keywords do: `Get Text`. `Getters.get_text` → `rpc GetText` →
+  `getText = this.wrapping(getters.getText)` in `grpc-service.ts` → `getters.getText`.
+- **No selector**: `Get Title`. `Getters.get_title` → `rpc GetTitle` → `getTitle` in
+  `grpc-service.ts` → `getters.getTitle`.
 
 ## Steps
 
@@ -42,11 +46,12 @@ Done when `inv node-build` succeeds.
 ### 3. Node
 
 Write the implementation as a function in the feature module (`getters.ts`, `interaction.ts`,
-...) that takes the request and the page, context or locator it acts on, and returns a
-`pb.Response_*`. Register it in `grpc-service.ts` with a handler shaped like its neighbours:
-resolve the active page or browser from `call`, call the function, and pass errors through
-`errorResponse`. Element lookups go through `findLocator` in `playwright-invoke.ts`, so strict
-mode and frame piercing behave like every other keyword.
+...) with the signature `(request, state: PlaywrightState)` that returns a `pb.Response_*`.
+Register it in `grpc-service.ts` as `name = this.wrapping(module.name)`. `wrapping` resolves the
+caller's state, logs the call, and turns errors into `errorResponse`. A selector keyword resolves
+its element with `findLocator(state, request.selector, request.strict, ...)` from
+`playwright-invoke.ts`, which handles frame piercing. Strict mode only applies because Python sends
+`strict` in the request (step 4).
 
 Done when `inv node-build` and `inv lint-node` pass.
 
@@ -57,10 +62,16 @@ Put the method on the keyword class for its feature area in `Browser/keywords/`,
 `Browser.__init__`. Call Node with `with self.playwright.grpc_channel() as stub:`.
 
 - **Annotations stay narrow**: an Enum, not `Enum | str` (ADR 0006).
+- **A selector keyword** starts with `selector = self.presenter_mode(selector, self.strict_mode)`
+  and sends `strict=self.strict_mode` in its request, the way `get_text` does. `presenter_mode`
+  also applies the selector prefix (`Set Selector Prefix`), so skipping it breaks more than
+  presenter mode.
 - **A getter asserts** with `@with_assertion_polling` and the `assertionengine` helpers
-  (`verify_assertion` and friends), the way `get_title` does.
-- **Timeouts and other settings** come from `LibraryComponent` properties (`self.timeout`), never
-  from `scope_stack` directly (ADR 0009).
+  (`verify_assertion` and friends), the way `get_title` and `get_text` do.
+- **A `timeout: timedelta | None = None` argument** goes to Node as `self.get_timeout(timeout)`:
+  milliseconds, falling back to the library timeout when the caller gave none.
+- **Other settings** come from `LibraryComponent` properties (`self.strict_mode`,
+  `self.timeout`), never from `scope_stack` directly (ADR 0009).
 
 Done when `inv lint-python` passes.
 
