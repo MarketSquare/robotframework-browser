@@ -45,8 +45,11 @@ After a change to the proto, the TypeScript wrapper, or a keyword signature or d
 `inv utest` test the last build of the wrapper and never rebuild it. `inv atest` does rebuild the
 Test App.
 
-- `inv utest`: pytest. About a third of the modules start a real `Browser`, so they need a built
-  wrapper and installed browsers. One file: `inv utest --suite utest/test_x.py`.
+- `inv utest`: pytest. Importing `Browser` needs the generated protobuf. `test_python_usage.py`,
+  `test_screenshot.py`, `test_secrets.py` and `test_shared_playwright_port.py` launch Node and a
+  real browser; the first three also start the built Test App on port 7272.
+  `test_close_deadline.py` and `test_python_arguments.py` start Node without a browser. One file:
+  `inv utest --suite utest/test_x.py`.
 - `inv utest-node`: Jest, in `node/playwright-wrapper/__tests__/`.
 - `inv atest --suite <name>` (or `--test`, `--include`): pabot, with one Node process shared by
   every worker. Results land in `atest/output/`; `inv atest-failed` reruns the failures.
