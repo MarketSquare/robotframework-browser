@@ -86,7 +86,9 @@ async function delayedRequestInvalidJsonPost() {
         }),
     );
 }
-function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
+function fileUploaded(uploadResultElement: React.RefObject<HTMLElement | null>, event: ChangeEvent<HTMLInputElement>) {
+    const uploadResult = uploadResultElement.current;
+    if (!uploadResult) return;
     const files = event.target.files;
     let fileNames = '';
     if (files) {
@@ -97,16 +99,18 @@ function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: 
                 fileNames = files[i].name;
             }
         }
-        uploadResultElement.current.innerHTML = fileNames;
+        uploadResult.innerHTML = fileNames;
     } else {
-        uploadResultElement.current.innerHTML = 'no uploaded file';
+        uploadResult.innerHTML = 'no uploaded file';
     }
 }
 
-function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
+function testPrompt(promptResultElement: React.RefObject<HTMLElement | null>) {
+    const promptResult = promptResultElement.current;
+    if (!promptResult) return;
     const input = prompt('Enter a value');
-    if (input) promptResultElement.current.innerHTML = input;
-    else promptResultElement.current.innerHTML = 'prompt_not_filled';
+    if (input) promptResult.innerHTML = input;
+    else promptResult.innerHTML = 'prompt_not_filled';
 }
 
 export default function Site() {

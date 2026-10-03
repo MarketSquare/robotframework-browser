@@ -9,8 +9,14 @@ const ItemTypes = {
     BOX: 'box',
 };
 
-const DraggableItem = ({ id, type, x, y, onDrop, onLog }) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+type DragItem = { id: number; type: string };
+type OnDrop = (id: number, x: number, y: number) => void;
+type OnLog = (entry: string) => void;
+
+type DraggableItemProps = DragItem & { x: number; y: number; onDrop: OnDrop; onLog: OnLog };
+
+const DraggableItem = ({ id, type, x, y, onDrop, onLog }: DraggableItemProps) => {
+    const [{ isDragging }, drag] = useDrag<DragItem, unknown, { isDragging: boolean }>(() => ({
         type,
         item: { id, type },
         collect: (monitor) => ({
@@ -23,7 +29,7 @@ const DraggableItem = ({ id, type, x, y, onDrop, onLog }) => {
         },
     }));
 
-    const [, drop] = useDrop(() => ({
+    const [, drop] = useDrop<DragItem>(() => ({
         accept: [ItemTypes.CIRCLE, ItemTypes.BOX],
         drop: (item, monitor) => {
             const offset = monitor.getClientOffset();
@@ -35,7 +41,9 @@ const DraggableItem = ({ id, type, x, y, onDrop, onLog }) => {
 
     return (
         <div
-            ref={(node) => drag(drop(node))} // Combine drag and drop refs
+            ref={(node) => {
+                drag(drop(node));
+            }}
             id={type === ItemTypes.CIRCLE ? 'red-circle' : 'blue-box'}
             style={{
                 position: 'absolute',
@@ -53,8 +61,8 @@ const DraggableItem = ({ id, type, x, y, onDrop, onLog }) => {
     );
 };
 
-const DropZone = ({ onDrop, onGoal, onLog }) => {
-    const [, drop] = useDrop(() => ({
+const DropZone = ({ onDrop, onGoal, onLog }: { onDrop: OnDrop; onGoal: () => void; onLog: OnLog }) => {
+    const [, drop] = useDrop<DragItem>(() => ({
         accept: [ItemTypes.CIRCLE, ItemTypes.BOX],
         drop: (item, monitor) => {
             const offset = monitor.getClientOffset();
@@ -80,7 +88,9 @@ const DropZone = ({ onDrop, onGoal, onLog }) => {
 
     return (
         <div
-            ref={drop}
+            ref={(node) => {
+                drop(node);
+            }}
             style={{
                 position: 'relative',
                 width: '100vw',
@@ -106,8 +116,8 @@ const DropZone = ({ onDrop, onGoal, onLog }) => {
     );
 };
 
-const InvisibleDropZone = ({ onDrop, onLog }) => {
-    const [{ isOver }, drop] = useDrop(() => ({
+const InvisibleDropZone = ({ onDrop, onLog }: { onDrop: OnDrop; onLog: OnLog }) => {
+    const [{ isOver }, drop] = useDrop<DragItem, unknown, { isOver: boolean }>(() => ({
         accept: [ItemTypes.CIRCLE, ItemTypes.BOX],
         drop: (item, monitor) => {
             const offset = monitor.getClientOffset();
@@ -127,7 +137,9 @@ const InvisibleDropZone = ({ onDrop, onLog }) => {
 
     return (
         <div
-            ref={drop}
+            ref={(node) => {
+                drop(node);
+            }}
             id="invisible-element"
             style={{
                 position: 'absolute',
@@ -155,7 +167,7 @@ const DragGame: React.FC = () => {
         document.title = 'Drag game';
     }, []);
 
-    const handleDrop = (id, x, y) => {
+    const handleDrop: OnDrop = (id, x, y) => {
         setItems((prevItems) => prevItems.map((item) => (item.id === id ? { ...item, x, y } : item)));
     };
 

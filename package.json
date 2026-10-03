@@ -57,6 +57,7 @@
     "build": "node ./node/build.wrapper.js",
     "test": "jest --config ./node/jest.config.cjs",
     "test:coverage": "jest --config ./node/jest.config.cjs --coverage",
+    "typecheck": "tsc --noEmit -p node",
     "lint": "eslint \"node/**/*.{js,ts,tsx}\" --fix --config ./node/eslint.config.mjs",
     "lint:check": "eslint \"node/**/*.{js,ts,tsx}\" --config ./node/eslint.config.mjs",
     "format": "prettier --write \"node/**/*.{js,ts,tsx}\"",
