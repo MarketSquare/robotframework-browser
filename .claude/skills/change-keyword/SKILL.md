@@ -30,7 +30,8 @@ plugins, libraries built on Browser, or acceptance-test helpers need goes on an 
 `Browser` property, not a keyword (ADR 0009).
 
 Every public keyword becomes an entry in each translation users maintain
-(`rfbrowser translation`), so removing or renaming one is a breaking change for them too.
+(`rfbrowser translation`), so removing or renaming one is a breaking change for them too. Removal
+and renaming follow their own path: see [Removing or renaming a keyword](#removing-or-renaming-a-keyword).
 
 Done when the need is stated in one sentence and the maintainer agrees with the shape: new
 keyword, new argument, or no keyword.
@@ -98,3 +99,23 @@ Done when every argument is described, the rendered page shows no broken links o
 
 Done when `inv utest`, `inv utest-node` and the affected `inv atest --suite` runs pass, and
 `inv lint` is clean.
+
+## Removing or renaming a keyword
+
+A keyword is never removed in the release that deprecates it. It is deprecated first, and removed
+only in the next major release (`Browser/version.py` has the current version).
+
+1. **Deprecate.** Start the docstring with `*DEPRECATED*` and name the replacement, as
+   `Open Browser` does in `playwright_state.py`. Robot Framework then warns on every call. A
+   renamed keyword keeps working under its old name until the removal.
+2. **Offer an automatic conversion when one is possible.** `rfbrowser transform` rewrites users'
+   test data with a robocop formatter. `Browser/robocop_transformer/network_idle.py` converts
+   `Wait Until Network Is Idle` to `Wait For Load State    networkidle` and is the example to
+   copy. A new conversion needs the formatter, a flag on `transform` in `Browser/entry/__main__.py`,
+   wiring in `Browser/entry/transform.py`, and a test in `atest/test/11_tidy_transformer/`. Tell
+   the maintainer when the change cannot be converted mechanically.
+3. **Remove in the major release.** Delete the keyword across all three layers and its acceptance
+   tests, and say in the release notes which keyword or `rfbrowser transform` flag replaces it.
+
+Done when the keyword is deprecated with its replacement named, the maintainer has decided whether
+`rfbrowser transform` gets a conversion, and the removal is planned for the next major release.
