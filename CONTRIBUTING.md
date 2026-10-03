@@ -75,19 +75,21 @@ inv utest-node --coverage      # run with HTML + LCOV coverage report (output: n
 ### Acceptance tests
 Written with Robot Framework, run with `inv atest`. To rerun failed tests use `inv atest-failed`.
 
-To collect Node.js V8 coverage during acceptance tests (Linux and macOS only):
+To collect Python and Node.js coverage during acceptance tests:
 ```
-inv atest-coverage-node [--suite <suite>]
+inv atest-coverage [--suite <suite>]
 ```
-This builds the wrapper with source maps, runs the tests, and generates an HTML + LCOV coverage report at `atest/output/node-coverage-report/`.
+This builds the wrapper with source maps, runs the tests under `coverage`, and generates an HTML + LCOV Node.js
+coverage report at `atest/output/node-coverage-report/`. Node.js coverage is not collected on Windows.
 
-If there are changes on the TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
+If there are changes on the TypeScript side, run `inv node-build` before executing unit or acceptance tests.
+They test the last build of the wrapper and do not rebuild it.
 
 ## Running tests in docker container
 
 Docker container builds a clean install package. This can be used to check that a built package works correctly in a clean environment without development dependencies.
 
-1. Build the container `inv docker`
+1. Build the container `inv docker-tester`
 2. Run tests mounted from host machine `inv docker-test`
 3. See results in `atest/output`
 
@@ -192,11 +194,13 @@ Update later if necessary.
 Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).
 
 ## Code style
-Python code style is enforced with ruff, isort and black. CI checks it; run it locally with `inv lint-python`.
+Python code style is enforced with ruff (format and check) and types with mypy. CI checks them; run them locally with
+`inv lint-python`, or `inv lint-python --fix` to apply the fixes.
 
-JS / TS code style is enforced with eslint. CI checks it; run it locally with `inv lint-node`.
+JS / TS code style is enforced with prettier and eslint, and types with `tsc`. CI checks them; run them locally with
+`inv lint-node`, which also applies the formatting and lint fixes.
 
-Acceptance tests style is enforced with RoboTidy: `inv lint-robot`.
+Acceptance tests style is enforced with `robocop format`: `inv lint-robot`, which also applies the formatting.
 
 To run all linters by one command, use `inv lint`
 
@@ -220,13 +224,3 @@ and follow the code in all your interactions with the project.
 
 This project uses [allcontributors.org](https://allcontributors.org/) bot to list contributors in README.md.
 You may interact with the bot by following the [bot usage guide](https://allcontributors.org/docs/en/bot/usage).
-
-## Pull Request Process
-
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a build.
-2. Update the README.md with details of changes to the interface, this includes new environment
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any example files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request once you have sign-off from another developer. If you do not have
-   permission to perform the merge, you may request the reviewer merges your pull request for you.

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Post-processes V8 coverage data collected by NODE_V8_COVERAGE into
-// HTML + LCOV reports. Run after `inv atest-coverage-node` or after
+// HTML + LCOV reports. Run after `inv atest-coverage` or after
 // an acceptance test run with ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE=1.
 
 import { createRequire } from 'module';
@@ -28,7 +28,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const v8CoverageDir = process.env.NODE_V8_COVERAGE;
 if (!v8CoverageDir) {
     console.error('ERROR: NODE_V8_COVERAGE environment variable is not set.');
-    console.error('Run with: ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE=1 inv atest-coverage-node');
+    console.error('Run with: inv atest-coverage');
     process.exit(1);
 }
 

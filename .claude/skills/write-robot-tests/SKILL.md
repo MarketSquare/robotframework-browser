@@ -159,6 +159,19 @@ Go To Login Page
 | Shared library keywords (Python) | `atest/library/` |
 | Shared resource files | `atest/test/keywords.resource`, `atest/test/variables.resource` |
 
+## Tags that keep a test out of a run
+
+`inv atest` excludes tests by tag. Tag a new test that cannot run everywhere:
+
+| Tag | Excluded when |
+|---|---|
+| `no-windows-support`, `no-mac-support` | running on that OS (`--include-mac` keeps macOS ones) |
+| `no-iframe` | running with `--framed` |
+| `slow` | running with `--smoke` |
+| `require-rf-7.4+` | Robot Framework is older than 7.4 |
+| `no-coverage-support` | running `inv atest-coverage` |
+| `not-implemented` | always |
+
 ## Running acceptance tests
 
 ```bash
