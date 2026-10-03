@@ -1,7 +1,6 @@
 Browser/wrapper/*.js
 Browser/wrapper
 Browser/generated
-Browser/__init__.pyi
 Browser/browser.pyi
 Browser/**/*.pyc
 Browser/rfbrowser.log

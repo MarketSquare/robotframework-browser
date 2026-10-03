@@ -1,0 +1,121 @@
+---
+name: change-keyword
+description: 'Add, change or remove a Browser library keyword across proto, Node and Python. Use when a task touches a keyword''s name, arguments, behaviour or docstring, or adds a new one.'
+argument-hint: 'The keyword, and what should change'
+---
+
+# Change a keyword
+
+A keyword spans three layers: a Python method in `Browser/keywords/`, an rpc in
+`protobuf/playwright.proto`, and a Node handler in `node/playwright-wrapper/`. Copy the example
+that matches the keyword:
+
+- **Takes a selector**, as most keywords do: `Get Text`. `Getters.get_text` → `rpc GetText` →
+  `getText = this.wrapping(getters.getText)` in `grpc-service.ts` → `getters.getText`.
+- **No selector**: `Get Title`. `Getters.get_title` → `rpc GetTitle` → `getTitle` in
+  `grpc-service.ts` → `getters.getTitle`.
+
+## Steps
+
+### 1. Is there a need for a keyword?
+
+For a new keyword, name the need first. It is one of:
+
+- Playwright functionality that can only be exposed to users as a keyword, or
+- a user need that is generally useful, not one test's convenience.
+
+Then look for a way that keeps the keyword count down: a new argument on an existing keyword, a
+better assertion, or one higher-level keyword that combines several Playwright calls. State that
+plugins, libraries built on Browser, or acceptance-test helpers need goes on an internal
+`Browser` property, not a keyword (ADR 0009).
+
+Every public keyword becomes an entry in each translation users maintain
+(`rfbrowser translation`), so removing or renaming one is a breaking change for them too. Removal
+and renaming follow their own path: see [Removing or renaming a keyword](#removing-or-renaming-a-keyword).
+
+Done when the need is stated in one sentence and the maintainer agrees with the shape: new
+keyword, new argument, or no keyword.
+
+### 2. Proto
+
+Add or change the rpc in `service Playwright` and its messages under `Request` or `Response`.
+Reuse an existing message when one fits (`Request.Empty`, `Response.String`, `Response.Json`).
+Run `inv node-build`; it regenerates the Python and TypeScript stubs.
+
+Done when `inv node-build` succeeds.
+
+### 3. Node
+
+Write the implementation as a function in the feature module (`getters.ts`, `interaction.ts`,
+...) with the signature `(request, state: PlaywrightState)` that returns a `pb.Response_*`.
+Register it in `grpc-service.ts` as `name = this.wrapping(module.name)`. `wrapping` resolves the
+caller's state, logs the call, and turns errors into `errorResponse`. A selector keyword resolves
+its element with `findLocator(state, request.selector, request.strict, ...)` from
+`playwright-invoke.ts`, which handles frame piercing. Strict mode only applies because Python sends
+`strict` in the request (step 4).
+
+Done when `inv node-build` and `inv lint-node` pass.
+
+### 4. Python
+
+Put the method on the keyword class for its feature area in `Browser/keywords/`, decorated with
+`@keyword(tags=(...))`; a new class must also be added to the `libraries` list in
+`Browser.__init__`. Call Node with `with self.playwright.grpc_channel() as stub:`.
+
+- **Annotations stay narrow**: an Enum, not `Enum | str` (ADR 0006).
+- **A selector keyword** starts with `selector = self.presenter_mode(selector, self.strict_mode)`
+  and sends `strict=self.strict_mode` in its request, the way `get_text` does. `presenter_mode`
+  also applies the selector prefix (`Set Selector Prefix`), so skipping it breaks more than
+  presenter mode.
+- **A getter asserts** with `@with_assertion_polling` and the `assertionengine` helpers
+  (`verify_assertion` and friends), the way `get_title` and `get_text` do.
+- **A `timeout: timedelta | None = None` argument** goes to Node as `self.get_timeout(timeout)`:
+  milliseconds, falling back to the library timeout when the caller gave none.
+- **Other settings** come from `LibraryComponent` properties (`self.strict_mode`,
+  `self.timeout`), never from `scope_stack` directly (ADR 0009).
+
+Done when `inv lint-python` passes.
+
+### 5. Docstring
+
+The docstring is the user documentation. It says what the keyword is for, what each argument
+really does, and gives an example when usage is not obvious. When an argument's behaviour
+changes, rewrite its row and check the example still holds. Code and tests stay free of
+explanatory comments. `inv node-build` regenerates `browser.pyi` from the new signature.
+
+Check the result the way users read it: `python -m robot.libdoc Browser show "<Keyword Name>"`
+prints the signature and docstring, and `inv docs` renders the full page to `docs/Browser.html`
+(gitignored) for checking links and formatting.
+
+Done when every argument is described, the rendered page shows no broken links or formatting, and
+`utest/test_docs.py` passes.
+
+### 6. Tests
+
+- **Jest** for Node logic worth testing in isolation (`node-unit-test` skill).
+- **pytest** for Python logic that runs without a browser (`python-unit-test` skill).
+- **Acceptance tests** for the keyword's behaviour against the Test App (`write-robot-tests`
+  skill). A new page or element for them goes in `node/dynamic-test-app/`.
+
+Done when `inv utest`, `inv utest-node` and the affected `inv atest --suite` runs pass, and
+`inv lint` is clean.
+
+## Removing or renaming a keyword
+
+A keyword is never removed in the release that deprecates it. It is deprecated first, and removed
+only in the next major release (`Browser/version.py` has the current version).
+
+1. **Deprecate.** Start the docstring with `*DEPRECATED*` and name the replacement, as
+   `Open Browser` does in `playwright_state.py`. Robot Framework then warns on every call. A
+   renamed keyword keeps working under its old name until the removal.
+2. **Offer an automatic conversion when one is possible.** `rfbrowser transform` rewrites users'
+   test data with a robocop formatter. `Browser/robocop_transformer/network_idle.py` converts
+   `Wait Until Network Is Idle` to `Wait For Load State    networkidle` and is the example to
+   copy. A new conversion needs the formatter, a flag on `transform` in `Browser/entry/__main__.py`,
+   wiring in `Browser/entry/transform.py`, and a test in `atest/test/11_tidy_transformer/`. Tell
+   the maintainer when the change cannot be converted mechanically.
+3. **Remove in the major release.** Delete the keyword across all three layers and its acceptance
+   tests, and say in the release notes which keyword or `rfbrowser transform` flag replaces it.
+
+Done when the keyword is deprecated with its replacement named, the maintainer has decided whether
+`rfbrowser transform` gets a conversion, and the removal is planned for the next major release.

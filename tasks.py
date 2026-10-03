@@ -243,11 +243,9 @@ def clean(c):
     ]:
         if target.exists():
             shutil.rmtree(target)
-    pyi_file = PYTHON_SRC_DIR / "__init__.pyi"
     for file in [
         npm_deps_timestamp_file,
         Path("./.coverage"),
-        pyi_file,
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
     ]:

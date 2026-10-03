@@ -35,7 +35,7 @@ Pass all four from the same Occurrence — a re-run Leg uploads once per Attempt
 - `(the Leg's shared node process)` — every Executor's node lines in one log; narrow it to the test's start and end times.
 - `also:` — the files not listed, counted by extension; they are all in `directory:` to open.
 
-When the failure is limited to one Configuration, fetch a **Control**: a Leg of the same Run where the test passed, with the same `--test`, and compare the same log line in both. `inv ci-artifact --run <run> --test "<Test Name>"` without `--leg` lists the Legs of the Run that ran the test, by Install, with each one's outcome and `--attempt`, Controls marked; fetching nothing. Pick the Control closest to the failing Leg — the same Platform on another Install, or the same Install on another Platform.
+When the failure is limited to one Configuration, fetch a **Control**: a Leg of the same Run where the test passed, with the same `--test`, and compare the same log line in both. `inv ci-artifact --run <run> --test "<Test Name>"` without `--leg` lists the candidates. Pick the Control closest to the failing Leg — the same Platform on another Install, or the same Install on another Platform.
 
 Done when the failing Attempt's files are local, and for a failure limited to one Configuration, a Control's too.
 
@@ -57,23 +57,23 @@ Cause, evidence, route:
 
 The route follows from where the change lands, not from how big it is.
 
-### 5. Propose the Known Cause, and wait for agreement
+### 5. Agree the Known Cause, and record it once the fix is on `main`
 
-Record one only when all three hold: the cause is proven (step 3), the signature matches the Group, and it is agreed — either side proposes, the other accepts. Add it to `tools/ci_failures/known_causes.json` (gitignored) in the shape of the existing entries:
+A Known Cause needs all three: the cause is proven (step 3), the signature matches the Group, and it is agreed — either side proposes, the other accepts. Agree its wording now, but write it to `tools/ci_failures/known_causes.json` (gitignored) only once the fix is merged to `main` of `MarketSquare/robotframework-browser`. Until then, give the maintainer the draft entry and say it is recorded after the merge. The entry takes the shape of the existing ones:
 
 - `test`, `signature` — exactly as the report gives them
-- `cause` — one line and a pointer, e.g. `Timing ceiling measured runner speed; fixed in #1234`. The PR is the best pointer: it explains what was done, references the issue, and everything else can be traced from it
+- `cause` — one line and a pointer to the PR that fixed it, e.g. `Timing ceiling measured runner speed; fixed in #1234`. The PR explains what was done, references the issue, and everything else can be traced from it
 - `reference` — the issue URL, or `null` for an on-the-spot fix
-- `recorded` — today's date
-- `fixed_by` — a bare commit SHA **on `main`**, filled only once the fix has landed there; `null` until then. Never the branch commit: a rebase or squash gives the fix another SHA on `main`, and `inv ci-verify-fixes` reports a SHA that is not on `main` of `MarketSquare/robotframework-browser` (the `upstream` remote in a fork's clone) as `not on main` rather than counting it
+- `recorded` — the date it is written
+- `fixed_by` — the bare commit SHA the fix has **on `main`**, never the branch commit (`inv ci-verify-fixes` in `tools/ci_failures/README.md` says why)
 - `fix_verified` — `null`; triage never fills it. `inv ci-verify-fixes --mark` does, once the fix has held for seven days
 
 ### 6. Act on the route
 
-- **Fix on the spot**: make the change, run the test locally, commit with the cause and evidence in the message. Leave `fixed_by` `null`; once the change is on `main`, put the SHA it has there.
+- **Fix on the spot**: make the change, run the test locally, commit with the cause and evidence in the message. Record the Known Cause once the change is on `main`.
 - **Issue**: draft title and body (cause, evidence, run links) and show it to the maintainer. File only on approval: `gh issue create --type <Bug|Feature|Task>`. The issue type field is what keeps Task out of the release notes, so it carries the classification on its own, with no label. Implementing it is a separate task for other skills.
 
-Then `inv ci-artifact --clean`. Done when the route is acted on, the Known Cause is agreed or declined, and the artifacts are gone.
+Then `inv ci-artifact --clean`. Done when the route is acted on, the Known Cause is agreed or declined (and written, if the fix is already on `main`), and the artifacts are gone.
 
 The Known Cause plus the commit message or issue is the whole record — the triage leaves no markdown write-up behind.
 
