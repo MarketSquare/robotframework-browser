@@ -72,8 +72,6 @@ inv atest-coverage-node [--suite <suite>]
 ```
 This builds the wrapper with source maps, runs the tests, and generates an HTML + LCOV coverage report at `atest/output/node-coverage-report/`.
 
-Tests are also executed in a pre-push hook.
-
 If there are changes on the TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
 
 ## Running tests in docker container
@@ -185,10 +183,9 @@ Update later if necessary.
 Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).
 
 ## Code style
-Python code style is enforced with ruff, isort and black. These are executed in a
-pre-commit hook, but can also be invoked manually with `inv lint-python`.
+Python code style is enforced with ruff, isort and black. CI checks it; run it locally with `inv lint-python`.
 
-JS / TS code style is enforced with eslint. Lints are run in pre-commit hooks, but can be run manually with `inv lint-node`.
+JS / TS code style is enforced with eslint. CI checks it; run it locally with `inv lint-node`.
 
 Acceptance tests style is enforced with RoboTidy: `inv lint-robot`.
 
