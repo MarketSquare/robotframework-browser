@@ -71,7 +71,12 @@ really does, and gives an example when usage is not obvious. When an argument's 
 changes, rewrite its row and check the example still holds. Code and tests stay free of
 explanatory comments. `inv node-build` regenerates `browser.pyi` from the new signature.
 
-Done when every argument is described and `utest/test_docs.py` passes.
+Check the result the way users read it: `python -m robot.libdoc Browser show "<Keyword Name>"`
+prints the signature and docstring, and `inv docs` renders the full page to `docs/Browser.html`
+(gitignored) for checking links and formatting.
+
+Done when every argument is described, the rendered page shows no broken links or formatting, and
+`utest/test_docs.py` passes.
 
 ### 6. Tests
 
