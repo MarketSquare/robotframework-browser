@@ -68,3 +68,6 @@ node/coverage/
 # would also swallow tools/ci_failures, which is source.
 /ci_failures/
 /tools/ci_failures/known_causes.json
+
+# Claude Code personal settings
+.claude/settings.local.json

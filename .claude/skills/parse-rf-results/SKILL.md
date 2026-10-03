@@ -13,13 +13,13 @@ Uses [scripts/parse_results.py](./scripts/parse_results.py) to parse `output.xml
 ## Running the script
 
 ```bash
-.venv/bin/python .github/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml
+.venv/bin/python .claude/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml
 ```
 
 On Windows:
 
 ```bash
-.venv\Scripts\python .github/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml
+.venv\Scripts\python .claude/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml
 ```
 
 The script prints three sections automatically: pass rate summary, individual failures with error messages, and failures grouped by identical error message.
@@ -31,7 +31,7 @@ The script prints three sections automatically: pass rate summary, individual fa
 Include all keyword log messages for each failing test. Each log entry shows the timestamp, log level, and message text. HTML tags are stripped from messages.
 
 ```bash
-.venv/bin/python .github/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml --keyword-logs
+.venv/bin/python .claude/skills/parse-rf-results/scripts/parse_results.py atest/output/output.xml --keyword-logs
 ```
 
 Example output for a failing test:
