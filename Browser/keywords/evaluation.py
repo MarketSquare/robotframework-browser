@@ -50,8 +50,8 @@ class Evaluation(LibraryComponent):
                 will be the first argument the function receives if not ``${None}``.
                 ``selector`` is optional and can be omitted. If given a selector, a
                 function is necessary, with an argument to capture the element.
-
-                For example ``(element) => document.activeElement === element``
+                For example ``(element) => document.activeElement === element``.
+                See the `Finding elements` section for details about the selectors.
           - ``*function``: A valid javascript function or a javascript function body.
                 These arguments can be used to write readable multiline JavaScript.
           - ``arg``: an additional argument that can be handed over to the JavaScript

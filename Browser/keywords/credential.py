@@ -29,8 +29,8 @@ class Credential(LibraryComponent):
     ):
         """Creates a credential with the given parameters.
 
-        Will always [create|https://playwright.dev/docs/api/class-credentials#credentials-create]
-        and [install|https://playwright.dev/docs/api/class-credentials#credentials-install] the
+        Will always [https://playwright.dev/docs/api/class-credentials#credentials-create|create]
+        and [https://playwright.dev/docs/api/class-credentials#credentials-install|install] the
         credential, even if the optional parameters are not provided. In this case Playwright will
         autogenerate the missing values.
 

@@ -299,7 +299,7 @@ class PlaywrightState(LibraryComponent):
         See `Browser, Context and Page` for more information about Page and related concepts.
 
         *Arguments:*
-          - ``page``: Page to close. ``CURRENT`` selects the active page.``ALL``
+          - ``page``: Page to close. ``CURRENT`` selects the active page. ``ALL``
                 selects all pages. When a page id is provided, that page is closed.
           - ``context``: Context in which pages are closed. ``CURRENT`` selects the
                 active context. ``ALL`` selects all contexts. When a context id is
@@ -309,7 +309,7 @@ class PlaywrightState(LibraryComponent):
                 active browser. ``ALL`` selects all browsers. When a browser id is
                 provided, pages of that browser are closed. The browsers themselves are
                 not closed.
-          - ``runBeforeUnload``: defines where to run the
+          - ``runBeforeUnload``: defines whether to run the
                 [https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event|before unload]
                 page handlers. Defaults to false.
 
@@ -525,7 +525,7 @@ class PlaywrightState(LibraryComponent):
           - ``proxy``: Network [#type-Proxy | Proxy] settings. Structure: ``{'server':
                 <str>, 'bypass': <Optional[str]>, 'username': <Optional[str]>,
                 'password': <Optional[str]>}``. Robot Framework 7.4 Secret type is
-                supported.`
+                supported.
           - ``reuse_existing``: If set to True, an existing browser instance that was
                 created with the same arguments is reused. If no such browser exists, a
                 new one is started. Defaults to True.
