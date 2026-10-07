@@ -28,8 +28,8 @@ class StrictMode(LibraryComponent):
                 to ``False``, such keywords do not fail but operate on the first
                 matching element.
           - ``scope``: Scope defines the live time of that setting. Available values are
-                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
-                details.
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         The keyword returns the strict mode value which was in use before this keyword
         was called.

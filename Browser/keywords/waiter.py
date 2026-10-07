@@ -68,7 +68,7 @@ class Waiter(LibraryComponent):
           - ``state``: See `ElementState` for explanation.
           - ``timeout``: uses default timeout from library if not set.
           - ``message``: overrides the default error message. The ``message`` argument
-                accepts `{selector}`, ``{function}``, and `{timeout}`
+                accepts ``{selector}``, ``{function}``, and ``{timeout}``
                 [https://docs.python.org/3/library/stdtypes.html#str.format | format]
                 options. The ``{function}`` formatter is the ``state`` argument value
                 for the states which are waited for by Playwright, that are
@@ -196,7 +196,7 @@ class Waiter(LibraryComponent):
                 a Robot Framework time for the interval between polls.
           - ``timeout``: Uses default timeout of the library if not set.
           - ``message``: overrides the default error message. The ``message`` argument
-                accepts `{selector}`, ``{function}``, and `{timeout}`
+                accepts ``{selector}``, ``{function}``, and ``{timeout}``
                 [https://docs.python.org/3/library/stdtypes.html#str.format | format]
                 options.
 

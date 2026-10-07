@@ -481,8 +481,8 @@ class Control(LibraryComponent):
           - ``timeout``: Assertion retry timeout will determine how long Browser library
                 will retry an assertion to be true.
           - ``scope``: Scope defines the live time of that setting. Available values are
-                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
-                details.
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         The other keyword `Set Browser Timeout` controls how long Playwright
         will wait on the node side for elements to fulfill the
@@ -516,8 +516,8 @@ class Control(LibraryComponent):
                 by a single space. Use ``${None}`` or ``${EMPTY}`` to disable the
                 prefix.
           - ``scope``: Scope defines the live time of that setting. Available values are
-                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
-                details.
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         Returns the previous value of the prefix.
 
@@ -553,8 +553,8 @@ class Control(LibraryComponent):
                 taken on failure. If ``False``, the element is not highlighted in the
                 screenshot.
           - ``scope``: Scope defines the live time of that setting. Available values are
-                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
-                details.
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         Returns the previous value of the setting.
 
@@ -586,8 +586,8 @@ class Control(LibraryComponent):
           - ``style``: Additional CSS styles to be applied to the banner. These styles
                 may override the existing ones for the banner.
           - ``scope``: Scope defines the live time of that setting. Available values are
-                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope` for more
-                details.
+                ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
+                more details.
 
         Returns the previous settings as a dictionary with the keys ``show`` and ``style``.
 

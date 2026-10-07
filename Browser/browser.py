@@ -380,14 +380,14 @@ class Browser(DynamicCore):
 
     Some keywords which manipulates library settings have a scope argument.
     With that scope argument one can set the "live time" of that setting.
-    Available Scopes are: ``Global``, ``Suite`` and ``Test``/`Task`
+    Available Scopes are: ``Global``, ``Suite`` and ``Test`` / ``Task``.
     See `Scope`.
     Is a scope finished, this scoped setting, like timeout, will no longer be used.
 
     Live Times:
     - A ``Global`` scope will live forever until it is overwritten by another ``Global`` scope. Or locally temporarily overridden by a more narrow scope.
     - A ``Suite`` scope will locally override the ``Global`` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with ``Global`` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local ``Suite`` setting that then will be inherited to its children suites.
-    - A ``Test`` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+    - A ``Test`` or ``Task`` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
 
     A new set higher order scope will always remove the lower order scope which may be in charge.
     So the setting of a ``Suite`` scope from a test, will set that scope to the robot file suite where that test is and removes the ``Test`` scope that may have been in place.
@@ -475,7 +475,7 @@ class Browser(DynamicCore):
                 Default is ``TEST``, for more details, see `AutoClosingLevel`
           - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
                 ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
-                passed tests or suites, depending on the context scope, not be saved.
+                passed tests or suites, depending on the context scope, will not be saved.
                 Also temp files will all be deleted after the whole execution ends.
           - ``enable_playwright_debug``: Enable low level debug information from the
                 playwright to playwright-log.txt file. For more details, see
@@ -531,7 +531,7 @@ class Browser(DynamicCore):
                 ``None`` or any other robot falsy value. Run on failure is not applied
                 when library methods are executed directly from Python.
           - ``selector_prefix``: Prefix for all selectors. This is useful when you need
-                to use add an iframe selector before each selector.
+                to add an iframe selector before each selector.
           - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
                 the keyword name and arguments before the keyword is executed at the
                 bottom of the page. If set to ``False``, will not show the banner. If
@@ -539,12 +539,12 @@ class Browser(DynamicCore):
                 presenter mode is enabled. `Get Page Source` and `Take Screenshot` will
                 not show the banner, because that could negatively affect your test
                 cases/tasks. This feature may be super helpful when you are debugging
-                your tests and using tracing from `New Context` or `Video recording`
-                features.
+                your tests and using the ``tracing`` or ``recordVideo`` arguments of
+                `New Context`.
           - ``strict``: If keyword selector points multiple elements and keywords should
                 interact with one element, keyword will fail if ``strict`` mode is true.
-                Strict mode can be changed individually in keywords or by ``Set Strict
-                Mode`` keyword.
+                Strict mode can be changed individually in keywords or by `Set Strict Mode`
+                keyword.
           - ``timeout``: Timeout for keywords that operate on elements. The keywords
                 will wait for this time for the element to appear into the page.
                 Defaults to "10s" => 10 seconds.
