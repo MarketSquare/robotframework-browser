@@ -444,6 +444,15 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
     _output_dir = "."
+    # Parameter names the Node side fills in for JavaScript extension functions.
+    _js_injected_arguments = (
+        "logger",
+        "playwright",
+        "page",
+        "context",
+        "browser",
+        "adoptContext",
+    )
 
     def __init__(  # noqa: PLR0915
         self,
@@ -501,10 +510,18 @@ class Browser(DynamicCore):
           - ``jsextension``: Path to JavaScript modules exposed as extra keywords. The
                 modules must be in CommonJS format; exported functions become keywords
                 and an ``fn.rfdoc`` string becomes a keyword's documentation. The
-                argument names ``page``, ``context``, ``browser``, ``logger`` and
-                ``playwright`` are filled in by the library rather than taken from the
-                keyword call. Can be a single path, a comma-separated list of paths or a
-                real list of strings. See
+                argument names ``page``, ``context``, ``browser``, ``logger``,
+                ``playwright`` and ``adoptContext`` are filled in by the library rather
+                than taken from the keyword call. ``adoptContext(context, onClose)``
+                registers a BrowserContext that the function created itself, for
+                example with ``playwright.chromium.launchPersistentContext`` or
+                ``playwright._electron.launch``, as a new active browser and makes its
+                first page the active page, so the other keywords work on it. It
+                returns the new browser, context and page ids. Closing that browser
+                closes the context and then calls the optional async ``onClose`` once,
+                so the function can release what it owns, such as an app or a device
+                connection. Can be a single path, a
+                comma-separated list of paths or a real list of strings. See
                 https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and
                 documentation.
@@ -802,7 +819,7 @@ class Browser(DynamicCore):
         arg_set_texts = []
         for item in argument_names_and_vals:
             arg_name = item[0]
-            if arg_name in ["logger", "playwright", "page", "context", "browser"]:
+            if arg_name in self._js_injected_arguments:
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
@@ -852,16 +869,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             raise DataError(f"{e.msg} in {name}")
 
     def call_js_keyword(self, keyword_name: str, **args) -> Any:
-        reserved = {
-            "logger": "RESERVED",
-            "playwright": "RESERVED",
-            "page": "RESERVED",
-            "context": "RESERVED",
-            "browser": "RESERVED",
-        }
         _args_browser_internal = {
             "arguments": [
-                (arg_name, reserved.get(arg_name, value))
+                (
+                    arg_name,
+                    "RESERVED" if arg_name in self._js_injected_arguments else value,
+                )
                 for arg_name, value in args.items()
             ]
         }

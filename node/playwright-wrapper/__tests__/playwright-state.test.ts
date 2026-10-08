@@ -16,6 +16,7 @@ import {
     closeAllBrowsers,
     closeBrowser,
     closeBrowserServer,
+    extensionKeywordCall,
     locatorCache,
     newPage,
     PlaywrightState,
@@ -478,5 +479,104 @@ describe('removeFailedPage', () => {
         await removeFailedPage({ token: 'unknown' }, state);
 
         expect(browser.page?.id).toBe('page=open');
+    });
+});
+
+function makeMockPage() {
+    return { on: jest.fn() } as any;
+}
+
+function makeMockContext(pages: any[], close = jest.fn().mockResolvedValue(undefined)) {
+    return { pages: () => pages, on: jest.fn(), close } as any;
+}
+
+describe('adoptContext', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('adds the context as a new active browser without a browser object', async () => {
+        const state = new PlaywrightState();
+        state.browserStack.push(makeBrowserState('browser=existing'));
+
+        const adopted = await state.adoptContext(makeMockContext([makeMockPage()]));
+
+        expect(state.browserStack).toHaveLength(2);
+        expect(state.activeBrowser?.id).toBe(adopted.browserId);
+        expect(state.activeBrowser?.browser).toBeNull();
+        expect(state.activeBrowser?.context?.id).toBe(adopted.contextId);
+    });
+
+    it('registers every existing page and makes the first one active', async () => {
+        const state = new PlaywrightState();
+        const first = makeMockPage();
+        const second = makeMockPage();
+
+        const adopted = await state.adoptContext(makeMockContext([first, second]));
+
+        expect(state.activeBrowser?.context?.pageStack.map((page) => page.p)).toEqual([second, first]);
+        expect(state.activeBrowser?.page?.p).toBe(first);
+        expect(adopted.pageId).toBe(state.activeBrowser?.page?.id);
+    });
+
+    it('keeps an existing browser state with a null browser separate', async () => {
+        const state = new PlaywrightState();
+
+        const one = await state.adoptContext(makeMockContext([makeMockPage()]));
+        const two = await state.adoptContext(makeMockContext([makeMockPage()]));
+
+        expect(state.browserStack).toHaveLength(2);
+        expect(state.browserStack.map((browser) => browser.id)).toEqual([one.browserId, two.browserId]);
+    });
+
+    it('runs onClose once after the adopted context is closed', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, onClose);
+        const adopted = state.getActiveBrowser();
+
+        await closeBrowser(state);
+        await adopted.close();
+
+        expect(context.close).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs onClose even if closing the context fails', async () => {
+        expect.assertions(2);
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()], jest.fn().mockRejectedValue(new Error('gone')));
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, onClose);
+
+        await expect(state.getActiveBrowser().close()).rejects.toThrow('gone');
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('extensionKeywordCall', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('lets an extension function adopt a context it created', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        async function openOwnContext(adoptContext: (c: unknown) => Promise<unknown>) {
+            return adoptContext(context);
+        }
+        state.extensions.push({ openOwnContext } as any);
+        const call = { write: jest.fn() } as any;
+
+        const responses = await extensionKeywordCall(
+            { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [] }) },
+            call,
+            state,
+        );
+
+        const adopted = JSON.parse(responses.map((response) => response.bodyPart).join(''));
+        expect(adopted.browserId).toBe(state.activeBrowser?.id);
+        expect(state.activeBrowser?.context?.c).toBe(context);
     });
 });
