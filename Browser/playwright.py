@@ -266,6 +266,7 @@ class Playwright(LibraryComponent):
 
     def _get_logfile(self) -> TextIO:
         if isinstance(self.playwright_log, Path):
+            self.playwright_log.parent.mkdir(parents=True, exist_ok=True)
             return self.playwright_log.open("w", encoding="utf-8")
         if self.playwright_log is None:
             return Path(os.devnull).open("w", encoding="utf-8")
