@@ -1,17 +1,17 @@
 *** Settings ***
-Resource            ../variables.resource
-Library             Browser
-...                     timeout=${PLAYWRIGHT_TIMEOUT}
-...                     enable_playwright_debug=${True}
-...                     enable_presenter_mode=False
-...                     selector_prefix=${SELECTOR_PREFIX}
-...                     jsextension=${CURDIR}/../05_JS_Tests/funky.js
-...                     plugins=${CURDIR}/ExamplePlugin.py
+Resource         ../variables.resource
+Library          Browser
+...                  timeout=${PLAYWRIGHT_TIMEOUT}
+...                  enable_playwright_debug=${True}
+...                  enable_presenter_mode=False
+...                  selector_prefix=${SELECTOR_PREFIX}
+...                  jsextension=${CURDIR}/../05_JS_Tests/funky.js
+...                  plugins=${CURDIR}/ExamplePlugin.py
 
-Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
-Test Teardown       Close Context    ALL
+Suite Setup      New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Teardown    Close Context    ALL
 
-Test Tags           no-iframe
+Test Tags        no-iframe
 
 *** Test Cases ***
 Calling Custom Js Keyword

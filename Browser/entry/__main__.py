@@ -344,6 +344,9 @@ def show_trace(
     if not _is_url(normalized_trace):
         log(f"Opening file: {normalized_trace}")
     ensure_playwright_browsers_path()
+    if HAS_BROWSER_BATTERIES:
+        _show_trace_via_grpc(browser, normalized_trace)
+        return
     try:
         _show_trace_via_npx(browser, host, port, stdin, normalized_trace)
     except Exception:
@@ -418,6 +421,13 @@ def launch_browser_server(browser, options):
     The browser server can be started with additional options, which are passed as named arguments
     to the keyword `Launch Browser Server`. Arguments must be in the form of `argument_name=value`.
     See the keyword documentation for more details on the available options.
+
+    Values are converted by Robot Framework, so quote the whole `argument_name=value` pair when
+    it contains spaces or quotes. Otherwise the shell strips them and the conversion fails.
+
+    \b
+    Example:
+      rfbrowser launch-browser-server chromium "timeout=10 sec" "proxy={'server': 'http://localhost:8888'}"
 
     == Connecting to a randomly generated websocket ==
 

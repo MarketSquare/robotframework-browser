@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup
-Suite Teardown      Set Retry Assertions For    ${assert_timeout}
+Suite Setup       Setup
+Suite Teardown    Set Retry Assertions For    ${assert_timeout}
 
 *** Test Cases ***
 Get Style Default Error
@@ -54,17 +54,16 @@ Get Client Size With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Client Size    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${size} =    Get Client Size    //input
     Should Be True    ${size}[width] > 0
-    [Teardown]    Set Strict Mode    True
 
 Get Client Size Element Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error
     ...    Client height is '*' (int) should be less than '0.0' (float)
     ...    Get Client Size    h1    height    <    0
-    ${expected} =    Create Dictionary    wrong=value
+    VAR    &{expected} =    wrong=value
     Run Keyword And Expect Error
     ...    KeyError: 'width'
     ...    Get Client Size    h1    all    <    ${expected}
@@ -74,7 +73,7 @@ Get Client Size Element Custom Error
     Run Keyword And Expect Error
     ...    Custom Error With ÄÄÄÄ 0.0
     ...    Get Client Size    h1    height    <    0    Custom Error With ÄÄÄÄ {expected}
-    ${expected} =    Create Dictionary    wrong=value
+    VAR    &{expected} =    wrong=value
     Run Keyword And Expect Error
     ...    Custom Error With ÄÄÄÄ {'wrong': 'value'}
     ...    Get Client Size    h1    all    ==    ${expected}    Custom Error With ÄÄÄÄ {expected}
@@ -85,16 +84,15 @@ Get Scroll Position With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Position    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Get Scroll Position    //input
-    [Teardown]    Set Strict Mode    True
 
 Get Scroll Position Element Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error
     ...    Scroll position top is '0' (int) should be less than '0.0' (float)
     ...    Get Scroll Position    h1    top    <    0
-    ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
+    VAR    &{expected} =    top=-1    left=-1    bottom=-1    right=-1
     Run Keyword And Expect Error
     ...    Scroll position is * (dotdict) should be '{'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}' (dotdict)
     ...    Get Scroll Position
@@ -108,7 +106,7 @@ Get Scroll Position Element Custom Error
     Run Keyword And Expect Error
     ...    Kala ÄÄ 0.0
     ...    Get Scroll Position    h1    top    <    0    Kala ÄÄ {expected}
-    ${expected} =    Create Dictionary    top=-1    left=-1    bottom=-1    right=-1
+    VAR    &{expected} =    top=-1    left=-1    bottom=-1    right=-1
     Run Keyword And Expect Error
     ...    Kala ÄÄ {'top': '-1', 'left': '-1', 'bottom': '-1', 'right': '-1'}
     ...    Get Scroll Position    h1    all    ==    ${expected}    Kala ÄÄ {expected}
@@ -118,17 +116,16 @@ Get Scroll Size With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Scroll Size    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${size} =    Get Scroll Size    //input
     Should Be True    ${size}[width] >= 0
-    [Teardown]    Set Strict Mode    True
 
 Get Scroll Size Element Default Error
     [Tags]    expect_error
     Run Keyword And Expect Error
     ...    Scroll width is * (int) should be less than '0.0' (float)
     ...    Get Scroll Size    h1    width    <    0
-    ${expected} =    Create Dictionary    top=-1    left=-1
+    VAR    &{expected} =    top=-1    left=-1
     Run Keyword And Expect Error
     ...    Scroll size is * (dotdict) should be '{'top': '-1', 'left': '-1'}' (dotdict)
     ...    Get Scroll Size    h1    all    ==    ${expected}
@@ -138,7 +135,7 @@ Get Scroll Size Element Custom Error
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Scroll Size    h1    width    <    0    Tidii
-    ${expected} =    Create Dictionary    top=-1    left=-1
+    VAR    &{expected} =    top=-1    left=-1
     Run Keyword And Expect Error
     ...    Tidii {'top': '-1', 'left': '-1'}"
     ...    Get Scroll Size    h1    all    ==    ${expected}    Tidii {expected}"
@@ -148,7 +145,7 @@ Get Viewport Size Default Error
     Run Keyword And Expect Error
     ...    SizeFields.height is '720' (int) should be less than '0.0' (float)
     ...    Get Viewport Size    height    <    0
-    ${expected} =    Create Dictionary    width=-1    height=-1
+    VAR    &{expected} =    width=-1    height=-1
     Run Keyword And Expect Error
     ...    Viewport size is * (dotdict) should be '{'width': '-1', 'height': '-1'}' (dotdict)
     ...    Get Viewport Size    all    ==    ${expected}
@@ -158,7 +155,7 @@ Get Viewport Size Custom Error
     Run Keyword And Expect Error
     ...    My error
     ...    Get Viewport Size    height    <    0    My error
-    ${expected} =    Create Dictionary    width=-1    height=-1
+    VAR    &{expected} =    width=-1    height=-1
     Run Keyword And Expect Error
     ...    My error dotdict
     ...    Get Viewport Size    all    ==    ${expected}    My error {expected_type}
@@ -187,11 +184,10 @@ Get Property Custom Error
 
 Get Property With Nonmatching Selector
     [Tags]    no-iframe
-    [Setup]    Set Browser Timeout    50ms
+    [Setup]    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Get Property    notamatch    attributeName
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Get Attribute With Strict
     TRY
@@ -204,11 +200,10 @@ Get Attribute With Strict
     EXCEPT    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*    type=glob    AS    ${error}
         Log    ${error}
     END
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${id} =    Get Attribute    //input    id
     Should Be Equal    ${id}    username_field
     Get Attribute    //input    id    equal    username_field
-    [Teardown]    Set Strict Mode    True
 
 Get Attribute Custom Error
     Run Keyword And Expect Error    None, nonetype, True, bool    Get Attribute    id=login_button    disabled    ==
@@ -216,7 +211,7 @@ Get Attribute Custom Error
 
 Get Attribute Names Default Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
+    VAR    @{expected} =    1    3
     Run Keyword And Expect Error
     ...    Attribute names '*' (list) should be '?'1', '3'?' (list)
     ...    Get Attribute Names    [name="readonly_input"]    ==    @{expected}
@@ -224,7 +219,7 @@ Get Attribute Names Default Error
 
 Get Attribute Names Custom Error
     [Setup]    New Page    ${ELEMENT_STATE_URL}
-    ${expected} =    Create List    1    3
+    VAR    @{expected} =    1    3
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
     ...    ==    @{expected}    message=Custom error {expected} {expected_type}
     Run Keyword And Expect Error    Custom error ?'1', '3'? list    Get Attribute Names    [name="readonly_input"]
@@ -305,4 +300,4 @@ Setup
     Close Page    ALL
     New Page    ${LOGIN_URL}
     ${assert_timeout} =    Set Retry Assertions For    0 sec
-    Set Suite Variable    $assert_timeout
+    VAR    ${assert_timeout} =    ${assert_timeout}    scope=SUITE

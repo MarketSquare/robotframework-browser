@@ -13,10 +13,10 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { pino } from 'pino';
 import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
-import { Request, Response } from './generated/playwright_pb';
+import { logger } from './browser_logger';
+import * as pb from './generated/playwright';
 import { _waitForDownload } from './network';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
@@ -28,29 +28,31 @@ import {
     parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
-/** Resolve an Locator, create global UUID for it, and store the reference
- * in global state. Enables using special selector syntax `element=<uuid>` in
- * RF keywords.
+/** Resolve a Locator and return the selector string Playwright built for it.
  */
-export async function getElement(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    const strictMode = request.getStrict();
-    const selector = request.getSelector();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+export async function getElement(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_String> {
+    const strictMode = request.strict;
+    const selector = request.selector;
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.waitFor({ state: 'attached' });
 
     // @ts-ignore
     return stringResponse(locator._selector, 'Locator found successfully.');
 }
 
-/** Resolve a list of Locator, create global UUIDs for them, and store the
- * references in global state. Enables using special selector syntax `element=<uuid>`
- * in RF keywords.
+/** Resolve a list of Locators and return their selector strings. Each one can
+ * be used as the first clause of another selector in RF keywords.
  */
-export async function getElements(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    const selector = request.getSelector();
-    const locator = await findLocator(state, selector, false, undefined, false);
+export async function getElements(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Json> {
+    const selector = request.selector;
+    const locator = await findLocator(state, selector, false, false);
     logger.info(`Wait element to reach attached state.`);
     try {
         await locator.first().waitFor({ state: 'attached' });
@@ -149,13 +151,13 @@ type AriaRole =
     | 'treegrid'
     | 'treeitem';
 
-export async function getByX(request: Request.GetByOptions, state: PlaywrightState): Promise<Response.Json> {
-    const strategy = request.getStrategy();
-    const text = parseRegExpOrKeepString(request.getText());
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    const allElements = request.getAll();
-    const frameSelector = request.getFrameselector();
+export async function getByX(request: pb.Request_GetByOptions, state: PlaywrightState): Promise<pb.Response_Json> {
+    const strategy = request.strategy;
+    const text = parseRegExpOrKeepString(request.text);
+    const options = JSON.parse(request.options);
+    const strictMode = request.strict;
+    const allElements = request.all;
+    const frameSelector = request.frameSelector;
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let document: Page | FrameLocator = activePage;
@@ -234,19 +236,19 @@ const tryToTransformStringToFunction = (str: string): string | (() => unknown) =
 };
 
 export async function evaluateJavascript(
-    request: Request.EvaluateAll,
+    request: pb.Request_EvaluateAll,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.JavascriptExecutionResult> {
-    const selector = request.getSelector();
-    const script = tryToTransformStringToFunction(request.getScript());
-    const strictMode = request.getStrict();
-    const arg = JSON.parse(request.getArg());
-    const allElements = request.getAllelements();
+): Promise<pb.Response_JavascriptExecutionResult> {
+    const selector = request.selector;
+    const script = tryToTransformStringToFunction(request.script);
+    const strictMode = request.strict;
+    const arg = JSON.parse(request.arg);
+    const allElements = request.allElements;
 
     async function getJSResult() {
         if (selector !== '') {
-            const locator = await findLocator(state, selector, strictMode, undefined, !allElements);
+            const locator = await findLocator(state, selector, strictMode, !allElements);
             if (allElements) {
                 return await locator.evaluateAll(script, arg);
             }
@@ -259,36 +261,41 @@ export async function evaluateJavascript(
 }
 
 export async function waitForElementState(
-    request: Request.ElementSelectorWithOptions,
-    pwState: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const { state, timeout } = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    const locator = await findLocator(pwState, selector, strictMode, undefined, true);
-    if (state === 'detached' || state === 'attached' || state === 'hidden' || state === 'visible') {
-        await locator.waitFor({ state: state, timeout: timeout });
+    request: pb.Request_ElementSelectorWithOptions,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const { state: elementState, timeout } = JSON.parse(request.options);
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
+    if (
+        elementState === 'detached' ||
+        elementState === 'attached' ||
+        elementState === 'hidden' ||
+        elementState === 'visible'
+    ) {
+        await locator.waitFor({ state: elementState, timeout: timeout });
     } else {
         const element = await locator.elementHandle({ timeout: timeout });
-        await element?.waitForElementState(state, { timeout: timeout });
+        await element?.waitForElementState(elementState, { timeout: timeout });
     }
-    return emptyWithLog(`Waited for Element with selector ${selector} at state ${state}`);
+    return emptyWithLog(`Waited for Element with selector ${selector} at state ${elementState}`);
 }
 
 export async function waitForFunction(
-    request: Request.WaitForFunctionOptions,
+    request: pb.Request_WaitForFunctionOptions,
     state: PlaywrightState,
     page: Page,
-): Promise<Response.Json> {
-    const script = tryToTransformStringToFunction(request.getScript());
-    const selector = request.getSelector();
-    const options = JSON.parse(request.getOptions());
-    const strictMode = request.getStrict();
-    logger.info(`unparsed args: ${request.getScript()}, ${request.getSelector()}, ${request.getOptions()}`);
+): Promise<pb.Response_Json> {
+    const script = tryToTransformStringToFunction(request.script);
+    const selector = request.selector;
+    const options = JSON.parse(request.options);
+    const strictMode = request.strict;
+    logger.info(`unparsed args: ${request.script}, ${request.selector}, ${request.options}`);
 
     let elem;
     if (selector) {
-        const locator = await findLocator(state, selector, strictMode, undefined, true);
+        const locator = await findLocator(state, selector, strictMode, true);
         elem = await locator.elementHandle();
     }
 
@@ -297,8 +304,8 @@ export async function waitForFunction(
     return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
 }
 
-export async function addStyleTag(request: Request.StyleTag, page: Page): Promise<Response.Empty> {
-    const content = request.getContent();
+export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Promise<pb.Response_Empty> {
+    const content = request.content;
     await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
 }
@@ -306,9 +313,9 @@ export async function addStyleTag(request: Request.StyleTag, page: Page): Promis
 const selectorsForPage: { [key: string]: unknown[] } = {};
 
 export async function recordSelector(
-    request: Request.Label,
+    request: pb.Request_Label,
     state: PlaywrightState,
-): Promise<Response.JavascriptExecutionResult> {
+): Promise<pb.Response_JavascriptExecutionResult> {
     if (state.getActiveBrowser().headless) {
         throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
     }
@@ -340,7 +347,7 @@ export async function recordSelector(
         });
     }
 
-    const result = await recordSelectorIterator(request.getLabel(), page.mainFrame());
+    const result = await recordSelectorIterator(request.label, page.mainFrame());
     // clean old recording array for the next run on the page
     while (selectorsForPage[indexedPage.id].length) {
         selectorsForPage[indexedPage.id].pop();
@@ -425,16 +432,16 @@ async function recordSelectorIterator(label: string, frame: Frame): Promise<stri
 }
 
 export async function highlightElements(
-    request: Request.ElementSelectorWithDuration,
+    request: pb.Request_ElementSelectorWithDuration,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    const selector = request.getSelector();
-    const duration = request.getDuration();
-    const width = request.getWidth();
-    const style = request.getStyle();
-    const color = request.getColor();
-    const strictMode = request.getStrict();
-    const mode = request.getMode();
+): Promise<pb.Response_Int> {
+    const selector = request.selector;
+    const duration = request.duration;
+    const width = request.width;
+    const style = request.style;
+    const color = request.color;
+    const strictMode = request.strict;
+    const mode = request.mode;
     const count = await highlightAll(
         selector,
         duration,
@@ -456,7 +463,7 @@ type EvaluationOptions = {
     clr: string;
 };
 
-async function highlightAll(
+export async function highlightAll(
     selector: string,
     duration: number,
     width: string,
@@ -466,7 +473,7 @@ async function highlightAll(
     state: PlaywrightState,
     mode: 'border' | 'playwright' | 'both' = 'border',
 ): Promise<number> {
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+    const locator = await findLocator(state, selector, strictMode, false);
     let count: number;
     try {
         count = await locator.count();
@@ -474,12 +481,22 @@ async function highlightAll(
         logger.info(e);
         return 0;
     }
+    if (selector === 'ROBOT_FRAMEWORK_BROWSER_NO_SET') {
+        logger.info(`Dispose all highlights because ROBOT_FRAMEWORK_BROWSER_NO_SET selector was used.`);
+        await state.highlightDisposableCache.disposeAll();
+        return 0;
+    }
     logger.info(`Locator count is ${count}`);
     if (['playwright', 'both'].includes(mode)) {
-        void locator.highlight();
+        const highlight = await locator.highlight();
+        if (duration === 0) {
+            logger.info(`Adding highlight to cache without timeout, it will be disposed later.`);
+            state.highlightDisposableCache.add(highlight);
+        }
         if (duration !== 0) {
             setTimeout(() => {
-                void state.getActivePage()?.locator('none.highlight-no-element').highlight();
+                logger.info(`Disposing highlight after ${duration} ms.`);
+                void highlight.dispose();
             }, duration);
         }
         if (mode === 'playwright') {
@@ -514,7 +531,7 @@ async function highlightAll(
     return count;
 }
 
-export async function download(request: Request.DownloadOptions, state: PlaywrightState): Promise<Response.Json> {
+export async function download(request: pb.Request_DownloadOptions, state: PlaywrightState): Promise<pb.Response_Json> {
     const browserState = state.activeBrowser;
     if (browserState === undefined) {
         throw new Error('Download requires an active browser');
@@ -530,10 +547,10 @@ export async function download(request: Request.DownloadOptions, state: Playwrig
     if (page === undefined) {
         throw new Error('Download requires an active page');
     }
-    const urlString = request.getUrl();
-    const saveAs = request.getPath();
-    const downloadTimeout = request.getDownloadtimeout();
-    const waitForFinish = request.getWaitforfinish();
+    const urlString = request.url;
+    const saveAs = request.path;
+    const downloadTimeout = request.downloadTimeout;
+    const waitForFinish = request.waitForFinish;
     const fromUrl = page.url();
     if (fromUrl === 'about:blank') {
         throw new Error('Download requires that the page has been navigated to an url');
@@ -555,8 +572,10 @@ export async function download(request: Request.DownloadOptions, state: Playwrig
                 return a.download;
             });
     };
-    const downloadStarted = _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
     logger.info(`Starting download from ${urlString} to ${saveAs}`);
-    await page.evaluate(script, urlString);
-    return await downloadStarted;
+    const [downloadInfo] = await Promise.all([
+        _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish),
+        page.evaluate(script, urlString),
+    ]);
+    return downloadInfo;
 }

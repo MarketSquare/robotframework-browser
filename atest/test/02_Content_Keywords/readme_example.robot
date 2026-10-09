@@ -1,13 +1,12 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Page
+Suite Teardown    Close Page
 
-Test Tags           no-iframe    need-inet    no-docker-pr
+Test Tags         no-iframe    need-inet    no-docker-pr
 
 *** Test Cases ***
 Example
-    ${old_timeout} =    Set Browser Timeout    60 seconds
+    Set Browser Timeout    60 seconds    scope=Test
     New Page    https://playwright.dev
     Get Text    h1    contains    Playwright
-    Set Browser Timeout    ${old_timeout}

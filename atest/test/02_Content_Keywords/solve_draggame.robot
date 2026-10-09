@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${DRAGGAME_URL}
+Test Setup    New Page    ${DRAGGAME_URL}
 
 *** Test Cases ***
 Move Obstacle To Element And Make A Goal

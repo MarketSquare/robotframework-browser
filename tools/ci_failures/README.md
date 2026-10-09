@@ -1,0 +1,304 @@
+# ci_failures — what fails in CI, how often, and where to start looking
+
+A maintainers' tool. It pulls Robot Framework results out of the artifacts each
+GitHub Actions run leaves behind, keeps them in a local SQLite database, and
+renders one report: which acceptance tests fail, grouped by the error they fail
+with, where in this repository to start looking, and what surrounded each
+failure.
+
+It ships with the repository rather than with the package, is excluded from the
+wheel, and is not part of the Browser library.
+
+**It does not decide whether a test is flaky.** It assembles the evidence for
+that judgement — rates with denominators, what the same matrix leg did in the
+runs either side, whether a hand re-run passed, what else broke alongside — and
+leaves the conclusion to you. A wrong answer about CI looks exactly like a right
+one, so the tool says what it counted and over what.
+
+## Before you start
+
+- **`gh` must be installed and authenticated.** Every request goes through the
+  GitHub CLI so that whoever runs this uses the credentials they already have
+  and no token is handled here. `gh auth status` should be green.
+- **The database is written to `ci_failures/ci_failures.sqlite3`** at the
+  repository root, gitignored. It is derived and rebuildable — but only as far
+  back as GitHub still has the artifacts, and rebuilding what it does have is
+  hours and gigabytes of downloads. It holds at most 120 days: every ingest
+  prunes older Runs (ADR `0005`). See *Retention* and *Three rules* below.
+  Every task takes `--db` for another one, and the page, the Snapshot and
+  fetched artifacts follow it: they live in the database's directory, its
+  **Workspace**. `known_causes.json` does not; it stays with the checkout.
+- **Artifacts live 90 days.** That is the whole horizon: a run older than that
+  cannot be ingested, re-ingested or checked, and `inv ci-ingest` says so —
+  `N artifact(s) expired, unrecoverable`. Everything younger can be fetched
+  again at the cost of the download.
+
+## Everyday use
+
+```bash
+inv ci-ingest --dry-run           # how many legs an ingest would fetch
+inv ci-ingest --limit 25          # pull the newest 25 runs (incremental)
+inv ci-ingest --days 14           # ... or the last two weeks, however many runs that is
+inv ci-ingest --days 84           # a rebuild: as deep as retention allows (see Retention)
+
+inv ci-report                     # the page, at ci_failures/ci_report.html
+inv ci-report --open-it           # ... and open it
+inv ci-report --days 3            # only the last three whole local days
+inv ci-report --json out.json     # the same report, for a language model
+inv ci-report --json a --html b   # both, from one build
+inv ci-report --mark-seen         # baseline this report, so the next can diff
+inv ci-report --test "<name>" --days 7   # one test's Groups as JSON, on stdout
+
+inv ci-artifact --run <id> --leg "<leg>" [--attempt 2] [--test "<Test Name>"]  # one Leg's artifact again, and the files worth opening
+inv ci-artifact --run <id> --test "<Test Name>"  # the Run's Legs that ran it, Controls marked, nothing fetched
+inv ci-artifact --clean                  # remove the artifacts fetched beside the database
+
+inv ci-verify-fixes               # has each Known Cause's fix held? read-only
+inv ci-verify-fixes --mark        # ... and mark the ready ones Verified
+
+inv ci-recompute                  # re-derive what the database can already answer
+inv ci-backfill-attempts          # fill in the attempt of very old legs
+```
+
+A typical session: `inv ci-ingest` to catch up, `inv ci-report --open-it` to
+read the page, then follow the artifact link on whichever occurrence looks worth
+opening. Ingest is incremental — legs already stored are never fetched again —
+so running it often only costs what is new.
+
+To triage one test, `inv ci-report --test` prints that test's part of the
+Report: its Groups, the Fixture Failures of the suites around it, and its Known
+Cause. It is filtered from the same Report the page is built from, so the two
+cannot disagree. Each Occurrence carries `run`, `leg` and `attempt`, which
+`inv ci-artifact` takes to bring back the files ingest threw away. They unpack
+under `artifacts/` in the database's Workspace and stay until `--clean` or the
+next `inv ci-ingest` of that database. Without `--leg`, `inv ci-artifact --test`
+fetches nothing and lists the Legs of the Run that ran the test, the passes
+marked as **Controls**, read from the database only (ADR `0006`).
+`inv --help ci-report` and `inv --help ci-artifact` describe every flag, and the
+`ci-failure-triage` skill in `.claude/skills/` is the triage procedure.
+
+Once a fix has landed, `inv ci-verify-fixes` says whether it held. For every
+Known Cause with a `fixed_by` commit and no `fix_verified` date, it finds the
+ingested Runs whose commit contains the fix — asked of git with `merge-base
+--is-ancestor`, never of the calendar, because a Run on an older commit can be
+created after the fix — and counts the days since the first of them, the Runs of
+the test since, and how often its Group came back. One line each: `waiting 3/7
+days`, `ready` after seven days with no recurrence, `recurred` with the Runs it
+came back in, `no runs yet` when no ingested Run has the fix, `no SHA` when
+`fixed_by` is not a commit in this clone, `not on main` when it is a commit but
+not on `main` of `MarketSquare/robotframework-browser` — a branch SHA that a rebase
+or squash replaced, which would otherwise wait for Runs forever. That `main` is
+found by remote URL, not by name: in a fork's clone it is `upstream/main`, since
+`origin` is the fork, and a clone with no remote pointing at the repository is
+refused. The same test failing on another error
+is listed as a note, not a recurrence. Every entry, verified or not, is also
+checked for being an `orphan` — matching no Group at all, which a mistyped
+signature or a change to the masking rules would otherwise pass off as zero
+recurrences. It changes nothing unless `--mark` is given, which writes today's
+date into `fix_verified` for the `ready` entries only and names the issues that
+can now be closed; it closes none.
+
+`--days` is the question you ask *after* fixing something: the failures from
+before the fix are exactly the ones that must not be counted. It cannot conjure
+data that was never ingested: ask for more days than the database holds and you
+get what it holds, and the report says so — `window.short` in the document, a
+line under the header on the page.
+
+## Retention, and how much history a limit buys
+
+`--limit` counts **runs, not days**, and the exchange rate moves with how busy
+the repository is. Measured on 2026-09-03, on `main`, `push` and `schedule`:
+
+| `--limit` | runs | history | note |
+| ---: | ---: | --- | --- |
+| 25 | 25 | ~8 days | the incremental default |
+| 100 | 100 | ~30 days | both events, contiguous |
+| 200 | 200 | ~14 weeks | **push runs stop at ~6 weeks**; older than that is `schedule` only |
+| 300 | 200 | ~14 weeks | no deeper — one page per event, 100 each, is the ceiling |
+
+So "rebuild it" and "restore what I had" are different requests, and `--limit`
+can only answer the first. **Use `--days` for anything deeper than a catch-up.**
+It walks both events to the same date rather than to the same count, pages until
+it passes the cutoff, and so has no ceiling but retention: `--days 90` reaches
+227 runs where `--limit` stopped at 200, and reaches them without the event mix
+changing halfway through the window.
+
+`--limit` stays the incremental default, because "the newest 25" is exactly the
+right question when you are catching up and costs one request per event. The two
+are alternatives and passing both is refused rather than reconciled.
+
+Against 90-day retention that leaves a narrow band: a rebuild reaches 90 days
+and no further. The database itself keeps 120. Every `inv ci-ingest` ends by
+pruning each Run older than that, with everything under it, and vacuums the
+file when anything went. `--dry-run` only says what would go. Losing the
+database therefore costs the 30 days between the two, which is accepted: CI
+changes fast and data that old is rarely read (ADR `0005`).
+
+## Architecture
+
+Two halves that meet at the database. One talks to the network and runs once per
+ingest; the other never touches it and runs once per report.
+
+Every `inv ci-*` task is a flag parser in front of a function in `commands.py`,
+which does the work, writes its lines through an `out` callable and refuses by
+raising a `RefusalError` (`refusal.py`). The task turns a refusal into its exit
+code in one place: 1 when the archive cannot answer, 2 when the flags were asked
+wrong, 3 when GitHub could not be reached (ADR `0007`). The tests start at
+`commands`, so the modes, the exit codes and the printed lines are all reached.
+
+### Ingest — needs the network
+
+```mermaid
+flowchart TB
+    GHA["GitHub Actions"] -->|"gh api"| GH["github.py<br/><i>runs, artifacts, attempts</i>"]
+    GH -->|"artifact.zip &middot; 10 MB &middot; discarded"| PAR["parse.py<br/><i>output.xml &rarr; rows</i>"]
+    LOC["locate.py<br/><i>where a keyword lives,<br/>from your working copy</i>"] --> PAR
+    PAR --> ING["ingest.py<br/><i>one leg at a time, each contained</i>"]
+    ING --> DB[("ci_failures.sqlite3<br/><i>db.py &middot; schema.sql</i>")]
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px,color:#1c1917;
+    class DB store
+```
+
+Every job of `on-push.yml` that runs the acceptance suite uploads a Leg: the
+parallel shards of `testing` and the serial whole-suite runs of the clean install,
+BrowserBatteries and docker checks, each recorded with its **Install**
+(`legs.py`; ADR `0003`). Downloads one artifact at a time, reads `output.xml`
+out of it, and throws the zip away. Nothing but the parsed rows is kept — the artifact URL is stored so
+screenshots, traces and `playwright-log.txt` can be fetched later for a failure
+that turns out to deserve it. One artifact that will not download, or will not
+unzip, or will not parse, costs that leg and nothing else. One that came down
+whole and cannot be used — no `output.xml`, one cut off by a job's timeout, or a
+root suite other than `atest/test` — is remembered and never fetched again.
+
+`locate.py` is the one part that reads your working copy rather than the
+artifact: `output.xml` says which library owns a failing keyword but not where
+it lives.
+
+### Read — never touches the network
+
+```mermaid
+flowchart TB
+    DB[("ci_failures.sqlite3")] --> WIN["window.py<br/><i>--days, as temp views that shadow the real tables</i>"]
+    WIN --> SUB["subject.py<br/><i>test_failure / fixture_failure</i>"]
+    SUB --> RDG["reading.py<br/><i>ONE Reading, made once</i>"]
+    RDG --> QRY["queries.py<br/><i>21 questions, typed rows</i>"]
+    QRY --> REP["report.py<br/><i>one Report, frozen</i>"]
+    ANN["annotations.py<br/><i>known_causes.json &middot; last_report.json</i>"] --> REP
+    REP --> HTM["render_html.py<br/><i>a page to read</i>"]
+    REP --> JSN["render_json.py<br/><i>a document for an agent to read</i>"]
+    classDef store fill:#f4f1e8,stroke:#57534e,stroke-width:2px,color:#1c1917;
+    classDef out fill:#ecfdf5,stroke:#059669,stroke-width:2px,color:#064e3b;
+    class DB,ANN store
+    class HTM,JSN out
+```
+
+Builds one **Report** and renders it twice. The Report is frozen dataclasses,
+complete and independent of how it is displayed, so the two renderings cannot
+quietly drift apart — a test fails if a field reaches one and not the other
+without somebody writing down why.
+
+Everything above `report.py` narrows what can be seen: the Window restricts the
+tables, the Subject views resolve which rows belong to a test and which to the
+suite fixture above it, and a **Reading** is the only thing the queries accept.
+By the time a query runs, there is no way for it to ask about the wrong rows.
+
+### The modules
+
+| file | what it is |
+| --- | --- |
+| `github.py` | Finds runs and artifacts through the `gh` CLI. The only module that knows GitHub exists. |
+| `legs.py` | What an artifact name says: which artifacts are Legs, their Install, how a Leg is named. |
+| `parse.py` | Reads an `output.xml` into rows. Everything the database holds comes from here. |
+| `locate.py` | Where a failing keyword is defined, resolved against your working copy. |
+| `artifacts.py` | One Leg's artifact fetched again for triage, the files in it that bear on one test, and cleanup after. |
+| `ingest.py` | Drives the two above into the database, one leg at a time, each contained; then prunes Runs past 120 days. |
+| `db.py` | Opens the database, adds columns a database predating them has not got, and refuses one that is not there unless an ingest is creating it. |
+| `schema.sql` | The tables, with the reasoning for each column beside it. |
+| `window.py` | `--days`, as shadowing temp views so no query can forget it. |
+| `subject.py` | `test_failure` and `fixture_failure`, so no query has to remember the rule. |
+| `reading.py` | The database as one Report reads it. The only thing queries accept. |
+| `queries.py` | Every question asked of the whole archive, and nothing else; one Subject's are in `history.py`. |
+| `report.py` | The Report, and what the numbers mean. |
+| `workspace.py` | Where a database's Snapshot, page and fetched artifacts live: beside it. |
+| `history.py` | A Subject History: a typed Test Name resolved, a test with no Group, the Legs of a Run with its Controls, a Subject's Runs and failures for `verify`. Database only. |
+| `annotations.py` | Known Causes (by hand, gitignored) and the Snapshot (in the Workspace). |
+| `verify.py` | Whether a Known Cause's fix held: Runs containing the fix, per git, and recurrences since. |
+| `render_html.py` | The page. |
+| `render_json.py` | The document. |
+| `commands.py` | What each `inv ci-*` task does: flags in, lines out, a refusal for the exit code. |
+| `refusal.py` | The three refusals, Unanswerable, Misasked and Unreachable, and the exit code each carries. |
+
+## Layout
+
+```
+tools/ci_failures/
+├── README.md            # this file
+├── CONTEXT.md           # the vocabulary — read this before changing anything
+├── docs/adr/            # decisions that should not be re-litigated
+├── known_causes.json    # conclusions someone reached, by hand — gitignored
+├── schema.sql
+└── *.py                 # see the table above
+
+ci_failures/             # the default Workspace: gitignored, at the repository root
+├── ci_failures.sqlite3  # the database
+├── ci_report.html       # the page, when you last rendered one
+├── artifacts/           # legs fetched by `inv ci-artifact`, until --clean
+└── last_report.json     # the Snapshot, when you last took one
+
+utest/test_tool_ci_failures.py            # the tool's tests, about three seconds
+utest/test_tool_ci_failures_commands.py   # what each task prints and exits with
+```
+
+## Three rules worth knowing before you change anything
+
+**1. There is no re-parse — except for six columns.** Nothing is kept but the
+parsed rows, so changing *what* is read out of `output.xml` (the log-line rule,
+the screenshot cap, a new column) means deleting the database and downloading
+every artifact again. Six derived columns are the exception, because their
+source is itself stored, and `inv ci-recompute` re-derives them with no network:
+`error_signature` from the message, `keyword_kind` / `keyword_source` /
+`keyword_lineno` from the keyword owner, `install` from the artifact name, and
+`platform` from the stored `os_release` (a full string that used to be stored in
+`platform` itself is moved there first).
+
+Note what "downloading every artifact again" buys, though: everything younger
+than 90 days and nothing older. A re-parse late in the database's life is not
+the same database with a rule changed — it is the last 90 days of it. Which of
+the two the answer needs is worth deciding before deleting anything.
+
+**2. The window is applied to the connection, not to the queries.** A `--days`
+report is windowed by temp views that shadow `run`, `leg`, `test_result` and
+`log_message` for every statement — inside CTEs and subqueries too. Queries
+cannot forget it and cannot disagree about it. The Subject views must stay
+**temp** for the same reason: a permanent view resolves against `main`, cannot
+see the shadows, and would quietly answer a windowed report from the whole
+archive with no error anywhere.
+
+**3. A rendering may show less than the Report holds — but it must say so.**
+`PAGE_OMITS` in the test file lists every field the page deliberately leaves
+out, with a reason each. Add a field to the Report and a test fails until it
+reaches both renderings or joins that list.
+
+## Where the rest of it is
+
+- **`CONTEXT.md`** — the vocabulary. Worth reading first; the code uses its
+  words precisely and means something by each.
+- **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
+  where nobody was changing anything are ingested, why every test artifact of a
+  run is a Leg, why a Leg's Platform is only its operating system, why the
+  archive is pruned at 120 days, why a Run's Controls come from the database,
+  and why a task exits 1, 2 or 3.
+- **Module docstrings** — most of the real reasoning lives there, next to the
+  code it explains, including the measurements behind several decisions and the
+  wrong answers a few of them replaced.
+
+## Development
+
+```bash
+inv lint-python                          # ruff format, ruff check, mypy
+pytest utest/test_tool_ci_failures.py utest/test_tool_ci_failures_commands.py
+```
+
+All three cover `tools/`, and coverage measures it. The tests need no network
+and no artifact: `seed()` builds a database directly, and `_run_robot()` produces
+a real `output.xml` by running Robot Framework in a temporary directory.

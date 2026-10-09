@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup    New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Add Style
@@ -14,6 +14,5 @@ Focus With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Focus    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Focus    //input
-    [Teardown]    Set Strict Mode    True

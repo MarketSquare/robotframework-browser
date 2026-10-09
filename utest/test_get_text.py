@@ -5,7 +5,12 @@ from Browser.keywords import Getters
 
 class Response:
     log = "Log text"
-    body = "element text"
+    items = ["element text"]
+
+
+class SelectResponse:
+    log = "Log text"
+    items = ["Dog"]
 
 
 def test_get_text(ctx: MagicMock):

@@ -11,23 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-import pino from 'pino';
-
-import { Request, Response } from './generated/playwright_pb';
+import { errorType, logger } from './browser_logger';
+import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { findLocator } from './playwright-invoke';
 import { locatorCache, PlaywrightState } from './playwright-state';
 import { emptyWithLog } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 export async function addLocatorHandlerCustom(
-    request: Request.LocatorHandlerAddCustom,
+    request: pb.Request_LocatorHandlerAddCustom,
     state: PlaywrightState,
-): Promise<Response.Empty> {
+): Promise<pb.Response_Empty> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    const overlaySelector = request.getSelector();
-    const timesString = request.getTimes();
+    const overlaySelector = request.selector;
+    const timesString = request.times;
     let times;
     if (timesString === 'None') {
         times = undefined;
@@ -35,19 +33,19 @@ export async function addLocatorHandlerCustom(
         times = parseInt(timesString);
     }
     logger.info(`Adding locator handler for ${overlaySelector} as times: ${times}`);
-    const noWaitAfter = request.getNowaitafter();
-    const hadlerSpecs = request.getHandlerspecsList();
-    const overlayLocator = await findLocator(state, overlaySelector, false, undefined, true);
+    const noWaitAfter = request.noWaitAfter;
+    const handlerSpecs = request.handlerSpecs;
+    const overlayLocator = await findLocator(state, overlaySelector, false, true);
     locatorCache.add(`${state.getActivePageId()}-${overlaySelector}`, overlayLocator);
     await activePage.addLocatorHandler(
         overlayLocator,
         async () => {
             logger.info(`Overlay locator ${overlaySelector} is found`);
-            for (const handlerSpec of hadlerSpecs) {
-                const action = handlerSpec.getAction();
-                const actionSelector = handlerSpec.getSelector();
-                const actionLocator = await findLocator(state, actionSelector, false, undefined, true);
-                const options = JSON.parse(handlerSpec.getOptionsasjson());
+            for (const handlerSpec of handlerSpecs) {
+                const action = handlerSpec.action;
+                const actionSelector = handlerSpec.selector;
+                const actionLocator = await findLocator(state, actionSelector, false, true);
+                const options = JSON.parse(handlerSpec.optionsAsJson);
                 try {
                     if (action === 'click') {
                         logger.info(
@@ -55,7 +53,7 @@ export async function addLocatorHandlerCustom(
                         );
                         await actionLocator.click({ ...options });
                     } else if (action === 'fill') {
-                        const value = handlerSpec.getValue();
+                        const value = handlerSpec.value;
                         logger.info(
                             `Overlay fill on element ${actionSelector} with value ${value} with options: ${JSON.stringify(options)}`,
                         );
@@ -72,7 +70,10 @@ export async function addLocatorHandlerCustom(
                         await actionLocator.uncheck({ ...options });
                     }
                 } catch (error) {
-                    logger.error(`Error in custom locator handler: ${String(error)}`);
+                    logger.error(
+                        { event_kind: 'internal_error', status: 'failed', error_type: errorType(error) },
+                        `Error in custom locator handler: ${String(error)}`,
+                    );
                 }
             }
         },
@@ -82,14 +83,14 @@ export async function addLocatorHandlerCustom(
 }
 
 export async function removeLocatorHandler(
-    request: Request.LocatorHandlerRemove,
+    request: pb.Request_LocatorHandlerRemove,
     state: PlaywrightState,
-): Promise<Response.Empty> {
-    logger.info(`Removing locator handler for ${request.getSelector()}`);
+): Promise<pb.Response_Empty> {
+    logger.info(`Removing locator handler for ${request.selector}`);
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     const activePageId = state.getActivePageId();
-    const overlaySelector = request.getSelector();
+    const overlaySelector = request.selector;
     const locator = locatorCache.get(`${activePageId}-${overlaySelector}`);
     locatorCache.delete(`${activePageId}-${overlaySelector}`);
     if (locator === undefined) {

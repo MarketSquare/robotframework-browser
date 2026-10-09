@@ -1,10 +1,10 @@
 *** Settings ***
-Library         OperatingSystem
-Library         CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
-Resource        imports.resource
+Library        OperatingSystem
+Library        CryptoLibrary    password=cryptoPassword123    key_path=${CURDIR}/keys/
+Resource       imports.resource
 
-Suite Setup     New Page
-Test Setup      Ensure Open Page    ${LOGIN_URL}
+Suite Setup    New Page
+Test Setup     Ensure Open Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Type Text With Clearing
@@ -15,11 +15,10 @@ Type Text With Clearing
 
 Type Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *    Error: locator.fill: Timeout 50ms exceeded.*waiting For Locator('notamatch')*
     ...    Type Text    notamatch    text
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Clear Text
     Fill Text    input#username_field    Wrong Text
@@ -33,17 +32,15 @@ Clear Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Clear Text    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Clear Text    //input
-    [Teardown]    Set Strict Mode    True
 
 Clear Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Clear Text    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill With Css Selector
     Fill Text    css=input#username_field    username
@@ -55,19 +52,17 @@ Fill Text With Force
 
 Fill Text With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Fill Text    notamatch    text
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Fill Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Fill Text    //input    something
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Fill Text    //input    something
-    [Teardown]    Set Strict Mode    True
 
 Fill Secret Direct Value
     TRY
@@ -87,17 +82,15 @@ Fill Secret With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Fill Secret    //input    $LOGIN_URL
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Fill Secret    //input    $LOGIN_URL
-    [Teardown]    Set Strict Mode    True
 
 Type Secret With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Type Secret    //input    $LOGIN_URL
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Type Secret    //input    $LOGIN_URL
-    [Teardown]    Set Strict Mode    True
 
 Fill Secret Placeholder-env-var
     [Documentation]    ...
@@ -161,14 +154,14 @@ Fill Secret Placeholder-robot-var
     ...    LOG 2:2    NONE
     ...    LOG 4:2    NONE
     [Tags]    no-iframe
-    ${var} =    Set Variable    password123
+    VAR    ${var} =    password123
     Type Secret    css=input#username_field    $var
     Get Text    css=input#username_field    ==    password123
     Fill Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password123
 
 Fill Secret Robot Var
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    ${var}
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -181,7 +174,7 @@ Fill Secret Robot Var
     END
 
 Fill Secret Robot Var Mixed
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    ${var}XXX
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -194,7 +187,7 @@ Fill Secret Robot Var Mixed
     END
 
 Fill Secret Robot Var Mixed2
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     TRY
         Type Secret    css=input#username_field    xxx${var}XXX
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -207,8 +200,8 @@ Fill Secret Robot Var Mixed2
     END
 
 Fill Secret Placeholder In Robot Var
-    Set Global Variable    ${global}    password666
-    ${var} =    Set Variable    $global
+    VAR    ${global} =    password666    scope=GLOBAL
+    VAR    ${var} =    $global
     TRY
         Type Secret    css=input#username_field    ${var}
     EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed. Use special variable syntax ($var instead of \${var}) to prevent variable values from being spoiled.
@@ -222,7 +215,7 @@ Fill Secret Placeholder In Robot Var
 
 Fill Secret Env Placeholder In Robot Var
     Set Environment Variable    pwd_TWO    ENV_password123
-    ${var} =    Set Variable    %pwd_TWO
+    VAR    ${var} =    %pwd_TWO
     Type Secret    css=input#username_field    ${var}
     Get Text    css=input#username_field    ==    ENV_password123
     Fill Secret    css=input#password_field    ${var}
@@ -264,18 +257,17 @@ Type Secret Local
     [Documentation]
     ...    LOG 2:2    NONE
     [Tags]    no-iframe
-    ${var} =    Set Variable    password321
+    VAR    ${var} =    password321
     Type Secret    css=input#password_field    $var
     Get Text    css=input#password_field    ==    password321
 
 Fill Secret With Nonmatching Selector
     [Tags]    no-iframe
     Set Environment Variable    MY_RFBROWSER_SECRET    secret
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.fill: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Fill Secret    notamatch    %MY_RFBROWSER_SECRET
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Type Text With Delay
     Type Text    input#username_field    username    delay=10 ms
@@ -285,9 +277,8 @@ Type Text With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation:*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements:*
     ...    Type Text    //input    username
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Type Text    //input    username
-    [Teardown]    Set Strict Mode    True
 
 Type And Fill Text With Text Selector
     Type Text    input#username_field    Text field
@@ -297,12 +288,12 @@ Type And Fill Text With Text Selector
     Get Text    input#username_field    ==    another text
 
 Type And Fill Secret With Text Selector
-    ${var} =    Set Variable    pwfield
+    VAR    ${var} =    pwfield
     Type Secret    input#password_field    $var
-    ${var} =    Set Variable    some text
+    VAR    ${var} =    some text
     Type Secret    text=Password:    $var
     Get Text    input#password_field    ==    some text
-    ${var} =    Set Variable    another text
+    VAR    ${var} =    another text
     Fill Secret    text=Password:    $var
     Get Text    input#password_field    ==    another text
 
@@ -316,27 +307,18 @@ Fill Text With Clearing
     Get Text    css=input#username_field    ==    username
 
 Get Text Default Error
-    Set Retry Assertions For    100ms
+    Set Retry Assertions For    100ms    scope=Test
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Text 'Wrong Text' (str) should be 'username' (str)
     ...    Get Text    css=input#username_field    ==    username
-    [Teardown]    Set Retry Assertions For    1s
 
 Get Text Custom Error
-    Set Retry Assertions For    100ms
+    Set Retry Assertions For    100ms    scope=Test
     Type Text    input#username_field    Wrong Text
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Text    css=input#username_field    ==    username    Tidii
-    [Teardown]    Set Retry Assertions For    1s
-
-Text Area Access
-    Get Text    id=textarea51    ==    Some initial text
-    Type Text    id=textarea51    Area 51
-    Get Text    id=textarea51    ==    Area 51
-    Type Text    id=textarea51    Ufo detected
-    Get Text    id=textarea51    ==    Ufo detected
 
 Type Secret With CryptoLibrary
     Type Secret

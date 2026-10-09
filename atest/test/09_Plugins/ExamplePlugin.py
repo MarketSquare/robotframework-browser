@@ -51,3 +51,16 @@ class ExamplePlugin(LibraryComponent):
     def mouse_wheel(self, x: int, y: int):
         """This keyword calls a custom javascript keyword from the file jsplugin.js."""
         return self.call_js_keyword("mouseWheel", y=y, x=x)
+
+    @keyword
+    def get_large_payload(self) -> dict:
+        """Returns a large payload from a custom javascript keyword."""
+        return self.call_js_keyword("getLargePayload")
+
+    @keyword(name="Plugin Login With Credentials")
+    def plugin_login_with_credentials(self, selector: str, secret: str):
+        return self.resolve_secret(secret, "secret")
+
+    @keyword(name="Plugin Login Without Type Hints")
+    def plugin_login_without_type_hints(self, selector, secret):
+        return self.resolve_secret(secret, "secret")

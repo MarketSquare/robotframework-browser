@@ -17,7 +17,7 @@ import Browser
 
 BR: Browser.Browser = Browser.Browser()
 KW_METHOD_NAMES = [kw.__name__ for kw in BR.keywords.values()]
-ADDED_KW = []
+ADDED_KW: list[str] = []
 
 
 def parse_kw_module_lines(lines: list[str]):
@@ -62,15 +62,16 @@ from Browser.utils import (
     BrowserInfo, PageLoadStates,ViewportDimensions, ServiceWorkersPermissions,
     ReduceMotion, RecordVideo, RecordHar, Proxy, Permission, HttpCredentials,
     GeoLocation, ForcedColors, ColorScheme, ClientCertificate, HighlightMode, ScreenshotReturnType,
-    Scale, ScreenshotFileTypes, BoundingBox, ReducedMotion, Media, PdfMarging,
+    Scale, ScreenshotFileTypes, BoundingBox, ReducedMotion, ReloadPages, Media, PdfMarging,
     PdfFormat, CoverageType, RequestMethod, ElementState, ScrollPosition,
     SelectAttribute, SelectOptions, ConditionInputs, FileUploadBuffer, SelectAttribute
 )
 from Browser.utils .data_types import (
-    MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction, NotSet, Dimensions,
-    SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole, AriaSnapshotReturnType,
-    KeyboardInputAction, KeyAction
+    ClientCredential, MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction,
+    NotSet, Dimensions, SizeFields, AreaFields, BoundingBoxFields, SelectionStrategy, ElementRole,
+     AriaSnapshotMode, AriaSnapshotReturnType, KeyboardInputAction, KeyAction, TextType
 )
+from Browser.utils.types import Secret
 """
 with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     stub_file.write(pyi_boilerplate)

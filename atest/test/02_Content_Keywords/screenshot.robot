@@ -1,10 +1,10 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Screenshot Timeout
+Test Setup    Screenshot Timeout
 
 *** Variables ***
-${TestScreenshot} =     ${OUTPUT_DIR}${/}test_screenshot
+${TestScreenshot} =    ${OUTPUT_DIR}${/}test_screenshot
 
 *** Test Cases ***
 Screenshot By Default Filename
@@ -48,7 +48,7 @@ Screenshotting With Jpeg Extension And Quality
 
 Screenshotting With Jpeg Extension And Quality Borders
     [Setup]    Screenshot Timeout    ${FORM_URL}    # used form url as login page has too much active elements
-    ${difference} =    Set Variable    ${42}    # Seems usually be 28 but use 42 to be safe side
+    VAR    ${difference} =    ${42}    # Seems usually be 28 but use 42 to be safe side
     Take Screenshot    fullPage=True    fileType=jpeg    quality=0    timeout=10s
     ${size_0} =    Get File Size    ${OUTPUT_DIR}/browser/screenshot/robotframework-browser-screenshot-1.jpeg
     Take Screenshot    fullPage=True    fileType=jpeg    quality=-190    timeout=10s
@@ -65,11 +65,10 @@ Screenshotting With Jpeg Extension And Quality Borders
     [Teardown]    Remove Files    ${OUTPUT_DIR}/browser/screenshot/*.jpeg
 
 If Element Not Found Screenshot Should Fail
-    ${timeout} =    Set Browser Timeout    200ms
+    Set Browser Timeout    200ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.screenshot: Timeout 200ms exceeded.*waiting for locator('#not_there')*
     ...    Take Screenshot    selector=\#not_there
-    Set Browser Timeout    ${timeout}
     [Teardown]    Remove File    ${OUTPUT_DIR}/*.png
 
 ElementHandle Screenshotting
@@ -82,9 +81,9 @@ Take Take Screenshot With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Take Screenshot    selector=//input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${path} =    Take Screenshot    browser-strict    selector=//input
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     [Teardown]    Remove File    ${path}
 
 Screenshotting Without Path
@@ -98,8 +97,8 @@ Screenshotting Without Path
 
 Screenshot Filename Incrementation
     [Documentation]
-    ...    LOG 1:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png" target="_blank"><img src="test_screenshot_1.png" width="800px"/></a>
-    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" width="800px"/></a>
+    ...    LOG 1:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_1.png" target="_blank"><img src="test_screenshot_1.png" style="max-width:800px;max-height:800px;"/></a>
+    ...    LOG 2:3    </td></tr><tr><td colspan="3"><a href="test_screenshot_2.png" target="_blank"><img src="test_screenshot_2.png" style="max-width:800px;max-height:800px;"/></a>
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{index}
     Take Screenshot    ${TestScreenshot}_{{index}}_{index}
@@ -112,14 +111,14 @@ Screenshot Filename Incrementation
 
 Embed ScreenShot To Log.html File
     [Documentation]
-    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:4    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" style="max-width:900px;max-height:900px;" src="data:image/png;base64
     ${path} =    Take Screenshot    EMBED
     Should Not Exist    ${OUTPUT_DIR}/EMBED*
     Should Be Equal    ${path}    EMBED
 
 Embed Element Picture To Log.html File
     [Documentation]
-    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" src="data:image/png;base64
+    ...    LOG 1:*    STARTS: </td></tr><tr><td colspan="3"><img alt="screenshot" class="robot-seleniumlibrary-screenshot" style="max-width:900px;max-height:900px;" src="data:image/png;base64
     ${path} =    Take Screenshot    EMbeD    selector=\#username_field
     Should Not Exist    ${OUTPUT_DIR}/EM??D*
     Should Be Equal    ${path}    EMBED

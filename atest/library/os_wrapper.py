@@ -1,12 +1,15 @@
 import json
 import os
+import platform
 import random
+import subprocess
 import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from robot import version  # type: ignore
 from robot.api import logger  # type: ignore
 from robot.libraries.BuiltIn import BuiltIn  # type: ignore
 from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
@@ -64,6 +67,35 @@ def get_enty_command() -> str:
     if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))):
         return "rfbrowser"
     return f"{sys.executable} -m Browser.entry"
+
+
+def get_robot_command() -> str:
+    """Return the command that starts a child Robot Framework run."""
+    return f"{sys.executable} -m robot"
+
+
+def get_child_robot_environment() -> dict:
+    """Return the environment for a child robot run that starts its own node process.
+
+    `inv atest` starts one shared node process for the whole run and exports
+    ROBOT_FRAMEWORK_BROWSER_NODE_PORT and DEBUG for it (tasks.py). A child run
+    that inherited those would connect to the shared process instead of
+    starting its own and would never write its own playwright-log.txt.
+    The pino log level is set rather than inherited so the child behaves the
+    same under `inv atest` and `inv atest-robot`.
+    """
+    env = os.environ.copy()
+    env.pop("ROBOT_FRAMEWORK_BROWSER_NODE_PORT", None)
+    env.pop("DEBUG", None)
+    env["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
+    return env
+
+
+def count_files(path: str, pattern: str) -> int:
+    """Return count of files matching pattern, also when path does not exist."""
+    files = sorted(str(file) for file in Path(path).glob(pattern))
+    logger.info(f'Files matching "{pattern}" in "{path}": {files}')
+    return len(files)
 
 
 def verify_translation(filename: Path) -> dict:
@@ -137,6 +169,71 @@ def get_python_binary_path() -> str:
 
 def is_python_314() -> bool:
     return sys.version_info >= (3, 14) and sys.version_info < (3, 15)
+
+
+def get_python_version() -> str:
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+
+
+def get_robot_version() -> str:
+    return str(version.VERSION)
+
+
+def get_node_version() -> str:
+    """The NodeJS actually running the library, for the result to record.
+
+    Which NodeJS ran matters when a failure only happens on one of them, and
+    output.xml is the only thing that survives a CI run long enough to be asked.
+    """
+    try:
+        completed = subprocess.run(
+            ["node", "--version"],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+    return completed.stdout.strip() or "unknown"
+
+
+def get_os_release() -> str:
+    """More than sys.platform: "win32" does not distinguish two Windows runners."""
+    return platform.platform()
+
+
+def get_executor_count(pabot_processes: str = "") -> str:
+    """How many test executions ran at the same time.
+
+    A whole class of failure lives on this dimension and no other: anything
+    where one worker's state reaches another's happens only when there is
+    another worker, and gets rarer as there are fewer. It is not recorded
+    anywhere that outlives a run, and nobody chooses it per platform - tasks.py
+    derives it from the runner's CPU count, so a four-core Linux runner runs
+    three workers and a three-core macOS runner two, which is enough to make the
+    same defect look platform specific.
+
+    `${PABOTNUMBEROFPROCESSES}` is set by pabot as a Robot variable. Its absence
+    means this was not a pabot run at all, and one execution is the honest
+    answer for that.
+    """
+    processes = str(pabot_processes or "").strip()
+    return processes if processes.isdigit() else "1"
+
+
+def get_node_process_sharing() -> str:
+    """Whether every worker talks to one node process or starts its own.
+
+    tasks.py points every pabot worker at a single node process through
+    ROBOT_FRAMEWORK_BROWSER_NODE_PORT. Anything the node side keeps in a
+    module-level singleton is therefore shared between workers that have every
+    reason to believe they are isolated, and whether that was the case is a fact
+    about the run that only the run can record.
+    """
+    if os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT"):
+        return "shared"
+    return "per-process"
 
 
 def _parse_fi_date(date: str) -> datetime:
@@ -223,3 +320,14 @@ def relative_to(path1: Path, path2: Path) -> Path:
 def get_file_name(path: str) -> str:
     """Return file name from path."""
     return Path(path).name
+
+
+def convert_to_path(path: str) -> Path:
+    """Convert string path to Path object."""
+    path_path = Path(path)
+    logger.info(f"Converted {path} to {path_path} {type(path_path)}")
+    return path_path
+
+
+if __name__ == "__main__":
+    print(f"Robot Framework Version: {get_robot_version()}")

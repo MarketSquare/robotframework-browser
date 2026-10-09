@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${FORM_URL}
+Test Setup    New Page    ${FORM_URL}
 
 *** Test Cases ***
 Press Keys Generate Characters
@@ -13,9 +13,8 @@ Press Keys With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Press Keys    //input    Foo
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Press Keys    //input    T    i    d    i    i
-    [Teardown]    Set Strict Mode    True
 
 Press Key Combinations Of Keystrokes In TextField
     Press Keys    input[name="email"]    Home    Shift+End    Delete
@@ -30,11 +29,10 @@ Press Keys Combination Of Keystrokes In Select List
 
 Press Keys With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.press: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Press Keys    css=notamatch    F
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Check Press Keys Events
     [Setup]    New Page    ${EVENTS_URL}

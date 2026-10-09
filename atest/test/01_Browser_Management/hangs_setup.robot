@@ -1,28 +1,28 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Browser
+Suite Teardown    Close Browser
 
 *** Variables ***
-${ErrorMessage} =       page.goto: Timeout 1ms exceeded.
+${ErrorMessage} =    page.goto: Timeout 1ms exceeded.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout
     [Tags]    slow
     New Page
-    Set Browser Timeout    1ms
+    Set Browser Timeout    1ms    scope=Test
     Run Keyword And Expect Error    *${ErrorMessage}*    Go To    ${LOGIN_URL}
     Wait For Elements State    //h1    visible    timeout=2 s
 
 Test New Page With Short Default Timeout
     New Context
-    Set Browser Timeout    1ms
+    Set Browser Timeout    1ms    scope=Test
     Run Keyword And Expect Error    *${ErrorMessage}*    New Page    ${LOGIN_URL}
 
 *** Keywords ***
 Setup
     ${original} =    Register Keyword To Run On Failure    ${None}
-    Set Suite Variable    $original
+    VAR    ${original} =    ${original}    scope=SUITE
 
 Teardown
     Register Keyword To Run On Failure    ${original}

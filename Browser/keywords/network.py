@@ -65,19 +65,29 @@ class Network(LibraryComponent):
     ) -> Any:
         """Performs an HTTP request in the current browser context
 
-        | =Arguments= | =Description= |
-        | ``url`` | The request url, e.g. ``/api/foo``. |
-        | ``method`` | The HTTP method for the request. Defaults to GET. |
-        | ``body`` | The request body. GET requests cannot have a body. If the body can be parsed as JSON, the ``Content-Type`` header for the request will be automatically set to ``application/json``. Defaults to None. |
-        | ``headers`` | A dictionary of additional request headers. Defaults to None. |
+        The request is sent with the browser's ``fetch`` from the currently active page,
+        so a relative ``url`` is resolved against the URL of that page.
 
-        The response is a Python dictionary with following attributes:
+        *Arguments:*
+          - ``url``: The request url, e.g. ``/api/foo``.
+          - ``method``: The HTTP method for the request. Defaults to GET.
+          - ``body``: The request body. It is ignored for GET requests, because GET
+                requests cannot have a body. If the body can be parsed as JSON, the
+                ``Content-Type`` header for the request is automatically set to
+                ``application/json``, unless ``headers`` already contains that header.
+                Defaults to None.
+          - ``headers``: A dictionary of additional request headers. Defaults to None.
+
+        The response is a Robot Framework dictionary with the following attributes:
           - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR. This may not be available for all browser.
+          - ``statusText`` <str> Status text corresponding to ``status``, e.g. OK or INTERNAL SERVER ERROR. This may not be available for all browsers.
           - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON object,
           it will be returned as Python dictionary, otherwise it is returned as a string.
           - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is range 200-299.
+          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is in the range 200-299.
+          - ``url`` <str> The final URL of the response, after possible redirects.
+          - ``redirected`` <bool> Whether the response is the result of a redirect.
+          - ``type`` <str> The type of the response, e.g. ``basic`` or ``cors``.
 
         Here's an example of using Robot Framework dictionary variables and extended variable syntax to
         do assertions on the response object:
@@ -116,9 +126,14 @@ class Network(LibraryComponent):
                     timeout=self.get_timeout(timeout),
                 )
             )
-            logger.debug(response.log)
-            # Add format response back here
-            return response.body
+            logger.info(response.log)
+            try:
+                data = json.loads(response.json)
+            except json.decoder.JSONDecodeError:
+                logger.info(f"Failed to decode JSON: {response.json}")
+                data = response.json
+            logger.debug(f"Received request: {data}")
+            return data
 
     def _wait_for_http_response(self, matcher, timeout):
         body = ""
@@ -142,17 +157,32 @@ class Network(LibraryComponent):
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
         self, matcher: str | RegExp = "", timeout: timedelta | None = None
-    ) -> Any:
-        """Waits for request matching matcher to be made.
+    ) -> DotDict | Any:
+        """Waits for a request matching ``matcher`` to be made.
 
-        | =Arguments= | =Description= |
-        | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), JavaScript RegExp (encapsulated in / with following flags) or JavaScript arrow-function that receives the [https://playwright.dev/docs/api/class-request|Request] object and returns a boolean. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-request|waitForRequest] documentation. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+        Only the request is awaited, not its response. See `Wait For Response` if the
+        response is needed.
 
-        See `Wait For Response` for more details.
+        The returned object is a dictionary with the keys ``url``, ``method``, ``headers`` and ``postData``.
+        ``headers`` is a dictionary of request headers. ``postData`` is ``None`` if the request has no body,
+        a dictionary if the body is valid JSON and otherwise the body as a string.
+
+        *Arguments:*
+          - ``matcher``: Request URL matcher. Can be a string (Glob-Pattern), a
+                JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
+                JavaScript arrow-function that receives the
+                [https://playwright.dev/docs/api/class-request | Request] object and
+                returns a boolean. By default (with an empty string) the first request
+                is matched. For additional information, see the Playwright
+                [https://playwright.dev/docs/api/class-page#page-wait-for-request |
+                waitForRequest] documentation.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
+
+        See `Wait For Response` for more details about the matcher.
 
         *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not needed to be in slashes.
+        But the regex did not need to be in slashes.
         The most simple way to migrate to the new syntax is to add slashes around the matcher.
         So ``/api/get/json`` becomes ``//api/get/json/``.
 
@@ -169,24 +199,35 @@ class Network(LibraryComponent):
     def wait_for_response(
         self, matcher: str | RegExp = "", timeout: timedelta | None = None
     ) -> DotDict | Any:
-        """Waits for response matching matcher and returns the response as robot dict.
+        """Waits for a response matching ``matcher`` and returns the response as a Robot Framework dictionary.
 
-        The response, which is returned by this keyword, is a robot dictionary with following attributes:
+        The keyword waits until the response headers are received and then reads the response body.
+
+        The response, which is returned by this keyword, is a Robot Framework dictionary with the following attributes:
           - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g OK or INTERNAL SERVER ERROR. This may not be available for all browser.
+          - ``statusText`` <str> Status text corresponding to ``status``, e.g. OK or INTERNAL SERVER ERROR. This may not be available for all browsers.
           - ``body`` <dict | str> The response body. If the body can be parsed as a JSON object,
           it will be returned as Python dictionary, otherwise it is returned as a string.
+          It is ``None`` if the body could not be read and the key is missing altogether
+          if the response body is empty.
           - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is range 200-299.
+          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is in the range 200-299.
           - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
-          - ``url`` <str> url of the request.
+          - ``url`` <str> url of the response.
 
-        | =Arguments= | =Description= |
-        | ``matcher`` | Request URL matcher. Can be a string (Glob-Pattern), JavaScript RegExp (encapsulated in / with following flags) or JavaScript arrow-function that receives the Response object and returns a boolean. By default (with empty string) matches first available request. For additional information, see the Playwright [https://playwright.dev/docs/api/class-page#page-wait-for-response|page.waitForResponse] documentation. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
+        *Arguments:*
+          - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
+                JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
+                JavaScript arrow-function that receives the Response object and returns
+                a boolean. By default (with an empty string) the first response is
+                matched. For additional information, see the Playwright
+                [https://playwright.dev/docs/api/class-page#page-wait-for-response |
+                page.waitForResponse] documentation.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
 
         *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not needed to be in slashes.
+        But the regex did not need to be in slashes.
         The most simple way to migrate to the new syntax is to add slashes around the matcher.
         So ``/api/get/json`` becomes ``//api/get/json/``.
 
@@ -194,8 +235,7 @@ class Network(LibraryComponent):
 
         === Glob-Pattern: ===
 
-        Glob-Patterns are strings that can contain wildcards. The following wildcards are supported:
-
+        Glob-Patterns are strings that can contain wildcards.
         Possible wildcards/patterns are:
         - ``*`` matches any number of characters, except ``/``
         - ``**`` matches any number of characters, including ``/``
@@ -205,16 +245,16 @@ class Network(LibraryComponent):
         - ``{foo,bar,baz}`` matches one of the strings in the braces (in this example ``foo``, ``bar`` or ``baz``)
 
         Example:
-        | `Wait For Response`    **/api/get/text    # matches any request with url ending with /api/get/text. example: https://browser.fi/api/get/text
+        | `Wait For Response`    **/api/get/text    # matches any response with url ending with /api/get/text. example: https://browser.fi/api/get/text
 
         === RegExp: ===
 
-        Regular Expressions are JavaScript regular expressions encapsulated in ``/`` with optional following flags:
+        Regular Expressions are JavaScript regular expressions enclosed in ``/`` with optional trailing flags.
         Be aware that backslashes need to be escaped in Robot Framework, e.g. ``\\\\w`` instead of ``\\w``.
         See [https://regex101.com|regex101] for more information on Regular Expressions.
 
         Example:
-        | `Wait For Response`    /http://\\\\w+:\\\\d+/api/get/text/i    # matches any request with url ending with /api/get/text and containing http:// followed by any word and port. example: http://localhost:8080/api/get/text
+        | `Wait For Response`    /http://\\\\w+:\\\\d+/api/get/text/i    # matches any response with url ending with /api/get/text and containing http:// followed by any word and port. example: http://localhost:8080/api/get/text
 
         === JavaScript Arrow-Function: ===
 
@@ -252,53 +292,41 @@ class Network(LibraryComponent):
             return response
 
     @keyword(tags=("Wait", "HTTP"))
-    def wait_until_network_is_idle(self, timeout: timedelta | None = None):
-        """*DEPRECATED!!* Use `Wait For Load State` instead. rfbrowser transform --wait-until-network-is-idle path/to/test command automatically transforms keyword to new format.
-
-        If you have:
-        | `Wait Until Network Is Idle`    timeout=3s
-        then change it to:
-        | `Wait For Load State`    networkidle    timeout=3s
-
-        Waits until there has been at least one instance of 500 ms of no network traffic on the page after loading.
-
-        Doesn't wait for network traffic that wasn't initiated within 500ms of page load.
-
-        | =Arguments= | =Description= |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses browser timeout if not set. |
-
-        Example:
-        | `Go To`                         ${URL}
-        | `Wait Until Network Is Idle`    timeout=3s
-
-        [https://forum.robotframework.org/t//4350|Comment >>]
-        """
-        self.library.wait_for_load_state(PageLoadStates.networkidle, timeout)
-
-    @keyword(tags=("Wait", "HTTP"))
     def wait_for_navigation(
         self,
         url: str | RegExp,
         timeout: timedelta | None = None,
         wait_until: PageLoadStates = PageLoadStates.load,
     ):
-        """Waits until page has navigated to given ``url``.
+        """Waits until the page has navigated to the given ``url``.
+
+        *Arguments:*
+          - ``url``: Expected navigation target address, either a Glob-Pattern (a plain
+                string without wildcards matches exactly) or a JavaScript-like regex
+                wrapped in ``/`` symbols.
+          - ``timeout``: Timeout supports Robot Framework time format. Uses default
+                timeout if not set.
+          - ``wait_until``: When to consider the operation succeeded, defaults to load.
+                Events can be either: ``domcontentloaded`` - consider operation to be
+                finished when the DOMContentLoaded event is fired. ``load`` - consider
+                operation to be finished when the load event is fired. ``networkidle`` -
+                consider operation to be finished when there are no network connections
+                for at least 500 ms. ``commit`` - consider operation to be finished when
+                network response is received and the document started loading.
 
 
-        | =Arguments= | =Description= |
-        | ``url`` | Expected navigation target address either the exact match or a JavaScript-like regex wrapped in ``/`` symbols. |
-        | ``timeout`` | Timeout supports Robot Framework time format. Uses default timeout if not set. |
-        | ``wait_until`` | When to consider operation succeeded, defaults to load. Events can be either: ``domcontentloaded`` - consider operation to be finished when the DOMContentLoaded event is fired. ``load`` - consider operation to be finished when the load event is fired. ``networkidle`` - consider operation to be finished when there are no network connections for at least 500 ms. ``commit`` - consider operation to be finished when network response is received and the document started loading. |
-
-
-        Keyword works only when page is loaded and does not work if URL fragment changes. Example if
+        The keyword works only when the page is loaded and it does not work if only the URL fragment changes. Example: if
         https://marketsquare.github.io/robotframework-browser/Browser.html changes to
         https://marketsquare.github.io/robotframework-browser/Browser.html#Wait%20For%20Navigation
-        keyword will fail.
+        the keyword will fail.
 
         Example:
         | `Go To`                  ${ROOT_URL}/redirector.html
         | `Wait for navigation`    ${ROOT_URL}/posted.html    wait_until=${wait_until}
+
+        If the wait times out, the page's load report is logged: whether its
+        navigation committed, how far the document got and which requests
+        were still open.
 
         [https://forum.robotframework.org/t//4347|Comment >>]
         """

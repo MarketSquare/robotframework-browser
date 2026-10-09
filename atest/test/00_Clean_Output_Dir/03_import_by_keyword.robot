@@ -1,6 +1,11 @@
 *** Settings ***
-Library     OperatingSystem
-Resource    ../variables.resource
+Documentation
+...              If Variable \${initial_screenshot} not found, it means 01 failed before it could
+...              publish the path as global variable. Nothing is wrong in this file; look at 01.
+...              If error says \${second_screenshot} is not found, then look at 02.
+
+Library          OperatingSystem
+Resource         ../variables.resource
 
 *** Test Cases ***
 Take Screenshot

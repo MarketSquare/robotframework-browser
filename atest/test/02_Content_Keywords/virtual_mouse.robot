@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      New Page    ${LOGIN_URL}
+Test Setup    New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${Center_Func} =    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
@@ -56,10 +56,9 @@ Drag And Drop With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Drag And Drop    id=clickWithOptions    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Drag And Drop    id=clickWithOptions    //input
     Drag And Drop    //input    id=clickWithOptions
-    [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Coordinates
     [Tags]    slow
@@ -81,10 +80,10 @@ Drag And Drop With Coordinates
     Assert Position    ${obj_center}[x]    ${obj_center}[y]    ${tol}
     # Tests with explicit values True or False for argument drop
     # "Start coordinates" of blue-box object:
-    ${x1} =    Set Variable    ${obj_center}[x]
-    ${y1} =    Set Variable    ${obj_center}[y]
-    ${width} =    Set Variable    ${obj_dim}[width]
-    ${height} =    Set Variable    ${obj_dim}[height]
+    VAR    ${x1} =    ${obj_center}[x]
+    VAR    ${y1} =    ${obj_center}[y]
+    VAR    ${width} =    ${obj_dim}[width]
+    VAR    ${height} =    ${obj_dim}[height]
     Log    blue-box object: ${obj_center}
     # coordinates where to drag in relative values:
     ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
@@ -92,11 +91,11 @@ Drag And Drop With Coordinates
     ${x3} =    Evaluate    ${x2} + 0.06 * ${width}
     ${y3} =    Evaluate    ${y2} + 1.2 * ${height}
     ${x4} =    Evaluate    ${x3} + 0.08 * ${width}
-    ${y4} =    Set Variable    ${y3}
-    ${x5} =    Set Variable    ${x4}
-    ${y5} =    Set Variable    ${height}
-    ${steps} =    Set Variable    200
-    ${time} =    Set Variable    1
+    VAR    ${y4} =    ${y3}
+    VAR    ${x5} =    ${x4}
+    VAR    ${y5} =    ${height}
+    VAR    ${steps} =    200
+    VAR    ${time} =    1
 
 Hover And Drop To Hover
     [Setup]    New Page    ${DRAGGAME_URL}
@@ -114,13 +113,12 @@ Hover And Drop To Hover
     Get Text    id=blue-box-y-value    ==    ${y}
 
 Hover With Strict
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Hover    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Hover    //input
-    [Teardown]    Set Strict Mode    True
 
 Drag And Drop With Move Relative
     [Setup]    New Page    ${DRAGGAME_URL}
@@ -163,19 +161,17 @@ Get Boundingbox With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Boundingbox    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${x} =    Get Boundingbox    //input    x
     Should Be True    ${x}
-    [Teardown]    Set Strict Mode    True
 
 Mouse Move Relative To With Strict
     [Tags]    slow
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Mouse Move Relative To    //input    4    2
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Mouse Move Relative To    //input    4    2
-    [Teardown]    Set Strict Mode    True
 
 Scroll By Mouse Wheel
     [Setup]    New Page    ${TABLES_URL}

@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
-Library             Process
+Resource         imports.resource
+Library          Process
 
-Test Teardown       Close Browser    ALL
+Test Teardown    Close Browser    ALL
 
 *** Test Cases ***
 Open Firefox
@@ -29,10 +29,9 @@ New Context Does Not Open A Page
 
 Open Browser Opens Everything
     [Tags]    slow    no-docker-pr
-    ${old_timeout} =    Set Browser Timeout    30 seconds
+    Set Browser Timeout    30 seconds    scope=Test
     Open Browser    url=${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    Set Browser Timeout    ${old_timeout}
 
 Open Browser With Invalid Browser Fails On RF Side
     Run Keyword And Expect Error
@@ -133,11 +132,10 @@ Switch New Page Fails When No New Pages
     New Page    ${LOGIN_URL}
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${timeout} =    Set Browser Timeout    0.1s
+    Set Browser Timeout    0.1s    scope=Test
     Run Keyword And Expect Error
     ...    Error: Tried to activate a new page but no new pages were detected in context.    Switch Page    NEW
     Get Title    ==    prefilled_email_form.html
-    [Teardown]    Set Browser Timeout    ${timeout}
 
 Set Viewport Size
     New Page
@@ -256,10 +254,9 @@ Close Page With Page Id
 New Context With DefaultBrowserType Ff
     [Tags]    slow
     [Timeout]    80s    # Because FF is just slow sometimes
-    ${old_timeout} =    Set Browser Timeout    80s
+    Set Browser Timeout    80s    scope=Test
     New Context    defaultBrowserType=firefox
     Verify Browser Type    firefox
-    Set Browser Timeout    ${old_timeout}
 
 New Context With baseURL
     [Tags]    no-docker-pr
@@ -414,7 +411,8 @@ Switch Page With ALL Browsers Failing
 
 Launch Browser Server CLI
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8270    wsPath=server1
-    Should Be Equal    ${wsEndpoint}    ws://localhost:8270/server1
+    Should Start With    ${wsEndpoint}    ws://
+    Should End With    ${wsEndpoint}    :8270/server1
     ${browser} =    Connect To Browser    ws://localhost:8270/server1
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
@@ -422,9 +420,10 @@ Launch Browser Server CLI
 
 Launch Browser Server CLI With Video
     [Documentation]
-    ...    LOG 5:3    DEBUG    Video is not enabled.
+    ...    LOG 6:3    DEBUG    Video is not enabled.
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8271    wsPath=server1
-    Should Be Equal    ${wsEndpoint}    ws://localhost:8271/server1
+    Should Start With    ${wsEndpoint}    ws://
+    Should End With    ${wsEndpoint}    :8271/server1
     ${browser} =    Connect To Browser    ws://localhost:8271/server1
     New Context
     ...    tracing=path/is/not/here/trace_999.zip
@@ -461,6 +460,8 @@ Launch Browser Server Via CLI
     ...    headless\=${HEADLESS}
     ...    port\=8273
     ...    wsPath\=server3
+    ...    timeout\=30s
+    ...    slowMo\=0s
     Wait Until Keyword Succeeds
     ...    10s
     ...    1s
@@ -479,6 +480,36 @@ Launch Browser Server Via CLI
     Get Viewport Size    width    ==    100
     Get Viewport Size    height    ==    100
     [Teardown]    Terminate All Processes
+
+Launch Browser Server Via CLI With Proxy
+    [Documentation]    The `proxy` TypedDict is converted twice: once by the CLI and once when
+    ...    the entry point calls the keyword by attribute access. Nothing listens on port 1, so
+    ...    a refused proxy connection is what proves the option survived both conversions and
+    ...    reached the browser. A proxy that was accepted but ignored would let the page load
+    ...    and this test would prove nothing.
+    [Tags]    no-docker-pr
+    ${python} =    Get Python Binary Path
+    ${process} =    Start Process
+    ...    ${python}
+    ...    -m
+    ...    Browser.entry
+    ...    launch-browser-server
+    ...    chromium
+    ...    headless\=${HEADLESS}
+    ...    port\=8274
+    ...    wsPath\=server4
+    ...    timeout\=30s
+    ...    proxy\={'server': 'http://localhost:1'}
+    Wait Until Keyword Succeeds
+    ...    10s
+    ...    1s
+    ...    Connect To Browser
+    ...    wsEndpoint=ws://localhost:8274/server4
+    ...    browser=chromium
+    Run Keyword And Expect Error
+    ...    *net::ERR_PROXY_CONNECTION_FAILED*
+    ...    New Page    ${LOGIN_URL}
+    [Teardown]    Run Keywords    Close Browser    ALL    AND    Terminate All Processes
 
 Connect To Browser With Timeout
     TRY

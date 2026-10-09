@@ -16,17 +16,18 @@ import { sendUnaryData, ServerReadableStream, ServerUnaryCall, ServerWritableStr
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { Page } from 'playwright';
 
-import { logger } from './browser_logger';
+import { errorType, logger } from './browser_logger';
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
+import * as credential from './credential';
 import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
-import { IPlaywrightServer } from './generated/playwright_grpc_pb';
-import { Request, Response } from './generated/playwright_pb';
+import * as pb from './generated/playwright';
 import * as getters from './getters';
 import * as interaction from './interaction';
 import { class_async_logger } from './keyword-decorators';
+import { withLoadReport } from './load-report';
 import * as locatorHandler from './locator-handler';
 import * as network from './network';
 import * as pdf from './pdf';
@@ -35,7 +36,7 @@ import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 
 @class_async_logger
-export class PlaywrightServer implements IPlaywrightServer {
+export class PlaywrightServer {
     private states: { [peer: string]: PlaywrightState } = {};
     peerMap: { [peer: string]: string } = {};
 
@@ -71,12 +72,30 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getState(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method  ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
+                callback(errorResponse(e), null);
+            }
+        };
+    };
+
+    private wrappingDebug = <T, K>(
+        func: (request: T, state: PlaywrightState) => Promise<K>,
+    ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
+        return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
+            try {
+                const request = call.request;
+                if (request === null) throw Error('No request');
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'started' });
+                const response = await func(request, this.getState(call));
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
+                callback(null, response);
+            } catch (e) {
+                logger.debug({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -87,12 +106,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     ): ((call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => Promise<void>) => {
         return async (call: ServerUnaryCall<T, K>, callback: sendUnaryData<K>) => {
             try {
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(this.getState(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -105,12 +124,12 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getActivePage(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -123,12 +142,12 @@ export class PlaywrightServer implements IPlaywrightServer {
             try {
                 const request = call.request;
                 if (request === null) throw Error('No request');
-                logger.info(`Start of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'started' });
                 const response = await func(request, this.getState(call), this.getActivePage(call));
-                logger.info(`End of node method ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'succeeded' });
                 callback(null, response);
             } catch (e) {
-                logger.info(`Error of node method  ${func.name}`);
+                logger.info({ event_kind: 'grpc', action: func.name, status: 'failed' });
                 callback(errorResponse(e), null);
             }
         };
@@ -136,13 +155,19 @@ export class PlaywrightServer implements IPlaywrightServer {
 
     initializeExtension = this.wrapping(playwrightState.initializeExtension);
 
-    async callExtensionKeyword(call: ServerWritableStream<Request.KeywordCall, Response.Json>): Promise<void> {
+    async callExtensionKeyword(call: ServerWritableStream<pb.Request_KeywordCall, pb.Response_Json>): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const result = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
-            call.write(result);
+            const results = await playwrightState.extensionKeywordCall(request, call, this.getState(call));
+            for (const result of results) {
+                call.write(result);
+            }
         } catch (e) {
+            logger.error(
+                { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
+                'Error in callExtensionKeyword',
+            );
             call.emit('error', errorResponse(e));
         }
         call.end();
@@ -153,15 +178,17 @@ export class PlaywrightServer implements IPlaywrightServer {
     closeAllBrowsers = this.wrappingState(playwrightState.closeAllBrowsers);
     closeContext = this.wrapping(playwrightState.closeContext);
     closePage = this.wrapping(playwrightState.closePage);
+    removeFailedPage = this.wrapping(playwrightState.removeFailedPage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
+    setRfContext = this.wrappingDebug(playwrightState.setRFContext);
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
 
     async getCookies(
-        call: ServerUnaryCall<Request.Empty, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
     ): Promise<void> {
         try {
             const context = this.getActiveContext(call);
@@ -174,8 +201,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async addCookie(
-        call: ServerUnaryCall<Request.Json, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -190,8 +217,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async deleteAllCookies(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const context = this.getActiveContext(call);
@@ -204,8 +231,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchPage(
-        call: ServerUnaryCall<Request.IdWithTimeout, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<pb.Request_IdWithTimeout, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -218,8 +245,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async switchContext(
-        call: ServerUnaryCall<Request.Index, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<pb.Request_Index, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -232,13 +259,27 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async saveStorageState(
-        call: ServerUnaryCall<Request.FilePath, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_StorageState, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             const response = await playwrightState.saveStorageState(request, this.getActiveBrowser(call));
+            callback(null, response);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async setStorageState(
+        call: ServerUnaryCall<pb.Request_SetStorageState, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const response = await playwrightState.setStorageState(request, this.getActiveBrowser(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);
@@ -263,11 +304,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     emulateMedia = this.wrapping(pdf.emulateMedia);
 
     async goBack(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage(call).goBack();
+            const page = this.getActivePage(call);
+            await withLoadReport(page, () => page.goBack());
             callback(null, emptyWithLog('Did Go Back'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -275,11 +317,12 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async goForward(
-        call: ServerUnaryCall<Request.Empty, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
-            await this.getActivePage(call).goForward();
+            const page = this.getActivePage(call);
+            await withLoadReport(page, () => page.goForward());
             callback(null, emptyWithLog('Did Go Forward'));
         } catch (e) {
             callback(errorResponse(e), null);
@@ -290,21 +333,21 @@ export class PlaywrightServer implements IPlaywrightServer {
     getBoundingBox = this.wrapping(getters.getBoundingBox);
     ariaSnapShot = this.wrappingStatePage(getters.getAriaSnapshot);
 
-    async getPageSource(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
-    ): Promise<void> {
+    async getPageSource(call: ServerWritableStream<pb.Request_Empty, pb.Response_Json>): Promise<void> {
         try {
-            const response = await getters.getPageSource(this.getActivePage(call));
-            callback(null, response);
+            const results = await getters.getPageSource(this.getActivePage(call));
+            for (const result of results) {
+                call.write(result);
+            }
         } catch (e) {
-            callback(errorResponse(e), null);
+            call.emit('error', errorResponse(e));
         }
+        call.end();
     }
 
     async setTimeout(
-        call: ServerUnaryCall<Request.Timeout, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Timeout, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -317,8 +360,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getTitle(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const response = await getters.getTitle(this.getActivePage(call));
@@ -329,8 +372,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async getUrl(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const response = await getters.getUrl(this.getActivePage(call));
@@ -353,8 +396,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     scrollToElement = this.wrapping(interaction.scrollToElement);
 
     async getViewportSize(
-        call: ServerUnaryCall<Request.Empty, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
     ): Promise<void> {
         try {
             const response = await getters.getViewportSize(this.getActivePage(call));
@@ -391,13 +434,13 @@ export class PlaywrightServer implements IPlaywrightServer {
     advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     waitForRequest = this.wrappingPage(network.waitForRequest);
-    async waitForResponse(call: ServerWritableStream<Request.HttpCapture, Response.Json>): Promise<void> {
+    async waitForResponse(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             const results = await network.waitForResponse(request, this.getActivePage(call));
             for (const result of results) {
-                logger.info(`Sending response ${result.getLog()}`);
+                logger.info(`Sending response ${result.log}`);
                 call.write(result);
             }
         } catch (e) {
@@ -412,8 +455,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     cancelDownload = this.wrapping(network.cancelDownload);
 
     async waitForFunction(
-        call: ServerUnaryCall<Request.WaitForFunctionOptions, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
+        call: ServerUnaryCall<pb.Request_WaitForFunctionOptions, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -432,12 +475,10 @@ export class PlaywrightServer implements IPlaywrightServer {
     recordSelector = this.wrapping(evaluation.recordSelector);
 
     async health(
-        call: ServerUnaryCall<Request.Empty, Response.String>,
-        callback: sendUnaryData<Response.String>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
-        const response = new Response.String();
-        response.setBody('OK');
-        callback(null, response);
+        callback(null, { body: 'OK', log: '' });
     }
 
     highlightElements = this.wrapping(evaluation.highlightElements);
@@ -446,8 +487,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     httpRequest = this.wrappingPage(network.httpRequest);
 
     async getDevice(
-        call: ServerUnaryCall<Request.Device, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
+        call: ServerUnaryCall<pb.Request_Device, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -459,8 +500,8 @@ export class PlaywrightServer implements IPlaywrightServer {
         }
     }
     async getDevices(
-        call: ServerUnaryCall<Request.Empty, Response.Json>,
-        callback: sendUnaryData<Response.Json>,
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -473,16 +514,16 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async uploadFileBySelector(
-        call: ServerReadableStream<Request.FileBySelector, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerReadableStream<pb.Request_FileBySelector, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         let buffer = '';
-        let lastRequest: Request.FileBySelector;
-        call.on('data', (request: Request.FileBySelector) => {
+        let lastRequest: pb.Request_FileBySelector | undefined;
+        call.on('data', (request: pb.Request_FileBySelector) => {
             void (async () => {
                 try {
                     logger.info(`Reading multiplepart uploadFileBySelector`);
-                    const newBuffer = request.getBuffer();
+                    const newBuffer = request.buffer;
                     buffer += newBuffer;
                     lastRequest = request;
                 } catch (e) {
@@ -491,13 +532,21 @@ export class PlaywrightServer implements IPlaywrightServer {
             })();
         });
         call.on('error', (e) => {
+            logger.error(
+                { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
+                'Stream error in uploadFileBySelector',
+            );
             callback(errorResponse(e), null);
         });
         call.on('end', () => {
             void (async () => {
                 try {
-                    lastRequest.setBuffer(buffer);
-                    const result = await interaction.uploadFileBySelector(lastRequest, this.getState(call));
+                    if (!lastRequest) {
+                        callback(errorResponse(new Error('No data received for uploadFileBySelector')), null);
+                        return;
+                    }
+                    const finalRequest = { ...lastRequest, buffer };
+                    const result = await interaction.uploadFileBySelector(finalRequest, this.getState(call));
                     callback(null, result);
                 } catch (e) {
                     callback(errorResponse(e), null);
@@ -516,8 +565,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     keyboardInput = this.wrappingPage(interaction.keyboardInput);
 
     async setOffline(
-        call: ServerUnaryCall<Request.Bool, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Bool, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -530,8 +579,8 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async setGeolocation(
-        call: ServerUnaryCall<Request.Json, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -544,13 +593,13 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async reload(
-        call: ServerUnaryCall<Request.Json, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
     ): Promise<void> {
         try {
             const request = call.request;
-            const body = request.getBody();
             if (request === null) throw Error('No request');
+            const body = request.body;
             const result = await browserControl.reload(this.getActivePage(call), body);
             callback(null, result);
         } catch (e) {
@@ -559,15 +608,71 @@ export class PlaywrightServer implements IPlaywrightServer {
     }
 
     async setPeerId(
-        call: ServerUnaryCall<Request.Index, Response.Empty>,
-        callback: sendUnaryData<Response.Empty>,
+        call: ServerUnaryCall<pb.Request_Index, pb.Response_String>,
+        callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             const oldPeer = this.peerMap[call.getPeer()];
-            this.peerMap[call.getPeer()] = request.getIndex();
+            this.peerMap[call.getPeer()] = request.index;
             callback(null, stringResponse(oldPeer, 'Successfully overrode peer id'));
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async createCredential(
+        call: ServerUnaryCall<pb.Request_CreateCredential, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.createCredential(request, this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async installCredential(
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.installCredential(this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async getCredential(
+        call: ServerUnaryCall<pb.Request_CredentialIdAndRpId, pb.Response_GetCredential>,
+        callback: sendUnaryData<pb.Response_GetCredential>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.getCredential(request, this.getActiveContext(call));
+            callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async deleteCredential(
+        call: ServerUnaryCall<pb.Request_CredentialIdAndRpId, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            const result = await credential.deleteCredential(request, this.getActiveContext(call));
+            callback(null, result);
         } catch (e) {
             callback(errorResponse(e), null);
         }

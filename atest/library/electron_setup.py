@@ -11,7 +11,7 @@ def get_electron_binary_path(app_dir: str) -> str:
     gracefully skipped (e.g. BrowserBatteries runs that remove node/).
 
     The Electron binary is resolved from the project root node_modules/,
-    which is populated by npm ci at project level before tests run.
+    which is populated by the invoke dependency task before tests run.
     """
     app_path = Path(app_dir)
     if not app_path.exists():
@@ -22,7 +22,13 @@ def get_electron_binary_path(app_dir: str) -> str:
     electron_dist = app_path.parent.parent / "node_modules" / "electron" / "dist"
 
     if sys.platform == "win32":
-        return str(electron_dist / "electron.exe")
-    if sys.platform == "darwin":
-        return str(electron_dist / "Electron.app" / "Contents" / "MacOS" / "Electron")
-    return str(electron_dist / "electron")
+        binary = electron_dist / "electron.exe"
+    elif sys.platform == "darwin":
+        binary = electron_dist / "Electron.app" / "Contents" / "MacOS" / "Electron"
+    else:
+        binary = electron_dist / "electron"
+    if not binary.is_file():
+        raise FileNotFoundError(
+            f"Electron binary missing at {binary}. Run inv install-electron."
+        )
+    return str(binary)

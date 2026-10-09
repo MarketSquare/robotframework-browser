@@ -1,18 +1,18 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Browser    headless=${HEADLESS}
+Suite Setup    New Browser    headless=${HEADLESS}
 
 *** Test Cases ***
 Har Path Only Defined
-    ${har} =    Create Dictionary    path=${OUTPUT_DIR}/har-1.file
+    VAR    &{har} =    path=${OUTPUT_DIR}/har-1.file
     New Context    recordHar=${har}
     New Page    ${LOGIN_URL}
     Close Context
     File Should Not Be Empty    ${OUTPUT_DIR}/har-1.file
 
 Har Path And OmitContent Defined
-    ${har} =    Create Dictionary    path=${OUTPUT_DIR}/har-2.file    omitContent=True
+    VAR    &{har} =    path=${OUTPUT_DIR}/har-2.file    omitContent=True
     New Context    recordHar=${har}
     New Page    ${LOGIN_URL}
     Close Context

@@ -18,6 +18,7 @@ from .data_types import (
     AutoClosingLevel,
     BrowserInfo,
     BoundingBox,
+    ClientCredential,
     ColorScheme,
     ConditionInputs,
     CookieSameSite,
@@ -52,6 +53,7 @@ from .data_types import (
     RecordVideo,
     ReduceMotion,
     ReducedMotion,
+    ReloadPages,
     RequestMethod,
     Scale,
     Scope,
@@ -63,8 +65,10 @@ from .data_types import (
     SelectionType,
     ServiceWorkersPermissions,
     SupportedBrowsers,
+    TextType,
     ViewportDimensions,
     convert_typed_dict,
+    ROBOT_FRAMEWORK_BROWSER_NO_SET,
 )
 from .js_utilities import get_abs_scroll_coordinates, get_rel_scroll_coordinates
 from .meta_python import find_by_id, locals_to_params
@@ -78,6 +82,5 @@ from .misc import (
     suppress_logging,
     close_process_tree,
 )
-from .robot_booleans import is_falsy, is_truthy
 from .settings_stack import ScopedSetting, SettingsStack
 from robot.utils import DotDict

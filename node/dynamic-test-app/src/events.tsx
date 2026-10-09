@@ -159,7 +159,7 @@ function EventLogger() {
 
         for (const t of targets) {
             for (const ev of events) {
-                t.addEventListener(ev, handler as EventListener, { passive: true });
+                t.addEventListener(ev, handler, { passive: true });
             }
         }
 
@@ -171,7 +171,7 @@ function EventLogger() {
         return () => {
             for (const t of targets) {
                 for (const ev of events) {
-                    t.removeEventListener(ev, handler as EventListener);
+                    t.removeEventListener(ev, handler);
                 }
             }
             setIsAttached(false);

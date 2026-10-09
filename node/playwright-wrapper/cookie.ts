@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { pino } from 'pino';
 import { BrowserContext } from 'playwright';
 
-import { Request, Response } from './generated/playwright_pb';
+import { logger } from './browser_logger';
+import * as pb from './generated/playwright';
 import { emptyWithLog, jsonResponse } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
 
 interface CookieData {
     name: string;
@@ -31,7 +30,7 @@ interface CookieData {
     sameSite?: 'Strict' | 'Lax' | 'None';
 }
 
-export async function getCookies(context: BrowserContext): Promise<Response.Json> {
+export async function getCookies(context: BrowserContext): Promise<pb.Response_Json> {
     const allCookies = await context.cookies();
     logger.info({ 'Cookies: ': allCookies });
     const cookieName = [];
@@ -41,14 +40,14 @@ export async function getCookies(context: BrowserContext): Promise<Response.Json
     return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
 }
 
-export async function addCookie(request: Request.Json, context: BrowserContext): Promise<Response.Empty> {
-    const cookie: CookieData = JSON.parse(request.getBody());
-    logger.info({ 'Cookie data: ': request.getBody() });
+export async function addCookie(request: pb.Request_Json, context: BrowserContext): Promise<pb.Response_Empty> {
+    const cookie: CookieData = JSON.parse(request.body);
+    logger.info({ 'Cookie data: ': request.body });
     await context.addCookies([cookie]);
     return emptyWithLog('Cookie "' + cookie.name + '" added.');
 }
 
-export async function deleteAllCookies(context: BrowserContext): Promise<Response.Empty> {
+export async function deleteAllCookies(context: BrowserContext): Promise<pb.Response_Empty> {
     await context.clearCookies();
     return emptyWithLog('All cookies deleted.');
 }

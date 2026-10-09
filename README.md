@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-197-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-209-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -18,7 +18,7 @@ See [keyword documentation](https://marketsquare.github.io/robotframework-browse
 
 # Installation instructions
 
-For both installation options only Python 3.10 or newer is supported. There are two main ways
+For both installation options Python 3.10 or newer is supported. There are two main ways
 to install Browser library, with or without user having NodeJS installed.
 
 The easiest way to install the Browser library is to use the
@@ -30,7 +30,7 @@ Node-side dependencies by them self.
 Limitations:
 - BrowserBatteries may not be available for every operating system or processor architecture.
 - If you develop plugins that require third-party NodeJS modules, those modules are not
-  compiled into the BrowserBatteries package.
+  included in the BrowserBatteries package.
 
 See [Installation without NodeJS](#installation-without-nodejs) for more details.
 
@@ -47,7 +47,7 @@ and install NodeJS dependencies. See more detail in
   - if `rfbrowser` is not found, try `python -m Browser.entry install`
 
 ## Installation with NodeJS
-From Node side 20, 22 and 24 LTS versions are supported.
+From Node side 22, 24 and 26 LTS versions are supported.
 
 1. Install NodeJS e.g. from https://nodejs.org/en/download/
 2. Update pip `pip install -U pip` to ensure latest version is used
@@ -68,6 +68,26 @@ Or use the
 [docker images](https://github.com/MarketSquare/robotframework-browser/pkgs/container/robotframework-browser%2Frfbrowser-stable)
 . Documented at
 [docker/README.md](https://github.com/MarketSquare/robotframework-browser/blob/main/docker/README.md).
+
+### NodeJS 26 and npm 12 support
+If you are installing Browser library with NodeJS 26 and are using `npm` 12.x, then there are
+few additional steps on the install process. This is because `npm` 12.x dropped support for
+post install scripts: https://installsafe.dev/ At this writing Browser library uses many
+dependencies which do use post install scripts. If you are using NodeJS 26 and npm 12.x,
+then users need to approve the post install scripts for the Browser library NodeJS
+dependencies. Because this is moving target, easiest way to do this to install Browser
+library, run `rfbrowser init`. Then un the following npm commands:
+1. npm approve-scripts --allow-scripts-pending
+2. npm approve-scripts <package-a> <package-b>
+
+Where `<package-a>`, `<package-b>` are replaced with the packages which are listed in
+step 1. Review the packages, because if you several NodeJS projects, the pending list
+may contain packages out of the Browser library ecosystem.
+
+After user has allowed required packages, rerun the `rfbrowser init` commend.
+The installation without NodeJS does not need these extra steps, because
+it has NodeJS dependencies build as binary.
+
 
 ## Install with transformer
 
@@ -98,6 +118,26 @@ To upgrade your already installed robotframework-browser library
 2. Clean old node side dependencies and browser binaries: `rfbrowser clean-node`
 3. Install the node dependencies for the newly installed version: `rfbrowser init`
 
+## Nightly builds
+
+Wheels built from the latest green `main` are always available on the
+[nightly release](https://github.com/MarketSquare/robotframework-browser/releases/tag/nightly).
+They are meant for trying out a fix or a new keyword before it is released, and
+they are replaced on every push to `main`, so pick up the current file names
+from that page:
+
+```
+base=https://github.com/MarketSquare/robotframework-browser/releases/download/nightly
+pip install --pre ${base}/robotframework_browser-<version>-py3-none-any.whl
+rfbrowser init
+```
+
+Install the matching `robotframework_browser_batteries` wheel for your platform
+from the same page if you use BrowserBatteries instead of your own NodeJS. The
+two packages are tied together and a nightly pair only installs as a pair.
+Nightly versions are `.dev` builds of the next milestone, so `pip` only
+considers them with `--pre` and a later real release always wins.
+
 ## Uninstall instructions
 
 To completely uninstall library, including the browser binaries installed by Playwright,
@@ -122,11 +162,21 @@ Example Test
 ### and testing with [Python](https://python.org).
 ```python
 import Browser
+
 browser = Browser.Browser()
 browser.new_page("https://playwright.dev")
-assert 'Playwright' in browser.get_text("h1")
+assert "Playwright" in browser.get_text("h1")
 browser.close_browser()
 ```
+
+But please note that not all features all available from Python. Example automatic closing,
+run on failure and some others features depends with the library interacting with Robot
+Framework. Either by using the Robot Framework
+[listener](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#listener-interface)
+or by using the Robot Framework
+[dynamic library API](https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#dynamic-library-api).
+If there is need to use these features from Python, then Python code must mimic the the required
+Robot Framework interfaces that the library requires.
 
 ### and extending with JavaScript
 
@@ -200,6 +250,10 @@ You can share the node side RF Browser processes by using the `ROBOT_FRAMEWORK_B
 
 - Figure out how the page is storing authentication
 - If it is localstorage or cookies `Save Storage State` should work. See usage example: https://marketsquare.github.io/robotframework-browser/Browser.html#Save%20Storage%20State
+
+# Plugins
+Browser library supports plugins to extend library. See more details in the
+[plugin documentation](https://robotframework-browser.org/docs/extending/python-plugins).
 
 # Development
 
@@ -351,7 +405,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/stude1"><img src="https://avatars.githubusercontent.com/u/5876939?v=4?s=100" width="100px;" alt="Timo Stordell"/><br /><sub><b>Timo Stordell</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Astude1" title="Bug reports">🐛</a></td>
     </tr>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarcinGmurczyk"><img src="https://avatars.githubusercontent.com/u/11760932?v=4?s=100" width="100px;" alt="Marcin Gmurczyk"/><br /><sub><b>Marcin Gmurczyk</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=MarcinGmurczyk" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarcinGmurczyk"><img src="https://avatars.githubusercontent.com/u/11760932?v=4?s=100" width="100px;" alt="Marcin Gmurczyk"/><br /><sub><b>Marcin Gmurczyk</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=MarcinGmurczyk" title="Code">💻</a> <a href="#ideas-MarcinGmurczyk" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.imbus.de"><img src="https://avatars.githubusercontent.com/u/7069968?v=4?s=100" width="100px;" alt="Daniel Biehl"/><br /><sub><b>Daniel Biehl</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ad-biehl" title="Bug reports">🐛</a> <a href="#ideas-d-biehl" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rarajabs"><img src="https://avatars.githubusercontent.com/u/1460421?v=4?s=100" width="100px;" alt="rarajabs"/><br /><sub><b>rarajabs</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Ararajabs" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/sandeepvaidya"><img src="https://avatars.githubusercontent.com/u/6525205?v=4?s=100" width="100px;" alt="Sandeep Vaidya"/><br /><sub><b>Sandeep Vaidya</b></sub></a><br /><a href="#ideas-sandeepvaidya" title="Ideas, Planning, & Feedback">🤔</a></td>
@@ -381,7 +435,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/madworx"><img src="https://avatars.githubusercontent.com/u/6368715?v=4?s=100" width="100px;" alt="Martin Kjellstrand"/><br /><sub><b>Martin Kjellstrand</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amadworx" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://medv.io"><img src="https://avatars.githubusercontent.com/u/141232?v=4?s=100" width="100px;" alt="Anton Medvedev"/><br /><sub><b>Anton Medvedev</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=antonmedv" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/martamedovova-ext91522"><img src="https://avatars.githubusercontent.com/u/130643867?v=4?s=100" width="100px;" alt="martamedovova-ext91522"/><br /><sub><b>martamedovova-ext91522</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amartamedovova-ext91522" title="Bug reports">🐛</a> <a href="#ideas-martamedovova-ext91522" title="Ideas, Planning, & Feedback">🤔</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/DirkRichter"><img src="https://avatars.githubusercontent.com/u/20930315?v=4?s=100" width="100px;" alt="Dr. Dirk Richter"/><br /><sub><b>Dr. Dirk Richter</b></sub></a><br /><a href="#ideas-DirkRichter" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/DirkRichter"><img src="https://avatars.githubusercontent.com/u/20930315?v=4?s=100" width="100px;" alt="Dr. Dirk Richter"/><br /><sub><b>Dr. Dirk Richter</b></sub></a><br /><a href="#ideas-DirkRichter" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ADirkRichter" title="Bug reports">🐛</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=DirkRichter" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/RatexMak"><img src="https://avatars.githubusercontent.com/u/33491425?v=4?s=100" width="100px;" alt="RatexMak"/><br /><sub><b>RatexMak</b></sub></a><br /><a href="#ideas-RatexMak" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/horzuff"><img src="https://avatars.githubusercontent.com/u/63282033?v=4?s=100" width="100px;" alt="horzuff"/><br /><sub><b>horzuff</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=horzuff" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/naibra"><img src="https://avatars.githubusercontent.com/u/76438934?v=4?s=100" width="100px;" alt="naibra"/><br /><sub><b>naibra</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Anaibra" title="Bug reports">🐛</a></td>
@@ -442,7 +496,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/dean4711"><img src="https://avatars.githubusercontent.com/u/5942386?v=4?s=100" width="100px;" alt="André"/><br /><sub><b>André</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=dean4711" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarvKler"><img src="https://avatars.githubusercontent.com/u/98239503?v=4?s=100" width="100px;" alt="MarvKler"/><br /><sub><b>MarvKler</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AMarvKler" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarvKler"><img src="https://avatars.githubusercontent.com/u/98239503?v=4?s=100" width="100px;" alt="MarvKler"/><br /><sub><b>MarvKler</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AMarvKler" title="Bug reports">🐛</a> <a href="#ideas-MarvKler" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/vcarnogu"><img src="https://avatars.githubusercontent.com/u/13346869?v=4?s=100" width="100px;" alt="Vaclav Carnogursky"/><br /><sub><b>Vaclav Carnogursky</b></sub></a><br /><a href="#ideas-vcarnogu" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Way"><img src="https://avatars.githubusercontent.com/u/122285?v=4?s=100" width="100px;" alt="Alexander Vey"/><br /><sub><b>Alexander Vey</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Away" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/brazdauskasv"><img src="https://avatars.githubusercontent.com/u/17760245?v=4?s=100" width="100px;" alt="Vaclovas Brazdauskas"/><br /><sub><b>Vaclovas Brazdauskas</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Abrazdauskasv" title="Bug reports">🐛</a></td>
@@ -478,6 +532,20 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/JanDubcak"><img src="https://avatars.githubusercontent.com/u/65766592?v=4?s=100" width="100px;" alt="Jan Dubcak"/><br /><sub><b>Jan Dubcak</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=JanDubcak" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/rauttiz"><img src="https://avatars.githubusercontent.com/u/15322977?v=4?s=100" width="100px;" alt="Marko Rautiainen"/><br /><sub><b>Marko Rautiainen</b></sub></a><br /><a href="#ideas-rauttiz" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/MarketSquare/robotframework-browser/commits?author=rauttiz" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/lahtinenn"><img src="https://avatars.githubusercontent.com/u/133641274?v=4?s=100" width="100px;" alt="lahtinenn"/><br /><sub><b>lahtinenn</b></sub></a><br /><a href="#ideas-lahtinenn" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/laguill"><img src="https://avatars.githubusercontent.com/u/74424947?v=4?s=100" width="100px;" alt="Guillaume LAFON"/><br /><sub><b>Guillaume LAFON</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Alaguill" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tkopra"><img src="https://avatars.githubusercontent.com/u/106748650?v=4?s=100" width="100px;" alt="tkopra"/><br /><sub><b>tkopra</b></sub></a><br /><a href="#ideas-tkopra" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/philipp2023"><img src="https://avatars.githubusercontent.com/u/124517865?v=4?s=100" width="100px;" alt="philipp2023"/><br /><sub><b>philipp2023</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Aphilipp2023" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/johnpp143"><img src="https://avatars.githubusercontent.com/u/35929471?v=4?s=100" width="100px;" alt="john0620"/><br /><sub><b>john0620</b></sub></a><br /><a href="#ideas-johnpp143" title="Ideas, Planning, & Feedback">🤔</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/OkuRobot"><img src="https://avatars.githubusercontent.com/u/115615336?v=4?s=100" width="100px;" alt="OkuRobot"/><br /><sub><b>OkuRobot</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AOkuRobot" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ElionSylwin"><img src="https://avatars.githubusercontent.com/u/75618976?v=4?s=100" width="100px;" alt="Jakub Wolf"/><br /><sub><b>Jakub Wolf</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AElionSylwin" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/mvanhorn"><img src="https://avatars.githubusercontent.com/u/455140?v=4?s=100" width="100px;" alt="Matt Van Horn"/><br /><sub><b>Matt Van Horn</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=mvanhorn" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Alpha-Centauri-00"><img src="https://avatars.githubusercontent.com/u/56655042?v=4?s=100" width="100px;" alt="M.Kherki"/><br /><sub><b>M.Kherki</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3AAlpha-Centauri-00" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/msbt-saab"><img src="https://avatars.githubusercontent.com/u/192189929?v=4?s=100" width="100px;" alt="msbt-saab"/><br /><sub><b>msbt-saab</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amsbt-saab" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/wesleyke2"><img src="https://avatars.githubusercontent.com/u/44478671?v=4?s=100" width="100px;" alt="wesleyke2"/><br /><sub><b>wesleyke2</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Awesleyke2" title="Bug reports">🐛</a></td>
     </tr>
   </tbody>
 </table>

@@ -65,7 +65,30 @@ async function delayedRequestBig() {
     console.log(await fetch('/api/get/json/big'));
 }
 
-function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: ChangeEvent<HTMLInputElement>) {
+async function delayedRequestPost() {
+    await sleep(200);
+    console.log(
+        await fetch('/api/post/json', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: 'test', kala: 'salmon' }),
+        }),
+    );
+}
+
+async function delayedRequestInvalidJsonPost() {
+    await sleep(200);
+    console.log(
+        await fetch('/api/post/invalid-json', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: 'This is not valid JSON in body',
+        }),
+    );
+}
+function fileUploaded(uploadResultElement: React.RefObject<HTMLElement | null>, event: ChangeEvent<HTMLInputElement>) {
+    const uploadResult = uploadResultElement.current;
+    if (!uploadResult) return;
     const files = event.target.files;
     let fileNames = '';
     if (files) {
@@ -76,16 +99,18 @@ function fileUploaded(uploadResultElement: React.RefObject<HTMLElement>, event: 
                 fileNames = files[i].name;
             }
         }
-        uploadResultElement.current.innerHTML = fileNames;
+        uploadResult.innerHTML = fileNames;
     } else {
-        uploadResultElement.current.innerHTML = 'no uploaded file';
+        uploadResult.innerHTML = 'no uploaded file';
     }
 }
 
-function testPrompt(promptResultElement: React.RefObject<HTMLElement>) {
+function testPrompt(promptResultElement: React.RefObject<HTMLElement | null>) {
+    const promptResult = promptResultElement.current;
+    if (!promptResult) return;
     const input = prompt('Enter a value');
-    if (input) promptResultElement.current.innerHTML = input;
-    else promptResultElement.current.innerHTML = 'prompt_not_filled';
+    if (input) promptResult.innerHTML = input;
+    else promptResult.innerHTML = 'prompt_not_filled';
 }
 
 export default function Site() {
@@ -225,6 +250,12 @@ export default function Site() {
                 <button id="delayed_request_big" onClick={() => void delayedRequestBig()}>
                     Fires a big request in 250ms
                 </button>
+                <button id="delayed_request_post" onClick={() => void delayedRequestPost()}>
+                    Fires a POST request in 200ms
+                </button>
+                <button id="delayed_request_invalid_json_post" onClick={() => void delayedRequestInvalidJsonPost()}>
+                    Fires a POST request with invalid JSON in 200ms
+                </button>{' '}
                 <button id="alerts" onClick={() => alert('Am an alert')}>
                     Pops up an alert
                 </button>
@@ -347,7 +378,17 @@ export default function Site() {
                         </tr>
                     </tbody>
                 </table>
-
+                <label id="pet-select-label">Choose a pet:</label>
+                <select name="pets" id="pet-select">
+                    <option value="">--Please choose an option--</option>
+                    <option value="dog">Dog</option>
+                    <option value="cat">Cat</option>
+                    <option value="hamster">Hamster</option>
+                    <option value="parrot">Parrot</option>
+                    <option value="spider">Spider</option>
+                    <option value="goldfish">Goldfish</option>
+                </select>
+                <br></br>
                 <input
                     type="file"
                     id="file_chooser"

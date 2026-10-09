@@ -1,18 +1,18 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Setup
-Suite Teardown      Set Retry Assertions For    1s
-Test Setup          Go To    ${LOGIN_URL}
+Suite Setup       Setup
+Suite Teardown    Set Retry Assertions For    1s
+Test Setup        Go To    ${LOGIN_URL}
 
 *** Variables ***
-${FailureScreenshot} =              ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot2} =             ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
-${FailureScreenshot3} =             ${OUTPUT_DIR}${/}Register_Kw_With_Custom_Path_Named_Not_First_FAILURE_SCREENSHOT_1.png
-${FailureScreenshot4_no_ext} =      ${OUTPUT_DIR}${/}myfailure_screenshot
-${FailureScreenshot4} =             ${FailureScreenshot4_no_ext}.png
-${FailureScreenshot5_no_ext} =      ${OUTPUT_DIR}${/}myfailure_screenshot_44
-${FailureScreenshot5} =             ${FailureScreenshot5_no_ext}.png
+${FailureScreenshot} =            ${OUTPUT_DIR}${/}Register_Keyword_To_Run_On_Failure_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot2} =           ${OUTPUT_DIR}${/}Register_KW_On_Failure_With_Unicode____FAILURE_SCREENSHOT_1.png
+${FailureScreenshot3} =           ${OUTPUT_DIR}${/}Register_Kw_With_Custom_Path_Named_Not_First_FAILURE_SCREENSHOT_1.png
+${FailureScreenshot4_no_ext} =    ${OUTPUT_DIR}${/}myfailure_screenshot
+${FailureScreenshot4} =           ${FailureScreenshot4_no_ext}.png
+${FailureScreenshot5_no_ext} =    ${OUTPUT_DIR}${/}myfailure_screenshot_44
+${FailureScreenshot5} =           ${FailureScreenshot5_no_ext}.png
 
 *** Test Cases ***
 Register Keyword To Run On Failure

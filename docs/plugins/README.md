@@ -9,14 +9,14 @@ Plugin API and extending Browser library allow similar access to the Python publ
 # Initialisation order
 
 When an instance is created from the Browser library, for example when Browser library is imported in the test data, there is an order
-of the initialisation. At first all classes defining Browser library keywords are discovered. As a second event,
+of the initialization. At first all classes defining Browser library keywords are discovered. As a second event,
 keywords from the JavaScript module are discovered. As a third and last event, keywords from plugins are discovered.
 
 # Plugins
 
 Browser library offers plugins as a way to modify and add library keywords, while also modifying some of the internal functionality of Browser library
-without creating a new library or hacking the source code. See 
-[plugin example](https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/example) 
+without creating a new library or hacking the source code. See
+[plugin example](./example)
 on how plugins can be implemented.
 
 ## Importing plugins
@@ -189,3 +189,10 @@ added or modified by plugins. Because of this, when Browser library keyword docu
 it is easy to separate keywords which are added or modified by plugins. Browser keyword documentation that includes plugins can be generated with the  following command:
 
 `libdoc Browser::plugins=/path/to/Plugin.py Browser.html`
+
+# Listeners
+
+Browser library uses [PythonLibCore](https://github.com/robotframework/PythonLibCore) (PLC), and
+because plugins are classes defining keywords, plugins can also act as listeners. See more
+details in PLC
+[listener documentation](https://github.com/robotframework/PythonLibCore#listener).

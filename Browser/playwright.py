@@ -14,8 +14,11 @@
 
 import atexit
 import contextlib
+import ipaddress
 import os
 import platform
+import signal
+import sys
 import time
 from functools import cached_property
 from pathlib import Path
@@ -23,11 +26,6 @@ from subprocess import DEVNULL, STDOUT, CalledProcessError, Popen, run
 from typing import TYPE_CHECKING, TextIO
 
 import grpc  # type: ignore
-
-try:
-    from BrowserBatteries import start_grpc_server
-except ImportError:
-    start_grpc_server = None  # type: ignore[assignment]
 
 from Browser.entry.constant import (
     PLAYWRIGHT_BROWSERS_PATH,
@@ -49,10 +47,106 @@ if TYPE_CHECKING:
     from .browser import Browser
 
 
+NO_HTTP_PROXY_OPTIONS = (("grpc.enable_http_proxy", 0),)
+
+
+def is_local_host(host: str | None) -> bool:
+    if not host:
+        return True
+    hostname = host.strip().strip("[]").lower()
+    if hostname == "localhost" or hostname.endswith(".localhost"):
+        return True
+    try:
+        address = ipaddress.ip_address(hostname)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_unspecified
+
+
+def grpc_channel_options(host: str | None) -> tuple[tuple[str, int], ...]:
+    """Return the gRPC channel options for reaching the Playwright process.
+
+    grpc-python routes even a loopback channel through ``http_proxy``/``https_proxy``,
+    which breaks the connection in containers that set them. A remote Playwright
+    process keeps the proxy, where it may well be the intended route.
+    """
+    return NO_HTTP_PROXY_OPTIONS if is_local_host(host) else ()
+
+
+def _log_load_report(error: grpc.RpcError):
+    trailing_metadata = getattr(error, "trailing_metadata", lambda: None)
+    for key, value in trailing_metadata() or ():
+        if key == "load-report-bin":
+            logger.info(value.decode("utf-8", errors="replace"))
+
+
+def batteries_grpc_server():
+    try:
+        from BrowserBatteries import start_grpc_server  # noqa: PLC0415
+    except ImportError:
+        return None
+    return start_grpc_server
+
+
+def spawn_wrapper_process(  # noqa: PLR0917
+    node_executable: "str | Path",
+    script: Path,
+    cwd: Path,
+    logfile: TextIO,
+    host: str,
+    port: str,
+    enable_playwright_debug: "PlaywrightLogTypes | bool",
+    coverage_output: Path | None = None,
+) -> Popen:
+    """Start the NodeJS side of the library and return the running process.
+
+    The only difference between the two distributions is which NodeJS runs the
+    wrapper and where the wrapper lives: the Browser library uses whatever
+    `node` is on PATH, BrowserBatteries the one inside its own wheel. Everything
+    else - debug options, coverage, the browsers path - has to behave the same,
+    so it lives here rather than in two copies that drift. It already had:
+    BrowserBatteries refused to honour
+    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS until the NodeJS bundled in it
+    stopped being a pkg binary, and NODE_V8_COVERAGE was silently ignored there
+    for as long as the two were separate.
+    """
+    logger.info(f"Starting Browser process {script} using at {host}:{port}")
+    if enable_playwright_debug == PlaywrightLogTypes.playwright:
+        logger.trace("Enabling Playwright debug logging")
+        os.environ["DEBUG"] = "pw:api"
+    node_args = [str(node_executable)]
+    node_debug_options = os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS")
+    if node_debug_options:
+        node_args.extend(node_debug_options.split(","))
+    node_args.extend([str(script), host, port])
+    if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
+        logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
+        os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
+    if (
+        coverage_output is not None
+        and os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+        and sys.platform != "win32"
+    ):
+        v8_coverage_dir = coverage_output / "node-v8-coverage"
+        v8_coverage_dir.mkdir(parents=True, exist_ok=True)
+        os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+        logger.info(f"V8 coverage enabled, writing to {v8_coverage_dir}")
+    logger.trace(f"Node startup parameters: {node_args}")
+    return Popen(
+        node_args,
+        shell=False,
+        cwd=cwd,
+        env=os.environ,
+        stdout=logfile,
+        stderr=STDOUT,
+    )
+
+
 class Playwright(LibraryComponent):
     """A wrapper for communicating with nodejs Playwright process."""
 
     port: str | None
+    _node_dependencies_checked = False
 
     def __init__(
         self,
@@ -64,19 +158,38 @@ class Playwright(LibraryComponent):
     ):
         LibraryComponent.__init__(self, library)
         self.enable_playwright_debug = enable_playwright_debug
-        self.ensure_node_dependencies()
         self.host = str(host) if host else None
         self.port = str(port) if port else None
+        self.ensure_node_dependencies()
         self.playwright_log = playwright_log
 
     @cached_property
     def _playwright_process(self) -> Popen | None:
-        process = self.start_playwright()
-        atexit.register(self.close)
-        self.wait_until_server_up()
-        if platform.system() == "Darwin":
-            time.sleep(1)  # To overcome problem with macOS Sonoma and hanging process
-        return process
+        max_attempts = 2 if platform.system() == "Darwin" else 1
+        last_error: RuntimeError | None = None
+        for attempt in range(1, max_attempts + 1):
+            process = self.start_playwright()
+            try:
+                self.wait_until_server_up()
+                atexit.register(self.close)
+                if platform.system() == "Darwin":
+                    time.sleep(
+                        1
+                    )  # To overcome problem with macOS Sonoma and hanging process
+                return process
+            except RuntimeError as err:
+                last_error = err
+                if process:
+                    close_process_tree(process)
+                # Reset host/port so next attempt starts a fresh process on a fresh port.
+                self.host = None
+                self.port = None
+                if attempt < max_attempts:
+                    logger.info(
+                        "Retrying Playwright startup on macOS after initial startup failure"
+                    )
+                    time.sleep(0.25)
+        raise last_error if last_error else RuntimeError("Failed to start Playwright")
 
     @cached_property
     def _rfbrowser_dir(self) -> Path:
@@ -91,18 +204,43 @@ class Playwright(LibraryComponent):
 
         If BrowserBatteries is installed, does nothing.
         """
-        if start_grpc_server is not None:
+        if self.__class__._node_dependencies_checked:
+            return
+        if batteries_grpc_server() is not None:
             logger.trace(
                 "Running gRPC server from BrowserBatteries, no need to check node"
             )
+            self.__class__._node_dependencies_checked = True
             return
-        try:
-            run(["node", "-v"], stdout=DEVNULL, check=True)
-        except (CalledProcessError, FileNotFoundError, PermissionError) as err:
+
+        # If an external Playwright process is configured, this Python process
+        # acts only as a gRPC client and does not need to execute local `node`.
+        configured_port = getattr(self, "port", None)
+        if configured_port or os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_PORT"):
+            logger.trace(
+                "Using external Playwright process, skipping local node dependency check"
+            )
+            return
+
+        node_check_error: (
+            CalledProcessError | FileNotFoundError | PermissionError | None
+        ) = None
+        node_check_attempts = 3 if platform.system() == "Darwin" else 1
+        for attempt in range(node_check_attempts):
+            try:
+                run(["node", "-v"], stdout=DEVNULL, check=True)
+                node_check_error = None
+                break
+            except (CalledProcessError, FileNotFoundError, PermissionError) as err:
+                node_check_error = err
+                if attempt < node_check_attempts - 1:
+                    time.sleep(0.2)
+
+        if node_check_error is not None:
             raise RuntimeError(
                 "Couldn't execute node. Please ensure you have node.js installed and in PATH. "
                 "See https://nodejs.org/ for instructions. "
-                f"Original error is {err}"
+                f"Original error is {node_check_error}"
             )
 
         # This second application of .parent is necessary to find out that a developer setup has node_modules correctly
@@ -113,6 +251,7 @@ class Playwright(LibraryComponent):
                 (self._browser_wrapper_dir / "node_modules").is_dir(),
             ]
         ):
+            self.__class__._node_dependencies_checked = True
             return
 
         raise RuntimeError(
@@ -152,43 +291,32 @@ class Playwright(LibraryComponent):
         port = str(find_free_port())
         self.host = host
         self.port = port
+        start_grpc_server = batteries_grpc_server()
         if start_grpc_server is None:
             return self._start_playwright_from_node(self._get_logfile(), host, port)
         ensure_playwright_browsers_path()
 
         return start_grpc_server(
-            self._get_logfile(), host, port, self.enable_playwright_debug
+            self._get_logfile(),
+            host,
+            port,
+            self.enable_playwright_debug,
+            coverage_output=self.browser_output,
         )
 
     def _start_playwright_from_node(
         self, logfile: TextIO, host: str, port: str
     ) -> Popen:
-        """Start Playwright from nodejs wrapper."""
-        playwright_script = self._browser_wrapper_dir / "index.js"
-        if self.enable_playwright_debug == PlaywrightLogTypes.playwright:
-            os.environ["DEBUG"] = "pw:api"
-        logger.info(
-            f"Starting Browser process {playwright_script} using at {host}:{port}"
-        )
-        node_args = ["node"]
-        node_debug_options = os.environ.get(
-            "ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS"
-        )
-        if node_debug_options:
-            node_args.extend(node_debug_options.split(","))
-        node_args.append(str(playwright_script))
-        node_args.append(host)
-        node_args.append(port)
-        if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
-            os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
-        logger.trace(f"Node startup parameters: {node_args}")
-        return Popen(
-            node_args,
-            shell=False,
+        """Start Playwright from nodejs wrapper, on the user's own NodeJS."""
+        return spawn_wrapper_process(
+            node_executable="node",
+            script=self._browser_wrapper_dir / "index.js",
             cwd=self._browser_wrapper_dir,
-            env=os.environ,
-            stdout=logfile,
-            stderr=STDOUT,
+            logfile=logfile,
+            host=host,
+            port=port,
+            enable_playwright_debug=self.enable_playwright_debug,
+            coverage_output=self.browser_output,
         )
 
     def wait_until_server_up(self):
@@ -196,7 +324,9 @@ class Playwright(LibraryComponent):
             logger.debug(
                 f"Waiting for Playwright server at {self.host}:{self.port} to start..."
             )
-            with grpc.insecure_channel(f"{self.host}:{self.port}") as channel:
+            with grpc.insecure_channel(
+                f"{self.host}:{self.port}", options=grpc_channel_options(self.host)
+            ) as channel:
                 try:
                     stub = playwright_pb2_grpc.PlaywrightStub(channel)
                     response = stub.Health(Request().Empty())
@@ -213,7 +343,9 @@ class Playwright(LibraryComponent):
 
     @cached_property
     def _channel(self):
-        return grpc.insecure_channel(f"{self.host}:{self.port}")
+        return grpc.insecure_channel(
+            f"{self.host}:{self.port}", options=grpc_channel_options(self.host)
+        )
 
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
@@ -231,6 +363,7 @@ class Playwright(LibraryComponent):
         try:
             yield playwright_pb2_grpc.PlaywrightStub(self._channel)
         except grpc.RpcError as error:
+            _log_load_report(error)
             if original_error:
                 raise error
             raise AssertionError(error.details())
@@ -263,6 +396,20 @@ class Playwright(LibraryComponent):
         playwright_process = self.__dict__.get("_playwright_process")
         if playwright_process:
             logger.trace("Closing Playwright process tree")
+            if (
+                os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+                and sys.platform != "win32"
+            ):
+                logger.info("Coverage mode: sending SIGTERM for graceful shutdown")
+                try:
+                    playwright_process.send_signal(signal.SIGTERM)
+                    playwright_process.wait(timeout=10)
+                    logger.info("Playwright process exited gracefully")
+                    return
+                except Exception as exc:
+                    logger.debug(
+                        f"Graceful shutdown failed, falling back to kill: {exc}"
+                    )
             close_process_tree(playwright_process)
         else:
             logger.trace("Disconnected from external Playwright process")

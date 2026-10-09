@@ -1,16 +1,16 @@
 *** Settings ***
-Library             Browser    run_on_failure=None    enable_playwright_debug=${True}
-Resource            imports.resource
+Library           Browser    run_on_failure=None    enable_playwright_debug=${True}
+Resource          imports.resource
 
-Suite Setup         New Browser    headless=${HEADLESS}
-Suite Teardown      Close Browser
+Suite Setup       New Browser    headless=${HEADLESS}
+Suite Teardown    Close Browser
 
-Test Tags           timeout    no-iframe
+Test Tags         timeout    no-iframe
 
 *** Variables ***
-${err_goto} =       page.goto: Timeout 1ms exceeded.
-${err_click} =      SEPARATOR=
-...                 locator.click: Timeout 100ms exceeded.
+${err_goto} =     page.goto: Timeout 1ms exceeded.
+${err_click} =    SEPARATOR=
+...               locator.click: Timeout 100ms exceeded.
 
 *** Test Cases ***
 Test GoTo With Short Default Timeout

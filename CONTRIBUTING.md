@@ -32,7 +32,7 @@ Install Python and nodejs.
 - https://www.python.org/downloads/
 - https://nodejs.org/
 
-N.B. The minimum Python version is 3.8.
+N.B. The minimum Python version is 3.10.
 
 Run `python bootstrap.py` to create a virtual environment with correct dependencies.
 After that, make sure to activate the virtual env before running other development commands.
@@ -51,20 +51,45 @@ Python stub file.
 
 Run `inv -l` to get list of current build commands.
 
+### Coding agent skills
+
+Skills for coding agents live in `.claude/skills/`. Claude Code and GitHub Copilot pick them up from there.
+
+The maintainers also use the general-purpose skills from [mattpocock/skills](https://github.com/mattpocock/skills),
+such as `grilling`, `domain-modeling` (the format of the `CONTEXT.md` files and `docs/adr/`) and `tdd`. They are optional.
+Install them in Claude Code with `claude plugin install mattpocock-skills@claude-plugins-official`, or for other
+agents with `npx skills@latest add mattpocock/skills`.
+
 ## Testing
 
-There are both unit tests written with pytest and acceptance tests written with
-Robot Framework. These can be run manually with `inv utest` and `inv atest`.
-To run continuously pytests in a watch mode `inv utest-watch`.
-To rerun failed tests you can use `inv atest-failed` The tests are also executed in a pre-push hook.
+### Python unit tests
+Written with pytest, run with `inv utest`. To run continuously in watch mode use `inv utest-watch`.
 
-If there changes inv TypeScript side, remember to run `inv build` before executing unit or acceptance tests.
+### Node.js unit tests
+Written with Jest, located in `node/playwright-wrapper/__tests__/`. Run with:
+```
+inv utest-node                 # run all tests
+inv utest-node --coverage      # run with HTML + LCOV coverage report (output: node/coverage/)
+```
+
+### Acceptance tests
+Written with Robot Framework, run with `inv atest`. To rerun failed tests use `inv atest-failed`.
+
+To collect Python and Node.js coverage during acceptance tests:
+```
+inv atest-coverage [--suite <suite>]
+```
+This builds the wrapper with source maps, runs the tests under `coverage`, and generates an HTML + LCOV Node.js
+coverage report at `atest/output/node-coverage-report/`. Node.js coverage is not collected on Windows.
+
+If there are changes on the TypeScript side, run `inv node-build` before executing unit or acceptance tests.
+They test the last build of the wrapper and do not rebuild it.
 
 ## Running tests in docker container
 
 Docker container builds a clean install package. This can be used to check that a built package works correctly in a clean environment without development dependencies.
 
-1. Build the container `inv docker`
+1. Build the container `inv docker-tester`
 2. Run tests mounted from host machine `inv docker-test`
 3. See results in `atest/output`
 
@@ -76,6 +101,28 @@ Docker container builds a clean install package. This can be used to check that 
 
 ### Install dependencies
 Ensure generated code and types are up to date with `inv build`
+
+### Check NodeJS version and platform floors
+1. Check the NodeJS version we ship is still current by running: `inv node-version-check`.
+If it does fail, raise an issue and add it to the milestone, update `version` in
+[nodejs_pin.toml](https://github.com/MarketSquare/robotframework-browser/blob/main/nodejs_pin.toml)
+, then close the issue once the PR is merged.
+1. Check the NodeJS shipped inside BrowserBatteries with `inv node-floor-check`
+If it fails, raise an issue and add it to the milestone so the change becomes
+visible in the release notes, update the value it names in `nodejs_pin.toml` and
+the platform table in `browser_batteries/README.md` to match, then close the
+issue once the PR is merged.
+
+The values both checks read live in `nodejs_pin.toml`, so that the daily
+[scheduled workflow](https://github.com/MarketSquare/robotframework-browser/blob/main/.github/workflows/on-schedule.yml)
+can rewrite them.
+
+Moving to a new **LTS line** is deliberately not automated. It changes which
+platforms get a wheel at all, so `inv node-version-check` fails and leaves it to
+a person. Run `inv node-pin-bump` by hand to see the derived values, and expect
+to update the platform table in `browser_batteries/README.md` too: the distro
+names in it cannot be read out of a binary.
+
 
 ### Set version number
 Run `inv version $VERSION` to update the version information to both Python
@@ -147,12 +194,13 @@ Update later if necessary.
 Announce new release, at least in Slack and [Forum](https://forum.robotframework.org/t/browser-library-releases/685).
 
 ## Code style
-Python code style is enforced with ruff, isort and black. These are executed in a
-pre-commit hook, but can also be invoked manually with `inv lint-python`.
+Python code style is enforced with ruff (format and check) and types with mypy. CI checks them; run them locally with
+`inv lint-python`, or `inv lint-python --fix` to apply the fixes.
 
-JS / TS code style is enforced with eslint. Lints are run in pre-commit hooks, but can be run manually with `inv lint-node`.
+JS / TS code style is enforced with prettier and eslint, and types with `tsc`. CI checks them; run them locally with
+`inv lint-node`, which also applies the formatting and lint fixes.
 
-Acceptance tests style is enforced with RoboTidy: `int lint-robot`.
+Acceptance tests style is enforced with `robocop format`: `inv lint-robot`, which also applies the formatting.
 
 To run all linters by one command, use `inv lint`
 
@@ -176,13 +224,3 @@ and follow the code in all your interactions with the project.
 
 This project uses [allcontributors.org](https://allcontributors.org/) bot to list contributors in README.md.
 You may interact with the bot by following the [bot usage guide](https://allcontributors.org/docs/en/bot/usage).
-
-## Pull Request Process
-
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a build.
-2. Update the README.md with details of changes to the interface, this includes new environment
-   variables, exposed ports, useful file locations and container parameters.
-3. Increase the version numbers in any example files and the README.md to the new version that this
-   Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request once you have sign-off from another developer. If you do not have
-   permission to perform the merge, you may request the reviewer merges your pull request for you.

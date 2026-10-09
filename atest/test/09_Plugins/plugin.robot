@@ -1,20 +1,24 @@
 *** Settings ***
-Resource            ../variables.resource
-Library             Browser
-...                     timeout=${PLAYWRIGHT_TIMEOUT}
-...                     enable_playwright_debug=${True}
-...                     enable_presenter_mode=False
-...                     selector_prefix=${SELECTOR_PREFIX}
-...                     plugins=${CURDIR}/ExamplePlugin.py
+Resource         ../variables.resource
+Library          Browser
+...                  timeout=${PLAYWRIGHT_TIMEOUT}
+...                  enable_playwright_debug=${True}
+...                  enable_presenter_mode=False
+...                  selector_prefix=${SELECTOR_PREFIX}
+...                  plugins=${CURDIR}/ExamplePlugin.py
+Library          ${CURDIR}/../../library/banner.py
 
-Suite Setup         New Browser    ${BROWSER}    headless=${HEADLESS}
-Test Teardown       Close Context    ALL
+Suite Setup      New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Teardown    Close Context    ALL
+
+*** Variables ***
+${PLUGIN_SECRET} =    plugin-secret-do-not-disclose
 
 *** Test Cases ***
 Set Message On Suite Level
     Set Last Log Message    Suite Level Message    scope=Suite
 
-Pluging Keyword Example
+Plugin Keyword Example
     [Setup]    New Page    ${FORM_URL}
     ${url} =    Get Url
     Add Cookie
@@ -46,7 +50,18 @@ Test Js Plugin Called From Python Plugin
     Get Scroll Position    ${None}    top    ==    50
     Get Scroll Position    ${None}    left    ==    30
 
-Pluging Keyword Example Location
+Plugin Keyword Large Payload
+    [Setup]    New Page    ${FORM_URL}
+    ${euro} =    Evaluate    chr(0x20AC)
+    ${payload} =    Get Large Payload
+    ${payload_length} =    Get Length    ${payload}[payload]
+    Should Be Equal    ${payload}[prefix]    chunk-prefix
+    Should Be Equal    ${payload}[suffix]    chunk-suffix
+    Should Be Equal As Integers    ${payload_length}    ${350000}
+    Should Start With    ${payload}[payload]    ${euro}
+    Should End With    ${payload}[payload]    ${euro}
+
+Plugin Keyword Example Location
     [Tags]    no-docker-pr
     [Setup]    New Page    ${FORM_URL}
     ${location} =    Get Location Object
@@ -80,3 +95,18 @@ Check Plugin Suite Scope Setting 2
     ...    LOG 1:3    INFO    Suite Level Message
     Log    Test
     Log    Hello
+
+Keyword Call Banner Covers Plugin Keywords
+    [Setup]    New Page    ${FORM_URL}
+    Show Keyword Banner    True
+    Get Element Count    css=input#username
+    Get Keyword Call Banner Text    ==    Get Element Count \ \ \ css=input#username
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Plugin Login With Credentials    css=input#username    ${PLUGIN_SECRET}
+    Get Keyword Call Banner Text    ==    Plugin Login With Credentials \ \ \ css=input#username \ \ \ ***
+    Run Keyword And Expect Error
+    ...    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*
+    ...    Plugin Login Without Type Hints    css=input#username    ${PLUGIN_SECRET}
+    Get Keyword Call Banner Text    ==    Plugin Login Without Type Hints \ \ \ css=input#username \ \ \ ***
+    [Teardown]    Show Keyword Banner    None

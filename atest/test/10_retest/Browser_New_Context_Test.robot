@@ -1,19 +1,19 @@
 *** Settings ***
-Library             Browser
-Library             OperatingSystem
-Library             mylib.py
-Resource            ../variables.resource
+Library           Browser
+Library           OperatingSystem
+Library           mylib.py
+Resource          ../variables.resource
 
-Suite Teardown      Clean Up
-Test Setup          New Browser And Path Setup
-Test Teardown       Close Browser    ALL
-Test Timeout        10 minutes
+Suite Teardown    Clean Up
+Test Setup        New Browser And Path Setup
+Test Teardown     Close Browser    ALL
+Test Timeout      10 minutes
 
 *** Variables ***
-${non_existing_relative_path} =     new_rel_folder
-${existing_relative_path} =         existing_rel_folder
-${non_existing_absolute_path} =     ${OUTPUT_DIR}/new_abs_folder
-${existing_absolute_path} =         ${OUTPUT_DIR}/existing_abs_folder
+${non_existing_relative_path} =    new_rel_folder
+${existing_relative_path} =        existing_rel_folder
+${non_existing_absolute_path} =    ${OUTPUT_DIR}/new_abs_folder
+${existing_absolute_path} =        ${OUTPUT_DIR}/existing_abs_folder
 
 *** Test Cases ***
 Test New Context With Existing Path Of Type String
@@ -97,8 +97,4 @@ Create New Persistent Context With RecordVideo.Dir As Path And Validate That Rec
 
 Verify Video File Type
     [Arguments]    ${dir_type}
-    IF    ${PYTHON_314}
-        Should Match Regexp    ${dir_type}    <class 'str'>
-    ELSE
-        Should Match Regexp    ${dir_type}    <class 'pathlib.+Path'>    # Python 3.13 need mode wired regex
-    END
+    Should Match Regexp    ${dir_type}    <class 'str'>

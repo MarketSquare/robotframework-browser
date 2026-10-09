@@ -18,9 +18,12 @@ import re
 import shutil
 import string
 import sys
+import threading
 import time
 import types
+from collections.abc import Iterator
 from concurrent.futures._base import Future
+from copy import copy
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -32,6 +35,7 @@ from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
 from robot.utils import secs_to_timestr, timestr_to_secs
+from robot.utils.robottypes import is_falsy
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
 from .base import ContextCache, LibraryComponent
@@ -41,12 +45,14 @@ from .keywords import (
     Control,
     Cookie,
     Coverage,
+    Credential,
     Devices,
     Electron,
     Evaluation,
     Formatter,
     Getters,
     Interaction,
+    KeywordCallObserver,
     LocatorHandler,
     Network,
     Pdf,
@@ -59,13 +65,13 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
+from .python_arguments import add_argument_conversion
 from .utils import (
     AutoClosingLevel,
     PlaywrightLogTypes,
     Scope,
     SettingsStack,
     get_normalized_keyword,
-    is_falsy,
     keyword,
     logger,
     suppress_logging,
@@ -78,42 +84,46 @@ from .utils.data_types import (
     KeywordCallStackEntry,
     LambdaFunction,
     RegExp,
+    RobotTypeConverter,
     SelectionType,
     SupportedBrowsers,
     TracingGroupMode,
 )
 from .version import __version__ as VERSION
 
-KW_CALL_CONTENT_TEMPLATE = """body::before {{
-    content: '{keyword_call}';
-    position: fixed;
-    z-index: 9999;
-    border: 1px solid lightblue;
-    border-radius: 1rem;
-    background: #00008b90;
-    color: white;
-    padding: 2px 10px;
-    pointer-events: none;
-    font-family: monospace;
-    font-size: medium;
-    font-weight: normal;
-    white-space: pre;
-    bottom: 5px;
-    left: 5px;
-    {additional_styles}
-}}"""
 
-KW_CALL_BANNER_FUNCTION = """(content) => {
-    const kwCallBanner = document.getElementById('kwCallBanner');
-    if (kwCallBanner) {
-        kwCallBanner.textContent = content;
-    } else {
-        const kwCallBanner = document.createElement("style");
-        kwCallBanner.setAttribute("id", 'kwCallBanner');
-        kwCallBanner.textContent = content;
-        document.head.appendChild(kwCallBanner);
-    }
-}"""
+class _RFContextTracker:
+    def __init__(self) -> None:
+        self._suite_stack: list[tuple[str, str]] = []
+        self._test_id: str = ""
+        self._test_name: str = ""
+
+    def start_suite(self, suite_id: str, suite_name: str) -> None:
+        self._suite_stack.append((suite_id, suite_name))
+
+    def end_suite(self) -> None:
+        if self._suite_stack:
+            self._suite_stack.pop()
+
+    def start_test(self, test_id: str, test_name: str) -> None:
+        self._test_id = test_id
+        self._test_name = test_name
+
+    def end_test(self) -> None:
+        self._test_id = ""
+        self._test_name = ""
+
+    def context(self) -> dict:
+        if self._suite_stack:
+            suite_id, suite_name = self._suite_stack[-1]
+        else:
+            suite_id, suite_name = "", ""
+        return {
+            "suite_id": suite_id,
+            "suite_name": suite_name,
+            "test_id": self._test_id,
+            "test_name": self._test_name,
+        }
 
 
 @library(
@@ -122,9 +132,9 @@ KW_CALL_BANNER_FUNCTION = """(content) => {
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.
 
-    This is the keyword documentation for Browser library. For information
-    about installation, support, and more please visit the
-    [https://github.com/MarketSquare/robotframework-playwright|project pages].
+    This is the keyword documentation for Browser library. For installation,
+    guides and everything else, see
+    [https://robotframework-browser.org|robotframework-browser.org].
     For more information about Robot Framework itself, see [https://robotframework.org|robotframework.org].
 
     Browser library uses
@@ -140,80 +150,36 @@ class Browser(DynamicCore):
 
     = Browser, Context and Page =
 
-    Browser library works with three different layers that build on each other:
-    *Browser*, *Context* and *Page*.
+    Browser library works in three layers that build on each other.
 
+    | = Layer =     | = Is =                                                        | = Opened with =  |
+    | *Browser*     | A browser process: ``chromium``, ``firefox`` or ``webkit``.    | `New Browser`    |
+    | *Context*     | An isolated session in that process: its own cookies, storage and permissions. Contexts share nothing with each other. | `New Context` |
+    | *Page*        | A tab, with its own content and history. Selectors resolve here. | `New Page`      |
 
-    == Browsers ==
+    Playwright brings its own browser binaries, so no separate driver is needed.
+    A browser starts ``headless`` unless `New Browser`'s ``headless`` argument is set to ``False``.
 
-    A *browser* can be started with one of the three
-    different engines Chromium, Firefox or Webkit.
+    | = Engine =    | = Ships in =                                       |
+    | ``chromium``  | Google Chrome, Microsoft Edge, Opera               |
+    | ``firefox``   | Mozilla Firefox                                    |
+    | ``webkit``    | Safari on macOS and iOS                            |
 
-    === Supported Browsers ===
+    The layers fill themselves in downwards: `New Page` with nothing open starts a
+    browser and a context first, using defaults. `Open Browser` opens all three at
+    once and is meant for experiments and debugging rather than for suites.
 
-    |   Browser     | Browser with this engine                          |
-    | ``chromium``  | Google Chrome, Microsoft Edge (since 2020), Opera |
-    | ``firefox``   | Mozilla Firefox                                   |
-    | ``webkit``    | Apple Safari, Mail, AppStore on MacOS and iOS     |
+    A context is the cheap unit of isolation — opening one is roughly a thousand
+    times cheaper than starting a browser, so a clean session per test does not
+    mean a new process. Context-level settings include ``viewport``,
+    ``geolocation``, ``locale``, ``colorScheme`` and ``httpCredentials``;
+    downloads are accepted unless ``acceptDownloads=False`` is given.
 
-    Since [https://github.com/microsoft/playwright|Playwright] comes with a pack of builtin
-    binaries for all browsers, no additional drivers e.g. geckodriver are needed.
+    Each browser, context and page has an id. `Get Browser Catalog` returns
+    everything currently open.
 
-    All these browsers that cover more than 85% of the world wide used browsers,
-    can be tested on Windows, Linux and MacOS.
-    There is no need for dedicated machines anymore.
-
-    A browser process is started ``headless`` (without a GUI) by default.
-    Run `New Browser` with specified arguments if a browser with a GUI is requested
-    or if a proxy has to be configured.
-    A browser process can contain several contexts.
-
-
-    == Contexts ==
-
-    A *context* corresponds to a set of independent incognito pages in a browser
-    that share cookies, sessions or profile settings. Pages in two separate
-    contexts do not share cookies, sessions or profile settings.
-    Compared to Selenium, these do *not* require their own browser process.
-    To get a clean environment a test can just open a new context.
-    Due to this new independent browser sessions can be opened with
-    Robot Framework Browser about 10 times faster than with Selenium by
-    just opening a `New Context` within the opened browser.
-
-    To make pages in the same suite share state, use the same context by opening the
-    context with `New Context` on suite setup.
-
-    The context layer is useful e.g. for testing different user sessions on the
-    same webpage without opening a whole new browser context.
-    Contexts can also have detailed configurations, such as geo-location, language settings,
-    the viewport size or color scheme.
-    Contexts do also support http credentials to be set, so that basic authentication
-    can also be tested. To be able to download files within the test,
-    the ``acceptDownloads`` argument must be set to ``True`` in `New Context` keyword.
-    A context can contain different pages.
-
-
-    == Pages ==
-
-    A *page* does contain the content of the loaded web site and has a browsing history.
-    Pages and browser tabs are the same.
-
-    Typical usage could be:
-    | *** Test Cases ***
-    | Starting a browser with a page
-    |     New Browser    chromium    headless=false
-    |     New Context    viewport={'width': 1920, 'height': 1080}
-    |     New Page       https://marketsquare.github.io/robotframework-browser/Browser.html
-    |     Get Title      ==    Browser
-
-    The `Open Browser` keyword opens a new browser, a new context and a new page.
-    This keyword is useful for quick experiments or debugging sessions.
-
-    When a `New Page` is called without an open browser, `New Browser`
-    and `New Context` are executed with default values first.
-
-    Each Browser, Context and Page has a unique ID with which they can be addressed.
-    A full catalog of what is open can be received by `Get Browser Catalog` as a dictionary.
+    Which layer to open for which job, and the cost of each:
+    https://robotframework-browser.org/docs/concepts/browser-context-page
 
     = Automatic page and context closing =
 
@@ -221,401 +187,161 @@ class Browser(DynamicCore):
 
     = Finding elements =
 
-    All keywords in the library that need to interact with an element
-    on a web page take an argument typically named ``selector`` that specifies
-    how to find the element. Keywords can find elements with strict mode. If
-    strict mode is true and locator finds multiple elements from the page, keyword
-    will fail. If keyword finds one element, keyword does not fail because of
-    strict mode. If strict mode is false, keyword does not fail if selector points
-    many elements. Strict mode is enabled by default, but can be changed in library
-    `importing` or `Set Strict Mode` keyword. Keyword documentation states if keyword
-    uses strict mode. If keyword does not state that strict mode is used, then strict
-    mode is not applied for the keyword. For more details, see Playwright
-    [https://playwright.dev/docs/api/class-page#page-query-selector|strict documentation].
+    Keywords that act on an element take a ``selector`` argument. A selector is
+    one or more clauses, each naming a strategy, chained with ``>>``.
 
-    Selector strategies that are supported by default are listed in the table
-    below.
+    Under strict mode a selector matching more than one element fails the keyword.
+    It is on by default, changeable in the library `importing` or with
+    `Set Strict Mode`, and each keyword's documentation states whether it applies.
 
-    | = Strategy = |     = Match based on =     |         = Example =                |
-    | ``css``      | CSS selector.              | ``css=.class > \\#login_btn``      |
-    | ``xpath``    | XPath expression.          | ``xpath=//input[@id="login_btn"]`` |
-    | ``text``     | Browser text engine.       | ``text=Login``                     |
-    | ``id``       | Element ID Attribute.      | ``id=login_btn``                   |
+    == Strategies ==
 
-    CSS Selectors can also be recorded with `Record selector` keyword.
+    | = Strategy =     | = Matches on =                               | = Example =                        |
+    | ``role``         | ARIA role, with optional accessible name.    | ``role=button[name="Login"]``      |
+    | ``data-testid``  | ``data-testid`` attribute.                   | ``data-testid=login``              |
+    | ``text``         | Text content. See `Text matching`.           | ``text=Login``                     |
+    | ``id``           | Element ID attribute.                        | ``id=login_btn``                   |
+    | ``css``          | CSS selector.                                | ``css=.class > \\#login_btn``      |
+    | ``xpath``        | XPath expression.                            | ``xpath=//input[@id="login_btn"]`` |
+    | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
+    | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
+    | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
 
-    == Explicit Selector Strategy ==
+    An attribute engine is equivalent to the matching css attribute selector:
+    ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
 
-    The explicit selector strategy is specified with a prefix using syntax
-    ``strategy=value``. Spaces around the separator are ignored, so
-    ``css=foo``, ``css= foo`` and ``css = foo`` are all equivalent.
+    ``css:light`` is the only non-piercing engine still supported.
+    All other locator, except ``xpath``, pierce shadow DOM automatically.
 
+    Two filters narrow what a clause already matched. Filter order changes the
+    result.
 
-    == Implicit Selector Strategy ==
+    | = Filter =  | = Selects =                                           | = Example =                    |
+    | ``nth``     | The nth match, zero based. ``0`` first, ``-1`` last.  | ``css=button >> nth=1``        |
+    | ``visible`` | Only visible, or only hidden, matches.                | ``css=button >> visible=true`` |
 
-    *The default selector strategy is `css`.*
+    Playwright's CSS pseudo-classes (``:has()``, ``:has-text()``,
+    ``:nth-match()``) and its layout selectors (``:right-of()``, ``:below()``)
+    are available inside a ``css`` clause. Which strategy to prefer, and the full
+    list with examples:
+    https://robotframework-browser.org/docs/concepts/selectors
 
-    If selector does not contain one of the know explicit selector strategies, it is
-    assumed to contain css selector.
+    == Explicit and implicit strategy ==
 
-    Selectors that are starting with ``//`` or ``..`` are considered as xpath selectors.
+    A strategy is named with a ``strategy=value`` prefix. Spaces around the
+    separator are ignored, so ``css=foo``, ``css= foo`` and ``css = foo`` are the
+    same.
 
-    Selectors that are in quotes are considered as text selectors.
+    Without a prefix the strategy is inferred:
 
-    Examples:
+    | = Selector starts with = | = Read as = | = Example =                             |
+    | ``//`` or ``..``         | ``xpath``   | ``//span/button`` is ``xpath=//span/button`` |
+    | ``"`` or ``'``           | ``text``, exact | ``"Login"`` is ``text="Login"``     |
+    | anything else            | ``css``     | ``span > button`` is ``css=span > button``   |
 
-    | # CSS selectors are default.
-    | `Click`  span > button.some_class         # This is equivalent
-    | `Click`  css=span > button.some_class     # to this.
-    |
-    | # // or .. leads to xpath selector strategy
-    | `Click`  //span/button[@class="some_class"]
-    | `Click`  xpath=//span/button[@class="some_class"]
-    |
-    | # "text" in quotes leads to exact text selector strategy
-    | `Click`  "Login"
-    | `Click`  text="Login"
+    Because ``#`` starts a comment in Robot Framework data, an id selector must be
+    escaped as ``\\#id``.
 
+    ``css`` follows the
+    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_selectors|CSS selector]
+    specification and ``xpath`` the
+    [https://developer.mozilla.org/en-US/docs/Web/XPath|XPath] specification;
+    neither is re-documented here.
 
-    == CSS ==
+    == Text matching ==
 
-    As written before, the default selector strategy is `css`. See
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector]
-    for more information.
+    The ``text`` engine matches a text node, and the value of ``button`` and
+    ``submit`` inputs. In keywords that insert text it also matches a field by its
+    label.
 
-    Any malformed selector not starting with ``//`` or ``..`` nor starting and ending
-    with a quote is assumed to be a css selector.
+    | = Form =             | = Matches =                                                              |
+    | ``text=Login``       | Substring, case-insensitive, leading and trailing whitespace ignored.    |
+    | ``text="Login "``    | Exact: case, whitespace and all. Escape a quote as ``\\"``.              |
+    | ``text=/^Hi .*!$/i`` | JavaScript-style [https://regex101.com/|regular expression] with flags: e.g. ``i`` for case-insensitive. |
 
-    Note that ``#`` is a comment character in [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#ignored-data | Robot Framework syntax] and needs to be
-    escaped like ``\\#`` to work as a [https://developer.mozilla.org/en-US/docs/Web/CSS/ID_selectors | css ID selector].
+    == Chaining ==
 
-    Examples:
-    | `Click`  span > button.some_class
-    | `Get Text`  \\#username_field  ==  George
+    Clauses are separated by ``>>`` and each searches inside the result of the
+    previous one. The chain returns what the last clause matched; prefix a clause
+    with ``*`` to return that one instead. A value containing ``>>`` must be
+    quoted, as in ``text="some >> text"``.
 
-
-    == XPath ==
-
-    XPath engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/evaluate|Document.evaluate].
-    Example: ``xpath=//html/body//span[text()="Hello World"]``.
-
-    Malformed selector starting with ``//`` or ``..`` is assumed to be an xpath selector.
-    For example, ``//html/body`` is converted to ``xpath=//html/body``. More
-    examples are displayed in `Examples`.
-
-    Note that xpath does not pierce [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|shadow_roots].
-
-
-    == Text ==
-
-    Text engine finds an element that contains a text node with the passed text.
-    For example, ``Click    text=Login`` clicks on a login button, and
-    ``Wait For Elements State   text="lazy loaded text"`` waits for the "lazy loaded text"
-    to appear in the page.
-
-    Text engine finds fields based on their labels in text inserting keywords.
-
-    Malformed selector starting and ending with a quote (either ``"`` or ``'``) is assumed
-    to be a text selector. For example, ``Click    "Login"`` is converted to ``Click    text="Login"``.
-    Be aware that these leads to exact matches only!
-    More examples are displayed in `Examples`.
-
-
-    === Insensitive match ===
-
-    By default, the match is case-insensitive, ignores leading/trailing whitespace and
-    searches for a substring. This means ``text= Login`` matches
-    ``<button>Button loGIN (click me)</button>``.
-
-    === Exact match ===
-
-    Text body can be escaped with single or double quotes for precise matching,
-    insisting on exact match, including specified whitespace and case.
-    This means ``text="Login "`` will only match ``<button>Login </button>`` with exactly
-    one space after "Login". Quoted text follows the usual escaping rules, e.g.
-    use ``\\"`` to escape double quote in a double-quoted string: ``text="foo\\"bar"``.
-
-    === RegEx ===
-
-    Text body can also be a JavaScript-like regex wrapped in / symbols.
-    This means ``text=/^hello .*!$/i`` or ``text=/^Hello .*!$/`` will match ``<span>Hello Peter Parker!</span>``
-    with any name after ``Hello``, ending with ``!``.
-    The first one flagged with ``i`` for case-insensitive.
-    See [https://regex101.com/|https://regex101.com] for more information about RegEx.
-
-    === Button and Submit Values ===
-
-    Input elements of the type button and submit are rendered with their value as text,
-    and text engine finds them. For example, ``text=Login`` matches
-    ``<input type=button value="Login">``.
-
-    == Cascaded selector syntax ==
-
-    Browser library supports the same selector strategies as the underlying
-    Playwright node module: xpath, css, id and text. The strategy can either
-    be explicitly specified with a prefix or the strategy can be implicit.
-
-    A major advantage of Browser is that multiple selector engines can be used
-    within one selector. It is possible to mix XPath, CSS and Text selectors while
-    selecting a single element.
-
-    Selectors are strings that consists of one or more clauses separated by
-    ``>>`` token, e.g. ``clause1 >> clause2 >> clause3``. When multiple clauses
-    are present, next one is queried relative to the previous one's result.
-    Browser library supports concatenation of different selectors separated by ``>>``.
-
-    For example:
-    | `Highlight Elements`    "Hello" >> ../.. >> .select_button
-    | `Highlight Elements`    text=Hello >> xpath=../.. >> css=.select_button
-
-    Each clause contains a selector engine name and selector body, e.g.
-    ``engine=body``. Here ``engine`` is one of the supported engines (e.g. css or
-    a custom one). Selector ``body`` follows the format of the particular engine,
-    e.g. for css engine it should be a [https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Selectors | css selector].
-    Body format is assumed to ignore leading and trailing white spaces,
-    so that extra whitespace can be added for readability. If the selector
-    engine needs to include ``>>`` in the body, it should be escaped
-    inside a string to not be confused with clause separator,
-    e.g. ``text="some >> text"``.
-
-    Selector engine name can be prefixed with ``*`` to capture an element that
-    matches the particular clause instead of the last one. For example,
-    ``css=article >> text=Hello`` captures the element with the text ``Hello``,
-    and ``*css=article >> text=Hello`` (note the *) captures the article element
-    that contains some element with the text Hello.
-
-    For convenience, selectors in the wrong format are heuristically converted
-    to the right format. See `Implicit Selector Strategy`
-
-    == Examples ==
-    | # queries 'div' css selector
-    | Get Element    css=div
-    |
-    | # queries '//html/body/div' xpath selector
-    | Get Element    //html/body/div
-    |
-    | # queries '"foo"' text selector
-    | Get Element    text=foo
-    |
-    | # queries 'span' css selector inside the result of '//html/body/div' xpath selector
-    | Get Element    xpath=//html/body/div >> css=span
-    |
-    | # converted to 'css=div'
-    | Get Element    div
-    |
-    | # converted to 'xpath=//html/body/div'
-    | Get Element    //html/body/div
-    |
-    | # converted to 'text="foo"'
-    | Get Element    "foo"
-    |
-    | # queries the div element of every 2nd span element inside an element with the id foo
-    | Get Element    \\#foo >> css=span:nth-child(2n+1) >> div
-    | Get Element    id=foo >> css=span:nth-child(2n+1) >> div
-
-    Be aware that using ``#`` as a starting character in Robot Framework would be interpreted as comment.
-    Due to that fact a ``#id`` must be escaped as ``\\#id``.
+    | Click    css=.checkout >> text=Confirm
+    | Get Element    *css=article >> text=Hello    # returns the article
 
     == iFrames ==
 
-    By default, selector chains do not cross frame boundaries. It means that a
-    simple CSS selector is not able to select an element located inside an iframe
-    or a frameset. For this use case, there is a special selector ``>>>`` which can
-    be used to combine a selector for the frame and a selector for an element
-    inside a frame.
+    A chain does not cross a frame boundary. ``>>>`` combines a selector for the
+    frame element with a selector inside it; the clause immediately before ``>>>``
+    must select the frame itself.
 
-    Given this simple pseudo html snippet:
-    | <iframe id="iframe" src="src.html">
-    |   #document
-    |     <!DOCTYPE html>
-    |     <html>
-    |       <head></head>
-    |       <body>
-    |         <button id="btn">Click Me</button>
-    |       </body>
-    |     </html>
-    | </iframe>
+    | Click    id=iframe >>> id=btn
 
-    Here's a keyword call that clicks the button inside the frame.
+    For several keywords inside one frame, set a prefix with `Set Selector Prefix`.
 
-    | Click   id=iframe >>> id=btn
+    == Shadow DOM ==
 
-    The selectors on the left and right side of ``>>>`` can be any valid selectors.
-    The selector clause directly before the frame opener ``>>>`` must select the frame element itself.
-    Frame selection is the only place where Browser Library modifies the selector, as explained in above.
-    In all cases, the library does not alter the selector in any way, instead it is passed as is to the
-    Playwright side.
+    All engines, except ``css:light`` and ``xpath``, pierce open shadow roots automatically:
+    every descendant combinator, including the implicit one at the start of a
+    selector, crosses any number of them. Light DOM is searched first, then open
+    shadow roots, in document order. Closed shadow roots and iframes are never
+    entered.
 
-    If multiple keyword shall be performed inside a frame,
-    it is possible to define a selector prefix with `Set Selector Prefix`.
-    If this prefix is set to a frame/iframe it has similar behavior as SeleniumLibrary keyword `Select Frame`.
+    Use ``css:light`` to stop at the shadow boundary. Worked examples of what
+    each matches:
+    https://robotframework-browser.org/docs/concepts/selectors
 
-    == WebComponents and Shadow DOM ==
+    == Element references ==
 
-    Playwright and so also Browser are able to do automatic piercing of Shadow DOMs
-    and therefore are the best automation technology when working with WebComponents.
-
-    Also other technologies claim that they can handle
-    [https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_shadow_DOM|Shadow DOM and Web Components].
-    However, none of them do pierce shadow roots automatically,
-    which may be inconvenient when working with Shadow DOM and Web Components.
-
-    For that reason, the css engine pierces shadow roots. More specifically, every
-    [https://developer.mozilla.org/en-US/docs/Web/CSS/Descendant_combinator|Descendant combinator]
-    pierces an arbitrary number of open shadow roots, including the implicit descendant combinator
-    at the start of the selector.
-
-    That means, it is not necessary to select each shadow host, open its shadow root and
-    select the next shadow host until you reach the element that should be controlled.
-
-    === CSS:light ===
-
-    ``css:light`` engine is equivalent to [https://developer.mozilla.org/en/docs/Web/API/Document/querySelector | Document.querySelector]
-    and behaves according to the CSS spec.
-    However, it does not pierce shadow roots.
-
-    ``css`` engine first searches for elements in the light dom in the iteration order,
-    and then recursively inside open shadow roots in the iteration order. It does not
-    search inside closed shadow roots or iframes.
-
-    Examples:
-
-    | <article>
-    |   <div>In the light dom</div>
-    |   <div slot='myslot'>In the light dom, but goes into the shadow slot</div>
-    |   <open mode shadow root>
-    |       <div class='in-the-shadow'>
-    |           <span class='content'>
-    |               In the shadow dom
-    |               <open mode shadow root>
-    |                   <li id='target'>Deep in the shadow</li>
-    |               </open mode shadow root>
-    |           </span>
-    |       </div>
-    |       <slot name='myslot'></slot>
-    |   </open mode shadow root>
-    | </article>
-
-    Note that ``<open mode shadow root>`` is not an html element, but rather a shadow root
-    created with ``element.attachShadow({mode: 'open'})``.
-
-    - Both ``"css=article div"`` and ``"css:light=article div"`` match the first ``<div>In the light dom</div>``.
-    - Both ``"css=article > div"`` and ``"css:light=article > div"`` match two ``div`` elements that are direct children of the ``article``.
-    - ``"css=article .in-the-shadow"`` matches the ``<div class='in-the-shadow'>``, piercing the shadow root, while ``"css:light=article .in-the-shadow"`` does not match anything.
-    - ``"css:light=article div > span"`` does not match anything, because both light-dom ``div`` elements do not contain a ``span``.
-    - ``"css=article div > span"`` matches the ``<span class='content'>``, piercing the shadow root.
-    - ``"css=article > .in-the-shadow"`` does not match anything, because ``<div class='in-the-shadow'>`` is not a direct child of ``article``
-    - ``"css:light=article > .in-the-shadow"`` does not match anything.
-    - ``"css=article li#target"`` matches the ``<li id='target'>Deep in the shadow</li>``, piercing two shadow roots.
-
-    === text:light ===
-
-    ``text`` engine open pierces shadow roots similarly to ``css``, while ``text:light`` does not.
-    Text engine first searches for elements in the light dom in the iteration order, and then
-    recursively inside open shadow roots in the iteration order. It does not search inside
-    closed shadow roots or iframes.
-
-    === id, data-testid, data-test-id, data-test and their :light counterparts ===
-
-    Attribute engines are selecting based on the corresponding attribute value.
-    For example: ``data-test-id=foo`` is equivalent to ``css=[data-test-id="foo"]``,
-    and ``id:light=foo`` is equivalent to ``css:light=[id="foo"]``.
-
-    == Element reference syntax ==
-
-    It is possible to get a reference to a Locator by using `Get Element` and `Get Elements` keywords.
-    Keywords do not save reference to an element in the HTML document, instead it saves reference to a Playwright
-    [https://playwright.dev/docs/api/class-locator|Locator]. In nutshell Locator captures the logic of how to
-    retrieve that element from the page. Each time an action is performed, the locator re-searches the elements
-    in the page. This reference can be used as a *first* part of a selector by using a special selector
-    syntax `element=`. like this:
+    `Get Element` returns a *selector string* for what it matched, and
+    `Get Elements` returns a list of them. They are ordinary selectors, so they go
+    in the *first* clause of another selector, chained with ``>>``:
 
     | ${ref}=    Get Element    .some_class
-    |            Click          ${ref} >> .some_child     # Locator searches an element from the page.
-    |            Click          ${ref} >> .other_child    # Locator searches again an element from the page.
+    |            Click          ${ref} >> .some_child
+    |            Click          ${ref} >> .other_child
 
-    The `.some_child` and `.other_child` selectors in the example are relative to the element referenced
-    by ${ref}. Please note that frame piercing is not possible with element reference.
+    Clauses after the reference are relative to it. Because the value is a
+    selector rather than a captured DOM node, it is resolved from the page again
+    on every use. A reference works like any other first clause, ``>>>`` included:
+    if it points at an iframe, ``${ref} >>> h1`` crosses into it.
 
     = Assertions =
 
-    Keywords that accept arguments ``assertion_operator`` <`AssertionOperator`> and ``assertion_expected``
-    can optionally assert that a specified condition holds. Keywords will return the value even when the
-    assertion is performed by the keyword.
-
-    Assert will retry and fail only after a specified timeout.
-    See `Importing` and ``retry_assertions_for`` (default is 1 second) for configuring this timeout.
-
+    Keywords taking ``assertion_operator`` <`AssertionOperator`> and
+    ``assertion_expected`` can assert on the value they return, and still return
+    it. An assertion retries until it passes or ``retry_assertions_for`` expires;
+    see `Importing` for that setting, which defaults to 1 second.
 
     %ASSERTION_TABLE%
 
-    By default, keywords will provide an error message if an assertion fails.
-    Default error messages can be overwritten with a ``message`` argument.
-    The ``message`` argument accepts `{value}`, `{value_type}`, `{expected}` and
-    `{expected_type}` [https://docs.python.org/3/library/stdtypes.html#str.format|format]
-    options.
-    The `{value}` is the value returned by the keyword and the `{expected}`
-    is the expected value defined by the user, usually the value in the
-    ``assertion_expected`` argument. The `{value_type}` and
-    `{expected_type}` are the type definitions from `{value}` and `{expected}`
-    arguments. In similar fashion as Python
-    [https://docs.python.org/3/library/functions.html#type|type] returns type definition.
-    Assertions will retry until ``timeout`` has expired if they do not pass.
+    Expected values are generally used as given, so they must already have the type
+    returned by the keyword. Keywords returning numbers are an exception and convert the expected value.
 
-    The assertion ``assertion_expected`` value is not converted by the library and
-    is used as is. Therefore when assertion is made, the ``assertion_expected``
-    argument value and value returned the keyword must have the same type. If types
-    are not the same, assertion will fail. Example `Get Text` always returns a string
-    and has to be compared with a string, even the returned value might look like
-    a number.
+    Examples:
+    - `Get Text` returns a string even when it looks like a number
+    - `Get Element Count` returns an integer.
+    - `Get BoundingBox` and `Get Viewport Size` return a dictionary unfiltered and a number when a key is selected.
 
-    Other Keywords have other specific types they return.
-    `Get Element Count` always returns an integer.
-    `Get Bounding Box` and `Get Viewport Size` can be filtered.
-    They return a dictionary without a filter and a number when filtered.
-    These Keywords do automatic conversion for the expected value if a number is returned.
+    Comparing strings with ``<`` or ``>`` compares code points character by
+    character and stops at the first difference; length is never considered.
+    Example: ``A < Z``, ``Z < a``, ``ac < dc``, ``'abcde' < 'abd'``.
 
-    * < less or greater > With Strings*
-    Comparisons of strings with ``greater than`` or ``less than`` compares each character,
-    starting from 0 regarding where it stands in the code page.
-    Example: ``A < Z``, ``Z < a``, ``ac < dc`
-    It does never compare the length of elements. Neither lists nor strings.
-    The comparison stops at the first character that is different.
-    Examples: ``'abcde' < 'abd'``, ``'100.000' < '2'``
-    In Python 3 and therefore also in Browser it is not possible to compare numbers
-    with strings with a greater or less operator.
-    On keywords that return numbers, the given expected value is automatically
-    converted to a number before comparison.
+    ``validate`` takes a Python expression over ``value``. ``then`` and
+    ``evaluate`` do not assert: they return the result of an expression over
+    ``value``.
 
+    | Get Text             h1      validate    value.startswith("Welcome")
+    | ${id}=    Get Property    a#link    href    then    value.split("/")[-1]
 
-    The getters `Get Page State` and `Get Browser Catalog` return a dictionary. Values of the dictionary can directly asserted.
-    Pay attention of possible types because they are evaluated in Python. For example:
+    A failing assertion has a default message, replaceable with ``message``. It
+    accepts the
+    [https://docs.python.org/3/library/stdtypes.html#str.format|format] fields
+    ``{value}``, ``{expected}``, ``{value_type}`` and ``{expected_type}``.
 
-    | Get Page State    validate    2020 >= value['year']                     # Comparison of numbers
-    | Get Page State    validate    "IMPORTANT MESSAGE!" == value['message']  # Comparison of strings
-
-    == The 'then' or 'evaluate' closure ==
-
-    Keywords that accept arguments ``assertion_operator`` and ``assertion_expected``
-    can optionally also use ``then`` or ``evaluate`` closure to modify the returned value with
-    BuiltIn Evaluate. Actual value can be accessed with ``value``.
-
-    For example ``Get Title  then  'TITLE: '+value``.
-    See
-    [https://robotframework.org/robotframework/latest/libraries/BuiltIn.html#Evaluating%20expressions|
-    Builtin Evaluating expressions]
-    for more info on the syntax.
-
-    == Examples ==
-
-    | # *Keyword*    *Selector*                    *Key*        *Assertion Operator*    *Assertion Expected*
-    | Get Title                                           equal                 Page Title
-    | Get Title                                           ^=                    Page
-    | Get Style    //*[@id="div-element"]      width      >                     100
-    | Get Title                                           matches               \\\\w+\\\\s\\\\w+
-    | Get Title                                           validate              value == "Login Page"
-    | Get Title                                           evaluate              value if value == "some value" else "something else"
-
+    What each operator is for, why a type mismatch is the usual failure, and the
+    formatters that normalise a value before comparison:
+    https://robotframework-browser.org/docs/concepts/assertions
 
     = Implicit waiting =
 
@@ -633,156 +359,82 @@ class Browser(DynamicCore):
 
     = Experimental: Re-using same node process =
 
-    Browser library integrated nodejs and python. The NodeJS side can be also executed as a standalone process.
-    Browser libraries running on the same machine can talk to that instead of starting new node processes.
-    This can speed execution when running tests parallel.
-    To start node side run on the directory when the Browser package is
-    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js PORT``.
+    The Node.js side can be started as a standalone process and shared by every
+    Browser library running on the same machine, instead of each one starting its
+    own. This can speed up parallel runs. Start it from the directory where the
+    Browser package is installed with
+    ```
+    PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT
+    ```
+    , for example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
+    script reads the host first and exits with ``No port defined`` if only one is
+    given. Point runs at it
+    with the ``playwright_process_port`` import parameter or the
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT`` environment variable, for example
+    ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
 
-    ``PORT`` is the port you want to use for the node process.
-    To execute tests then with pabot for example do ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT=PORT pabot ..``.
-
-    = Experimental: Provide parameters to node process =
-
-    Browser library is integrated with NodeJSand and Python. Browser library starts a node process, to communicate
-    Playwright API in NodeJS side. It is possible to provide parameters for the started node process by defining
-    ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS environment variable, before starting the test execution. Example:
-    ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS=--inspect;robot path/to/tests``.
-    There can be multiple arguments defined in the environment variable and arguments must be separated with comma.
+    What this costs, how to run it under Pabot, and how to pass Node flags such as
+    ``--inspect``:
+    https://robotframework-browser.org/docs/operations/node-process
 
     = Scope Setting =
 
     Some keywords which manipulates library settings have a scope argument.
     With that scope argument one can set the "live time" of that setting.
-    Available Scopes are: `Global`, `Suite` and `Test`/`Task`
+    Available Scopes are: ``Global``, ``Suite`` and ``Test`` / ``Task``.
     See `Scope`.
     Is a scope finished, this scoped setting, like timeout, will no longer be used.
 
     Live Times:
-    - A `Global` scope will live forever until it is overwritten by another `Global` scope. Or locally temporarily overridden by a more narrow scope.
-    - A `Suite` scope will locally override the `Global` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with `Global` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local `Suite` setting that then will be inherited to its children suites.
-    - A `Test` or `Task` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
+    - A ``Global`` scope will live forever until it is overwritten by another ``Global`` scope. Or locally temporarily overridden by a more narrow scope.
+    - A ``Suite`` scope will locally override the ``Global`` scope and live until the end of the Suite within it is set, or if it is overwritten by a later setting with ``Global`` or same scope. Children suite does inherit the setting from the parent suite but also may have its own local ``Suite`` setting that then will be inherited to its children suites.
+    - A ``Test`` or ``Task`` scope will be inherited from its parent suite but when set, lives until the end of that particular test or task.
 
     A new set higher order scope will always remove the lower order scope which may be in charge.
-    So the setting of a `Suite` scope from a test, will set that scope to the robot file suite where that test is and removes the `Test` scope that may have been in place.
+    So the setting of a ``Suite`` scope from a test, will set that scope to the robot file suite where that test is and removes the ``Test`` scope that may have been in place.
 
-    = Extending Browser library with a JavaScript module =
+    = Using Browser from Python =
 
-    Browser library can be extended with JavaScript. The module must be in CommonJS format that Node.js uses.
-    You can translate your ES6 module to Node.js CommonJS style with Babel. Many other languages
-    can be also translated to modules that can be used from Node.js. For example TypeScript, PureScript and
-    ClojureScript just to mention few.
+    Browser keywords can be called directly from Python, from your own Robot
+    Framework library. Arguments convert the same way Robot Framework converts
+    them, so ``browser.click("//button", "middle")`` works, and a Python
+    ``None`` is passed through unchanged. Robot Framework's own features do not
+    all follow: `Automatic page and context closing` and `Scope Setting` need
+    Browser's listener to be registered, and ``run_on_failure`` never applies
+    to a keyword your library calls from Python.
 
-    | async function myGoToKeyword(url, args, page, logger, playwright) {
-    |   logger(args.toString())
-    |   playwright.coolNewFeature()
-    |   return await page.goto(url);
-    | }
-
-    Functions can contain any number of arguments and arguments may have default values.
-
-    There are some reserved arguments that are not accessible from Robot Framework side.
-    They are injected to the function if they are in the arguments:
-
-    ``page``: [https://playwright.dev/docs/api/class-page|the playwright Page object].
-
-    ``context``: [https://playwright.dev/docs/api/class-browsercontext|the playwright BrowserContext object].
-
-    ``browser``: [https://playwright.dev/docs/api/class-browser|the playwright Browser object].
-
-    ``args``: the rest of values from Robot Framework keyword call ``*args``.
-
-    ``logger``: callback function that takes strings as arguments and writes them to robot log. Can be called multiple times.
-
-    ``playwright``: playwright module (* from 'playwright'). Useful for integrating with Playwright features that Browser library doesn't support with it's own keywords. [https://playwright.dev/docs/api/class-playwright| API docs]
-
-    also argument name ``self`` can not be used.
-
-    == Example module.js ==
-
-    | async function myGoToKeyword(pageUrl, page) {
-    |   await page.goto(pageUrl);
-    |   return await page.title();
-    | }
-    | exports.__esModule = true;
-    | exports.myGoToKeyword = myGoToKeyword;
-
-    == Example Robot Framework side ==
-
-    | *** Settings ***
-    | Library   Browser  jsextension=${CURDIR}/module.js
-    |
-    | *** Test Cases ***
-    | Hello
-    |   New Page
-    |   ${title}=  myGoToKeyword  https://playwright.dev
-    |   Should be equal  ${title}  Playwright
-
-    Also selector syntax can be extended with a custom selector using a js module
-
-    == Example module keyword for custom selector registering ==
-
-    | async function registerMySelector(playwright) {
-    | playwright.selectors.register("myselector", () => ({
-    |    // Returns the first element matching given selector in the root's subtree.
-    |    query(root, selector) {
-    |       return root.querySelector(`a[data-title="${selector}"]`);
-    |     },
-    |
-    |     // Returns all elements matching given selector in the root's subtree.
-    |     queryAll(root, selector) {
-    |       return Array.from(root.querySelectorAll(`a[data-title="${selector}"]`));
-    |     }
-    | }));
-    | return 1;
-    | }
-    | exports.__esModule = true;
-    | exports.registerMySelector = registerMySelector;
-
-    = Plugins =
-
-    Browser library offers plugins as a way to modify and add library keywords and modify some of the internal
-    functionality without creating a new library or hacking the source code. See plugin API
-    [https://github.com/MarketSquare/robotframework-browser/blob/main/docs/plugins/README.md | documentation] for
-    further details.
+    Getting started, and what your own library gets in each case:
+    https://robotframework-browser.org/docs/extending/python-libraries
 
     = Language =
 
-    Browser library offers possibility to translate keyword names and documentation to new language. If language
-    is defined, Browser library will search from
-    [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#module-search-path | module search path]
-    Python packages starting with `robotframework_browser_translation` by using
-    [https://packaging.python.org/en/latest/guides/creating-and-discovering-plugins/ | Python pluging API]. Library
-    is using naming convention to find Python plugins.
+    Keyword names and their documentation can be translated. Install a Python
+    package whose name starts with ``robotframework_browser_translation`` and set
+    the ``language`` import parameter to the language that the package declares;
+    Browser discovers it on the module search path through the Python plugin API.
 
-    The package must implement single API call, ``get_language`` without any arguments. Method must return a
-    dictionary containing two keys: ``language`` and ``path``. The language key value defines which language
-    the package contains. Also value should match (case insensitive) the library ``language`` import parameter.
-    The path parameter value should be full path to the translation file.
+    A template for a new translation, containing every keyword in the correct
+    format, is produced by ``rfbrowser translation /path/to/translation.json``.
+    Keywords coming from library plugins and JavaScript extensions can be included
+    with the ``--plugings`` and ``--jsextension`` arguments.
 
-    == Translation file ==
+    Writing and packaging a translation:
+    https://robotframework-browser.org/docs/extending/translations
 
-    The file name or extension is not important, but data must be in [https://www.json.org/json-en.html | json]
-    format. The keys of json are the methods names, not the keyword names, which implements keywords. Value of
-    key is json object which contains two keys: ``name`` and ``doc``. The ``name`` key contains the keyword
-    translated name and `doc` contains translated documentation. Providing doc and name are optional, example
-    translation json file can only provide translations to keyword names or only to documentation. But it is
-    always recommended to provide translation to both name and doc. Special key ``__intro__`` is for class level
-    documentation and ``__init__`` is for init level documentation. These special values ``name`` can not be
-    translated, instead ``name`` should be kept the same.
+    = ENVIRONMENT VARIABLES =
 
-    == Generating template translation file ==
+    These environment variables modify the behaviour of the library. Two of them are
+    development features and must not be set in production; they are listed here so
+    that nobody uses them by accident.
 
-    Template translation file, with English language can be created by running:
-    `rfbrowser translation /path/to/translation.json` command. Command does not provide translations to other
-    languages, it only provides easy way to create full list keywords and their documentation in correct
-    format. It is also possible to add keywords from library plugins and js extensions by providing
-    `--plugings` and `--jsextension` arguments to command. Example:
-    `rfbrowser translation --plugings myplugin.SomePlugin --jsextension /path/ot/jsplugin.js /path/to/translation.json`
+    | =Environment variable=                         | =Description= |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``          | Port number for connecting to an existing node process. This is an alternative to ``playwright_process_port`` import argument. |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE``      | If set to ``1``, will collect code coverage for the node process. This must not be used in production environments and is not supported on Windows. |
+    | ``ROBOT_FRAMEWORK_BROWSER_NODE_DEBUG_OPTIONS`` | Debug options for the node process. This is a comma-separated list of arguments, for example ``--inspect``. This must not be used in production environments. |
 
-    Example project for translation can be found from
-    [https://github.com/MarketSquare/robotframework-browser-translation-fi | robotframework-browser-translation-fi]
-    repository.
+    Which of these to prefer over an import parameter, and how they behave with
+    BrowserBatteries:
+    https://robotframework-browser.org/docs/operations/environment-variables
     """
 
     ROBOT_LIBRARY_VERSION = VERSION
@@ -816,27 +468,90 @@ class Browser(DynamicCore):
         timeout: timedelta = timedelta(seconds=10),
         tracing_group_mode: TracingGroupMode = TracingGroupMode.Full,
     ):
-        """Browser library can be taken into use with optional arguments:
+        """Browser library can be taken into use with optional arguments.
 
-        | =Argument=                        | =Description= |
-        | ``auto_closing_level``            | Configure context and page automatic closing. Default is ``TEST``, for more details, see `AutoClosingLevel` |
-        | ``auto_delete_passed_tracing``    | If ``auto_closing_level`` is set to ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of passed tests or suites, depending on the context scope, not be saved. Also temp files will all be deleted after the whole execution ends. |
-        | ``enable_playwright_debug``       | Enable low level debug information from the playwright to playwright-log.txt file. For more details, see `PlaywrightLogTypes`. |
-        | ``enable_presenter_mode``         | Automatic highlights the interacted components, slowMo and a small pause at the end. Can be enabled by giving True or can be customized by giving a dictionary: `{"duration": "2 seconds", "width": "2px", "style": "dotted", "color": "blue"}` Where `duration` is time format in Robot Framework format, defaults to 2 seconds. `width` is width of the marker in pixels, defaults the `2px`. `style` is the style of border, defaults to `dotted`. `color` is the color of the marker, defaults to `blue`. By default, the call banner keyword is also enabled unless explicitly disabled. |
-        | ``external_browser_executable``   | Dict mapping name of browser to path of executable of a browser. Will make opening new browsers of the given type use the set executablePath. Currently only configuring of `chromium` to a separate executable (chrome, chromium and Edge executables all work with recent versions) works. |
-        | ``highlight_on_failure``          | If set to ``True``, will highlight the element in the screenshot when a keyword fails, by highlighting the selector used in the failed keyword. If set to ``False``, will not highlight the element. |
-        | ``jsextension``                   | Path to Javascript modules exposed as extra keywords. The modules must be in CommonJS. It can either be a single path, a comma-separated lists of path or a real list of strings |
-        | ``language``                      | Defines language which is used to translate keyword names and documentation. |
-        | ``playwright_process_host``       | Hostname / Host address which should be used when spawning the Playwright process. Defaults to 127.0.0.1. |
-        | ``playwright_process_port``       | Experimental reusing of playwright process. ``playwright_process_port`` is preferred over environment variable ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same node process` for more details. |
-        | ``plugins``                       | Allows extending the Browser library with external Python classes. Can either be a single class/module, a comma-separated list or a real list of strings |
-        | ``retry_assertions_for``          | Timeout for retrying assertions on keywords before failing the keywords. This timeout starts counting from the first failure. Global ``timeout`` will still be in effect. This allows stopping execution faster to assertion failure when element is found fast. |
-        | ``run_on_failure``                | Sets the keyword to execute in case of a failing Browser keyword. It can be the name of any keyword. If the keyword has arguments those must be separated with two spaces for example ``My keyword \\ arg1 \\ arg2``. If no extra action should be done after a failure, set it to ``None`` or any other robot falsy value. Run on failure is not applied when library methods are executed directly from Python. |
-        | ``selector_prefix``               | Prefix for all selectors. This is useful when you need to use add an iframe selector before each selector. |
-        | ``show_keyword_call_banner``      | If set to ``True``, will show a banner with the keyword name and arguments before the keyword is executed at the bottom of the page. If set to ``False``, will not show the banner. If set to None, which is the default, will show the banner only if the presenter mode is enabled. `Get Page Source` and `Take Screenshot` will not show the banner, because that could negatively affect your test cases/tasks. This feature may be super helpful when you are debugging your tests and using tracing from `New Context` or `Video recording` features. |
-        | ``strict``                        | If keyword selector points multiple elements and keywords should interact with one element, keyword will fail if ``strict`` mode is true. Strict mode can be changed individually in keywords or by ``Set Strict Mode`` keyword. |
-        | ``timeout``                       | Timeout for keywords that operate on elements. The keywords will wait for this time for the element to appear into the page. Defaults to "10s" => 10 seconds. |
-        | ``tracing_group_mode``            | Defines how Robot Framework keyword calls are logged in Playwright trace log. Default is `Full`. For more details, see `TracingGroupMode`. |
+        *Arguments:*
+          - ``_``: Positional arguments are ignored. All arguments must be passed as named arguments.
+          - ``auto_closing_level``: Configure context and page automatic closing.
+                Default is ``TEST``, for more details, see `AutoClosingLevel`
+          - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
+                ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
+                passed tests or suites, depending on the context scope, will not be saved.
+                Also temp files will all be deleted after the whole execution ends.
+          - ``enable_playwright_debug``: Enable low level debug information from the
+                playwright to playwright-log.txt file. For more details, see
+                `PlaywrightLogTypes`.
+          - ``enable_presenter_mode``: Automatic highlights the interacted components,
+                slowMo and a small pause at the end. Can be enabled by giving True or
+                can be customized by giving a dictionary: ``{"duration": "2 seconds",
+                "width": "2px", "style": "dotted", "color": "blue"}`` Where `duration` is
+                time format in Robot Framework format, defaults to 2 seconds. `width` is
+                width of the marker in pixels, defaults the ``2px``. ``style`` is the style
+                of border, defaults to ``dotted``. ``color`` is the color of the marker,
+                defaults to ``blue``. By default, the call banner keyword is also enabled
+                unless explicitly disabled.
+          - ``external_browser_executable``: Dict mapping name of browser to path of
+                executable of a browser. Will make opening new browsers of the given
+                type use the set executablePath. Currently only configuring of
+                ``chromium`` to a separate executable (chrome, chromium and Edge
+                executables all work with recent versions) works.
+          - ``highlight_on_failure``: If set to ``True``, will highlight the element in
+                the screenshot when a keyword fails, by highlighting the selector used
+                in the failed keyword. If set to ``False``, will not highlight the
+                element.
+          - ``jsextension``: Path to JavaScript modules exposed as extra keywords. The
+                modules must be in CommonJS format; exported functions become keywords
+                and an ``fn.rfdoc`` string becomes a keyword's documentation. The
+                argument names ``page``, ``context``, ``browser``, ``logger`` and
+                ``playwright`` are filled in by the library rather than taken from the
+                keyword call. Can be a single path, a comma-separated list of paths or a
+                real list of strings. See
+                https://robotframework-browser.org/docs/extending/javascript-extensions
+          - ``language``: Defines language which is used to translate keyword names and
+                documentation.
+          - ``playwright_process_host``: Hostname / Host address which should be used
+                when spawning the Playwright process. Defaults to 127.0.0.1.
+          - ``playwright_process_port``: Experimental reusing of playwright process.
+                ``playwright_process_port`` is preferred over environment variable
+                ``ROBOT_FRAMEWORK_BROWSER_NODE_PORT``. See `Experimental: Re-using same
+                node process` for more details.
+          - ``plugins``: Allows extending the Browser library with external Python
+                classes, which can add keywords and modify some internal behaviour
+                without forking the library. Can be a single class/module, a
+                comma-separated list or a real list of strings. See
+                https://robotframework-browser.org/docs/extending/python-plugins
+          - ``retry_assertions_for``: Timeout for retrying assertions on keywords before
+                failing the keywords. This timeout starts counting from the first
+                failure. Global ``timeout`` will still be in effect. This allows
+                stopping execution faster to assertion failure when element is found
+                fast.
+          - ``run_on_failure``: Sets the keyword to execute in case of a failing Browser
+                keyword. It can be the name of any keyword. If the keyword has arguments
+                those must be separated with two spaces for example ``My keyword \\ arg1
+                \\ arg2``. If no extra action should be done after a failure, set it to
+                ``None`` or any other robot falsy value. Run on failure is not applied
+                when library methods are executed directly from Python.
+          - ``selector_prefix``: Prefix for all selectors. This is useful when you need
+                to add an iframe selector before each selector.
+          - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
+                the keyword name and arguments before the keyword is executed at the
+                bottom of the page. If set to ``False``, will not show the banner. If
+                set to None, which is the default, will show the banner only if the
+                presenter mode is enabled. `Get Page Source` and `Take Screenshot` will
+                not show the banner, because that could negatively affect your test
+                cases/tasks. This feature may be super helpful when you are debugging
+                your tests and using the ``tracing`` or ``recordVideo`` arguments of
+                `New Context`.
+          - ``strict``: If keyword selector points multiple elements and keywords should
+                interact with one element, keyword will fail if ``strict`` mode is true.
+                Strict mode can be changed individually in keywords or by `Set Strict Mode`
+                keyword.
+          - ``timeout``: Timeout for keywords that operate on elements. The keywords
+                will wait for this time for the element to appear into the page.
+                Defaults to "10s" => 10 seconds.
+          - ``tracing_group_mode``: Defines how Robot Framework keyword calls are logged
+                in Playwright trace log. Default is ``Full``.
+
         """
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
@@ -844,14 +559,17 @@ class Browser(DynamicCore):
         self.scope_stack: dict = {}
         self.suite_ids: dict[str, None] = {}
         self.current_test_id: str | None = None
+        self._rf_context = _RFContextTracker()
         self._playwright_state: PlaywrightState = PlaywrightState(self)
         self._browser_control = Control(self)
         self._assertion_formatter = Formatter(self)
+        self._keyword_call = KeywordCallObserver(self)
         libraries = [
             self._playwright_state,
             self._browser_control,
             Cookie(self),
             Clock(self),
+            Credential(self),
             Coverage(self),
             Crawling(self),
             Devices(self),
@@ -900,14 +618,14 @@ class Browser(DynamicCore):
             self._plugin_keywords = parser.get_plugin_keywords(parsed_plugins)
         else:
             self._plugin_keywords = []
-        self.presenter_mode: HighLightElement | bool = enable_presenter_mode
+        self.presenter_mode = enable_presenter_mode
         self.tracing_group_mode = tracing_group_mode
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
+        self._failed_page_tokens_local = threading.local()
         self.pause_on_failure: set[str] = set()
         self._unresolved_promises: set[Future] = set()
         self._keyword_formatters: dict = {}
-        self._current_loglevel: str | None = None
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
@@ -915,6 +633,7 @@ class Browser(DynamicCore):
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
+        add_argument_conversion(self)
 
         self.scope_stack["timeout"] = SettingsStack(
             self.convert_timeout(timeout),
@@ -939,6 +658,34 @@ class Browser(DynamicCore):
         )
         self.scope_stack["keyword_call_banner_add_style"] = SettingsStack("", self)
         self.scope_stack["assertion_formatter"] = SettingsStack({}, self)
+        self.close_deadline_floor_secs = 20
+
+    @property
+    def presenter_mode(self) -> HighLightElement | bool:
+        return copy(self._presenter_mode)
+
+    @presenter_mode.setter
+    def presenter_mode(self, value: HighLightElement | bool):
+        if not isinstance(value, (bool, dict)):
+            raise ValueError(
+                f"'Presenter Mode' got value {value!r} ({type(value).__name__}) that cannot be converted to HighLightElement or boolean."
+            )
+        if isinstance(value, bool):
+            if not value:
+                self._presenter_mode = False
+                return
+            value = {}
+        duration = value.get("duration", timedelta(seconds=2))
+        width = value.get("width", "2px")
+        style = value.get("style", "dotted")
+        color = value.get("color", "blue")
+        self._presenter_mode = RobotTypeConverter.converter_for(
+            HighLightElement
+        ).convert(
+            {"duration": duration, "width": width, "style": style, "color": color},
+            name="presenter_mode",
+            kind="Field",
+        )
 
     @property
     def playwright(self) -> Playwright:
@@ -969,8 +716,20 @@ class Browser(DynamicCore):
         return self.scope_stack["highlight_on_failure"].get()
 
     @property
-    def timeout(self):
+    def timeout(self) -> float:
         return self.scope_stack["timeout"].get()
+
+    @property
+    def retry_assertions_for(self) -> float:
+        return self.scope_stack["retry_assertions_for"].get()
+
+    @property
+    def strict_mode(self) -> bool:
+        return self.scope_stack["strict_mode"].get()
+
+    @property
+    def selector_prefix(self) -> str:
+        return self.scope_stack["selector_prefix"].get()
 
     def _parse_run_on_failure_keyword(self, keyword: str | None) -> DelayedKeyword:
         if keyword is None or is_falsy(keyword):
@@ -1067,11 +826,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         responses = stub.CallExtensionKeyword(
             Request().KeywordCall(name="{name}", arguments=json.dumps(_args_browser_internal))
         )
+        body_parts: list[str] = []
+        last_json = ""
         for response in responses:
             logger.info(response.log)
-        if response.json == "":
+            if response.bodyPart:
+                body_parts.append(response.bodyPart)
+            if response.json:
+                last_json = response.json
+        if body_parts:
+            body = "".join(body_parts)
+            return json.loads(body)
+        if not last_json:
             return
-        return json.loads(response.json)
+        return json.loads(last_json)
 """
         try:
             exec(
@@ -1105,11 +873,20 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     name=keyword_name, arguments=json.dumps(_args_browser_internal)
                 )
             )
+            body_parts: list[str] = []
+            last_json = ""
             for response in responses:
                 logger.info(response.log)
-            if response.json == "":
+                if response.bodyPart:
+                    body_parts.append(response.bodyPart)
+                if response.json:
+                    last_json = response.json
+            if body_parts:
+                body = "".join(body_parts)
+                return json.loads(body)
+            if not last_json:
                 return None
-            return json.loads(response.json)
+            return json.loads(last_json)
 
     @property
     def outputdir(self) -> str:
@@ -1149,9 +926,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def coverage_output(self) -> Path:
         return self.browser_output / "coverage"
 
-    def _start_suite(self, _name, attrs):
+    def _start_suite(self, name, attrs):
         self.suite_ids[attrs["id"]] = None
         self._add_to_scope_stack(attrs["id"], Scope.Suite)
+        self._rf_context.start_suite(attrs["id"], attrs.get("longname", name))
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if not Browser._suite_cleanup_done:
             Browser._suite_cleanup_done = True
             for path in [
@@ -1174,10 +953,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             except ConnectionError as e:
                 logger.trace(f"Browser._start_suite connection problem: {e}")
 
-    def _start_test(self, _name, attrs):
+    def _start_test(self, name, attrs):
         self.current_test_id = attrs["id"]
         self._add_to_scope_stack(attrs["id"], Scope.Test)
         self.is_test_case_running = True
+        self._rf_context.start_test(attrs["id"], attrs.get("longname", name))
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if self._auto_closing_level == AutoClosingLevel.TEST:
             try:
                 self._execution_stack.append(
@@ -1208,20 +989,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             source,
             attrs["lineno"],
             attrs["type"],
+            kwname=attrs["kwname"],
         )
         self.keyword_call_stack.append(kw_call_stack_entry)
         if self.tracing_group_mode == TracingGroupMode.Full:
-            self._playwright_state.open_trace_group(**kw_call_stack_entry)
-        if not (
-            self.show_keyword_call_banner is False
-            or (self.show_keyword_call_banner is None and not self.presenter_mode)
-            or attrs["libname"] != "Browser"
-            or attrs["status"] == "NOT RUN"
-        ):
-            self._show_keyword_call(attrs)
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(False)
-
+            self._playwright_state.open_trace_group(
+                **self._trace_group_arguments(kw_call_stack_entry)
+            )
         if attrs["type"] == "Teardown":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
@@ -1239,10 +1013,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         source: str | Path | None,
         lineno: int,
         typ: str,
+        *,
+        kwname: str = "",
     ) -> KeywordCallStackEntry:
         if typ not in ["SETUP", "KEYWORD", "TEARDOWN"]:
             args = [name] if name else []
             name = typ
+            kwname = typ
         try:
             lineno = int(lineno)
         except (ValueError, TypeError):
@@ -1253,15 +1030,28 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             ),
             "file": str(source),
             "line": lineno,
+            "kwname": kwname,
+            "args": list(args),
         }
 
+    @staticmethod
+    def _trace_group_arguments(entry: KeywordCallStackEntry) -> dict[str, Any]:
+        return {"name": entry["name"], "file": entry["file"], "line": entry["line"]}
+
     def run_keyword(self, name, args, kwargs=None):
+        is_secret_keyword = self._keyword_call.is_secret_keyword(name)
+        self._failed_page_tokens.append([])
         try:
+            if is_secret_keyword:
+                self._keyword_call.suppress_logging()
+            self._keyword_call.show(name)
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
             ):
-                self._playwright_state.open_trace_group(**(self.keyword_call_stack[-1]))
+                self._playwright_state.open_trace_group(
+                    **self._trace_group_arguments(self.keyword_call_stack[-1])
+                )
             return DynamicCore.run_keyword(self, name, args, kwargs)
         except (AssertionError, AttributeError) as e:
             selector = self._get_selector_value_from_keyword_call(name, args, kwargs)
@@ -1276,11 +1066,38 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 input()
             raise e
         finally:
+            self._remove_failed_pages(self._failed_page_tokens.pop())
             if (
                 self.tracing_group_mode == TracingGroupMode.Browser
                 and self.keyword_call_stack
             ):
                 self._playwright_state.close_trace_group()
+            if is_secret_keyword:
+                self._keyword_call.restore_logging()
+
+    @property
+    def _failed_page_tokens(self) -> list[list[str]]:
+        if not hasattr(self._failed_page_tokens_local, "stack"):
+            self._failed_page_tokens_local.stack = []
+        return self._failed_page_tokens_local.stack
+
+    def _remove_failed_page_after_failure_handling(self, token: str):
+        """Removes the failed page once the failing keyword's failure handling is done.
+
+        On the Python path, and in a `Promise To` thread, there is no failure
+        handling, so the page is removed at once.
+        """
+        if self._failed_page_tokens:
+            self._failed_page_tokens[-1].append(token)
+        else:
+            self._remove_failed_pages([token])
+
+    def _remove_failed_pages(self, tokens: list[str]):
+        for token in tokens:
+            try:
+                self._playwright_state._remove_failed_page(token)
+            except Exception as error:
+                logger.warn(f"Removing a failed page failed: {error}")
 
     def _get_selector_value_from_keyword_call(self, name, args, kwargs):
         selector = kwargs.get("selector")
@@ -1311,13 +1128,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self.keyword_call_stack.pop()
         if self.tracing_group_mode == TracingGroupMode.Full:
             self._playwright_state.close_trace_group()
-        if "secret" in attrs["kwname"].lower() and attrs["libname"] == "Browser":
-            self._set_logging(True)
 
     def _end_test(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.current_test_id = None
         self.is_test_case_running = False
+        self._rf_context.end_test()
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
@@ -1330,6 +1147,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_suite(self, name, attrs):
         self._remove_from_scope_stack(attrs["id"])
         self.suite_ids.pop(attrs["id"], None)
+        self._rf_context.end_suite()
+        self._playwright_state.set_rf_context(**self._rf_context.context())
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
 
@@ -1432,51 +1251,6 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         )
         clean_message = ansi_escape.sub("", args[0])
         return (clean_message, *args[1:])
-
-    def _set_logging(self, status: bool):
-        try:
-            context = BuiltIn()._context.output
-        except DataError:
-            context = BuiltIn()
-        if status:
-            if self._current_loglevel:
-                context.set_log_level(self._current_loglevel)
-                self._current_loglevel = None
-        else:
-            self._current_loglevel = context.set_log_level("NONE")
-
-    def _show_keyword_call(self, attrs):
-        try:
-            if attrs["kwname"] in ["Take Screenshot", "Get Page Source"]:
-                self.set_keyword_call_banner()
-            else:
-                args = "    ".join(attrs["args"])
-                args = BuiltIn().replace_variables(args)
-                content = f"{attrs['kwname']}{'    ' * bool(attrs['args'])}{args}"
-                self.set_keyword_call_banner(content)
-        except Exception:
-            pass
-
-    def set_keyword_call_banner(self, keyword_call=None):
-        if keyword_call:
-            keyword_call = keyword_call.replace("'", "\\'")
-            content = KW_CALL_CONTENT_TEMPLATE.format(
-                keyword_call=keyword_call,
-                additional_styles=self.keyword_call_banner_add_style,
-            )
-        else:
-            content = "body::before{}"
-
-        with self.playwright.grpc_channel() as stub:
-            stub.EvaluateJavascript(
-                Request().EvaluateAll(
-                    selector="",
-                    script=KW_CALL_BANNER_FUNCTION,
-                    arg=json.dumps(content),
-                    allElements=False,
-                    strict=False,
-                )
-            )
 
     def keyword_error(self, selector):
         """Runs keyword on failure."""
@@ -1597,12 +1371,25 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         return True
 
     @staticmethod
+    def _iter_module_names() -> Iterator[str]:
+        for importer in pkgutil.iter_importers():
+            # A Windows console script such as ``robot.exe`` is a zip archive on sys.path.
+            # Which may fail, therefore own wrapper.
+            try:
+                modules = list(pkgutil.iter_importer_modules(importer))
+            except KeyError as error:
+                logger.debug(f"Could not list modules of {importer}: {error}")
+                continue
+            for name, _ in modules:
+                yield name
+
+    @staticmethod
     def _get_translation(language: str | None) -> Path | None:
         if not language:
             return None
         discovered_plugins = {
             name: importlib.import_module(name)
-            for _, name, _ in pkgutil.iter_modules()
+            for name in Browser._iter_module_names()
             if name.startswith("robotframework_browser_translation")
         }
         lang = language.lower()

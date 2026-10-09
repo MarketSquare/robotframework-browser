@@ -20,6 +20,9 @@ message Request {
   message AriaSnapShot {
     string locator = 1;
     bool strict = 2;
+    string mode = 3;
+    int32 depth = 4;
+    bool boxes = 5;
   }
 
   message ClosePage {
@@ -59,6 +62,13 @@ message Request {
     int32 line = 3;
     int32 column = 4;
     string contextId = 5;
+  }
+
+  message RFContext {
+    string test_id = 1;
+    string test_name = 2;
+    string suite_id = 3;
+    string suite_name = 4;
   }
 
   message Label {
@@ -114,6 +124,17 @@ message Request {
   message FilePath {
     string path = 1;
   }
+  message StorageState {
+    string path = 1;
+    bool indexedDB = 2;
+    bool credentials = 3;
+  }
+  message SetStorageState {
+    string path = 1;
+    int32 timeout = 2;
+    string reloadPages = 3;
+    int32 navigationTimeout = 4;
+  }
   message FileBySelector {
     repeated string path = 1;
     string selector = 2;
@@ -157,6 +178,7 @@ message Request {
   message KeyboardKeypress {
     string action = 1;
     string key = 2;
+    int32 delay = 3;
   }
 
   message KeyboardInputOptions {
@@ -212,6 +234,16 @@ message Request {
   message UrlOptions {
     Url url = 1;
     string waitUntil = 2;
+  }
+
+  message NewPage {
+    Url url = 1;
+    string waitUntil = 2;
+    string failedPageToken = 3;
+  }
+
+  message FailedPage {
+    string token = 1;
   }
 
   message PageLoadState {
@@ -270,6 +302,12 @@ message Request {
     string selector = 1;
     bool strict = 2;
     bool force = 3;
+  }
+
+  message ElementSelectorWithTextType {
+    string selector = 1;
+    bool strict = 2;
+    string textType = 3;
   }
 
   message Timeout {
@@ -370,6 +408,19 @@ message Request {
     string styleKey = 3;
     bool strict = 4;
   }
+
+  message CreateCredential {
+    string rpId = 1;
+    string id = 2;
+    string privateKey = 3;
+    string publicKey = 4;
+    string userHandle = 5;
+  }
+
+  message CredentialIdAndRpId {
+    string id = 1;
+    string rpId = 2;
+  }
 }
 
 message Types {
@@ -393,6 +444,7 @@ message Response {
 
   message ListString {
     repeated string items = 1;
+    string log = 2;
   }
 
   message Keywords {
@@ -458,6 +510,15 @@ message Response {
     string console = 3;
     string pageId = 4;
   }
+
+  message GetCredential {
+    string id = 1;
+    string rpId = 2;
+    string userHandle = 3;
+    string privateKey = 4;
+    string publicKey = 5;
+    string log = 6;
+  }
 }
 
 service  Playwright {
@@ -487,7 +548,7 @@ service  Playwright {
   rpc ClearText(Request.ClearText) returns (Response.Empty);
   /* Gets the DOM property 'property' of selector specified element */
   rpc GetDomProperty(Request.ElementProperty) returns (Response.String);
-  rpc GetText(Request.ElementSelector) returns (Response.String);
+  rpc GetText(Request.ElementSelectorWithTextType) returns (Response.ListString);
   /* Gets the XML attribute 'attribute' of selector specified element */
   rpc GetElementAttribute(Request.ElementProperty) returns (Response.String);
   /* Gets the boolean DOM property 'property' of selector specified element */
@@ -496,8 +557,8 @@ service  Playwright {
   rpc GetViewportSize(Request.Empty) returns (Response.Json);
   /* Returns current playwright page url*/
   rpc GetUrl(Request.Empty) returns (Response.String);
-  /* Gets pages HTML code */
-  rpc GetPageSource(Request.Empty) returns (Response.String);
+  /* Gets page HTML code as a stream of Response.Json messages, with the source split into chunks via bodyPart */
+  rpc GetPageSource(Request.Empty) returns (stream Response.Json);
   /* Inputs a list of keypresses to element specified by selector */
   rpc Press(Request.PressKeys) returns (Response.Empty);
   /* Gets the Select element specified by selector and returns the contents */
@@ -552,7 +613,7 @@ service  Playwright {
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
-  rpc WaitForRequest(Request.HttpCapture) returns (Response.String);
+  rpc WaitForRequest(Request.HttpCapture) returns (Response.Json);
   rpc WaitForResponse(Request.HttpCapture) returns (stream Response.Json);
   rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
@@ -591,7 +652,7 @@ service  Playwright {
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
   rpc SwitchContext(Request.Index) returns (Response.String);
   rpc SwitchBrowser(Request.Index) returns (Response.String);
-  rpc NewPage(Request.UrlOptions) returns (Response.NewPageResponse);
+  rpc NewPage(Request.NewPage) returns (Response.NewPageResponse);
   rpc NewContext(Request.Context) returns (Response.NewContextResponse);
   rpc NewBrowser(Request.Browser) returns (Response.String);
   rpc LaunchBrowserServer(Request.Browser) returns (Response.String);
@@ -605,14 +666,17 @@ service  Playwright {
   rpc CloseAllBrowsers(Request.Empty) returns (Response.Empty);
   rpc CloseContext(Request.Bool) returns (Response.Empty);
   rpc ClosePage(Request.ClosePage) returns (Response.PageReportResponse);
+  rpc RemoveFailedPage(Request.FailedPage) returns (Response.Empty);
   rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
+  rpc SetRFContext(Request.RFContext) returns (Response.Empty);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
   rpc GetBrowserCatalog(Request.Bool) returns (Response.Json);
   rpc GetDownloadState(Request.DownloadID) returns (Response.Json);
   rpc CancelDownload(Request.DownloadID) returns (Response.Empty);
-  rpc SaveStorageState(Request.FilePath) returns (Response.Empty);
+  rpc SaveStorageState(Request.StorageState) returns (Response.Empty);
+  rpc SetStorageState(Request.SetStorageState) returns (Response.Empty);
 
   rpc GrantPermissions(Request.Permissions) returns (Response.Empty);
   rpc ExecutePlaywright(Request.Json) returns (Response.Empty);
@@ -638,4 +702,10 @@ service  Playwright {
   rpc StartCoverage(Request.CoverageStart) returns (Response.Empty);
   rpc StopCoverage(Request.Empty) returns (Response.String);
   rpc MergeCoverage(Request.CoverageMerge) returns (Response.Empty);
+
+  /* Credential */
+  rpc CreateCredential(Request.CreateCredential) returns (Response.Empty);
+  rpc InstallCredential(Request.Empty) returns (Response.Empty);
+  rpc GetCredential(Request.CredentialIdAndRpId) returns (Response.GetCredential);
+  rpc DeleteCredential(Request.CredentialIdAndRpId) returns (Response.Empty);
 }

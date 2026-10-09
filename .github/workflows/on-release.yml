@@ -5,18 +5,23 @@ on:
     types: [ published ]
 
 jobs:
+  # The `nightly` prerelease in on-push.yml is not a release: it must never
+  # publish docs or reach PyPI. Creating it from CI does not start a workflow
+  # anyway, since the GITHUB_TOKEN cannot trigger one, but a maintainer editing
+  # it by hand could, so the two jobs everything else hangs off say no here.
   gh-pages:
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22.x
+          node-version: 24.x
       - name: Set up Python 3.12
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.12
       - name: Dependencies for building docs
@@ -32,7 +37,7 @@ jobs:
           inv docs
           inv gh-pages-index
       - name: Deploy 🚀
-        uses: JamesIves/github-pages-deploy-action@v4.8.0
+        uses: JamesIves/github-pages-deploy-action@v4.9.0
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
@@ -40,28 +45,34 @@ jobs:
 
   build_browser_wheels:
     name: Build wheels on ${{ matrix.os }}
+    if: ${{ !github.event.release.prerelease }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      # This job only builds wheels, no need to download Playwright browsers.
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: ubuntu-24.04-arm
-          - os: windows-latest
-          - os: macos-15-intel
-          - os: macos-latest
-            arch: arm64
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22.x"
+          node-version: "24.x"
+          cache: 'npm'
       - name: Setup Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+          cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -105,33 +116,38 @@ jobs:
           name: browser-batteries-wheels-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
+      - name: Check the NodeJS version we ship
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          inv node-version-check
 
   test_browser_wheels:
     needs:
       - build_browser_wheels
     name: Test wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: ubuntu-24.04-arm
-          - os: windows-latest
-          - os: macos-15-intel
-          - os: macos-latest
-            arch: arm64
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.14
+          cache: 'pip'
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22.x"
+          node-version: "24.x"
       - name: Download rfbrowser-wheel artifact
         uses: actions/download-artifact@v8
         with:
@@ -196,11 +212,15 @@ jobs:
           name: Clean_install_results_${{ matrix.os }}
           path: atest/output
       - name: Github Job Summary
-        if: ${{ always() }}
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
         run: |
-          python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
+      - name: Uninstall
+        run: |
+          rfbrowser clean-node
+          pip uninstall -y robotframework-browser-batteries
+          pip uninstall -y robotframework-browser
 
   publish-browser-to-pypi:
     needs:
@@ -214,9 +234,9 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Download rfbrowser-wheel artifact
@@ -245,9 +265,9 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
       - name: Download rfbrowser-browser-wheels
@@ -265,18 +285,44 @@ jobs:
       - name: Publish BrowserBatteries distribution to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
-  docker-image:
+  wait-for-pypi:
     needs: publish-browser-to-pypi
+    name: Wait for Browser to appear on PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for robotframework-browser on PyPI
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -eu
+          version="${RELEASE_TAG#v}"
+          url="https://pypi.org/pypi/robotframework-browser/${version}/json"
+          echo "Polling ${url}"
+          for attempt in $(seq 1 120); do
+            status=$(curl -sS -H 'Cache-Control: no-cache' -o /dev/null -w '%{http_code}' "$url" || echo "000")
+            if [ "$status" = "200" ]; then
+              echo "robotframework-browser ${version} is available on PyPI (attempt ${attempt})."
+              exit 0
+            fi
+            echo "Attempt ${attempt}/120: HTTP ${status}, sleeping 10s..."
+            sleep 10
+          done
+          echo "::error::robotframework-browser ${version} did not appear on PyPI within 20 minutes."
+          exit 1
+
+  docker-image:
+    needs: wait-for-pypi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up QEMU for cross-platforms builds
         uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
@@ -316,7 +362,7 @@ jobs:
             latest=true
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -334,9 +380,9 @@ jobs:
     needs: docker-image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v7
         with:
           python-version: 3.11
           cache: 'pip'

@@ -27,6 +27,7 @@ from ..utils import (
     RecordHar,
     RecordVideo,
     ViewportDimensions,
+    convert_typed_dict,
     keyword,
     locals_to_params,
     logger,
@@ -69,13 +70,17 @@ class Electron(LibraryComponent):
         """Launches an Electron application and sets its first window as the active page.
 
         Uses Playwright's ``_electron.launch()`` API to start the application, then
-        attaches the first window as the active ``Page``.  All standard Browser library
+        waits for its DOM content to load and attaches it as the active ``Page``.  All standard Browser library
         page keywords (``Click``, ``Get Text``, ``Wait For Elements State``, …) work
         against the Electron window without any extra setup.
 
         Returns a ``(browser_id, context_id, page_details)`` tuple — the same shape as
         `New Persistent Context` — so ``Switch Page`` and friends work if multiple
         windows are open.
+
+        Launching again closes the previous Electron application. Windows with an
+        empty title are valid; the first window is selected without guessing which
+        window is a splash screen.
 
         *Note on headless mode*
 
@@ -91,7 +96,7 @@ class Electron(LibraryComponent):
         | ``executable_path``   | Path to the Electron binary or packaged application executable. When using the bare ``electron`` npm package pass the path to ``main.js`` via ``args``. |
         | ``args``              | Additional command-line arguments forwarded to the Electron process. Use this to pass the entry-point script when running the bare Electron binary, e.g. ``[node/my-app/main.js]``. |
         | ``env``               | Environment variables for the launched process. Merged on top of the current process environment so ``PATH`` and other system variables are still inherited. |
-        | ``timeout``           | Maximum time to wait for the first window to appear. Defaults to ``30 seconds``. Pass ``0`` to disable. |
+        | ``timeout``           | Maximum time for launch, the first window, and its DOM content to load. Defaults to ``30 seconds``. Pass ``0`` to disable. |
         | ``acceptDownloads``   | Whether to automatically download all attachments. Defaults to ``True``. |
         | ``bypassCSP``         | Toggles bypassing page's Content-Security-Policy. Defaults to ``False``. |
         | ``colorScheme``       | Emulates ``prefers-color-scheme`` media feature: ``dark``, ``light``, ``no-preference``, or ``null`` to disable emulation. |
@@ -135,6 +140,11 @@ class Electron(LibraryComponent):
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         options = locals_to_params(locals())
+        options = convert_typed_dict(
+            self.new_electron_application.__annotations__, options
+        )
+        options = self.library._playwright_state._set_video_path(options)
+        options = self.library._playwright_state._set_video_size_to_int(options)
         timeout_ms = int(timeout.total_seconds() * 1000)
         slow_mo_ms = int(slowMo.total_seconds() * 1000)
 
@@ -143,8 +153,7 @@ class Electron(LibraryComponent):
         options.pop("slowMo", None)
         if slow_mo_ms > 0:
             options["slowMo"] = slow_mo_ms
-        if viewport is not None:
-            options["viewport"] = copy(viewport)
+        options["viewport"] = copy(viewport) if viewport is not None else None
 
         with self.playwright.grpc_channel() as stub:
             response = stub.LaunchElectron(
@@ -177,9 +186,8 @@ class Electron(LibraryComponent):
         ``ElectronApplication`` handle and removes the associated browser, context,
         and page from the Browser library state stack.
 
-        After this keyword there is no active browser; call `New Electron Application`,
-        `New Browser`, or `New Persistent Context` before issuing further page
-        interactions.
+        Other open browsers remain available. The previously active browser becomes
+        active when the Electron browser was selected.
 
         Calling this keyword when no Electron app is open is safe — it logs a message
         and does nothing.
@@ -192,7 +200,9 @@ class Electron(LibraryComponent):
         [https://forum.robotframework.org/t//4309|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.CloseElectron(Request().Empty())
+            response = stub.CloseElectron(
+                Request().Empty(), timeout=self.close_deadline
+            )
             logger.info(response.log)
 
     @keyword(tags=("Getter", "BrowserControl"))

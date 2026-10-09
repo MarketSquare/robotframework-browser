@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        ../imports.resource
+Resource       ../imports.resource
 
-Suite Setup     Setup Suite
+Suite Setup    Setup Suite
 
 *** Test Cases ***
 Resource Leaker

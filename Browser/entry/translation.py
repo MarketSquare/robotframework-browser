@@ -38,22 +38,23 @@ def get_library_translation(
     browser = Browser(plugins=plugings, jsextension=jsextension)
     translation = {}
     for function in browser.attributes.values():
-        translation[function.__name__] = {
-            "name": function.__name__,
-            "doc": function.__doc__,
-            "sha256": hashlib.sha256(function.__doc__.encode("utf-16")).hexdigest(),
-        }
-    translation["__init__"] = {
-        "name": "__init__",
-        "doc": inspect.getdoc(browser),
-        "sha256": hashlib.sha256(inspect.getdoc(browser).encode("utf-16")).hexdigest(),  # type: ignore
-    }
-    translation["__intro__"] = {
-        "name": "__intro__",
-        "doc": browser.__doc__,
-        "sha256": hashlib.sha256(browser.__doc__.encode("utf-16")).hexdigest(),  # type: ignore
-    }
+        translation[function.__name__] = _translation_entry(
+            function.__name__, inspect.getdoc(function)
+        )
+    translation["__init__"] = _translation_entry(
+        "__init__", inspect.getdoc(type(browser).__init__)
+    )
+    translation["__intro__"] = _translation_entry("__intro__", inspect.getdoc(browser))
     return translation
+
+
+def _translation_entry(name: str, doc: str | None) -> dict:
+    doc = inspect.cleandoc(doc) if doc else ""
+    return {
+        "name": name,
+        "doc": doc,
+        "sha256": hashlib.sha256(doc.encode("utf-16")).hexdigest(),
+    }
 
 
 def _max_kw_name_lenght(project_tanslation: dict) -> int:

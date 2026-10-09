@@ -1,8 +1,8 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Tracing Timeout
-Suite Teardown      Set Browser Timeout    ${OLD_BROWSER_TIMEOUT}
+Suite Setup       Tracing Timeout
+Suite Teardown    Set Browser Timeout    ${OLD_BROWSER_TIMEOUT}
 
 *** Test Cases ***
 Enable Tracing To File
@@ -86,6 +86,6 @@ Tracing And Closing Current Browsers
 *** Keywords ***
 Tracing Timeout
     ${OLD_BROWSER_TIMEOUT} =    Set Browser Timeout    15s
-    Set Suite Variable    ${OLD_BROWSER_TIMEOUT}
+    VAR    ${OLD_BROWSER_TIMEOUT} =    ${OLD_BROWSER_TIMEOUT}    scope=SUITE
     Remove Directory    ${OUTPUT_DIR}/browser/traces/    recursive=True
     Create Directory    ${OUTPUT_DIR}/browser/traces/

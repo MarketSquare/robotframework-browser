@@ -1,7 +1,6 @@
 Browser/wrapper/*.js
 Browser/wrapper
 Browser/generated
-Browser/__init__.pyi
 Browser/browser.pyi
 Browser/**/*.pyc
 Browser/rfbrowser.log
@@ -13,6 +12,7 @@ docs/index.html
 
 node/dynamic-test-app/dist/*.js
 node/dynamic-test-app/src/*.js
+node/dynamic-test-app/test-app.log
 *.js.map
 
 .idea
@@ -47,6 +47,7 @@ playwright-log.txt
 lsp
 
 node_modules/
+.nvmrc
 dist
 build
 pip-wheel-metadata
@@ -57,9 +58,17 @@ tmp
 .coverage
 htmlcov
 results
+node/coverage/
 
 # linting
 .ruff_cache
 
-# Chromium IPC pipe socket created by the Electron process at runtime
-node/electron-test-app/PIPE
+node/electron-test-app/*.sock
+
+# CI failure analysis: the database, rebuilt from CI. Anchored to the root, or it
+# would also swallow tools/ci_failures, which is source.
+/ci_failures/
+/tools/ci_failures/known_causes.json
+
+# Claude Code personal settings
+.claude/settings.local.json

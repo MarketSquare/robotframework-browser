@@ -14,63 +14,136 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, auto
-from typing import Dict, TypedDict, Union  # noqa: UP035
+from types import UnionType
+from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
+from robot.api import TypeInfo
 from robot.running.arguments.typeconverters import TypeConverter
+
+from .types import Secret
 
 
 class RobotTypeConverter(TypeConverter):
+    """Resolves a converter from a raw type hint.
+
+    The base ``TypeConverter.converter_for`` requires a ``TypeInfo``; this accepts
+    a raw type hint, such as the ones ``get_keyword_types`` returns.
+    """
+
     @classmethod
     def converter_for(cls, arg_type):
         if arg_type is None:
             return None
-        try:
-            from robot.api import TypeInfo  # noqa: PLC0415
-
-            if not isinstance(arg_type, TypeInfo):
-                type_hint = TypeInfo.from_type_hint(arg_type)
-        except ImportError:
-            type_hint = arg_type
-        return TypeConverter.converter_for(type_hint)
+        return TypeConverter.converter_for(TypeInfo.from_type_hint(arg_type))
 
 
 class TypedDictDummy(TypedDict):
     pass
 
 
-def convert_typed_dict(function_annotations: dict, params: dict) -> dict:  # noqa: C901
+def _is_typed_dict_type(type_hint: Any) -> bool:
+    return (
+        isinstance(type_hint, type)
+        and hasattr(type_hint, "__required_keys__")
+        and hasattr(type_hint, "__optional_keys__")
+        and hasattr(type_hint, "__annotations__")
+    )
+
+
+def _convert_nested_typed_dict(value: Any, struct_type):
+    if not isinstance(value, dict):
+        raise TypeError(
+            f"Value '{value}' cannot be converted to {struct_type.__name__}. Expected dictionary like object."
+        )
+    converted = convert_typed_dict({"value": struct_type}, {"value": value})
+    return converted["value"]
+
+
+def _require_conversion(value: Any, struct_type):
+    if isinstance(struct_type, UnionType):
+        for union_type in struct_type.__args__:
+            if _is_typed_dict_type(union_type):
+                if isinstance(value, dict):
+                    return True
+                continue
+            if isinstance(value, union_type):
+                return False
+        return True
+    if _is_typed_dict_type(struct_type):
+        return True
+    return not isinstance(value, struct_type)
+
+
+def _do_conversion(value: Any, struct_type):
+    if isinstance(struct_type, UnionType):
+        for union_type in struct_type.__args__:
+            try:
+                if _is_typed_dict_type(union_type):
+                    return _convert_nested_typed_dict(value, union_type)
+                return union_type(value)
+            except (ValueError, TypeError):
+                continue
+        raise TypeError(
+            f"Cannot convert value '{value}' to any of the types in {struct_type}."
+        )
+    if _is_typed_dict_type(struct_type):
+        return _convert_nested_typed_dict(value, struct_type)
+    return struct_type(value)
+
+
+def _handel_conversion(  # ruff: ignore[PLR0917]
+    typed_dict, lower_case_dict, struct, req_key, arg_name, arg_type, raise_error=True
+):
+    if req_key.lower() not in lower_case_dict:
+        if raise_error:
+            raise RuntimeError(
+                f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
+                f"\nThe required key '{req_key}' in not set in given value."
+                f"\nExpected types: {arg_type.__annotations__}"
+            )
+        return typed_dict
+    struct_type = struct.get(req_key)
+    value = lower_case_dict[req_key.lower()]
+    if _require_conversion(value, struct_type):
+        typed_dict[req_key] = _do_conversion(value, struct_type)
+    else:
+        typed_dict[req_key] = value
+    return typed_dict
+
+
+def convert_typed_dict(function_annotations: dict, params: dict) -> dict:
     for arg_name, arg_type in function_annotations.items():
         if arg_name not in params or params[arg_name] is None:
             continue
         arg_value = params[arg_name]
         if getattr(arg_type, "__origin__", None) is Union:
             for union_type in arg_type.__args__:
-                if arg_value is None or not isinstance(
-                    union_type, type(TypedDictDummy)
-                ):
+                if arg_value is None or not _is_typed_dict_type(union_type):
                     continue
                 arg_type = union_type  # noqa: PLW2901
                 break
-        if isinstance(arg_type, type(TypedDictDummy)):
+        if _is_typed_dict_type(arg_type):
             if not isinstance(arg_value, dict):
                 raise TypeError(
                     f"Argument '{arg_name}' expects a dictionary like object but did get '{type(arg_value)} instead.'"
                 )
             lower_case_dict = {k.lower(): v for k, v in arg_value.items()}
             struct = arg_type.__annotations__
-            typed_dict = arg_type()
+            typed_dict: dict[str, Any] = {}
             for req_key in arg_type.__required_keys__:
-                if req_key.lower() not in lower_case_dict:
-                    raise RuntimeError(
-                        f"`{lower_case_dict}` cannot be converted to {arg_type.__name__} for argument '{arg_name}'."
-                        f"\nThe required key '{req_key}' in not set in given value."
-                        f"\nExpected types: {arg_type.__annotations__}"
-                    )
-                typed_dict[req_key] = struct[req_key](lower_case_dict[req_key.lower()])  # type: ignore
+                typed_dict = _handel_conversion(
+                    typed_dict, lower_case_dict, struct, req_key, arg_name, arg_type
+                )
             for opt_key in arg_type.__optional_keys__:
-                if opt_key.lower() not in lower_case_dict:
-                    continue
-                typed_dict[opt_key] = struct[opt_key](lower_case_dict[opt_key.lower()])  # type: ignore
+                typed_dict = _handel_conversion(
+                    typed_dict,
+                    lower_case_dict,
+                    struct,
+                    opt_key,
+                    arg_name,
+                    arg_type,
+                    raise_error=False,
+                )
             params[arg_name] = typed_dict
     return params
 
@@ -97,24 +170,254 @@ class NotSet(Enum):
     not_set = "not_set"
 
 
+class AriaSnapshotMode(Enum):
+    """Defines the mode of the AriaSnapshot.
+
+    | =Value=     | =Description= |
+    | ``default`` | Standard aria snapshot. |
+    | ``ai`` | Snapshot optimized for AI consumption. It includes element references like ``[ref=e2]``, includes snapshots of iframes inside the target and does not wait for a matching element, but fails immediately when no element matches. |
+    """
+
+    default = auto()
+    ai = auto()
+
+
 class AriaSnapshotReturnType(Enum):
     """Defines the return type of the AriaSnapshot.
 
     | =Value=  | =Description= |
     | ``dict`` | returns the snapshot as a dictionary. |
     | ``yaml`` | returns the snapshot as a yaml string. |
+    | ``parsed`` | returns the snapshot as a tree of node dictionaries. |
+
+    ``dict`` loads the yaml as it is. Role, name and all annotations of an
+    element stay inside the dictionary keys, for example
+    ``{'heading "Login Page" [level=1]': None}``.
+
+    ``parsed`` splits that information into separate keys. Every node has
+    ``role``, ``name``, ``text``, ``props`` and ``children``, and its values
+    are reachable both as ``${node}[role]`` and as ``${node.role}``.
+    Annotations without a value, like ``[selected]``, become ``True``,
+    ``[level=2]`` becomes an integer and ``box`` uses the same keys as
+    `Get BoundingBox`. The ``/url`` entry of a link is an annotation in
+    Playwright, not an element, and therefore becomes the ``url`` property of
+    the link instead of one of its children.
+
+    == Examples ==
+
+    All outputs below come from the same element of the same page. It offers
+    fourteen tag options; the examples stop after the fourth one:
+
+    | `New Browser`    chromium
+    | `New Page`       https://robotframework-browser.org/keywords
+    | ${snapshot} =    `Get Aria Snapshot`    .rail-top
+
+    === return_type=yaml (default) ===
+
+    | - text: Filter keywords
+    | - searchbox "Filter keywords"
+    | - group: Version 20.3.0
+    | - text: Filter by tag
+    | - combobox "Filter by tag":
+    |   - option "— Show all tags —" [selected]
+    |   - option "Setter (84)"
+    |   - option "PageContent (83)"
+    |   - option "Getter (45)"
+
+    === return_type=yaml with boxes=True ===
+
+    | - text: Filter keywords
+    | - searchbox "Filter keywords" [box=12,77,279,30]
+    | - group [box=12,116,279,34]: Version 20.3.0
+    | - text: Filter by tag
+    | - combobox "Filter by tag" [box=12,158,279,32]:
+    |   - option "— Show all tags —" [selected] [box=0,0,0,0]
+    |   - option "Setter (84)" [box=0,0,0,0]
+    |   - option "PageContent (83)" [box=0,0,0,0]
+    |   - option "Getter (45)" [box=0,0,0,0]
+
+    === return_type=yaml with boxes=True and mode=ai ===
+
+    | - generic [ref=f2e1] [box=0,65,303,137]:
+    |   - generic [ref=f2e3] [box=12,77,279,30]:
+    |     - generic [ref=f2e4] [box=12,77,1,1]: Filter keywords
+    |     - searchbox "Filter keywords" [ref=f2e5] [box=12,77,279,30]
+    |   - generic [ref=f2e6] [box=12,116,279,74]:
+    |     - group [ref=f2e7] [box=12,116,279,34]:
+    |       - generic "Version 20.3.0" [ref=f2e8] [cursor=pointer] [box=12,116,157,34]:
+    |         - generic [ref=f2e9] [box=22,124,66,18]: Version
+    |         - generic [ref=f2e10] [box=96,121,49,22]: 20.3.0
+    |     - generic [ref=f2e12] [box=12,158,279,32]:
+    |       - generic [ref=f2e13] [box=12,158,1,1]: Filter by tag
+    |       - combobox "Filter by tag" [ref=f2e14] [box=12,158,279,32]:
+    |         - option "— Show all tags —" [selected] [box=0,0,0,0]
+    |         - option "Setter (84)" [box=0,0,0,0]
+    |         - option "PageContent (83)" [box=0,0,0,0]
+    |         - option "Getter (45)" [box=0,0,0,0]
+
+    === return_type=dict with boxes=True ===
+
+    | [
+    |   {
+    |     'text': 'Filter keywords'
+    |   },
+    |   'searchbox "Filter keywords" [box=12,77,279,30]',
+    |   {
+    |     'group [box=12,116,279,34]': 'Version 20.3.0'
+    |   },
+    |   {
+    |     'text': 'Filter by tag'
+    |   },
+    |   {
+    |     'combobox "Filter by tag" [box=12,158,279,32]': [
+    |       'option "— Show all tags —" [selected] [box=0,0,0,0]',
+    |       'option "Setter (84)" [box=0,0,0,0]',
+    |       'option "PageContent (83)" [box=0,0,0,0]'
+    |       'option "Getter (45)" [box=0,0,0,0]'
+    |     ]
+    |   }
+    | ]
+
+    === return_type=parsed with boxes=True ===
+
+    Fully parsed snapshot as Robot Framework dictionary:
+
+    | [
+    |   {
+    |     'role': 'text',
+    |     'name': None,
+    |     'text': 'Filter keywords',
+    |     'props': {},
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'searchbox',
+    |     'name': 'Filter keywords',
+    |     'text': None,
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 77,
+    |         'width': 279,
+    |         'height': 30
+    |       }
+    |     },
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'group',
+    |     'name': None,
+    |     'text': 'Version 20.3.0',
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 116,
+    |         'width': 279,
+    |         'height': 34
+    |       }
+    |     },
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'text',
+    |     'name': None,
+    |     'text': 'Filter by tag',
+    |     'props': {},
+    |     'children': []
+    |   },
+    |   {
+    |     'role': 'combobox',
+    |     'name': 'Filter by tag',
+    |     'text': None,
+    |     'props': {
+    |       'box': {
+    |         'x': 12,
+    |         'y': 158,
+    |         'width': 279,
+    |         'height': 32
+    |       }
+    |     },
+    |     'children': [
+    |       {
+    |         'role': 'option',
+    |         'name': '— Show all tags —',
+    |         'text': None,
+    |         'props': {
+    |           'selected': True,
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'Setter (84)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'PageContent (83)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       },
+    |       {
+    |         'role': 'option',
+    |         'name': 'Getter (45)',
+    |         'text': None,
+    |         'props': {
+    |           'box': {
+    |             'x': 0,
+    |             'y': 0,
+    |             'width': 0,
+    |             'height': 0
+    |           }
+    |         },
+    |         'children': []
+    |       }
+    |     ]
+    |   }
+    | ]
     """
 
     dict = auto()
     yaml = auto()
+    parsed = auto()
 
 
 class KeywordCallStackEntry(TypedDict):
-    """Information about the keyword call stack."""
+    """Information about the keyword call stack.
+
+    ``kwname`` and ``args`` keep the call as it was written in the source. The
+    arguments the keyword receives are already converted and would render enums
+    and numbers instead of the text the user wrote.
+    """
 
     name: str
     file: str
     line: int
+    kwname: str
+    args: list[str]
 
 
 class SelectOptions(TypedDict):
@@ -416,8 +719,8 @@ class RecordHar(TypedDict, total=False):
 
 
 class _HttpCredentials(TypedDict):
-    username: str
-    password: str
+    username: str | Secret
+    password: str | Secret
 
 
 class HttpCredentials(_HttpCredentials, total=False):
@@ -521,7 +824,7 @@ class PdfMarging(TypedDict):
 class Media(Enum):
     """Changes the CSS media type of the page.
 
-    The only allowed values are 'screen', 'print' and `null`.
+    The only allowed values are 'screen', 'print' and ``null``.
     Passing null disables CSS media emulation.
     Using False will not define media argument.
     """
@@ -534,8 +837,8 @@ class Media(Enum):
 class ReducedMotion(Enum):
     """Emulates 'prefers-reduced-motion' media feature.
 
-    Supported values are 'reduce', 'no-preference' and `null`.
-    Passing `null` disables reduced motion emulation.
+    Supported values are 'reduce', 'no-preference' and ``null``.
+    Passing ``null`` disables reduced motion emulation.
     """
 
     reduce = "reduce"
@@ -559,8 +862,8 @@ class Proxy(_Server, total=False):
     """
 
     bypass: str
-    username: str
-    password: str
+    username: str | Secret
+    password: str | Secret
 
 
 class DownloadInfo(TypedDict):
@@ -590,7 +893,7 @@ class NewPageDetails(TypedDict):
     video_path: str
 
 
-class HighLightElement(TypedDict):
+class HighLightElement(TypedDict, total=False):
     """Presenter mode configuration options.
 
     ``duration`` Sets for how long the selector shall be highlighted. Defaults to ``5s`` => 5 seconds.
@@ -899,10 +1202,10 @@ class SupportedBrowsers(Enum):
 
 
 ColorScheme = Enum("ColorScheme", ["dark", "light", "no-preference", "null"])
-ColorScheme.__doc__ = """Emulates 'prefers-colors-scheme' media feature.
-        Supported values are 'light', 'dark', 'no-preference' and `null`.
-        Passing `null` disables color scheme emulation.
-        `no-preference` is deprecated.
+ColorScheme.__doc__ = """Emulates 'prefers-color-scheme' media feature.
+        Supported values are 'light', 'dark', 'no-preference' and ``null``.
+        Passing ``null`` disables color scheme emulation.
+        ``no-preference`` is deprecated.
 
         See [https://playwright.dev/docs/api/class-page?_highlight=emulatemedia#pageemulatemediaparams |emulateMedia(options)]
         for more details.
@@ -1015,17 +1318,17 @@ class BoundingBoxFields(Enum):
 class AutoClosingLevel(Enum):
     """Controls when contexts and pages are closed during the test execution.
 
-    If automatic closing level is `TEST`, contexts and pages that are created during a single test are
+    If automatic closing level is ``TEST``, contexts and pages that are created during a single test are
     automatically closed when the test ends. Contexts and pages that are created during suite setup are
     closed when the suite teardown ends.
 
-    If automatic closing level is `SUITE`, all contexts and pages that are created during the test suite
+    If automatic closing level is ``SUITE``, all contexts and pages that are created during the test suite
     are closed when the suite teardown ends.
 
-    If automatic closing level is `MANUAL`, nothing is closed automatically while the test execution
+    If automatic closing level is ``MANUAL``, nothing is closed automatically while the test execution
     is ongoing. All browsers, context and pages are automatically closed when test execution ends.
 
-    If automatic closing level is `KEEP`, nothing is closed automatically while the test execution
+    If automatic closing level is ``KEEP``, nothing is closed automatically while the test execution
     is ongoing. Also, nothing is closed when test execution ends, including the node process. Therefore,
     it is users responsibility to close all browsers, context and pages and ensure that all process
     that are left running after the test execution end are closed. This level is only intended for
@@ -1122,8 +1425,8 @@ class ReduceMotion(Enum):
 class ForcedColors(Enum):
     """Emulates 'forced-colors' media feature.
 
-    Supported values are 'active', 'none' and `null`.
-    Passing `null` disables forced colors emulation.
+    Supported values are 'active', 'none' and ``null``.
+    Passing ``null`` disables forced colors emulation.
     """
 
     active = auto()
@@ -1273,28 +1576,28 @@ class BrowserInfo(TypedDict):
 
     Structure:
     | {
-    |   'type': `str`,
-    |   'id': `str`,
+    |   'type': ``str``,
+    |   'id': ``str``,
     |   'contexts': [
     |       {
-    |           'type': `str`,
-    |           'id': `str`,
-    |           'activePage': `str`,
+    |           'type': ``str``,
+    |           'id': ``str``,
+    |           'activePage': ``str``,
     |           'pages': [
     |               {
-    |                   'type': `str`,
-    |                   'title': `str`,
-    |                   'url': `str`,
-    |                   'id': `str`,
-    |                   'timestamp': `float`
+    |                   'type': ``str``,
+    |                   'title': ``str``,
+    |                   'url': ``str``,
+    |                   'id': ``str``,
+    |                   'timestamp': ``float``
     |               },
     |               ...
     |           ]
     |       },
     |       ...
     |   ],
-    |   'activeContext': `str`,
-    |   'activeBrowser': `bool`
+    |   'activeContext': ``str``,
+    |   'activeBrowser': ``bool``
     | }
     """
 
@@ -1315,9 +1618,9 @@ class FileUploadBuffer(TypedDict):
 
     Structure:
     | {
-    |   'name': `str`,
-    |   'mimeType': `str`,
-    |   'buffer': `str`
+    |   'name': ``str``,
+    |   'mimeType': ``str``,
+    |   'buffer': ``str``
     | }
     """
 
@@ -1336,6 +1639,25 @@ class CoverageType(Enum):
 
     js = auto()
     css = auto()
+    all = auto()
+
+
+class ReloadPages(Enum):
+    """Defines which pages `Set Storage State` reloads while it restores the state.
+
+    Restoring a state file that contains IndexedDB does not finish while a page
+    of the context holds an open connection to a database of that origin. To get
+    around that, the pages are navigated to ``about:blank``, the state is
+    restored, and they are navigated back to the url they had before.
+
+    ``affected``: Reloads the pages whose origin has IndexedDB in the state file.
+    ``none``: Reloads nothing. The keyword fails immediately when it detects an
+    open connection which would block the restore.
+    ``all``: Reloads every page of the context.
+    """
+
+    affected = auto()
+    none = auto()
     all = auto()
 
 
@@ -1392,6 +1714,24 @@ class ClientCertificate(TypedDict, total=False):
     passphrase: str
 
 
+class ClientCredential(TypedDict):
+    """Returned client credential.
+
+    - ``id`` Base64url-encoded credential id.
+    - ``rpId`` Relying party id (typically the site's effective domain).
+    - ``userHandle`` Base64url-encoded user handle.
+    - ``privateKey`` Base64url-encoded PKCS#8 (DER) private key.
+    - ``publicKey`` Base64url-encoded SPKI (DER) public key.
+    Example usage: ``{'id': 'localhost', 'rpId': 'localhost', 'userHandle': 'localhost', 'privateKey': 'localhost', 'publicKey': 'localhost'}``
+    """
+
+    id: str
+    rpId: str
+    userHandle: str
+    privateKey: Secret
+    publicKey: Secret
+
+
 class TracingGroupMode(Enum):
     """Defines in what detail level keywords are written to Playwright trace.
 
@@ -1408,6 +1748,27 @@ class TracingGroupMode(Enum):
     Full = auto()
     Browser = auto()
     Playwright = auto()
+
+
+class TextType(Enum):
+    """Defines which Playwright method is used to get the text of an element.
+
+    ``allInnerTexts``: Returns a list of `node.innerText` values for all matching nodes.
+
+    ``allTextContents``: Returns a list of `node.textContent` values for all matching nodes.
+
+    ``innerText``: Returns the element node.innerText value, which represents the rendered text content of a node and its descendants.
+
+    ``inputValue``: Returns the value for the matching <input> or <textarea> or <select> element.
+
+    ``innerHTML``: Returns the element node.innerHTML value, which is the HTML markup contained within the element, omitting any shadow roots.
+    """
+
+    allInnerTexts = auto()
+    allTextContents = auto()
+    innerText = auto()
+    inputValue = auto()
+    innerHTML = auto()
 
 
 InstallableBrowser = Enum(
@@ -1449,3 +1810,5 @@ InstallationOptionsHelp = {
     "only-shell": "only install headless shell when installing chromium",
     "no-shell": "do not install chromium headless shell",
 }
+
+ROBOT_FRAMEWORK_BROWSER_NO_SET = "ROBOT_FRAMEWORK_BROWSER_NO_SET"

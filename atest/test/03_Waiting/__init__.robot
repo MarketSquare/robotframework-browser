@@ -1,5 +1,5 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         Open Browser To No Page
-Suite Teardown      Close Browser    ALL
+Suite Setup       Open Browser To No Page
+Suite Teardown    Close Browser    ALL

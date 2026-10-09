@@ -1,5 +1,10 @@
+import hashlib
+import inspect
+
+import pytest
 from approvaltests import verify_all
 
+from Browser import Browser
 from Browser.entry.translation import (
     DOC_CHANGED,
     MISSING_CHECKSUM,
@@ -7,6 +12,8 @@ from Browser.entry.translation import (
     NO_LIB_KEYWORD,
     _get_heading,
     _table_doc_updated,
+    _translation_entry,
+    get_library_translation,
 )
 
 
@@ -40,3 +47,55 @@ def test_full_long_kw_table():
     )
     lines.append(_table_doc_updated("close", 42, DOC_CHANGED))
     verify_all("all with long kw name", lines)
+
+
+# Docstring as it reaches the entry builder on Python <= 3.12 and on >= 3.13.
+# Python 3.13 strips the leading indentation at compile time, see issue #5219.
+INDENTED_DOC = "First line.\n\n        Indented body line.\n    "
+DEDENTED_DOC = "First line.\n\nIndented body line.\n"
+
+
+def test_translation_entry_dedents_documentation():
+    assert (
+        _translation_entry("kw", INDENTED_DOC)["doc"]
+        == "First line.\n\nIndented body line."
+    )
+
+
+def test_translation_entry_checksum_does_not_depend_on_python_version():
+    indented = _translation_entry("kw", INDENTED_DOC)
+    dedented = _translation_entry("kw", DEDENTED_DOC)
+    assert indented["sha256"] == dedented["sha256"]
+    assert indented["doc"] == dedented["doc"]
+
+
+def test_translation_entry_handles_missing_documentation():
+    assert _translation_entry("kw", None) == {
+        "name": "kw",
+        "doc": "",
+        "sha256": hashlib.sha256(b"\xff\xfe").hexdigest(),
+    }
+
+
+@pytest.fixture
+def _library_output_dir(tmp_path):
+    """Keep the library instance from unlinking playwright-log.txt in the cwd."""
+    original = Browser._output_dir
+    Browser._output_dir = tmp_path
+    yield
+    Browser._output_dir = original
+
+
+@pytest.mark.usefixtures("_library_output_dir")
+def test_library_translation_init_documents_import_arguments():
+    """``__init__`` must document the import arguments, not the library intro."""
+    translation = get_library_translation()
+    init_doc = translation["__init__"]["doc"]
+    assert init_doc == inspect.getdoc(Browser.__init__)
+    assert init_doc != translation["__intro__"]["doc"]
+
+
+@pytest.mark.usefixtures("_library_output_dir")
+def test_library_translation_intro_is_class_documentation():
+    translation = get_library_translation()
+    assert translation["__intro__"]["doc"] == inspect.getdoc(Browser)

@@ -1,43 +1,16 @@
 *** Settings ***
-Resource            imports.resource
-Library             ../../library/presenter_mode.py
+Resource          imports.resource
+Library           ../../library/presenter_mode.py
 
-Suite Setup         Setup
-Suite Teardown      Set Retry Assertions For    ${assert_timeout}
-Test Setup          Ensure Location    ${LOGIN_URL}
+Suite Setup       Setup Basic Getters
+Suite Teardown    Set Retry Assertions For    ${assert_timeout}
+Test Setup        Ensure Location    ${LOGIN_URL}
 
 *** Variables ***
-${UserNameLabel} =      label[for="username_field"]
-${InputUsername} =      id=username_field
+${UserNameLabel} =    label[for="username_field"]
+${InputUsername} =    id=username_field
 
 *** Test Cases ***
-Get Text
-    ${h1} =    Get Text    h1
-    Should Be Equal    ${h1}    Login Page
-
-Get Text Disabled
-    [Setup]    Go To    ${ELEMENT_STATE_URL}
-    Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
-    ${text} =    Get Text    //input[@name="readonly_with_equals_only"]
-    [Teardown]    Set Presenter Mode    False
-
-Get Text And Assert ==
-    Get Text    ${UserNameLabel}    ==    User Name:
-
-Get Text And Assert !=
-    Get Text    ${UserNameLabel}    !=
-
-Get Text Assert Validate
-    Get Text    h1    validate    value.startswith('Login')
-
-Get Text With Nonmatching Selector
-    [Tags]    no-iframe
-    Set Browser Timeout    50ms
-    Run Keyword And Expect Error
-    ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
-    ...    Get Text    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
-
 Get Property And Assert
     Get Property    h1    innerText    ==    Login Page
     Get Property    h1    innerText    !=    ${None}
@@ -49,10 +22,9 @@ Get Property With Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Property    //input    id
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${property} =    Get Property    //input    id
     Should Not Be Empty    ${property}
-    [Teardown]    Set Strict Mode    True
 
 Get Property InnerText
     ${inner_text} =    Get Property    ${UserNameLabel}    innerText
@@ -103,10 +75,9 @@ Get Attribute Names With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to 12 elements*
     ...    Get Attribute Names    //input
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${attrs} =    Get Attribute Names    //input
     Should Not Be Empty    ${attrs}
-    [Teardown]    Set Strict Mode    True
 
 Get Attribute Names And Assert Single And Multiple
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
@@ -129,10 +100,9 @@ Get Classes With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//button*resolved to ${BUTTON_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Get Classes    //button
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${classes} =    Get Classes    //button
     Should Be Equal    ${classes}    ${{[]}}
-    [Teardown]    Set Strict Mode    True
 
 Get Classes And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
@@ -148,7 +118,7 @@ Get Element Count
     ${count} =    Get Element Count    h1
     Should Be Equal    ${count}    ${1}
     ${count} =    Get Element Count    label
-    Should Be Equal    ${count}    ${13}
+    Should Be Equal    ${count}    ${14}
     ${count} =    Get Element Count    not-existing
     Should Be Equal    ${count}    ${0}
 
@@ -156,12 +126,12 @@ Get Element Count And Assert
     [Setup]    Ensure Location    ${LOGIN_URL}
     Get Element Count    h1    ==    1
     Get Element Count    h1    ==    ${1}
-    Get Element Count    label    validate    value == 13
+    Get Element Count    label    validate    value == 14
     Get Element Count    label    >    1
     Get Element Count    not-existing    ==
     ${promise} =    Promise To    Get Element Count    label
     ${count} =    Wait For    ${promise}
-    Should Be Equal    ${count}    ${13}
+    Should Be Equal    ${count}    ${14}
 
 Get Style And Assert
     Get Style    h1    ALL    *=    align-content
@@ -211,6 +181,22 @@ Get Element Width And Height
 Get Page Source
     Get Page Source    contains    <title>Login Page</title>
 
+Get Page Source Large Content
+    Evaluate JavaScript  # robocop: off=SPC15     # robocop: fmt: off=NormalizeSeparators
+    ...    ${None}
+    ...    () => {
+    ...    const marker = document.createElement('div');
+    ...    marker.id = 'chunked-page-source-marker';
+    ...    marker.textContent = 'chunk-prefix-' + 'A'.repeat(1100000) + '-chunk-suffix';
+    ...    document.body.appendChild(marker);
+    ...    }
+    ${source} =    Get Page Source
+    ${source_length} =    Get Length    ${source}
+    Should Be True    ${source_length} > 1100000
+    Should Contain    ${source}    id="chunked-page-source-marker"
+    Should Contain    ${source}    chunk-prefix-
+    Should Contain    ${source}    -chunk-suffix
+
 Get Client Size
     ${size} =    Get Client Size
     Should Be True    ${size}[width] > 0
@@ -254,17 +240,16 @@ Get Element States
     Wait For Elements State    h1
     ${state} =    Get Element States    h1
     Sort List    ${state}
-    ${expected} =    Create List    attached    defocused    enabled    visible
+    VAR    @{expected} =    attached    defocused    enabled    visible
     FOR    ${state}    ${exp}    IN ZIP    ${state}    ${expected}
         Should Be Equal    ${state}    ${exp}
     END
 
 Get Element States Check Hidden And Retry
     [Tags]    slow
-    ${org} =    Set Retry Assertions For    2 sec
+    Set Retry Assertions For    2 sec    scope=Test
     Click    id=goes_hidden
     Get Element States    id=goes_hidden    *=    hidden
-    [Teardown]    Set Retry Assertions For    ${org}
 
 Get Element States Checkboxes And RadioButton Checked
     [Setup]    Ensure Location    ${FORM_URL}
@@ -309,7 +294,7 @@ Get Element States Then Flag Operations
     [Setup]    Ensure Location    ${ELEMENT_STATE_URL}
     Wait For Elements State    [name="enabled_input"]
     ${filtered} =    Get Element States    [name="enabled_input"]    evaluate    value & (visible | attached)
-    ${exp} =    Create List    attached    visible
+    VAR    @{exp} =    attached    visible
     Lists Should Be Equal    ${filtered}    ${exp}
 
 Get Element States Validate Flag Operations
@@ -337,7 +322,7 @@ Get Element States Return Flags
     Should Be Equal    ${input_state}    ${pwd_state}
 
 Get Console Log Test
-    [Setup]    Setup
+    [Setup]    Setup Basic Getters
     ${first} =    Get Console Log    then    len(value)
     Click With Options    "Click with Options"    left    ALT    SHIFT
     # Sometimes test app emist React Router Future Flag Warning: React Router ...
@@ -363,7 +348,7 @@ Get Console Log Test
     ${errors} =    Get Page Errors    validate    len(value) == 1
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site
-    ${last_time} =    Set Variable    ${errors}[-1][time]
+    VAR    ${last_time} =    ${errors}[-1][time]
     Should Be True
     ...    datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.strptime($last_time, '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=1)
     Get Console Log    validate    len(value) == 0
@@ -379,8 +364,8 @@ Get Console Log Test
     ...    $now - datetime.datetime.strptime($first_log['time'], '%Y-%m-%dT%H:%M:%S.%f%z') < datetime.timedelta(seconds=0.5)
 
 *** Keywords ***
-Setup
+Setup Basic Getters
     Close Page    ALL
     Ensure Open Page    ${LOGIN_URL}
     ${assert_timeout} =    Set Retry Assertions For    2 sec
-    Set Suite Variable    $assert_timeout
+    VAR    ${assert_timeout} =    ${assert_timeout}    scope=SUITE

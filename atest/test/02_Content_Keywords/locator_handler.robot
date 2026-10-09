@@ -1,9 +1,7 @@
 *** Settings ***
-Resource            imports.resource
+Resource      imports.resource
 
-Suite Setup         Overlay Suite Setup
-Suite Teardown      Overlay Suite Teardown
-Test Setup          New Page    ${OWERLAY_URL}
+Test Setup    New Page    ${OWERLAY_URL}
 
 *** Test Cases ***
 Overlay Should Be Closed Automatically
@@ -16,6 +14,7 @@ Overlay Should Be Closed Automatically
 
 If Overlay Not Set Click Should Fail
     Click    id=CreateOverlayButton
+    Set Browser Timeout    0.5s    scope=Test
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
@@ -30,6 +29,7 @@ Overlay Should Be Closed Automatically On Page Where It Is Given
     Get Element Count    id=overlay    ==    1
     New Page    ${OWERLAY_URL}
     Click    id=CreateOverlayButton
+    Set Browser Timeout    0.5s    scope=Test
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
@@ -45,6 +45,7 @@ Removing Locator Handler Should Leave Overlay Open
     Click    id=textHeading
     Remove Locator Handler    id=overlay
     Click    id=CreateOverlayButton
+    Set Browser Timeout    0.5s    scope=Test
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
@@ -60,6 +61,7 @@ Adding Same Locator Handler Should Work
     Remove Locator Handler    id=overlay
     Remove Locator Handler    id=overlay
     Click    id=CreateOverlayButton
+    Set Browser Timeout    0.5s    scope=Test
     TRY
         Click    id=CreateOverlayButton
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
@@ -77,6 +79,7 @@ Adding Locator Handler With All Args Should Work
     ...    click_force=True
     Click    id=CreateOverlayButton    # Overlay is displayed
     Click    id=CreateOverlayButton    # Overlay should be closed
+    Set Browser Timeout    0.5s    scope=Test
     TRY
         Click    id=CreateOverlayButton    # Overlay should not be closed because times=1
     EXCEPT    TimeoutError: locator.click: Timeout 500ms exceeded*    type=GLOB    AS    ${error}
@@ -149,6 +152,20 @@ Adding Custom Locator Handler With Wrong Order Does Not Fail
     ...    [${handler_spec_click}, ${handler_spec_check} ]
     Click    id=CreateOverlayButton    # Overlay is displayed
     Click    id=textHeading    # Overlay should be closed
+
+Custom Locator Handler Spec Survives Being Reused
+    VAR    &{handler_spec_click} =
+    ...    action=click
+    ...    selector=id=OverlayCloseButton
+    ...    force=${True}
+    VAR    @{specs} =    ${handler_spec_click}
+    Add Locator Handler Custom    id=overlay    ${specs}
+    Dictionary Should Contain Key    ${handler_spec_click}    action
+    Dictionary Should Contain Key    ${handler_spec_click}    selector
+    # The same dict twice in one call is the second way this used to fail.
+    VAR    @{twice} =    ${handler_spec_click}    ${handler_spec_click}
+    Add Locator Handler Custom    id=overlay    ${twice}
+    Add Locator Handler Custom    id=overlay    ${specs}
 
 Adding Custom Locator Handler Fill Without Value Shuld Fail
     VAR    &{handler_spec_fill} =
@@ -227,11 +244,3 @@ Adding Custom Locator Handler Wiht Invalid Action Should Fail
     EXCEPT    ValueError: Action was INVALID, it must be one of the following: click, fill, check, uncheck    AS    ${error}
         Log    All OK with error ${error}
     END
-
-*** Keywords ***
-Overlay Suite Setup
-    ${TIMEOUT} =    Set Browser Timeout    0.5s
-    VAR    ${TIMEOUT} =    ${TIMEOUT}    scope=SUITE
-
-Overlay Suite Teardown
-    Set Browser Timeout    ${TIMEOUT}

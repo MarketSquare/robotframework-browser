@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Setup         New Browser    headless=${HEADLESS}
-Suite Teardown      Close Browser
-Test Setup          New Page    ${LOGIN_URL}
+Suite Setup       New Browser    headless=${HEADLESS}
+Suite Teardown    Close Browser
+Test Setup        New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 JS Execute Without And With Element
@@ -42,33 +42,30 @@ Evaluate Multiline JavaScript With Singel Element
     Should Be Equal    ${texts}[-1]    Hello World
 
 Evaluate Multiline JavaScript With Strict Mode Disabled And All Elements
-    ${org} =    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${length} =    Evaluate JavaScript    button
     ...    (elements) => {
     ...    return elements.length
     ...    }
     ...    all_elements=True
     Should Be Equal    ${length}    ${BUTTON_ELEMENT_COUNT_IN_LOGIN}
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Enabled And All Elements
-    ${org} =    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     ${length} =    Evaluate JavaScript    button
     ...    (elements) => {
     ...    return elements.length
     ...    }
     ...    all_elements=True
     Should Be Equal    ${length}    ${BUTTON_ELEMENT_COUNT_IN_LOGIN}
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript With Strict Mode Disabled And Single Element
-    ${org} =    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${text} =    Evaluate JavaScript    button
     ...    (e) => {
     ...    return e.innerText
     ...    }
     Should Be Equal    ${text}    Visible
-    [Teardown]    Set Strict Mode    ${org}
 
 Evaluate Multiline JavaScript Strict Mode Error
     Run Keyword And Expect Error
@@ -85,7 +82,7 @@ Evaluate Multiline JavaScript Strict Mode Error
 
 Evaluate Multiline JavaScript On Page
     [Tags]    no-iframe
-    ${arg} =    Create Dictionary    selector=input#login_button    text=-APPENDIX
+    VAR    &{arg} =    selector=input#login_button    text=-APPENDIX
     ${texts} =    Evaluate JavaScript    ${NONE}
     ...    (arg) => {
     ...    e = document.querySelector(arg.selector);
@@ -97,19 +94,17 @@ Evaluate Multiline JavaScript On Page
 JS Execute Without Element On Strict Mode
     ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${result} =    Evaluate JavaScript    ${None}    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    [Teardown]    Set Strict Mode    True
 
 JS Execute With Element On Strict Mode
     Run Keyword And Expect Error
     ...    *strict mode violation*//input*resolved to ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements*
     ...    Evaluate JavaScript    //input    () => {return false;}
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${result} =    Evaluate JavaScript    //input    () => {return false;}
     Should Be Equal    ${result}    ${False}
-    [Teardown]    Set Strict Mode    True
 
 Results From Page
     ${result} =    Evaluate JavaScript    ${None}    "hello from page "+location.href
@@ -136,9 +131,9 @@ Highlight Element On Page
     Get Element Count    .robotframework-browser-highlight    ==    1
     Sleep    200ms
     Get Element Count    .robotframework-browser-highlight    ==    0
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${count} =    Highlight Elements    .pure-button    duration=1000ms
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Get Element Count    .robotframework-browser-highlight    ==    5
     Should Be Equal    ${count}    ${5}
     Sleep    1500ms
@@ -150,9 +145,8 @@ Highlight Element With Invalid Selector
     Get Element Count    .robotframework-browser-highlight    ==    0
 
 Highlight Element With Strict
-    Set Strict Mode    True
+    Set Strict Mode    True    scope=Test
     Highlight Elements    //input    duration=200ms
-    [Teardown]    Set Strict Mode    True
 
 Highlight Element With Style
     [Tags]    slow
@@ -189,7 +183,52 @@ Highlight Element With Element Selector
     Highlight Elements    ${elem}
     Get Element Count    .robotframework-browser-highlight    ==    1
 
-Page State
-    [Tags]    not-implemented
-    Log    Is that art???
-    # Get page state    validate    value['a'] == 'HELLO FROM PAGE!' and value['b'] == 123
+Disable Highlight With Empty Selector On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END
+
+Disable Multiple Highlight With Empty Selector On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    Highlight Elements    button    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END
+
+Highlight Should Disappear After Timeout On Playwright Mode
+    New Page    ${LOGIN_URL}
+    ${screenshot1} =    Take Screenshot
+    Highlight Elements    button    duration=500ms    mode=playwright
+    Sleep    800ms
+    ${screenshot2} =    Take Screenshot
+    Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+
+Disposing Highlights After Closing Page Should Work On Playwright Mode
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot1} =    Take Screenshot
+    Close Page
+    New Page    ${LOGIN_URL}
+    Highlight Elements    input    duration=0    mode=playwright
+    ${screenshot2} =    Take Screenshot
+    Compare Images    ${screenshot1}    ${screenshot2}    error_threshold=1000
+    Highlight Elements    ${EMPTY}    duration=0    mode=playwright
+    ${screenshot3} =    Take Screenshot
+    TRY
+        Compare Images    ${screenshot2}    ${screenshot3}    error_threshold=1000
+    EXCEPT    ValueError: Box*has difference of*    type=glob    AS    ${error}
+        Log    Highlight did disappear, error was: ${error}
+    END

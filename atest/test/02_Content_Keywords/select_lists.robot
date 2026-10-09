@@ -24,10 +24,9 @@ Get Select Options Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Get Select Options    //select
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     ${options} =    Get Select Options    //select
     Length Should Be    ${options}    3
-    [Teardown]    Set Strict Mode    True
 
 Get Selected Options
     [Documentation]
@@ -70,40 +69,38 @@ Get Selected Options With Xpath
 
 Get Selected Options With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.elementHandle: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Get Selected Options    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Option By Label
-    ${selection} =    Create List    Direct mail
+    VAR    @{selection} =    Direct mail
     ${selected} =    Select Option And Verify Selection    label    select[name=preferred_channel]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By Value
-    ${selection} =    Create List    males    females    others
+    VAR    @{selection} =    males    females    others
     ${selected} =    Select Option And Verify Selection    value    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By Index
-    ${selection} =    Create List    ${0}    ${2}
+    VAR    @{selection} =    ${0}    ${2}
     ${selected} =    Select Option And Verify Selection    index    select[name=possible_channels]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By Text
-    ${selection} =    Create List    Males    Females
+    VAR    @{selection} =    Males    Females
     ${selected} =    Select Option And Verify Selection    text    select[name=interests]    @{selection}
     Lists Should Be Equal    ${selected}    ${selection}
 
 Select Options By With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.selectOption: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Select Options By
     ...    notamatch    label    False    Label
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 Select Options By Text When Select Does Not Have Value Attribute
     ${selection} =    Select Options By    id=noValue    text    Option 2
@@ -153,17 +150,15 @@ Deselect Options With Strict
     Run Keyword And Expect Error
     ...    *strict mode violation*//select*resolved to 7 elements*
     ...    Deselect Options    //select
-    Set Strict Mode    False
+    Set Strict Mode    False    scope=Test
     Deselect Options    //select
-    [Teardown]    Set Strict Mode    True
 
 Deselect Options With Nonmatching Selector
     [Tags]    no-iframe
-    Set Browser Timeout    50ms
+    Set Browser Timeout    50ms    scope=Test
     Run Keyword And Expect Error
     ...    *Error: locator.selectOption: Timeout 50ms exceeded.*waiting for locator('notamatch')*
     ...    Deselect Options    notamatch
-    [Teardown]    Set Browser Timeout    ${PLAYWRIGHT_TIMEOUT}
 
 *** Keywords ***
 Select Option And Verify Selection

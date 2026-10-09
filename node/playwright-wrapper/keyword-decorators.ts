@@ -17,12 +17,12 @@ export function async_logger(propertyKey: string, propertyDescriptor: PropertyDe
     const originalMethod = propertyDescriptor.value;
     propertyDescriptor.value = async function (...args: any[]) {
         try {
-            logger.info(`Start of node method ${propertyKey}`);
+            logger.info({ event_kind: 'grpc', action: propertyKey, status: 'started' });
             const result = await originalMethod.apply(this, args);
-            logger.info(`End of node method ${propertyKey}`);
+            logger.info({ event_kind: 'grpc', action: propertyKey, status: 'succeeded' });
             return result;
         } catch (err) {
-            logger.info(`Error of node method  ${propertyKey}`);
+            logger.info({ event_kind: 'grpc', action: propertyKey, status: 'failed' });
             throw err;
         }
     };

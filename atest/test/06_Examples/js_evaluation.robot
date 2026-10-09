@@ -1,8 +1,8 @@
 *** Settings ***
-Resource        imports.resource
+Resource       imports.resource
 
-Suite Setup     New Browser    ${BROWSER}    headless=${HEADLESS}
-Test Setup      New Page    ${LOGIN_URL}
+Suite Setup    New Browser    ${BROWSER}    headless=${HEADLESS}
+Test Setup     New Page    ${LOGIN_URL}
 
 *** Test Cases ***
 Mutate Element On Page With ElementHandle

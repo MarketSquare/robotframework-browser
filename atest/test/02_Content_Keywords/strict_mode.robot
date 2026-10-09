@@ -1,7 +1,7 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Set Strict Mode    True
+Suite Teardown    Set Strict Mode    True
 
 *** Test Cases ***
 Set Strict Mode

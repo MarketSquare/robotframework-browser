@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Suite Setup         Close Browser    ALL
-Test Teardown       Close Browser    ALL
-Test Timeout        60s
+Suite Setup      Close Browser    ALL
+Test Teardown    Close Browser    ALL
+Test Timeout     60s
 
 *** Test Cases ***
 Get Multiple Browsers
@@ -14,7 +14,7 @@ Get Multiple Browsers
     New Page    ${LOGIN_URL}
     New Browser    headless=${HEADLESS}    reuse_existing=False
     New Context
-    ${oldtimeout} =    Set Browser Timeout    15s
+    Set Browser Timeout    15s    scope=Test
     New Page    http://${SERVER}/dist/#
     ${browsers} =    Get Browser Catalog    then
     ...    [(b['type'], b['activeBrowser'], [[p['url'] for p in c['pages']] for c in b['contexts']]) for b in value]
@@ -33,14 +33,14 @@ Get Closed Browsers
 Get Browser Catalog Default Error
     [Tags]    slow
     New Browser    headless=${HEADLESS}
-    ${expected} =    Create List    1    2
+    VAR    @{expected} =    1    2
     Run Keyword And Expect Error
     ...    Browser Catalog '*' (list) should be '[[]'1', '2'[]]' (list)
     ...    Get Browser Catalog    ==    ${expected}
 
 Get Browser Catalog Custom Error
     New Browser    headless=${HEADLESS}
-    ${expected} =    Create List    1    2
+    VAR    @{expected} =    1    2
     Run Keyword And Expect Error
     ...    Tidii
     ...    Get Browser Catalog    ==    ${expected}    Tidii

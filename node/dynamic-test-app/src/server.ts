@@ -2,10 +2,28 @@ import { Command } from 'commander';
 import * as express from 'express';
 import * as fs from 'fs';
 import * as https from 'https';
+import morgan from 'morgan';
 import * as path from 'path';
 
 const app = express.default();
 
+const logJson = (entry: Record<string, unknown>) => {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), ...entry }));
+};
+
+app.use(
+    morgan((tokens, req, res) =>
+        JSON.stringify({
+            timestamp: tokens.date(req, res, 'iso'),
+            event: 'http',
+            method: tokens.method(req, res),
+            url: tokens.url(req, res),
+            status: Number(tokens.status(req, res)),
+            contentLength: tokens.res(req, res, 'content-length') ?? null,
+            responseTimeMs: Number(tokens['response-time'](req, res)),
+        }),
+    ),
+);
 app.use(express.json());
 
 const program = new Command();
@@ -16,7 +34,12 @@ program
     .option('-k, --private-key <path>', 'path to private key in PEM format')
     .option('-P, --passphrase <passphrase>', 'passphrase for the private key')
     .option('-C, --certificate-authority <path>', 'path to CA certificate in PEM format')
-    .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false);
+    .option('-M, --mutual-tls', 'mutual TLS authentication with a client certificate (implies TLS)', false)
+    .option(
+        '-i, --instance-id <id>',
+        'unique id echoed by /health, used by the test harness to verify server identity',
+        '',
+    );
 
 program.parse(process.argv);
 const options = program.opts();
@@ -28,12 +51,14 @@ const privateKey = options.privateKey;
 const passphrase = options.passphrase;
 const certificateAuthority = options.certificateAuthority;
 const mutualTls: boolean = options.mutualTls;
+const instanceId: string = options.instanceId;
 
 app.set('etag', false);
 
-// @ts-expect-error
+// Readiness endpoint echoing the instance id, so the test harness can confirm it reached its own server.
+app.get('/health', (req, res) => res.status(200).type('text/plain').send(instanceId));
+
 app.get('/favicon.ico', (req, res) => res.status(204).send());
-// @ts-expect-error
 app.get('/dist/favicon.ico', (req, res) => res.status(204).send());
 
 app.head('/api/get/json', (req, res) => {
@@ -111,10 +136,84 @@ app.delete('/api/delete', (req, res) => {
     res.send();
 });
 
+// In-memory store for users and credentials
+const users = new Map();
+users.set('testuser', { id: 'testuser', name: 'Test User', credentials: [] });
+const credentials = new Map();
+
+// Helper to generate a random buffer
+const generateRandomBuffer = (length = 32) => {
+    const array = new Uint8Array(length);
+    crypto.getRandomValues(array);
+    return array.buffer;
+};
+
+// Helper to convert buffer to Base64URL
+const bufferToBase64URL = (buffer: ArrayBuffer) => {
+    return Buffer.from(buffer).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
+app.post('/login-challenge', (req, res) => {
+    const { username, domain } = req.body;
+    const challenge = bufferToBase64URL(generateRandomBuffer());
+    logJson({ event: 'webauthn_login_challenge', username, challenge });
+
+    const userCredentials = Array.from(credentials.values()).map((cred) => ({
+        type: 'public-key',
+        id: cred.id,
+    }));
+
+    if (username && !users.has(username)) {
+        logJson({ event: 'webauthn_error', message: `Login challenge for unknown user: ${username}` });
+        return res.status(404).send('User not found.');
+    }
+    const challengeResponse = {
+        challenge,
+        rpId: domain || req.hostname,
+        allowCredentials: userCredentials,
+        userVerification: 'discouraged',
+        timeout: 60000,
+    };
+    logJson({ event: 'webauthn_login_challenge_response', username, challengeResponse });
+    res.json(challengeResponse);
+});
+
 app.get('/slowpage.html', (req, res) => {
     setTimeout(() => {
         res.send('<html lang="en"><head><title>Slow page</title></head><body>HELLO</body></html>');
     }, 11000);
+});
+
+app.get('/stalledpage.html', (req, res) => {
+    res.send(
+        '<html lang="en"><head><title>Stalled page</title></head>' +
+            '<body>HELLO<img src="/api/stalled-image" alt="never loads"></body></html>',
+    );
+});
+
+app.get('/api/stalled-image', (req, res) => {
+    setTimeout(() => {
+        res.status(204).send();
+    }, 11000);
+});
+
+app.get('/api/download/slow', (req, res) => {
+    const startDelayMs = Number(req.query.startDelayMs ?? 0);
+    const transferMs = Number(req.query.transferMs ?? 0);
+    const totalBytes = 10;
+    setTimeout(() => {
+        res.attachment('slow_download.txt');
+        res.setHeader('Content-Length', totalBytes);
+        let sent = 0;
+        const timer = setInterval(() => {
+            res.write('x');
+            sent += 1;
+            if (sent === totalBytes) {
+                clearInterval(timer);
+                res.end();
+            }
+        }, transferMs / totalBytes);
+    }, startDelayMs);
 });
 
 app.get('/redirector.html', (req, res) => {
@@ -139,6 +238,16 @@ app.get('/api/get/bad_binary', (req, res) => {
     const data = Buffer.from([123120349139516]);
     // res.contentType('image/jpeg');
     res.end(data, 'binary');
+});
+
+app.post('/api/log/context', (req, res) => {
+    logJson(req.body);
+    res.status(204).send();
+});
+
+app.post('/api/log/event', (req, res) => {
+    logJson(req.body);
+    res.status(204).send();
 });
 
 app.use(express.static(path.join(__dirname, '..')));
@@ -173,9 +282,9 @@ if (tls || mutualTls) {
     };
 
     https
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
         .createServer(serverOptions, app)
-        .listen(port, () => console.log(`Successfully started server on https://localhost:${port}`));
+        .listen(port, () => logJson({ event: 'server_start', url: `https://localhost:${port}`, instanceId }));
 } else {
-    app.listen(port, () => console.log(`Successfully started server on http://localhost:${port}`));
+    app.listen(port, () => logJson({ event: 'server_start', url: `http://localhost:${port}`, instanceId }));
 }

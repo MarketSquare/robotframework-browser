@@ -17,6 +17,35 @@ env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
 jobs:
+  # The version the wheels of this run carry. Empty unless this is a push to
+  # main, which keeps pull request and scheduled runs building exactly the
+  # versions they build today.
+  nightly_version:
+    name: Work out the nightly version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.dev.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv pip install invoke --python 3.13 --system
+      - name: Work out the version
+        id: dev
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          inv dev-version
+
   testing:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -25,60 +54,74 @@ jobs:
       pull-requests: write
     strategy:
       fail-fast: false
+      # The lowest rf-version below is the supported Robot Framework floor and must
+      # match the robotframework lower bound in pyproject.toml. Change both together.
       matrix:
         include:
           - os: windows-latest
             python-version: "3.10"
             node-version: 22.x
             shard: 1
+            rf-version: "7.4.2"
           - os: windows-latest
             python-version: "3.12"
-            node-version: 20.x
+            node-version: 24.x
             shard: 2
+            rf-version: "7.1.1"
           - os: ubuntu-latest
             python-version: "3.14"
             node-version: 22.x
             shard: 3
+            rf-version: "7.4.2"
           - os: ubuntu-latest
             python-version: "3.11"
-            node-version: 20.x
+            node-version: 26.x
             shard: 4
+            rf-version: "7.1.1"
           - os: windows-latest
             python-version: "3.14"
             node-version: 24.x
             shard: 1
+            rf-version: "7.4.2"
           - os: ubuntu-latest
             python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
             shard: 2
+            rf-version: "7.1.1"
           - os: ubuntu-latest
             python-version: "3.13"
             node-version: 22.x
             shard: 3
+            rf-version: "7.1.1"
           - os: ubuntu-latest
             python-version: "3.10"
             node-version: 24.x
             shard: 4
+            rf-version: "7.1.1"
           - os: ubuntu-latest
-            python-version: "3.11"
-            node-version: 20.x
+            python-version: "3.14"
+            node-version: 22.x
             shard: 1
+            rf-version: "7.4.2"
           - os: macos-latest
             python-version: "3.11"
-            node-version: 20.x
+            node-version: 24.x
             shard: 1
+            rf-version: "7.4.2"
           - os: macos-latest
             python-version: "3.14"
-            node-version: 20.x
+            node-version: 24.x
             shard: 2
+            rf-version: "7.1.1"
           - os: macos-latest
             python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
             shard: 3
+            rf-version: "7.4.2"
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Use Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -89,7 +132,7 @@ jobs:
         npm ci
         npx playwright install --with-deps
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -100,6 +143,8 @@ jobs:
         uv pip install wheel --python ${{ matrix.python-version }} --system
         uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
         uv pip install -r pyproject.toml  --python ${{ matrix.python-version }} --system
+        uv pip install robotframework==${{ matrix.rf-version }} --python ${{ matrix.python-version }} --system
+        python atest/library/os_wrapper.py
     - name: Build stubs
       run: |
         inv node-build
@@ -118,15 +163,33 @@ jobs:
     - name: Build test app
       run: |
         inv create-test-app
+        inv install-electron
     - name: Start xvfb on Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
+    # Shard 1 is pinned to the latest Robot Framework, so the extra condition is what runs
+    # the unit tests against the supported floor as well. Keep one entry of each rf-version.
     - name: Run pytests
-      if: matrix.shard == 1
+      if: matrix.shard == 1 || (matrix.rf-version == '7.1.1' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13')
       run: |
         invoke utest
+    - uses: actions/upload-artifact@v7
+      if: ${{ always() && hashFiles('utest/output/pytest_xunit.xml') != '' }}
+      with:
+        name: Unit test results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        path: utest/output/pytest_xunit.xml
+    - name: Run Node.js unit tests with coverage
+      if: matrix.shard == 1
+      run: |
+        npm run test:coverage
+        node node/coverage-summary.mjs
+    - uses: actions/upload-artifact@v7
+      if: matrix.shard == 1
+      with:
+        name: node-coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        path: node/coverage/
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -145,23 +208,23 @@ jobs:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: atest/output
     - name: Github Job Summary
-      if: ${{ always() }}
+      if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
       run: |
-        python -m GHAReports --robotlog atest/output/output.xml
         python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
         cat fail.md
 
   build:
     runs-on: ${{ matrix.os }}
+    needs: nightly_version
     strategy:
       matrix:
         os: [ "ubuntu-latest", "windows-latest" ]
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Use Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
-        node-version: 22.x
+        node-version: 24.x
         cache: 'npm'
     - name: Install nodejs dependencies
       env:
@@ -170,7 +233,7 @@ jobs:
         npm ci
         npx playwright install --with-deps
     - name: Set up Python 3.12
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v7
       with:
         python-version: 3.12
         cache: 'pip'
@@ -181,6 +244,13 @@ jobs:
         uv pip install wheel --python 3.12  --system --verbose
         uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
         uv pip install -r pyproject.toml  --python 3.12  --system
+    # A nightly wheel has to say which build it is, and the version has to be
+    # stamped before packaging rather than renamed afterwards, because it also
+    # goes into the metadata and into the BrowserBatteries dependency pin.
+    - name: Stamp the nightly version
+      if: needs.nightly_version.outputs.version != ''
+      run: |
+        inv version ${{ needs.nightly_version.outputs.version }}
     - name: Build stubs
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -214,16 +284,16 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
         python-version: ["3.10", "3.13"]
-        node-version: [20.x, 24.x]
+        node-version: [22.x, 24.x]
         exclude:
           - python-version: "3.10"
-            node-version: 20.x
+            node-version: 22.x
           - os: windows-latest
             python-version: "3.10"
           - os: windows-latest
-            node-version: 20.x
+            node-version: 22.x
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Download package for install testing
         uses: actions/download-artifact@v8
         with:
@@ -244,12 +314,12 @@ jobs:
           dir zip_results/demoapp
           tar -xf zip_results/demoapp/demo-app-win32.zip
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -295,33 +365,41 @@ jobs:
           name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
           path: atest/output
       - name: Github Job Summary
-        if: ${{ always() }}
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
         run: |
-          python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
 
   build_browser_batteries_wheels:
     name: Build wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
+    needs: nightly_version
+    timeout-minutes: 45
+    env:
+      # This job only builds wheels, no need to download Playwright browsers
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
-            arch: arm64
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-15-intel
+          - macos-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22.x"
+          node-version: "24.x"
+          cache: 'npm'
       - name: Setup Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.13"
+          cache: 'pip'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -331,6 +409,10 @@ jobs:
           python -c "import sysconfig;print(sysconfig.get_platform())"
           python -c "import platform;print(platform.machine().lower())"
           inv deps
+      - name: Stamp the nightly version
+        if: needs.nightly_version.outputs.version != ''
+        run: |
+          inv version ${{ needs.nightly_version.outputs.version }}
       - name: Build stubs
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -371,24 +453,23 @@ jobs:
       - build_browser_batteries_wheels
     name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-          - os: macos-latest
-            arch: arm64
+        os: ${{ fromJSON(github.event_name == 'schedule' && '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-15-intel", "macos-latest"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest"]') }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: 3.14
+          cache: 'pip'
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: "22.x"
+          node-version: "24.x"
       - name: Download browser-wheel
         uses: actions/download-artifact@v8
         with:
@@ -405,28 +486,46 @@ jobs:
           name: demoapp-bb-test-${{ matrix.os }}
           path: demoapp
       - name: Install Browser and BrowserBatteries
+        if: matrix.os != 'windows-latest'
         run: |
           python -m pip install --upgrade pip
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
           rfbrowser install --with-deps
+      - name: Install Browser and BrowserBatteries On Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          python -m pip install --upgrade pip
+          pip install (Resolve-Path rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl)
+          pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
+          rfbrowser --version
+          rfbrowser install
       - name: Install test dependencies
         run: |
           pip install -r Browser/dev-requirements.txt
       - name: Unzip demoapp *nix
+        if: matrix.os != 'windows-latest'
         run: |
           rm -rf Browser
           rm -rf node
           rm -rf browser_batteries
           ls -l demoapp
           unzip demoapp/demo-app*.zip -d .
-      - name: Run tests on Linux with packed demoapp
+      - name: Unzip demoapp Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          Remove-Item -Path .\Browser -Force -Recurse
+          Remove-Item -Path .\node -Force -Recurse
+          Remove-Item -Path .\browser_batteries -Force -Recurse
+          dir demoapp
+          Expand-Archive -Path (Resolve-Path demoapp/demo-app*.zip) -DestinationPath .
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
           xvfb-run --auto-servernum invoke atest-robot --smoke
-      - name: Run tests on MacOS with packed demoapp
-        if: matrix.os == 'macos-latest'
+      - name: Run tests on ${{ matrix.os }} with packed demoapp
+        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
           inv atest-robot
       - uses: actions/upload-artifact@v7
@@ -435,9 +534,8 @@ jobs:
           name: Clean_install_results_${{ matrix.os }}
           path: atest/output
       - name: Github Job Summary
-        if: ${{ always() }}
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
         run: |
-          python -m GHAReports --robotlog atest/output/output.xml
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
       - name: Uninstall
@@ -451,8 +549,8 @@ jobs:
     needs: build_browser_batteries_wheels
     permissions: write-all
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
           cache: 'pip'
@@ -469,7 +567,7 @@ jobs:
           name: rfbrowser-wheel-bb-test
           path: docker/dist
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -497,12 +595,85 @@ jobs:
         run: |
           pip install uv
           uv pip install invoke robotframework-ghareports --python 3.14 --system
-          invoke run-test-app-no-build --asynchronous
-          docker run -v ./atest/:/home/pwuser/test  -t tidii:latest bash -c "robot -v SERVER:172.17.0.1:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/test"
+          set +e
+          docker run \
+            -v ./atest/:/home/pwuser/atest \
+            -v ./node/:/home/pwuser/node \
+            -t tidii:latest \
+            bash -lc "
+              node /home/pwuser/node/dynamic-test-app/dist/server.js > /tmp/test-app.log 2>&1 &
+              app_pid=\$!
+              for i in \$(seq 1 30); do
+                if curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
+                  break
+                fi
+                sleep 1
+              done
+              if ! curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
+                echo 'Test app failed to start inside container.'
+                cat /tmp/test-app.log
+                exit 1
+              fi
+              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
+              robot_status=\$?
+              kill \$app_pid || true
+              wait \$app_pid 2>/dev/null || true
+              exit \$robot_status
+            "
+          docker_status=$?
           inv docker-copy-output
-      - name: Github Job Summary
+          copy_status=$?
+          if [ "$docker_status" -ne 0 ]; then
+            exit "$docker_status"
+          fi
+          exit "$copy_status"
+
+      - uses: actions/upload-artifact@v7
         if: ${{ always() }}
+        with:
+          name: docker_results
+          path: output_docker
+      - name: Github Job Summary
+        if: ${{ always() && hashFiles('output_docker/output.xml') != '' }}
         run: |
-          python -m GHAReports --robotlog output_docker/output.xml
           python -m GHAReports --robotlog output_docker/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
+
+  # Everything green on main becomes the wheels at
+  # https://github.com/MarketSquare/robotframework-browser/releases/tag/nightly
+  # so that a fix can be tried out without waiting for a release. Needs the test
+  # jobs and not just the build jobs, because untested wheels are worse than no
+  # wheels: whoever installs them cannot tell our breakage from theirs.
+  publish_nightly:
+    name: Publish the nightly wheels
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - nightly_version
+      - testing
+      - build
+      - test-install
+      - build_browser_batteries_wheels
+      - test_browser_batteries_wheels
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download the Browser wheel
+        uses: actions/download-artifact@v8
+        with:
+          name: rfbrowser-wheel
+          path: nightly-wheels
+      - name: Download the BrowserBatteries wheels
+        uses: actions/download-artifact@v8
+        with:
+          pattern: browser-batteries-wheels-bb-test-*
+          merge-multiple: true
+          path: nightly-wheels
+      - name: Replace the assets on the nightly release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.nightly_version.outputs.version }}
+        run: |
+          bash .github/scripts/publish-nightly.sh

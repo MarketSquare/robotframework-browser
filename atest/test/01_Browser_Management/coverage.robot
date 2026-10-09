@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource      imports.resource
 
-Test Setup      Open Page And Store ID
+Test Setup    Open Page And Store ID
 
 *** Variables ***
 ${PAGE_ID} =    ${EMPTY}
@@ -251,6 +251,18 @@ Merge Coverage Reports Config File
     Get Text    .mcr-title    equal    Browser library Coverage Report MD
     Close Page
 
+Merge Coverage Reports Config File And Name
+    ${combined_folder} =    Merge Coverage Reports
+    ...    ${OUTPUT_DIR}/browser/coverage
+    ...    ${OUTPUT_DIR}/merge_coverage_reports_keyword_8
+    ...    config_file=${CURDIR}/coverageConfigMD.js
+    ...    name=Name From The Keyword
+    Directory Should Not Be Empty    ${combined_folder}
+    ${uri} =    File As Uri    ${combined_folder}/index.html
+    New Page    ${uri}
+    Get Text    .mcr-title    equal    Name From The Keyword
+    Close Page
+
 Merge Coverage Reports Invalid Config File
     TRY
         ${combined_folder} =    Merge Coverage Reports
@@ -269,7 +281,15 @@ Merge Coverage Reports Invalid Config File
         Log    Caught expected error ${error}
     END
 
+Only Stop Coverage
+    [Documentation]    ...
+    ...    LOG 1:2    INFO    Stopping coverage
+    ...    LOG 1:3    INFO    Coverage not started
+    ...    LOG 1:4    INFO    Coverage was not started, no report generated.
+    ${result} =    Stop Coverage
+    Should Be Equal    ${result}    ${None}
+
 *** Keywords ***
 Open Page And Store ID
     &{page_info} =    New Page
-    Set Suite Variable    ${PAGE_ID}    ${page_info.page_id}
+    VAR    ${PAGE_ID} =    ${page_info.page_id}    scope=SUITE

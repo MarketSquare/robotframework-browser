@@ -17,11 +17,13 @@ from .browser_control import Control
 from .clock import Clock
 from .cookie import Cookie
 from .coverage import Coverage
+from .credential import Credential
 from .device_descriptors import Devices
 from .electron import Electron
 from .evaluation import Evaluation
 from .getters import Getters
 from .interaction import Interaction
+from .keyword_call import KeywordCallObserver
 from .locator_handler import LocatorHandler
 from .network import Network
 from .pdf import Pdf
@@ -37,12 +39,14 @@ __all__ = [
     "Control",
     "Cookie",
     "Coverage",
+    "Credential",
     "Devices",
     "Electron",
     "Evaluation",
     "Formatter",
     "Getters",
     "Interaction",
+    "KeywordCallObserver",
     "LocatorHandler",
     "Network",
     "Pdf",

@@ -1,9 +1,9 @@
 *** Settings ***
-Resource            imports.resource
+Resource          imports.resource
 
-Suite Teardown      Close Browser    ALL
+Suite Teardown    Close Browser    ALL
 
-Test Tags           no-docker-pr
+Test Tags         no-docker-pr
 
 *** Test Cases ***
 Wrong Browser With Channel
@@ -16,7 +16,5 @@ Use Chrome Stable With Channel Argument
     [Timeout]    60s    # Is slow in Windows OS.
     New Browser    chromium    headless=False    channel=chrome
     New Context
-    ${TIMEOUT} =    Set Browser Timeout    30 s
-    Set Suite Variable    ${TIMEOUT}
+    Set Browser Timeout    30 s    scope=Test
     New Page    ${LOGIN_URL}
-    [Teardown]    Set Browser Timeout    ${TIMEOUT}

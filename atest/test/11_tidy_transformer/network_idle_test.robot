@@ -1,7 +1,7 @@
 *** Settings ***
-Resource        imports.resource
+Resource     imports.resource
 
-Test Tags       no-docker-pr
+Test Tags    no-docker-pr
 
 *** Test Cases ***
 Tranform Wait Until Network Is Idle Keyword
@@ -32,7 +32,7 @@ Tranform Wait Until Network Is Idle Keyword
 *** Keywords ***
 Network Idle Setup
     ${NETWORK_IDLE_FILE_DATA} =    Get File    ${CURDIR}/network_idle_file.robot
-    Set Test Variable    ${NETWORK_IDLE_FILE_DATA}
+    VAR    ${NETWORK_IDLE_FILE_DATA} =    ${NETWORK_IDLE_FILE_DATA}    scope=TEST
 
 Network Idle Treardown
     Create File    ${CURDIR}/network_idle_file.robot    ${NETWORK_IDLE_FILE_DATA}

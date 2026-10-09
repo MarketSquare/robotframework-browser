@@ -16,34 +16,58 @@ import { ElementHandle, Locator, Page } from 'playwright';
 import { errors } from 'playwright';
 
 import { logger } from './browser_logger';
-import { Request, Response, Types } from './generated/playwright_pb';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
+import * as pb from './generated/playwright';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { boolResponse, intResponse, jsonResponse, stringResponse } from './response-util';
+import { boolResponse, intResponse, jsonResponse, listStringResponse, stringResponse } from './response-util';
 
-export async function getAriaSnapshot(request: Request.AriaSnapShot, state: PlaywrightState): Promise<Response.String> {
-    const selector = request.getLocator();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
-    const snapshot = await locator.ariaSnapshot();
-    logger.info(`Aria snapshot for ${selector}: ${snapshot}`);
+type AriaSnapshotOptions = NonNullable<Parameters<Locator['ariaSnapshot']>[0]>;
+
+function ariaSnapshotOptions(request: pb.Request_AriaSnapShot): AriaSnapshotOptions {
+    const options: AriaSnapshotOptions = {};
+    if (request.mode) {
+        options.mode = request.mode as AriaSnapshotOptions['mode'];
+    }
+    if (request.depth > 0) {
+        options.depth = request.depth;
+    }
+    if (request.boxes) {
+        options.boxes = true;
+    }
+    return options;
+}
+
+export async function getAriaSnapshot(
+    request: pb.Request_AriaSnapShot,
+    state: PlaywrightState,
+): Promise<pb.Response_String> {
+    const selector = request.locator;
+    const strictMode = request.strict;
+    const options = ariaSnapshotOptions(request);
+    const locator = await findLocator(state, selector, strictMode, true);
+    const snapshot = await locator.ariaSnapshot(options);
+    logger.info(`Aria snapshot for ${selector} with options ${JSON.stringify(options)}: ${snapshot}`);
     return stringResponse(snapshot, 'Aria snapshot received successfully.');
 }
 
-export async function getTitle(page: Page): Promise<Response.String> {
+export async function getTitle(page: Page): Promise<pb.Response_String> {
     const title = await page.title();
     return stringResponse(title, 'Active page title is: ' + title);
 }
 
-export async function getUrl(page: Page): Promise<Response.String> {
+export async function getUrl(page: Page): Promise<pb.Response_String> {
     const url = page.url();
     return stringResponse(url, url);
 }
 
-export async function getElementCount(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Int> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, false);
+export async function getElementCount(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Int> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, false);
     let count = 0;
     try {
         count = await locator.count();
@@ -55,8 +79,7 @@ export async function getElementCount(request: Request.ElementSelector, state: P
     return intResponse(count, `Found ${count} element(s).`);
 }
 
-export async function getSelections(locator: Locator) {
-    const response = new Response.Select();
+export async function getSelections(locator: Locator): Promise<pb.Response_Select> {
     const selectElement = await locator.elementHandle();
     const selectOptions = await selectElement?.evaluate((e) => {
         return Array.from((e as HTMLSelectElement).options).map((option) => ({
@@ -66,84 +89,132 @@ export async function getSelections(locator: Locator) {
             selected: option.selected,
         }));
     });
+    const entry: pb.Types_SelectEntry[] = [];
     if (selectOptions) {
-        const entries = selectOptions.map((e) => {
-            const entry = new Types.SelectEntry();
-            entry.setLabel(e.label);
-            entry.setValue(e.value);
-            entry.setIndex(e.index);
-            entry.setSelected(e.selected);
-            return entry;
-        });
+        const entries = selectOptions.map((e) => ({
+            value: e.value,
+            label: e.label,
+            index: e.index,
+            selected: e.selected,
+        }));
         logger.info(`Option entries: ${entries.length}`);
-        logger.info(`Selected entries: ${entries.filter((e) => e.getSelected()).length}`);
-        entries.forEach((e) => response.addEntry(e));
+        logger.info(`Selected entries: ${entries.filter((e) => e.selected).length}`);
+        entry.push(...entries);
     }
-    return response;
+    return { entry };
 }
 
 export async function getSelectContent(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Select> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+): Promise<pb.Response_Select> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.elementHandle();
     return await getSelections(locator);
 }
 
 export async function getDomProperty(
-    request: Request.ElementProperty,
+    request: pb.Request_ElementProperty,
     state: PlaywrightState,
-): Promise<Response.String> {
+): Promise<pb.Response_String> {
     const content = await getProperty(request, state);
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getTextContent(locator: Locator): Promise<string> {
-    const element = await locator.elementHandle();
-    exists(element, 'Locator did not resolve to elementHandle.');
-    const tag = await (await element.getProperty('tagName')).jsonValue();
-    if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        return await (await element.getProperty('value')).jsonValue();
-    }
-    return await element.innerText();
+enum TextType {
+    allInnerTexts = 'allInnerTexts',
+    allTextContents = 'allTextContents',
+    innerText = 'innerText',
+    inputValue = 'inputValue',
+    innerHTML = 'innerHTML',
+    ROBOT_FRAMEWORK_BROWSER_NO_SET = 'ROBOT_FRAMEWORK_BROWSER_NO_SET',
 }
 
-export async function getText(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.String> {
-    const selector = request.getSelector();
-    const strict = request.getStrict();
-    const locator = await findLocator(state, selector, strict, undefined, true);
-    let content: string;
+async function _getTextContentNoTextType(locator: Locator): Promise<string[]> {
+    logger.info(`Getting text content without text type`);
+    const tag = await locator.evaluate((e) => e.tagName);
+    if (tag === 'TEXTAREA' || tag === 'INPUT') {
+        logger.info(`Element is ${tag}, get inputValue`);
+        const inputValue = await locator.inputValue();
+        return [inputValue];
+    } else {
+        logger.info(`Locator was not an <input> or <textarea> element, falling back to innerText.`);
+        const innerText = await locator.innerText();
+        return [innerText];
+    }
+}
+
+async function getTextContent(locator: Locator, textType: TextType): Promise<string[]> {
+    logger.info(`Getting text content with text type ${textType}`);
+    switch (textType) {
+        case TextType.ROBOT_FRAMEWORK_BROWSER_NO_SET:
+            return await _getTextContentNoTextType(locator);
+        case TextType.allInnerTexts:
+            logger.info(`Getting allInnerTexts`);
+            return await locator.allInnerTexts();
+        case TextType.allTextContents:
+            logger.info(`Getting allTextContents`);
+            return await locator.allTextContents();
+        case TextType.innerHTML:
+            logger.info(`Getting innerHTML`);
+            return [await locator.innerHTML()];
+        case TextType.inputValue:
+            logger.info(`Getting inputValue`);
+            return [await locator.inputValue()];
+        case TextType.innerText:
+            logger.info(`Getting innerText`);
+            return [await locator.innerText()];
+    }
+}
+
+export async function getText(
+    request: pb.Request_ElementSelectorWithTextType,
+    state: PlaywrightState,
+): Promise<pb.Response_ListString> {
+    const selector = request.selector;
+    const strict = request.strict;
+    const textType = request.textType;
+    const locator = await findLocator(state, selector, strict, true);
+    let content: string[];
+    const textTypeEnum = TextType[textType as keyof typeof TextType];
     try {
-        content = await getTextContent(locator);
-        logger.info(`Retrieved text for element ${selector} containing ${content}`);
+        content = await getTextContent(locator, textTypeEnum);
+        logger.info(
+            `Retrieved text for element ${selector} containing '${JSON.stringify(content)}' with text type ${textType}`,
+        );
     } catch (e) {
         if (e instanceof Error) {
             logger.error(e);
         }
         throw e;
     }
-    return stringResponse(content, 'Text received successfully.');
+    let textTypeString: string;
+    if (textTypeEnum !== TextType.ROBOT_FRAMEWORK_BROWSER_NO_SET) {
+        textTypeString = ` with text type ${textType}.`;
+    } else {
+        textTypeString = '.';
+    }
+    return listStringResponse(content, `Text received successfully${textTypeString}`);
 }
 
 export async function getBoolProperty(
-    request: Request.ElementProperty,
+    request: pb.Request_ElementProperty,
     state: PlaywrightState,
-): Promise<Response.Bool> {
-    const selector = request.getSelector();
+): Promise<pb.Response_Bool> {
+    const selector = request.selector;
     const content = await getProperty(request, state);
     return boolResponse(content || false, 'Retrieved dom property for element ' + selector + ' containing ' + content);
 }
 
-async function getProperty(request: Request.ElementProperty, state: PlaywrightState) {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = findLocator(state, selector, strictMode, undefined, true);
+async function getProperty(request: pb.Request_ElementProperty, state: PlaywrightState) {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = findLocator(state, selector, strictMode, true);
     try {
         const element = await (await locator).elementHandle();
-        const propertyName = request.getProperty();
+        const propertyName = request.property;
         const property = await element?.getProperty(propertyName);
         const content = await property?.jsonValue();
         logger.info(`Retrieved dom property for element ${selector} containing ${content}`);
@@ -157,18 +228,18 @@ async function getProperty(request: Request.ElementProperty, state: PlaywrightSt
 }
 
 export async function getElementAttribute(
-    request: Request.ElementProperty,
+    request: pb.Request_ElementProperty,
     state: PlaywrightState,
-): Promise<Response.String> {
+): Promise<pb.Response_String> {
     const content = await getAttributeValue(request, state);
     return stringResponse(JSON.stringify(content), 'Property received successfully.');
 }
 
-async function getAttributeValue(request: Request.ElementProperty, state: PlaywrightState) {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const attributeName = request.getProperty();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+async function getAttributeValue(request: pb.Request_ElementProperty, state: PlaywrightState) {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const attributeName = request.property;
+    const locator = await findLocator(state, selector, strictMode, true);
     await locator.elementHandle();
     const attribute = await locator.getAttribute(attributeName);
     logger.info(`Retrieved attribute for element ${selector} containing ${attribute}`);
@@ -212,12 +283,12 @@ async function getSelectState(element: ElementHandle) {
 }
 
 export async function getElementStates(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Json> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+): Promise<pb.Response_Json> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
     let states: number;
     try {
         await locator.waitFor({ state: 'attached', timeout: 250 });
@@ -267,16 +338,16 @@ export async function getElementStates(
     return jsonResponse(JSON.stringify(states), 'Returned state.');
 }
 
-export async function getStyle(request: Request.ElementStyle, state: PlaywrightState): Promise<Response.Json> {
-    const selector = request.getSelector();
+export async function getStyle(request: pb.Request_ElementStyle, state: PlaywrightState): Promise<pb.Response_Json> {
+    const selector = request.selector;
     const option = {
-        styleKey: request.getStylekey() || null,
-        pseudoElement: request.getPseudo() || null,
+        styleKey: request.styleKey || null,
+        pseudoElement: request.pseudo || null,
     };
-    const strictMode = request.getStrict();
+    const strictMode = request.strict;
 
     logger.info('Getting css of element on page');
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+    const locator = await findLocator(state, selector, strictMode, true);
     const result = await locator.evaluate((element: Element, option) => {
         const cssStyleDeclaration = window.getComputedStyle(element, option.pseudoElement);
         if (option.styleKey) {
@@ -290,32 +361,48 @@ export async function getStyle(request: Request.ElementStyle, state: PlaywrightS
     return jsonResponse(JSON.stringify(result), 'Style get successfully.');
 }
 
-export async function getViewportSize(page: Page): Promise<Response.Json> {
+export async function getViewportSize(page: Page): Promise<pb.Response_Json> {
     const result = page.viewportSize();
-    return jsonResponse(JSON.stringify(result), 'View port size received sucesfully from page.');
+    return jsonResponse(JSON.stringify(result), 'View port size received successfully from page.');
 }
 
-export async function getBoundingBox(request: Request.ElementSelector, state: PlaywrightState): Promise<Response.Json> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+export async function getBoundingBox(
+    request: pb.Request_ElementSelector,
+    state: PlaywrightState,
+): Promise<pb.Response_Json> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
     const boundingBox = await locator.boundingBox();
     return jsonResponse(JSON.stringify(boundingBox), 'Got bounding box successfully.');
 }
 
-export async function getPageSource(page: Page): Promise<Response.String> {
+export async function getPageSource(page: Page): Promise<pb.Response_Json[]> {
     const result = await page.content();
     logger.info(result);
-    return stringResponse(JSON.stringify(result), 'Page source obtained successfully.');
+    const body = JSON.stringify(result);
+    const responseChunks = [];
+    const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+    if (bodyChunks.length > 1) {
+        for (let i = 0; i < bodyChunks.length; i++) {
+            const chunk = bodyChunks[i];
+            const response = jsonResponse('{}', `Page source obtained, chunk ${i}`, chunk);
+            responseChunks.push(response);
+        }
+    } else {
+        const response = jsonResponse('{}', 'Page source obtained successfully.', body);
+        responseChunks.push(response);
+    }
+    return responseChunks;
 }
 
 export async function getTableCellIndex(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Int> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+): Promise<pb.Response_Int> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {
@@ -332,12 +419,12 @@ export async function getTableCellIndex(
 }
 
 export async function getTableRowIndex(
-    request: Request.ElementSelector,
+    request: pb.Request_ElementSelector,
     state: PlaywrightState,
-): Promise<Response.Int> {
-    const selector = request.getSelector();
-    const strictMode = request.getStrict();
-    const locator = await findLocator(state, selector, strictMode, undefined, true);
+): Promise<pb.Response_Int> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
     const element = await locator.elementHandle();
     exists(element, 'Locator did not resolve to elementHandle.');
     const count = await element.evaluate((element) => {

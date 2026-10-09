@@ -16,7 +16,7 @@ import re
 import traceback
 from collections.abc import Callable
 from concurrent.futures._base import Future
-from copy import copy, deepcopy
+from copy import deepcopy
 from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
@@ -24,7 +24,6 @@ from time import sleep
 from typing import TYPE_CHECKING, Any
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
-from robot.utils import timestr_to_secs
 
 from ..generated.playwright_pb2 import Response
 from ..utils import SettingsStack, get_variable_value, logger
@@ -33,6 +32,7 @@ from ..utils.data_types import (
     DelayedKeyword,
     HighLightElement,
 )
+from ..utils.types import Secret
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -60,7 +60,7 @@ class LibraryComponent:
 
     @property
     def keyword_call_banner_add_style(self) -> str:
-        return self.library.scope_stack["keyword_call_banner_add_style"].get()
+        return self.library.keyword_call_banner_add_style
 
     @property
     def keyword_call_banner_add_style_stack(self) -> SettingsStack:
@@ -72,7 +72,7 @@ class LibraryComponent:
 
     @property
     def show_keyword_call_banner(self) -> bool:
-        return self.library.scope_stack["show_keyword_call_banner"].get()
+        return self.library.show_keyword_call_banner
 
     @property
     def show_keyword_call_banner_stack(self) -> SettingsStack:
@@ -84,7 +84,7 @@ class LibraryComponent:
 
     @property
     def run_on_failure_keyword(self) -> DelayedKeyword:
-        return self.library.scope_stack["run_on_failure"].get()
+        return self.library.run_on_failure_keyword
 
     @property
     def run_on_failure_keyword_stack(self) -> SettingsStack:
@@ -96,7 +96,7 @@ class LibraryComponent:
 
     @property
     def highlight_on_failure(self) -> bool:
-        return self.library.scope_stack["highlight_on_failure"].get()
+        return self.library.highlight_on_failure
 
     @property
     def highlight_on_failure_stack(self) -> SettingsStack:
@@ -122,7 +122,7 @@ class LibraryComponent:
 
     @property
     def timeout(self) -> float:
-        return self.library.scope_stack["timeout"].get()
+        return self.library.timeout
 
     @property
     def timeout_stack(self) -> SettingsStack:
@@ -134,7 +134,7 @@ class LibraryComponent:
 
     @property
     def retry_assertions_for(self) -> float:
-        return self.library.scope_stack["retry_assertions_for"].get()
+        return self.library.retry_assertions_for
 
     @property
     def retry_assertions_for_stack(self) -> SettingsStack:
@@ -146,7 +146,7 @@ class LibraryComponent:
 
     @property
     def selector_prefix(self) -> str:
-        return self.library.scope_stack["selector_prefix"].get()
+        return self.library.selector_prefix
 
     @property
     def selector_prefix_stack(self) -> SettingsStack:
@@ -297,6 +297,8 @@ class LibraryComponent:
         return self._replace_placeholder_variable(placeholder)
 
     def _replace_placeholder_variable(self, placeholder):
+        if isinstance(placeholder, Secret):
+            return placeholder.value
         if isinstance(placeholder, str) and len(placeholder) == 0:
             return placeholder
         if not isinstance(placeholder, str) or placeholder[:1] not in "$%":
@@ -308,11 +310,13 @@ class LibraryComponent:
         if value is NOT_FOUND:
             logger.warn("Given variable placeholder could not be resolved.")
             return placeholder
+        if isinstance(value, Secret):
+            return value.value
         return value
 
     @property
     def strict_mode(self) -> bool:
-        return self.library.scope_stack["strict_mode"].get()
+        return self.library.strict_mode
 
     @property
     def strict_mode_stack(self) -> SettingsStack:
@@ -330,38 +334,28 @@ class LibraryComponent:
         return self.library._keyword_formatters
 
     @property
-    def get_presenter_mode(self) -> HighLightElement:
-        mode: HighLightElement | dict = {}
-        if isinstance(self.library.presenter_mode, dict):
-            mode = copy(self.library.presenter_mode)
-        duration = mode.get("duration", "2 seconds")
-        if not isinstance(duration, timedelta):
-            duration = timedelta(seconds=timestr_to_secs(duration))
-        width = mode.get("width", "2px")
-        style = mode.get("style", "dotted")
-        color = mode.get("color", "blue")
-        return HighLightElement(
-            duration=duration, width=width, style=style, color=color
-        )
+    def get_presenter_mode(self) -> HighLightElement | bool:
+        return self.library.presenter_mode
 
     def presenter_mode(self, selector, strict):
         selector = self.resolve_selector(selector)
-        if self.library.presenter_mode:
-            mode = self.get_presenter_mode
+        mode = self.library.presenter_mode
+        logger.trace(f"Presenter mode: {mode}, selector: {selector}, strict: {strict}")
+        if isinstance(mode, dict):
             try:
                 self.library.scroll_to_element(selector)
                 self.library.highlight_elements(
                     selector,
-                    duration=mode["duration"],
-                    width=mode["width"],
-                    style=mode["style"],
-                    color=mode["color"],
+                    duration=mode.get("duration", timedelta(seconds=2)),
+                    width=mode.get("width", "2px"),
+                    style=mode.get("style", "dotted"),
+                    color=mode.get("color", "blue"),
                 )
             except Exception as error:
                 selector = self.library.record_selector(f'"{selector}" failure')
                 logger.debug(f"On presenter more supress {error}")
             else:
-                sleep(mode["duration"].seconds)
+                sleep(mode.get("duration", timedelta(seconds=2)).total_seconds())
         return selector
 
     def exec_scroll_function(self, function: str, selector: str | None = None):
@@ -372,3 +366,13 @@ class LibraryComponent:
         return self.library.evaluate_javascript(
             selector, f"{element_selector}.{function}"
         )
+
+    @property
+    def close_deadline(self) -> float:
+        """How long the closing calls may take, in seconds.
+
+        ``self.timeout`` is in milliseconds and gRPC deadlines are in seconds,
+        hence the conversion. The deadline is there so that a browser that
+        never finishes closing cannot hang the whole run, see issue #4124.
+        """
+        return max(self.library.close_deadline_floor_secs, self.timeout / 1000 * 2)

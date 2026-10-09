@@ -41,7 +41,7 @@ function bottomUpSearch(a, b, c) {
         e = [],
         f = a,
         g = 0;
-    for (; f && f !== config.root.parentElement; ) {
+    for (; f && f !== config.root.parentElement;) {
         let a = maybe(id(f)) || maybe(...attr(f)) || maybe(...classNames(f)) || maybe(tagName(f)) || [any()];
         const h = index(f);
         if (b === Limit.All) h && (a = a.concat(a.filter(dispensableNth).map((a) => nthChild(a, h))));
@@ -123,7 +123,7 @@ function index(a) {
     let c = b.firstChild;
     if (!c) return null;
     let d = 0;
-    for (; c && (c.nodeType === Node.ELEMENT_NODE && d++, c !== a); ) c = c.nextSibling;
+    for (; c && (c.nodeType === Node.ELEMENT_NODE && d++, c !== a);) c = c.nextSibling;
     return d;
 }
 
@@ -183,7 +183,7 @@ function cssesc(a, b = {}) {
         f = a.charAt(0);
     let g = '',
         h = 0;
-    for (const f = a.length; h < f; ) {
+    for (const f = a.length; h < f;) {
         const b = a.charAt(h++);
         let i,
             j = b.charCodeAt(0);

@@ -13,23 +13,24 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { pino } from 'pino';
 import { Page } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
-import * as pb from './generated/playwright_pb';
+import { logger } from './browser_logger';
+import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
+import * as pb from './generated/playwright';
+import { withLoadReport } from './load-report';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, jsonResponse, parseRegExpOrKeepString, stringResponse } from './response-util';
-const logger = pino({ timestamp: pino.stdTimeFunctions.isoTime });
+import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
-export async function httpRequest(request: pb.Request.HttpRequest, page: Page): Promise<pb.Response.Json> {
+export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json> {
     const opts: { [k: string]: any } = {
-        method: request.getMethod(),
-        url: request.getUrl(),
-        headers: JSON.parse(request.getHeaders()),
+        method: request.method,
+        url: request.url,
+        headers: JSON.parse(request.headers),
     };
     if (opts.method != 'GET') {
-        opts.body = request.getBody();
+        opts.body = request.body;
     }
     const response = await page.evaluate(({ url, method, body, headers }) => {
         return fetch(url, { method, body, headers }).then((data: Response) => {
@@ -70,9 +71,9 @@ export function deserializeUrlOrPredicate(
     return parseRegExpOrKeepString(urlOrPredicate);
 }
 
-export async function waitForResponse(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.Json[]> {
-    const urlOrPredicate = deserializeUrlOrPredicate(request.getUrlorpredicate());
-    const timeout = request.getTimeout();
+export async function waitForResponse(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json[]> {
+    const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
+    const timeout = request.timeout;
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
     let body = null;
     try {
@@ -92,61 +93,73 @@ export async function waitForResponse(request: pb.Request.HttpCapture, page: Pag
             postData: data.request().postData(),
         },
     });
-    const chunkSize = 3500000;
     const responseChunks = [];
-    if (body && body.length > chunkSize) {
-        logger.info(`body.length: ${body.length}`);
-        for (let i = 0; i < body.length; i += chunkSize) {
-            const chunk = body.substring(i, i + chunkSize);
-            const response = jsonResponse(jsonData, `Response received, chunk ${i}`, chunk);
-            logger.info(`chunked response: ${i}`);
-            responseChunks.push(response);
+    if (body !== null) {
+        const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
+        if (bodyChunks.length > 1) {
+            logger.info(`body.length: ${body.length}`);
+            for (let i = 0; i < bodyChunks.length; i++) {
+                const response = jsonResponse(jsonData, `Response received, chunk ${i}`, bodyChunks[i]);
+                logger.info(`chunked response: ${i}`);
+                responseChunks.push(response);
+            }
+        } else {
+            responseChunks.push(jsonResponse(jsonData, 'Response received', body));
         }
     } else {
-        if (body !== null) {
-            const response = jsonResponse(jsonData, 'Response received', body);
-            responseChunks.push(response);
-        } else {
-            const jsonDataMap = JSON.parse(jsonData);
-            jsonDataMap.body = null;
-            const response = jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', '');
-            responseChunks.push(response);
-        }
+        const jsonDataMap = JSON.parse(jsonData);
+        jsonDataMap.body = null;
+        responseChunks.push(jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', ''));
     }
     logger.info(`responseChunks.length: ${responseChunks.length}`);
     return responseChunks;
 }
-export async function waitForRequest(request: pb.Request.HttpCapture, page: Page): Promise<pb.Response.String> {
-    const urlOrPredicate = deserializeUrlOrPredicate(request.getUrlorpredicate());
-    const timeout = request.getTimeout();
+export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json> {
+    const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
+    const timeout = request.timeout;
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
-    return stringResponse(result.url(), 'Request completed within timeout.');
+    let postData;
+    try {
+        postData = JSON.parse(result.postData() || 'null');
+    } catch (e) {
+        logger.info(`Failed to parse postData as JSON: ${String(e)}, using raw postData`);
+        postData = result.postData();
+    }
+    const jsonData = JSON.stringify({
+        url: result.url(),
+        method: result.method(),
+        headers: result.headers(),
+        postData: postData,
+    });
+    logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);
+    const matcherStr = typeof urlOrPredicate === 'string' ? urlOrPredicate : urlOrPredicate.toString();
+    return jsonResponse(jsonData, `Request completed within timeout ${timeout}ms by using matcher: ${matcherStr}`);
 }
 
-export async function waitForNavigation(request: pb.Request.UrlOptions, page: Page): Promise<pb.Response.Empty> {
-    const url = parseRegExpOrKeepString(<string>request.getUrl()?.getUrl());
-    const timeout = request.getUrl()?.getDefaulttimeout();
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit' | undefined>request.getWaituntil();
-    await page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil });
+export async function waitForNavigation(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
+    const url = parseRegExpOrKeepString(<string>request.url?.url);
+    const timeout = request.url?.defaultTimeout;
+    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit' | undefined>request.waitUntil;
+    await withLoadReport(page, () => page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil }));
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
-export async function WaitForPageLoadState(request: pb.Request.PageLoadState, page: Page): Promise<pb.Response.Empty> {
-    const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.getState();
-    const timeout = request.getTimeout();
+export async function WaitForPageLoadState(request: pb.Request_PageLoadState, page: Page): Promise<pb.Response_Empty> {
+    const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.state;
+    const timeout = request.timeout;
     logger.info(`timeout: ${timeout} state: ${state}`);
-    await page.waitForLoadState(state, { timeout });
+    await withLoadReport(page, () => page.waitForLoadState(state, { timeout }));
     return emptyWithLog(`Load state ${state} got in ${timeout}`);
 }
 
 export async function waitForDownload(
-    request: pb.Request.DownloadOptions,
+    request: pb.Request_DownloadOptions,
     state: PlaywrightState,
     page: Page,
-): Promise<pb.Response.Json> {
-    const saveAs = request.getPath();
-    const waitForFinish = request.getWaitforfinish();
-    const downloadTimeout = request.getDownloadtimeout();
+): Promise<pb.Response_Json> {
+    const saveAs = request.path;
+    const waitForFinish = request.waitForFinish;
+    const downloadTimeout = request.downloadTimeout;
     return await _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
 }
 
@@ -156,8 +169,9 @@ export async function _waitForDownload(
     saveAs: string,
     downloadTimeout: number,
     waitForFinished: boolean,
-): Promise<pb.Response.Json> {
-    const downloadObject = await page.waitForEvent('download');
+): Promise<pb.Response_Json> {
+    const downloadWaitStartedAt = Date.now();
+    const downloadObject = await page.waitForEvent('download', { timeout: downloadTimeout || undefined });
 
     // @ts-ignore
     const downloadsPath = state.activeBrowser.browser?._options?.downloadsPath;
@@ -191,10 +205,14 @@ export async function _waitForDownload(
         }
     }
     if (downloadTimeout > 0) {
+        const remainingTimeout = Math.max(downloadTimeout - (Date.now() - downloadWaitStartedAt), 0);
+        let timer: NodeJS.Timeout | undefined;
         const readStream = await Promise.race([
             downloadObject.createReadStream(),
-            new Promise((resolve) => setTimeout(resolve, downloadTimeout)),
-        ]);
+            new Promise((resolve) => {
+                timer = setTimeout(resolve, remainingTimeout);
+            }),
+        ]).finally(() => clearTimeout(timer));
         if (!readStream) {
             await downloadObject.cancel();
             throw new Error('Download failed, Timeout exceeded.');
@@ -215,10 +233,10 @@ export async function _waitForDownload(
 }
 
 export async function getDownloadState(
-    request: pb.Request.DownloadID,
+    request: pb.Request_DownloadID,
     state: PlaywrightState,
-): Promise<pb.Response.Json> {
-    const downloadID = request.getId();
+): Promise<pb.Response_Json> {
+    const downloadID = request.id;
     const activeIndexedPage = state.activeBrowser?.page;
     if (!activeIndexedPage) {
         throw new Error('No active page found');
@@ -272,10 +290,10 @@ export async function getDownloadState(
 }
 
 export async function cancelDownload(
-    request: pb.Request.DownloadID,
+    request: pb.Request_DownloadID,
     state: PlaywrightState,
-): Promise<pb.Response.Empty> {
-    const downloadID = request.getId();
+): Promise<pb.Response_Empty> {
+    const downloadID = request.id;
     const activeIndexedPage = state.activeBrowser?.page;
     if (!activeIndexedPage) {
         throw new Error('No active page found');

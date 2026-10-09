@@ -1,14 +1,14 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Test Setup          Set Library Timeout
-Test Teardown       Run Keywords    Restore Library Timeout    AND    Wait For All Promises
+Test Setup       Set Library Timeout
+Test Teardown    Run Keywords    Restore Library Timeout    AND    Wait For All Promises
 
-Test Tags           slow
+Test Tags        slow
 
 *** Variables ***
-${CUSTOM_DL_PATH} =         ${CURDIR}/download_file
-${ORIGINAL_TIMEOUT} =       1s
+${CUSTOM_DL_PATH} =      ${CURDIR}/download_file
+${ORIGINAL_TIMEOUT} =    1s
 
 *** Test Cases ***
 Upload Upload_test_file
@@ -155,6 +155,32 @@ Wait For Download With Custom Path
     Remove File    ${CUSTOM_DL_PATH}
     Remove File    ${file_object.saveAs}
 
+Wait For Download That Starts Slower Than Browser Timeout
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    Set Browser Timeout    1s
+    ${dl_promise} =    Promise To Wait For Download    download_timeout=10s
+    Click    id=slow_start_download
+    ${file_object} =    Wait For    ${dl_promise}
+    File Should Exist    ${file_object}[saveAs]
+    Remove File    ${file_object}[saveAs]
+
+Wait For Download Fails At Browser Timeout By Default
+    New Context    acceptDownloads=True
+    New Page
+    Set Browser Timeout    1s
+    ${dl_promise} =    Promise To Wait For Download
+    Run Keyword And Expect Error    *Timeout 1000ms exceeded while waiting for event "download"*
+    ...    Wait For    ${dl_promise}
+
+Download Fails Without Crashing When File Is Not Fetched Within Download Timeout
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    Set Browser Timeout    1s
+    Run Keyword And Expect Error    *Timeout 500ms exceeded while waiting for event "download"*
+    ...    Download    ${ROOT_URL}api/download/slow?transferMs=2000    download_timeout=500ms
+    Get Title    ==    Downloads
+
 Wait For Download Relative To downloadsPath
     New Browser    ${BROWSER}    headless=${HEADLESS}    downloadsPath=${OUTPUT DIR}
     New Context    acceptDownloads=True
@@ -219,7 +245,7 @@ Restore Library Timeout
 
 Generate Test File
     [Arguments]    ${size_in_mb}
-    ${filename} =    Set Variable    ${size_in_mb}MB
+    VAR    ${filename} =    ${size_in_mb}MB
     ${size_in_bytes} =    Evaluate    1024 * ${size_in_mb}
     IF    os.sys.platform.startswith('win32')
         Run    fsutil file createNew ${CURDIR}/${filename}.file ${${size_in_bytes}*1024}
@@ -230,7 +256,7 @@ Generate Test File
 
 Generate Test Text File
     [Arguments]    ${length_of_text}
-    ${filename} =    Set Variable    ${length_of_text}.txt
+    VAR    ${filename} =    ${length_of_text}.txt
     ${length_of_text} =    Convert To Integer    ${length_of_text}
     ${full_path} =    Normalize Path    ${CURDIR}${/}${filename}
     Evaluate

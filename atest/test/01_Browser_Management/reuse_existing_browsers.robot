@@ -1,11 +1,11 @@
 *** Settings ***
-Resource            imports.resource
+Resource         imports.resource
 
-Suite Setup         Close Browser    ALL
-Test Teardown       Close Browser    ALL
+Suite Setup      Close Browser    ALL
+Test Teardown    Close Browser    ALL
 
 *** Variables ***
-${ARGS} =       ["--user-agent FAKE_AGENT"]
+${ARGS} =    ["--user-agent FAKE_AGENT"]
 
 *** Test Cases ***
 New Browser With Reuse_existing Does Not Open New Browser If Matching One Exists
