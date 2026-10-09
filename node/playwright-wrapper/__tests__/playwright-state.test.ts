@@ -16,6 +16,7 @@ import {
     closeAllBrowsers,
     closeBrowser,
     closeBrowserServer,
+    closeContext,
     extensionKeywordCall,
     locatorCache,
     newPage,
@@ -552,6 +553,32 @@ describe('adoptContext', () => {
 
         await expect(state.getActiveBrowser().close()).rejects.toThrow('gone');
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the browser and waits for onClose when its context is closed', async () => {
+        const state = new PlaywrightState();
+        let released = false;
+        await state.adoptContext(makeMockContext([makeMockPage()]), async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            released = true;
+        });
+
+        await closeContext({ value: false }, state);
+
+        expect(released).toBe(true);
+        expect(state.browserStack).toHaveLength(0);
+    });
+
+    it('closes the browser and runs onClose even if closing its context fails', async () => {
+        expect.assertions(3);
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()], jest.fn().mockRejectedValue(new Error('gone')));
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, onClose);
+
+        await expect(closeContext({ value: false }, state)).rejects.toThrow('gone');
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(state.browserStack).toHaveLength(0);
     });
 });
 

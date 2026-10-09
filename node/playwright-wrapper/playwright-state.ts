@@ -834,11 +834,16 @@ export async function closeContext(request: Request_Bool, openBrowsers: Playwrig
     for (const page of activeBrowser.context?.pageStack || []) {
         await _saveCoverageReport(page);
     }
-    await openBrowsers.getActiveContext()?.close();
-    activeBrowser.popContext();
-    // Closing Persistent Context if Context is closed.
-    if (activeBrowser.contextStack.length === 0 && activeBrowser.browser === null) {
-        void closeBrowser(openBrowsers);
+    // A persistent or adopted context is the only context of a browser without a browser object.
+    // Closing it closes that browser too, which runs its onClose, even if closing the context fails.
+    const closesBrowser = activeBrowser.browser === null && activeBrowser.contextStack.length === 1;
+    try {
+        await openBrowsers.getActiveContext()?.close();
+        activeBrowser.popContext();
+    } finally {
+        if (closesBrowser) {
+            await closeBrowser(openBrowsers);
+        }
     }
     return emptyWithLog('Successfully closed Context');
 }
