@@ -514,12 +514,13 @@ class Browser(DynamicCore):
                 ``playwright`` and ``adoptContext`` are filled in by the library rather
                 than taken from the keyword call. ``adoptContext(context, onClose)``
                 registers a BrowserContext that the function created itself, for
-                example with ``playwright.chromium.launchPersistentContext`` or
-                ``playwright._electron.launch``, as a new active browser and makes its
-                first page the active page, so the other keywords work on it. It
-                returns the new browser, context and page ids. Closing that browser
-                closes the context and then calls the optional async ``onClose`` once,
-                so the function can release what it owns, such as an app or a device
+                example with ``playwright.chromium.launchPersistentContext`` or as
+                ``app.context()`` of an app from ``playwright._electron.launch``, as a
+                new active browser and makes its first page the active page, so the
+                other keywords work on it. It returns the new browser and context ids,
+                and the page id if the context has a page. Closing that browser closes
+                the context and then calls the optional async ``onClose`` once, so the
+                function can release what the context does not own, such as a device
                 connection. Can be a single path, a
                 comma-separated list of paths or a real list of strings. See
                 https://robotframework-browser.org/docs/extending/javascript-extensions
