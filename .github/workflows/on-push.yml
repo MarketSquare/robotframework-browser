@@ -178,7 +178,9 @@ jobs:
       if: ${{ always() && hashFiles('utest/output/pytest_xunit.xml') != '' }}
       with:
         name: Unit test results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
-        path: utest/output/pytest_xunit.xml
+        path: |
+          utest/output/pytest_xunit.xml
+          utest/output/test-app/
     - name: Run Node.js unit tests with coverage
       if: matrix.shard == 1
       run: |
@@ -206,6 +208,19 @@ jobs:
       with:
         name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: atest/output
+    # The Test App and the Node wrapper sometimes die with SIGTRAP on macOS and print
+    # nothing; the macOS crash report holds the faulting stack.
+    - name: Collect Node crash reports on macOS
+      if: ${{ always() && matrix.os == 'macos-latest' }}
+      run: |
+        mkdir -p node-crash-reports
+        find ~/Library/Logs/DiagnosticReports -name 'node*' -exec cp {} node-crash-reports/ \; || true
+    - uses: actions/upload-artifact@v7
+      if: ${{ always() && matrix.os == 'macos-latest' }}
+      with:
+        name: Node crash reports-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        path: node-crash-reports/
+        if-no-files-found: ignore
     - name: Github Job Summary
       if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
       run: |
