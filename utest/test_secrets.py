@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 import sys
 from unittest.mock import MagicMock
 
@@ -21,15 +20,6 @@ ERROR_MESSAGE = (
 
 class Response:
     log = "log message"
-
-
-@pytest.fixture
-def application_server():
-    process = subprocess.Popen(
-        ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
-    )
-    yield
-    process.terminate()
 
 
 @pytest.fixture
@@ -140,7 +130,7 @@ def test_http_credentials_in_new_context():
     assert result_raw_options["httpCredentials"]["password"] == "PWD"
 
 
-def test_creds_from_python(application_server, browser):
+def test_creds_from_python(browser):
     with pytest.raises(RobotNotRunningError):
         browser.new_context(
             httpCredentials={"username": "$name}", "password": "$password"}

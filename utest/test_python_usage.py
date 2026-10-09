@@ -1,6 +1,4 @@
 import logging
-import subprocess
-import time
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -13,37 +11,6 @@ from Browser import SupportedBrowsers
 from Browser.utils import PlaywrightLogTypes
 
 PW_LOG = "playwright-log.txt"
-
-
-@pytest.fixture
-def application_server():
-    process = subprocess.Popen(
-        ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
-    )
-
-    import socket
-
-    start_time = time.time()
-    while time.time() - start_time < 10:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            result = sock.connect_ex(("localhost", 7272))
-            if result == 0:
-                sock.close()
-                break
-        except:
-            pass
-        finally:
-            sock.close()
-        time.sleep(0.1)
-    else:
-        process.terminate()
-        raise RuntimeError("Server failed to start within timeout")
-
-    time.sleep(0.5)
-
-    yield
-    process.terminate()
 
 
 @pytest.fixture
@@ -126,20 +93,20 @@ def test_playwright_constructor_port_skips_local_node_check(monkeypatch):
     assert pw.port == "12345"
 
 
-def test_open_page_get_text(application_server, browser):
-    browser.new_page("localhost:7272/dist/")
+def test_open_page_get_text(test_app_url, browser):
+    browser.new_page(f"{test_app_url}/dist/")
     text = browser.get_text("h1", AssertionOperator["=="], "Login Page")
     assert text == "Login Page"
 
 
-def test_click_with_a_plain_string_button(application_server, browser):
-    browser.new_page("localhost:7272/dist/")
+def test_click_with_a_plain_string_button(test_app_url, browser):
+    browser.new_page(f"{test_app_url}/dist/")
     browser.click_with_options("#clickWithOptions", "middle")
     assert browser.get_text("#mouse_button") == "middle"
 
 
-def test_get_text_with_a_plain_string_assertion_operator(application_server, browser):
-    browser.new_page("localhost:7272/dist/")
+def test_get_text_with_a_plain_string_assertion_operator(test_app_url, browser):
+    browser.new_page(f"{test_app_url}/dist/")
     assert browser.get_text("h1", "==", "Login Page") == "Login Page"
     with pytest.raises(AssertionError):
         browser.get_text("h1", "==", "Wrong Page")
@@ -150,40 +117,38 @@ def test_readme_example(browser):
     assert "Playwright" in browser.get_text("h1")
 
 
-def test_playwright_log(browser: Browser.Browser, application_server):
+def test_playwright_log(browser: Browser.Browser, test_app_url):
     root_folder = Path(browser.outputdir)
     log_file = root_folder / PW_LOG
     assert not log_file.is_file()
-    browser.new_page("localhost:7272/dist/")
+    browser.new_page(f"{test_app_url}/dist/")
     assert log_file.is_file()
 
 
 def test_playwright_log_new_file(
-    browser_log_exist_unlink_false: Browser.Browser, application_server
+    browser_log_exist_unlink_false: Browser.Browser, test_app_url
 ):
     root_folder = Path(browser_log_exist_unlink_false.outputdir)
-    browser_log_exist_unlink_false.new_page("localhost:7272/dist/")
+    browser_log_exist_unlink_false.new_page(f"{test_app_url}/dist/")
     log_files = [
         file for file in root_folder.iterdir() if file.name.startswith("playwright-log")
     ]
     assert len(log_files) == 2
 
 
-def test_playwright_log_with_unlink(
-    browser_log_exist: Browser.Browser, application_server
-):
+def test_playwright_log_with_unlink(browser_log_exist: Browser.Browser, test_app_url):
     root_folder = Path(browser_log_exist.outputdir)
     log_file = root_folder / PW_LOG
     log_file.touch()
-    browser_log_exist.new_page("localhost:7272/dist/")
+    browser_log_exist.new_page(f"{test_app_url}/dist/")
     assert log_file.is_file()
 
 
-def test_playwright_log_disabled(browser_no_log: Browser.Browser, application_server):
+def test_playwright_log_disabled(browser_no_log: Browser.Browser, test_app_url):
     root_folder = Path(browser_no_log.outputdir)
     log_file = root_folder / PW_LOG
     assert not log_file.is_file()
-    browser_no_log.new_page("localhost:7272/dist/")
+    browser_no_log.new_page(f"{test_app_url}/dist/")
     assert not log_file.is_file()
 
 
@@ -219,9 +184,9 @@ def test_playwright_double_close():
     browser.playwright.close()
 
 
-def test_promise_handling(browser, application_server):
+def test_promise_handling(browser, test_app_url):
     file = Path(__file__)
-    browser.new_page("localhost:7272/dist/")
+    browser.new_page(f"{test_app_url}/dist/")
     promise = browser.promise_to_upload_file(file.resolve())
     browser.click("#file_chooser")
     browser.wait_for(promise)
@@ -277,8 +242,8 @@ def browser_locator_handler(tmpdir):
     browser.close_browser("ALL")
 
 
-def test_custom_locator_handler(browser_locator_handler, application_server):
-    browser_locator_handler.new_page("http://localhost:7272/overlay.html")
+def test_custom_locator_handler(browser_locator_handler, test_app_url):
+    browser_locator_handler.new_page(f"{test_app_url}/overlay.html")
     browser_locator_handler.click("id=textHeading")
     browser_locator_handler.customLocatorHandler("id=overlay", "id=OverlayCloseButton")
     browser_locator_handler.click("id=CreateOverlayButton")

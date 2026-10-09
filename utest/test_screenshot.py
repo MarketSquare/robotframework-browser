@@ -1,19 +1,9 @@
 import os
-import subprocess
 import uuid
 
 import pytest
 
 import Browser
-
-
-@pytest.fixture
-def application_server():
-    process = subprocess.Popen(
-        ["node", "./node/dynamic-test-app/dist/server.js", "-p", "7272"]
-    )
-    yield
-    process.terminate()
 
 
 @pytest.fixture
@@ -24,8 +14,8 @@ def browser(tmpdir):
     browser.close_browser("ALL")
 
 
-def test_take_screenshot(application_server, browser):
-    browser.new_page("localhost:7272/dist/")
+def test_take_screenshot(test_app_url, browser):
+    browser.new_page(f"{test_app_url}/dist/")
     screenshot_path = browser.take_screenshot(rf"screenshot-{uuid.uuid4()}")
     assert os.path.exists(screenshot_path)
     screenshot_path = browser.take_screenshot()
