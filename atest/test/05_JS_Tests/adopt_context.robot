@@ -1,8 +1,8 @@
 *** Settings ***
-Library       Browser    jsextension=${CURDIR}/adopt.js
-Resource      imports.resource
+Library      Browser    jsextension=${CURDIR}/adopt.js
+Resource     ../variables.resource
 
-Force Tags    no-iframe
+Test Tags    no-iframe
 
 *** Test Cases ***
 Browser Keywords Work On A Context Adopted By A JavaScript Extension
