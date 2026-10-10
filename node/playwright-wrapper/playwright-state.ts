@@ -159,7 +159,7 @@ export async function extensionKeywordCall(
     state: PlaywrightState,
 ): Promise<Response_Json[]> {
     const keywordName = request.name;
-    const args = JSON.parse(request.arguments) as { arguments: [string, unknown][] };
+    const args = JSON.parse(request.arguments) as { arguments: [string, unknown][]; defaultTimeout?: number };
     const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
     if (!extension) throw Error(`Could not find keyword ${keywordName}`);
     const keyword = extension[keywordName];
@@ -175,6 +175,9 @@ export async function extensionKeywordCall(
     apiArguments.set('context', state.getActiveContext());
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
+    apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
+        state.adoptContext(context, options, args.defaultTimeout),
+    );
     const functionArguments = argNames.map((argName) => apiArguments.get(argName) || namedArguments[argName]);
     const result = await keyword(...functionArguments);
     if (result === undefined) {
@@ -194,6 +197,28 @@ interface BrowserAndConfs {
     browser: Browser | null;
     browserType: 'chromium' | 'firefox' | 'webkit';
     headless: boolean;
+}
+
+/*
+ * What a BrowserState is made of. Launched and connected browsers take their
+ * name from the browser type; adopted contexts get the name their creator passes.
+ */
+interface BrowserStateConfig {
+    browser: Browser | null;
+    name: string;
+    headless: boolean;
+}
+
+function _browserStateConfig({ browser, browserType, headless }: BrowserAndConfs): BrowserStateConfig {
+    return { browser, name: browserType, headless };
+}
+
+export interface AdoptContextOptions {
+    name?: string;
+    headless?: boolean;
+    onClose?: () => Promise<void>;
+    tracing?: string;
+    contextOptions?: Record<string, unknown>;
 }
 
 async function _newBrowser(
@@ -301,6 +326,25 @@ async function _createIndexedContext(
     return indexedContext;
 }
 
+/*
+ * Indexes a context and every page it already has. The context's first page
+ * ends up last in the page stack, so it becomes the active page.
+ */
+async function _indexContextWithPages(
+    context: BrowserContext,
+    defaultTimeout: number | undefined,
+    traceFile: string,
+    options?: Record<string, unknown>,
+): Promise<IndexedContext> {
+    const indexedContext = await _createIndexedContext(context, defaultTimeout, traceFile, options);
+    for (const page of context.pages()) {
+        if (!indexedContext.pageStack.some((indexed) => indexed.p === page)) {
+            indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+        }
+    }
+    return indexedContext;
+}
+
 function indexedPage(newPage: Page): IndexedPage {
     trackRequests(newPage);
     const timestamp = new Date().getTime() / 1000;
@@ -398,7 +442,7 @@ export class PlaywrightState {
         if (currentBrowser === undefined) {
             logger.info('No active browser, creating a new one');
             const browserAndConfs = await _newBrowser(browserType || 'chromium', true, timeout);
-            const newState = new BrowserState(browserAndConfs);
+            const newState = new BrowserState(_browserStateConfig(browserAndConfs));
             this.browserStack.push(newState);
             return { browser: newState, newBrowser: true };
         } else {
@@ -490,7 +534,7 @@ export class PlaywrightState {
         if (browserState !== undefined) {
             this.browserStack = this.browserStack.filter((b) => b.browser !== adding_browser);
         } else {
-            browserState = new BrowserState(browserAndConfs);
+            browserState = new BrowserState(_browserStateConfig(browserAndConfs));
         }
         const browserContexts = browserState.browser?.contexts();
         if (browserContexts !== undefined) {
@@ -513,6 +557,40 @@ export class PlaywrightState {
         }
         this.browserStack.push(browserState);
         return browserState;
+    }
+
+    /*
+     * Adds a context that was created outside the library, for example by a
+     * JavaScript extension, as a new active browser without a browser object.
+     * Its first page becomes the active page, and it gets the library's default
+     * timeout like a context the library creates. Closing the context closes the
+     * browser, as with a persistent context. options.onClose runs once after that,
+     * so the creator can release what the context does not own, such as a device.
+     * The browser is named 'adopted' and not headless unless the creator says otherwise.
+     * With options.tracing, the context is traced like one created with a trace file.
+     * options.contextOptions are the options the context was created with, kept like
+     * those of New Context, so that keywords depending on them, such as Download, work.
+     */
+    public async adoptContext(
+        context: BrowserContext,
+        options: AdoptContextOptions = {},
+        defaultTimeout?: number,
+    ): Promise<AdoptedContext> {
+        const browserState = new BrowserState({
+            browser: null,
+            name: options.name ?? 'adopted',
+            headless: options.headless ?? false,
+        });
+        browserState.onClose = options.onClose;
+        const indexedContext = await _indexContextWithPages(
+            context,
+            defaultTimeout,
+            options.tracing ?? '',
+            options.contextOptions,
+        );
+        browserState.pushContext(indexedContext);
+        this.browserStack.push(browserState);
+        return { browserId: browserState.id, contextId: indexedContext.id, pageId: browserState.page?.id };
     }
 
     public addBrowserServer = (browserServer: BrowserServer): void => {
@@ -630,6 +708,12 @@ export type IndexedPage = {
 
 type Uuid = string;
 
+type AdoptedContext = {
+    browserId: Uuid;
+    contextId: Uuid;
+    pageId: Uuid | undefined;
+};
+
 type FailedPage = {
     context: IndexedContext;
     page: IndexedPage;
@@ -640,32 +724,38 @@ type FailedPage = {
  * User opened items should get pushed and page opened unshifted
  * */
 export class BrowserState {
-    constructor(browserAndConfs: BrowserAndConfs) {
-        this.name = browserAndConfs.browserType;
-        this.browser = browserAndConfs.browser;
-        this.headless = browserAndConfs.headless;
+    constructor(config: BrowserStateConfig) {
+        this.name = config.name;
+        this.browser = config.browser;
+        this.headless = config.headless;
         this._contextStack = [];
         this.id = `browser=${uuidv4()}`;
     }
     private _contextStack: IndexedContext[];
     browser: Browser | null;
-    name?: string;
+    name: string;
     id: Uuid;
     headless: boolean;
+    onClose?: () => Promise<void>;
 
     public async close(): Promise<void> {
-        for (const context of this.contextStack) {
-            const traceFile = context.traceFile;
-            if (traceFile) {
-                await context.c.tracing.stop({ path: traceFile });
+        try {
+            for (const context of this.contextStack) {
+                const traceFile = context.traceFile;
+                if (traceFile) {
+                    await context.c.tracing.stop({ path: traceFile });
+                }
+                await context.c.close();
             }
-            await context.c.close();
+            this._contextStack = [];
+            if (this.browser !== null) {
+                await this.browser.close();
+            }
+        } finally {
+            const onClose = this.onClose;
+            this.onClose = undefined;
+            await onClose?.();
         }
-        this._contextStack = [];
-        if (this.browser === null) {
-            return;
-        }
-        await this.browser.close();
     }
 
     public async getOrCreateActiveContext(defaultTimeout: number | undefined): Promise<IIndexedContext> {
@@ -784,11 +874,16 @@ export async function closeContext(request: Request_Bool, openBrowsers: Playwrig
     for (const page of activeBrowser.context?.pageStack || []) {
         await _saveCoverageReport(page);
     }
-    await openBrowsers.getActiveContext()?.close();
-    activeBrowser.popContext();
-    // Closing Persistent Context if Context is closed.
-    if (activeBrowser.contextStack.length === 0 && activeBrowser.browser === null) {
-        void closeBrowser(openBrowsers);
+    // A persistent or adopted context is the only context of a browser without a browser object.
+    // Closing it closes that browser too, which runs its onClose, even if closing the context fails.
+    const closesBrowser = activeBrowser.browser === null && activeBrowser.contextStack.length === 1;
+    try {
+        await openBrowsers.getActiveContext()?.close();
+        activeBrowser.popContext();
+    } finally {
+        if (closesBrowser) {
+            await closeBrowser(openBrowsers);
+        }
     }
     return emptyWithLog('Successfully closed Context');
 }
@@ -974,12 +1069,10 @@ export async function newPersistentContext(
         throw new Error('A new browser was created in error while trying to create a persistent context');
     }
 
-    const indexedContext = await _createIndexedContext(context, timeout, traceFile, options);
-    const page = indexedContext.c.pages()[0];
-    indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
+    const indexedContext = await _indexContextWithPages(context, timeout, traceFile, options);
     const baseResponse = await _finishContextResponse(indexedContext, browserState, options);
     const currentBrowser = openBrowsers.activeBrowser;
-    const currentPage = indexedContext.pageStack[0];
+    const currentPage = indexedContext.pageStack[indexedContext.pageStack.length - 1];
     const videoPath = await currentPage.p.video()?.path();
     const video = { video_path: videoPath || null, contextUuid: indexedContext.id };
     return {

@@ -16,6 +16,8 @@ import {
     closeAllBrowsers,
     closeBrowser,
     closeBrowserServer,
+    closeContext,
+    extensionKeywordCall,
     locatorCache,
     newPage,
     PlaywrightState,
@@ -25,7 +27,7 @@ import {
 function makeBrowserState(id: string): BrowserState {
     const state = new BrowserState({
         browser: null,
-        browserType: 'chromium',
+        name: 'chromium',
         headless: true,
     });
     state.id = id;
@@ -254,7 +256,7 @@ describe('BrowserState', () => {
         } as unknown as Browser;
         const browser = new BrowserState({
             browser: browserMock,
-            browserType: 'chromium',
+            name: 'chromium',
             headless: true,
         });
         browser.pushContext({
@@ -478,5 +480,188 @@ describe('removeFailedPage', () => {
         await removeFailedPage({ token: 'unknown' }, state);
 
         expect(browser.page?.id).toBe('page=open');
+    });
+});
+
+function makeMockPage() {
+    return { on: jest.fn() } as any;
+}
+
+function makeMockContext(pages: any[], close = jest.fn().mockResolvedValue(undefined)) {
+    const tracing = { start: jest.fn().mockResolvedValue(undefined), stop: jest.fn().mockResolvedValue(undefined) };
+    return { pages: () => pages, on: jest.fn(), close, setDefaultTimeout: jest.fn(), tracing } as any;
+}
+
+describe('adoptContext', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('adds the context as a new active browser without a browser object', async () => {
+        const state = new PlaywrightState();
+        state.browserStack.push(makeBrowserState('browser=existing'));
+
+        const adopted = await state.adoptContext(makeMockContext([makeMockPage()]));
+
+        expect(state.browserStack).toHaveLength(2);
+        expect(state.activeBrowser?.id).toBe(adopted.browserId);
+        expect(state.activeBrowser?.browser).toBeNull();
+        expect(state.activeBrowser?.context?.id).toBe(adopted.contextId);
+        expect(state.activeBrowser?.name).toBe('adopted');
+        expect(state.activeBrowser?.headless).toBe(false);
+    });
+
+    it('takes the name and headless that the creator passes', async () => {
+        const state = new PlaywrightState();
+
+        await state.adoptContext(makeMockContext([makeMockPage()]), { name: 'electron', headless: true });
+
+        expect(state.activeBrowser?.name).toBe('electron');
+        expect(state.activeBrowser?.headless).toBe(true);
+    });
+
+    it('traces the context and saves the trace before closing it', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        await state.adoptContext(context, { tracing: '/traces/app.zip' });
+
+        await state.getActiveBrowser().close();
+
+        expect(context.tracing.start).toHaveBeenCalledWith({ screenshots: true, snapshots: true });
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: '/traces/app.zip' });
+        expect(context.tracing.stop.mock.invocationCallOrder[0]).toBeLessThan(
+            context.close.mock.invocationCallOrder[0],
+        );
+    });
+
+    it('does not trace the context without the tracing option', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        await state.adoptContext(context);
+
+        await state.getActiveBrowser().close();
+
+        expect(context.tracing.start).not.toHaveBeenCalled();
+        expect(context.tracing.stop).not.toHaveBeenCalled();
+    });
+
+    it('keeps the options the context was created with', async () => {
+        const state = new PlaywrightState();
+
+        await state.adoptContext(makeMockContext([makeMockPage()]), { contextOptions: { acceptDownloads: true } });
+
+        expect(state.activeBrowser?.context?.options).toEqual({ acceptDownloads: true });
+    });
+
+    it('sets the library timeout as the default timeout of the context', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+
+        await state.adoptContext(context, {}, 5000);
+
+        expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
+    });
+
+    it('registers every existing page and makes the first one active', async () => {
+        const state = new PlaywrightState();
+        const first = makeMockPage();
+        const second = makeMockPage();
+
+        const adopted = await state.adoptContext(makeMockContext([first, second]));
+
+        expect(state.activeBrowser?.context?.pageStack.map((page) => page.p)).toEqual([second, first]);
+        expect(state.activeBrowser?.page?.p).toBe(first);
+        expect(adopted.pageId).toBe(state.activeBrowser?.page?.id);
+    });
+
+    it('keeps an existing browser state with a null browser separate', async () => {
+        const state = new PlaywrightState();
+
+        const one = await state.adoptContext(makeMockContext([makeMockPage()]));
+        const two = await state.adoptContext(makeMockContext([makeMockPage()]));
+
+        expect(state.browserStack).toHaveLength(2);
+        expect(state.browserStack.map((browser) => browser.id)).toEqual([one.browserId, two.browserId]);
+    });
+
+    it('runs onClose once after the adopted context is closed', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, { onClose });
+        const adopted = state.getActiveBrowser();
+
+        await closeBrowser(state);
+        await adopted.close();
+
+        expect(context.close).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('runs onClose even if closing the context fails', async () => {
+        expect.assertions(2);
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()], jest.fn().mockRejectedValue(new Error('gone')));
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, { onClose });
+
+        await expect(state.getActiveBrowser().close()).rejects.toThrow('gone');
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('closes the browser and waits for onClose when its context is closed', async () => {
+        const state = new PlaywrightState();
+        let released = false;
+        await state.adoptContext(makeMockContext([makeMockPage()]), {
+            onClose: async () => {
+                await new Promise((resolve) => setTimeout(resolve, 0));
+                released = true;
+            },
+        });
+
+        await closeContext({ value: false }, state);
+
+        expect(released).toBe(true);
+        expect(state.browserStack).toHaveLength(0);
+    });
+
+    it('closes the browser and runs onClose even if closing its context fails', async () => {
+        expect.assertions(3);
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()], jest.fn().mockRejectedValue(new Error('gone')));
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, { onClose });
+
+        await expect(closeContext({ value: false }, state)).rejects.toThrow('gone');
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(state.browserStack).toHaveLength(0);
+    });
+});
+
+describe('extensionKeywordCall', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('lets an extension function adopt a context it created', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        async function openOwnContext(adoptContext: (c: unknown, options?: unknown) => Promise<unknown>) {
+            return adoptContext(context, { name: 'own' });
+        }
+        state.extensions.push({ openOwnContext } as any);
+        const call = { write: jest.fn() } as any;
+
+        const responses = await extensionKeywordCall(
+            { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [], defaultTimeout: 5000 }) },
+            call,
+            state,
+        );
+
+        const adopted = JSON.parse(responses.map((response) => response.bodyPart).join(''));
+        expect(adopted.browserId).toBe(state.activeBrowser?.id);
+        expect(state.activeBrowser?.context?.c).toBe(context);
+        expect(state.activeBrowser?.name).toBe('own');
+        expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
     });
 });
