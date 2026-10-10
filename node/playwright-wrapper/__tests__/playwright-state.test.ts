@@ -676,4 +676,31 @@ describe('extensionKeywordCall', () => {
         expect(state.activeBrowser?.name).toBe('own');
         expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
     });
+
+    it('passes null as the browser of an adopted context', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        let received: unknown = 'not called';
+        async function openOwnContext(adoptContext: (c: unknown) => Promise<unknown>) {
+            return adoptContext(context);
+        }
+        async function useBrowser(browser: unknown) {
+            received = browser;
+        }
+        state.extensions.push({ openOwnContext, useBrowser } as any);
+        const call = { write: jest.fn() } as any;
+
+        await extensionKeywordCall(
+            { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [['adoptContext', 'RESERVED']] }) },
+            call,
+            state,
+        );
+        await extensionKeywordCall(
+            { name: 'useBrowser', arguments: JSON.stringify({ arguments: [['browser', 'RESERVED']] }) },
+            call,
+            state,
+        );
+
+        expect(received).toBeNull();
+    });
 });

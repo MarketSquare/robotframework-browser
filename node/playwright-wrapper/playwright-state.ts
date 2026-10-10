@@ -178,7 +178,11 @@ export async function extensionKeywordCall(
     apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
         state.adoptContext(context, options),
     );
-    const functionArguments = argNames.map((argName) => apiArguments.get(argName) || namedArguments[argName]);
+    // Injected values can be null or undefined, for example the browser of a
+    // persistent or adopted context, so they must not fall back to the marker.
+    const functionArguments = argNames.map((argName) =>
+        apiArguments.has(argName) ? apiArguments.get(argName) : namedArguments[argName],
+    );
     const result = await keyword(...functionArguments);
     if (result === undefined) {
         return [jsonResponse('', 'ok')];
