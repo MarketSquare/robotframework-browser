@@ -17,6 +17,13 @@ Browser Keywords Work On A Context Adopted By A JavaScript Extension
     ${on_close_called} =    Adopted Context On Close Was Called
     Should Be True    ${on_close_called}
 
+An Extension Gives An Adopted Context The Library Timeout
+    Set Browser Timeout    1s    scope=Test
+    Open Adopted Persistent Context    ${OUTPUT_DIR}/adopted-profile-timeout    ${LOGIN_URL}    ${HEADLESS}
+    ${elapsed} =    Milliseconds Until A Wait Fails
+    Should Be True    ${elapsed} < 5000
+    [Teardown]    Close Browser
+
 An Adopted Context Is Traced And Accepts Downloads
     Open Adopted Persistent Context With Tracing And Downloads
     ...    ${OUTPUT_DIR}/adopted-profile-traced    ${LOGIN_URL}    ${HEADLESS}    ${OUTPUT_DIR}/adopted-trace.zip

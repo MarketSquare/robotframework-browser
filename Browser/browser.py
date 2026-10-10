@@ -511,14 +511,16 @@ class Browser(DynamicCore):
                 modules must be in CommonJS format; exported functions become keywords
                 and an ``fn.rfdoc`` string becomes a keyword's documentation. The
                 argument names ``page``, ``context``, ``browser``, ``logger``,
-                ``playwright`` and ``adoptContext`` are filled in by the library rather
-                than taken from the keyword call. ``adoptContext(context, options)``
+                ``playwright``, ``adoptContext`` and ``defaultTimeout`` are filled in by
+                the library rather than taken from the keyword call. ``defaultTimeout``
+                is the library timeout in milliseconds. ``adoptContext(context, options)``
                 registers a BrowserContext that the function created itself, for
                 example with ``playwright.chromium.launchPersistentContext`` or as
                 ``app.context()`` of an app from ``playwright._electron.launch``, as a
                 new active browser and makes its first page the active page, so the
-                other keywords work on it. Like the contexts the library creates, it
-                gets the library timeout as its default timeout. It returns the new
+                other keywords work on it. It keeps its own default timeout;
+                ``context.setDefaultTimeout(defaultTimeout)`` gives it the library
+                timeout, like the contexts the library creates. It returns the new
                 browser and context ids, and the page id if the context has a page.
                 Closing that browser closes the context. The optional ``options`` are
                 ``name``, which `Get Browser Catalog` reports as the browser's type,
@@ -833,6 +835,9 @@ class Browser(DynamicCore):
             arg_name = item[0]
             if arg_name in self._js_injected_arguments:
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
+            elif arg_name == "defaultTimeout":
+                # The library timeout at the time of the call.
+                arg_set_texts.append('("defaultTimeout", int(self.timeout))')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
                 if arg_name == "args":
@@ -888,8 +893,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     "RESERVED" if arg_name in self._js_injected_arguments else value,
                 )
                 for arg_name, value in args.items()
-            ],
-            "defaultTimeout": int(self.timeout),
+            ]
         }
         with self.playwright.grpc_channel() as stub:
             responses = stub.CallExtensionKeyword(

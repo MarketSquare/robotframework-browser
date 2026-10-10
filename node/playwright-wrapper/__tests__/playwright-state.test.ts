@@ -553,13 +553,13 @@ describe('adoptContext', () => {
         expect(state.activeBrowser?.context?.options).toEqual({ acceptDownloads: true });
     });
 
-    it('sets the library timeout as the default timeout of the context', async () => {
+    it('leaves the default timeout of the context alone', async () => {
         const state = new PlaywrightState();
         const context = makeMockContext([makeMockPage()]);
 
-        await state.adoptContext(context, {}, 5000);
+        await state.adoptContext(context);
 
-        expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
+        expect(context.setDefaultTimeout).not.toHaveBeenCalled();
     });
 
     it('registers every existing page and makes the first one active', async () => {
@@ -646,14 +646,26 @@ describe('extensionKeywordCall', () => {
     it('lets an extension function adopt a context it created', async () => {
         const state = new PlaywrightState();
         const context = makeMockContext([makeMockPage()]);
-        async function openOwnContext(adoptContext: (c: unknown, options?: unknown) => Promise<unknown>) {
+        async function openOwnContext(
+            defaultTimeout: number,
+            adoptContext: (c: unknown, options?: unknown) => Promise<unknown>,
+        ) {
+            context.setDefaultTimeout(defaultTimeout);
             return adoptContext(context, { name: 'own' });
         }
         state.extensions.push({ openOwnContext } as any);
         const call = { write: jest.fn() } as any;
 
         const responses = await extensionKeywordCall(
-            { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [], defaultTimeout: 5000 }) },
+            {
+                name: 'openOwnContext',
+                arguments: JSON.stringify({
+                    arguments: [
+                        ['defaultTimeout', 5000],
+                        ['adoptContext', 'RESERVED'],
+                    ],
+                }),
+            },
             call,
             state,
         );

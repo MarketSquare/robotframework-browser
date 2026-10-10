@@ -1,10 +1,11 @@
 let adoptedContextClosed = false;
 let onCloseCalled = false;
 
-async function openAdoptedPersistentContext(userDataDir, url, headless, playwright, adoptContext) {
+async function openAdoptedPersistentContext(userDataDir, url, headless, playwright, adoptContext, defaultTimeout) {
     const context = await playwright.chromium.launchPersistentContext(userDataDir, {
         headless: String(headless).toLowerCase() !== 'false',
     });
+    context.setDefaultTimeout(defaultTimeout);
     context.on('close', () => (adoptedContextClosed = true));
     await context.pages()[0].goto(url);
     return adoptContext(context, {
@@ -24,6 +25,16 @@ async function openAdoptedPersistentContextWithTracingAndDownloads(userDataDir, 
     return adoptContext(context, { tracing, contextOptions });
 }
 
+async function millisecondsUntilAWaitFails(page) {
+    const start = Date.now();
+    try {
+        await page.waitForSelector('#not-on-the-page');
+    } catch {
+        return Date.now() - start;
+    }
+    return -1;
+}
+
 async function adoptedContextIsClosed() {
     return adoptedContextClosed;
 }
@@ -35,5 +46,6 @@ async function adoptedContextOnCloseWasCalled() {
 exports.__esModule = true;
 exports.openAdoptedPersistentContext = openAdoptedPersistentContext;
 exports.openAdoptedPersistentContextWithTracingAndDownloads = openAdoptedPersistentContextWithTracingAndDownloads;
+exports.millisecondsUntilAWaitFails = millisecondsUntilAWaitFails;
 exports.adoptedContextIsClosed = adoptedContextIsClosed;
 exports.adoptedContextOnCloseWasCalled = adoptedContextOnCloseWasCalled;

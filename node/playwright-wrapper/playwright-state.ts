@@ -159,7 +159,7 @@ export async function extensionKeywordCall(
     state: PlaywrightState,
 ): Promise<Response_Json[]> {
     const keywordName = request.name;
-    const args = JSON.parse(request.arguments) as { arguments: [string, unknown][]; defaultTimeout?: number };
+    const args = JSON.parse(request.arguments) as { arguments: [string, unknown][] };
     const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
     if (!extension) throw Error(`Could not find keyword ${keywordName}`);
     const keyword = extension[keywordName];
@@ -176,7 +176,7 @@ export async function extensionKeywordCall(
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
     apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
-        state.adoptContext(context, options, args.defaultTimeout),
+        state.adoptContext(context, options),
     );
     const functionArguments = argNames.map((argName) => apiArguments.get(argName) || namedArguments[argName]);
     const result = await keyword(...functionArguments);
@@ -562,20 +562,16 @@ export class PlaywrightState {
     /*
      * Adds a context that was created outside the library, for example by a
      * JavaScript extension, as a new active browser without a browser object.
-     * Its first page becomes the active page, and it gets the library's default
-     * timeout like a context the library creates. Closing the context closes the
-     * browser, as with a persistent context. options.onClose runs once after that,
+     * Its first page becomes the active page. It keeps its default timeout; an
+     * extension gives it the library timeout with the injected defaultTimeout.
+     * Closing the context closes the browser, as with a persistent context. options.onClose runs once after that,
      * so the creator can release what the context does not own, such as a device.
      * The browser is named 'adopted' and not headless unless the creator says otherwise.
      * With options.tracing, the context is traced like one created with a trace file.
      * options.contextOptions are the options the context was created with, kept like
      * those of New Context, so that keywords depending on them, such as Download, work.
      */
-    public async adoptContext(
-        context: BrowserContext,
-        options: AdoptContextOptions = {},
-        defaultTimeout?: number,
-    ): Promise<AdoptedContext> {
+    public async adoptContext(context: BrowserContext, options: AdoptContextOptions = {}): Promise<AdoptedContext> {
         const browserState = new BrowserState({
             browser: null,
             name: options.name ?? 'adopted',
@@ -584,7 +580,7 @@ export class PlaywrightState {
         browserState.onClose = options.onClose;
         const indexedContext = await _indexContextWithPages(
             context,
-            defaultTimeout,
+            undefined,
             options.tracing ?? '',
             options.contextOptions,
         );
