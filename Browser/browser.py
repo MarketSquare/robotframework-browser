@@ -522,10 +522,17 @@ class Browser(DynamicCore):
                 browser and context ids, and the page id if the context has a page.
                 Closing that browser closes the context. The optional ``options`` are
                 ``name``, which `Get Browser Catalog` reports as the browser's type,
-                ``adopted`` by default; ``headless``, ``false`` by default; and
+                ``adopted`` by default; ``headless``, ``false`` by default;
                 ``onClose``, an async function that runs once after the context is
                 closed, so the function can release what the context does not own,
-                such as a device connection. Can be a single path, a
+                such as a device connection; ``tracing``, the path of a trace file
+                or folder, as the library resolves it for ``tracing`` of `New Context`;
+                and ``contextOptions``, the options the context was created with, in
+                the form of Playwright's browser context options. With ``tracing``,
+                the library starts tracing the context and saves the trace before it
+                closes the context. With ``contextOptions``, keywords that depend on
+                them work on the context, such as `Download` with
+                ``acceptDownloads``. Can be a single path, a
                 comma-separated list of paths or a real list of strings. See
                 https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and

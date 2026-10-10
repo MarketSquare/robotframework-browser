@@ -488,7 +488,8 @@ function makeMockPage() {
 }
 
 function makeMockContext(pages: any[], close = jest.fn().mockResolvedValue(undefined)) {
-    return { pages: () => pages, on: jest.fn(), close, setDefaultTimeout: jest.fn() } as any;
+    const tracing = { start: jest.fn().mockResolvedValue(undefined), stop: jest.fn().mockResolvedValue(undefined) };
+    return { pages: () => pages, on: jest.fn(), close, setDefaultTimeout: jest.fn(), tracing } as any;
 }
 
 describe('adoptContext', () => {
@@ -517,6 +518,39 @@ describe('adoptContext', () => {
 
         expect(state.activeBrowser?.name).toBe('electron');
         expect(state.activeBrowser?.headless).toBe(true);
+    });
+
+    it('traces the context and saves the trace before closing it', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        await state.adoptContext(context, { tracing: '/traces/app.zip' });
+
+        await state.getActiveBrowser().close();
+
+        expect(context.tracing.start).toHaveBeenCalledWith({ screenshots: true, snapshots: true });
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: '/traces/app.zip' });
+        expect(context.tracing.stop.mock.invocationCallOrder[0]).toBeLessThan(
+            context.close.mock.invocationCallOrder[0],
+        );
+    });
+
+    it('does not trace the context without the tracing option', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        await state.adoptContext(context);
+
+        await state.getActiveBrowser().close();
+
+        expect(context.tracing.start).not.toHaveBeenCalled();
+        expect(context.tracing.stop).not.toHaveBeenCalled();
+    });
+
+    it('keeps the options the context was created with', async () => {
+        const state = new PlaywrightState();
+
+        await state.adoptContext(makeMockContext([makeMockPage()]), { contextOptions: { acceptDownloads: true } });
+
+        expect(state.activeBrowser?.context?.options).toEqual({ acceptDownloads: true });
     });
 
     it('sets the library timeout as the default timeout of the context', async () => {

@@ -14,6 +14,16 @@ async function openAdoptedPersistentContext(userDataDir, url, headless, playwrig
     });
 }
 
+async function openAdoptedPersistentContextWithTracingAndDownloads(userDataDir, url, headless, tracing, playwright, adoptContext) {
+    const contextOptions = { acceptDownloads: true };
+    const context = await playwright.chromium.launchPersistentContext(userDataDir, {
+        headless: String(headless).toLowerCase() !== 'false',
+        ...contextOptions,
+    });
+    await context.pages()[0].goto(url);
+    return adoptContext(context, { tracing, contextOptions });
+}
+
 async function adoptedContextIsClosed() {
     return adoptedContextClosed;
 }
@@ -24,5 +34,6 @@ async function adoptedContextOnCloseWasCalled() {
 
 exports.__esModule = true;
 exports.openAdoptedPersistentContext = openAdoptedPersistentContext;
+exports.openAdoptedPersistentContextWithTracingAndDownloads = openAdoptedPersistentContextWithTracingAndDownloads;
 exports.adoptedContextIsClosed = adoptedContextIsClosed;
 exports.adoptedContextOnCloseWasCalled = adoptedContextOnCloseWasCalled;

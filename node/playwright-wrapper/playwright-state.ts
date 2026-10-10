@@ -217,6 +217,8 @@ export interface AdoptContextOptions {
     name?: string;
     headless?: boolean;
     onClose?: () => Promise<void>;
+    tracing?: string;
+    contextOptions?: Record<string, unknown>;
 }
 
 async function _newBrowser(
@@ -565,6 +567,9 @@ export class PlaywrightState {
      * browser, as with a persistent context. options.onClose runs once after that,
      * so the creator can release what the context does not own, such as a device.
      * The browser is named 'adopted' and not headless unless the creator says otherwise.
+     * With options.tracing, the context is traced like one created with a trace file.
+     * options.contextOptions are the options the context was created with, kept like
+     * those of New Context, so that keywords depending on them, such as Download, work.
      */
     public async adoptContext(
         context: BrowserContext,
@@ -577,7 +582,12 @@ export class PlaywrightState {
             headless: options.headless ?? false,
         });
         browserState.onClose = options.onClose;
-        const indexedContext = await _indexContextWithPages(context, defaultTimeout, '');
+        const indexedContext = await _indexContextWithPages(
+            context,
+            defaultTimeout,
+            options.tracing ?? '',
+            options.contextOptions,
+        );
         browserState.pushContext(indexedContext);
         this.browserStack.push(browserState);
         return { browserId: browserState.id, contextId: indexedContext.id, pageId: browserState.page?.id };
