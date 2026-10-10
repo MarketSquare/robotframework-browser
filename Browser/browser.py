@@ -512,16 +512,20 @@ class Browser(DynamicCore):
                 and an ``fn.rfdoc`` string becomes a keyword's documentation. The
                 argument names ``page``, ``context``, ``browser``, ``logger``,
                 ``playwright`` and ``adoptContext`` are filled in by the library rather
-                than taken from the keyword call. ``adoptContext(context, onClose)``
+                than taken from the keyword call. ``adoptContext(context, options)``
                 registers a BrowserContext that the function created itself, for
                 example with ``playwright.chromium.launchPersistentContext`` or as
                 ``app.context()`` of an app from ``playwright._electron.launch``, as a
                 new active browser and makes its first page the active page, so the
-                other keywords work on it. It returns the new browser and context ids,
-                and the page id if the context has a page. Closing that browser closes
-                the context and then calls the optional async ``onClose`` once, so the
-                function can release what the context does not own, such as a device
-                connection. Can be a single path, a
+                other keywords work on it. Like the contexts the library creates, it
+                gets the library timeout as its default timeout. It returns the new
+                browser and context ids, and the page id if the context has a page.
+                Closing that browser closes the context. The optional ``options`` are
+                ``name``, which `Get Browser Catalog` reports as the browser's type,
+                ``adopted`` by default; ``headless``, ``false`` by default; and
+                ``onClose``, an async function that runs once after the context is
+                closed, so the function can release what the context does not own,
+                such as a device connection. Can be a single path, a
                 comma-separated list of paths or a real list of strings. See
                 https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and
@@ -877,7 +881,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     "RESERVED" if arg_name in self._js_injected_arguments else value,
                 )
                 for arg_name, value in args.items()
-            ]
+            ],
+            "defaultTimeout": int(self.timeout),
         }
         with self.playwright.grpc_channel() as stub:
             responses = stub.CallExtensionKeyword(

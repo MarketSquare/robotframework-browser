@@ -7,8 +7,10 @@ async function openAdoptedPersistentContext(userDataDir, url, headless, playwrig
     });
     context.on('close', () => (adoptedContextClosed = true));
     await context.pages()[0].goto(url);
-    return adoptContext(context, async () => {
-        onCloseCalled = true;
+    return adoptContext(context, {
+        onClose: async () => {
+            onCloseCalled = true;
+        },
     });
 }
 

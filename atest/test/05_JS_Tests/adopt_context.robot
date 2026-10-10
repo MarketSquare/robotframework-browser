@@ -8,6 +8,7 @@ Force Tags    no-iframe
 Browser Keywords Work On A Context Adopted By A JavaScript Extension
     ${adopted} =    Open Adopted Persistent Context    ${OUTPUT_DIR}/adopted-profile    ${LOGIN_URL}    ${HEADLESS}
     Get Browser Ids    ACTIVE    contains    ${adopted}[browserId]
+    Get Browser Catalog    validate    [b["type"] for b in value if b["id"] == "${adopted}[browserId]"] == ["adopted"]
     Get Text    h1    ==    Login Page
     Close Browser
     ${closed} =    Adopted Context Is Closed
