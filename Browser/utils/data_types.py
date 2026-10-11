@@ -707,7 +707,8 @@ class RecordHar(TypedDict, total=False):
     `omitContent`: Optional setting to control whether to omit request content
     from the HAR. Default is False
 
-    `path`: Path on the filesystem to write the HAR file to.
+    `path`: Path on the filesystem to write the HAR file to. A relative path is
+    relative to the output directory.
 
     Example:
     | ${har} =    Create Dictionary     path=/path/to/har.file    omitContent=True

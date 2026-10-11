@@ -751,7 +751,8 @@ class PlaywrightState(LibraryComponent):
           - ``recordHar``: Enables [http://www.softwareishard.com/blog/har-12-spec/ |
                 HAR] recording for all pages into a file. The ``path`` key must be a
                 path to a file, for example ``recordHar={'path':
-                '${OUTPUT_DIR}/har.file'}``. If not specified, the HAR is not recorded.
+                '${OUTPUT_DIR}/har.file'}``. A relative path is relative to the output
+                directory. If not specified, the HAR is not recorded.
                 Make sure to close the context for the HAR to be saved.
           - ``recordVideo``: Enables video recording for all pages into a folder. If not
                 specified videos are not recorded. Make sure to close the context for
@@ -1024,6 +1025,7 @@ class PlaywrightState(LibraryComponent):
         params = convert_typed_dict(self.new_context.__annotations__, params)
         params = self._set_video_path(params)
         params = self._set_video_size_to_int(params)
+        params = self._set_har_path(params)
         reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
@@ -1106,6 +1108,12 @@ class PlaywrightState(LibraryComponent):
         else:
             vid_path = self.video_output / video_path
         params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
+        return params
+
+    def _set_har_path(self, params: dict) -> dict:
+        record_har = params.get("recordHar")
+        if record_har and record_har.get("path"):
+            record_har["path"] = str(Path(self.outputdir, record_har["path"]).resolve())
         return params
 
     def _get_record_video_size(self, params) -> tuple[int | None, int | None]:

@@ -31,3 +31,9 @@ No Har Created
     Close Context
     ${files} =    List Files In Directory    ${OUTPUT_DIR}    har*
     Length Should Be    ${files}    3
+
+Relative Har Path Is Relative To The Output Directory
+    New Context    recordHar={"path": "relative-path.har"}
+    New Page    ${LOGIN_URL}
+    Close Context
+    File Should Not Be Empty    ${OUTPUT_DIR}/relative-path.har
