@@ -1,4 +1,6 @@
 import logging
+import subprocess
+import sys
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -182,6 +184,15 @@ def test_playwright_double_close():
     browser.new_browser()
     browser.playwright.close()
     browser.playwright.close()
+
+
+def test_grpc_does_not_run_in_processes_forked_after_a_keyword(browser):
+    browser.new_page("about:blank")
+    for _ in range(10):
+        child = subprocess.run(
+            [sys.executable, "-c", "pass"], capture_output=True, text=True, check=True
+        )
+        assert "fork parent" not in child.stdout + child.stderr
 
 
 def test_promise_handling(browser, test_app_url):

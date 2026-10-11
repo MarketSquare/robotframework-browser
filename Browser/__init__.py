@@ -11,6 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
+
+# Must be set before grpc is imported. With fork support on, gRPC runs its fork handler in
+# every child that subprocess forks before exec, and on macOS that handler sometimes kills
+# the child (for example the Node process) with SIGTRAP or SIGSEGV.
+os.environ.setdefault("GRPC_ENABLE_FORK_SUPPORT", "false")
+
 from assertionengine import AssertionOperator
 
 from .browser import Browser
