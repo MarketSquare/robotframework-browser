@@ -204,42 +204,42 @@ def test_promise_handling(browser, test_app_url):
     browser.get_text("#upload_result", AssertionOperator["=="], "test_python_usage.py")
 
 
-def test_promise_to_wait_for_response_with_name_arguments(browser):
+def test_promise_to_wait_for_response_with_name_arguments(browser, test_app_url):
     browser.new_page()
     logger = logging.getLogger()
     old_level = logger.getEffectiveLevel()
     logger.setLevel(logging.WARNING)
     promise = browser.promise_to("Wait For Response", "matcher=", "timeout=1s")
-    browser.go_to(url="https://www.google.com")
+    browser.go_to(url=f"{test_app_url}/dist/")
     logger.setLevel(old_level)
 
     assert promise.result() is not None
 
 
-def test_promise_to_wait_for_alert_with_name_arguments(browser):
+def test_promise_to_wait_for_alert_with_name_arguments(browser, test_app_url):
     browser.new_page()
     promise = browser.promise_to(
         "Wait For Alert", "action=accept", "prompt_input=Kala", "text=Wrong Text"
     )
-    browser.go_to(url="https://www.google.com")
+    browser.go_to(url=f"{test_app_url}/dist/")
     assert (promise.running() or promise.done()) is True
 
 
-def test_promise_to_wait_for_elements_state(browser):
+def test_promise_to_wait_for_elements_state(browser, test_app_url):
     browser.new_page()
     promise = browser.promise_to(
         "Wait For Elements State", "#victim", "hidden", "200ms"
     )
-    browser.go_to(url="https://www.google.com")
+    browser.go_to(url=f"{test_app_url}/dist/")
     assert (promise.running() or promise.done()) is True
 
 
-def test_promise_to_wait_for_elements_state_with_name_arguments(browser):
+def test_promise_to_wait_for_elements_state_with_name_arguments(browser, test_app_url):
     browser.new_page()
     promise = browser.promise_to(
         "Wait For Elements State", 'selector="#victim"', "state=hidden", "timeout=200ms"
     )
-    browser.go_to(url="https://www.google.com")
+    browser.go_to(url=f"{test_app_url}/dist/")
     assert (promise.running() or promise.done()) is True
 
 
