@@ -65,10 +65,10 @@ Login User
 Python keywords in `atest/library/` and `Browser/keywords/` can and should have docstrings. These are discoverable via libdoc and IDE tooling.
 
 ```python
-def assert_passed_duration(
-    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
+def child_test_status_should_be(
+    result: Result, name: str, status: str, message_pattern: str | None = None
 ) -> None:
-    """Assert that the time elapsed since start_time does not exceed max_duration_ms + delta_ms."""
+    """Verify status, and optionally the failure message, of a child run test."""
     ...
 ```
 
@@ -109,8 +109,8 @@ All Python keyword functions in `atest/library/` must have type annotations on p
 def start_test_server() -> str: ...
 
 
-def assert_passed_duration(
-    start_time: datetime, max_duration_ms: int, delta_ms: int = 300
+def child_test_status_should_be(
+    result: Result, name: str, status: str, message_pattern: str | None = None
 ) -> None: ...
 ```
 
@@ -119,7 +119,33 @@ def assert_passed_duration(
 def start_test_server(): ...
 
 
-def assert_passed_duration(start_time, max_duration_ms, delta_ms=300): ...
+def child_test_status_should_be(result, name, status, message_pattern=None): ...
+```
+
+### Do not assert elapsed wall-clock time
+
+CI runners stall, so a test that measures how long something took is flaky, and an upper bound
+like `< 5000` proves little about the value it means to check. To check a timeout, read the
+value Playwright reports in its error, `Timeout 1000ms exceeded`. Where nothing reports the
+value, assert only a lower bound: a loaded runner makes a wait longer, never shorter.
+
+**Good** — exact value from Playwright's error (`atest/test/08_Scope_Tests/scope_keywords.resource`)
+```robotframework
+*** Keywords ***
+Timeout Should Be
+    [Arguments]    ${expected_ms}
+    Run Keyword And Expect Error
+    ...    *Timeout ${expected_ms}ms exceeded*
+    ...    Click    id=not_here
+```
+
+**Bad** — elapsed time with a range
+```robotframework
+*** Test Cases ***
+Timeout Is Set
+    Set Browser Timeout    1s
+    ${elapsed} =    Milliseconds Until A Wait Fails
+    Should Be True    500 < ${elapsed} < 1700
 ```
 
 ### Avoid deeply nested user keywords
