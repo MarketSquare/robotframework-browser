@@ -25,7 +25,11 @@ def library(tmpdir, monkeypatch) -> Browser:
 def test_no_tracing_and_no_video_by_default(tmpdir, monkeypatch):
     browser = library(tmpdir, monkeypatch)
 
-    assert browser.adopted_context_options() == {"tracing": ""}
+    assert browser.adopted_context_options() == {
+        "tracing": None,
+        "recordVideo": None,
+        "recordHar": None,
+    }
 
 
 def test_tracing_follows_new_context(tmpdir, monkeypatch):
@@ -74,7 +78,9 @@ def test_video_folder_and_size_follow_new_context(tmpdir, monkeypatch):
 def test_registering_without_tracing_and_video_changes_nothing(tmpdir, monkeypatch):
     browser = library(tmpdir, monkeypatch)
 
-    video_path = browser.register_adopted_context("context=1", {"tracing": ""})
+    video_path = browser.register_adopted_context(
+        "context=1", browser.adopted_context_options()
+    )
 
     assert video_path == ""
     assert browser.tracing_contexts == []

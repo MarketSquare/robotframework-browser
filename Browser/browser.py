@@ -21,7 +21,7 @@ import sys
 import threading
 import time
 import types
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
@@ -78,10 +78,13 @@ from .utils import (
 
 # Importing this directly from .utils break the stub type checks
 from .utils.data_types import (
+    AdoptedContextOptions,
     DelayedKeyword,
     HighLightElement,
     KeywordCallStackEntry,
     LambdaFunction,
+    RecordHar,
+    RecordVideo,
     RegExp,
     RobotTypeConverter,
     SelectionType,
@@ -899,24 +902,29 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def adopted_context_options(
         self,
         tracing: bool | Path | None = None,
-        recordVideo: Mapping[str, Any] | None = None,
-        recordHar: Mapping[str, Any] | None = None,
-    ) -> dict[str, Any]:
+        recordVideo: RecordVideo | None = None,
+        recordHar: RecordHar | None = None,
+    ) -> AdoptedContextOptions:
         """Returns the tracing and recording options for a context that a JavaScript
         extension creates and hands over with ``adoptContext``.
 
         They follow the rules of `New Context`: ``tracing`` gives the trace path or
-        folder, also when ``ROBOT_FRAMEWORK_BROWSER_TRACING`` is set, or an empty
-        string. ``recordVideo`` gets the video folder and size, Browser's video
-        folder and 1280x720 by default, and keeps its other keys. A relative
-        ``path`` of ``recordHar`` becomes relative to the output directory. Pass
-        ``tracing`` on as the ``tracing`` option of ``adoptContext``, and
-        ``recordVideo`` and ``recordHar`` to Playwright when the extension creates
-        the context. After the extension returns, call `register_adopted_context`
-        with these options.
+        folder, also when ``ROBOT_FRAMEWORK_BROWSER_TRACING`` is set.
+        ``recordVideo`` gets the video folder and size, Browser's video folder and
+        1280x720 by default, and keeps its other keys. A relative ``path`` of
+        ``recordHar`` becomes relative to the output directory. ``None`` means off.
+        The keys can be passed to the extension function as keyword arguments:
+        ``tracing`` for the ``tracing`` option of ``adoptContext``, ``recordVideo``
+        and ``recordHar`` for Playwright when the extension creates the context.
+        After the extension returns, call `register_adopted_context` with these
+        options.
         """
         state = self._playwright_state
-        options: dict[str, Any] = {"tracing": state._resolve_trace_file(tracing)}
+        options: AdoptedContextOptions = {
+            "tracing": state._resolve_trace_file(tracing) or None,
+            "recordVideo": None,
+            "recordHar": None,
+        }
         if recordVideo is not None:
             params = {"recordVideo": {"dir": None, **recordVideo}}
             params = state._set_video_size_to_int(state._set_video_path(params))
@@ -933,7 +941,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def register_adopted_context(
         self,
         context_id: str,
-        options: dict[str, Any],
+        options: AdoptedContextOptions,
         video_path: str | None = None,
     ) -> str:
         """Registers a context that a JavaScript extension handed over with
@@ -945,11 +953,11 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         string if there is no video.
         """
         state = self._playwright_state
-        if options.get("tracing"):
+        if options["tracing"]:
             state.add_context_and_keyword_call_stack_to_trace(
                 options["tracing"], context_id
             )
-        if not options.get("recordVideo"):
+        if not options["recordVideo"]:
             return ""
         state.context_cache.add(context_id, options["recordVideo"]["size"])
         return state._embed_video({"video_path": video_path, "contextUuid": context_id})
