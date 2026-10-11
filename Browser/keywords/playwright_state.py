@@ -1247,7 +1247,10 @@ class PlaywrightState(LibraryComponent):
 
         The data is parsed into a python list containing data representing the open Objects.
 
-        On the root level the data contains a list of open browsers.
+        On the root level the data contains a list of open browsers. The ``type`` of a
+        browser is ``chromium``, ``firefox`` or ``webkit``. For a context that a JavaScript
+        extension adopted, it is the name the extension passed, ``adopted`` by default;
+        see ``jsextension`` in `Importing`.
 
         Data can be manipulated also with ``assertion_operator`` for example to find
         a specific id based on index or page title with ``then`` operator.
