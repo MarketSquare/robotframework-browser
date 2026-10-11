@@ -719,6 +719,20 @@ class RecordHar(TypedDict, total=False):
     path: str
 
 
+class AdoptedContextOptions(TypedDict):
+    """Tracing and recording options of a context that a JavaScript extension
+    creates and hands over with ``adoptContext``, as ``adopted_context_options``
+    returns them. ``None`` means off.
+
+    The keys are named like the options of `New Context`, so that they can be
+    passed on to the extension function as keyword arguments.
+    """
+
+    tracing: str | None
+    recordVideo: dict[str, Any] | None
+    recordHar: dict[str, Any] | None
+
+
 class _HttpCredentials(TypedDict):
     username: str | Secret
     password: str | Secret

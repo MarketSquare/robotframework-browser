@@ -15,6 +15,7 @@
 # flake8: noqa
 
 from .data_types import (
+    AdoptedContextOptions,
     AutoClosingLevel,
     BrowserInfo,
     BoundingBox,
