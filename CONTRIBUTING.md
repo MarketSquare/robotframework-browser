@@ -75,6 +75,10 @@ inv utest-node --coverage      # run with HTML + LCOV coverage report (output: n
 ### Acceptance tests
 Written with Robot Framework, run with `inv atest`. To rerun failed tests use `inv atest-failed`.
 
+Do not assert elapsed wall-clock time; it makes tests flaky in CI. To check a timeout, assert the
+value Playwright reports in its error, such as `Timeout 1000ms exceeded`. The rules for acceptance
+tests are in `.claude/skills/write-robot-tests/SKILL.md`.
+
 To collect Python and Node.js coverage during acceptance tests:
 ```
 inv atest-coverage [--suite <suite>]
