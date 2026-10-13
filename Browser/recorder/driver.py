@@ -49,7 +49,7 @@ def run_session(
     reset = True
     try:
         while True:
-            reply = client.poll(session.toolbar_state(), reset)
+            reply = _as_dict(client.poll(session.toolbar_state(), reset))
             reset = False
             if _apply(session, reply):
                 last_activity = clock()
@@ -60,7 +60,7 @@ def run_session(
             if reply.get("mode") == "stopped":
                 # Playwright flushes the Action it was holding back when its
                 # Record button stops the recording; take it before closing.
-                _apply(session, client.poll(session.toolbar_state(), False))
+                _drain_after_stop(session, client)
                 return "playwright"
             if not reply.get("pages"):
                 logger.info("recorder: all pages closed, ending the session")
@@ -74,39 +74,75 @@ def run_session(
         # cleanup failure may replace an exception already propagating.
         names: list[str] = []
         try:
-            names = session.close()
-        except Exception as error:
-            logger.debug(f"recorder: close failed: {error!r}")
-        _drain_log(session)
-        try:
-            client.stop()
-        except Exception as error:
-            logger.debug(f"recorder: stop failed: {error!r}")
+            try:
+                names = session.close()
+            except Exception as error:
+                logger.warn(f"recorder: close failed: {error!r}")
+            _drain_log(session)
+        finally:
+            try:
+                client.stop()
+            except Exception as error:
+                logger.debug(f"recorder: stop failed: {error!r}")
         logger.info(f"Recorded {len(names)} keyword(s): {', '.join(names) or '-'}")
 
 
+def _as_dict(reply: Any) -> dict:
+    """The reply crosses a process boundary; anything but a dict is an empty, healthy reply."""
+    return reply if isinstance(reply, dict) else {"mode": "recording", "pages": 1}
+
+
+def _entries(reply: dict, key: str) -> list[dict]:
+    """The well-formed (dict) entries of a list field; anything else is dropped."""
+    value = reply.get(key)
+    if not isinstance(value, list):
+        return []
+    return [entry for entry in value if isinstance(entry, dict)]
+
+
+def _drain_after_stop(session: RecorderSession, client: RecorderClient) -> None:
+    try:
+        _apply(session, _as_dict(client.poll(session.toolbar_state(), False)))
+    except Exception as error:
+        logger.warn(f"recorder: final poll failed: {error!r}")
+
+
 def _apply(session: RecorderSession, reply: dict) -> bool:
-    """Apply one poll reply. True if it carried any Action or command."""
-    events = reply.get("events") or []
-    commands = reply.get("commands") or []
-    for entry in events:
-        _safely(session, "event", entry)
+    """Apply one poll reply, events before commands.
+
+    True if it carried any well-formed Action or command: junk from the page
+    under test must not keep an idle session alive.
+    """
+    events = _entries(reply, "events")
+    commands = _entries(reply, "commands")
+    for event in events:
+        _safely(f"event {event!r}", _handle_event, session, event)
     for command in commands:
-        _safely(session, "command", command)
+        _safely(f"command {command!r}", _handle_command, session, command)
     return bool(events or commands)
 
 
-def _safely(session: RecorderSession, kind: str, entry: Any) -> None:
+def _handle_event(session: RecorderSession, event: dict) -> None:
+    session.handle_event(
+        str(event.get("event", "added")), dict(event.get("action") or {})
+    )
+
+
+def _handle_command(session: RecorderSession, command: dict) -> None:
+    session.handle_command(command)
+
+
+def _safely(
+    what: str,
+    handler: Callable[[RecorderSession, dict], None],
+    session: RecorderSession,
+    entry: dict,
+) -> None:
     """Survive one malformed event or command: the channel is page-callable (ADR 0010)."""
     try:
-        if kind == "event":
-            session.handle_event(
-                str(entry.get("event", "added")), dict(entry.get("action") or {})
-            )
-        else:
-            session.handle_command(dict(entry))
+        handler(session, entry)
     except Exception as error:
-        logger.warn(f"recorder: ignoring {kind} {entry!r}: {error!r}")
+        logger.warn(f"recorder: ignoring {what}: {error!r}")
 
 
 def _drain_log(session: RecorderSession) -> None:
