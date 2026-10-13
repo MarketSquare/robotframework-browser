@@ -39,6 +39,7 @@ from Browser.generated.playwright_pb2 import Request
 
 from .names import collect_known_keywords
 from .session import RecorderSession
+from .target import FileTarget
 
 _JS_EXTENSION = Path(__file__).parent.resolve() / "recorder.js"
 _POLL_KEYWORD = "rfbRecorderPoll"
@@ -133,7 +134,7 @@ class RecorderPlugin(LibraryComponent):
         target = Path(file).resolve() if file else self._default_target()
         known = collect_known_keywords()
         session = RecorderSession(
-            target,
+            FileTarget(target),
             fixed_name=fixed_name,
             known=known,
         )
@@ -165,6 +166,7 @@ class RecorderPlugin(LibraryComponent):
                         lambda command=command: session.handle_command(command or {}),
                         f"command {command!r}",
                     )
+                session.tick()
                 self._drain_log(session)
                 if session.stopped:
                     break
