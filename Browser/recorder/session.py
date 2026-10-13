@@ -21,16 +21,11 @@ is unit testable in milliseconds.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from .action_mapper import ActionMapper
-from .keyword_writer import (
-    LiveKeywordWriter,
-    existing_keyword_names,
-    keyword_name_error,
-    normalize_keyword_name,
-)
+from .keyword_writer import LiveKeywordWriter
+from .names import KnownKeywords, NameGuard, existing_keyword_names
 
 IDLE = "idle"
 RECORDING = "recording"
@@ -45,43 +40,27 @@ class RecorderSession:
     author, so an unusable name raises rather than being reported to a toolbar
     nobody is looking at yet.
 
-    ``known_keywords`` are the keyword names already visible in the running
-    Robot suite - every imported library and resource file. A recorded keyword
-    lands in a *resource*, and resource keywords outrank library keywords in
-    Robot's resolution order, so a name that merely repeats an existing one
-    silently replaces it on the next suite run. Since the ``new`` command is
-    callable by the page under test, that is a way for a page to substitute its
-    own body for `Log`, `No Operation` or `Click`.
+    ``known`` are the keyword names already visible in the running Robot suite
+    (see `KnownKeywords`). A recorded keyword lands in a *resource*, and resource
+    keywords outrank library keywords in Robot's resolution order, so a name that
+    merely repeats - or can be instantiated from - an existing one silently
+    replaces it on the next suite run. Since the ``new`` command is callable by
+    the page under test, `NameGuard` checks every name against it. A name the
+    target file already defines is rejected too: a Keyword Recording never
+    extends an existing keyword.
 
-    ``embedded_keywords`` covers the keywords a *literal* name can shadow
-    without repeating it: ``Open ${page} Page`` is instantiated by a call to
-    ``Open Login Page``, so a recording under that name takes its place. Each
-    entry pairs the declared name with a predicate that says whether a candidate
-    would be matched by it.
-
-    ``bdd_prefixes`` are the suite's ``Given``/``When``/... markers, which Robot
-    strips *before* resolving a keyword; a candidate is therefore checked with
-    each prefix stripped as well.
-
-    All three are injected rather than collected here so this class stays free
-    of any Robot runtime context.
+    It is injected rather than collected here so this class stays free of any
+    Robot runtime context.
     """
 
     def __init__(
         self,
         target: Path,
         fixed_name: str | None = None,
-        known_keywords: Iterable[str] | None = None,
-        embedded_keywords: Iterable[tuple[str, Callable[[str], bool]]] | None = None,
-        bdd_prefixes: Iterable[str] | None = None,
+        known: KnownKeywords | None = None,
     ) -> None:
         self.target = Path(target)
-        # normalized name -> the name as the user would see it in the message
-        self._known: dict[str, str] = {
-            normalize_keyword_name(name): name for name in known_keywords or ()
-        }
-        self._embedded = tuple(embedded_keywords or ())
-        self._bdd_prefixes = tuple(bdd_prefixes or ())
+        self._guard = NameGuard(known or KnownKeywords())
         self.stopped = False
         self.log: list[str] = []
         self._mapper = ActionMapper()
@@ -96,15 +75,8 @@ class RecorderSession:
         self._written = False
         self._dead = False
         if fixed_name is not None:
-            # Same collision surface as the `new` command, minus the literal
-            # duplicate: repeating a name the target file already has *is* the
-            # documented way to extend an existing keyword.
-            in_file = {
-                normalize_keyword_name(k): k
-                for k in existing_keyword_names(self.target)
-            }
-            error = keyword_name_error(fixed_name) or self._shadow_error(
-                fixed_name, also=in_file
+            error = self._guard.error(
+                fixed_name, taken=existing_keyword_names(self.target)
             )
             if error:
                 raise ValueError(error)
@@ -195,7 +167,9 @@ class RecorderSession:
             return
         # The command channel is callable by the page under test, so the name
         # is untrusted input, not just a typo risk.
-        error = keyword_name_error(name) or self._duplicate_error(name)
+        error = self._guard.error(
+            name, taken=[*self._keywords, *existing_keyword_names(self.target)]
+        )
         if error:
             self._error = error
             return
@@ -236,82 +210,6 @@ class RecorderSession:
             self._start(str(name))
 
     # -- helpers ----------------------------------------------------------- #
-
-    def _duplicate_error(self, name: str) -> str | None:
-        """Why ``name`` must not be recorded now, or ``None``.
-
-        Names are compared the way Robot compares them - caseless, ignoring
-        spaces and underscores - not as raw strings. Robot would otherwise
-        accept ``l_ogin as admin`` next to an existing ``Login As Admin`` and
-        then refuse *both* at run time, so a page could disable a keyword the
-        user already relies on just by re-spelling its name.
-        """
-        normalized = normalize_keyword_name(name)
-        recorded = {normalize_keyword_name(k): k for k in self._keywords}
-        in_file = {
-            normalize_keyword_name(k): k for k in existing_keyword_names(self.target)
-        }
-        for existing in (recorded, in_file):
-            if normalized in existing:
-                return f"Keyword '{existing[normalized]}' already exists."
-        return self._shadow_error(name, also={**recorded, **in_file})
-
-    def _shadow_error(
-        self, name: str, also: dict[str, str] | None = None
-    ) -> str | None:
-        """Why ``name`` would shadow a keyword the running suite already has.
-
-        Checked for the name itself *and* for every BDD-prefix-stripped form of
-        it. The stripped forms are refused for the opposite reason to the rest:
-        ``Namespace._get_bdd_style_runner`` runs *before* the full name is tried
-        and only falls through when the stripped name resolves to nothing, so a
-        recorded ``Given User Is Logged In`` can never take a call away from an
-        existing ``User Is Logged In`` - it is simply *unreachable*, and a
-        keyword the user can never call is not a recording worth writing. The
-        refusal is therefore conservative, not a hijack defence.
-
-        ``also`` are names that are only reachable in this direction - already
-        recorded ones and the target file's own - whose *literal* collision is
-        handled by the caller (for the target file it is a legitimate reuse), so
-        the candidate's own form is not looked up in them.
-        """
-        own = normalize_keyword_name(name)
-        for form in self._name_forms(name):
-            normalized = normalize_keyword_name(form)
-            existing = self._known.get(normalized)
-            if existing is None and normalized != own:
-                existing = (also or {}).get(normalized)
-            if existing is None:
-                existing = self._embedded_shadow(form)
-            if existing is not None:
-                return (
-                    f"Keyword '{existing}' already exists in this suite and would be "
-                    f"shadowed by '{name}'. Please choose another name."
-                )
-        return None
-
-    def _name_forms(self, name: str) -> list[str]:
-        """``name`` and every form Robot would resolve a call to it as."""
-        forms = [name]
-        for prefix in self._bdd_prefixes:
-            marker = f"{prefix} "
-            if name.lower().startswith(marker.lower()) and name[len(marker) :].strip():
-                forms.append(name[len(marker) :])
-        return forms
-
-    def _embedded_shadow(self, name: str) -> str | None:
-        """The embedded-argument keyword ``name`` would instantiate, if any."""
-        for declared, matches in self._embedded:
-            try:
-                matched = matches(name)
-            except Exception as error:
-                self.log.append(
-                    f"could not match '{name}' against '{declared}': {error!r}"
-                )
-                continue
-            if matched:
-                return declared
-        return None
 
     def _start(self, name: str) -> None:
         self._name = name

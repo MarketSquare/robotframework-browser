@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from robot.running.arguments.embedded import EmbeddedArguments
 
+from Browser.recorder.names import KnownKeywords
 from Browser.recorder.session import RecorderSession
 
 CLICK_A = {
@@ -318,7 +319,9 @@ _SUITE_KEYWORDS = ["Log", "No Operation", "Click", "New Page", "Open Browser"]
 
 @pytest.mark.parametrize("name", _SUITE_KEYWORDS)
 def test_new_rejects_a_name_that_shadows_a_keyword_of_the_running_suite(target, name):
-    session = RecorderSession(target, known_keywords=_SUITE_KEYWORDS)
+    session = RecorderSession(
+        target, known=KnownKeywords(names=frozenset(_SUITE_KEYWORDS))
+    )
     session.handle_command({"cmd": "new", "name": name})
     assert session.state == "idle"
     error = session.toolbar_state()["error"]
@@ -330,14 +333,20 @@ def test_new_rejects_a_name_that_shadows_a_keyword_of_the_running_suite(target, 
 @pytest.mark.parametrize("name", _SUITE_KEYWORDS)
 def test_fixed_name_that_shadows_a_keyword_of_the_running_suite_raises(target, name):
     with pytest.raises(ValueError, match="already exists in this suite"):
-        RecorderSession(target, fixed_name=name, known_keywords=_SUITE_KEYWORDS)
+        RecorderSession(
+            target,
+            fixed_name=name,
+            known=KnownKeywords(names=frozenset(_SUITE_KEYWORDS)),
+        )
     assert not target.exists()
 
 
 def test_collision_check_uses_robots_own_normalisation(target):
     # Robot resolves keyword names caseless and ignoring spaces/underscores, so
     # these are the *same* keyword to it.
-    session = RecorderSession(target, known_keywords=["Login As Admin"])
+    session = RecorderSession(
+        target, known=KnownKeywords(names=frozenset({"Login As Admin"}))
+    )
     session.handle_command({"cmd": "new", "name": "l_ogin as admin"})
     assert session.state == "idle"
     assert session.toolbar_state()["error"]
@@ -364,7 +373,9 @@ def test_duplicate_recorded_this_session_is_normalised_too(target):
 
 
 def test_a_name_no_keyword_uses_is_still_accepted(target):
-    session = RecorderSession(target, known_keywords=_SUITE_KEYWORDS)
+    session = RecorderSession(
+        target, known=KnownKeywords(names=frozenset(_SUITE_KEYWORDS))
+    )
     session.handle_command({"cmd": "new", "name": "Login As Büroleiter"})
     assert session.state == "recording"
     assert session.toolbar_state()["error"] is None
@@ -373,7 +384,7 @@ def test_a_name_no_keyword_uses_is_still_accepted(target):
 def test_no_known_keywords_keeps_the_session_usable(target):
     # `known_keywords` is empty when no suite is running; the recorder must
     # still work from plain Python.
-    session = RecorderSession(target, known_keywords=None)
+    session = RecorderSession(target)
     session.handle_command({"cmd": "new", "name": "Log"})
     assert session.state == "recording"
 
@@ -428,7 +439,7 @@ _BDD_PREFIXES = ("Given", "When", "Then", "And", "But", "Angenommen", "Wenn", "D
 def test_new_rejects_a_name_an_embedded_keyword_would_claim(target, name):
     # `Open ${page} Page` is *instantiated* by a literal call, so a recording
     # under that literal name silently replaces it - no name collision needed.
-    session = RecorderSession(target, embedded_keywords=_EMBEDDED)
+    session = RecorderSession(target, known=KnownKeywords(embedded=tuple(_EMBEDDED)))
     session.handle_command({"cmd": "new", "name": name})
     assert session.state == "idle"
     assert "another name" in session.toolbar_state()["error"]
@@ -438,7 +449,9 @@ def test_new_rejects_a_name_an_embedded_keyword_would_claim(target, name):
 def test_fixed_name_an_embedded_keyword_would_claim_raises(target):
     with pytest.raises(ValueError, match=r"Open \$\{page\} Page"):
         RecorderSession(
-            target, fixed_name="Open Login Page", embedded_keywords=_EMBEDDED
+            target,
+            fixed_name="Open Login Page",
+            known=KnownKeywords(embedded=tuple(_EMBEDDED)),
         )
     assert not target.exists()
 
@@ -469,9 +482,11 @@ _ACCEPTED_NAMES = [
 def test_embedded_and_bdd_checks_do_not_reject_ordinary_names(target, name):
     session = RecorderSession(
         target,
-        known_keywords=_SUITE_KEYWORDS,
-        embedded_keywords=_EMBEDDED,
-        bdd_prefixes=_BDD_PREFIXES,
+        known=KnownKeywords(
+            names=frozenset(_SUITE_KEYWORDS),
+            embedded=tuple(_EMBEDDED),
+            bdd_prefixes=_BDD_PREFIXES,
+        ),
     )
     session.handle_command({"cmd": "new", "name": name})
     assert session.toolbar_state()["error"] is None
@@ -486,7 +501,8 @@ def test_new_rejects_a_bdd_prefixed_name_because_it_would_be_unreachable(target)
     # in the user's suite, so the recorder refuses it rather than writing a
     # keyword that can never run.
     session = RecorderSession(
-        target, known_keywords=["Log"], bdd_prefixes=_BDD_PREFIXES
+        target,
+        known=KnownKeywords(names=frozenset({"Log"}), bdd_prefixes=_BDD_PREFIXES),
     )
     session.handle_command({"cmd": "new", "name": "Given Log"})
     assert session.state == "idle"
@@ -495,7 +511,7 @@ def test_new_rejects_a_bdd_prefixed_name_because_it_would_be_unreachable(target)
 
 def test_new_rejects_a_bdd_prefixed_name_that_takes_over_a_target_file_keyword(target):
     target.write_text("*** Keywords ***\nUser Is Logged In\n    Log    hi\n")
-    session = RecorderSession(target, bdd_prefixes=_BDD_PREFIXES)
+    session = RecorderSession(target, known=KnownKeywords(bdd_prefixes=_BDD_PREFIXES))
     session.handle_command({"cmd": "new", "name": "Wenn User Is Logged In"})
     assert session.state == "idle"
     assert "another name" in session.toolbar_state()["error"]
@@ -503,7 +519,8 @@ def test_new_rejects_a_bdd_prefixed_name_that_takes_over_a_target_file_keyword(t
 
 def test_a_bdd_prefixed_name_that_shadows_an_embedded_keyword_is_rejected(target):
     session = RecorderSession(
-        target, embedded_keywords=_EMBEDDED, bdd_prefixes=_BDD_PREFIXES
+        target,
+        known=KnownKeywords(embedded=tuple(_EMBEDDED), bdd_prefixes=_BDD_PREFIXES),
     )
     session.handle_command({"cmd": "new", "name": "Given Open Login Page"})
     assert session.state == "idle"
@@ -519,7 +536,7 @@ def test_fixed_name_is_checked_against_the_target_files_own_names_too(target):
         RecorderSession(
             target,
             fixed_name="Wenn User Is Logged In",
-            bdd_prefixes=_BDD_PREFIXES,
+            known=KnownKeywords(bdd_prefixes=_BDD_PREFIXES),
         )
 
 
@@ -527,19 +544,16 @@ def test_a_broken_embedded_matcher_does_not_kill_the_session(target):
     def boom(name):
         raise RuntimeError("no")
 
-    session = RecorderSession(target, embedded_keywords=[("Broken ${x}", boom)])
+    session = RecorderSession(
+        target, known=KnownKeywords(embedded=(("Broken ${x}", boom),))
+    )
     session.handle_command({"cmd": "new", "name": "Login As Admin"})
     assert session.state == "recording"
 
 
-def test_reusing_a_target_file_keyword_still_works(target):
-    # The target's own literal names are the ones the writer may reuse; the
-    # collision check must not swallow that documented behaviour.
+def test_a_fixed_name_the_target_file_already_defines_is_rejected(target):
+    # AC-37: a Keyword Recording never extends an existing keyword.
     target.write_text("*** Keywords ***\nSuite Local Keyword\n    Log    hi\n")
-    session = RecorderSession(
-        target,
-        fixed_name="Suite Local Keyword",
-        bdd_prefixes=_BDD_PREFIXES,
-        embedded_keywords=_EMBEDDED,
-    )
-    assert session.state == "recording"
+    with pytest.raises(ValueError, match="already exists"):
+        RecorderSession(target, fixed_name="suite_local_keyword")
+    assert target.read_text().count("Log    hi") == 1
