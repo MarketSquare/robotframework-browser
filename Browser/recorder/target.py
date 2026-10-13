@@ -20,7 +20,10 @@ whatever is on disk at that moment, so edits made in an IDE meanwhile survive.
 
 from __future__ import annotations
 
+import codecs
 import io
+import shutil
+import tempfile
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -82,6 +85,14 @@ class _Owned:
     signature: tuple
     created_section: bool
     separated: bool
+    section_separated: bool = False
+
+
+@dataclass
+class _Format:
+    bom: bool = False
+    eol: str = _EOL
+    final_newline: bool = True
 
 
 class FileTarget:
@@ -89,6 +100,7 @@ class FileTarget:
         self.path = Path(path)
         self.label = self.path.name
         self._owned: dict[str, _Owned] = {}
+        self._format: _Format | None = None
 
     def existing_names(self) -> set[str]:
         return existing_keyword_names(self.path)
@@ -124,17 +136,18 @@ class FileTarget:
                     f"'{keyword.name}' was removed outside the recorder and has "
                     "been written again."
                 )
-            section, created = self._keyword_section(model)
+            section, created, section_separated = self._keyword_section(model)
             separated = bool(section.body) and _ensure_blank_line(section.body)
             section.body.append(block)
             owned = _Owned(
                 (),
                 created or (owned.created_section if owned else False),
                 separated,
+                section_separated or (owned.section_separated if owned else False),
             )
         owned.signature = _signature(block)
         self._owned[key] = owned
-        model.save(str(self.path))
+        self._write(model)
         return notice
 
     def finish(self, keyword: RecordedKeyword) -> None:
@@ -159,31 +172,73 @@ class FileTarget:
                     isinstance(item, Keyword) for item in body
                 ):
                     del model.sections[position]
-                    if position > 0:
+                    if owned.section_separated and position > 0:
                         _pop_trailing_empty_line(model.sections[position - 1])
                     break
-        model.save(str(self.path))
+        self._write(model, restore_final_newline=not self._owned)
 
     # -- helpers ----------------------------------------------------------- #
 
     def _read(self) -> File:
-        if self.path.exists():
-            return get_model(str(self.path))
-        return File(source=str(self.path))
+        """Parse the file as it is on disk right now.
+
+        Byte level details Robot does not keep (BOM, CRLF, a missing final
+        newline) are remembered at first touch so `_write` can restore them.
+        """
+        if not self.path.exists():
+            self._format = self._format or _Format()
+            return File(source=str(self.path))
+        data = self.path.read_bytes()
+        bom = data.startswith(codecs.BOM_UTF8)
+        text = data[len(codecs.BOM_UTF8) if bom else 0 :].decode("utf-8", "replace")
+        crlf = "\r\n" in text
+        if self._format is None:
+            self._format = _Format(
+                bom=bom,
+                eol="\r\n" if crlf else "\n",
+                final_newline=not text or text.endswith("\n"),
+            )
+        return get_model(io.StringIO(text.replace("\r\n", "\n")))
+
+    def _write(self, model: File, restore_final_newline: bool = False) -> None:
+        """Write atomically, in the file's own BOM and line ending."""
+        fmt = self._format or _Format()
+        buffer = io.StringIO()
+        model.save(buffer)
+        text = buffer.getvalue()
+        if restore_final_newline and not fmt.final_newline and text.endswith("\n"):
+            text = text[:-1]
+        data = text.replace("\n", fmt.eol).encode("utf-8")
+        if fmt.bom:
+            data = codecs.BOM_UTF8 + data
+        directory = self.path.parent
+        with tempfile.NamedTemporaryFile(
+            "wb", dir=directory, prefix=f".{self.path.name}.", delete=False
+        ) as handle:
+            temp = Path(handle.name)
+            handle.write(data)
+        try:
+            if self.path.exists():
+                shutil.copymode(self.path, temp)
+            temp.replace(self.path)
+        except BaseException:
+            temp.unlink(missing_ok=True)
+            raise
 
     @staticmethod
-    def _keyword_section(model: File) -> tuple[KeywordSection, bool]:
+    def _keyword_section(model: File) -> tuple[KeywordSection, bool, bool]:
         for section in model.sections:
             if isinstance(section, KeywordSection):
-                return section, False
+                return section, False, False
+        separated = False
         if model.sections:
-            _ensure_blank_line(model.sections[-1].body)
+            separated = _ensure_blank_line(model.sections[-1].body)
         header = SectionHeader(
             [Token(Token.KEYWORD_HEADER, "*** Keywords ***"), Token(Token.EOL, _EOL)]
         )
         section = KeywordSection(header=header)
         model.sections.append(section)
-        return section, True
+        return section, True, separated
 
 
 def _parse_block(text: str) -> Keyword:

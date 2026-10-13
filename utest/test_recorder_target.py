@@ -263,3 +263,39 @@ def test_saving_over_a_foreign_keyword_of_the_same_name_is_refused(tmp_path):
     with pytest.raises(ValueError, match="already exists"):
         FileTarget(path).save(keyword("Existing"))
     assert path.read_text() == ORIGINAL
+
+
+def _save_and_remove(tmp_path, data: bytes):
+    path = tmp_path / "k.resource"
+    path.write_bytes(data)
+    target = FileTarget(path)
+    target.save(keyword())
+    saved = path.read_bytes()
+    target.remove("Fill Name")
+    return saved, path.read_bytes()
+
+
+def test_crlf_file_stays_crlf_and_is_restored(tmp_path):
+    data = ORIGINAL.replace("\n", "\r\n").encode()
+    saved, restored = _save_and_remove(tmp_path, data)
+    assert saved.startswith(data)
+    assert saved.count(b"\n") == saved.count(b"\r\n")
+    assert restored == data
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        b"*** Settings ***\nLibrary    Browser\n\n\n",
+        b"*** Settings ***\nLibrary    Browser\n   \n",
+        b"*** Keywords ***\nExisting\n    Log    hi",
+        b"*** Settings ***\nLibrary    Browser",
+        b"\xef\xbb\xbf*** Keywords ***\nExisting\n    Log    hi\n",
+    ],
+    ids=["trailing_blank", "whitespace_line", "no_eol", "no_eol_settings", "bom"],
+)
+def test_save_then_remove_restores_unusual_files(tmp_path, data):
+    saved, restored = _save_and_remove(tmp_path, data)
+    assert saved.startswith(data[:-1] if not data.endswith(b"\n") else data)
+    assert saved.startswith(b"\xef\xbb\xbf") == data.startswith(b"\xef\xbb\xbf")
+    assert restored == data
