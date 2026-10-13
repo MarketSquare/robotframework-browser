@@ -32,7 +32,7 @@ from robot.running.arguments.embedded import EmbeddedArgumentParser, EmbeddedArg
 from robot.utils import normalize
 from robot.variables import VariableMatches
 
-from .cells import _VARIABLE_START
+from .cells import VARIABLE_START
 
 # Anything Robot cannot carry inside a single keyword-name cell. A newline in
 # particular would end the row and let the rest of the "name" be parsed as
@@ -102,7 +102,7 @@ _NAME_RULES: tuple[tuple[Callable[[str], object], str], ...] = (
     # recorded steps are lost. Neither shape has any legitimate use in a
     # recorded name, so all of Robot's variable openers are rejected.
     (
-        _VARIABLE_START.search,
+        VARIABLE_START.search,
         (
             "Keyword name must not contain Robot Framework variable syntax "
             "such as '${...}'."
@@ -405,6 +405,47 @@ def _bdd_variants(name: str, prefixes: tuple[str, ...]) -> set[str]:
 _ARGUMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
+#: Robot's built-in variables. An argument of that name would shadow them in
+#: the recorded keyword - `cell()` itself writes `${SPACE}` and `${EMPTY}`.
+_BUILTIN_VARIABLES = frozenset(
+    normalize_keyword_name(variable)
+    for variable in [
+        "SPACE",
+        "EMPTY",
+        "TRUE",
+        "FALSE",
+        "NONE",
+        "NULL",
+        "TEMPDIR",
+        "EXECDIR",
+        "CURDIR",
+        "OPTIONS",
+        "TEST_NAME",
+        "TEST_TAGS",
+        "TEST_DOCUMENTATION",
+        "TEST_STATUS",
+        "TEST_MESSAGE",
+        "PREV_TEST_NAME",
+        "PREV_TEST_STATUS",
+        "PREV_TEST_MESSAGE",
+        "SUITE_NAME",
+        "SUITE_SOURCE",
+        "SUITE_DOCUMENTATION",
+        "SUITE_METADATA",
+        "SUITE_STATUS",
+        "SUITE_MESSAGE",
+        "KEYWORD_STATUS",
+        "KEYWORD_MESSAGE",
+        "LOG_LEVEL",
+        "OUTPUT_DIR",
+        "OUTPUT_FILE",
+        "REPORT_FILE",
+        "LOG_FILE",
+        "DEBUG_FILE",
+    ]
+)
+
+
 def argument_name_error(name: object) -> str | None:
     """Why ``name`` is unusable as a Keyword Argument name, or ``None``."""
     if not isinstance(name, str):
@@ -416,6 +457,8 @@ def argument_name_error(name: object) -> str | None:
             "Argument name must start with a letter or '_' and contain only "
             "letters, digits and '_'."
         )
+    if normalize_keyword_name(name) in _BUILTIN_VARIABLES:
+        return f"Argument name '{name}' is a Robot Framework built-in variable."
     return None
 
 
@@ -462,12 +505,7 @@ class NameGuard:
 
     def _name_forms(self, name: str) -> list[str]:
         """``name`` and every form Robot would resolve a call to it as."""
-        forms = [name]
-        for prefix in self._prefixes:
-            marker = f"{prefix} "
-            if name.lower().startswith(marker.lower()) and name[len(marker) :].strip():
-                forms.append(name[len(marker) :])
-        return forms
+        return [name, *sorted(_bdd_variants(name, self._prefixes))]
 
     def _embedded_shadow(self, name: str) -> str | None:
         """The embedded-argument keyword ``name`` would instantiate, if any."""

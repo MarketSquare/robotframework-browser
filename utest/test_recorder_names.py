@@ -263,6 +263,11 @@ def _run_probe(tmp_path, call, via_symlink=False):
         # The same with a custom pattern, which the matcher must preserve.
         "Count ${n:\\d+} Items\n    Log    ${n}\n"
     )
+    # A file the suite does not import, so its keywords reach the guard only as
+    # `taken` names, never as known ones.
+    (tmp_path / "target.resource").write_text(
+        "*** Keywords ***\nTarget Only Keyword\n    Log    t\n"
+    )
     (tmp_path / "nested.resource").write_text(
         "*** Keywords ***\nNested Helper\n    Log    y\n"
     )
@@ -307,10 +312,7 @@ def _run_probe(tmp_path, call, via_symlink=False):
 
 def test_collect_known_keywords_sees_the_whole_running_suite(tmp_path):
     """The RF-API integration itself, inside a real `robot` run."""
-    # An unrelated target excludes nothing, so this is the full picture.
-    names = set(
-        _run_probe(tmp_path, "Dump Known Keywords    file=unrelated.resource")["names"]
-    )
+    names = set(_run_probe(tmp_path, "Dump Known Keywords")["names"])
     # BuiltIn, an explicitly imported library, an imported resource, a resource
     # imported by that resource, and the suite file's own keywords.
     assert "Log" in names
@@ -329,9 +331,7 @@ def test_collect_known_keywords_covers_bdd_prefix_stripping(tmp_path):
     call while colliding with nothing. Verified against a real `robot` run: the
     resource keyword did run in place of the suite's own.
     """
-    names = set(
-        _run_probe(tmp_path, "Dump Known Keywords    file=unrelated.resource")["names"]
-    )
+    names = set(_run_probe(tmp_path, "Dump Known Keywords")["names"])
     assert "Given User Is Logged In" in names
     assert "User Is Logged In" in names
 
@@ -360,7 +360,7 @@ def test_recording_rejects_an_embedded_keyword_of_the_target_file(tmp_path):
 
 
 def test_recording_rejects_an_embedded_keyword_of_the_default_target(tmp_path):
-    # The suite file's own embedded keyword, on the default (excluded) path.
+    # The suite file's own embedded keyword, on the default path.
     outcome = _run_probe(tmp_path, "Try To Record    Open Coffee From Suite")
     assert outcome["outcome"] == "rejected"
     assert "Open ${thing} From Suite" in outcome["error"]
@@ -509,21 +509,24 @@ def test_a_name_an_embedded_owner_does_not_claim_stays_accepted(tmp_path):
     assert _run_probe(tmp_path, "Try To Record    Open Page") == {"outcome": "accepted"}
 
 
-def test_recording_rejects_a_suite_keyword_behind_a_symlink(tmp_path):
-    """AC-39: a name the suite file already defines is taken, symlink or not."""
+def test_recording_rejects_a_target_keyword_behind_a_symlink(tmp_path):
+    """AC-39: a name the target file already defines is taken, symlink or not."""
     outcome = _run_probe(
-        tmp_path, "Try To Record    Suite Local Keyword", via_symlink=True
+        tmp_path,
+        "Try To Record    Target Only Keyword    file=link/target.resource",
+        via_symlink=True,
     )
     assert outcome["outcome"] == "rejected"
-    assert "Suite Local Keyword" in outcome["error"]
+    assert "already exists" in outcome["error"]
 
 
 def test_recording_rejects_a_keyword_of_the_target_file(tmp_path):
     """AC-37: no reuse - an existing name in the target is a collision."""
     outcome = _run_probe(
-        tmp_path, "Try To Record    My Helper    file=helpers.resource"
+        tmp_path, "Try To Record    target_only_keyword    file=target.resource"
     )
     assert outcome["outcome"] == "rejected"
+    assert "already exists" in outcome["error"]
 
 
 @pytest.mark.parametrize("name", ["email", "item_id", "_x", "Password2"])
@@ -537,6 +540,13 @@ def test_usable_argument_names_are_accepted(name):
 )
 def test_unusable_argument_names_are_reported(name):
     assert argument_name_error(name)
+
+
+@pytest.mark.parametrize(
+    "name", ["SPACE", "s_pace", "empty", "True", "test_name", "OUTPUT_DIR"]
+)
+def test_argument_names_shadowing_robot_variables_are_reported(name):
+    assert "built-in variable" in argument_name_error(name)
 
 
 def test_name_guard_rejects_a_taken_name_in_any_spelling():

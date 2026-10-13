@@ -19,7 +19,7 @@ import re
 
 # Robot's variable/list/dict/environment syntax, which must not be resolved in
 # a recorded literal.
-_VARIABLE_START = re.compile(r"[$@&%]\{")
+VARIABLE_START = re.compile(r"[$@&%]\{")
 _MULTI_SPACE = re.compile(r"  +")
 
 
@@ -56,7 +56,7 @@ def cell(value: str, *, at_start: bool = True, at_end: bool = True) -> str:
         f"\\u{ord(char):04x}" if char.isspace() and char != " " else char
         for char in cell
     )
-    cell = _VARIABLE_START.sub(r"\\\g<0>", cell)
+    cell = VARIABLE_START.sub(r"\\\g<0>", cell)
     if at_start and cell.startswith("#"):
         cell = "\\" + cell
     cell = _MULTI_SPACE.sub(lambda m: "${SPACE}" * len(m.group()), cell)

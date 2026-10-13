@@ -175,12 +175,10 @@ class LiveKeywordWriter:
     def _find_keyword(self) -> tuple[KeywordSection, Keyword] | None:
         """The existing keyword block with this name, in *any* keyword section.
 
-        Compared with `normalize_keyword_name`, the same way `NameGuard`
-        decides a name is reusable rather than colliding: Robot matches
+        Compared with `normalize_keyword_name`: Robot matches
         keyword names case-, space- and underscore-insensitively, so a raw
-        comparison here would miss a name that was deliberately *accepted* as
-        a reuse (e.g. ``existing_in_target`` against ``Existing In Target``)
-        and write a second, duplicate keyword block instead of appending to
+        comparison here would miss an existing block (e.g. ``existing_in_target``
+        against ``Existing In Target``) and write a second, duplicate keyword block instead of appending to
         the first - both then fail at run time as "defined multiple times".
         """
         target_name = normalize_keyword_name(self.keyword_name)
