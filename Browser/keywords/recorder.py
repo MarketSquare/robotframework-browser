@@ -48,7 +48,14 @@ class _GrpcRecorderClient:
         body = json.dumps({"state": state, "reset": reset})
         with self._library.playwright.grpc_channel() as stub:
             response = stub.RecorderPoll(Request().Json(body=body))
-        return json.loads(response.json) if response.json else {}
+        if not response.json:
+            return {}
+        try:
+            reply = json.loads(response.json)
+        except ValueError:
+            logger.debug("Ignoring a recorder reply that is not valid JSON")
+            return {}
+        return reply if isinstance(reply, dict) else {}
 
     def stop(self) -> None:
         with self._library.playwright.grpc_channel() as stub:
@@ -73,14 +80,29 @@ class Recorder(LibraryComponent):
         marked part of it, into a Keyword Argument; its recorded value becomes the
         default, which can be deselected.
 
+        Toolbar buttons:
+
+        - *Stop*: ends the session.
+        - *Undo*: removes the Keyword Calls of the last Action.
+        - *Discard*: starts the keyword being recorded again, empty.
+
+        The toolbar is in the recording state from the start. Click a value in the toolbar
+        to turn the whole value, or a marked part of it, into a Keyword Argument; its
+        recorded value becomes the default, which can be deselected. The toolbar also
+        offers to use the new argument for the same value elsewhere in the keyword
+        (replacing repeated values).
+
+        The keyword is always created new: an existing keyword is never extended.
+        Only the *current* browser context is recorded (limitation); other contexts are ignored.
+
         The recording ends with *Stop* in the toolbar, with Playwright's Record button,
-        when ``idle_timeout`` passes without any Action or toolbar command, or when all
-        pages are closed. The keyword being recorded is saved in every case.
+        when ``idle_timeout`` passes without any Action or toolbar command, when all
+        pages are closed, or on an error. The keyword being recorded is saved in every case.
 
         | =Arguments= | =Description= |
         | ``name`` | Name of the User Keyword to create. It must not exist in ``file`` and must not shadow any keyword the running suite can call. |
         | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without activity. Default: no timeout. |
+        | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
 
@@ -127,13 +149,30 @@ class Recorder(LibraryComponent):
         marked part of it, into a Keyword Argument; its recorded value becomes the
         default, which can be deselected.
 
+        Toolbar buttons:
+
+        - *Stop*: ends the session.
+        - *+ New Keyword*: names and starts a keyword (only in `Record Keywords`).
+        - *Finish*: saves the keyword being recorded and returns to idle (only in `Record Keywords`).
+        - *Undo*: removes the Keyword Calls of the last Action.
+        - *Discard*: starts the keyword being recorded again, empty.
+
+        The toolbar is idle until a keyword is started; Actions while idle are not recorded.
+        While recording, click a value in the toolbar to turn the whole value, or a marked
+        part of it, into a Keyword Argument; its recorded value becomes the default, which
+        can be deselected. The toolbar also offers to use the new argument for the same
+        value elsewhere in the keyword (replacing repeated values).
+
+        Existing keywords are never extended. Only the *current* browser context is
+        recorded (limitation); other contexts are ignored.
+
         The recording ends with *Stop* in the toolbar, with Playwright's Record button,
-        when ``idle_timeout`` passes without any Action or toolbar command, or when all
-        pages are closed. The keyword being recorded is saved in every case.
+        when ``idle_timeout`` passes without any Action or toolbar command, when all
+        pages are closed, or on an error. The keyword being recorded is saved in every case.
 
         | =Arguments= | =Description= |
         | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without activity. Default: no timeout. |
+        | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
 
         Returns the text of all keywords recorded in the session, under one
         ``*** Keywords ***`` header.
@@ -160,6 +199,10 @@ class Recorder(LibraryComponent):
     def _record(
         self, file: str | None, idle_timeout: timedelta | None, fixed_name: str | None
     ) -> RecorderSession:
+        if idle_timeout is not None and idle_timeout <= timedelta(0):
+            raise ValueError(
+                f"'idle_timeout' must be greater than zero, got {idle_timeout}."
+            )
         target = self._target(file)
         session = RecorderSession(
             target, fixed_name=fixed_name, known=collect_known_keywords()
@@ -168,7 +211,9 @@ class Recorder(LibraryComponent):
         run_session(
             session,
             self._client(),
-            idle_timeout=idle_timeout.total_seconds() if idle_timeout else None,
+            idle_timeout=idle_timeout.total_seconds()
+            if idle_timeout is not None
+            else None,
         )
         return session
 
