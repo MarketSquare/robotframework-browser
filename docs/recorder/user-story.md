@@ -60,8 +60,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-14** *Discard* abandons the running Keyword Recording completely and leaves the file as
   it was before. In `Record Keyword` the keyword then starts again, empty, under the same name.
 - **AC-15** Actions while idle produce no Keyword Calls.
-- **AC-16** Actions with no Browser keyword equivalent (e.g. `assertSnapshot`) produce no
-  Keyword Call, but a visible notice in the toolbar.
+- **AC-16** Actions with no Browser keyword equivalent produce no Keyword Call, but a visible
+  notice in the toolbar.
+- **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
+  shows a clear notice saying so for as long as the mode is on.
 
 ### Ending
 
@@ -89,6 +91,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
   Download`, the Action, and `Wait For    ${dl}`.
 - **AC-27** Password fields get no special treatment; the typed value is recorded like any
   other.
+- **AC-46** Playwright's *Assert snapshot* becomes `Get Aria Snapshot    <selector>    yaml    ==
+  <snapshot>`, with the recorded ARIA snapshot as one escaped value.
 
 ### Keyword Arguments
 
@@ -152,7 +156,8 @@ See ADR 0010.
 
 ## Feature scope
 
-The feature scope is fully described by acceptance criteria **AC-01 to AC-41**. Anything not
+The feature scope is fully described by acceptance criteria **AC-01 to AC-41, AC-45 and
+AC-46**. Anything not
 stated there is not part of v1.
 
 ## Out of scope (possible future extensions)
@@ -170,7 +175,10 @@ These are deliberately not part of v1. The design should not block them.
 **Recording**
 - Several browser contexts in one session
 - A non-blocking `Start Recording` / `Stop Recording` pair, with the test continuing
-- A Browser keyword for `assertSnapshot` (ARIA snapshot)
+- An own element picker in the toolbar that shows a picked element's Browser selector to copy
+  (Playwright's *Pick locator* result is not delivered in api mode)
+- Recording file uploads and hovers (Playwright 1.63 does not report them in api mode)
+- A tolerant ARIA snapshot comparison like Playwright's `toMatchAriaSnapshot`
 - Merging Actions beyond what Playwright merges itself (e.g. `Fill Text` + `Enter`)
 - Optional treatment of password fields, e.g. `Fill Secret` behind a toolbar switch
 
