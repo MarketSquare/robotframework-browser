@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .action_mapper import ActionMapper
+from .action_mapper import SILENT_ACTIONS, ActionMapper
 from .keyword_writer import LiveKeywordWriter
 from .names import KnownKeywords, NameGuard, existing_keyword_names
 
@@ -112,8 +112,10 @@ class RecorderSession:
     def handle_event(self, event: str, action: dict) -> None:
         if event == "signal" or self._writer is None:
             return
-        mapped = self._mapper.map(action)
-        if mapped is None:
+        call = self._mapper.map(action)
+        if call is None:
+            if action.get("name") in SILENT_ACTIONS:
+                return
             self.log.append(
                 f"action {action.get('name')!r} has no Browser keyword "
                 "equivalent and was skipped"
@@ -121,7 +123,8 @@ class RecorderSession:
             # An update of a skipped action must not overwrite an earlier line.
             self._written = False
             return
-        kw_name, args = mapped
+        kw_name = call.keyword
+        args = [v.text or "" for v in call.args]
         if event == "updated":
             if self._dead:
                 return

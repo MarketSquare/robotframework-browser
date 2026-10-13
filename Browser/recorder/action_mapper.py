@@ -23,7 +23,7 @@ Two pure, side-effect-free pieces (unit tested without a browser):
   is, and frame boundaries map to Browser's ``>>>`` piercing separator.
 
 * :class:`ActionMapper` - map a single recorded action (a ``dict`` matching
-  Playwright's ``actions.d.ts``) to a ``(keyword_name, [args...])`` tuple, or
+  Playwright's ``actions.d.ts``) to a :class:`~Browser.recorder.model.Call`, or
   ``None`` when the action has no sensible keyword representation.
 """
 
@@ -31,7 +31,10 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import ClassVar
+
+from .model import ArgRef, Call, Value
 
 # --------------------------------------------------------------------------- #
 # Selector translation
@@ -158,8 +161,34 @@ def _modifier_names(mask: int) -> list[str]:
 # --------------------------------------------------------------------------- #
 
 
+#: Actions that never produce a Keyword Call and need no notice: Playwright
+#: reports `openPage` for pages that already exist and for tabs opened by hand,
+#: and a page opened by an Action arrives as a `popup` signal on that Action.
+SILENT_ACTIONS = frozenset({"openPage"})
+
+
+@dataclass
+class SignalEffect:
+    before: list[Call]
+    after: list[Call]
+
+
+def _selector(action: dict) -> Value:
+    return Value.literal(
+        to_browser_selector(action.get("selector", "")), selectable=False
+    )
+
+
+def _fixed(text: str) -> Value:
+    return Value.literal(text, selectable=False)
+
+
+def _data(text: object) -> Value:
+    return Value.literal("" if text is None else str(text))
+
+
 class ActionMapper:
-    """Map recorded Playwright actions to Browser keyword calls.
+    """Map recorded Playwright actions to Browser Keyword Calls.
 
     Stateless: Playwright's recorder refines an action *in place* (see
     ``actionUpdated``), so a mapper that remembered previous actions would give
@@ -167,105 +196,130 @@ class ActionMapper:
     re-mapped.
     """
 
-    def map(self, action: dict) -> tuple[str, list[str]] | None:
-        handler = self._HANDLERS.get(action.get("name"))
-        if handler is None:
-            return None
-        return handler(self, action)
+    def map(self, action: dict) -> Call | None:
+        handler = self._HANDLERS.get(action.get("name", ""))
+        return None if handler is None else handler(self, action)
 
-    # -- helpers ----------------------------------------------------------- #
+    def map_signal(
+        self, signal: dict, unique: Callable[[str], str]
+    ) -> SignalEffect | None:
+        """The Keyword Calls a signal adds around the Action that raised it.
 
-    @staticmethod
-    def _sel(action: dict) -> str:
-        return to_browser_selector(action.get("selector", ""))
+        Playwright reports dialogs, downloads and popups *after* the Action, but
+        Browser needs dialog handling and the download promise *before* it.
+        """
+        name = signal.get("name")
+        if name == "popup":
+            return SignalEffect([], [Call("Switch Page", [_fixed("NEW")])])
+        if name == "dialog":
+            return SignalEffect(
+                [Call("Handle Future Dialogs", [_fixed("action=accept")])], []
+            )
+        if name == "download":
+            variable = unique("download")
+            return SignalEffect(
+                [Call("Promise To Wait For Download", [], assign=variable)],
+                [Call("Wait For", [Value([ArgRef(variable)], selectable=False)])],
+            )
+        return None
 
     # -- navigation -------------------------------------------------------- #
 
-    def _map_navigate(self, action: dict) -> tuple[str, list[str]]:
+    def _map_navigate(self, action: dict) -> Call:
         # A recorded keyword is reusable only if it does not create the page it
         # runs in - browser/page setup stays the caller's job, so an in-page
         # navigation is always `Go To`.
-        return ("Go To", [action.get("url", "")])
+        return Call("Go To", [_data(action.get("url", ""))])
 
-    def _map_open_page(self, action: dict) -> tuple[str, list[str]]:
-        return ("New Page", [action.get("url") or "about:blank"])
-
-    def _map_close_page(self, action: dict) -> tuple[str, list[str]]:
-        return ("Close Page", [])
+    def _map_close_page(self, action: dict) -> Call:
+        return Call("Close Page", [])
 
     # -- interaction ------------------------------------------------------- #
 
-    def _map_click(self, action: dict) -> tuple[str, list[str]]:
-        selector = self._sel(action)
+    def _map_click(self, action: dict) -> Call:
+        selector = _selector(action)
         button = action.get("button", "left")
         count = action.get("clickCount", 1)
         modifiers = _modifier_names(action.get("modifiers", 0))
         if button == "left" and count == 1 and not modifiers:
-            return ("Click", [selector])
+            return Call("Click", [selector])
         args = [selector]
         # `button` is positional before *modifiers, so it must be present
         # whenever a modifier follows it, even if it is the default "left".
         if button != "left" or modifiers:
-            args.append(button)
-        args.extend(modifiers)
+            args.append(_fixed(button))
+        args.extend(_fixed(m) for m in modifiers)
         if count > 1:
-            args.append(f"clickCount={count}")
-        return ("Click With Options", args)
+            args.append(_fixed(f"clickCount={count}"))
+        return Call("Click With Options", args)
 
-    def _map_hover(self, action: dict) -> tuple[str, list[str]]:
-        return ("Hover", [self._sel(action)])
+    def _map_hover(self, action: dict) -> Call:
+        return Call("Hover", [_selector(action)])
 
-    def _map_fill(self, action: dict) -> tuple[str, list[str]]:
-        return ("Fill Text", [self._sel(action), action.get("text", "")])
+    def _map_fill(self, action: dict) -> Call:
+        return Call("Fill Text", [_selector(action), _data(action.get("text", ""))])
 
-    def _map_press(self, action: dict) -> tuple[str, list[str]]:
+    def _map_press(self, action: dict) -> Call:
         # `Press Keys` chains modifiers with "+", e.g. `Control+Shift+T`.
         keys = [*_modifier_names(action.get("modifiers", 0)), action.get("key", "")]
-        return ("Press Keys", [self._sel(action), "+".join(k for k in keys if k)])
-
-    def _map_check(self, action: dict) -> tuple[str, list[str]]:
-        return ("Check Checkbox", [self._sel(action)])
-
-    def _map_uncheck(self, action: dict) -> tuple[str, list[str]]:
-        return ("Uncheck Checkbox", [self._sel(action)])
-
-    def _map_select(self, action: dict) -> tuple[str, list[str]]:
-        return (
-            "Select Options By",
-            [self._sel(action), "value", *action.get("options", [])],
+        return Call(
+            "Press Keys", [_selector(action), _fixed("+".join(k for k in keys if k))]
         )
 
-    def _map_set_input_files(self, action: dict) -> tuple[str, list[str]]:
-        return (
+    def _map_check(self, action: dict) -> Call:
+        return Call("Check Checkbox", [_selector(action)])
+
+    def _map_uncheck(self, action: dict) -> Call:
+        return Call("Uncheck Checkbox", [_selector(action)])
+
+    def _map_select(self, action: dict) -> Call:
+        return Call(
+            "Select Options By",
+            [
+                _selector(action),
+                _fixed("value"),
+                *(_data(o) for o in action.get("options", [])),
+            ],
+        )
+
+    def _map_set_input_files(self, action: dict) -> Call:
+        return Call(
             "Upload File By Selector",
-            [self._sel(action), *action.get("files", [])],
+            [_selector(action), *(_data(f) for f in action.get("files", []))],
         )
 
     # -- assertions -------------------------------------------------------- #
 
-    def _map_assert_text(self, action: dict) -> tuple[str, list[str]]:
+    def _map_assert_text(self, action: dict) -> Call:
         operator = "contains" if action.get("substring") else "=="
-        return ("Get Text", [self._sel(action), operator, action.get("text", "")])
-
-    def _map_assert_value(self, action: dict) -> tuple[str, list[str]]:
-        return (
-            "Get Property",
-            [self._sel(action), "value", "==", action.get("value", "")],
+        return Call(
+            "Get Text",
+            [_selector(action), _fixed(operator), _data(action.get("text", ""))],
         )
 
-    def _map_assert_checked(self, action: dict) -> tuple[str, list[str]]:
-        state = "checked" if action.get("checked") else "unchecked"
-        return ("Get Checkbox State", [self._sel(action), "==", state])
+    def _map_assert_value(self, action: dict) -> Call:
+        return Call(
+            "Get Property",
+            [
+                _selector(action),
+                _fixed("value"),
+                _fixed("=="),
+                _data(action.get("value", "")),
+            ],
+        )
 
-    def _map_assert_visible(self, action: dict) -> tuple[str, list[str]]:
-        return ("Wait For Elements State", [self._sel(action), "visible"])
+    def _map_assert_checked(self, action: dict) -> Call:
+        state = "checked" if action.get("checked") else "unchecked"
+        return Call(
+            "Get Checkbox State", [_selector(action), _fixed("=="), _fixed(state)]
+        )
+
+    def _map_assert_visible(self, action: dict) -> Call:
+        return Call("Wait For Elements State", [_selector(action), _fixed("visible")])
 
     # Maps a Playwright action name (see actions.d.ts) to its handler.
-    _HANDLERS: ClassVar[
-        dict[str, Callable[[ActionMapper, dict], tuple[str, list[str]]]]
-    ] = {
+    _HANDLERS: ClassVar[dict[str, Callable[[ActionMapper, dict], Call]]] = {
         "navigate": _map_navigate,
-        "openPage": _map_open_page,
         "closePage": _map_close_page,
         "click": _map_click,
         "hover": _map_hover,
