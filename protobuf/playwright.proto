@@ -701,4 +701,8 @@ service  Playwright {
   rpc InstallCredential(Request.Empty) returns (Response.Empty);
   rpc GetCredential(Request.CredentialIdAndRpId) returns (Response.GetCredential);
   rpc DeleteCredential(Request.CredentialIdAndRpId) returns (Response.Empty);
+
+  /* Recorder */
+  rpc RecorderPoll(Request.Json) returns (Response.Json);
+  rpc RecorderStop(Request.Empty) returns (Response.Empty);
 }

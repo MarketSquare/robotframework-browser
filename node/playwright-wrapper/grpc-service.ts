@@ -33,6 +33,7 @@ import * as network from './network';
 import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
+import * as recorder from './recorder';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 
 @class_async_logger
@@ -670,6 +671,28 @@ export class PlaywrightServer {
             if (request === null) throw Error('No request');
             const result = await credential.deleteCredential(request, this.getActiveContext(call));
             callback(null, result);
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async recorderPoll(
+        call: ServerUnaryCall<pb.Request_Json, pb.Response_Json>,
+        callback: sendUnaryData<pb.Response_Json>,
+    ): Promise<void> {
+        try {
+            callback(null, await recorder.recorderPoll(call.request, this.getState(call)));
+        } catch (e) {
+            callback(errorResponse(e), null);
+        }
+    }
+
+    async recorderStop(
+        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
+        callback: sendUnaryData<pb.Response_Empty>,
+    ): Promise<void> {
+        try {
+            callback(null, await recorder.recorderStop(call.request, this.getState(call)));
         } catch (e) {
             callback(errorResponse(e), null);
         }

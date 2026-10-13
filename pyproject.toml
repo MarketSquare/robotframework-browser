@@ -95,9 +95,7 @@ exclude = [
     "package.json",
     "package-lock.json",
     "selector-finder.js",
-]
-"Browser.recorder" = [
-    "*.js",
+    "recorder-toolbar.js",
 ]
 
 [tool.ruff]
