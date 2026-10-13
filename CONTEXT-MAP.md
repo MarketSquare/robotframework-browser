@@ -4,12 +4,18 @@
 
 - [Browser Library](./Browser/CONTEXT.md) — the keyword library itself: how a keyword call
   reaches a keyword body, from Robot Framework and from plain Python
+- [Recorder](./Browser/recorder/CONTEXT.md) — recording interactions in the live browser as
+  Robot Framework User Keywords made of Browser keywords
 - [Test App Rich Logging](./atest/CONTEXT.md) — correlating Robot Framework test execution
   with HTTP server activity in the acceptance test setup
 - [CI Failure Analysis](./tools/ci_failures/CONTEXT.md) — which acceptance tests fail in CI and
   on which error, read out of the artifacts each run leaves behind. Maintainers only
 
 ## Relationships
+
+- **Recorder → Browser Library**: writes **Keyword Calls** to Browser keywords with Browser
+  selectors. The Recorder's **Keyword Call** is a line in a file, not the runtime keyword call
+  of the Browser Library context.
 
 - **Test App Rich Logging → Browser Library**: the acceptance suite drives the Browser Library
   over the **Robot Framework path** while the Test App records what the browser did. It
