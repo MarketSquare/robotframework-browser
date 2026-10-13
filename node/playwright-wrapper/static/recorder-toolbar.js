@@ -123,6 +123,7 @@
         </div>
         <div class="args" id="args"></div>
         <div class="err" id="err" hidden></div>
+        <div class="notice" id="argHint" hidden></div>
         <div class="row" id="idleRow">
           <button class="primary" id="new">+ New Keyword</button>
         </div>
@@ -277,12 +278,21 @@
         // `raw` is the literal cell text the offsets refer to (the rendered text
         // differs for escapes); Python rejects the command if it changed meanwhile.
         let argTarget = null;
+        // While Python is finishing a keyword nothing may be sent.
+        const isPending = () => !!(window.__rfbToolbarState && window.__rfbToolbarState.pending);
+        // The hint is owned by the toolbar itself (render never touches it except
+        // to clear it on a real state change), unlike #err which mirrors the state.
+        const setHint = (text) => {
+            $('argHint').textContent = text;
+            $('argHint').hidden = !text;
+        };
         const openArgModal = (call, value, raw) => {
+            if (isPending()) return;
             if (raw === null || raw === undefined) {
-                $('err').textContent = 'This value already contains an argument.';
-                $('err').hidden = false;
+                setHint('This value already contains an argument.');
                 return;
             }
+            setHint('');
             argTarget = { call, value, raw };
             $('argValue').value = raw;
             $('argName').value = '';
@@ -296,7 +306,7 @@
         };
         $('argCancel').addEventListener('click', closeArgModal);
         $('argOk').addEventListener('click', () => {
-            if (!argTarget) return;
+            if (!argTarget || isPending()) return;
             const name = $('argName').value.trim();
             if (!name) {
                 $('argErr').textContent = 'Argument name must not be empty.';
@@ -304,11 +314,15 @@
                 return;
             }
             const input = $('argValue');
-            let start = input.selectionStart ?? 0;
-            let end = input.selectionEnd ?? 0;
-            if (start === end) {
+            // Selection offsets are UTF-16 code units; Python indexes by code point.
+            const points = (text) => Array.from(text).length;
+            const from = input.selectionStart ?? 0;
+            const to = input.selectionEnd ?? 0;
+            let start = points(argTarget.raw.slice(0, from));
+            let end = points(argTarget.raw.slice(0, to));
+            if (from === to) {
                 start = 0;
-                end = argTarget.raw.length;
+                end = points(argTarget.raw);
             }
             send({
                 cmd: 'argument',
@@ -328,7 +342,7 @@
         const currentOffer = () => (window.__rfbToolbarState && window.__rfbToolbarState.offer) || null;
         $('offerApply').addEventListener('click', () => {
             const offer = currentOffer();
-            if (!offer) return;
+            if (!offer || isPending()) return;
             const chosen = [...$('offerList').querySelectorAll('input:checked')].map((i) => [
                 Number(i.dataset.c),
                 Number(i.dataset.v),
@@ -337,13 +351,28 @@
         });
         $('offerSkip').addEventListener('click', () => {
             const offer = currentOffer();
-            if (offer) send({ cmd: 'replace', argument: offer.argument, occurrences: [] });
+            if (offer && !isPending()) send({ cmd: 'replace', argument: offer.argument, occurrences: [] });
         });
 
         // -- render ---------------------------------------------------------- //
+        // Polling re-sends the state every 200 ms. Rebuilding the DOM that often
+        // would swallow clicks straddling a poll, reset the scroll position and
+        // the offer's checkboxes, so an unchanged state renders nothing.
+        let lastKey = null;
+        let offerKey = null;
+        let offerChecked = {};
         window.__rfbToolbarRender = (state) => {
             if (!state) return;
             window.__rfbToolbarState = state;
+            const key = JSON.stringify(state);
+            if (key !== lastKey) {
+                lastKey = key;
+                renderBody(state);
+            }
+            finishRender(state);
+        };
+        const renderBody = (state) => {
+            setHint('');
             const recording = state.state === 'recording';
             const calls = Array.isArray(state.calls) ? state.calls : [];
             const keywords = Array.isArray(state.keywords) ? state.keywords : [];
@@ -352,17 +381,20 @@
             $('title').textContent = recording ? state.name || 'Recording' : 'Idle';
             $('count').textContent = recording ? `(${calls.length})` : '';
             const list = $('calls');
+            const oldTop = list.scrollTop;
+            const wasAtBottom = list.scrollTop + list.clientHeight >= list.scrollHeight - 4;
+            const oldCount = list.children.length;
             list.textContent = '';
             calls.forEach((call, callIndex) => {
                 const item = document.createElement('li');
                 const kw = document.createElement('span');
-                kw.textContent = call.keyword;
+                kw.textContent = call.keyword ?? '';
                 item.appendChild(kw);
                 (call.values || []).forEach((value, valueIndex) => {
                     const cell = document.createElement('span');
                     const pick = !!value.selectable && recording;
                     cell.className = pick ? 'cell pick' : 'cell';
-                    cell.textContent = value.text;
+                    cell.textContent = value.text ?? '';
                     if (pick) {
                         cell.title = 'Make this value an argument';
                         cell.addEventListener('click', () => openArgModal(callIndex, valueIndex, value.raw));
@@ -371,23 +403,34 @@
                 });
                 list.appendChild(item);
             });
+            // Keep the reader's place; follow new calls only if already at the end.
+            list.scrollTop = calls.length > oldCount && wasAtBottom ? list.scrollHeight : oldTop;
             $('notice').textContent = state.notice || '';
             $('notice').hidden = !state.notice;
             const offer = recording ? state.offer : null;
             $('offer').hidden = !offer;
             if (offer) {
-                $('offerText').textContent = `Also use \${${offer.argument}} for "${offer.text}" in:`;
+                $('offerText').textContent = `Also use \${${offer.argument ?? ''}} for "${offer.text ?? ''}" in:`;
+                const identity = JSON.stringify([offer.argument, offer.text, offer.occurrences]);
+                if (identity !== offerKey) {
+                    offerKey = identity;
+                    offerChecked = {};
+                }
                 const box = $('offerList');
                 box.textContent = '';
                 (offer.occurrences || []).forEach(([c, v]) => {
                     const label = document.createElement('label');
                     const check = document.createElement('input');
                     check.type = 'checkbox';
-                    check.checked = true;
+                    const id = `${c},${v}`;
+                    check.checked = offerChecked[id] !== false;
+                    check.addEventListener('change', () => {
+                        offerChecked[id] = check.checked;
+                    });
                     check.dataset.c = String(c);
                     check.dataset.v = String(v);
                     label.appendChild(check);
-                    label.append(` ${calls[c] ? calls[c].text : ''}`);
+                    label.append(` ${calls[c] ? (calls[c].text ?? '') : ''}`);
                     box.appendChild(label);
                 });
             }
@@ -399,11 +442,15 @@
                     const check = document.createElement('input');
                     check.type = 'checkbox';
                     check.checked = !!arg.useDefault;
-                    check.addEventListener('change', () =>
-                        send({ cmd: 'default', argument: arg.name, use: check.checked }),
-                    );
+                    check.addEventListener('change', () => {
+                        if (isPending()) {
+                            check.checked = !check.checked;
+                            return;
+                        }
+                        send({ cmd: 'default', argument: arg.name, use: check.checked });
+                    });
                     label.appendChild(check);
-                    label.append(` \${${arg.name}} default: ${arg.default}`);
+                    label.append(` \${${arg.name}} default: ${arg.default ?? ''}`);
                     args.appendChild(label);
                 });
             }
@@ -419,6 +466,9 @@
                 : `${keywords.length} keyword(s) recorded into ${state.target}`;
             $('err').textContent = state.error || '';
             $('err').hidden = !state.error;
+        };
+        const finishRender = (state) => {
+            const recording = state.state === 'recording';
             // The panel's content-driven width can change with every render (a
             // longer Keyword Call just got added); re-clamp so growth never pushes it
             // past the right edge of the viewport.
