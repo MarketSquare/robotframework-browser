@@ -57,6 +57,7 @@ from .keywords import (
     Pdf,
     PlaywrightState,
     Promises,
+    Recorder,
     RunOnFailureKeywords,
     StrictMode,
     Waiter,
@@ -617,6 +618,7 @@ class Browser(DynamicCore):
             RunOnFailureKeywords(self),
             StrictMode(self),
             Promises(self),
+            Recorder(self),
             Waiter(self),
             WebAppState(self),
         ]
