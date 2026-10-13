@@ -276,3 +276,40 @@ def test_events_are_applied_before_commands_within_one_reply():
     run_session(s, client, clock=clock, sleep=lambda _: None)
     assert s.keywords == ["K"]
     assert "Fill Text" in s.text()
+
+
+def test_picking_flag_of_the_reply_reaches_the_toolbar_state():
+    s, clock = make()
+    client = Client(
+        [
+            {**reply(), "picking": True},
+            reply(),
+            {**reply(), "picking": True},
+            {**reply(), "picking": False},
+            reply(commands=[{"cmd": "stop"}]),
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert [state["picking"] for state, _ in client.polls][:5] == [
+        False,
+        True,
+        False,
+        True,
+        False,
+    ]
+
+
+@pytest.mark.parametrize("bad", ["yes", 1, None, [True]])
+def test_a_non_bool_picking_field_counts_as_off(bad):
+    s, clock = make()
+    client = Client(
+        [
+            {**reply(), "picking": True},
+            {**reply(), "picking": bad},
+            reply(commands=[{"cmd": "stop"}]),
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert client.polls[2][0]["picking"] is False

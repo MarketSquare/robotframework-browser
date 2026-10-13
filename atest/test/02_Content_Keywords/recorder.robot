@@ -190,6 +190,36 @@ Name Dialog Closes When A Name Is Accepted After A Rejected One
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+Pick Locator Mode Shows A Notice And Records Nothing
+    ${promise} =    Promise To    Record Keyword    Fill After Picking    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
+    Wait For Function    () => window.__rfbToolbarState.picking === true
+    Fill Text    id=input_name    while picking
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording')
+    Wait For Function    () => window.__rfbToolbarState.picking === false
+    Fill Text    id=input_name    after picking
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    after picking
+    Should Not Contain    ${file}    while picking
+
+Assert Snapshot Becomes Get Aria Snapshot
+    ${promise} =    Promise To    Record Keyword    Check Heading Snapshot    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('assertingSnapshot')
+    # The assert tool needs an element with text under the pointer.
+    Hover    css=label[for="input_name"]
+    Click    css=label[for="input_name"]
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Match Regexp    ${file}    Get Aria Snapshot\\s+\\S+\\s+yaml\\s+==\\s+- text
+    Recorded Keyword Replays    ${RESOURCE}    Check Heading Snapshot
+
 *** Keywords ***
 Open Form And Name Resource
     New Page    ${FORM_URL}

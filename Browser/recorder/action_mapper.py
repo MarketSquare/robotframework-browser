@@ -315,7 +315,22 @@ class ActionMapper:
         )
 
     def _map_assert_visible(self, action: dict) -> Call:
-        return Call("Wait For Elements State", [_selector(action), _fixed("visible")])
+        return Call(
+            "Get Element States", [_selector(action), _fixed("*="), _fixed("visible")]
+        )
+
+    def _map_assert_snapshot(self, action: dict) -> Call:
+        # Playwright's snapshot is a multi-line YAML string; `yaml` + `==` is an
+        # exact comparison of it.
+        return Call(
+            "Get Aria Snapshot",
+            [
+                _selector(action),
+                _fixed("yaml"),
+                _fixed("=="),
+                _data(action.get("ariaSnapshot", "")),
+            ],
+        )
 
     # Maps a Playwright action name (see actions.d.ts) to its handler.
     _HANDLERS: ClassVar[dict[str, Callable[[ActionMapper, dict], Call]]] = {
@@ -333,4 +348,5 @@ class ActionMapper:
         "assertValue": _map_assert_value,
         "assertChecked": _map_assert_checked,
         "assertVisible": _map_assert_visible,
+        "assertSnapshot": _map_assert_snapshot,
     }

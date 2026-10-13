@@ -109,7 +109,11 @@ class Recorder(LibraryComponent):
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs`` before the
         Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
-        Actions without a Browser keyword are only reported in the toolbar.
+        Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
+        comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
+        While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
+        are not recorded, because Playwright does not report them. Other Actions without a
+        Browser keyword are only reported in the toolbar.
 
         *Review a recorded keyword before you commit it.* Its values come from the page
         under test, including anything typed into password fields.
@@ -180,7 +184,11 @@ class Recorder(LibraryComponent):
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs`` before the
         Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
-        Actions without a Browser keyword are only reported in the toolbar.
+        Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
+        comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
+        While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
+        are not recorded, because Playwright does not report them. Other Actions without a
+        Browser keyword are only reported in the toolbar.
 
         *Review recorded keywords before you commit them.* Their values come from the page
         under test, including anything typed into password fields.

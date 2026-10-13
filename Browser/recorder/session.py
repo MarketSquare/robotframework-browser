@@ -69,6 +69,7 @@ class RecorderSession:
         self._undone = False
         self._skipped = False
         self._discard_on_stop = False
+        self._picking = False
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
@@ -89,6 +90,10 @@ class RecorderSession:
         if not self._finished:
             return ""
         return "*** Keywords ***\n" + "\n".join(k.block() for k in self._finished)
+
+    def set_picking(self, picking: bool) -> None:
+        """Playwright's Pick locator mode is on: nothing is recorded meanwhile."""
+        self._picking = picking
 
     def toolbar_state(self) -> dict:
         keyword = self._keyword
@@ -121,6 +126,7 @@ class RecorderSession:
             "pending": self._pending[0] if self._pending else None,
             "notice": self._notice,
             "error": self._error,
+            "picking": self._picking,
         }
 
     # -- events ------------------------------------------------------------ #

@@ -141,7 +141,7 @@ def test_update_after_a_skipped_action_appends():
     s, _, _ = session()
     start(s, "K")
     s.handle_event("added", CLICK)
-    s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
+    s.handle_event("added", {"name": "somethingNew", "selector": "#x"})
     s.handle_event("updated", FILL)
     assert [c["keyword"] for c in s.toolbar_state()["calls"]] == ["Click", "Fill Text"]
 
@@ -149,8 +149,8 @@ def test_update_after_a_skipped_action_appends():
 def test_unsupported_action_shows_a_notice():
     s, _, _ = session()
     start(s, "K")
-    s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
-    assert "assertSnapshot" in s.toolbar_state()["notice"]
+    s.handle_event("added", {"name": "somethingNew", "selector": "#x"})
+    assert "somethingNew" in s.toolbar_state()["notice"]
 
 
 def test_open_page_is_silent():
@@ -667,7 +667,7 @@ def test_signal_after_a_skipped_action_is_ignored():
     s, _, _ = session()
     start(s, "K")
     s.handle_event("added", CLICK)
-    s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
+    s.handle_event("added", {"name": "somethingNew", "selector": "#x"})
     s.handle_event("signal", {"name": "dialog"})
     assert [c["keyword"] for c in s.toolbar_state()["calls"]] == ["Click"]
 
@@ -710,3 +710,12 @@ def test_close_while_a_new_keyword_is_settling_records_nothing():
     s.handle_command({"cmd": "new", "name": "K"})
     assert s.close() == []
     assert s.state == "idle"
+
+
+def test_picking_is_off_by_default_and_follows_set_picking():
+    s = RecorderSession(FakeTarget(), clock=Clock())
+    assert s.toolbar_state()["picking"] is False
+    s.set_picking(True)
+    assert s.toolbar_state()["picking"] is True
+    s.set_picking(False)
+    assert s.toolbar_state()["picking"] is False

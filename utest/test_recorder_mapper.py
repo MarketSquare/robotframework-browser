@@ -1,3 +1,7 @@
+import json
+import subprocess
+import sys
+
 import pytest
 
 from Browser.recorder.action_mapper import (
@@ -134,8 +138,64 @@ def test_map_assert_checked():
     assert rendered(action) == "Get Checkbox State    css=.c    ==    unchecked"
 
 
+def test_map_assert_visible_is_get_element_states_contains_visible():
+    call = ActionMapper().map({"name": "assertVisible", "selector": "css=#a"})
+    assert call is not None
+    assert call.render() == "Get Element States    css=#a    *=    visible"
+    assert [v.selectable for v in call.args] == [False, False, False]
+
+
 def test_unknown_action_returns_none():
-    assert ActionMapper().map({"name": "assertSnapshot", "selector": "x"}) is None
+    assert ActionMapper().map({"name": "somethingNew", "selector": "x"}) is None
+
+
+SNAPSHOT = '- heading "Hi" [level=1]\n- button "Save  now"'
+
+
+def test_map_assert_snapshot_is_get_aria_snapshot_with_exact_yaml():
+    action = {"name": "assertSnapshot", "selector": "css=#a", "ariaSnapshot": SNAPSHOT}
+    call = ActionMapper().map(action)
+    assert call is not None
+    assert call.keyword == "Get Aria Snapshot"
+    assert [(v.text, v.selectable) for v in call.args] == [
+        ("css=#a", False),
+        ("yaml", False),
+        ("==", False),
+        (SNAPSHOT, True),
+    ]
+
+
+def test_assert_snapshot_renders_as_one_cell_and_roundtrips_through_robot(tmp_path):
+    call = ActionMapper().map(
+        {"name": "assertSnapshot", "selector": "css=#a", "ariaSnapshot": SNAPSHOT}
+    )
+    line = call.render()
+    assert "\n" not in line
+    (tmp_path / "Spy.py").write_text(
+        "import json, pathlib\n"
+        "def get_aria_snapshot(*args):\n"
+        "    pathlib.Path(__file__).with_name('args.json').write_text(json.dumps(args))\n"
+    )
+    (tmp_path / "run.robot").write_text(
+        "*** Settings ***\nLibrary    Spy.py\n\n*** Keywords ***\n"
+        + "Recorded\n    "
+        + line
+        + "\n\n*** Test Cases ***\nT\n    Recorded\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), "run.robot"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads((tmp_path / "args.json").read_text()) == [
+        "css=#a",
+        "yaml",
+        "==",
+        SNAPSHOT,
+    ]
 
 
 def test_open_page_produces_nothing():

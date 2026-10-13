@@ -6,6 +6,7 @@ import {
     drain,
     ensureRecorder,
     HELD_BACK_MS,
+    isPicking,
     isToolbarAction,
     resetSession,
     toAction,
@@ -24,9 +25,34 @@ describe('toAction', () => {
     it('accepts the bare 1.63 Action and drops ariaSnapshot', () => {
         expect(toAction({ name: 'fill', text: 'x', ariaSnapshot: 'big' })).toEqual({ name: 'fill', text: 'x' });
     });
+    it('keeps ariaSnapshot only for assertSnapshot', () => {
+        expect(toAction({ name: 'assertSnapshot', selector: '#a', ariaSnapshot: '- button "x"\n- link' })).toEqual({
+            name: 'assertSnapshot',
+            selector: '#a',
+            ariaSnapshot: '- button "x"\n- link',
+        });
+        expect(toAction({ action: { name: 'assertSnapshot', ariaSnapshot: 'y' } })).toEqual({
+            name: 'assertSnapshot',
+            ariaSnapshot: 'y',
+        });
+        expect(toAction({ name: 'assertText', text: 't', ariaSnapshot: 'big' })).toEqual({
+            name: 'assertText',
+            text: 't',
+        });
+    });
     it('rejects garbage', () => {
         expect(toAction(null)).toBeNull();
         expect(toAction({ action: { selector: '#a' } })).toBeNull();
+    });
+});
+
+describe('isPicking', () => {
+    it('is true only in the inspecting modes', () => {
+        expect(isPicking('recording-inspecting')).toBe(true);
+        expect(isPicking('inspecting')).toBe(true);
+        for (const mode of ['recording', 'standby', 'none', 'assertingText', undefined]) {
+            expect(isPicking(mode)).toBe(false);
+        }
     });
 });
 

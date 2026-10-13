@@ -88,6 +88,7 @@
       .cell.pick { cursor: pointer; text-decoration: underline dotted; }
       .cell.pick:hover { background: #0a6ebd55; }
       .notice { color: #ffd479; }
+      .picking { background: #b8860b; color: #fff; font-weight: bold; border-radius: 4px; padding: 6px; }
       .args label, .offer label { display: block; }
       .offer { background: #2a2a2a; border-radius: 4px; padding: 6px;
                display: flex; flex-direction: column; gap: 6px; }
@@ -113,6 +114,7 @@
         <button id="collapse" title="Collapse">-</button>
       </div>
       <div class="body" id="body">
+        <div class="picking" id="picking" hidden></div>
         <ol class="calls" id="calls"></ol>
         <div class="hint" id="hint"></div>
         <div class="notice" id="notice" hidden></div>
@@ -413,6 +415,10 @@
             });
             // Keep the reader's place; follow new calls only if already at the end.
             list.scrollTop = calls.length > oldCount && wasAtBottom ? list.scrollHeight : oldTop;
+            $('picking').textContent = state.picking
+                ? 'Pick locator is on - nothing is being recorded. Turn it off in the Playwright toolbar to continue.'
+                : '';
+            $('picking').hidden = !state.picking;
             $('notice').textContent = state.notice || '';
             $('notice').hidden = !state.notice;
             const offer = recording ? state.offer : null;

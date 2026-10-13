@@ -51,6 +51,7 @@ def run_session(
         while True:
             reply = _as_dict(client.poll(session.toolbar_state(), reset))
             reset = False
+            session.set_picking(reply.get("picking") is True)
             if _apply(session, reply):
                 last_activity = clock()
             session.tick()

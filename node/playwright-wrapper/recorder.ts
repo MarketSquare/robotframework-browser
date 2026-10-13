@@ -69,8 +69,18 @@ export function toAction(payload: unknown): Action | null {
     const inner =
         record.action && typeof record.action === 'object' ? (record.action as Record<string, unknown>) : record;
     if (typeof inner.name !== 'string') return null;
+    // The snapshot of every Action is large and unused; only `assertSnapshot` needs it.
+    if (inner.name === 'assertSnapshot') return { ...inner } as Action;
     const { ariaSnapshot: _ariaSnapshot, ...rest } = inner; // eslint-disable-line @typescript-eslint/no-unused-vars
     return rest as Action;
+}
+
+// Playwright's "Pick locator" overlay button toggles these modes. While on, the
+// recorder is disabled: no Actions, no signals, and the pick is not delivered.
+const PICKING_MODES = new Set(['recording-inspecting', 'inspecting']);
+
+export function isPicking(mode: string | undefined): boolean {
+    return mode !== undefined && PICKING_MODES.has(mode);
 }
 
 export function isToolbarAction(action: Action): boolean {
@@ -228,6 +238,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
     return jsonResponse(
         JSON.stringify({
             mode: stopped ? 'stopped' : 'recording',
+            picking: isPicking(mode),
             pages: context.pages().length,
             events: drain(buffers.events),
             commands: drain(buffers.commands),
