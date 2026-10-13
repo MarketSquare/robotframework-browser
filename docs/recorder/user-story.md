@@ -93,6 +93,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
   other.
 - **AC-46** Playwright's *Assert snapshot* becomes `Get Aria Snapshot    <selector>    yaml    ==
   <snapshot>`, with the recorded ARIA snapshot as one escaped value.
+- **AC-47** Playwright's *Assert visibility* becomes `Get Element States    <selector>    *=
+  visible`.
 
 ### Keyword Arguments
 
@@ -156,8 +158,8 @@ See ADR 0010.
 
 ## Feature scope
 
-The feature scope is fully described by acceptance criteria **AC-01 to AC-41, AC-45 and
-AC-46**. Anything not
+The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
+AC-47**. Anything not
 stated there is not part of v1.
 
 ## Out of scope (possible future extensions)
