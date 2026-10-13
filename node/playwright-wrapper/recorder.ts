@@ -203,12 +203,14 @@ export async function resetSession(
 ): Promise<void> {
     // A previous session leaves the recorder in `standby`, `armed` set and
     // possibly Actions buffered in between; all three would end this
-    // session on its first poll.
+    // session on its first poll. The wait happens while still in `standby`,
+    // and recording starts only after the drain, so no Action made after the
+    // switch to `recording` can be dropped with the stale ones.
     buffers.armed = false;
-    await writeMode(context, 'recording');
     await wait(HELD_BACK_MS);
     drain(buffers.events);
     drain(buffers.commands);
+    await writeMode(context, 'recording');
 }
 
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {

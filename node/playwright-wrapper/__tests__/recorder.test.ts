@@ -131,4 +131,22 @@ describe('resetSession', () => {
         expect(buffers.events).toEqual([]);
         expect(buffers.armed).toBe(false);
     });
+
+    it('waits and drains while still in standby, then starts recording', async () => {
+        const order: string[] = [];
+        const buffers = { events: [] as any[], commands: [] as unknown[], armed: false };
+        const page = {
+            evaluate: jest.fn(async (_fn: unknown, mode: string) => {
+                order.push(`mode:${mode}:events=${buffers.events.length}`);
+                return true;
+            }),
+        };
+        const context = { pages: () => [page] } as any;
+        const wait = jest.fn(async () => {
+            order.push('wait');
+            buffers.events.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
+        });
+        await resetSession(context, buffers, wait);
+        expect(order).toEqual(['wait', 'mode:recording:events=0']);
+    });
 });
