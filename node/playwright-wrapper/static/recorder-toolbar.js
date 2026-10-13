@@ -238,6 +238,12 @@
         // closed when it is sent: a rejected name (duplicate, unusable) must come
         // back *inside* the panel, with what was typed still there to correct.
         let pending = false;
+        // The state a poll renders right after the `new` was sent can still be
+        // the one from before it - including the error of an earlier rejected
+        // name. Only a state that differs from the one at send time, or the
+        // second render after it (by then the command has been processed), answers it.
+        let sentKey = null;
+        let rendersSinceSend = 0;
         const openModal = () => {
             pending = false;
             $('ok').disabled = false;
@@ -263,6 +269,8 @@
             }
             if (!send({ cmd: 'new', name })) return;
             pending = true;
+            sentKey = lastKey;
+            rendersSinceSend = 0;
             $('ok').disabled = true;
         });
         $('nameInput').addEventListener('keydown', (event) => {
@@ -369,7 +377,7 @@
                 lastKey = key;
                 renderBody(state);
             }
-            finishRender(state);
+            finishRender(state, key);
         };
         const renderBody = (state) => {
             setHint('');
@@ -467,13 +475,13 @@
             $('err').textContent = state.error || '';
             $('err').hidden = !state.error;
         };
-        const finishRender = (state) => {
+        const finishRender = (state, key) => {
             const recording = state.state === 'recording';
             // The panel's content-driven width can change with every render (a
             // longer Keyword Call just got added); re-clamp so growth never pushes it
             // past the right edge of the viewport.
             place();
-            if (pending) {
+            if (pending && (key !== sentKey || ++rendersSinceSend >= 2)) {
                 if (state.error) {
                     // Rejected: keep the panel and the typed name, let them retry.
                     $('modalErr').textContent = state.error;
