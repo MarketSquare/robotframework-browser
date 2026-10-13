@@ -190,20 +190,33 @@ async function renderToolbars(context: BrowserContext, toolbarState: unknown): P
     }
 }
 
+// Playwright holds a navigation (and a left click) back for 500 ms before it
+// reports it, so a page opened or navigated right before a session starts
+// would otherwise arrive as the session's first Action.
+export const HELD_BACK_MS = 600;
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export async function resetSession(
+    context: BrowserContext,
+    buffers: RecorderBuffers,
+    wait: (ms: number) => Promise<void> = delay,
+): Promise<void> {
+    // A previous session leaves the recorder in `standby`, `armed` set and
+    // possibly Actions buffered in between; all three would end this
+    // session on its first poll.
+    buffers.armed = false;
+    await writeMode(context, 'recording');
+    await wait(HELD_BACK_MS);
+    drain(buffers.events);
+    drain(buffers.commands);
+}
+
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
     const context = state.getActiveContext();
     if (!context) throw new Error('No browser context is open. Open a page before recording.');
     const { state: toolbarState, reset } = JSON.parse(request.body || '{}');
     const buffers = await ensureRecorder(context);
-    if (reset) {
-        // A previous session leaves the recorder in `standby`, `armed` set and
-        // possibly Actions buffered in between; all three would end this
-        // session on its first poll.
-        buffers.armed = false;
-        drain(buffers.events);
-        drain(buffers.commands);
-        await writeMode(context, 'recording');
-    }
+    if (reset) await resetSession(context, buffers);
     if (toolbarState) await renderToolbars(context, toolbarState);
     const mode = await readMode(context);
     // Only honour a stop once the recorder has actually been seen recording,

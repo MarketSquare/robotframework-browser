@@ -2,7 +2,17 @@ import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
 
-import { drain, ensureRecorder, isToolbarAction, toAction, TOOLBAR_TAG, toolbarScript, writeMode } from '../recorder';
+import {
+    drain,
+    ensureRecorder,
+    HELD_BACK_MS,
+    isToolbarAction,
+    resetSession,
+    toAction,
+    TOOLBAR_TAG,
+    toolbarScript,
+    writeMode,
+} from '../recorder';
 
 describe('toAction', () => {
     it('unwraps the 1.62 ActionInContext shape', () => {
@@ -105,5 +115,20 @@ describe('writeMode', () => {
     it('skips a failing page and reports false when no page has the binding', async () => {
         const context = { pages: () => [page(new Error('closed')), page(false)] } as any;
         await expect(writeMode(context, 'recording')).resolves.toBe(false);
+    });
+});
+
+describe('resetSession', () => {
+    it('drops an Action Playwright held back from before the session', async () => {
+        const buffers = { events: [] as any[], commands: [] as unknown[], armed: true };
+        const context = { pages: () => [] } as any;
+        const wait = jest.fn(async (ms: number) => {
+            expect(ms).toBe(HELD_BACK_MS);
+            buffers.events.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
+        });
+        await resetSession(context, buffers, wait);
+        expect(wait).toHaveBeenCalledTimes(1);
+        expect(buffers.events).toEqual([]);
+        expect(buffers.armed).toBe(false);
     });
 });
