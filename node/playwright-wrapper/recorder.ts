@@ -106,14 +106,17 @@ async function readMode(context: BrowserContext): Promise<string | undefined> {
     return undefined;
 }
 
-async function writeMode(context: BrowserContext, mode: string): Promise<boolean> {
+export async function writeMode(context: BrowserContext, mode: string): Promise<boolean> {
     for (const page of context.pages()) {
         try {
-            await page.evaluate((m) => {
+            const present = await page.evaluate((m) => {
                 const w = window as unknown as { __pw_recorderSetMode?: (mode: string) => unknown };
-                return w.__pw_recorderSetMode && w.__pw_recorderSetMode(m);
+                if (!w.__pw_recorderSetMode) return false;
+                w.__pw_recorderSetMode(m);
+                return true;
             }, mode);
-            return true;
+            // Binding missing on this page (not yet injected) - try the next one.
+            if (present) return true;
         } catch {
             // Page closed or navigating - try the next one.
         }
@@ -121,10 +124,18 @@ async function writeMode(context: BrowserContext, mode: string): Promise<boolean
     return false;
 }
 
-export async function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers> {
-    const holder = context as unknown as Record<symbol, RecorderBuffers | undefined>;
+// The in-flight promise is stored on the context, so concurrent calls and a
+// retry after a partial failure can never run `_enableRecorder` twice.
+export function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers> {
+    const holder = context as unknown as Record<symbol, Promise<RecorderBuffers> | undefined>;
     const existing = holder[RECORDER];
     if (existing) return existing;
+    const created = createRecorder(context);
+    holder[RECORDER] = created;
+    return created;
+}
+
+async function createRecorder(context: BrowserContext): Promise<RecorderBuffers> {
     const enable = (context as unknown as { _enableRecorder?: (...args: unknown[]) => Promise<void> })._enableRecorder;
     if (typeof enable !== 'function') {
         throw new Error(
@@ -159,7 +170,6 @@ export async function ensureRecorder(context: BrowserContext): Promise<RecorderB
     // navigation long after the session ended. `renderToolbars` re-injects it
     // on every poll instead, which covers navigation and popups and stops by
     // itself once polling stops.
-    holder[RECORDER] = buffers;
     return buffers;
 }
 
@@ -194,7 +204,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
         drain(buffers.commands);
         await writeMode(context, 'recording');
     }
-    await renderToolbars(context, toolbarState ?? {});
+    if (toolbarState) await renderToolbars(context, toolbarState);
     const mode = await readMode(context);
     // Only honour a stop once the recorder has actually been seen recording,
     // otherwise a slow start would end the session immediately.

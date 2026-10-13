@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
 
-import { drain, ensureRecorder, isToolbarAction, toAction, TOOLBAR_TAG, toolbarScript } from '../recorder';
+import { drain, ensureRecorder, isToolbarAction, toAction, TOOLBAR_TAG, toolbarScript, writeMode } from '../recorder';
 
 describe('toAction', () => {
     it('unwraps the 1.62 ActionInContext shape', () => {
@@ -64,6 +64,12 @@ describe('ensureRecorder', () => {
         expect(context.exposeBinding).toHaveBeenCalledTimes(1);
     });
 
+    it('enables the recorder once for concurrent calls', async () => {
+        const context = fakeContext();
+        await Promise.all([ensureRecorder(context), ensureRecorder(context)]);
+        expect(context._enableRecorder).toHaveBeenCalledTimes(1);
+    });
+
     it('buffers actions, updates and signals, but not toolbar actions', async () => {
         const context = fakeContext();
         const state = await ensureRecorder(context);
@@ -77,5 +83,27 @@ describe('ensureRecorder', () => {
 
     it('fails clearly without the programmatic recorder', async () => {
         await expect(ensureRecorder({ exposeBinding: jest.fn() } as any)).rejects.toThrow('programmatic recorder');
+    });
+});
+
+describe('writeMode', () => {
+    const page = (result: boolean | Error) => ({
+        evaluate: jest.fn(async () => {
+            if (result instanceof Error) throw result;
+            return result;
+        }),
+    });
+
+    it('continues to the next page when the binding is missing', async () => {
+        const first = page(false);
+        const second = page(true);
+        const context = { pages: () => [first, second] } as any;
+        await expect(writeMode(context, 'recording')).resolves.toBe(true);
+        expect(second.evaluate).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips a failing page and reports false when no page has the binding', async () => {
+        const context = { pages: () => [page(new Error('closed')), page(false)] } as any;
+        await expect(writeMode(context, 'recording')).resolves.toBe(false);
     });
 });
