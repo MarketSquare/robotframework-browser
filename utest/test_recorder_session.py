@@ -62,6 +62,12 @@ def settle(s, clock):
     s.tick()
 
 
+def start(s, name):
+    """Send New and let its settle time pass, as the poll loop does."""
+    s.handle_command({"cmd": "new", "name": name})
+    settle(s, s._clock)
+
+
 def test_idle_actions_are_not_recorded():
     s, target, _ = session()
     s.handle_event("added", FILL)
@@ -71,7 +77,7 @@ def test_idle_actions_are_not_recorded():
 
 def test_new_record_finish():
     s, target, clock = session()
-    s.handle_command({"cmd": "new", "name": "Fill Name"})
+    start(s, "Fill Name")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "finish"})
     assert s.toolbar_state()["pending"] == "finish"
@@ -84,7 +90,7 @@ def test_new_record_finish():
 
 def test_click_arriving_after_finish_lands_in_the_finished_keyword():
     s, target, clock = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_command({"cmd": "finish"})
     clock.now += 0.4
     s.handle_event("added", CLICK)
@@ -94,7 +100,7 @@ def test_click_arriving_after_finish_lands_in_the_finished_keyword():
 
 def test_commands_are_rejected_while_finishing():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "finish"})
     s.handle_command({"cmd": "undo"})
@@ -104,7 +110,7 @@ def test_commands_are_rejected_while_finishing():
 
 def test_stop_overrides_a_pending_finish():
     s, target, clock = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "finish"})
     s.handle_command({"cmd": "stop"})
@@ -116,7 +122,7 @@ def test_stop_overrides_a_pending_finish():
 
 def test_finish_of_an_empty_keyword_saves_nothing():
     s, target, clock = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_command({"cmd": "finish"})
     settle(s, clock)
     assert target.finished == [] and s.keywords == []
@@ -124,7 +130,7 @@ def test_finish_of_an_empty_keyword_saves_nothing():
 
 def test_undo_ignores_later_updates_of_the_undone_action():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "undo"})
     s.handle_event("updated", {**FILL, "text": "Alicia"})
@@ -133,7 +139,7 @@ def test_undo_ignores_later_updates_of_the_undone_action():
 
 def test_update_after_a_skipped_action_appends():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", CLICK)
     s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
     s.handle_event("updated", FILL)
@@ -142,14 +148,14 @@ def test_update_after_a_skipped_action_appends():
 
 def test_unsupported_action_shows_a_notice():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
     assert "assertSnapshot" in s.toolbar_state()["notice"]
 
 
 def test_open_page_is_silent():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", {"name": "openPage", "url": "about:blank"})
     assert s.toolbar_state()["notice"] is None
     assert s.toolbar_state()["calls"] == []
@@ -157,7 +163,7 @@ def test_open_page_is_silent():
 
 def test_dialog_signal_and_undo_as_a_group():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", CLICK)
     s.handle_event("signal", {"name": "dialog"})
     assert [c["keyword"] for c in s.toolbar_state()["calls"]] == [
@@ -170,7 +176,7 @@ def test_dialog_signal_and_undo_as_a_group():
 
 def test_discard_removes_and_returns_to_idle():
     s, target, clock = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "discard"})
     settle(s, clock)
@@ -187,7 +193,7 @@ def test_fixed_name_discard_restarts_the_same_keyword():
 
 def test_fixed_name_rejects_new_and_finish():
     s, _, _ = session(fixed_name="K")
-    s.handle_command({"cmd": "new", "name": "Other"})
+    start(s, "Other")
     assert s.toolbar_state()["error"]
     s.handle_command({"cmd": "finish"})
     assert s.toolbar_state()["error"]
@@ -200,7 +206,7 @@ def test_fixed_name_existing_in_target_raises():
 
 def test_new_rejects_shadowing_names():
     s, _, _ = session(known=KnownKeywords(names=frozenset({"Click"})))
-    s.handle_command({"cmd": "new", "name": "click"})
+    start(s, "click")
     assert "shadowed" in s.toolbar_state()["error"]
     assert s.state == "idle"
 
@@ -208,7 +214,7 @@ def test_new_rejects_shadowing_names():
 def test_new_rejects_a_name_recorded_earlier_in_the_session():
     s, _, clock = session()
     for _ in range(2):
-        s.handle_command({"cmd": "new", "name": "K"})
+        start(s, "K")
         s.handle_event("added", FILL)
         s.handle_command({"cmd": "finish"})
         settle(s, clock)
@@ -217,7 +223,7 @@ def test_new_rejects_a_name_recorded_earlier_in_the_session():
 
 def test_close_saves_a_running_keyword():
     s, target, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     assert s.close() == ["K"]
     assert target.finished
@@ -226,7 +232,7 @@ def test_close_saves_a_running_keyword():
 def test_text_of_all_finished_keywords():
     s, _, clock = session()
     for name in ("A", "B"):
-        s.handle_command({"cmd": "new", "name": name})
+        start(s, name)
         s.handle_event("added", FILL)
         s.handle_command({"cmd": "finish"})
         settle(s, clock)
@@ -236,7 +242,7 @@ def test_text_of_all_finished_keywords():
 
 def test_argument_offer_and_replace():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_event("added", {"name": "fill", "selector": "#m", "text": "Alice"})
     s.handle_command(
@@ -263,7 +269,7 @@ def test_argument_offer_and_replace():
 
 def test_default_toggle():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command(
         {
@@ -319,7 +325,7 @@ def test_default_toggle():
 )
 def test_bad_argument_commands_become_toolbar_errors(command):
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command(command)
     assert s.toolbar_state()["error"]
@@ -327,7 +333,7 @@ def test_bad_argument_commands_become_toolbar_errors(command):
 
 def test_save_failure_is_reported_and_recording_continues():
     s, target, _ = session(target=FakeTarget(fail=True))
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     assert "read-only" in s.toolbar_state()["error"]
     target.fail = False
@@ -344,7 +350,7 @@ def test_unknown_command_is_logged():
 
 def test_toolbar_values_carry_their_raw_text():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     assert [v["raw"] for v in s.toolbar_state()["calls"][0]["values"]] == [
         "#n",
@@ -366,7 +372,7 @@ def test_toolbar_values_carry_their_raw_text():
 
 def test_argument_with_a_stale_raw_is_rejected():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_event("added", {"name": "fill", "selector": "#m", "text": "Bob"})
     s.handle_command(
@@ -398,7 +404,7 @@ class ValueErrorTarget(FakeTarget):
 
 def test_value_error_from_save_is_a_toolbar_error_and_clears_later():
     s, target, _ = session(target=ValueErrorTarget(fail=True))
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     assert "foreign keyword" in s.toolbar_state()["error"]
     target.fail = False
@@ -409,7 +415,7 @@ def test_value_error_from_save_is_a_toolbar_error_and_clears_later():
 
 def test_value_error_from_finish_is_a_toolbar_error_and_keeps_the_keyword():
     s, _, clock = session(target=ValueErrorTarget(fail=True))
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command({"cmd": "finish"})
     settle(s, clock)
@@ -418,13 +424,20 @@ def test_value_error_from_finish_is_a_toolbar_error_and_keeps_the_keyword():
 
 
 def arg(**fields):
-    base = {"cmd": "argument", "call": 0, "value": 1, "start": 0, "end": 5, "name": "who"}
+    base = {
+        "cmd": "argument",
+        "call": 0,
+        "value": 1,
+        "start": 0,
+        "end": 5,
+        "name": "who",
+    }
     return {**base, "raw": "Alice", **fields}
 
 
 def recording(**kwargs):
     s, target, clock = session(**kwargs)
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", FILL)
     return s, target, clock
 
@@ -476,7 +489,9 @@ def test_repeated_stop_does_not_extend_the_deadline():
     assert s.stopped
 
 
-@pytest.mark.parametrize("fields", [{"call": -1, "value": -1}, {"start": -1}, {"end": -1}])
+@pytest.mark.parametrize(
+    "fields", [{"call": -1, "value": -1}, {"start": -1}, {"end": -1}]
+)
 def test_negative_indexes_are_rejected(fields):
     s, _, _ = recording()
     s.handle_command(arg(**fields))
@@ -531,7 +546,7 @@ def test_failing_remove_on_discard_is_a_toolbar_error_and_the_keyword_is_gone(er
 
 def test_failing_remove_of_an_empty_keyword_on_finish_is_a_toolbar_error():
     s, _, clock = session(target=RemoveFailTarget(OSError("disk")))
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_command({"cmd": "finish"})
     settle(s, clock)
     assert "disk" in s.toolbar_state()["error"]
@@ -548,13 +563,29 @@ def test_failing_remove_of_an_empty_keyword_on_finish_is_a_toolbar_error():
         {"cmd": "default", "argument": 3, "use": True},
         {"cmd": "default", "argument": "who", "use": "false"},
         {"cmd": "default", "argument": "who", "use": 1},
-        {"cmd": "argument", "call": 0, "value": 1, "start": 0, "end": 5, "name": 7, "raw": "Alice"},
-        {"cmd": "argument", "call": 0, "value": 1, "start": 0, "end": 5, "name": "w", "raw": 5},
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 1,
+            "start": 0,
+            "end": 5,
+            "name": 7,
+            "raw": "Alice",
+        },
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 1,
+            "start": 0,
+            "end": 5,
+            "name": "w",
+            "raw": 5,
+        },
     ],
 )
 def test_non_conforming_command_fields_are_toolbar_errors(command):
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"}) if command["cmd"] != "new" else None
+    start(s, "K") if command["cmd"] != "new" else None
     if command["cmd"] != "new":
         s.handle_event("added", FILL)
         s.handle_command(arg(name="who"))
@@ -611,14 +642,14 @@ def test_a_failed_argument_command_clears_the_offer():
 
 def test_updated_event_on_an_empty_recording_is_added_as_a_call():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("updated", FILL)
     assert [c["keyword"] for c in s.toolbar_state()["calls"]] == ["Fill Text"]
 
 
 def test_unsupported_action_name_is_text_and_truncated():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", {"name": "x" * 500})
     assert len(s.toolbar_state()["notice"]) < 200
     s.handle_event("added", {"name": ["list"]})
@@ -634,16 +665,48 @@ def test_signal_after_undo_is_ignored():
 
 def test_signal_after_a_skipped_action_is_ignored():
     s, _, _ = session()
-    s.handle_command({"cmd": "new", "name": "K"})
+    start(s, "K")
     s.handle_event("added", CLICK)
     s.handle_event("added", {"name": "assertSnapshot", "selector": "#x"})
     s.handle_event("signal", {"name": "dialog"})
     assert [c["keyword"] for c in s.toolbar_state()["calls"]] == ["Click"]
 
 
-@pytest.mark.parametrize("command", [{"cmd": "finish"}, {"cmd": "discard"}, {"cmd": "undo"}, arg()])
+@pytest.mark.parametrize(
+    "command", [{"cmd": "finish"}, {"cmd": "discard"}, {"cmd": "undo"}, arg()]
+)
 def test_commands_while_idle_are_toolbar_errors(command):
     s, _, _ = session()
     s.handle_command(command)
     assert s.toolbar_state()["error"]
     assert s.toolbar_state()["pending"] is None
+
+
+def test_action_held_back_from_idle_time_does_not_land_in_the_new_keyword():
+    s, target, clock = session()
+    s.handle_command({"cmd": "new", "name": "K"})
+    state = s.toolbar_state()
+    assert (state["state"], state["pending"], state["name"]) == ("idle", "new", "K")
+    clock.now += 0.5
+    s.handle_event("added", {"name": "navigate", "url": "http://idle"})
+    settle(s, clock)
+    assert s.state == "recording"
+    assert s.toolbar_state()["calls"] == []
+    assert target.saved == []
+
+
+def test_stop_while_a_new_keyword_is_settling_never_starts_it():
+    s, target, clock = session()
+    s.handle_command({"cmd": "new", "name": "K"})
+    s.handle_command({"cmd": "stop"})
+    settle(s, clock)
+    assert s.stopped
+    assert s.state == "idle"
+    assert s.toolbar_state()["name"] is None
+
+
+def test_close_while_a_new_keyword_is_settling_records_nothing():
+    s, _, _ = session()
+    s.handle_command({"cmd": "new", "name": "K"})
+    assert s.close() == []
+    assert s.state == "idle"

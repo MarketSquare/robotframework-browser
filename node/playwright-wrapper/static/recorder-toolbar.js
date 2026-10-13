@@ -463,7 +463,8 @@
                 });
             }
             $('panel').classList.toggle('busy', !!state.pending);
-            if (state.pending) $('title').textContent = `${state.name || 'Recording'} - finishing…`;
+            if (state.pending === 'new') $('title').textContent = `${state.name || 'Keyword'} - starting…`;
+            else if (state.pending) $('title').textContent = `${state.name || 'Recording'} - finishing…`;
             $('idleRow').hidden = recording;
             $('recRow').hidden = !recording;
             // A fixed-name recording writes exactly one keyword: no New, no Finish.

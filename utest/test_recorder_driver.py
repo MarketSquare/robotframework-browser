@@ -24,6 +24,8 @@ FAIL_ON_POLL = 2
 DRAIN_POLLS = 3
 BAD_REPLY_POLLS = 2
 IDLE_POLL_LIMIT = 6
+#: Polls (0.2 s each) until a New has settled and the keyword is recording.
+SETTLE_POLLS = 3
 
 
 class Client:
@@ -55,6 +57,10 @@ def reply(events=(), commands=(), mode="recording", pages=1):
     }
 
 
+def settling():
+    return [reply() for _ in range(SETTLE_POLLS)]
+
+
 def make(clock=None, **kwargs):
     clock = clock or Clock()
     return RecorderSession(FakeTarget(), clock=clock, **kwargs), clock
@@ -73,6 +79,7 @@ def test_playwright_stop_drains_once_more_then_ends():
     client = Client(
         [
             reply(commands=[{"cmd": "new", "name": "K"}]),
+            *settling(),
             reply(mode="stopped"),
             reply(events=[{"event": "added", "action": FILL}]),
         ],
@@ -81,7 +88,7 @@ def test_playwright_stop_drains_once_more_then_ends():
     assert run_session(s, client, clock=clock, sleep=lambda _: None) == "playwright"
     assert s.keywords == ["K"]
     assert "Fill Text" in s.text()
-    assert len(client.polls) == DRAIN_POLLS
+    assert len(client.polls) == DRAIN_POLLS + SETTLE_POLLS
 
 
 def test_failing_drain_poll_after_playwright_stop_is_ignored():
@@ -89,11 +96,13 @@ def test_failing_drain_poll_after_playwright_stop_is_ignored():
 
     class DrainBoom(Client):
         def poll(self, state, reset):
-            if len(self.polls) == FAIL_ON_POLL:
+            if len(self.polls) == FAIL_ON_POLL + SETTLE_POLLS:
                 raise RuntimeError("late")
             return super().poll(state, reset)
 
-    client = DrainBoom([reply(commands=[{"cmd": "new", "name": "K"}])], clock)
+    client = DrainBoom(
+        [reply(commands=[{"cmd": "new", "name": "K"}]), *settling()], clock
+    )
     client.replies.append(
         reply(mode="stopped", events=[{"event": "added", "action": FILL}])
     )
@@ -133,13 +142,14 @@ def test_exception_still_saves_and_stops():
 
     class Boom(Client):
         def poll(self, state, reset):
-            if len(self.polls) == FAIL_ON_POLL:
+            if len(self.polls) == FAIL_ON_POLL + SETTLE_POLLS:
                 raise RuntimeError("grpc down")
             return super().poll(state, reset)
 
     client = Boom(
         [
             reply(commands=[{"cmd": "new", "name": "K"}]),
+            *settling(),
             reply(events=[{"event": "added", "action": FILL}]),
         ],
         clock,
@@ -254,6 +264,7 @@ def test_events_are_applied_before_commands_within_one_reply():
     client = Client(
         [
             reply(commands=[{"cmd": "new", "name": "K"}]),
+            *settling(),
             reply(
                 events=[{"event": "added", "action": FILL}],
                 commands=[{"cmd": "new", "name": "L"}],

@@ -7,6 +7,7 @@ import pytest
 
 from Browser.keywords import recorder as module
 from Browser.keywords.recorder import SUITE_SOURCE, Recorder
+from Browser.recorder import session as session_module
 from Browser.recorder.target import FileTarget, LogTarget
 
 
@@ -38,11 +39,13 @@ def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
     def fake_run(session, client, idle_timeout=None):
         seen["idle"] = idle_timeout
         session.handle_command({"cmd": "new", "name": "K"})
+        session.tick()
         session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
         session.close()
         return "stop"
 
     monkeypatch.setattr(module, "run_session", fake_run)
+    monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
     monkeypatch.setattr(
         module, "collect_known_keywords", lambda: module.KnownKeywords()
     )
@@ -122,6 +125,7 @@ def test_non_positive_idle_timeout_is_rejected(idle, tmp_path):
 
 def _fake_run(session, client, idle_timeout=None):
     session.handle_command({"cmd": "new", "name": "K"})
+    session.tick()
     session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
     session.close()
     return "stop"
@@ -129,6 +133,7 @@ def _fake_run(session, client, idle_timeout=None):
 
 def _recorder(monkeypatch):
     monkeypatch.setattr(module, "run_session", _fake_run)
+    monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
     monkeypatch.setattr(
         module, "collect_known_keywords", lambda: module.KnownKeywords()
     )

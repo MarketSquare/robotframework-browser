@@ -31,15 +31,17 @@ from .target import Target
 IDLE = "idle"
 RECORDING = "recording"
 
-#: Playwright holds a left click back for 500 ms before reporting it (ADR 0011).
-#: Finish, Discard and Stop wait this long so such a click still lands in the
-#: keyword it was made in (AC-19).
+#: Playwright holds a left click and a navigation back for 500 ms before
+#: reporting them (ADR 0011). Finish, Discard and Stop wait this long so such an
+#: Action still lands in the keyword it was made in (AC-19); New waits this long
+#: so one made while idle does not land in the new keyword.
 SETTLE_SECONDS = 0.6
 _WRITE_FAILED = "Could not write"
 _PAIR = 2
 _NAME_LIMIT = 80
 _STILL_FINISHING = "Still finishing the last command - please wait."
 _DEFERRED = ("finish", "discard", "stop")
+_STARTING = "new"
 
 
 class RecorderSession:
@@ -60,6 +62,7 @@ class RecorderSession:
         self._finished: list[RecordedKeyword] = []
         self._keyword: RecordedKeyword | None = None
         self._pending: tuple[str, float] | None = None
+        self._starting: str | None = None
         self._error: str | None = None
         self._notice: str | None = None
         self._offer: dict | None = None
@@ -91,7 +94,7 @@ class RecorderSession:
         keyword = self._keyword
         return {
             "state": self.state,
-            "name": keyword.name if keyword is not None else None,
+            "name": keyword.name if keyword is not None else self._starting,
             "fixedName": self._fixed_name is not None,
             "target": self.target.label,
             "keywords": self.keywords,
@@ -191,7 +194,9 @@ class RecorderSession:
             self._discard_on_stop = False
             if self._keyword is not None:
                 self._discard(restart=False)
-        if cmd == "finish":
+        if cmd == _STARTING:
+            self._start()
+        elif cmd == "finish":
             self._finish()
         elif cmd == "discard":
             self._discard()
@@ -202,6 +207,7 @@ class RecorderSession:
         """End the session now; a running Keyword Recording is saved (AC-18)."""
         pending = self._pending
         self._pending = None
+        self._starting = None
         discard = self._discard_on_stop or (
             pending is not None and pending[0] == "discard"
         )
@@ -226,7 +232,9 @@ class RecorderSession:
                 self._error = "Use Stop to end this recording."
                 return
         if cmd == "stop" and self._pending is not None:
-            # Keep the running settle time; a discard still happens first.
+            # Keep the running settle time; a discard still happens first and
+            # a keyword not yet started is never started.
+            self._starting = None
             if self._pending[0] == "discard":
                 self._discard_on_stop = True
             if self._pending[0] != "stop":
@@ -248,6 +256,14 @@ class RecorderSession:
         error = self._guard.error(name, taken=taken)
         if error:
             self._error = error
+            return
+        self._starting = name
+        self._pending = (_STARTING, self._clock() + SETTLE_SECONDS)
+
+    def _start(self) -> None:
+        name = self._starting
+        self._starting = None
+        if name is None:
             return
         self._keyword = RecordedKeyword(name)
         self._undone = self._skipped = False
