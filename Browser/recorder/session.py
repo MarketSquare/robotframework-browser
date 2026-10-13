@@ -37,6 +37,8 @@ RECORDING = "recording"
 SETTLE_SECONDS = 0.6
 _WRITE_FAILED = "Could not write"
 _PAIR = 2
+_NAME_LIMIT = 80
+_STILL_FINISHING = "Still finishing the last command - please wait."
 _DEFERRED = ("finish", "discard", "stop")
 
 
@@ -63,6 +65,7 @@ class RecorderSession:
         self._offer: dict | None = None
         self._undone = False
         self._skipped = False
+        self._discard_on_stop = False
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
@@ -131,12 +134,15 @@ class RecorderSession:
                 and not self._skipped
                 and keyword.attach(effect.before, effect.after)
             ):
+                self._offer = None
                 self._save()
             return
-        call = self._mapper.map(action)
+        call = self._mapper.map(action) if isinstance(action.get("name"), str) else None
         if call is None:
-            name = action.get("name")
+            raw_name = action.get("name")
+            name = raw_name if isinstance(raw_name, str) else "?"
             if name not in SILENT_ACTIONS:
+                name = name[:_NAME_LIMIT]
                 self._notice = f"'{name}' has no Browser keyword and was not recorded."
                 self.log.append(f"action {name!r} has no Browser keyword equivalent")
                 self._skipped = True
@@ -145,9 +151,11 @@ class RecorderSession:
             if self._undone:
                 return
             if not self._skipped and keyword.update_last(call):
+                self._offer = None
                 self._save()
                 return
         keyword.add(call)
+        self._offer = None
         self._undone = False
         self._skipped = False
         self._save()
@@ -159,12 +167,12 @@ class RecorderSession:
         self._notice = None
         cmd = str(command.get("cmd", ""))
         if self._pending is not None and cmd != "stop":
-            self._error = "Still finishing the last command - please wait."
+            self._error = _STILL_FINISHING
             return
         if cmd in _DEFERRED:
             self._defer(cmd)
         elif cmd == "new":
-            self._new(str(command.get("name", "")))
+            self._new(command.get("name"))
         elif cmd == "undo":
             self._undo()
         elif cmd in ("argument", "replace", "default"):
@@ -177,6 +185,12 @@ class RecorderSession:
             return
         cmd = self._pending[0]
         self._pending = None
+        if self._error == _STILL_FINISHING:
+            self._error = None
+        if self._discard_on_stop:
+            self._discard_on_stop = False
+            if self._keyword is not None:
+                self._discard(restart=False)
         if cmd == "finish":
             self._finish()
         elif cmd == "discard":
@@ -186,9 +200,16 @@ class RecorderSession:
 
     def close(self) -> list[str]:
         """End the session now; a running Keyword Recording is saved (AC-18)."""
+        pending = self._pending
         self._pending = None
+        discard = self._discard_on_stop or (
+            pending is not None and pending[0] == "discard"
+        )
+        self._discard_on_stop = False
         if self._keyword is not None:
-            if len(self._keyword):
+            if discard:
+                self._discard(restart=False)
+            elif len(self._keyword):
                 self._finish()
             else:
                 self._keyword = None
@@ -204,9 +225,19 @@ class RecorderSession:
             if cmd == "finish" and self._fixed_name is not None:
                 self._error = "Use Stop to end this recording."
                 return
+        if cmd == "stop" and self._pending is not None:
+            # Keep the running settle time; a discard still happens first.
+            if self._pending[0] == "discard":
+                self._discard_on_stop = True
+            if self._pending[0] != "stop":
+                self._pending = ("stop", self._pending[1])
+            return
         self._pending = (cmd, self._clock() + SETTLE_SECONDS)
 
-    def _new(self, name: str) -> None:
+    def _new(self, name: object) -> None:
+        if not isinstance(name, str):
+            self._error = "'name' must be text."
+            return
         if self._fixed_name is not None:
             self._error = f"This recording writes only '{self._fixed_name}'."
             return
@@ -228,7 +259,7 @@ class RecorderSession:
         self._offer = None
         if not len(keyword):
             self.log.append(f"'{keyword.name}' had no Keyword Calls and was discarded")
-            self.target.remove(keyword.name)
+            self._remove(keyword.name)
             return
         try:
             self.target.finish(keyword)
@@ -246,16 +277,24 @@ class RecorderSession:
             self._offer = None
             self._save()
 
-    def _discard(self) -> None:
+    def _discard(self, restart: bool = True) -> None:
         keyword = self._keyword
         assert keyword is not None
-        self.target.remove(keyword.name)
-        self.log.append(f"discarded '{keyword.name}'")
         self._keyword = (
-            RecordedKeyword(self._fixed_name) if self._fixed_name is not None else None
+            RecordedKeyword(self._fixed_name)
+            if restart and self._fixed_name is not None
+            else None
         )
         self._offer = None
         self._undone = self._skipped = False
+        self.log.append(f"discarded '{keyword.name}'")
+        self._remove(keyword.name)
+
+    def _remove(self, name: str) -> None:
+        try:
+            self.target.remove(name)
+        except (OSError, ValueError) as error:
+            self._error = f"{_WRITE_FAILED} {self.target.label}: {error}"
 
     def _argument_command(self, cmd: str, command: dict) -> None:
         keyword = self._keyword
@@ -264,16 +303,11 @@ class RecorderSession:
             return
         try:
             if cmd == "argument":
-                self._check_raw(keyword, command)
-                raw_name = command.get("name")
-                name = raw_name if isinstance(raw_name, str) else ""
-                occurrences = keyword.make_argument(
-                    _int(command, "call"),
-                    _int(command, "value"),
-                    _int(command, "start"),
-                    _int(command, "end"),
-                    name,
-                )
+                call, value = _int(command, "call"), _int(command, "value")
+                start, end = _int(command, "start"), _int(command, "end")
+                self._check_raw(keyword, call, value, command)
+                name = _text(command, "name")
+                occurrences = keyword.make_argument(call, value, start, end, name)
                 self._offer = (
                     {
                         "argument": name,
@@ -285,29 +319,34 @@ class RecorderSession:
                 )
             elif cmd == "replace":
                 keyword.replace(
-                    str(command.get("argument")), _pairs(command.get("occurrences"))
+                    _text(command, "argument"), _pairs(command.get("occurrences"))
                 )
                 self._offer = None
             else:
-                keyword.set_default(
-                    str(command.get("argument")), bool(command.get("use"))
-                )
+                use = command.get("use")
+                if not isinstance(use, bool):
+                    raise ValueError("'use' must be true or false.")
+                keyword.set_default(_text(command, "argument"), use)
         except ValueError as error:
             self._error = str(error)
+            if cmd == "argument":
+                self._offer = None
             return
         self._save()
 
     @staticmethod
-    def _check_raw(keyword: RecordedKeyword, command: dict) -> None:
+    def _check_raw(
+        keyword: RecordedKeyword, call: int, value: int, command: dict
+    ) -> None:
         """Reject a selection made against a view that has since changed."""
-        call, value = command.get("call"), command.get("value")
+        raw = command.get("raw", _MISSING)
+        if raw is not None and not isinstance(raw, str):
+            raise ValueError("'raw' must be text.")
         calls = keyword.calls()
         if (
-            isinstance(call, int)
-            and isinstance(value, int)
-            and 0 <= call < len(calls)
-            and 0 <= value < len(calls[call].args)
-            and calls[call].args[value].text != command.get("raw")
+            call < len(calls)
+            and value < len(calls[call].args)
+            and (raw is _MISSING or calls[call].args[value].text != raw)
         ):
             raise ValueError("The keyword calls changed - please try again.")
 
@@ -326,9 +365,19 @@ class RecorderSession:
             self._notice = notice
 
 
+_MISSING: object = object()
+
+
+def _text(command: dict, key: str) -> str:
+    value = command.get(key)
+    if not isinstance(value, str):
+        raise ValueError(f"'{key}' must be text.")
+    return value
+
+
 def _int(command: dict, key: str) -> int:
     value = command.get(key)
-    if not isinstance(value, int) or isinstance(value, bool):
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise ValueError(f"'{key}' must be a number.")
     return value
 
@@ -341,7 +390,9 @@ def _pairs(value: object) -> list[tuple[int, int]]:
         if (
             not isinstance(item, list)
             or len(item) != _PAIR
-            or not all(isinstance(i, int) and not isinstance(i, bool) for i in item)
+            or not all(
+                isinstance(i, int) and not isinstance(i, bool) and i >= 0 for i in item
+            )
         ):
             raise ValueError("Each occurrence must be [call, value].")
         pairs.append((item[0], item[1]))
