@@ -51,6 +51,16 @@ const RECORDER = Symbol.for('robotframework-browser.recorder.state');
 // Modes that mean "the user is no longer recording". Everything else
 // (`recording`, `recording-inspecting`, `asserting*`) is part of a recording.
 const STOP_MODES = new Set(['none', 'standby']);
+// The mode written when a session ends: in Playwright 1.63 only `none` hides its overlay.
+const STOPPED_MODE = 'none';
+
+// The command binding is callable by any page script (ADR 0010), and one poll
+// reply must stay well below gRPC's 4 MB message limit.
+export const MAX_COMMAND_LENGTH = 4096;
+export const MAX_BUFFERED_COMMANDS = 100;
+export const MAX_EVENT_LENGTH = 1024 * 1024;
+export const MAX_EVENTS_PER_POLL = 500;
+export const MAX_REPLY_EVENT_CHARS = 2 * 1024 * 1024;
 
 export type Action = Record<string, unknown> & { name: string; selector?: string };
 interface Buffered {
@@ -61,6 +71,8 @@ export interface RecorderBuffers {
     events: Buffered[];
     commands: unknown[];
     armed: boolean;
+    // A Recording Session is running: set by the reset poll, cleared by `recorderStop`.
+    active: boolean;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -89,6 +101,32 @@ export function isToolbarAction(action: Action): boolean {
 
 export function drain<T>(list: T[]): T[] {
     return list.splice(0, list.length);
+}
+
+function jsonLength(value: unknown): number {
+    try {
+        return JSON.stringify(value)?.length ?? Infinity;
+    } catch {
+        return Infinity;
+    }
+}
+
+// The oldest events that fit one poll reply; the rest wait for the next poll.
+export function drainEvents(events: Buffered[]): Buffered[] {
+    let count = 0;
+    let chars = 0;
+    while (count < events.length && count < MAX_EVENTS_PER_POLL) {
+        chars += jsonLength(events[count]);
+        if (count > 0 && chars > MAX_REPLY_EVENT_CHARS) break;
+        count += 1;
+    }
+    return events.splice(0, count);
+}
+
+export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
+    if (!buffers.active || buffers.commands.length >= MAX_BUFFERED_COMMANDS) return;
+    if (jsonLength(command) > MAX_COMMAND_LENGTH) return;
+    buffers.commands.push(command);
 }
 
 let toolbarSource: string | undefined;
@@ -137,12 +175,15 @@ export async function writeMode(context: BrowserContext, mode: string): Promise<
 // The in-flight promise is stored on the context, so concurrent calls and a
 // retry after a partial failure can never run `_enableRecorder` twice.
 export function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers> {
-    const holder = context as unknown as Record<symbol, Promise<RecorderBuffers> | undefined>;
-    const existing = holder[RECORDER];
+    const existing = existingRecorder(context);
     if (existing) return existing;
     const created = createRecorder(context);
-    holder[RECORDER] = created;
+    (context as unknown as Record<symbol, Promise<RecorderBuffers>>)[RECORDER] = created;
     return created;
+}
+
+function existingRecorder(context: BrowserContext): Promise<RecorderBuffers> | undefined {
+    return (context as unknown as Record<symbol, Promise<RecorderBuffers> | undefined>)[RECORDER];
 }
 
 async function createRecorder(context: BrowserContext): Promise<RecorderBuffers> {
@@ -153,11 +194,14 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
                 '(BrowserContext._enableRecorder), which Record Keyword and Record Keywords need.',
         );
     }
-    const buffers: RecorderBuffers = { events: [], commands: [], armed: false };
+    const buffers: RecorderBuffers = { events: [], commands: [], armed: false, active: false };
+    const buffer = (entry: Buffered) => {
+        if (buffers.active && jsonLength(entry) <= MAX_EVENT_LENGTH) buffers.events.push(entry);
+    };
     const forward = (event: 'added' | 'updated') => (_page: unknown, payload: unknown) => {
         const action = toAction(payload);
         if (!action || isToolbarAction(action)) return;
-        buffers.events.push({ event, action });
+        buffer({ event, action });
     };
     await enable.call(
         context,
@@ -167,13 +211,13 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
             actionUpdated: forward('updated'),
             signalAdded: (_page: unknown, signal: unknown) => {
                 if (signal && typeof signal === 'object' && typeof (signal as Action).name === 'string') {
-                    buffers.events.push({ event: 'signal', action: signal as Record<string, unknown> });
+                    buffer({ event: 'signal', action: signal as Record<string, unknown> });
                 }
             },
         },
     );
     await context.exposeBinding('__rfbCommand', (_source: unknown, command: unknown) => {
-        buffers.commands.push(command);
+        acceptCommand(buffers, command);
     });
     // Deliberately no `context.addInitScript(toolbarScript())`: an init script
     // cannot be un-registered, so the toolbar would keep re-appearing on every
@@ -211,12 +255,13 @@ export async function resetSession(
     buffers: RecorderBuffers,
     wait: (ms: number) => Promise<void> = delay,
 ): Promise<void> {
-    // A previous session leaves the recorder in `standby`, `armed` set and
+    // A previous session leaves the recorder stopped (`none`), `armed` set and
     // possibly Actions buffered in between; all three would end this
-    // session on its first poll. The wait happens while still in `standby`,
-    // and recording starts only after the drain, so no Action made after the
+    // session on its first poll. The wait happens while still stopped, and
+    // recording starts only after the drain, so no Action made after the
     // switch to `recording` can be dropped with the stale ones.
     buffers.armed = false;
+    buffers.active = true;
     await wait(HELD_BACK_MS);
     drain(buffers.events);
     drain(buffers.commands);
@@ -240,7 +285,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             mode: stopped ? 'stopped' : 'recording',
             picking: isPicking(mode),
             pages: context.pages().length,
-            events: drain(buffers.events),
+            events: drainEvents(buffers.events),
             commands: drain(buffers.commands),
         }),
         '',
@@ -250,9 +295,15 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
 export async function recorderStop(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
     const context = state.getActiveContext();
     if (!context) return emptyWithLog('No context to stop recording in.');
+    try {
+        const recorder = existingRecorder(context);
+        if (recorder) (await recorder).active = false;
+    } catch {
+        // The recorder never started; nothing buffers commands.
+    }
     // Deliberately not `_disableRecorder()`: it drops the event sink, and
     // re-installing it would deliver every Action of the next session twice.
-    await writeMode(context, 'standby');
+    await writeMode(context, STOPPED_MODE);
     for (const page of context.pages()) {
         try {
             await page.evaluate(() => {
