@@ -158,6 +158,7 @@ class RecorderSession:
             calls.append(
                 {
                     "text": _shown(call.render()),
+                    "assign": f"${{{call.assign}}}=" if call.assign else None,
                     "keyword": call.keyword,
                     "values": values,
                 }

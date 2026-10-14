@@ -96,7 +96,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `fixedName` | true for `Record Keyword` (name is fixed, only ✕ ends it) |
 | `target` | label of the file or log the keywords go to |
 | `keywords` | names finished in this session |
-| `calls` | `[{text, keyword, values: [{text, selectable, raw}]}]`; `raw` is the literal text of the value, `null` once it holds a reference |
+| `calls` | `[{text, assign, keyword, values: [{text, selectable, raw}]}]`; `assign` is `${name}=` or `null`; `raw` is the literal text of the value, `null` once it holds a reference |
 | `arguments` | `[{name, default, useDefault}]` |
 
 Every displayed text (`text`, `default`, the offer's `text`) is cut to `TOOLBAR_TEXT_LIMIT`

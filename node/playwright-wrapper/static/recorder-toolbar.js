@@ -120,6 +120,7 @@
       .calls:empty::after { content: 'no keyword calls yet'; color: var(--faint); }
       .calls li { white-space: pre; }
       .cell { margin-left: 8px; }
+      .assign { margin-right: 8px; color: var(--amber); }
       .cell.pick { cursor: pointer; text-decoration: underline dotted var(--teal); }
       .cell.pick:hover { background: rgb(0 192 181 / 20%); }
       .notice { color: var(--amber); }
@@ -542,6 +543,12 @@
             list.textContent = '';
             calls.forEach((call, callIndex) => {
                 const item = document.createElement('li');
+                if (call.assign) {
+                    const assign = document.createElement('span');
+                    assign.className = 'assign';
+                    assign.textContent = call.assign;
+                    item.appendChild(assign);
+                }
                 const kw = document.createElement('span');
                 kw.textContent = call.keyword ?? '';
                 item.appendChild(kw);

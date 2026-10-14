@@ -224,6 +224,17 @@ def test_selector_and_fixed_values_are_not_selectable():
     assert [v.selectable for v in call.args] == [False, False, True]
 
 
+def test_pressed_keys_and_expected_checkbox_state_are_selectable():
+    press = ActionMapper().map(
+        {"name": "press", "selector": "#n", "key": "Enter", "modifiers": 0}
+    )
+    assert [v.selectable for v in press.args] == [False, True]
+    checked = ActionMapper().map(
+        {"name": "assertChecked", "selector": "#c", "checked": True}
+    )
+    assert [v.selectable for v in checked.args] == [False, False, True]
+
+
 def test_fill_text_is_selectable():
     call = ActionMapper().map({"name": "fill", "selector": "#n", "text": "Al"})
     assert [v.selectable for v in call.args] == [False, True]

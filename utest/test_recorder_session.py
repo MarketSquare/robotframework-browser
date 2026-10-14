@@ -168,6 +168,19 @@ def test_open_page_is_silent():
     assert s.toolbar_state()["calls"] == []
 
 
+def test_toolbar_shows_the_assignment_of_a_download_promise():
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", CLICK)
+    s.handle_event("signal", {"name": "download"})
+    calls = s.toolbar_state()["calls"]
+    assert [(c["assign"], c["keyword"]) for c in calls] == [
+        ("${download}=", "Promise To Wait For Download"),
+        (None, "Click"),
+        (None, "Wait For"),
+    ]
+
+
 def test_dialog_signal_and_undo_as_a_group():
     s, _, _ = session()
     start(s, "K")

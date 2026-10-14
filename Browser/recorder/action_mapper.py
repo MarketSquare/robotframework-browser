@@ -263,7 +263,7 @@ class ActionMapper:
         # `Press Keys` chains modifiers with "+", e.g. `Control+Shift+T`.
         keys = [*_modifier_names(action.get("modifiers", 0)), action.get("key", "")]
         return Call(
-            "Press Keys", [_selector(action), _fixed("+".join(k for k in keys if k))]
+            "Press Keys", [_selector(action), _data("+".join(k for k in keys if k))]
         )
 
     def _map_check(self, action: dict) -> Call:
@@ -311,7 +311,7 @@ class ActionMapper:
     def _map_assert_checked(self, action: dict) -> Call:
         state = "checked" if action.get("checked") else "unchecked"
         return Call(
-            "Get Checkbox State", [_selector(action), _fixed("=="), _fixed(state)]
+            "Get Checkbox State", [_selector(action), _fixed("=="), _data(state)]
         )
 
     def _map_assert_visible(self, action: dict) -> Call:

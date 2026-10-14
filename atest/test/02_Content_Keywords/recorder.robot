@@ -175,10 +175,14 @@ Dialog Gets Handled Before The Click
 
 Download Is Wrapped In A Download Promise
     Go To    ${LOGIN_URL}
+    Keep The Closed Toolbar Root Reachable
     ${promise} =    Promise To    Record Keyword    Download File    ${RESOURCE}
     Toolbar State Should Be    recording
     Click    id=file_download
     Wait Until Calls    3
+    ${shown} =    Evaluate JavaScript    ${None}
+    ...    () => window.toolbarRoot.querySelector('#calls li').textContent
+    Should Start With    ${shown}    \${download}=Promise To Wait For Download
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
     ${file} =    Get File    ${RESOURCE}

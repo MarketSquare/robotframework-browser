@@ -112,8 +112,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
 ### Keyword Arguments
 
 - **AC-28** While a Keyword Recording is running, a value of a Keyword Call (text, URL,
-  option, file path) can be turned into a Keyword Argument from the toolbar. Selectors cannot
-  become arguments.
+  option, file path, pressed keys, expected value) can be turned into a Keyword Argument from
+  the toolbar. Selectors and structural values (mouse button, modifiers, assertion operators,
+  option strategy) cannot become arguments. A variable assignment such as `${download}=` is
+  shown in the toolbar.
 - **AC-29** If part of a value is marked, only that part becomes the argument, e.g.
   `Go To    https://shop.example.com/item/${item_id}`.
 - **AC-30** A new Keyword Argument starts with the recorded value as its default
