@@ -35,6 +35,7 @@ from Browser.recorder.names import (
     existing_keyword_names,
     keyword_name_error,
     normalize_keyword_name,
+    plain_argument_name,
 )
 
 # --------------------------------------------------------------------------- #
@@ -537,14 +538,34 @@ def test_recording_rejects_a_keyword_of_the_target_file(tmp_path):
     assert "already exists" in outcome["error"]
 
 
-@pytest.mark.parametrize("name", ["email", "item_id", "_x", "Password2"])
+@pytest.mark.parametrize(
+    "name", ["email", "item_id", "_x", "Password2", "${email}", "${_x}"]
+)
 def test_usable_argument_names_are_accepted(name):
     assert argument_name_error(name) is None
 
 
 @pytest.mark.parametrize(
     "name",
-    ["", "2fa", "e mail", "a-b", "${email}", "x}", "a\nb", "ä", None, 42],
+    [
+        "",
+        "2fa",
+        "e mail",
+        "a-b",
+        "x}",
+        "a\nb",
+        "ä",
+        None,
+        42,
+        "${",
+        "${}",
+        "${email",
+        "${e mail}",
+        "${a}b}",
+        "${${a}}",
+        "${a.b}",
+        "@{list}",
+    ],
 )
 def test_unusable_argument_names_are_reported(name):
     assert argument_name_error(name)
@@ -555,6 +576,14 @@ def test_unusable_argument_names_are_reported(name):
 )
 def test_argument_names_shadowing_robot_variables_are_reported(name):
     assert "built-in variable" in argument_name_error(name)
+    assert "built-in variable" in argument_name_error(f"${{{name}}}")
+
+
+@pytest.mark.parametrize(
+    ("given", "plain"), [("${email}", "email"), ("email", "email"), ("${a", "${a")]
+)
+def test_plain_argument_name(given, plain):
+    assert plain_argument_name(given) == plain
 
 
 def test_name_guard_rejects_a_taken_name_in_any_spelling():

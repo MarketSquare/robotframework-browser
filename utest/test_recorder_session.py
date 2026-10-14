@@ -274,6 +274,48 @@ def test_argument_offer_and_replace():
     assert [c["values"][1]["text"] for c in state["calls"]] == ["${who}", "${who}"]
 
 
+def test_argument_written_as_a_variable_gets_its_plain_name():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", FILL)
+    s.handle_event("added", {**FILL, "selector": "#m"})
+    s.handle_command(
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 1,
+            "start": 0,
+            "end": 5,
+            "name": "${who}",
+            "raw": "Alice",
+        }
+    )
+    state = s.toolbar_state()
+    assert state["error"] is None
+    assert state["arguments"][0]["name"] == "who"
+    assert state["offer"]["argument"] == "who"
+    assert "[Arguments]    ${who}=Alice" in target.saved[-1]
+
+
+def test_malformed_variable_argument_name_is_rejected():
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", FILL)
+    s.handle_command(
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 1,
+            "start": 0,
+            "end": 5,
+            "name": "${who",
+            "raw": "Alice",
+        }
+    )
+    assert "${email}" in s.toolbar_state()["error"]
+    assert s.toolbar_state()["arguments"] == []
+
+
 def test_default_toggle():
     s, _, _ = session()
     start(s, "K")
@@ -370,7 +412,7 @@ def test_toolbar_budget_counts_escaped_json():
             "value": 1,
             "start": 0,
             "end": 1,
-            "name": "${a}",
+            "name": "${a.b}",
             "raw": "Alice",
         },
         {

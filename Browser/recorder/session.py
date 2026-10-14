@@ -26,7 +26,12 @@ from collections.abc import Callable
 
 from .action_mapper import SILENT_ACTIONS, ActionMapper
 from .model import RecordedKeyword
-from .names import KnownKeywords, NameGuard
+from .names import (
+    KnownKeywords,
+    NameGuard,
+    argument_name_error,
+    plain_argument_name,
+)
 from .target import Target
 
 IDLE = "idle"
@@ -364,6 +369,8 @@ class RecorderSession:
                 start, end = _int(command, "start"), _int(command, "end")
                 self._check_raw(keyword, call, value, command)
                 name = _text(command, "name")
+                if argument_name_error(name) is None:
+                    name = plain_argument_name(name)
                 occurrences = keyword.make_argument(call, value, start, end, name)
                 self._offer = (
                     {

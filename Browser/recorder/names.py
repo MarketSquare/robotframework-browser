@@ -446,10 +446,27 @@ _BUILTIN_VARIABLES = frozenset(
 )
 
 
+_VARIABLE_FORM = re.compile(r"\$\{(.*)\}", re.DOTALL)
+
+
+def plain_argument_name(name: str) -> str:
+    """``email`` for ``${email}``: an argument may be written as a variable."""
+    match = _VARIABLE_FORM.fullmatch(name)
+    return match.group(1) if match else name
+
+
 def argument_name_error(name: object) -> str | None:
-    """Why ``name`` is unusable as a Keyword Argument name, or ``None``."""
+    """Why ``name`` is unusable as a Keyword Argument name, or ``None``.
+
+    ``name`` is the plain name or the same written as a variable, ``${name}``.
+    """
     if not isinstance(name, str):
         return "Argument name must be a string."
+    if name.startswith("${"):
+        plain = plain_argument_name(name)
+        if plain == name or not _ARGUMENT_NAME.fullmatch(plain):
+            return "Write the argument as a variable like ${email}, or just email."
+        name = plain
     if not name:
         return "Argument name must not be empty."
     if not _ARGUMENT_NAME.fullmatch(name):
