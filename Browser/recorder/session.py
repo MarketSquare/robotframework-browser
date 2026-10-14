@@ -25,7 +25,13 @@ import math
 import time
 from collections.abc import Callable
 
-from .action_mapper import SILENT_ACTIONS, ActionMapper, internal_selector_notice
+from .action_mapper import (
+    SILENT_ACTIONS,
+    UPLOAD_FOLDER,
+    ActionMapper,
+    internal_selector_notice,
+    uploaded_files,
+)
 from .model import RecordedKeyword
 from .names import (
     KnownKeywords,
@@ -190,6 +196,10 @@ class RecorderSession:
                 self._offer = None
                 self._save()
             return
+        files = uploaded_files(action)
+        if files is not None:
+            self._upload(keyword, action, files)
+            return
         call = self._mapper.map(action) if isinstance(action.get("name"), str) else None
         if call is None:
             raw_name = action.get("name")
@@ -213,6 +223,20 @@ class RecorderSession:
         self._undone = False
         self._skipped = False
         self._notice = internal_selector_notice(action) or self._notice
+        self._save()
+
+    def _upload(self, keyword: RecordedKeyword, action: dict, files: list[str]) -> None:
+        """Wrap the Action that opened the file chooser, as Browser needs the
+        promise before it; without one, set the files on the input itself."""
+        if not files:
+            return
+        effect = self._mapper.map_upload(files[0], keyword.unique_variable)
+        attached = len(files) == 1 and not self._undone and not self._skipped
+        if not (attached and keyword.attach(effect.before, effect.after)):
+            keyword.add(self._mapper.map_upload_by_selector(action, files))
+            self._undone = self._skipped = False
+        self._offer = None
+        self._notice = f"Replace {UPLOAD_FOLDER} with the folder of the uploaded file."
         self._save()
 
     # -- commands ---------------------------------------------------------- #

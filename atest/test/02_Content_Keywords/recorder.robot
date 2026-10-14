@@ -549,6 +549,23 @@ The Argument Dialog Shows The Marked Part Without Focus And Survives A Release O
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+A File Chooser Upload Becomes An Upload Promise Around The Click
+    Record An Upload    id=open    Upload Through The Button
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain
+    ...    ${file}
+    ...    \${upload}=${SPACE*4}Promise To Upload File${SPACE*4}<define_path_to_file>/recorder.robot\n${SPACE*4}Click${SPACE*4}
+    Should Contain    ${file}    Wait For${SPACE*4}\${upload}
+    Upload Replays    ${file}    Upload Through The Button
+
+An Upload Into A File Input Becomes Upload File By Selector
+    Record An Upload    id=plain-file    Upload Into The Input
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    Upload File By Selector
+    Should Contain    ${file}    <define_path_to_file>/recorder.robot\n
+    Should Not Contain    ${file}    Promise To Upload File
+    Upload Replays    ${file}    Upload Into The Input
+
 Every Recorded Selector Finds Exactly The Clicked Element
     [Documentation]    Playwright's generator picks a different selector shape for each element
     ...    of the page. Each translated selector must find the element that was clicked, and only it.
@@ -757,6 +774,31 @@ Toolbar Header Point
     ...    ${None}
     ...    () => { const r = window.toolbarRoot.getElementById('title').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }
     RETURN    ${point}
+
+Record An Upload
+    [Documentation]    Records choosing this file through the file chooser that clicking ``${opener}`` opens.
+    [Arguments]    ${opener}    ${name}
+    New Page    ${RECORDER_UPLOAD_URL}
+    ${promise} =    Promise To    Record Keyword    ${name}    ${RESOURCE}
+    Toolbar State Should Be    recording
+    ${upload} =    Promise To Upload File    ${CURDIR}${/}recorder.robot
+    Click    ${opener}
+    Wait For    ${upload}
+    Wait For Function
+    ...    () => window.__rfbToolbarState.notice && window.__rfbToolbarState.notice.includes('<define_path_to_file>')
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Upload Replays
+    [Arguments]    ${recorded}    ${name}
+    # Forward slashes: a backslash in the resource would be a Robot escape on Windows.
+    VAR    ${folder}    ${CURDIR}
+    ${replayable} =    Evaluate
+    ...    $recorded.replace('<define_path_to_file>', pathlib.Path($folder).as_posix())
+    ...    modules=pathlib
+    Create File    ${RESOURCE}    ${replayable}
+    Recorded Keyword Replays    ${RESOURCE}    ${name}    ${RECORDER_UPLOAD_URL}
+    Get Text    id=upload_result    ==    recorder.robot
 
 Mark Clicked Elements
     [Documentation]    Numbers every clicked element in click order, across the page and its frames.

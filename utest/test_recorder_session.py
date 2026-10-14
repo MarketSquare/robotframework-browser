@@ -1001,3 +1001,73 @@ def test_a_selector_left_internal_is_recorded_with_a_notice():
     )
     assert "internal:label" in s.toolbar_state()["notice"]
     assert 'Click    internal:label="Map"i' in target.saved[-1]
+
+
+UPLOAD_CLICK = {**CLICK, "selector": 'internal:role=button[name="Open Report"i]'}
+CHOSEN = {
+    "name": "fill",
+    "selector": 'internal:attr=[type="file"s]',
+    "text": "C:\\fakepath\\report.zip",
+}
+
+
+def test_a_file_chosen_after_a_click_wraps_the_click_in_an_upload_promise():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", UPLOAD_CLICK)
+    s.handle_event("added", CHOSEN)
+    assert target.saved[-1].splitlines()[2:] == [
+        "    ${upload}=    Promise To Upload File    <define_path_to_file>/report.zip",
+        '    Click    role=button[name*="Open Report"i]',
+        "    Wait For    ${upload}",
+    ]
+    assert "<define_path_to_file>" in s.toolbar_state()["notice"]
+    s.handle_command({"cmd": "undo"})
+    assert "Promise To Upload File" not in target.saved[-1]
+    assert "Click" not in target.saved[-1]
+
+
+def test_setinputfiles_is_an_upload_too():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", UPLOAD_CLICK)
+    s.handle_event(
+        "added", {"name": "setInputFiles", "selector": "#f", "files": ["a.txt"]}
+    )
+    assert "Promise To Upload File    <define_path_to_file>/a.txt" in target.saved[-1]
+
+
+@pytest.mark.parametrize(
+    ("before", "upload"),
+    [
+        ([], CHOSEN),
+        ([UPLOAD_CLICK, "undo"], CHOSEN),
+        (
+            [UPLOAD_CLICK],
+            {"name": "setInputFiles", "selector": "#f", "files": ["a.txt", "b.txt"]},
+        ),
+    ],
+    ids=["nothing_before", "after_undo", "several_files"],
+)
+def test_an_upload_without_an_action_to_wrap_sets_the_files_on_the_input(
+    before, upload
+):
+    s, target, _ = session()
+    start(s, "K")
+    for step in before:
+        if step == "undo":
+            s.handle_command({"cmd": "undo"})
+        else:
+            s.handle_event("added", step)
+    s.handle_event("added", upload)
+    last = target.saved[-1].splitlines()[-1]
+    assert last.startswith("    Upload File By Selector    ")
+    assert "Promise To Upload File" not in target.saved[-1]
+
+
+def test_a_cancelled_file_chooser_records_nothing():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", UPLOAD_CLICK)
+    s.handle_event("added", {"name": "setInputFiles", "selector": "#f", "files": []})
+    assert "Upload" not in target.saved[-1]

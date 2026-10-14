@@ -64,7 +64,18 @@ operators, option strategies) never are.
 | `assertVisible` | `Get Element States    <selector>    *=    visible` (AC-47) | selector |
 | `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>` (AC-46); the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
 
-Playwright 1.64 never emits `hover` or `setInputFiles` in api mode, so neither is mapped.
+A file chosen in a file chooser arrives in api mode as a `fill` of the browser's fake path
+`C:\fakepath\<name>` (only the first file), from other recorder tools as `setInputFiles`
+with every name. Either becomes an upload of `<define_path_to_file>/<name>`
+(`UPLOAD_FOLDER`), with a toolbar notice to complete the path:
+
+| Upload | Keyword Calls |
+|--------|---------------|
+| one file, after an Action (the click that opened the chooser) | `${upload}=    Promise To Upload File    <path>` before that Action, `Wait For    ${upload}` after it; Undo removes them together |
+| no such Action (it was undone, or the click went straight to the file input, which Playwright does not record), or several files | `Upload File By Selector    <file input>    <path>...` |
+| an empty file list (chooser cancelled) | nothing |
+
+Playwright 1.64 never emits `hover` in api mode, so it is not mapped.
 Any other action name produces no Keyword Call and a
 toolbar notice ("... has no Browser keyword and was not recorded."). A later
 `actionUpdated` for that Action never updates the previous Keyword Call: if Playwright's
@@ -219,7 +230,8 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
 - Pick locator: while it is on, Playwright's recorder is disabled and nothing is recorded
   (the toolbar shows a notice, from `picking`). The picked locator is not delivered in api
   mode, so it cannot be used.
-- File uploads and hovers are not recorded (Playwright does not emit them in api mode).
+- Hovers are not recorded (Playwright does not emit them in api mode).
+- An uploaded file's folder is unknown to the page; the recorded path has to be completed.
 - Playwright's own overlay cannot be hidden during a session and covers the top centre of
   the page; its Record button ends the session too. It is hidden after the session.
 - A value longer than about 64 KiB, or one past the first MiB of values in the keyword,
@@ -267,8 +279,9 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
 7. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps
    it, see `toAction`), and `Get Aria Snapshot ... yaml ==` still accepts it.
 8. The action names and fields in the table above (`assertVisible`, `assertChecked`, ...)
-   are unchanged; re-check whether `hover` / `setInputFiles` are emitted now (neither is
-   mapped, as Playwright never emitted them).
+   are unchanged; re-check whether `hover` is emitted now, and that a file chooser still
+   arrives as a `fill` of `C:\fakepath\<name>` (atest "A File Chooser Upload Becomes An
+   Upload Promise Around The Click").
 9. The injected recorder still skips events whose composed path holds an `x-pw-glass`
    element (`_ignoreOverlayEvent`) for clicks, input and keys, and `contextmenu` is still the
    only one it records without that check; Playwright does not restyle other `x-pw-glass`

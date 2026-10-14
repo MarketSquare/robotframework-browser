@@ -313,6 +313,36 @@ def _modifier_names(mask: int) -> list[str]:
 SILENT_ACTIONS = frozenset({"openPage"})
 
 
+#: Stands in for the folder of an uploaded file, which the page never reveals.
+UPLOAD_FOLDER = "<define_path_to_file>"
+# Browsers report a chosen file as this fake path (HTML `input.value`).
+_FAKE_PATH = "C:\\fakepath\\"
+
+
+def uploaded_files(action: dict) -> list[str] | None:
+    """The names of the files an Action uploads, or None if it uploads nothing.
+
+    In api mode Playwright reports a file chooser as a `fill` of the browser's
+    fake path, which names only the first file; another recorder tool reports
+    `setInputFiles` with every name.
+    """
+    if action.get("name") == "setInputFiles":
+        files = action.get("files")
+        return [str(f) for f in files] if isinstance(files, list) else []
+    text = action.get("text")
+    if (
+        action.get("name") == "fill"
+        and isinstance(text, str)
+        and text.startswith(_FAKE_PATH)
+    ):
+        return [text[len(_FAKE_PATH) :]]
+    return None
+
+
+def _upload_path(name: str) -> Value:
+    return _data(f"{UPLOAD_FOLDER}/{name}")
+
+
 @dataclass
 class SignalEffect:
     before: list[Call]
@@ -386,6 +416,21 @@ class ActionMapper:
                 [Call("Wait For", [Value([ArgRef(variable)], selectable=False)])],
             )
         return None
+
+    def map_upload(self, name: str, unique: Callable[[str], str]) -> SignalEffect:
+        """The Keyword Calls around the Action that opened the file chooser."""
+        variable = unique("upload")
+        return SignalEffect(
+            [Call("Promise To Upload File", [_upload_path(name)], assign=variable)],
+            [Call("Wait For", [Value([ArgRef(variable)], selectable=False)])],
+        )
+
+    def map_upload_by_selector(self, action: dict, names: list[str]) -> Call:
+        """An upload no recorded Action opened: set the files on the input itself."""
+        return Call(
+            "Upload File By Selector",
+            [_selector(action), *(_upload_path(name) for name in names)],
+        )
 
     # -- navigation -------------------------------------------------------- #
 

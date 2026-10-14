@@ -115,13 +115,16 @@ class Recorder(LibraryComponent):
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
         before the Action (Playwright does not report whether the dialog was accepted);
-        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
+        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``. A file
+        chosen in a file chooser wraps the click that opened it in ``Promise To Upload File``
+        and ``Wait For``; the page never reveals the file's folder, so the path reads
+        ``<define_path_to_file>/<file name>`` and must be completed (or made an argument).
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
         key press into that Action, so it is not recorded as a ``Go To`` of its own.
-        While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
-        are not recorded, because Playwright does not report them. Other Actions without a
+        While Playwright's Pick locator is on, nothing is recorded. Hovers are not recorded,
+        because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
         Needs a visible browser: fails if the active browser was opened headless, since
@@ -207,13 +210,16 @@ class Recorder(LibraryComponent):
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
         before the Action (Playwright does not report whether the dialog was accepted);
-        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
+        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``. A file
+        chosen in a file chooser wraps the click that opened it in ``Promise To Upload File``
+        and ``Wait For``; the page never reveals the file's folder, so the path reads
+        ``<define_path_to_file>/<file name>`` and must be completed (or made an argument).
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
         key press into that Action, so it is not recorded as a ``Go To`` of its own.
-        While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
-        are not recorded, because Playwright does not report them. Other Actions without a
+        While Playwright's Pick locator is on, nothing is recorded. Hovers are not recorded,
+        because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
         Needs a visible browser: fails if the active browser was opened headless, since

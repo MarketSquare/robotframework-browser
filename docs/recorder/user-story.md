@@ -91,6 +91,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
   pointer events on `body`, traps the focus or closes on a click outside); using the toolbar
   neither closes that modal nor lets it take the focus back. A native modal `<dialog>` is
   the exception: it makes the toolbar inert until it is closed.
+- **AC-55** A file chosen in a file chooser is recorded as `${upload}=    Promise To Upload File
+  <define_path_to_file>/<file name>` before the Action that opened the chooser and
+  `Wait For    ${upload}` after it; without such an Action, as `Upload File By Selector`. The
+  toolbar says that the folder has to be filled in.
 - **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
   shows a clear notice saying so for as long as the mode is on.
 
@@ -196,7 +200,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-54**. Anything not
+AC-55**. Anything not
 stated there is not part of v1.
 
 ## Changes outside the recorder
@@ -223,7 +227,7 @@ These are deliberately not part of v1. The design should not block them.
 - A non-blocking `Start Recording` / `Stop Recording` pair, with the test continuing
 - An own element picker in the toolbar that shows a picked element's Browser selector to copy
   (Playwright's *Pick locator* result is not delivered in api mode)
-- Recording file uploads and hovers (Playwright 1.64 does not report them in api mode)
+- Recording hovers (Playwright 1.64 does not report them in api mode)
 - A tolerant ARIA snapshot comparison like Playwright's `toMatchAriaSnapshot`
 - Merging Actions beyond what Playwright merges itself (e.g. `Fill Text` + `Enter`)
 - Optional treatment of password fields, e.g. `Fill Secret` behind a toolbar switch

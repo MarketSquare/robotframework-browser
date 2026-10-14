@@ -67,11 +67,13 @@ KEYWORD_PARAMETERS: dict[str, frozenset[str]] = {
     "Go To": frozenset({"url", "timeout", "wait_until"}),
     "Handle Future Dialogs": frozenset({"action", "prompt_input"}),
     "Press Keys": frozenset({"selector", "press_duration", "key_delay"}),
+    "Promise To Upload File": frozenset({"path"}),
     "Promise To Wait For Download": frozenset(
         {"saveAs", "wait_for_finished", "download_timeout"}
     ),
     "Select Options By": frozenset({"selector", "attribute"}),
     "Switch Page": frozenset({"id", "context", "browser"}),
     "Uncheck Checkbox": frozenset({"selector", "force"}),
+    "Upload File By Selector": frozenset({"selector", "path"}),
     "Wait For": frozenset(),
 }

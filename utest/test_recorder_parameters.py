@@ -29,6 +29,9 @@ def recorded_keywords() -> set[str]:
     for signal in SIGNALS:
         effect = mapper.map_signal(signal, lambda base: base)
         names.update(call.keyword for call in [*effect.before, *effect.after])
+    upload = mapper.map_upload("a.txt", lambda base: base)
+    names.update(call.keyword for call in [*upload.before, *upload.after])
+    names.add(mapper.map_upload_by_selector({"selector": "s"}, ["a.txt"]).keyword)
     return names
 
 
