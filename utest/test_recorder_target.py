@@ -299,3 +299,63 @@ def test_save_then_remove_restores_unusual_files(tmp_path, data):
     assert saved.startswith(data[:-1] if not data.endswith(b"\n") else data)
     assert saved.startswith(b"\xef\xbb\xbf") == data.startswith(b"\xef\xbb\xbf")
     assert restored == data
+
+
+def test_failed_remove_keeps_ownership_for_a_retry(tmp_path, monkeypatch):
+    path = tmp_path / "k.resource"
+    target = FileTarget(path)
+    target.save(keyword())
+    write = FileTarget._write
+
+    def broken(self, model, restore_final_newline=False):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(FileTarget, "_write", broken)
+    with pytest.raises(OSError):
+        target.remove("Fill Name")
+    monkeypatch.setattr(FileTarget, "_write", write)
+    target.remove("Fill Name")
+    assert "Fill Name" not in path.read_text()
+
+
+def test_named_argument_shaped_values_roundtrip_through_a_real_robot_run(tmp_path):
+    (tmp_path / "NamedSpy.py").write_text(
+        "import json, pathlib\n"
+        "def fill(selector, txt, clear=None):\n"
+        "    out = pathlib.Path(__file__).with_name('named.json')\n"
+        "    calls = json.loads(out.read_text()) if out.exists() else []\n"
+        "    calls.append([selector, txt, clear])\n"
+        "    out.write_text(json.dumps(calls))\n"
+    )
+    resource = tmp_path / "recorded.resource"
+    kw = RecordedKeyword("Recorded")
+    values = ["txt=hello", "clear=yes", "selector=x", "a b=c", "=lead"]
+    for text in values:
+        kw.add(Call("Fill", [Value.literal("css=.x", False), Value.literal(text)]))
+    FileTarget(resource).finish(kw)
+    assert "txt\\=hello" in resource.read_text()
+    (tmp_path / "run.robot").write_text(
+        "*** Settings ***\n"
+        "Library     NamedSpy.py\n"
+        "Resource    recorded.resource\n\n"
+        "*** Test Cases ***\n"
+        "T\n"
+        "    Recorded\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), "run.robot"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads((tmp_path / "named.json").read_text()) == [
+        ["css=.x", text, None] for text in values
+    ]
+
+
+def test_fixed_named_argument_stays_named(tmp_path):
+    kw = RecordedKeyword("Dialog")
+    kw.add(Call("Handle Future Dialogs", [Value.literal("action=accept", False)]))
+    assert "Handle Future Dialogs    action=accept" in kw.block()

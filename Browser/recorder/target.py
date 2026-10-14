@@ -155,12 +155,15 @@ class FileTarget:
         self._owned.pop(normalize_keyword_name(keyword.name), None)
 
     def remove(self, name: str) -> None:
-        owned = self._owned.pop(normalize_keyword_name(name), None)
+        key = normalize_keyword_name(name)
+        owned = self._owned.get(key)
         if owned is None or not self.path.exists():
+            self._owned.pop(key, None)
             return
         model = self._read()
         found = _find(model, name)
         if found is None:
+            self._owned.pop(key, None)
             return
         body, index = found
         del body[index]
@@ -175,7 +178,8 @@ class FileTarget:
                     if owned.section_separated and position > 0:
                         _pop_trailing_empty_line(model.sections[position - 1])
                     break
-        self._write(model, restore_final_newline=not self._owned)
+        self._write(model, restore_final_newline=len(self._owned) == 1)
+        self._owned.pop(key, None)
 
     # -- helpers ----------------------------------------------------------- #
 

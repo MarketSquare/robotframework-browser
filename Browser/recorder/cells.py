@@ -21,9 +21,13 @@ import re
 # a recorded literal.
 VARIABLE_START = re.compile(r"[$@&%]\{")
 _MULTI_SPACE = re.compile(r"  +")
+# `txt=hello` in a Keyword Call is a named argument when `txt` is an argument name.
+_NAMED_ARGUMENT = re.compile(r"^([^\W\d]\w*)=")
 
 
-def cell(value: str, *, at_start: bool = True, at_end: bool = True) -> str:
+def cell(
+    value: str, *, at_start: bool = True, at_end: bool = True, data: bool = False
+) -> str:
     """Escape a recorded value so Robot reads it back as that exact string.
 
     Recorded selectors and texts are arbitrary strings, and several of them
@@ -46,6 +50,10 @@ def cell(value: str, *, at_start: bool = True, at_end: bool = True) -> str:
     cell. A value split around a Keyword Argument (`id-${n}`) is escaped part
     by part, and only the real cell edges need the `#`, edge-space and empty
     rules.
+
+    ``data`` marks recorded data, as opposed to a selector or a fixed value
+    such as ``action=accept``: an identifier followed by ``=`` at its start
+    gets the ``=`` escaped, so ``txt=hello`` is not passed as a named argument.
     """
     if value == "":
         return "${EMPTY}" if at_start and at_end else ""
@@ -57,6 +65,8 @@ def cell(value: str, *, at_start: bool = True, at_end: bool = True) -> str:
         for char in cell
     )
     cell = VARIABLE_START.sub(r"\\\g<0>", cell)
+    if at_start and data:
+        cell = _NAMED_ARGUMENT.sub(r"\1\\=", cell, count=1)
     if at_start and cell.startswith("#"):
         cell = "\\" + cell
     cell = _MULTI_SPACE.sub(lambda m: "${SPACE}" * len(m.group()), cell)

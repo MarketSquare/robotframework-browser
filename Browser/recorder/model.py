@@ -21,6 +21,7 @@ around it) and Undo must remove all of them together.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from .cells import cell
@@ -69,7 +70,7 @@ class Value:
         return "".join(
             f"${{{s.name}}}"
             if isinstance(s, ArgRef)
-            else cell(s, at_start=i == 0, at_end=i == last)
+            else cell(s, at_start=i == 0, at_end=i == last, data=self.selectable)
             for i, s in enumerate(self.segments)
         )
 
@@ -248,7 +249,7 @@ class RecordedKeyword:
 
     # -- helpers ----------------------------------------------------------- #
 
-    def _values(self):
+    def _values(self) -> Iterator[tuple[int, int, Value]]:
         for c, call in enumerate(self.calls()):
             for v, value in enumerate(call.args):
                 yield c, v, value
