@@ -112,8 +112,9 @@ class Recorder(LibraryComponent):
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
-        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs`` before the
-        Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
+        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
+        before the Action (Playwright does not report whether the dialog was accepted);
+        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
@@ -134,6 +135,8 @@ class Recorder(LibraryComponent):
         under test, including anything typed into password fields. During the session
         the toolbar state, including the recorded values and typed text, is readable by
         scripts of every page in the context, and those scripts can send toolbar commands.
+        Keystrokes typed into the toolbar do not reach the page, except to a ``window``
+        capture listener the page registered before the toolbar was injected.
 
         Requires a Playwright version that offers the programmatic recorder. The context
         stays prepared for recording after the session ends.
@@ -200,8 +203,9 @@ class Recorder(LibraryComponent):
         ``*** Keywords ***`` header.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
-        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs`` before the
-        Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
+        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
+        before the Action (Playwright does not report whether the dialog was accepted);
+        a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
@@ -222,6 +226,8 @@ class Recorder(LibraryComponent):
         under test, including anything typed into password fields. During the session
         the toolbar state, including the recorded values and typed text, is readable by
         scripts of every page in the context, and those scripts can send toolbar commands.
+        Keystrokes typed into the toolbar do not reach the page, except to a ``window``
+        capture listener the page registered before the toolbar was injected.
 
         Requires a Playwright version that offers the programmatic recorder. The context
         stays prepared for recording after the session ends.

@@ -2,7 +2,6 @@ import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
 
-import { logger } from '../browser_logger';
 import {
     drain,
     ensureRecorder,
@@ -23,6 +22,8 @@ import {
     toolbarScript,
     writeMode,
 } from '../recorder';
+
+beforeEach(() => jest.clearAllMocks());
 
 describe('toAction', () => {
     it('unwraps the 1.62 ActionInContext shape', () => {
@@ -203,7 +204,6 @@ interface FakeWindow {
     __rfbToolbarRemove?: () => void;
 }
 
-// A page whose `evaluate` runs the recorder's page functions against its own fake `window`.
 function fakePage(mode: string | undefined = 'recording', { closed = false } = {}) {
     const win: FakeWindow = { mode, toolbar: undefined, removed: 0 };
     if (mode !== undefined) {
@@ -365,7 +365,6 @@ describe('the command channel', () => {
         send({ cmd: 'new', name: 'x'.repeat(MAX_COMMAND_BYTES) });
         send('x'.repeat(5_000_000));
         expect(buffers.commands).toEqual([]);
-        expect(logger.info).toHaveBeenCalledWith('recorder: ignoring an oversized toolbar command');
         send({ cmd: 'undo' });
         expect(buffers.commands).toEqual([{ cmd: 'undo' }]);
     });
@@ -417,7 +416,6 @@ describe('event buffering', () => {
         await resetSession(context, buffers, async () => undefined);
         context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x'.repeat(MAX_EVENT_BYTES) });
         expect(buffers.events).toEqual([]);
-        expect(logger.info).toHaveBeenCalledWith("recorder: ignoring an oversized 'fill' event");
     });
 
     it('measures an Action in UTF-8 bytes', async () => {

@@ -180,7 +180,7 @@
         <div class="offer" id="offer" hidden>
           <div id="offerText"></div>
           <div id="offerList"></div>
-          <div class="row"><button id="offerSkip">Skip</button><button class="primary" id="offerApply">Replace</button></div>
+          <div class="row"><button id="offerSkip" title="Keep the other occurrences as they are">Skip</button><button class="primary" id="offerApply" title="Use the argument for the checked occurrences too">Replace</button></div>
         </div>
         <div class="args" id="args"></div>
         <div class="err" id="err" hidden></div>
@@ -490,15 +490,15 @@
         const toolbarKeys = {
             nameInput: (event) => {
                 if (event.key === 'Enter') $('ok').click();
-                if (event.key === 'Escape') closeModal();
             },
             argName: (event) => {
                 if (event.key === 'Enter') $('argOk').click();
-                if (event.key === 'Escape') closeArgModal();
             },
-            argValue: (event) => {
-                if (event.key === 'Escape') closeArgModal();
-            },
+        };
+        // Escape closes the open dialog wherever the focus is inside the toolbar.
+        const escapeDialog = () => {
+            if (!$('argModal').hidden) closeArgModal();
+            else if (!$('modal').hidden && !pending) closeModal();
         };
         const toolbarInput = {
             argName: () => {
@@ -522,6 +522,10 @@
         const isolateKeyboard = (event) => {
             if (event.target !== host) return;
             event.stopImmediatePropagation();
+            if (event.type === 'keydown' && event.key === 'Escape') {
+                escapeDialog();
+                return;
+            }
             const focused = root.activeElement;
             const handlers = { keydown: toolbarKeys, input: toolbarInput }[event.type];
             const handler = handlers && focused ? handlers[focused.id] : undefined;

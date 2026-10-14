@@ -118,11 +118,6 @@ def test_map_navigate_is_always_go_to():
     assert rendered({"name": "navigate", "url": "http://b"}) == "Go To    http://b"
 
 
-def test_map_hover():
-    action = {"name": "hover", "selector": 'internal:role=link[name="Docs"i]'}
-    assert rendered(action) == 'Hover    role=link[name="Docs"i]'
-
-
 def test_map_press_plain():
     action = {"name": "press", "selector": "css=.x", "key": "Enter", "modifiers": 0}
     assert rendered(action) == "Press Keys    css=.x    Enter"

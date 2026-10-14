@@ -42,11 +42,9 @@ option strategies, states) never are.
 | `assertChecked` | `Get Checkbox State    <selector>    ==    checked` (or `unchecked`) | none |
 | `assertVisible` | `Get Element States    <selector>    *=    visible` (AC-47) | none |
 | `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>` (AC-46); the multi-line YAML comes from the action's `ariaSnapshot` field | snapshot |
-| `hover` | `Hover    <selector>` | none |
-| `setInputFiles` | `Upload File By Selector    <selector>    <file>...` | each file |
 
-`hover` and `setInputFiles` are mapped, but Playwright 1.64 never emits them in api mode, so
-in practice they are not recorded. Any other action name produces no Keyword Call and a
+Playwright 1.64 never emits `hover` or `setInputFiles` in api mode, so neither is mapped.
+Any other action name produces no Keyword Call and a
 toolbar notice ("... has no Browser keyword and was not recorded."). A later
 `actionUpdated` for that Action never updates the previous Keyword Call: if Playwright's
 update maps to a Browser keyword it is added as a new Keyword Call, otherwise it gives the
@@ -196,6 +194,7 @@ bytes of JSON.
 6. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps
    it, see `toAction`), and `Get Aria Snapshot ... yaml ==` still accepts it.
 7. The action names and fields in the table above (`assertVisible`, `assertChecked`, ...)
-   are unchanged; re-check whether `hover` / `setInputFiles` are emitted now.
+   are unchanged; re-check whether `hover` / `setInputFiles` are emitted now (neither is
+   mapped, as Playwright never emitted them).
 8. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.

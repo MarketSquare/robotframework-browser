@@ -12,36 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Drives Playwright's *programmatic* recorder (`recorderMode: 'api'`), which
-// emits a structured, semantic Action stream instead of generated code, and
-// hosts the Robot Framework toolbar injected into the page.
-//
-// Python calls `recorderPoll` repeatedly. Each call pushes the current toolbar
-// state into the page and drains the Actions, signals and toolbar commands
-// buffered since the previous call. Polling rather than one long-lived stream
-// is what makes the channel bidirectional, which the live Keyword Call list in
-// the toolbar requires.
-//
-// Four things here are load-bearing, established by testing against Playwright
-// 1.64, the version in use:
-//
-//  1. `_startRecording` is called once per context, and the recording it starts
-//     is never stopped. A second call throws "Recording is already in progress".
-//     (1.63 called it `_enableRecorder`, which accepted a second call but then
-//     delivered every Action twice.)
-//  2. Never call `_stopRecording()`: it drops the event sink. Sessions switch
-//     the mode with `__pw_recorderSetMode` instead, `recording` to start and
-//     `none` to stop.
-//  3. The recorder sink delivers the whole `ActionInContext` on <= 1.62 and the
-//     bare `Action` on >= 1.63; `toAction` accepts both. `actionUpdated` still
-//     exists in 1.64.
-//  4. Interactions with our own toolbar arrive as Actions targeting the toolbar
-//     host element (its shadow root is closed, so `composedPath()` cannot see
-//     inside) and are dropped by `isToolbarAction`.
+// Playwright's programmatic recorder and the toolbar injected into the page;
+// see Browser/recorder/README.md. Load-bearing, established against Playwright 1.64:
+//  1. `_startRecording` once per context, never `_stopRecording`: a second start
+//     throws, a stop drops the event sink. Sessions switch `__pw_recorderSetMode`.
+//  2. The sink delivers the whole `ActionInContext` on <= 1.62, the bare `Action`
+//     from 1.63; `toAction` accepts both.
+//  3. Toolbar interactions arrive as Actions on the toolbar host (closed shadow
+//     root) and are dropped by `isToolbarAction`.
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { BrowserContext } from 'playwright';
+import { BrowserContext, Page } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
@@ -156,37 +138,51 @@ export function toolbarScript(): string {
     return toolbarSource;
 }
 
-async function readMode(context: BrowserContext): Promise<string | undefined> {
+// Runs `fn` on each page until it returns a value. A page that closed or is
+// navigating throws and is skipped, as is one where `fn` returns undefined.
+async function firstOnPages<T>(
+    context: BrowserContext,
+    fn: (page: Page) => Promise<T | undefined>,
+): Promise<T | undefined> {
     for (const page of context.pages()) {
         try {
-            const recorderState = await page.evaluate(() => {
-                const w = window as unknown as { __pw_recorderState?: () => { mode?: string } | null };
-                return w.__pw_recorderState ? w.__pw_recorderState() : null;
-            });
-            if (recorderState && recorderState.mode) return recorderState.mode;
+            const result = await fn(page);
+            if (result !== undefined) return result;
         } catch {
-            // Page closed or navigating - try the next one.
+            // Page closed or navigating.
         }
     }
     return undefined;
 }
 
+async function onEveryPage(context: BrowserContext, fn: (page: Page) => Promise<unknown>): Promise<void> {
+    await firstOnPages(context, async (page) => {
+        await fn(page);
+        return undefined;
+    });
+}
+
+function readMode(context: BrowserContext): Promise<string | undefined> {
+    return firstOnPages(context, async (page) => {
+        const recorderState = await page.evaluate(() => {
+            const w = window as unknown as { __pw_recorderState?: () => { mode?: string } | null };
+            return w.__pw_recorderState ? w.__pw_recorderState() : null;
+        });
+        return recorderState?.mode || undefined;
+    });
+}
+
 export async function writeMode(context: BrowserContext, mode: string): Promise<boolean> {
-    for (const page of context.pages()) {
-        try {
-            const present = await page.evaluate((m) => {
-                const w = window as unknown as { __pw_recorderSetMode?: (mode: string) => unknown };
-                if (!w.__pw_recorderSetMode) return false;
-                w.__pw_recorderSetMode(m);
-                return true;
-            }, mode);
-            // Binding missing on this page (not yet injected) - try the next one.
-            if (present) return true;
-        } catch {
-            // Page closed or navigating - try the next one.
-        }
-    }
-    return false;
+    const written = await firstOnPages(context, async (page) => {
+        const present = await page.evaluate((m) => {
+            const w = window as unknown as { __pw_recorderSetMode?: (mode: string) => unknown };
+            if (!w.__pw_recorderSetMode) return false;
+            w.__pw_recorderSetMode(m);
+            return true;
+        }, mode);
+        return present || undefined;
+    });
+    return written === true;
 }
 
 // The in-flight promise is stored on the context, so concurrent calls and a
@@ -251,21 +247,17 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     return buffers;
 }
 
-async function renderToolbars(context: BrowserContext, toolbarState: unknown): Promise<void> {
-    for (const page of context.pages()) {
-        try {
-            const installed = await page.evaluate(
-                () => typeof (window as unknown as { __rfbToolbarRender?: unknown }).__rfbToolbarRender === 'function',
-            );
-            if (!installed) await page.evaluate(toolbarScript());
-            await page.evaluate((s) => {
-                const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
-                return w.__rfbToolbarRender && w.__rfbToolbarRender(s);
-            }, toolbarState);
-        } catch {
-            // Page closed or navigating - it picks the state up next poll.
-        }
-    }
+function renderToolbars(context: BrowserContext, toolbarState: unknown): Promise<void> {
+    return onEveryPage(context, async (page) => {
+        const installed = await page.evaluate(
+            () => typeof (window as unknown as { __rfbToolbarRender?: unknown }).__rfbToolbarRender === 'function',
+        );
+        if (!installed) await page.evaluate(toolbarScript());
+        await page.evaluate((s) => {
+            const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
+            return w.__rfbToolbarRender && w.__rfbToolbarRender(s);
+        }, toolbarState);
+    });
 }
 
 // Playwright holds a navigation (and a left click) back for 500 ms before it
@@ -334,15 +326,11 @@ export async function recorderStop(_request: pb.Request_Empty, state: Playwright
     // Deliberately not `_stopRecording()`: it drops the event sink, and the
     // next session would have to start a new recording.
     await writeMode(context, STOPPED_MODE);
-    for (const page of context.pages()) {
-        try {
-            await page.evaluate(() => {
-                const w = window as unknown as { __rfbToolbarRemove?: () => void };
-                w.__rfbToolbarRemove?.();
-            });
-        } catch {
-            // Page closed or navigating.
-        }
-    }
+    await onEveryPage(context, (page) =>
+        page.evaluate(() => {
+            const w = window as unknown as { __rfbToolbarRemove?: () => void };
+            w.__rfbToolbarRemove?.();
+        }),
+    );
     return emptyWithLog('Recording stopped.');
 }

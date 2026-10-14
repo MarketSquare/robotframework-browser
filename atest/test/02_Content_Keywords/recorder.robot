@@ -305,14 +305,10 @@ The Toolbar Is Removed From All Pages After The Session
     Get Element Count    css=rfb-recorder-toolbar    ==    0
 
 Typing In The Toolbar Does Not Reach The Page
+    Keep The Closed Toolbar Root Reachable
     Evaluate JavaScript
     ...    ${None}
-    ...    () => {
-    ...    window.pageKeys = [];
-    ...    document.addEventListener('keydown', (event) => window.pageKeys.push(event.key), true);
-    ...    const attach = Element.prototype.attachShadow;
-    ...    Element.prototype.attachShadow = function (init) { const root = attach.call(this, init); window.toolbarRoot = root; return root; };
-    ...    }
+    ...    () => { window.pageKeys = []; document.addEventListener('keydown', (event) => window.pageKeys.push(event.key), true); }
     ${promise} =    Promise To    Record Keyword    Typed Argument    ${RESOURCE}
     Toolbar State Should Be    recording
     Fill Text    id=input_name    Alice
@@ -507,8 +503,6 @@ Open The Toolbar Shadow Root For Inspection
     ...    }
 
 Keep The Closed Toolbar Root Reachable
-    [Documentation]    The root stays closed, so the recorder behaves as for a user;
-    ...    only the test keeps a reference to it.
     Evaluate JavaScript
     ...    ${None}
     ...    () => {
@@ -525,7 +519,6 @@ Toolbar Element Should Be Hidden
     Wait For Function    () => window.toolbarRoot.getElementById('${id}').hidden    timeout=2s
 
 Click Inside Toolbar
-    [Documentation]    A real mouse click, so the closed shadow root stays closed.
     [Arguments]    ${finder}
     ${box} =    Evaluate JavaScript    ${None}
     ...    () => { const r = (${finder})().getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }
@@ -537,7 +530,6 @@ Toolbar Should Touch The Bottom Right Corner
     ...    timeout=2s
 
 Toolbar Header Point
-    [Documentation]    A point on the header's title, away from its buttons.
     ${point} =    Evaluate JavaScript
     ...    ${None}
     ...    () => { const r = window.toolbarRoot.getElementById('title').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }

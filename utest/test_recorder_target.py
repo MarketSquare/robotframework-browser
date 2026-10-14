@@ -156,7 +156,6 @@ def test_log_target_writes_block_to_console_and_log():
 
 
 def test_written_keyword_runs_in_a_real_robot_run(tmp_path):
-    """Escaped values come back as the exact recorded strings."""
     path = tmp_path / "k.resource"
     kw = RecordedKeyword("Echo")
     tricky = "#a  b ${x} \u00a0\n"
@@ -222,7 +221,6 @@ _ROUNDTRIP_VALUES = [
 
 
 def test_values_roundtrip_through_a_real_robot_run(tmp_path):
-    """Whatever was recorded must reach the keyword as exactly that value."""
     (tmp_path / "ArgSpy.py").write_text(
         "import json, pathlib\n"
         "CALLS = []\n"

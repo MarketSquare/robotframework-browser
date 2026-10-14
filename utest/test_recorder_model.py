@@ -228,6 +228,15 @@ def test_a_selection_of_a_value_that_does_not_exist_is_rejected():
         kw.make_argument(5, 1, 0, 1, "x")
 
 
+def test_value_changed_compares_the_current_text_and_ignores_missing_values():
+    kw = RecordedKeyword("K")
+    kw.add(fill("ab"))
+    assert kw.value_changed(0, 1, "ab") is False
+    assert kw.value_changed(0, 1, "a") is True
+    assert kw.value_changed(0, 9, "ab") is False
+    assert kw.value_changed(5, 1, "ab") is False
+
+
 def test_replace_skips_occurrences_that_no_longer_contain_the_text_or_are_selectors():
     kw = RecordedKeyword("K")
     kw.add(fill("admin"))

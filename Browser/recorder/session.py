@@ -407,12 +407,7 @@ class RecorderSession:
         raw = command.get("raw", _MISSING)
         if raw is not None and not isinstance(raw, str):
             raise ValueError("'raw' must be text.")
-        calls = keyword.calls()
-        if (
-            call < len(calls)
-            and value < len(calls[call].args)
-            and (raw is _MISSING or calls[call].args[value].text != raw)
-        ):
+        if keyword.value_changed(call, value, raw):
             raise ValueError("The keyword calls changed - please try again.")
 
     def _save(self) -> None:

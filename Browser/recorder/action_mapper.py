@@ -42,13 +42,9 @@ from .model import ArgRef, Call, Value
 
 _ENTER_FRAME = "internal:control=enter-frame"
 
-# Split a selector on the top-level " >> " combinator only (never inside
-# brackets or quotes).
-_SPLIT_RE = re.compile(r"\s+>>\s+(?![^\[]*\])")
-
 
 def _split_parts(selector: str) -> list[str]:
-    # A simple state machine is more robust than regex against quotes/brackets.
+    """Split on the top-level `` >> `` combinator, never inside quotes or brackets."""
     parts: list[str] = []
     depth = 0
     quote = ""
@@ -56,7 +52,7 @@ def _split_parts(selector: str) -> list[str]:
     i = 0
     while i < len(selector):
         ch = selector[i]
-        two = selector[i : i + 4]
+        ahead = selector[i : i + 4]
         if quote:
             buf += ch
             if ch == quote:
@@ -70,7 +66,7 @@ def _split_parts(selector: str) -> list[str]:
         elif ch == "]":
             depth = max(0, depth - 1)
             buf += ch
-        elif depth == 0 and two == " >> ":
+        elif depth == 0 and ahead == " >> ":
             parts.append(buf)
             buf = ""
             i += 4
@@ -120,11 +116,8 @@ def _translate_part(part: str) -> str:
         return part[len("internal:testid=") :]
     if part.startswith("internal:attr="):
         return part[len("internal:attr=") :]
-    # Everything else (css, xpath=, id=, internal:label, internal:has-text, an
-    # untranslatable internal:text, ...) is passed through unchanged. Browser
-    # resolves selectors with `page.locator(...)`, and Playwright's locator
-    # parser accepts its own internal engines verbatim - so a pass-through is
-    # always correct, just less readable.
+    # Everything else passes through: Playwright's locator parser accepts its
+    # own internal engines verbatim, so this is always correct, just less readable.
     return part
 
 
@@ -253,9 +246,6 @@ class ActionMapper:
             args.append(_fixed(f"clickCount={count}"))
         return Call("Click With Options", args)
 
-    def _map_hover(self, action: dict) -> Call:
-        return Call("Hover", [_selector(action)])
-
     def _map_fill(self, action: dict) -> Call:
         return Call("Fill Text", [_selector(action), _data(action.get("text", ""))])
 
@@ -280,12 +270,6 @@ class ActionMapper:
                 _fixed("value"),
                 *(_data(o) for o in action.get("options", [])),
             ],
-        )
-
-    def _map_set_input_files(self, action: dict) -> Call:
-        return Call(
-            "Upload File By Selector",
-            [_selector(action), *(_data(f) for f in action.get("files", []))],
         )
 
     # -- assertions -------------------------------------------------------- #
@@ -337,13 +321,11 @@ class ActionMapper:
         "navigate": _map_navigate,
         "closePage": _map_close_page,
         "click": _map_click,
-        "hover": _map_hover,
         "fill": _map_fill,
         "press": _map_press,
         "check": _map_check,
         "uncheck": _map_uncheck,
         "select": _map_select,
-        "setInputFiles": _map_set_input_files,
         "assertText": _map_assert_text,
         "assertValue": _map_assert_value,
         "assertChecked": _map_assert_checked,

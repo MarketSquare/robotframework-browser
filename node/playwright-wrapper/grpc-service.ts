@@ -676,25 +676,7 @@ export class PlaywrightServer {
         }
     }
 
-    async recorderPoll(
-        call: ServerUnaryCall<pb.Request_Json, pb.Response_Json>,
-        callback: sendUnaryData<pb.Response_Json>,
-    ): Promise<void> {
-        try {
-            callback(null, await recorder.recorderPoll(call.request, this.getState(call)));
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    recorderPoll = this.wrapping(recorder.recorderPoll);
 
-    async recorderStop(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            callback(null, await recorder.recorderStop(call.request, this.getState(call)));
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    recorderStop = this.wrapping(recorder.recorderStop);
 }

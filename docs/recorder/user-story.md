@@ -33,7 +33,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
   Recording Session in which any number of Keyword Recordings are named and recorded one
   after another from the toolbar.
 - **AC-04** The default value of `file` is the string `${SUITE_SOURCE}`. It is resolved as a
-  Robot Framework variable, so recording goes into the file of the running suite.
+  Robot Framework variable, so recording goes into the file of the running suite. A
+  directory, or a file that exists but cannot be read, is rejected before the session starts.
 - **AC-05** With `file=${None}`, nothing is written to a file. Each finished keyword is
   written as a complete block (`*** Keywords ***` …) to the console and to the log at INFO
   level when it is finished.
@@ -42,19 +43,22 @@ Defined in `Browser/recorder/CONTEXT.md`.
   session.
 - **AC-07** The session ends after `idle_timeout` (default 5 minutes) with neither an Action
   reported nor a toolbar command given. Actions while idle reset the timer too. With
-  `idle_timeout=${None}`, the session waits until it is ended.
+  `idle_timeout=${None}`, the session waits until it is ended. An `idle_timeout` of zero or
+  less is rejected.
 - **AC-08** If the installed Playwright version does not offer the programmatic recorder,
   the keyword fails with a clear error message.
-- **AC-48** If the active browser was launched headless, both keywords fail before the
-  session starts, with an error that asks for `headless=False`, and write nothing. A browser
-  attached with `Connect To Browser` counts as visible.
+- **AC-48** If the active browser was launched headless, both keywords fail before anything
+  is recorded or written, with an error that asks for `headless=False`. A browser attached
+  with `Connect To Browser` counts as visible. The internal switch
+  `Browser.recorder_allows_headless` lets the acceptance tests drive scripted sessions
+  headless; it is not a keyword and not documented for users.
 
 ### Toolbar and operation
 
 - **AC-09** During the session the page shows a Robot Framework toolbar. It shows the state
   (idle or recording), the name of the current keyword and its Keyword Calls, live.
-- **AC-10** The toolbar can be dragged, collapsed and resized. Position, size and collapsed
-  state survive navigation. It can sit flush against every edge of the viewport but never
+- **AC-10** The toolbar can be dragged, collapsed and resized in width (its height follows
+  its content). Position, width and collapsed state survive navigation. It can sit flush against every edge of the viewport but never
   past it; a drag that ends past an edge leaves it at that edge, and the next drag moves it
   right away.
 - **AC-11** Clicks and input in the toolbar itself are never recorded as Actions.
@@ -78,7 +82,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
   "Starting recording…" indicator, until the Keyword Recording starts. A rejected name is
   shown in the dialog, with the typed name kept.
 - **AC-52** The name and argument dialogs close on *Cancel*, on Escape and on a click on the
-  dimmed area around them. While typing in the toolbar, no keystroke reaches the page.
+  dimmed area around them. While typing in the toolbar, no keystroke reaches the page, except
+  a `window` capture listener the page registered before the toolbar was injected.
 - **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
   shows a clear notice saying so for as long as the mode is on.
 
@@ -87,7 +92,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-17** The session ends on *✕* in the Robot Framework toolbar, on Playwright's Record
   button, when `idle_timeout` is reached, when all pages are closed, or on an error.
 - **AC-18** A Keyword Recording still running when the session ends is saved, never
-  discarded. A Keyword Recording with no Keyword Calls is not saved.
+  discarded, unless a *Discard* was already requested and is only waiting for Playwright's
+  held-back Actions (AC-19). A Keyword Recording with no Keyword Calls is not saved.
 - **AC-19** *Save*, *Discard* and *✕* take effect only after Playwright has reported
   every Action it was still holding back, so a click right before *Save* still lands in the
   right keyword. The toolbar shows that it is finishing in the meantime.
@@ -103,9 +109,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-23** Every recorded User Keyword carries the tag `recorded`.
 - **AC-24** A recorded keyword never creates a page. An Action that opens a popup or new tab
   becomes `Switch Page    NEW`; closing a page becomes `Close Page`.
-- **AC-25** An Action that opens a dialog is preceded by a matching `Handle Future Dialogs`.
-- **AC-26** An Action that starts a download is written as `${dl}=    Promise To Wait For
-  Download`, the Action, and `Wait For    ${dl}`.
+- **AC-25** An Action that opens a dialog is preceded by `Handle Future Dialogs    action=accept`;
+  Playwright does not report whether the dialog was accepted or dismissed.
+- **AC-26** An Action that starts a download is written as `${download}=    Promise To Wait
+  For Download`, the Action, and `Wait For    ${download}`.
 - **AC-27** Password fields get no special treatment; the typed value is recorded like any
   other.
 - **AC-46** Playwright's *Assert snapshot* becomes `Get Aria Snapshot    <selector>    yaml    ==
@@ -183,6 +190,13 @@ See ADR 0010.
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
 AC-52**. Anything not
 stated there is not part of v1.
+
+## Changes outside the recorder
+
+Two fixes elsewhere in the library came out of the recorder work and ship with it:
+`Promise To` converts non-string positional arguments like string ones (the recorder's
+`file=${None}` needed it), and `New Persistent Context` no longer records every context as
+headless.
 
 ## Out of scope (possible future extensions)
 
@@ -291,16 +305,18 @@ These are deliberately not part of v1. The design should not block them.
 - both payload shapes (1.62 wrapped, 1.63 bare)
 - filtering of toolbar Actions
 - buffering and draining of events and commands; the reset poll at session start
-- signals (popup, dialog, download) attached to the right Action
-- detecting whether Playwright is still holding back Actions
-- rendering the toolbar state
+- the settle wait at session start, which drains Actions Playwright was holding back
+- the headless check and its test switch
+- the toolbar script is injected once per page and removed after the session
 
 **Acceptance (`atest/`, scripted, in CI on all platforms)**
 - `Record Keywords` with at least two keywords and idle navigation in between that is not
   recorded
 - `Record Keyword` with a fixed name, and its return value
 - *Undo*, *Discard*, and a click right before *Save*
-- log-only mode (`file=${None}`): no file, block in the log
+- log-only mode (`file=${None}`): no file; the console and log output of `LogTarget` is
+  covered by its unit tests
+- the toolbar's rendering and dialogs, driven through the real toolbar in a browser
 - Keyword Arguments, including a partial value and a default
 - popup → `Switch Page    NEW`, dialog, download
 - ending by `idle_timeout` and by closing all pages

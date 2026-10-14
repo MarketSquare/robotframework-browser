@@ -249,6 +249,13 @@ class RecordedKeyword:
 
     # -- helpers ----------------------------------------------------------- #
 
+    def value_changed(self, call: int, value: int, raw: object) -> bool:
+        """Whether the value exists and no longer reads ``raw``."""
+        try:
+            return self._value(call, value).text != raw
+        except ValueError:
+            return False
+
     def _values(self) -> Iterator[tuple[int, int, Value]]:
         for c, call in enumerate(self.calls()):
             for v, value in enumerate(call.args):

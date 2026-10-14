@@ -200,13 +200,6 @@ def test_collect_known_keywords_is_empty_without_a_running_suite():
 
 
 def test_collect_known_keywords_warns_when_the_keyword_store_is_missing(monkeypatch):
-    """`_kw_store` is a private Robot attribute; losing it must not fail silently.
-
-    If a future RF version renames or removes it, the collision set silently
-    shrinks to `namespace.libraries` only - resource and suite-file keywords
-    stop being checked with no other signal. That must at least surface as a
-    warning instead of vanishing without a trace.
-    """
     namespace = SimpleNamespace(libraries=[], languages=None)
     context = SimpleNamespace(namespace=namespace)
     monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
@@ -320,7 +313,6 @@ def _run_probe(tmp_path, call, via_symlink=False):
 
 
 def test_collect_known_keywords_sees_the_whole_running_suite(tmp_path):
-    """The RF-API integration itself, inside a real `robot` run."""
     names = set(_run_probe(tmp_path, "Dump Known Keywords")["names"])
     # BuiltIn, an explicitly imported library, an imported resource, a resource
     # imported by that resource, and the suite file's own keywords.
@@ -333,34 +325,24 @@ def test_collect_known_keywords_sees_the_whole_running_suite(tmp_path):
 
 
 def test_collect_known_keywords_covers_bdd_prefix_stripping(tmp_path):
-    """Robot strips `Given`/`When`/... *before* resolving a keyword.
-
-    So a suite keyword `Given User Is Logged In` is actually reached by
-    resolving `User Is Logged In`, and recording that bare name hijacks the BDD
-    call while colliding with nothing. Verified against a real `robot` run: the
-    resource keyword did run in place of the suite's own.
-    """
     names = set(_run_probe(tmp_path, "Dump Known Keywords")["names"])
     assert "Given User Is Logged In" in names
     assert "User Is Logged In" in names
 
 
 def test_recording_rejects_the_bdd_variant_of_a_target_file_keyword(tmp_path):
-    """End to end: the page's chosen name is refused inside a real `robot` run."""
     outcome = _run_probe(tmp_path, "Try To Record    User Is Logged In")
     assert outcome["outcome"] == "rejected"
     assert "already exists in this suite" in outcome["error"]
 
 
 def test_recording_rejects_an_embedded_argument_instantiation(tmp_path):
-    """`Open ${page} Page` is instantiated by the literal `Open Login Page`."""
     outcome = _run_probe(tmp_path, "Try To Record    Open Login Page")
     assert outcome["outcome"] == "rejected"
     assert "Open ${page} Page" in outcome["error"]
 
 
 def test_recording_rejects_an_embedded_keyword_of_the_target_file(tmp_path):
-    """An embedded keyword cannot be "reused" by a literal name, only shadowed."""
     outcome = _run_probe(
         tmp_path, "Try To Record    Open Login Page    file=helpers.resource"
     )
@@ -453,12 +435,6 @@ def test_embedded_matcher_is_none_for_a_literal_name():
     ],
 )
 def test_recording_rejects_a_normalised_embedded_instantiation(tmp_path, name):
-    """The raw `EmbeddedArguments` check alone let each of these through.
-
-    Robot's own matching is caseless, spaceless *and* underscore-insensitive and
-    prefers such a normal match over the embedded owner, so writing any of these
-    hijacks the existing call - rc=0, PASS, no warning.
-    """
     outcome = _run_probe(tmp_path, f"Try To Record    {name}")
     assert outcome["outcome"] == "rejected"
     assert "already exists in this suite" in outcome["error"]
@@ -500,13 +476,6 @@ def test_collect_known_keywords_includes_owner_qualified_names(tmp_path):
 def test_recording_rejects_an_owner_qualified_name_on_the_default_target(
     tmp_path, name
 ):
-    """`_get_runner_from_suite_file` runs *before* `_get_explicit_runner`.
-
-    So a keyword literally named `BuiltIn.Log` in the suite file wins over the
-    explicit `BuiltIn.Log` call - and the suite file is the default target. An
-    alias from `WITH NAME` is just as exposed, since the alias is the owner name
-    the call has to use.
-    """
     outcome = _run_probe(tmp_path, f"Try To Record    {name}")
     assert outcome["outcome"] == "rejected"
     assert "already exists in this suite" in outcome["error"]
@@ -519,7 +488,6 @@ def test_a_name_an_embedded_owner_does_not_claim_stays_accepted(tmp_path):
 
 
 def test_recording_rejects_a_target_keyword_behind_a_symlink(tmp_path):
-    """AC-39: a name the target file already defines is taken, symlink or not."""
     outcome = _run_probe(
         tmp_path,
         "Try To Record    Target Only Keyword    file=link/target.resource",
@@ -530,7 +498,6 @@ def test_recording_rejects_a_target_keyword_behind_a_symlink(tmp_path):
 
 
 def test_recording_rejects_a_keyword_of_the_target_file(tmp_path):
-    """AC-37: no reuse - an existing name in the target is a collision."""
     outcome = _run_probe(
         tmp_path, "Try To Record    target_only_keyword    file=target.resource"
     )

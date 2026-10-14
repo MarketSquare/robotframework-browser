@@ -251,13 +251,8 @@ def collect_known_keywords() -> KnownKeywords:
         if suite_file is not None:
             owners.append(suite_file)
     else:
-        # `_kw_store` is a private Robot attribute. If a future RF version
-        # renames or removes it this branch silently falls back to only
-        # `namespace.libraries`, dropping every resource, resource-of-resource
-        # and suite-file keyword from the collision set with no other signal -
-        # quietly weakening the name-collision defence. Failing loudly here
-        # (without raising, which would break recording outright on an RF
-        # version bump) at least puts the gap in front of the user.
+        # `_kw_store` is private to Robot. Without it only library keywords are
+        # known, which weakens the collision defence; warn rather than fail.
         logger.warn(
             "recorder: could not read Robot's internal keyword store "
             "(Namespace._kw_store is missing or was renamed); resource and "
