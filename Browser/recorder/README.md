@@ -47,8 +47,10 @@ option strategies, states) never are.
 
 `hover` and `setInputFiles` are mapped, but Playwright 1.63 never emits them in api mode, so
 in practice they are not recorded. Any other action name produces no Keyword Call and a
-toolbar notice ("... has no Browser keyword and was not recorded."); the session then
-ignores later `actionUpdated` events for it.
+toolbar notice ("... has no Browser keyword and was not recorded."). A later
+`actionUpdated` for that Action never updates the previous Keyword Call: if Playwright's
+update maps to a Browser keyword it is added as a new Keyword Call, otherwise it gives the
+same notice again.
 
 ### Signals
 
@@ -97,7 +99,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `calls` | `[{text, keyword, values: [{text, selectable, raw}]}]`; `raw` is the literal text of the value, `null` once it holds a reference |
 | `arguments` | `[{name, default, useDefault}]` |
 | `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null` |
-| `pending` | `new`/`finish`/`discard`/`stop` while it settles (commands are refused meanwhile), else `null` |
+| `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
 | `notice` / `error` | one-shot message, cleared by the next command |
 | `picking` | Playwright's Pick locator mode is on |
 
@@ -114,7 +116,12 @@ Commands, toolbar -> Python, through `window.__rfbCommand(command)`:
 `raw` on `argument` is the value text the person selected in. The session rejects the
 command ("The keyword calls changed - please try again.") if the call now holds other text,
 so a selection made against a stale view never marks the wrong text. All fields are
-validated; the page can call the binding too (ADR 0010).
+validated; the page can call the binding too (ADR 0010). Node accepts commands only while a
+session runs (from the reset poll until `recorderStop`), drops and logs a command over
+`MAX_COMMAND_LENGTH` (4096 characters of JSON) and buffers at most `MAX_BUFFERED_COMMANDS`
+(100). An Action over `MAX_EVENT_LENGTH` (1 MB) is dropped and logged; one poll reply carries
+at most `MAX_EVENTS_PER_POLL` (500) events and about `MAX_REPLY_EVENT_CHARS` (2 MB) of them,
+the rest follow with the next poll.
 
 ## Timing
 
@@ -125,8 +132,11 @@ validated; the page can call the binding too (ADR 0010).
   made while idle does not land in the next keyword. `Stop` while another command is
   settling keeps the running wait; a pending discard still happens first.
 - A session reset (first poll, `reset=true`) waits `HELD_BACK_MS` (600 ms) while the
-  recorder is still in `standby`, drains buffered events and commands, and only then
+  recorder is still stopped, drains buffered events and commands, and only then
   switches to `recording`, so no Action made after the switch is dropped with stale ones.
+- The end of a session writes mode `none`: in Playwright 1.63 only `none` hides its overlay.
+  Its Record button switches to `standby`; both count as stopped once the session was seen
+  recording.
 - Python polls every 200 ms (`POLL_INTERVAL`).
 
 ## What Playwright does before our sink (1.63)
@@ -145,11 +155,11 @@ validated; the page can call the binding too (ADR 0010).
   (the toolbar shows a notice, from `picking`). The picked locator is not delivered in api
   mode, so it cannot be used.
 - File uploads and hovers are not recorded (Playwright does not emit them in api mode).
-- Playwright's own overlay cannot be hidden and covers the top centre of the page; its
-  Record button ends the session too.
+- Playwright's own overlay cannot be hidden during a session and covers the top centre of
+  the page; its Record button ends the session too. It is hidden after the session.
 - One browser context: the recorder works in the active context.
 - `_enableRecorder` registers the recorder in the context for good. After a session it
-  stays registered (in `standby`), as do the `__rfbCommand` binding and the Action sink;
+  stays registered (in mode `none`), as do the `__rfbCommand` binding and the Action sink;
   the toolbar itself is removed.
 - It rests on a private Playwright API (ADR 0011).
 
@@ -162,7 +172,8 @@ validated; the page can call the binding too (ADR 0010).
 3. Signal names `popup`, `dialog`, `download` unchanged.
 4. Click buffer still <= 500 ms (`kActionBufferTimeout`), so `SETTLE_SECONDS` and
    `HELD_BACK_MS` still cover it.
-5. `STOP_MODES` (`none`, `standby`) still match the overlay's modes. `recording-inspecting`
+5. `STOP_MODES` (`none`, `standby`) still match the overlay's modes, and `none` still hides
+   the overlay (`recorderStop` writes it). `recording-inspecting`
    and `inspecting` (Pick locator, `PICKING_MODES`) are not stops; a new mode must be
    classified as stop, part of the recording, or picking.
 6. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps

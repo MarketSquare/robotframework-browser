@@ -56,7 +56,10 @@ only to the log. See the keyword documentation.
 - The recorder uses Playwright's programmatic recorder, which is not a public Playwright API.
   It may need adapting after a Playwright upgrade.
 - A recorded keyword contains values from the page under test, including anything typed into
-  password fields. Review it before committing.
+  password fields. Review it before committing. During a session these values are also
+  readable by scripts on the recorded pages.
+- Playwright's own recorder toolbar is shown at the top centre of the page while recording
+  and cannot be hidden.
 
 ### Promise To converts non-string positional arguments
 `Promise To` now converts non-string positional arguments like string ones, so the

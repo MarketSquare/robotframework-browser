@@ -34,3 +34,11 @@ those grounds.
 - **An owner-qualified name that does not resolve today is accepted**, e.g. `Beta.Beta
   Action` when that library is imported under a different name. It hijacks nothing that
   works now.
+- **The toolbar state is visible to page script.** It is rendered into every page of the
+  context, so during a session any script on any of those pages can read it, including the
+  recorded values and anything typed into password fields, and can send toolbar commands.
+  The keyword documentation says so; recording against pages that load untrusted script
+  exposes what is typed.
+- **The command channel is bounded.** Commands are accepted only while a session runs, and
+  oversized commands and Actions are logged and dropped, so a page cannot end a session by
+  pushing a poll reply past the gRPC message limit.

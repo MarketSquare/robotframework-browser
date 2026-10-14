@@ -72,19 +72,16 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Record browser interactions as one User Keyword named ``name``.
 
-        Shows the Robot Framework recorder toolbar on the page of the *current* browser
+        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
-        to a Browser keyword and is written to ``file`` immediately. The toolbar shows
-        the Keyword Calls; *Undo* removes the last Action's Keyword Calls, *Discard*
-        starts the keyword again empty. Click a value in the toolbar to turn it, or a
-        marked part of it, into a Keyword Argument; its recorded value becomes the
-        default, which can be deselected.
+        to a Browser keyword, is listed in the toolbar and is written to ``file``
+        immediately.
 
         Toolbar buttons:
 
         - *Stop*: ends the session.
         - *Undo*: removes the Keyword Calls of the last Action.
-        - *Discard*: starts the keyword being recorded again, empty.
+        - *Discard*: drops the Keyword Calls recorded so far and starts the keyword again, empty.
 
         The toolbar is in the recording state from the start. Click a value in the toolbar
         to turn the whole value, or a marked part of it, into a Keyword Argument; its
@@ -93,15 +90,15 @@ class Recorder(LibraryComponent):
         (replacing repeated values).
 
         The keyword is always created new: an existing keyword is never extended.
-        Only the *current* browser context is recorded (limitation); other contexts are ignored.
 
         The recording ends with *Stop* in the toolbar, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
-        pages are closed, or on an error. The keyword being recorded is saved in every case.
+        pages are closed, or on an error. The keyword being recorded is saved unless it
+        has no Keyword Calls.
 
         | =Arguments= | =Description= |
         | ``name`` | Name of the User Keyword to create. It must not exist in ``file`` and must not shadow any keyword the running suite can call. |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
+        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
         | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
@@ -111,12 +108,20 @@ class Recorder(LibraryComponent):
         Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
+        Playwright folds a navigation that happens within 5 seconds after a click, fill or
+        key press into that Action, so it is not recorded as a ``Go To`` of its own.
         While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
         are not recorded, because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
+        Limitations: only the *current* browser context is recorded; other contexts are
+        ignored. Playwright's own recorder toolbar is shown at the top centre of the page
+        during the recording and cannot be hidden, so it covers the page there.
+
         *Review a recorded keyword before you commit it.* Its values come from the page
-        under test, including anything typed into password fields.
+        under test, including anything typed into password fields. During the session
+        the toolbar state, including the recorded values and typed text, is readable by
+        scripts of every page in the context, and those scripts can send toolbar commands.
 
         Requires a Playwright version that offers the programmatic recorder. The context
         stays prepared for recording after the session ends.
@@ -145,21 +150,18 @@ class Recorder(LibraryComponent):
         not shadow any keyword the running suite can call - such names are rejected in
         the toolbar.
 
-        Shows the Robot Framework recorder toolbar on the page of the *current* browser
+        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
-        to a Browser keyword and is written to ``file`` immediately. The toolbar shows
-        the Keyword Calls; *Undo* removes the last Action's Keyword Calls, *Discard*
-        starts the keyword again empty. Click a value in the toolbar to turn it, or a
-        marked part of it, into a Keyword Argument; its recorded value becomes the
-        default, which can be deselected.
+        to a Browser keyword, is listed in the toolbar and is written to ``file``
+        immediately.
 
         Toolbar buttons:
 
         - *Stop*: ends the session.
-        - *+ New Keyword*: names and starts a keyword (only in `Record Keywords`).
-        - *Finish*: saves the keyword being recorded and returns to idle (only in `Record Keywords`).
+        - *+ New Keyword*: names and starts a keyword.
+        - *Finish*: saves the keyword being recorded and returns to idle.
         - *Undo*: removes the Keyword Calls of the last Action.
-        - *Discard*: starts the keyword being recorded again, empty.
+        - *Discard*: drops the keyword being recorded, also from ``file``, and returns to idle.
 
         The toolbar is idle until a keyword is started; Actions while idle are not recorded.
         While recording, click a value in the toolbar to turn the whole value, or a marked
@@ -167,15 +169,15 @@ class Recorder(LibraryComponent):
         can be deselected. The toolbar also offers to use the new argument for the same
         value elsewhere in the keyword (replacing repeated values).
 
-        Existing keywords are never extended. Only the *current* browser context is
-        recorded (limitation); other contexts are ignored.
+        Existing keywords are never extended.
 
         The recording ends with *Stop* in the toolbar, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
-        pages are closed, or on an error. The keyword being recorded is saved in every case.
+        pages are closed, or on an error. The keyword being recorded is saved unless it
+        has no Keyword Calls.
 
         | =Arguments= | =Description= |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
+        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keywords are logged to the console and to the log at INFO level instead. |
         | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
 
         Returns the text of all keywords recorded in the session, under one
@@ -186,12 +188,20 @@ class Recorder(LibraryComponent):
         Action; a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``.
         Playwright's Assert snapshot becomes ``Get Aria Snapshot`` with an exact YAML
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
+        Playwright folds a navigation that happens within 5 seconds after a click, fill or
+        key press into that Action, so it is not recorded as a ``Go To`` of its own.
         While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
         are not recorded, because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
+        Limitations: only the *current* browser context is recorded; other contexts are
+        ignored. Playwright's own recorder toolbar is shown at the top centre of the page
+        during the recording and cannot be hidden, so it covers the page there.
+
         *Review recorded keywords before you commit them.* Their values come from the page
-        under test, including anything typed into password fields.
+        under test, including anything typed into password fields. During the session
+        the toolbar state, including the recorded values and typed text, is readable by
+        scripts of every page in the context, and those scripts can send toolbar commands.
 
         Requires a Playwright version that offers the programmatic recorder. The context
         stays prepared for recording after the session ends.

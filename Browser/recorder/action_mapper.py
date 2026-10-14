@@ -92,7 +92,7 @@ _TEXT_RE = re.compile(r'^internal:text="([^"\\]*)"([is])$')
 def _translate_text(body: str, flag: str) -> str | None:
     """Public `text=` equivalent of an `internal:text=` body, or None.
 
-    Verified against Playwright 1.62 (identical match sets):
+    Verified against Playwright 1.63 (identical match sets):
     `internal:text="X"i` == `text=X` (substring, case-insensitive) and
     `internal:text="X"s` == `text="X"` (exact, case-sensitive).
 
