@@ -166,6 +166,10 @@ bytes of JSON.
   the page; its Record button ends the session too. It is hidden after the session.
 - A value longer than about 64 KiB, or one past the first MiB of values in the keyword,
   cannot be made an argument in the toolbar; edit the file instead.
+- Keyboard isolation: keyboard, input, composition and clipboard events from inside the
+  toolbar are stopped by a capture listener on `window`, so page shortcuts do not fire while
+  typing in it. A `window` capture listener the page registered before the toolbar was
+  injected still sees them.
 - Headless: the reset poll fails if the active browser was launched headless. The
   acceptance suite sets the internal `Browser.recorder_allows_headless` to drive scripted
   sessions headless. Connected and adopted browsers count as visible.

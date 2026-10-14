@@ -300,6 +300,32 @@ The Toolbar Is Removed From All Pages After The Session
     Switch Page    ${second}[0]
     Get Element Count    css=rfb-recorder-toolbar    ==    0
 
+Typing In The Toolbar Does Not Reach The Page
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => {
+    ...    window.pageKeys = [];
+    ...    document.addEventListener('keydown', (event) => window.pageKeys.push(event.key), true);
+    ...    const attach = Element.prototype.attachShadow;
+    ...    Element.prototype.attachShadow = function (init) { const root = attach.call(this, init); window.toolbarRoot = root; return root; };
+    ...    }
+    ${promise} =    Promise To    Record Keyword    Typed Argument    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Evaluate JavaScript    ${None}    () => { window.pageKeys.length = 0; }
+    Click Inside Toolbar    () => [...window.toolbarRoot.querySelectorAll('.cell.pick')].pop()
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('argName')
+    Keyboard Input    type    who
+    Keyboard Key    press    Enter
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    ${page_keys} =    Evaluate JavaScript    ${None}    () => window.pageKeys
+    Should Be Empty    ${page_keys}
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${who}=Alice
+
 Recording Fails In A Headless Browser
     Allow Recording Headless    ${False}
     New Browser    ${BROWSER}    headless=True
@@ -360,6 +386,13 @@ Open The Toolbar Shadow Root For Inspection
     ...    const attach = Element.prototype.attachShadow;
     ...    Element.prototype.attachShadow = function (init) { return attach.call(this, { ...init, mode: 'open' }); };
     ...    }
+
+Click Inside Toolbar
+    [Documentation]    A real mouse click, so the closed shadow root stays closed.
+    [Arguments]    ${finder}
+    ${box} =    Evaluate JavaScript    ${None}
+    ...    () => { const r = (${finder})().getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }
+    Mouse Button    click    ${box}[0]    ${box}[1]
 
 Click Toolbar Collapse Button
     Evaluate JavaScript    rfb-recorder-toolbar >> #collapse    (element) => element.click()
