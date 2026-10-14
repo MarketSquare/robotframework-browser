@@ -84,21 +84,22 @@ class Recorder(LibraryComponent):
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
 
-        Toolbar buttons:
+        Toolbar buttons (each has a tooltip):
 
-        - *Stop*: ends the session.
-        - *Undo*: removes the Keyword Calls of the last Action.
+        - *✕* in the header: ends the session.
+        - *Minimize* in the header (a dash): minimizes the toolbar.
         - *Discard*: drops the Keyword Calls recorded so far and starts the keyword again, empty.
+        - *Undo*: removes the Keyword Calls of the last Action.
 
         The toolbar is in the recording state from the start. Click a value in the toolbar
-        to turn the whole value, or a marked part of it, into a Keyword Argument; its
+        to turn the whole value, or a marked part of it, into a Keyword Argument, named like ``email`` or ``${email}``; its
         recorded value becomes the default, which can be deselected. The toolbar also
         offers to use the new argument for the same value elsewhere in the keyword
         (replacing repeated values).
 
         The keyword is always created new: an existing keyword is never extended.
 
-        The recording ends with *Stop* in the toolbar, with Playwright's Record button,
+        The recording ends with *✕* in the toolbar header, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
         pages are closed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
@@ -154,8 +155,8 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Record several User Keywords in one session.
 
-        Use *+ New Keyword* in the toolbar to name and start a keyword, record it, and
-        *Finish* it; then start the next one. Actions while no keyword is being recorded
+        Use *Record keyword* in the toolbar to name and start a keyword, record it, and
+        *Save* it; then start the next one. Actions while no keyword is being recorded
         are not captured, so you can navigate freely between keywords. A name must not
         exist in ``file``, must not have been recorded earlier in the session, and must
         not shadow any keyword the running suite can call - such names are rejected in
@@ -166,23 +167,24 @@ class Recorder(LibraryComponent):
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
 
-        Toolbar buttons:
+        Toolbar buttons (each has a tooltip):
 
-        - *Stop*: ends the session.
-        - *+ New Keyword*: names and starts a keyword.
-        - *Finish*: saves the keyword being recorded and returns to idle.
-        - *Undo*: removes the Keyword Calls of the last Action.
+        - *✕* in the header: ends the session.
+        - *Minimize* in the header (a dash): minimizes the toolbar.
+        - *Record keyword*: names and starts a keyword.
         - *Discard*: drops the keyword being recorded, also from ``file``, and returns to idle.
+        - *Undo*: removes the Keyword Calls of the last Action.
+        - *Save*: saves the keyword being recorded and returns to idle.
 
         The toolbar is idle until a keyword is started; Actions while idle are not recorded.
         While recording, click a value in the toolbar to turn the whole value, or a marked
-        part of it, into a Keyword Argument; its recorded value becomes the default, which
+        part of it, into a Keyword Argument, named like ``email`` or ``${email}``; its recorded value becomes the default, which
         can be deselected. The toolbar also offers to use the new argument for the same
         value elsewhere in the keyword (replacing repeated values).
 
         Existing keywords are never extended.
 
-        The recording ends with *Stop* in the toolbar, with Playwright's Record button,
+        The recording ends with *✕* in the toolbar header, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
         pages are closed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.

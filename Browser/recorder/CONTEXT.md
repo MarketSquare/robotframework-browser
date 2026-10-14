@@ -15,7 +15,7 @@ _Avoid_: recording, session (on its own, when the meaning is unclear)
 
 **Keyword Recording**:
 The part of a **Recording Session** in which exactly one User Keyword is being recorded,
-from *New* until *Finish* or *Discard*. `Record Keyword` is a **Recording Session** with
+from *Record keyword* until *Save* or *Discard*. `Record Keyword` is a **Recording Session** with
 exactly one **Keyword Recording**, which starts immediately.
 _Avoid_: recording, active keyword
 
@@ -49,7 +49,7 @@ _Avoid_: parameter, variable
 - A **Recording Session** has one or more **Keyword Recordings**; between them it is **idle**
 - A **Keyword Recording** produces exactly one User Keyword made of **Keyword Calls**, or
   nothing if it is discarded or has no **Keyword Calls** when it ends
-- A **Keyword Recording** that is still running when its **Recording Session** ends (Stop,
+- A **Keyword Recording** that is still running when its **Recording Session** ends (✕ in the toolbar,
   inactivity, all pages closed, error) is saved, never discarded
 - A **Keyword Recording** always creates a new User Keyword; it never extends an existing one
 - Every recorded User Keyword carries the tag `recorded`, so it can be found and reviewed

@@ -326,6 +326,62 @@ Typing In The Toolbar Does Not Reach The Page
     ${file} =    Get File    ${RESOURCE}
     Should Contain    ${file}    [Arguments]${SPACE*4}\${who}=Alice
 
+Argument Dialog Validates In Place And Accepts Variable Syntax
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Validated Argument    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Click Inside Toolbar    () => [...window.toolbarRoot.querySelectorAll('.cell.pick')].pop()
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('argName')
+    Keyboard Input    type    \${who
+    Toolbar Element Should Be Shown    argErr
+    Keyboard Key    press    Enter
+    Toolbar Element Should Be Shown    argModal
+    Keyboard Input    type    }
+    Toolbar Element Should Be Hidden    argErr
+    Keyboard Key    press    Enter
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Toolbar Element Should Be Hidden    argModal
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${who}=Alice
+
+Argument Dialog Keeps A Rejected Name And Closes On The Glass Pane
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Glass Pane    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Click Inside Toolbar    () => [...window.toolbarRoot.querySelectorAll('.cell.pick')].pop()
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('argName')
+    Keyboard Input    type    SPACE
+    Keyboard Key    press    Enter
+    Wait For Function    () => window.toolbarRoot.getElementById('argErr').textContent.includes('built-in')
+    Toolbar Element Should Be Shown    argModal
+    Mouse Button    click    3    300
+    Toolbar Element Should Be Hidden    argModal
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Not Contain    ${file}    [Arguments]
+
+Name Dialog Shows That Recording Starts And Idle Shows No Call List
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar State Should Be    idle
+    Toolbar Element Should Be Hidden    calls
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('new')
+    Keyboard Input    type    Shows Starting
+    Keyboard Key    press    Enter
+    Toolbar Element Should Be Shown    starting
+    Toolbar State Should Be    recording
+    Toolbar Element Should Be Hidden    modal
+    Toolbar Element Should Be Shown    calls
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 Recording Fails In A Headless Browser
     Allow Recording Headless    ${False}
     New Browser    ${BROWSER}    headless=True
@@ -347,6 +403,9 @@ Allow Recording Headless
 
 Open Form And Name Resource
     New Page    ${FORM_URL}
+    # The toolbar starts at the top left; keep it off the elements the tests use.
+    Evaluate JavaScript    ${None}
+    ...    () => window.sessionStorage.setItem('rfb.toolbar.position', JSON.stringify({x: 5000, y: 12}))
     ${slug} =    Evaluate    "${TEST_NAME}".lower().replace(" ", "_")
     Set Test Variable    ${RESOURCE}    ${OUTPUT_DIR}${/}recorded_${slug}.resource
     Remove File    ${RESOURCE}
@@ -386,6 +445,24 @@ Open The Toolbar Shadow Root For Inspection
     ...    const attach = Element.prototype.attachShadow;
     ...    Element.prototype.attachShadow = function (init) { return attach.call(this, { ...init, mode: 'open' }); };
     ...    }
+
+Keep The Closed Toolbar Root Reachable
+    [Documentation]    The root stays closed, so the recorder behaves as for a user;
+    ...    only the test keeps a reference to it.
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => {
+    ...    const attach = Element.prototype.attachShadow;
+    ...    Element.prototype.attachShadow = function (init) { const root = attach.call(this, init); window.toolbarRoot = root; return root; };
+    ...    }
+
+Toolbar Element Should Be Shown
+    [Arguments]    ${id}
+    Wait For Function    () => !window.toolbarRoot.getElementById('${id}').hidden    timeout=2s
+
+Toolbar Element Should Be Hidden
+    [Arguments]    ${id}
+    Wait For Function    () => window.toolbarRoot.getElementById('${id}').hidden    timeout=2s
 
 Click Inside Toolbar
     [Documentation]    A real mouse click, so the closed shadow root stays closed.

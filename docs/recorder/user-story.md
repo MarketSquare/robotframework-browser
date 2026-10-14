@@ -15,7 +15,7 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **Recording Session**: everything from the call of `Record Keyword` / `Record Keywords`
   until it returns; **idle** between Keyword Recordings.
 - **Keyword Recording**: the part of a Recording Session in which exactly one User Keyword is
-  recorded, from *New* until *Finish* or *Discard*.
+  recorded, from *Record keyword* until *Save* or *Discard*.
 - **Keyword Argument**: a value, or a marked part of one, of a Keyword Call that was turned
   into an argument of the recorded keyword.
 
@@ -56,8 +56,8 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-10** The toolbar can be dragged, collapsed and resized. Position, size and collapsed
   state survive navigation.
 - **AC-11** Clicks and input in the toolbar itself are never recorded as Actions.
-- **AC-12** In `Record Keywords`, *+ New Keyword* starts a Keyword Recording under a name to
-  be entered, and *Finish* ends it. In `Record Keyword` these two buttons are not shown.
+- **AC-12** In `Record Keywords`, *Record keyword* starts a Keyword Recording under a name to
+  be entered, and *Save* ends it. In `Record Keyword` these two buttons are not shown.
 - **AC-13** *Undo* removes every Keyword Call the last Action produced. Later refinements of
   that Action by Playwright do not bring it back.
 - **AC-14** *Discard* abandons the running Keyword Recording completely and leaves the file as
@@ -65,17 +65,27 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-15** Actions while idle produce no Keyword Calls.
 - **AC-16** Actions with no Browser keyword equivalent produce no Keyword Call, but a visible
   notice in the toolbar.
+- **AC-49** The toolbar starts at the top left of the page. Its header has *Minimize* (a dash) and
+  *✕* (end the session) on the right. While recording, the buttons are *Discard*, *Undo* and
+  *Save*, in this order, each with an icon. Every button has a tooltip explaining it.
+- **AC-50** While idle, the toolbar shows no Keyword Call list. While recording, the keyword
+  name is shown in a monospaced font and the recording indicator pulses.
+- **AC-51** After a name is confirmed, the name dialog stays visible but dimmed, with a
+  "Starting recording…" indicator, until the Keyword Recording starts. A rejected name is
+  shown in the dialog, with the typed name kept.
+- **AC-52** The name and argument dialogs close on *Cancel*, on Escape and on a click on the
+  dimmed area around them. While typing in the toolbar, no keystroke reaches the page.
 - **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
   shows a clear notice saying so for as long as the mode is on.
 
 ### Ending
 
-- **AC-17** The session ends on *Stop* in the Robot Framework toolbar, on Playwright's Record
+- **AC-17** The session ends on *✕* in the Robot Framework toolbar, on Playwright's Record
   button, when `idle_timeout` is reached, when all pages are closed, or on an error.
 - **AC-18** A Keyword Recording still running when the session ends is saved, never
   discarded. A Keyword Recording with no Keyword Calls is not saved.
-- **AC-19** *Finish*, *Discard* and *Stop* take effect only after Playwright has reported
-  every Action it was still holding back, so a click right before *Finish* still lands in the
+- **AC-19** *Save*, *Discard* and *✕* take effect only after Playwright has reported
+  every Action it was still holding back, so a click right before *Save* still lands in the
   right keyword. The toolbar shows that it is finishing in the meantime.
 - **AC-20** After the session the toolbar is removed from all pages. Another session in the
   same browser context works, without recording any Action twice.
@@ -114,7 +124,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
   from `[Arguments]`.
 - **AC-33** If typing continues after a value was turned into an argument, the Keyword Call
   keeps using the argument and its default follows the new text.
-- **AC-34** Argument names are validated as strictly as keyword names.
+- **AC-34** Argument names are validated as strictly as keyword names. A name may be given
+  plain (`email`) or as a variable (`${email}`); anything starting with `${` must be valid
+  variable syntax. The argument dialog shows a validation error while typing and on
+  *Make argument*, and stays open until the name is accepted; *Cancel* is always possible.
 
 ### Target file
 
@@ -162,7 +175,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-48**. Anything not
+AC-52**. Anything not
 stated there is not part of v1.
 
 ## Out of scope (possible future extensions)
@@ -254,7 +267,7 @@ These are deliberately not part of v1. The design should not block them.
   - formatting of existing content is preserved
 - **RecorderSession**
   - every command in every state (idle, recording, fixed name)
-  - deferred *Finish*, *Discard* and *Stop*
+  - deferred *Save*, *Discard* and *✕*
   - *Undo* removes a group (dialog, download)
   - merging through `actionUpdated`, also after *Undo*
   - Keyword Arguments: create, partial value, replace repeated values, removal on *Undo*,
@@ -280,7 +293,7 @@ These are deliberately not part of v1. The design should not block them.
 - `Record Keywords` with at least two keywords and idle navigation in between that is not
   recorded
 - `Record Keyword` with a fixed name, and its return value
-- *Undo*, *Discard*, and a click right before *Finish*
+- *Undo*, *Discard*, and a click right before *Save*
 - log-only mode (`file=${None}`): no file, block in the log
 - Keyword Arguments, including a partial value and a default
 - popup → `Switch Page    NEW`, dialog, download

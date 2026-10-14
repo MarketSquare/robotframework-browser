@@ -93,7 +93,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 |-------|---------|
 | `state` | `idle` or `recording` |
 | `name` | keyword being recorded, or the name of one about to start |
-| `fixedName` | true for `Record Keyword` (name is fixed, only Stop ends it) |
+| `fixedName` | true for `Record Keyword` (name is fixed, only ✕ ends it) |
 | `target` | label of the file or log the keywords go to |
 | `keywords` | names finished in this session |
 | `calls` | `[{text, keyword, values: [{text, selectable, raw}]}]`; `raw` is the literal text of the value, `null` once it holds a reference |

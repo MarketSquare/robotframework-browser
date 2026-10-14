@@ -49,6 +49,17 @@
 
         const LOGO =
             '<svg class="logo" role="img" aria-label="Browser library" viewBox="422 465 1664 1219" xmlns="http://www.w3.org/2000/svg"><rect fill="#b82e24" x="562" y="759" width="349.9" height="687.3" transform="rotate(-15,736.9,1102.7)"/><rect fill="#d63a2e" x="900" y="668.4" width="350.6" height="687.3" transform="rotate(-15,1075.3,1012.1)"/><path fill="#fff" d="m 955.4,1004.6 c 11.1,9.5 26.1,12.9 40.2,9.1 8.4,-2.2 15.9,-7 21.6,-13.7 l 80.5,-92.6 c 0.5,-0.6 1,-1.2 1.5,-1.8 15.3,-18.7 12.6,-46.3 -6.1,-61.6 -18.7,-15.3 -46.3,-12.6 -61.6,6.1 l -80.2,92.5 c -15.9,18.2 -14,45.9 4.2,61.9 l -0.1,0 z"/><path fill="#fff" stroke="#000" stroke-width="14.17" d="m 1217.5,659.5 v -0 c 0,0 -120.8,-69.8 -120.8,-69.8 -18.3,-10.6 -40,-13.5 -60.4,-8.1 L 558,709.8 c -20.4,5.5 -37.8,18.8 -48.4,37.1 l -69.6,121 c -10.5,18.3 -13.4,40 -8,60.3 l 128.2,478.3 c 5.5,20.4 18.8,37.8 37.1,48.4 l 120.7,69.8 c 18.3,10.4 40,13.2 60.4,7.8 l 478.3,-128.2 c 20.4,-5.4 37.8,-18.7 48.4,-36.9 l 69.7,-120.8 c 10.6,-18.3 13.5,-40 8,-60.4 L 1254.6,707.9 c -5.4,-20.4 -18.8,-37.9 -37.1,-48.4 z m 76.4,533.5 c 2.1,8 1,16.6 -3.1,23.7 l -53.4,92.5 c -4.2,7.2 -11,12.4 -19,14.6 l -447.2,119.8 c -8,2.1 -16.6,1 -23.7,-3.1 l -92.2,-53.5 c -7.2,-4.2 -12.4,-11 -14.6,-19 L 521,921.3 c -2.1,-8 -1,-16.6 3.1,-23.7 l 53.1,-92.4 c 4.2,-7.2 11,-12.4 19,-14.6 l 447.3,-119.9 c 8,-2.1 16.6,-1 23.7,3.1 l 92.5,53.4 c 7.2,4.2 12.4,11 14.6,19 l 119.6,446.9 z"/><path fill="#fff" d="m 703.4,1091.8 c 23.4,-6.3 37.2,-30.3 31,-53.6 -4.7,-17.6 5.7,-35.7 23.3,-40.4 17.6,-4.7 35.7,5.7 40.4,23.3 l 0,0.1 c 6.3,23.4 30.3,37.2 53.7,30.9 23.4,-6.3 37.2,-30.3 30.9,-53.7 -18,-62.3 -82,-99.3 -144.9,-83.7 -64.7,16 -104.2,81.4 -88.1,146.1 h 0 c 6.3,23.4 30.3,37.2 53.6,31 z"/><path fill="#fff" d="m 1177.3,1267.3 -392.7,105.2 c -23.4,6.3 -47.5,-7.6 -53.8,-31 v 0 c -19,-71 72.5,-157.2 204.3,-192.5 131.8,-35.3 254.2,-6.4 273.2,64.6 v 0 c 6.3,23.4 -7.6,47.5 -31,53.8 z"/><rect fill="#1d8d22" x="1041.9" y="583.9" width="440.9" height="866.1" transform="rotate(15,1262.3,1017)"/><rect fill="#2ead33" x="1467.7" y="698.2" width="441.8" height="866.1" transform="rotate(15,1688.6,1131.2)"/><path d="m 1562.5,1047.5 c 6.1,17.4 20.4,30.6 38.1,35.3 10.6,2.9 21.8,2.4 32.2,-1.3 L 1779,1031.1 c 0.9,-0.3 1.9,-0.6 2.8,-1 28.5,-10.7 42.9,-42.5 32.1,-71 -10.7,-28.5 -42.5,-42.9 -71,-32.1 l -145.9,50.4 c -28.8,9.9 -44.2,41.3 -34.4,70.2 z"/><path stroke="#fff" stroke-width="14.17" d="m 2065.9,836.2 v -0.1 l -87.8,-152.3 c -13.3,-23 -35.1,-39.9 -60.8,-46.9 L 1314.6,475.5 c -25.7,-6.8 -53.1,-3.2 -76.2,10 l -152.2,88.1 c -23,13.3 -39.8,35.1 -46.7,60.8 L 878.1,1237.1 c -6.9,25.7 -3.3,53.1 10,76.2 l 87.8,152.2 c 13.4,22.9 35.3,39.7 61,46.5 l 602.7,161.5 c 25.7,6.9 53,3.4 76.1,-9.8 l 152.1,-88 c 23.1,-13.2 40,-35.2 46.8,-61 l 161.4,-602.5 c 7,-25.7 3.4,-53.1 -10,-76.2 z m -252.7,630.3 c -2.7,10.1 -9.3,18.7 -18.4,23.9 l -116.6,67.3 c -9.1,5.2 -19.8,6.6 -29.9,3.9 l -563.5,-151 c -10.1,-2.7 -18.7,-9.3 -23.9,-18.4 l -66.9,-116.5 c -5.2,-9.1 -6.6,-19.8 -3.9,-29.9 L 1141,682.9 c 2.7,-10.1 9.3,-18.7 18.4,-23.9 l 116.2,-67.3 c 9.1,-5.2 19.8,-6.6 29.9,-3.9 l 563.6,151 c 10.1,2.7 18.7,9.3 23.9,18.4 l 67.3,116.5 c 5.2,9.1 6.6,19.8 3.9,29.9 -123,452.9 -41.2,151.5 -151,562.9 z"/><path d="m 1232.6,984 c 29.4,7.9 59.7,-9.6 67.6,-39 6,-22.2 28.7,-35.3 50.9,-29.4 22.2,5.9 35.4,28.7 29.4,50.9 l -0,0.1 c -7.9,29.4 9.6,59.7 39.1,67.6 29.4,7.9 59.7,-9.6 67.6,-39.1 19.6,-79.3 -26.9,-160 -105.4,-182.6 -80.7,-23.3 -164.9,23.2 -188.2,103.9 h 0.1 c -7.9,29.5 9.6,59.7 39,67.6 z"/><path d="M 1696.9,1258.7 1202.1,1126.1 c -29.5,-7.9 -59.8,9.6 -67.7,39.1 v 0 c -23.9,89.5 91.3,198 257.4,242.5 166.1,44.5 320.3,8.1 344.2,-81.3 v 0 c 7.9,-29.5 -9.6,-59.8 -39.1,-67.7 z"/></svg>';
+        const icon = (body) =>
+            `<svg class="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+        const ICONS = {
+            close: icon('<path d="M4 4l8 8M12 4l-8 8"/>'),
+            minimize: icon('<path d="M3.5 8h9"/>'),
+            expand: icon('<path d="M3.5 8h9M8 3.5v9"/>'),
+            record: icon('<circle cx="8" cy="8" r="4.5" fill="currentColor" stroke="none"/>'),
+            bin: icon('<path d="M2.5 4.5h11M6.5 4.5V3h3v1.5M4 4.5l.7 9h6.6l.7-9M6.8 7v4.5M9.2 7v4.5"/>'),
+            undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
+            save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
+        };
         const host = document.createElement(TAG);
         host.style.cssText = 'position:fixed;z-index:2147483647;top:0;left:0';
         const root = host.attachShadow({ mode: 'closed' });
@@ -77,13 +88,20 @@
       .logo { width: 27px; height: 20px; flex: none; }
       /* Stop lives in the header so it is reachable in both states and both
          modes - it ends the whole session, unlike the body's state-specific rows. */
-      .head button { flex: none; padding: 2px 6px; cursor: pointer; }
+      .head button { flex: none; width: 24px; height: 22px; padding: 0; }
       .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
-      .dot.rec { background: var(--red); }
+      .dot.rec { background: var(--red); animation: pulse 1.4s ease-in-out infinite; }
+      @keyframes pulse { 50% { opacity: .25; } }
+      @media (prefers-reduced-motion: reduce) { .dot.rec { animation: none; } }
       .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .title.rec, .title.rec * { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+                                 'DejaVu Sans Mono', monospace; }
       .count { color: var(--dim); }
       button { background: transparent; color: var(--ink); border: 1px solid var(--line-strong);
-               border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+               border-radius: 4px; padding: 4px 8px; cursor: pointer;
+               display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+      button:disabled { opacity: .5; cursor: default; }
+      .icon { width: 14px; height: 14px; flex: none; }
       button:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
       button.primary { background: var(--red); border-color: var(--red); color: var(--paper); }
       button.primary:hover { filter: brightness(1.1); }
@@ -116,8 +134,17 @@
       .hint { color: var(--dim); }
       .err { color: var(--red); }
       [hidden] { display: none !important; }
-      .modal { position: fixed; inset: 0; background: rgb(0 0 0 / 50%);
+      /* The host is moved with a transform, which makes it the containing block
+         of fixed descendants; --x/--y undo that offset so the glass pane covers
+         the whole viewport. */
+      .modal { position: fixed; left: calc(-1 * var(--x, 0px)); top: calc(-1 * var(--y, 0px));
+               width: 100vw; height: 100vh; background: rgb(0 0 0 / 35%);
                display: flex; align-items: center; justify-content: center; }
+      .dialog.starting > :not(.status) { opacity: .5; pointer-events: none; }
+      .status { display: flex; align-items: center; gap: 8px; color: var(--dim); }
+      .spinner { width: 12px; height: 12px; border: 2px solid var(--line-strong); border-top-color: var(--red);
+                 border-radius: 50%; animation: spin .8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
       .dialog { background: var(--paper); color: var(--ink); padding: 16px; border-radius: 7px;
                 border: 1px solid var(--line); color-scheme: dark;
                 width: 320px; display: flex; flex-direction: column; gap: 10px; }
@@ -131,8 +158,8 @@
         <span class="dot" id="dot"></span>
         <span class="title" id="title">Idle</span>
         <span class="count" id="count"></span>
-        <button id="stop" title="End the recording session">Stop</button>
-        <button id="collapse" title="Collapse">-</button>
+        <button id="collapse" title="Minimize the toolbar">${ICONS.minimize}</button>
+        <button id="stop" title="End the recording session. The keyword being recorded is saved; the test continues.">${ICONS.close}</button>
       </div>
       <div class="body" id="body">
         <div class="picking" id="picking" hidden></div>
@@ -148,23 +175,24 @@
         <div class="err" id="err" hidden></div>
         <div class="notice" id="argHint" hidden></div>
         <div class="row" id="idleRow">
-          <button class="primary" id="new">+ New Keyword</button>
+          <button class="primary" id="new" title="Name a new keyword and start recording it">${ICONS.record}Record keyword</button>
         </div>
         <div class="row" id="recRow" hidden>
-          <button id="undo">Undo</button>
-          <button class="danger" id="discard">Discard</button>
-          <button class="primary" id="finish">Finish</button>
+          <button class="danger" id="discard" title="Drop this keyword - nothing of it is saved">${ICONS.bin}Discard</button>
+          <button id="undo" title="Remove the Keyword Calls of the last recorded action">${ICONS.undo}Undo</button>
+          <button class="primary" id="finish" title="Save this keyword and stop recording it. The session stays open for the next one.">${ICONS.save}Save</button>
         </div>
       </div>
     </div>
     <div class="modal" id="modal" hidden>
-      <div class="dialog">
+      <div class="dialog" id="nameDialog">
         <div>Name of the keyword to record</div>
         <input id="nameInput" placeholder="e.g. Login As Admin" autocomplete="off">
         <div class="err" id="modalErr" hidden></div>
+        <div class="status" id="starting" hidden><span class="spinner"></span>Starting recording…</div>
         <div class="row">
-          <button id="cancel">Cancel</button>
-          <button class="primary" id="ok">Start recording</button>
+          <button id="cancel" title="Close without recording">Cancel</button>
+          <button class="primary" id="ok" title="Start recording this keyword">${ICONS.record}Start recording</button>
         </div>
       </div>
     </div>
@@ -172,9 +200,9 @@
       <div class="dialog">
         <div>Mark the part that becomes an argument (or leave it unmarked for the whole value)</div>
         <textarea id="argValue" rows="3" readonly></textarea>
-        <input id="argName" placeholder="argument name, e.g. email" autocomplete="off">
+        <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off">
         <div class="err" id="argErr" hidden></div>
-        <div class="row"><button id="argCancel">Cancel</button><button class="primary" id="argOk">Make argument</button></div>
+        <div class="row"><button id="argCancel" title="Close without making an argument">Cancel</button><button class="primary" id="argOk" title="Make the marked part an argument of the keyword">Make argument</button></div>
       </div>
     </div>`;
 
@@ -216,19 +244,23 @@
         window.addEventListener('pointercancel', endResize);
 
         // -- placement ------------------------------------------------------- //
-        const position = read(POSITION_KEY, { x: window.innerWidth - 340, y: 12 });
+        // Top left: the top right is where Playwright's overlay grows and
+        // Chromium shows its translate prompt.
+        const position = read(POSITION_KEY, { x: 12, y: 12 });
         const place = () => {
             const width = panel.offsetWidth || 320;
             const x = Math.min(Math.max(position.x, 0), Math.max(window.innerWidth - width - 10, 0));
             const y = Math.min(Math.max(position.y, 0), Math.max(window.innerHeight - 60, 0));
             host.style.transform = `translate(${x}px, ${y}px)`;
+            host.style.setProperty('--x', `${x}px`);
+            host.style.setProperty('--y', `${y}px`);
         };
         place();
 
         let drag = null;
         $('head').addEventListener('pointerdown', (event) => {
             // The header doubles as the drag handle; its buttons must still click.
-            if (event.target.id === 'collapse' || event.target.id === 'stop') return;
+            if (event.target.closest('button')) return;
             drag = { x: event.clientX - position.x, y: event.clientY - position.y };
             $('head').setPointerCapture(event.pointerId);
         });
@@ -247,7 +279,8 @@
         let collapsed = read(COLLAPSED_KEY, false);
         const applyCollapsed = () => {
             $('body').hidden = collapsed;
-            $('collapse').textContent = collapsed ? '+' : '-';
+            $('collapse').innerHTML = collapsed ? ICONS.expand : ICONS.minimize;
+            $('collapse').title = collapsed ? 'Expand the toolbar' : 'Minimize the toolbar';
         };
         applyCollapsed();
         $('collapse').addEventListener('click', () => {
@@ -267,21 +300,31 @@
         // second render after it (by then the command has been processed), answers it.
         let sentKey = null;
         let rendersSinceSend = 0;
+        const setStarting = (starting) => {
+            pending = starting;
+            $('ok').disabled = starting;
+            $('nameInput').disabled = starting;
+            $('nameDialog').classList.toggle('starting', starting);
+            $('starting').hidden = !starting;
+        };
         const openModal = () => {
-            pending = false;
-            $('ok').disabled = false;
+            setStarting(false);
             $('nameInput').value = '';
             $('modalErr').hidden = true;
             $('modal').hidden = false;
             $('nameInput').focus();
         };
         const closeModal = () => {
-            pending = false;
-            $('ok').disabled = false;
+            setStarting(false);
             $('modal').hidden = true;
         };
         $('new').addEventListener('click', openModal);
         $('cancel').addEventListener('click', closeModal);
+        // A click on the glass pane cancels, as in any modal - but not once the
+        // name was sent.
+        $('modal').addEventListener('click', (event) => {
+            if (event.target === $('modal') && !pending) closeModal();
+        });
         $('ok').addEventListener('click', () => {
             if (pending) return;
             const name = $('nameInput').value.trim();
@@ -291,10 +334,10 @@
                 return;
             }
             if (!send({ cmd: 'new', name })) return;
-            pending = true;
+            $('modalErr').hidden = true;
+            setStarting(true);
             sentKey = lastKey;
             rendersSinceSend = 0;
-            $('ok').disabled = true;
         });
         $('stop').addEventListener('click', () => send({ cmd: 'stop' }));
         $('undo').addEventListener('click', () => send({ cmd: 'undo' }));
@@ -321,25 +364,51 @@
             }
             setHint('');
             argTarget = { call, value, raw };
+            argSent = null;
+            $('argOk').disabled = false;
             $('argValue').value = raw;
             $('argName').value = '';
-            $('argErr').hidden = true;
+            showArgError('');
             $('argModal').hidden = false;
             $('argValue').focus();
         };
+        // Like the name modal, the dialog stays open until Python answered, so
+        // a rejected name is shown here and can be corrected.
+        let argSent = null;
         const closeArgModal = () => {
             $('argModal').hidden = true;
             argTarget = null;
+            argSent = null;
+        };
+        const showArgError = (text) => {
+            $('argErr').textContent = text || '';
+            $('argErr').hidden = !text;
+        };
+        // Mirrors `argument_name_error` in names.py for instant feedback; Python
+        // checks again and also rejects built-in and taken names.
+        const argumentNameError = (name) => {
+            if (!name) return 'Argument name must not be empty.';
+            const plain = /^[A-Za-z_][A-Za-z0-9_]*$/;
+            if (name.startsWith('${')) {
+                const inner = /^\$\{(.*)\}$/.exec(name);
+                return inner && plain.test(inner[1])
+                    ? null
+                    : 'Write the argument as a variable like ${email}, or just email.';
+            }
+            return plain.test(name)
+                ? null
+                : "Argument name must start with a letter or '_' and contain only letters, digits and '_'.";
         };
         $('argCancel').addEventListener('click', closeArgModal);
+        $('argModal').addEventListener('click', (event) => {
+            if (event.target === $('argModal')) closeArgModal();
+        });
         $('argOk').addEventListener('click', () => {
-            if (!argTarget || isPending()) return;
+            if (!argTarget || argSent || isPending()) return;
             const name = $('argName').value.trim();
-            if (!name) {
-                $('argErr').textContent = 'Argument name must not be empty.';
-                $('argErr').hidden = false;
-                return;
-            }
+            const error = argumentNameError(name);
+            showArgError(error);
+            if (error) return;
             const input = $('argValue');
             // Selection offsets are UTF-16 code units; Python indexes by code point.
             const points = (text) => Array.from(text).length;
@@ -360,16 +429,20 @@
                 start = 0;
                 end = points(argTarget.raw);
             }
-            send({
-                cmd: 'argument',
-                call: argTarget.call,
-                value: argTarget.value,
-                start,
-                end,
-                name,
-                raw: argTarget.raw,
-            });
-            closeArgModal();
+            if (
+                !send({
+                    cmd: 'argument',
+                    call: argTarget.call,
+                    value: argTarget.value,
+                    start,
+                    end,
+                    name,
+                    raw: argTarget.raw,
+                })
+            )
+                return;
+            argSent = { key: lastKey, renders: 0 };
+            $('argOk').disabled = true;
         });
         // -- keyboard isolation ---------------------------------------------- //
         // Keyboard events are composed, so typing in the toolbar would reach the
@@ -385,6 +458,15 @@
             argName: (event) => {
                 if (event.key === 'Enter') $('argOk').click();
                 if (event.key === 'Escape') closeArgModal();
+            },
+            argValue: (event) => {
+                if (event.key === 'Escape') closeArgModal();
+            },
+        };
+        const toolbarInput = {
+            argName: () => {
+                const name = $('argName').value.trim();
+                showArgError(name ? argumentNameError(name) : '');
             },
         };
         const KEYBOARD_EVENTS = [
@@ -404,7 +486,8 @@
             if (event.target !== host) return;
             event.stopImmediatePropagation();
             const focused = root.activeElement;
-            const handler = event.type === 'keydown' && focused ? toolbarKeys[focused.id] : undefined;
+            const handlers = { keydown: toolbarKeys, input: toolbarInput }[event.type];
+            const handler = handlers && focused ? handlers[focused.id] : undefined;
             if (handler) handler(event);
         };
         KEYBOARD_EVENTS.forEach((type) => window.addEventListener(type, isolateKeyboard, true));
@@ -448,6 +531,9 @@
             const argumentList = Array.isArray(state.arguments) ? state.arguments : [];
             $('dot').className = recording ? 'dot rec' : 'dot';
             $('title').textContent = recording ? state.name || 'Recording' : 'Idle';
+            $('title').classList.toggle('rec', recording || state.pending === 'new');
+            // Nothing is recorded while idle, so an empty call list would only confuse.
+            $('calls').hidden = !recording;
             $('count').textContent = recording ? `(${calls.length})` : '';
             const list = $('calls');
             const oldTop = list.scrollTop;
@@ -552,12 +638,22 @@
                     // Rejected: keep the panel and the typed name, let them retry.
                     $('modalErr').textContent = state.error;
                     $('modalErr').hidden = false;
-                    pending = false;
-                    $('ok').disabled = false;
+                    setStarting(false);
+                    $('nameInput').focus();
                 } else if (recording) {
                     // Accepted only once the session actually reports recording;
                     // `error === null` alone can still be the pre-command state.
                     closeModal();
+                }
+            }
+            if (argSent && (key !== argSent.key || ++argSent.renders >= 2)) {
+                if (state.error) {
+                    showArgError(state.error);
+                    argSent = null;
+                    $('argOk').disabled = false;
+                    $('argName').focus();
+                } else {
+                    closeArgModal();
                 }
             }
         };
