@@ -176,6 +176,9 @@ class Recorder(LibraryComponent):
         - *Undo*: removes the Keyword Calls of the last Action.
         - *Save*: saves the keyword being recorded and returns to idle.
 
+        While the toolbar is minimized, its header offers *Start* (idle) or *Save*
+        (recording).
+
         The toolbar is idle until a keyword is started; Actions while idle are not recorded.
         While recording, click a value in the toolbar to turn the whole value, or a marked
         part of it, into a Keyword Argument, named like ``email`` or ``${email}``; its recorded value becomes the default, which

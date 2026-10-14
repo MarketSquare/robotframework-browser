@@ -386,6 +386,29 @@ Name Dialog Shows That Recording Starts And Idle Shows No Call List
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+Minimized Toolbar Starts And Saves A Keyword
+    Keep The Closed Toolbar Root Reachable
+    Evaluate JavaScript    ${None}    () => window.sessionStorage.setItem('rfb.toolbar.collapsed', 'true')
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar State Should Be    idle
+    Toolbar Element Should Be Hidden    body
+    Toolbar Element Should Be Hidden    headSave
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('headNew')
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('nameInput')
+    Keyboard Input    type    Minimized
+    Keyboard Key    press    Enter
+    Toolbar State Should Be    recording
+    Toolbar Element Should Be Hidden    headNew
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('headSave')
+    Toolbar State Should Be    idle
+    Toolbar Element Should Be Shown    headNew
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    Minimized\n
+
 Recording Fails In A Headless Browser
     Allow Recording Headless    ${False}
     New Browser    ${BROWSER}    headless=True

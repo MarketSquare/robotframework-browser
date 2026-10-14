@@ -89,6 +89,14 @@
       /* Stop lives in the header so it is reachable in both states and both
          modes - it ends the whole session, unlike the body's state-specific rows. */
       .head button { flex: none; width: 24px; height: 22px; padding: 0; }
+      /* Shown only while minimized, so the main action stays one click away. */
+      .head button.quick { width: auto; padding: 0 8px; font-weight: 600; }
+      .head button.quick.rec { animation: glow 1.4s ease-in-out infinite; }
+      @keyframes glow { 50% { box-shadow: 0 0 0 4px rgb(255 107 94 / 55%); } }
+      /* Minimized: only the header, without the resize grip's spare room. */
+      .panel.collapsed { padding-bottom: 0; resize: none; }
+      .panel.collapsed .head { border-bottom: 0; }
+      @media (prefers-reduced-motion: reduce) { .head button.quick.rec { animation: none; } }
       .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
       .dot.rec { background: var(--red); animation: pulse 1.4s ease-in-out infinite; }
       @keyframes pulse { 50% { opacity: .25; } }
@@ -159,6 +167,8 @@
         <span class="dot" id="dot"></span>
         <span class="title" id="title">Idle</span>
         <span class="count" id="count"></span>
+        <button class="primary quick" id="headNew" title="Name a new keyword and start recording it" hidden>${ICONS.record}Start</button>
+        <button class="primary quick rec" id="headSave" title="Save this keyword and stop recording it. The session stays open for the next one." hidden>${ICONS.save}Save</button>
         <button id="collapse" title="Minimize the toolbar">${ICONS.minimize}</button>
         <button id="stop" title="End the recording session. The keyword being recorded is saved; the test continues.">${ICONS.close}</button>
       </div>
@@ -278,8 +288,19 @@
 
         // -- collapse -------------------------------------------------------- //
         let collapsed = read(COLLAPSED_KEY, false);
+        // The quick buttons in the header: Start while idle, Save while recording,
+        // only when minimized and only when the body would offer the same.
+        const updateQuickButtons = () => {
+            const state = window.__rfbToolbarState || {};
+            const offered = collapsed && !state.fixedName;
+            $('headNew').hidden = !offered || state.state === 'recording';
+            $('headSave').hidden = !offered || state.state !== 'recording';
+            $('headNew').disabled = !!state.pending;
+            $('headSave').disabled = !!state.pending;
+        };
         const applyCollapsed = () => {
             $('body').hidden = collapsed;
+            panel.classList.toggle('collapsed', collapsed);
             $('collapse').innerHTML = collapsed ? ICONS.expand : ICONS.minimize;
             $('collapse').title = collapsed ? 'Expand the toolbar' : 'Minimize the toolbar';
         };
@@ -288,6 +309,7 @@
             collapsed = !collapsed;
             write(COLLAPSED_KEY, collapsed);
             applyCollapsed();
+            updateQuickButtons();
         });
 
         // -- commands -------------------------------------------------------- //
@@ -320,6 +342,7 @@
             $('modal').hidden = true;
         };
         $('new').addEventListener('click', openModal);
+        $('headNew').addEventListener('click', openModal);
         $('cancel').addEventListener('click', closeModal);
         // A click on the glass pane cancels, as in any modal - but not once the
         // name was sent.
@@ -344,6 +367,7 @@
         $('undo').addEventListener('click', () => send({ cmd: 'undo' }));
         $('discard').addEventListener('click', () => send({ cmd: 'discard' }));
         $('finish').addEventListener('click', () => send({ cmd: 'finish' }));
+        $('headSave').addEventListener('click', () => send({ cmd: 'finish' }));
 
         // -- keyword arguments -------------------------------------------------- //
         // `raw` is the literal cell text the offsets refer to (the rendered text
@@ -628,6 +652,7 @@
             // A fixed-name recording writes exactly one keyword: no New, no Finish.
             $('new').hidden = !!state.fixedName;
             $('finish').hidden = !!state.fixedName;
+            updateQuickButtons();
             $('hint').textContent = recording
                 ? `writing to ${state.target}`
                 : `${keywords.length} keyword(s) recorded into ${state.target}`;

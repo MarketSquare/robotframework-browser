@@ -67,7 +67,9 @@ Defined in `Browser/recorder/CONTEXT.md`.
   notice in the toolbar.
 - **AC-49** The toolbar starts at the top left of the page. Its header has *Minimize* (a dash) and
   *✕* (end the session) on the right. While recording, the buttons are *Discard*, *Undo* and
-  *Save*, in this order, each with an icon. Every button has a tooltip explaining it.
+  *Save*, in this order, each with an icon. Every button has a tooltip explaining it. While
+  minimized, the header of `Record Keywords` offers a prominent *Start* (idle) or a
+  highlighted, pulsing *Save* (recording) left of *Minimize*.
 - **AC-50** While idle, the toolbar shows no Keyword Call list. While recording, the keyword
   name is shown in a monospaced font and the recording indicator pulses.
 - **AC-51** After a name is confirmed, the name dialog stays visible but dimmed, with a
