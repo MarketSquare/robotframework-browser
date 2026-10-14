@@ -42,6 +42,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { BrowserContext } from 'playwright';
 
+import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
@@ -125,7 +126,10 @@ export function drainEvents(events: Buffered[]): Buffered[] {
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
     if (!buffers.active || buffers.commands.length >= MAX_BUFFERED_COMMANDS) return;
-    if (jsonLength(command) > MAX_COMMAND_LENGTH) return;
+    if (jsonLength(command) > MAX_COMMAND_LENGTH) {
+        logger.info('recorder: ignoring an oversized toolbar command');
+        return;
+    }
     buffers.commands.push(command);
 }
 
@@ -196,7 +200,12 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     }
     const buffers: RecorderBuffers = { events: [], commands: [], armed: false, active: false };
     const buffer = (entry: Buffered) => {
-        if (buffers.active && jsonLength(entry) <= MAX_EVENT_LENGTH) buffers.events.push(entry);
+        if (!buffers.active) return;
+        if (jsonLength(entry) > MAX_EVENT_LENGTH) {
+            logger.info(`recorder: ignoring an oversized '${String(entry.action.name)}' event`);
+            return;
+        }
+        buffers.events.push(entry);
     };
     const forward = (event: 'added' | 'updated') => (_page: unknown, payload: unknown) => {
         const action = toAction(payload);

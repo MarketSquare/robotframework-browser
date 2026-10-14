@@ -2,6 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
 
+import { logger } from '../browser_logger';
 import {
     drain,
     ensureRecorder,
@@ -343,6 +344,7 @@ describe('the command channel', () => {
         send({ cmd: 'new', name: 'x'.repeat(MAX_COMMAND_LENGTH) });
         send('x'.repeat(5_000_000));
         expect(buffers.commands).toEqual([]);
+        expect(logger.info).toHaveBeenCalledWith('recorder: ignoring an oversized toolbar command');
         send({ cmd: 'undo' });
         expect(buffers.commands).toEqual([{ cmd: 'undo' }]);
     });
@@ -368,6 +370,7 @@ describe('event buffering', () => {
         await resetSession(context, buffers, async () => undefined);
         context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x'.repeat(MAX_EVENT_LENGTH) });
         expect(buffers.events).toEqual([]);
+        expect(logger.info).toHaveBeenCalledWith("recorder: ignoring an oversized 'fill' event");
     });
 
     it('delivers at most MAX_EVENTS_PER_POLL events per poll and keeps the rest', async () => {
