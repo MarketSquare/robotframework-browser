@@ -10,10 +10,11 @@ import {
     isPicking,
     isToolbarAction,
     MAX_BUFFERED_COMMANDS,
-    MAX_COMMAND_LENGTH,
-    MAX_EVENT_LENGTH,
+    MAX_COMMAND_BYTES,
+    MAX_EVENT_BYTES,
     MAX_EVENTS_PER_POLL,
-    MAX_REPLY_EVENT_CHARS,
+    MAX_REPLY_COMMAND_BYTES,
+    MAX_REPLY_EVENT_BYTES,
     recorderPoll,
     recorderStop,
     resetSession,
@@ -341,12 +342,38 @@ describe('the command channel', () => {
 
     it('drops an oversized command', async () => {
         const { buffers, send } = await activeContext();
-        send({ cmd: 'new', name: 'x'.repeat(MAX_COMMAND_LENGTH) });
+        send({ cmd: 'new', name: 'x'.repeat(MAX_COMMAND_BYTES) });
         send('x'.repeat(5_000_000));
         expect(buffers.commands).toEqual([]);
         expect(logger.info).toHaveBeenCalledWith('recorder: ignoring an oversized toolbar command');
         send({ cmd: 'undo' });
         expect(buffers.commands).toEqual([{ cmd: 'undo' }]);
+    });
+
+    it('accepts an argument command quoting a long value', async () => {
+        const { buffers, send } = await activeContext();
+        const command = { cmd: 'argument', call: 0, value: 1, start: 0, end: 1, name: 'a', raw: 'x'.repeat(64 * 1024) };
+        send(command);
+        expect(buffers.commands).toEqual([command]);
+    });
+
+    it('measures a command in UTF-8 bytes', async () => {
+        const { buffers, send } = await activeContext();
+        send({ cmd: 'new', name: '\u6f22'.repeat(MAX_COMMAND_BYTES / 3 + 1) });
+        expect(buffers.commands).toEqual([]);
+    });
+
+    it('keeps one poll reply within MAX_REPLY_COMMAND_BYTES and delivers the rest next poll', async () => {
+        const { context, buffers, send } = await activeContext();
+        const raw = 'x'.repeat(MAX_COMMAND_BYTES - 1000);
+        const count = Math.ceil(MAX_REPLY_COMMAND_BYTES / raw.length) + 2;
+        for (let i = 0; i < count; i++) send({ cmd: 'argument', raw });
+        const first = (await poll(context)).commands;
+        expect(JSON.stringify(first).length).toBeLessThanOrEqual(MAX_REPLY_COMMAND_BYTES);
+        expect(first.length).toBeGreaterThan(0);
+        let total = first.length;
+        while (buffers.commands.length) total += (await poll(context)).commands.length;
+        expect(total).toBe(count);
     });
 
     it('buffers at most MAX_BUFFERED_COMMANDS commands', async () => {
@@ -368,9 +395,20 @@ describe('event buffering', () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         await resetSession(context, buffers, async () => undefined);
-        context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x'.repeat(MAX_EVENT_LENGTH) });
+        context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x'.repeat(MAX_EVENT_BYTES) });
         expect(buffers.events).toEqual([]);
         expect(logger.info).toHaveBeenCalledWith("recorder: ignoring an oversized 'fill' event");
+    });
+
+    it('measures an Action in UTF-8 bytes', async () => {
+        const context = fakeRecorderContext([fakePage()]);
+        const buffers = await ensureRecorder(context);
+        await resetSession(context, buffers, async () => undefined);
+        context.sinks[0].actionAdded(
+            {},
+            { name: 'fill', selector: '#a', text: '\u6f22'.repeat(MAX_EVENT_BYTES / 3 + 1) },
+        );
+        expect(buffers.events).toEqual([]);
     });
 
     it('delivers at most MAX_EVENTS_PER_POLL events per poll and keeps the rest', async () => {
@@ -389,15 +427,15 @@ describe('event buffering', () => {
         ]);
     });
 
-    it('keeps one poll reply within MAX_REPLY_EVENT_CHARS', async () => {
+    it('keeps one poll reply within MAX_REPLY_EVENT_BYTES', async () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         await resetSession(context, buffers, async () => undefined);
-        const text = 'x'.repeat(MAX_EVENT_LENGTH - 100);
-        const count = Math.ceil(MAX_REPLY_EVENT_CHARS / text.length) + 2;
+        const text = 'x'.repeat(MAX_EVENT_BYTES - 100);
+        const count = Math.ceil(MAX_REPLY_EVENT_BYTES / text.length) + 2;
         for (let i = 0; i < count; i++) context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text });
         const first = (await poll(context)).events;
-        expect(JSON.stringify(first).length).toBeLessThanOrEqual(MAX_REPLY_EVENT_CHARS + MAX_EVENT_LENGTH);
+        expect(Buffer.byteLength(JSON.stringify(first))).toBeLessThanOrEqual(MAX_REPLY_EVENT_BYTES);
         expect(first.length).toBeGreaterThan(0);
         expect(first.length).toBeLessThan(count);
         let total = first.length;

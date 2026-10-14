@@ -20,6 +20,7 @@ is injected, so the whole interaction model is unit-testable in milliseconds.
 
 from __future__ import annotations
 
+import json
 import time
 from collections.abc import Callable
 
@@ -42,6 +43,13 @@ _NAME_LIMIT = 80
 _STILL_FINISHING = "Still finishing the last command - please wait."
 _DEFERRED = ("finish", "discard", "stop")
 _STARTING = "new"
+#: The toolbar shows at most this many characters of one text.
+TOOLBAR_TEXT_LIMIT = 200
+#: A value whose JSON is longer cannot become an argument in the toolbar.
+MAX_RAW_LENGTH = 64 * 1024
+#: The ``raw`` values of one toolbar state together stay below this, so the
+#: state and the commands quoting them fit one gRPC message.
+MAX_RAW_TOTAL = 1024 * 1024
 
 
 class RecorderSession:
@@ -97,37 +105,59 @@ class RecorderSession:
 
     def toolbar_state(self) -> dict:
         keyword = self._keyword
+        offer = self._offer and {**self._offer, "text": _shown(self._offer["text"])}
         return {
             "state": self.state,
             "name": keyword.name if keyword is not None else self._starting,
             "fixedName": self._fixed_name is not None,
             "target": self.target.label,
             "keywords": self.keywords,
-            "calls": [
-                {
-                    "text": call.render(),
-                    "keyword": call.keyword,
-                    "values": [
-                        {
-                            "text": value.render(),
-                            "selectable": value.selectable,
-                            "raw": value.text,
-                        }
-                        for value in call.args
-                    ],
-                }
-                for call in (keyword.calls() if keyword is not None else [])
-            ],
+            "calls": self._toolbar_calls(keyword),
             "arguments": [
-                {"name": a.name, "default": a.default, "useDefault": a.use_default}
+                {
+                    "name": a.name,
+                    "default": _shown(a.default),
+                    "useDefault": a.use_default,
+                }
                 for a in (keyword.arguments if keyword is not None else [])
             ],
-            "offer": self._offer,
+            "offer": offer,
             "pending": self._pending[0] if self._pending else None,
             "notice": self._notice,
             "error": self._error,
             "picking": self._picking,
         }
+
+    @staticmethod
+    def _toolbar_calls(keyword: RecordedKeyword | None) -> list[dict]:
+        budget = MAX_RAW_TOTAL
+        calls = []
+        for call in keyword.calls() if keyword is not None else []:
+            values = []
+            for value in call.args:
+                raw = value.text
+                selectable = value.selectable
+                if selectable and raw is not None:
+                    size = len(json.dumps(raw))
+                    if size > MAX_RAW_LENGTH or size > budget:
+                        raw, selectable = None, False
+                    else:
+                        budget -= size
+                values.append(
+                    {
+                        "text": _shown(value.render()),
+                        "selectable": selectable,
+                        "raw": raw,
+                    }
+                )
+            calls.append(
+                {
+                    "text": _shown(call.render()),
+                    "keyword": call.keyword,
+                    "values": values,
+                }
+            )
+        return calls
 
     # -- events ------------------------------------------------------------ #
 
@@ -424,3 +454,9 @@ def _pairs(value: object) -> list[tuple[int, int]]:
             raise ValueError("Each occurrence must be [call, value].")
         pairs.append((item[0], item[1]))
     return pairs
+
+
+def _shown(text: str) -> str:
+    if len(text) <= TOOLBAR_TEXT_LIMIT:
+        return text
+    return text[: TOOLBAR_TEXT_LIMIT - 1] + "\u2026"

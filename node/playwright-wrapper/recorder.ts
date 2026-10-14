@@ -56,12 +56,15 @@ const STOP_MODES = new Set(['none', 'standby']);
 const STOPPED_MODE = 'none';
 
 // The command binding is callable by any page script (ADR 0010), and one poll
-// reply must stay well below gRPC's 4 MB message limit.
-export const MAX_COMMAND_LENGTH = 4096;
+// reply must stay well below gRPC's 4 MB message limit. Sizes are UTF-8 bytes
+// of JSON. A command quotes the value it makes an argument of, which the
+// session bounds to 64 KiB of ASCII-escaped JSON (`MAX_RAW_LENGTH`).
+export const MAX_COMMAND_BYTES = 256 * 1024;
 export const MAX_BUFFERED_COMMANDS = 100;
-export const MAX_EVENT_LENGTH = 1024 * 1024;
+export const MAX_REPLY_COMMAND_BYTES = 1024 * 1024;
+export const MAX_EVENT_BYTES = 1024 * 1024;
 export const MAX_EVENTS_PER_POLL = 500;
-export const MAX_REPLY_EVENT_CHARS = 2 * 1024 * 1024;
+export const MAX_REPLY_EVENT_BYTES = 2 * 1024 * 1024;
 
 export type Action = Record<string, unknown> & { name: string; selector?: string };
 interface Buffered {
@@ -106,27 +109,36 @@ export function drain<T>(list: T[]): T[] {
 
 function jsonLength(value: unknown): number {
     try {
-        return JSON.stringify(value)?.length ?? Infinity;
+        const json = JSON.stringify(value);
+        return json === undefined ? Infinity : Buffer.byteLength(json, 'utf8');
     } catch {
         return Infinity;
     }
 }
 
-// The oldest events that fit one poll reply; the rest wait for the next poll.
-export function drainEvents(events: Buffered[]): Buffered[] {
+// The oldest entries that fit one poll reply; the rest wait for the next poll.
+function drainWithin<T>(list: T[], maxCount: number, maxBytes: number): T[] {
     let count = 0;
-    let chars = 0;
-    while (count < events.length && count < MAX_EVENTS_PER_POLL) {
-        chars += jsonLength(events[count]);
-        if (count > 0 && chars > MAX_REPLY_EVENT_CHARS) break;
+    let bytes = 0;
+    while (count < list.length && count < maxCount) {
+        bytes += jsonLength(list[count]);
+        if (count > 0 && bytes > maxBytes) break;
         count += 1;
     }
-    return events.splice(0, count);
+    return list.splice(0, count);
+}
+
+export function drainEvents(events: Buffered[]): Buffered[] {
+    return drainWithin(events, MAX_EVENTS_PER_POLL, MAX_REPLY_EVENT_BYTES);
+}
+
+export function drainCommands(commands: unknown[]): unknown[] {
+    return drainWithin(commands, MAX_BUFFERED_COMMANDS, MAX_REPLY_COMMAND_BYTES);
 }
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
     if (!buffers.active || buffers.commands.length >= MAX_BUFFERED_COMMANDS) return;
-    if (jsonLength(command) > MAX_COMMAND_LENGTH) {
+    if (jsonLength(command) > MAX_COMMAND_BYTES) {
         logger.info('recorder: ignoring an oversized toolbar command');
         return;
     }
@@ -201,7 +213,7 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     const buffers: RecorderBuffers = { events: [], commands: [], armed: false, active: false };
     const buffer = (entry: Buffered) => {
         if (!buffers.active) return;
-        if (jsonLength(entry) > MAX_EVENT_LENGTH) {
+        if (jsonLength(entry) > MAX_EVENT_BYTES) {
             logger.info(`recorder: ignoring an oversized '${String(entry.action.name)}' event`);
             return;
         }
@@ -295,7 +307,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             picking: isPicking(mode),
             pages: context.pages().length,
             events: drainEvents(buffers.events),
-            commands: drain(buffers.commands),
+            commands: drainCommands(buffers.commands),
         }),
         '',
     );

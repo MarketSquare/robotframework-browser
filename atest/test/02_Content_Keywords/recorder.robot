@@ -128,6 +128,24 @@ Part Of A Multi-Line Value Becomes An Argument
     Should Contain    ${file}    first line\\n\${which} line
     Should Not Contain    ${file}    Make argument
 
+A Long Value Becomes An Argument
+    ${long} =    Evaluate    "x" * 10000 + "end"
+    ${promise} =    Promise To    Record Keyword    Comment At Length    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    textarea[name="comment"]    ${long}
+    Wait Until Calls    1
+    Evaluate JavaScript    ${None}
+    ...    () => {
+    ...    const raw = window.__rfbToolbarState.calls[0].values[1].raw;
+    ...    window.__rfbCommand({cmd: 'argument', call: 0, value: 1, start: 0, end: raw.length, name: 'text', raw});
+    ...    }
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${text}=${long}
+    Should Contain    ${file}    ${SPACE*4}\${text}\n
+
 Popup Becomes Switch Page New
     Go To    ${CREATE_POPUPS_URL}
     ${promise} =    Promise To    Record Keyword    Open Popup    ${RESOURCE}

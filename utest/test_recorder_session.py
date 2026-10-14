@@ -4,7 +4,14 @@ import pytest
 
 from Browser.recorder.model import RecordedKeyword
 from Browser.recorder.names import KnownKeywords
-from Browser.recorder.session import _STARTING, SETTLE_SECONDS, RecorderSession
+from Browser.recorder.session import (
+    _STARTING,
+    MAX_RAW_LENGTH,
+    MAX_RAW_TOTAL,
+    SETTLE_SECONDS,
+    TOOLBAR_TEXT_LIMIT,
+    RecorderSession,
+)
 
 
 class FakeTarget:
@@ -286,6 +293,63 @@ def test_default_toggle():
     assert s.toolbar_state()["arguments"] == [
         {"name": "who", "default": "Alice", "useDefault": False}
     ]
+
+
+def test_toolbar_shortens_long_texts_but_quotes_the_whole_value():
+    s, _, _ = session()
+    start(s, "K")
+    text = "a" * (TOOLBAR_TEXT_LIMIT * 2)
+    s.handle_event("added", {**FILL, "text": text})
+    call = s.toolbar_state()["calls"][0]
+    assert len(call["text"]) == TOOLBAR_TEXT_LIMIT
+    assert call["text"].endswith("\u2026")
+    assert len(call["values"][1]["text"]) == TOOLBAR_TEXT_LIMIT
+    assert call["values"][1]["raw"] == text
+    s.handle_command(
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 1,
+            "start": 0,
+            "end": len(text),
+            "name": "long",
+            "raw": text,
+        }
+    )
+    state = s.toolbar_state()
+    assert state["error"] is None
+    assert len(state["arguments"][0]["default"]) == TOOLBAR_TEXT_LIMIT
+
+
+def test_toolbar_offers_no_argument_for_a_value_too_long_to_quote():
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", {**FILL, "text": "a" * MAX_RAW_LENGTH})
+    value = s.toolbar_state()["calls"][0]["values"][1]
+    assert value["selectable"] is False
+    assert value["raw"] is None
+
+
+def test_toolbar_state_quotes_values_up_to_a_total_budget():
+    s, _, _ = session()
+    start(s, "K")
+    text = "a" * (MAX_RAW_LENGTH - 10)
+    count = MAX_RAW_TOTAL // MAX_RAW_LENGTH + 2
+    for index in range(count):
+        s.handle_event("added", {**FILL, "selector": f"#n{index}", "text": text})
+    values = [c["values"][1] for c in s.toolbar_state()["calls"]]
+    assert len(values) == count
+    assert values[0]["raw"] == text
+    assert values[-1] == {"text": values[-1]["text"], "selectable": False, "raw": None}
+    quoted = sum(len(v["raw"]) for v in values if v["raw"] is not None)
+    assert quoted <= MAX_RAW_TOTAL
+
+
+def test_toolbar_budget_counts_escaped_json():
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", {**FILL, "text": "\u6f22" * (MAX_RAW_LENGTH // 6 + 1)})
+    assert s.toolbar_state()["calls"][0]["values"][1]["raw"] is None
 
 
 @pytest.mark.parametrize(

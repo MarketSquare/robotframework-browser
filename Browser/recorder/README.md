@@ -98,6 +98,12 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `keywords` | names finished in this session |
 | `calls` | `[{text, keyword, values: [{text, selectable, raw}]}]`; `raw` is the literal text of the value, `null` once it holds a reference |
 | `arguments` | `[{name, default, useDefault}]` |
+
+Every displayed text (`text`, `default`, the offer's `text`) is cut to `TOOLBAR_TEXT_LIMIT`
+(200) characters. `raw` is sent only up to `MAX_RAW_LENGTH` (64 KiB of JSON) per value and
+`MAX_RAW_TOTAL` (1 MiB) per state, in call order; a value beyond either limit is sent with
+`selectable: false` and `raw: null`. So the state and the commands quoting `raw` stay below
+the gRPC message limit.
 | `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null` |
 | `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
 | `notice` / `error` | one-shot message, cleared by the next command |
@@ -118,10 +124,11 @@ command ("The keyword calls changed - please try again.") if the call now holds 
 so a selection made against a stale view never marks the wrong text. All fields are
 validated; the page can call the binding too (ADR 0010). Node accepts commands only while a
 session runs (from the reset poll until `recorderStop`), drops and logs a command over
-`MAX_COMMAND_LENGTH` (4096 characters of JSON) and buffers at most `MAX_BUFFERED_COMMANDS`
-(100). An Action over `MAX_EVENT_LENGTH` (1 MB) is dropped and logged; one poll reply carries
-at most `MAX_EVENTS_PER_POLL` (500) events and about `MAX_REPLY_EVENT_CHARS` (2 MB) of them,
-the rest follow with the next poll.
+`MAX_COMMAND_BYTES` (256 KiB) and buffers at most `MAX_BUFFERED_COMMANDS` (100). An Action
+over `MAX_EVENT_BYTES` (1 MiB) is dropped and logged. One poll reply carries at most
+`MAX_EVENTS_PER_POLL` (500) events within `MAX_REPLY_EVENT_BYTES` (2 MiB) and commands within
+`MAX_REPLY_COMMAND_BYTES` (1 MiB); the rest follow with the next poll. All sizes are UTF-8
+bytes of JSON.
 
 ## Timing
 
@@ -157,6 +164,8 @@ the rest follow with the next poll.
 - File uploads and hovers are not recorded (Playwright does not emit them in api mode).
 - Playwright's own overlay cannot be hidden during a session and covers the top centre of
   the page; its Record button ends the session too. It is hidden after the session.
+- A value longer than about 64 KiB, or one past the first MiB of values in the keyword,
+  cannot be made an argument in the toolbar; edit the file instead.
 - One browser context: the recorder works in the active context.
 - `_enableRecorder` registers the recorder in the context for good. After a session it
   stays registered (in mode `none`), as do the `__rfbCommand` binding and the Action sink;
