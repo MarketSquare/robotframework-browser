@@ -94,6 +94,22 @@ def test_map_fill():
     assert rendered(action) == 'Fill Text    [placeholder="Email"i]    a@b.c'
 
 
+@pytest.mark.parametrize(
+    "selector",
+    [
+        'internal:attr=[type="password"i]',
+        'internal:label="Password"i',
+        "input[type=password]",
+    ],
+)
+def test_fill_on_a_password_field_keeps_the_typed_value_verbatim(selector):
+    # AC-27: no special treatment - no Fill Secret, no masking.
+    line = rendered({"name": "fill", "selector": selector, "text": "hunter2"})
+    assert line.startswith("Fill Text    ")
+    assert line.endswith("    hunter2")
+    assert "Secret" not in line
+
+
 def test_map_navigate_is_always_go_to():
     # A recorded keyword must not create the page it runs in, so `navigate`
     # never becomes `New Page` - and the mapper stays stateless, which matters

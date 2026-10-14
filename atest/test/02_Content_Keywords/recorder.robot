@@ -220,20 +220,40 @@ Assert Snapshot Becomes Get Aria Snapshot
     Should Match Regexp    ${file}    Get Aria Snapshot\\s+\\S+\\s+yaml\\s+==\\s+- text
     Recorded Keyword Replays    ${RESOURCE}    Check Heading Snapshot
 
-Toolbar Collapse Persists And The Toolbar Is Removed After The Session
+Toolbar Collapse And Position Survive A Reload
     Open The Toolbar Shadow Root For Inspection
-    ${promise} =    Promise To    Record Keyword    Toolbar Collapse    ${RESOURCE}
+    ${promise} =    Promise To    Record Keyword    Toolbar Layout    ${RESOURCE}
     Toolbar State Should Be    recording
+    ${expanded} =    Get BoundingBox    rfb-recorder-toolbar    height
     Click Toolbar Collapse Button
     Get Element States    rfb-recorder-toolbar >> #body    *=    hidden
-    ${stored} =    Evaluate JavaScript    ${None}    () => window.sessionStorage.getItem('rfb.toolbar.collapsed')
-    Should Be Equal    ${stored}    true
-    Click Toolbar Collapse Button
-    Get Element States    rfb-recorder-toolbar >> #body    *=    visible
-    Fill Text    id=input_name    after collapse
-    Wait Until Calls    1
+    ${collapsed} =    Get BoundingBox    rfb-recorder-toolbar    height
+    Should Be True    ${collapsed} < ${expanded}
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => window.sessionStorage.setItem('rfb.toolbar.position', JSON.stringify({x: 40, y: 70}))
+    Reload
+    Toolbar Is Ready
+    ${after} =    Get BoundingBox    rfb-recorder-toolbar    height
+    Should Be Equal As Numbers    ${after}    ${collapsed}
+    ${transform} =    Evaluate JavaScript    rfb-recorder-toolbar    (element) => element.style.transform
+    Should Be Equal    ${transform}    translate(40px, 70px)
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
+
+The Toolbar Is Removed From All Pages After The Session
+    ${first} =    Get Page Ids    ACTIVE
+    New Page    ${FORM_URL}
+    ${second} =    Get Page Ids    ACTIVE
+    ${promise} =    Promise To    Record Keyword    Two Pages    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Get Element Count    css=rfb-recorder-toolbar    ==    1
+    Switch Page    ${first}[0]
+    Get Element Count    css=rfb-recorder-toolbar    ==    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    Get Element Count    css=rfb-recorder-toolbar    ==    0
+    Switch Page    ${second}[0]
     Get Element Count    css=rfb-recorder-toolbar    ==    0
 
 *** Keywords ***
@@ -280,5 +300,4 @@ Open The Toolbar Shadow Root For Inspection
     ...    }
 
 Click Toolbar Collapse Button
-    Evaluate JavaScript    ${None}
-    ...    () => document.querySelector('rfb-recorder-toolbar').shadowRoot.querySelector('#collapse').click()
+    Evaluate JavaScript    rfb-recorder-toolbar >> #collapse    (element) => element.click()

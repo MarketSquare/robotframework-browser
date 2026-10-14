@@ -179,6 +179,12 @@ def test_existing_keyword_names():
         assert existing_keyword_names(target) == {"One", "Two"}
         target.write_text("*** Keywords ***\n# only a comment\nOne\n    Log    a\n")
         assert existing_keyword_names(target) == {"One"}
+        target.write_text(
+            "*** Settings ***\nLibrary    Browser\n\n*** Variables ***\n${X}    1\n\n"
+            "*** Test Cases ***\nA Test\n    Log    x\n\n"
+            "*** Keywords ***\nOne\n    Log    a\n"
+        )
+        assert existing_keyword_names(target) == {"One"}
 
 
 # --------------------------------------------------------------------------- #

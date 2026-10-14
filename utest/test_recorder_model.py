@@ -186,3 +186,64 @@ def test_bad_marks_are_rejected(start, end):
     kw.add(fill("ab"))
     with pytest.raises(ValueError):
         kw.make_argument(0, 1, start, end, "x")
+
+
+def test_update_last_with_a_different_keyword_replaces_the_call_without_carrying_arguments():
+    kw = RecordedKeyword("K")
+    kw.add(fill("A"))
+    assert kw.update_last(Call("Click", [Value.literal("#b", False)]))
+    assert [c.render() for c in kw.calls()] == ["Click    \\#b"]
+
+
+def test_update_last_with_a_different_argument_count_replaces_the_call():
+    kw = RecordedKeyword("K")
+    kw.add(Call("Click", [Value.literal("#b", False)]))
+    assert kw.update_last(
+        Call("Click", [Value.literal("#b", False), Value.literal("left")])
+    )
+    assert [c.render() for c in kw.calls()] == ["Click    \\#b    left"]
+
+
+def test_update_last_and_attach_on_an_empty_keyword_do_nothing():
+    kw = RecordedKeyword("K")
+    assert kw.update_last(fill("A")) is False
+    assert kw.attach([], []) is False
+    assert kw.undo() is False
+
+
+def test_a_value_that_is_already_an_argument_cannot_become_one_again():
+    kw = RecordedKeyword("K")
+    kw.add(fill("ab"))
+    kw.make_argument(0, 1, 0, 2, "first")
+    with pytest.raises(ValueError, match="already contains an argument"):
+        kw.make_argument(0, 1, 0, 1, "second")
+
+
+def test_a_selection_of_a_value_that_does_not_exist_is_rejected():
+    kw = RecordedKeyword("K")
+    kw.add(fill("ab"))
+    with pytest.raises(ValueError, match="No such value"):
+        kw.make_argument(0, 9, 0, 1, "x")
+    with pytest.raises(ValueError, match="No such value"):
+        kw.make_argument(5, 1, 0, 1, "x")
+
+
+def test_replace_skips_occurrences_that_no_longer_contain_the_text_or_are_selectors():
+    kw = RecordedKeyword("K")
+    kw.add(fill("admin"))
+    kw.add(
+        Call(
+            "Fill Text",
+            [Value.literal("#admin", False), Value.literal("something else")],
+        )
+    )
+    kw.make_argument(0, 1, 0, 5, "user")
+    kw.replace("user", [(1, 0), (1, 1)])
+    assert kw.calls()[1].render() == "Fill Text    \\#admin    something else"
+
+
+def test_a_refinement_keeps_a_value_whose_argument_is_unknown_to_the_keyword():
+    kw = RecordedKeyword("K")
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value([ArgRef("ghost")])]))
+    assert kw.update_last(fill("typed"))
+    assert kw.calls()[0].args[1].text == "typed"
