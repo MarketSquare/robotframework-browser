@@ -129,8 +129,9 @@ Defined in `Browser/recorder/CONTEXT.md`.
   shown in the toolbar.
 - **AC-29** If part of a value is marked, only that part becomes the argument, e.g.
   `Go To    https://shop.example.com/item/${item_id}`.
-- **AC-30** A new Keyword Argument starts with the recorded value as its default
-  (`${email}=admin@example.com`); the default can be deselected in the toolbar.
+- **AC-30** The argument dialog asks whether the marked value becomes the new Keyword
+  Argument's default (`${email}=admin@example.com`) or not (`${email}`); it is preselected.
+  The toolbar lists the keyword's arguments in that form.
 - **AC-31** If the same value occurs in other Keyword Calls of the Keyword Recording, the
   toolbar offers to replace those too, with the occurrences preselected.
 - **AC-32** A Keyword Argument no longer used by any Keyword Call after *Undo* is removed

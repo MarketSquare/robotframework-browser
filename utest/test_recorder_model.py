@@ -141,8 +141,7 @@ def test_required_arguments_come_before_defaulted_ones():
     kw.add(fill("a"))
     kw.add(fill("b"))
     kw.make_argument(0, 1, 0, 1, "first")
-    kw.make_argument(1, 1, 0, 1, "second")
-    kw.set_default("second", False)
+    kw.make_argument(1, 1, 0, 1, "second", use_default=False)
     assert kw.lines()[1] == "[Arguments]    ${second}    ${first}=a"
 
 

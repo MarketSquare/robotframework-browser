@@ -329,8 +329,8 @@ def test_malformed_variable_argument_name_is_rejected():
     assert s.toolbar_state()["arguments"] == []
 
 
-def test_default_toggle():
-    s, _, _ = session()
+def test_the_default_is_chosen_when_the_argument_is_made():
+    s, target, _ = session()
     start(s, "K")
     s.handle_event("added", FILL)
     s.handle_command(
@@ -341,13 +341,24 @@ def test_default_toggle():
             "start": 0,
             "end": 5,
             "name": "who",
+            "useDefault": False,
             "raw": "Alice",
         }
     )
-    s.handle_command({"cmd": "default", "argument": "who", "use": False})
     assert s.toolbar_state()["arguments"] == [
         {"name": "who", "default": "Alice", "useDefault": False}
     ]
+    assert "[Arguments]    ${who}\n" in target.saved[-1]
+
+
+@pytest.mark.parametrize("use_default", ["false", 0, None])
+def test_use_default_must_be_a_boolean(use_default):
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", FILL)
+    s.handle_command(arg(useDefault=use_default))
+    assert "'useDefault'" in s.toolbar_state()["error"]
+    assert s.toolbar_state()["arguments"] == []
 
 
 def test_toolbar_shortens_long_texts_but_quotes_the_whole_value():
@@ -439,7 +450,6 @@ def test_toolbar_budget_counts_escaped_json():
         },
         {"cmd": "replace", "argument": "nope", "occurrences": [[0, 1]]},
         {"cmd": "replace", "argument": "a", "occurrences": "bad"},
-        {"cmd": "default", "argument": "nope", "use": True},
     ],
 )
 def test_bad_argument_commands_become_toolbar_errors(command):
@@ -679,9 +689,6 @@ def test_failing_remove_of_an_empty_keyword_on_finish_is_a_toolbar_error():
         {"cmd": "new"},
         {"cmd": "new", "name": 5},
         {"cmd": "replace", "argument": None, "occurrences": []},
-        {"cmd": "default", "argument": 3, "use": True},
-        {"cmd": "default", "argument": "who", "use": "false"},
-        {"cmd": "default", "argument": "who", "use": 1},
         {
             "cmd": "argument",
             "call": 0,

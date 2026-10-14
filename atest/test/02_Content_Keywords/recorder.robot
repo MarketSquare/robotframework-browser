@@ -130,6 +130,23 @@ Part Of A Multi-Line Value Becomes An Argument
     Should Contain    ${file}    first line\\n\${which} line
     Should Not Contain    ${file}    Make argument
 
+An Argument Made Without A Default Is Required
+    Open The Toolbar Shadow Root For Inspection
+    ${promise} =    Promise To    Record Keyword    Fill Required Name    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Evaluate JavaScript    rfb-recorder-toolbar >> .cell.pick >> nth=-1    (element) => element.click()
+    Evaluate JavaScript    rfb-recorder-toolbar >> #argName    (element) => { element.value = 'who'; }
+    Evaluate JavaScript    rfb-recorder-toolbar >> #argDefault    (element) => element.click()
+    Evaluate JavaScript    rfb-recorder-toolbar >> #argOk    (element) => element.click()
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Get Text    rfb-recorder-toolbar >> #args    ==    \${who}
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${who}\n
+
 A Long Value Becomes An Argument
     ${long} =    Evaluate    "x" * 10000 + "end"
     ${promise} =    Promise To    Record Keyword    Comment At Length    ${RESOURCE}

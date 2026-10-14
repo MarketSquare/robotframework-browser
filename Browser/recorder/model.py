@@ -184,10 +184,18 @@ class RecordedKeyword:
         raise ValueError(f"No argument '{name}'.")
 
     def make_argument(
-        self, call: int, value: int, start: int, end: int, name: str
+        self,
+        call: int,
+        value: int,
+        start: int,
+        end: int,
+        name: str,
+        *,
+        use_default: bool = True,
     ) -> list[tuple[int, int]]:
         """Turn ``text[start:end]`` of one value into ``${name}``.
 
+        With ``use_default`` the marked text becomes the argument's default.
         Returns the other values that contain the same text, for the toolbar
         to offer (AC-31).
         """
@@ -206,7 +214,7 @@ class RecordedKeyword:
             raise ValueError("Mark a non-empty part of the value.")
         marked = text[start:end]
         target.segments = _split(text, start, end, ArgRef(name))
-        self.arguments.append(Argument(name, marked))
+        self.arguments.append(Argument(name, marked, use_default))
         return [
             (c, v)
             for c, v, other in self._values()
@@ -224,9 +232,6 @@ class RecordedKeyword:
             if not target.selectable or text is None or marked not in text:
                 continue
             target.segments = _split_all(text, marked, ArgRef(name))
-
-    def set_default(self, name: str, use: bool) -> None:
-        self.argument(name).use_default = bool(use)
 
     # -- rendering --------------------------------------------------------- #
 

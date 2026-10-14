@@ -220,7 +220,7 @@ class RecorderSession:
             self._new(command.get("name"))
         elif cmd == "undo":
             self._undo()
-        elif cmd in ("argument", "replace", "default"):
+        elif cmd in ("argument", "replace"):
             self._argument_command(cmd, command)
         else:
             self.log.append(f"unknown recorder command {cmd[:_NAME_LIMIT]!r}")
@@ -372,7 +372,12 @@ class RecorderSession:
                 name = _text(command, "name")
                 if argument_name_error(name) is None:
                     name = plain_argument_name(name)
-                occurrences = keyword.make_argument(call, value, start, end, name)
+                use_default = command.get("useDefault", True)
+                if not isinstance(use_default, bool):
+                    raise ValueError("'useDefault' must be true or false.")
+                occurrences = keyword.make_argument(
+                    call, value, start, end, name, use_default=use_default
+                )
                 self._offer = (
                     {
                         "argument": name,
@@ -382,16 +387,11 @@ class RecorderSession:
                     if occurrences
                     else None
                 )
-            elif cmd == "replace":
+            else:
                 keyword.replace(
                     _text(command, "argument"), _pairs(command.get("occurrences"))
                 )
                 self._offer = None
-            else:
-                use = command.get("use")
-                if not isinstance(use, bool):
-                    raise ValueError("'use' must be true or false.")
-                keyword.set_default(_text(command, "argument"), use)
         except ValueError as error:
             self._error = str(error)
             if cmd == "argument":

@@ -124,16 +124,18 @@
                font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace;
                font-size: 11px; }
       .calls * { font-family: inherit; font-size: inherit; }
+      .args { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+              font-size: 11px; }
       .calls li::marker { color: var(--faint); }
       .calls:empty::after { content: 'no keyword calls yet'; color: var(--faint); }
       .calls li { white-space: pre; }
-      .cell { margin-left: 8px; }
-      .assign { margin-right: 8px; color: var(--amber); }
+      .cell { margin-left: 3ch; }
+      .assign { margin-right: 3ch; color: var(--amber); }
       .cell.pick { cursor: pointer; text-decoration: underline dotted var(--teal); }
       .cell.pick:hover { background: rgb(0 192 181 / 20%); }
       .notice { color: var(--amber); }
       .picking { background: var(--amber); color: var(--plate); font-weight: bold; border-radius: 4px; padding: 6px; }
-      .args label, .offer label { display: block; }
+      .args div, .offer label, .dialog label { display: block; }
       input[type=checkbox] { accent-color: var(--red); }
       .offer { background: var(--chrome); border: 1px solid var(--line); border-radius: 4px; padding: 6px;
                display: flex; flex-direction: column; gap: 6px; }
@@ -212,6 +214,7 @@
         <div>Mark the part that becomes an argument (or leave it unmarked for the whole value)</div>
         <textarea id="argValue" rows="3" readonly></textarea>
         <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off">
+        <label title="Without a default, every caller must pass a value"><input type="checkbox" id="argDefault" checked> Use the marked value as default</label>
         <div class="err" id="argErr" hidden></div>
         <div class="row"><button id="argCancel" title="Close without making an argument">Cancel</button><button class="primary" id="argOk" title="Make the marked part an argument of the keyword">Make argument</button></div>
       </div>
@@ -405,6 +408,7 @@
             $('argOk').disabled = false;
             $('argValue').value = raw;
             $('argName').value = '';
+            $('argDefault').checked = true;
             showArgError('');
             $('argModal').hidden = false;
             $('argValue').focus();
@@ -474,6 +478,7 @@
                     start,
                     end,
                     name,
+                    useDefault: $('argDefault').checked,
                     raw: argTarget.raw,
                 })
             )
@@ -644,20 +649,9 @@
             args.textContent = '';
             if (recording) {
                 argumentList.forEach((arg) => {
-                    const label = document.createElement('label');
-                    const check = document.createElement('input');
-                    check.type = 'checkbox';
-                    check.checked = !!arg.useDefault;
-                    check.addEventListener('change', () => {
-                        if (isPending()) {
-                            check.checked = !check.checked;
-                            return;
-                        }
-                        send({ cmd: 'default', argument: arg.name, use: check.checked });
-                    });
-                    label.appendChild(check);
-                    label.append(` \${${arg.name}} default: ${arg.default ?? ''}`);
-                    args.appendChild(label);
+                    const line = document.createElement('div');
+                    line.textContent = arg.useDefault ? `\${${arg.name}}=${arg.default ?? ''}` : `\${${arg.name}}`;
+                    args.appendChild(line);
                 });
             }
             $('panel').classList.toggle('busy', !!state.pending);

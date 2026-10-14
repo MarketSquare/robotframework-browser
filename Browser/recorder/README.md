@@ -113,9 +113,8 @@ Commands, toolbar -> Python, through `window.__rfbCommand(command)`:
 |-------|--------|
 | `new` | `name` |
 | `finish`, `discard`, `stop`, `undo` | - |
-| `argument` | `call`, `value`, `start`, `end` (code point offsets into the value), `name`, `raw` |
+| `argument` | `call`, `value`, `start`, `end` (code point offsets into the value), `name`, `raw`, `useDefault` (boolean, default `true`: the marked text becomes the default) |
 | `replace` | `argument`, `occurrences` (`[[call, value], ...]`, possibly empty) |
-| `default` | `argument`, `use` (boolean) |
 
 `raw` on `argument` is the value text the person selected in. The session rejects the
 command ("The keyword calls changed - please try again.") if the call now holds other text,
