@@ -54,7 +54,9 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-09** During the session the page shows a Robot Framework toolbar. It shows the state
   (idle or recording), the name of the current keyword and its Keyword Calls, live.
 - **AC-10** The toolbar can be dragged, collapsed and resized. Position, size and collapsed
-  state survive navigation.
+  state survive navigation. It can sit flush against every edge of the viewport but never
+  past it; a drag that ends past an edge leaves it at that edge, and the next drag moves it
+  right away.
 - **AC-11** Clicks and input in the toolbar itself are never recorded as Actions.
 - **AC-12** In `Record Keywords`, *Record keyword* starts a Keyword Recording under a name to
   be entered, and *Save* ends it. In `Record Keyword` these two buttons are not shown.

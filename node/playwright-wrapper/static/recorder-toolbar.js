@@ -258,10 +258,17 @@
         // Top left: the top right is where Playwright's overlay grows and
         // Chromium shows its translate prompt.
         const position = read(POSITION_KEY, { x: 12, y: 12 });
+        // `position` may lie past an edge (the toolbar then sits at that edge,
+        // and stays there when it grows or shrinks); `shown` is where it is drawn.
+        const shown = { x: 0, y: 0 };
         const place = () => {
-            const width = panel.offsetWidth || 320;
-            const x = Math.min(Math.max(position.x, 0), Math.max(window.innerWidth - width - 10, 0));
-            const y = Math.min(Math.max(position.y, 0), Math.max(window.innerHeight - 60, 0));
+            // Flush with every edge of the viewport, scrollbars excluded.
+            const viewWidth = document.documentElement.clientWidth || window.innerWidth;
+            const viewHeight = document.documentElement.clientHeight || window.innerHeight;
+            const x = Math.min(Math.max(position.x, 0), Math.max(viewWidth - panel.offsetWidth, 0));
+            const y = Math.min(Math.max(position.y, 0), Math.max(viewHeight - panel.offsetHeight, 0));
+            shown.x = x;
+            shown.y = y;
             host.style.transform = `translate(${x}px, ${y}px)`;
             host.style.setProperty('--x', `${x}px`);
             host.style.setProperty('--y', `${y}px`);
@@ -272,6 +279,10 @@
         $('head').addEventListener('pointerdown', (event) => {
             // The header doubles as the drag handle; its buttons must still click.
             if (event.target.closest('button')) return;
+            // Start from where the toolbar is drawn, so a drop past an edge
+            // does not make the next drag wait until the pointer is back.
+            position.x = shown.x;
+            position.y = shown.y;
             drag = { x: event.clientX - position.x, y: event.clientY - position.y };
             $('head').setPointerCapture(event.pointerId);
         });
@@ -310,6 +321,7 @@
             write(COLLAPSED_KEY, collapsed);
             applyCollapsed();
             updateQuickButtons();
+            place();
         });
 
         // -- commands -------------------------------------------------------- //

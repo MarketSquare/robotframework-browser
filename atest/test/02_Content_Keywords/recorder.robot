@@ -409,6 +409,39 @@ Minimized Toolbar Starts And Saves A Keyword
     ${file} =    Get File    ${RESOURCE}
     Should Contain    ${file}    Minimized\n
 
+Toolbar Sits Flush With The Bottom Right Corner
+    Open The Toolbar Shadow Root For Inspection
+    Evaluate JavaScript    ${None}
+    ...    () => window.sessionStorage.setItem('rfb.toolbar.position', JSON.stringify({x: 99999, y: 99999}))
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar State Should Be    idle
+    Toolbar Should Touch The Bottom Right Corner
+    Click Toolbar Collapse Button
+    Toolbar Should Touch The Bottom Right Corner
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Dragging Past The Edge Does Not Shift The Next Drag
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar State Should Be    idle
+    ${start} =    Toolbar Header Point
+    Mouse Move    ${start}[0]    ${start}[1]
+    Mouse Button    down
+    Mouse Move    ${{ $start[0] + 3000 }}    ${start}[1]    steps=5
+    Mouse Button    up
+    Toolbar Should Touch The Right Edge
+    ${edge} =    Toolbar Left
+    ${grab} =    Toolbar Header Point
+    Mouse Move    ${grab}[0]    ${grab}[1]
+    Mouse Button    down
+    Mouse Move    ${{ $grab[0] - 50 }}    ${grab}[1]    steps=5
+    Mouse Button    up
+    ${moved} =    Toolbar Left
+    Should Be True    abs(${edge} - ${moved} - 50) < 1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 Recording Fails In A Headless Browser
     Allow Recording Headless    ${False}
     New Browser    ${BROWSER}    headless=True
@@ -497,6 +530,28 @@ Click Inside Toolbar
     ${box} =    Evaluate JavaScript    ${None}
     ...    () => { const r = (${finder})().getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }
     Mouse Button    click    ${box}[0]    ${box}[1]
+
+Toolbar Should Touch The Bottom Right Corner
+    Wait For Function
+    ...    () => { const r = document.querySelector('rfb-recorder-toolbar').shadowRoot.getElementById('panel').getBoundingClientRect(); const d = document.documentElement; return Math.abs(r.right - d.clientWidth) < 1 && Math.abs(r.bottom - d.clientHeight) < 1; }
+    ...    timeout=2s
+
+Toolbar Header Point
+    [Documentation]    A point on the header's title, away from its buttons.
+    ${point} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('title').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }
+    RETURN    ${point}
+
+Toolbar Left
+    ${left} =    Evaluate JavaScript    ${None}
+    ...    () => window.toolbarRoot.getElementById('panel').getBoundingClientRect().left
+    RETURN    ${left}
+
+Toolbar Should Touch The Right Edge
+    Wait For Function
+    ...    () => Math.abs(window.toolbarRoot.getElementById('panel').getBoundingClientRect().right - document.documentElement.clientWidth) < 1
+    ...    timeout=2s
 
 Click Toolbar Collapse Button
     Evaluate JavaScript    rfb-recorder-toolbar >> #collapse    (element) => element.click()
