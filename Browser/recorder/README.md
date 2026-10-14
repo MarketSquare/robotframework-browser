@@ -43,26 +43,26 @@ take any name, so every such value is escaped there. Deliberate named arguments
 ## Action -> Keyword Call
 
 Generated from `ActionMapper` in `action_mapper.py`. "Selectable" marks the values a person
-can turn into a Keyword Argument; selectors and structural values (buttons, operators,
-option strategies, states) never are.
+can turn into a Keyword Argument, wholly or in part; structural values (buttons, modifiers,
+operators, option strategies) never are.
 
 | Playwright action | Keyword Call | Selectable values |
 |-------------------|--------------|-------------------|
-| `click` (left, once, no modifiers) | `Click    <selector>` | none |
-| `click` (other button, modifiers or `clickCount` > 1) | `Click With Options    <selector>    [button]    [modifiers...]    [clickCount=N]` (`button` is written whenever a modifier follows) | none |
-| `fill` | `Fill Text    <selector>    <text>` | text |
-| `press` | `Press Keys    <selector>    [Modifier+...]Key` | none |
-| `check` | `Check Checkbox    <selector>` | none |
-| `uncheck` | `Uncheck Checkbox    <selector>` | none |
-| `select` | `Select Options By    <selector>    value    <option>...` | each option |
+| `click` (left, once, no modifiers) | `Click    <selector>` | selector |
+| `click` (other button, modifiers or `clickCount` > 1) | `Click With Options    <selector>    [button]    [modifiers...]    [clickCount=N]` (`button` is written whenever a modifier follows) | selector |
+| `fill` | `Fill Text    <selector>    <text>` | selector, text |
+| `press` | `Press Keys    <selector>    [Modifier+...]Key` | selector, keys |
+| `check` | `Check Checkbox    <selector>` | selector |
+| `uncheck` | `Uncheck Checkbox    <selector>` | selector |
+| `select` | `Select Options By    <selector>    value    <option>...` | selector, each option |
 | `navigate` | `Go To    <url>` (never `New Page`: a recorded keyword does not create its page) | url |
 | `closePage` | `Close Page` | - |
 | `openPage` | nothing, silently (existing pages, hand-opened tabs; a page opened by an Action arrives as a `popup` signal) | - |
-| `assertText` | `Get Text    <selector>    contains    <text>` (`==` when not a substring assertion) | text |
-| `assertValue` | `Get Property    <selector>    value    ==    <value>` | value |
-| `assertChecked` | `Get Checkbox State    <selector>    ==    checked` (or `unchecked`) | none |
-| `assertVisible` | `Get Element States    <selector>    *=    visible` (AC-47) | none |
-| `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>` (AC-46); the multi-line YAML comes from the action's `ariaSnapshot` field | snapshot |
+| `assertText` | `Get Text    <selector>    contains    <text>` (`==` when not a substring assertion) | selector, text |
+| `assertValue` | `Get Property    <selector>    value    ==    <value>` | selector, value |
+| `assertChecked` | `Get Checkbox State    <selector>    ==    checked` (or `unchecked`) | selector, state |
+| `assertVisible` | `Get Element States    <selector>    *=    visible` (AC-47) | selector |
+| `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>` (AC-46); the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
 
 Playwright 1.64 never emits `hover` or `setInputFiles` in api mode, so neither is mapped.
 Any other action name produces no Keyword Call and a
@@ -195,10 +195,16 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
   the page; its Record button ends the session too. It is hidden after the session.
 - A value longer than about 64 KiB, or one past the first MiB of values in the keyword,
   cannot be made an argument in the toolbar; edit the file instead.
-- Event isolation: keyboard, input, composition, clipboard and `contextmenu` events from
-  inside the toolbar are stopped by a capture listener on `window`, so page shortcuts do not
-  fire while typing in it. A `window` capture listener the page registered before the
-  toolbar was injected still sees them.
+- Event isolation: keyboard, input, composition, clipboard, focus and `contextmenu` events
+  from inside the toolbar are stopped by a capture listener on `window`, so page shortcuts
+  do not fire while typing in it and a page modal's focus trap does not pull the focus
+  back. Pointer, mouse, touch and wheel events are stopped at the host after the toolbar
+  handled them, so a page modal does not close on a toolbar click ("click outside") or
+  block its scrolling; the host also sets `pointer-events: auto` against a `body` without
+  pointer events. A `window` capture listener the page registered before the toolbar was
+  injected still sees all of them.
+- A native modal `<dialog>` (`showModal()`) makes the rest of the page inert, the toolbar
+  included; close it to use the toolbar.
 - The quiet time counts clicks, not other input that Playwright might hold back; a
   same-document navigation by script (`history.pushState`) shortly before Save is not seen.
 - Headless: the reset poll fails if the active browser was launched headless. The

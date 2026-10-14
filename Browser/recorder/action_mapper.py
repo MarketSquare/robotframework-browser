@@ -167,9 +167,7 @@ class SignalEffect:
 
 
 def _selector(action: dict) -> Value:
-    return Value.literal(
-        to_browser_selector(action.get("selector", "")), selectable=False
-    )
+    return Value.literal(to_browser_selector(action.get("selector", "")))
 
 
 def _fixed(text: str) -> Value:

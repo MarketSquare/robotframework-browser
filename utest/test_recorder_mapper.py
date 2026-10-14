@@ -153,7 +153,7 @@ def test_map_assert_visible_is_get_element_states_contains_visible():
     call = ActionMapper().map({"name": "assertVisible", "selector": "css=#a"})
     assert call is not None
     assert call.render() == "Get Element States    css=#a    *=    visible"
-    assert [v.selectable for v in call.args] == [False, False, False]
+    assert [v.selectable for v in call.args] == [True, False, False]
 
 
 def test_unknown_action_returns_none():
@@ -169,7 +169,7 @@ def test_map_assert_snapshot_is_get_aria_snapshot_with_exact_yaml():
     assert call is not None
     assert call.keyword == "Get Aria Snapshot"
     assert [(v.text, v.selectable) for v in call.args] == [
-        ("css=#a", False),
+        ("css=#a", True),
         ("yaml", False),
         ("==", False),
         (SNAPSHOT, True),
@@ -214,25 +214,29 @@ def test_open_page_produces_nothing():
     assert "openPage" in SILENT_ACTIONS
 
 
-def test_selector_and_fixed_values_are_not_selectable():
+def test_selectors_are_selectable_fixed_values_are_not():
     call = ActionMapper().map({"name": "select", "selector": "#s", "options": ["a"]})
-    assert [v.selectable for v in call.args] == [False, False, True]
+    assert [v.selectable for v in call.args] == [True, False, True]
+    click = ActionMapper().map(
+        {"name": "click", "selector": "#b", "button": "right", "clickCount": 2}
+    )
+    assert [v.selectable for v in click.args] == [True, False, False]
 
 
 def test_pressed_keys_and_expected_checkbox_state_are_selectable():
     press = ActionMapper().map(
         {"name": "press", "selector": "#n", "key": "Enter", "modifiers": 0}
     )
-    assert [v.selectable for v in press.args] == [False, True]
+    assert [v.selectable for v in press.args] == [True, True]
     checked = ActionMapper().map(
         {"name": "assertChecked", "selector": "#c", "checked": True}
     )
-    assert [v.selectable for v in checked.args] == [False, False, True]
+    assert [v.selectable for v in checked.args] == [True, False, True]
 
 
 def test_fill_text_is_selectable():
     call = ActionMapper().map({"name": "fill", "selector": "#n", "text": "Al"})
-    assert [v.selectable for v in call.args] == [False, True]
+    assert [v.selectable for v in call.args] == [True, True]
 
 
 def test_popup_signal_switches_to_the_new_page():

@@ -82,8 +82,15 @@ Defined in `Browser/recorder/CONTEXT.md`.
   "Starting recording…" indicator, until the Keyword Recording starts. A rejected name is
   shown in the dialog, with the typed name kept.
 - **AC-52** The name and argument dialogs close on *Cancel*, on Escape and on a click on the
-  dimmed area around them. While typing in the toolbar, no keystroke reaches the page, except
-  a `window` capture listener the page registered before the toolbar was injected.
+  dimmed area around them; a press inside a dialog that is released on that area does not
+  close it. While typing in the toolbar, no keystroke reaches the page, except a `window`
+  capture listener the page registered before the toolbar was injected.
+- **AC-53** The part marked in the argument dialog stays highlighted when the focus moves on,
+  for example to the argument name.
+- **AC-54** The toolbar can be used while a modal of the page is open (one that disables
+  pointer events on `body`, traps the focus or closes on a click outside); using the toolbar
+  neither closes that modal nor lets it take the focus back. A native modal `<dialog>` is
+  the exception: it makes the toolbar inert until it is closed.
 - **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
   shows a clear notice saying so for as long as the mode is on.
 
@@ -122,10 +129,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
 
 ### Keyword Arguments
 
-- **AC-28** While a Keyword Recording is running, a value of a Keyword Call (text, URL,
-  option, file path, pressed keys, expected value) can be turned into a Keyword Argument from
-  the toolbar. Selectors and structural values (mouse button, modifiers, assertion operators,
-  option strategy) cannot become arguments. A variable assignment such as `${download}=` is
+- **AC-28** While a Keyword Recording is running, a value of a Keyword Call (selector, text,
+  URL, option, file path, pressed keys, expected value) can be turned into a Keyword Argument
+  from the toolbar. Structural values (mouse button, modifiers, assertion operators, option
+  strategy) cannot become arguments. A variable assignment such as `${download}=` is
   shown in the toolbar.
 - **AC-29** If part of a value is marked, only that part becomes the argument, e.g.
   `Go To    https://shop.example.com/item/${item_id}`.
@@ -189,7 +196,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-52**. Anything not
+AC-54**. Anything not
 stated there is not part of v1.
 
 ## Changes outside the recorder
@@ -209,7 +216,7 @@ These are deliberately not part of v1. The design should not block them.
 - Appending to an existing User Keyword
 - Recording or inserting control structures (`IF`, `FOR`, `TRY`)
 - Extracting recorded values into variables (`${VAR}`) instead of Keyword Arguments
-- Selectors as Keyword Arguments or as variables (page-object style)
+- Selectors as variables (page-object style)
 
 **Recording**
 - Several browser contexts in one session

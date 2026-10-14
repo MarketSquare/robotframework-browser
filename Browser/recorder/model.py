@@ -43,8 +43,8 @@ class ArgRef:
 class Value:
     """One argument cell of a Keyword Call.
 
-    ``selectable`` is False for selectors and for structural values (buttons,
-    operators, option strategies): those can never become Keyword Arguments.
+    ``selectable`` is False for structural values (buttons, operators, option
+    strategies): those can never become Keyword Arguments.
     ``named`` marks a deliberate named argument such as ``action=accept``; every
     other value that looks like one is escaped.
     """
@@ -222,7 +222,7 @@ class RecordedKeyword:
             raise ValueError(f"A variable named '{name}' already exists.")
         target = self._value(call, value)
         if not target.selectable:
-            raise ValueError("Selectors and fixed options cannot become arguments.")
+            raise ValueError("Fixed options cannot become arguments.")
         text = target.text
         if text is None:
             raise ValueError("This value already contains an argument.")

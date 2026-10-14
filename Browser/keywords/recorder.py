@@ -92,8 +92,8 @@ class Recorder(LibraryComponent):
         - *Discard*: drops the Keyword Calls recorded so far and starts the keyword again, empty.
         - *Undo*: removes the Keyword Calls of the last Action.
 
-        The toolbar is in the recording state from the start. Click a value in the toolbar
-        to turn the whole value, or a marked part of it, into a Keyword Argument, named
+        The toolbar is in the recording state from the start. Click a value or a selector in
+        the toolbar to turn the whole of it, or a marked part, into a Keyword Argument, named
         like ``email`` or ``${email}``. The same dialog asks whether the marked value
         becomes the argument's default. The toolbar also offers to use the new argument
         for the same value elsewhere in the keyword (replacing repeated values).
@@ -184,8 +184,8 @@ class Recorder(LibraryComponent):
         (recording).
 
         The toolbar is idle until a keyword is started; Actions while idle are not recorded.
-        While recording, click a value in the toolbar to turn the whole value, or a marked
-        part of it, into a Keyword Argument, named like ``email`` or ``${email}``. The same
+        While recording, click a value or a selector in the toolbar to turn the whole of it,
+        or a marked part, into a Keyword Argument, named like ``email`` or ``${email}``. The same
         dialog asks whether the marked value becomes the argument's default. The toolbar
         also offers to use the new argument for the same value elsewhere in the keyword
         (replacing repeated values).

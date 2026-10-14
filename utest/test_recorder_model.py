@@ -80,11 +80,21 @@ def test_partial_argument_keeps_literal_parts_escaped():
     assert kw.calls()[0].render() == "Fill Text    \\#name    price \\${x} is ${amount}"
 
 
-def test_selectors_cannot_become_arguments():
+def test_fixed_values_cannot_become_arguments():
     kw = RecordedKeyword("K")
     kw.add(fill("x"))
-    with pytest.raises(ValueError, match="Selectors"):
+    with pytest.raises(ValueError, match="Fixed options"):
         kw.make_argument(0, 0, 0, 1, "sel")
+
+
+def test_part_of_a_selector_becomes_an_argument():
+    kw = RecordedKeyword("K")
+    kw.add(Call("Click", [Value.literal('[data-testid="row-42"]')]))
+    kw.make_argument(0, 0, 18, 20, "row")
+    assert kw.lines()[1:] == [
+        "[Arguments]    ${row}=42",
+        'Click    [data-testid="row-${row}"]',
+    ]
 
 
 def test_make_argument_reports_other_occurrences():

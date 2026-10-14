@@ -53,8 +53,9 @@ _Avoid_: parameter, variable
   inactivity, all pages closed, error) is saved, never discarded
 - A **Keyword Recording** always creates a new User Keyword; it never extends an existing one
 - Every recorded User Keyword carries the tag `recorded`, so it can be found and reviewed
-- A **Keyword Argument** is made from a value, never from a selector, and only while its
-  **Keyword Recording** is running. A **Keyword Argument** no **Keyword Call** uses any more
+- A **Keyword Argument** is made from a value or a selector, or a part of one, never from a
+  structural value (mouse button, operator), and only while its **Keyword Recording** is
+  running. A **Keyword Argument** no **Keyword Call** uses any more
   is removed; a recorded keyword never has unused arguments
 - Password fields get no special treatment: the person decides whether a typed value becomes
   a **Keyword Argument**, with or without its recorded value as default

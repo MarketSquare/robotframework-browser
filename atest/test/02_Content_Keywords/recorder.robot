@@ -485,6 +485,70 @@ Toolbar Clicks Are Neither Recorded Nor Swallow A Navigation
     Should Contain    ${file}    Go To${SPACE*4}${FORM_URL}?after_toolbar
     Should Not Contain    ${file}    Click
 
+A Selector Becomes An Argument
+    ${promise} =    Promise To    Record Keyword    Fill Field    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const raw = window.__rfbToolbarState.calls[0].values[0].raw; window.__rfbCommand({cmd: 'argument', call: 0, value: 0, start: 0, end: raw.length, name: 'field', raw}); }
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    Fill Text${SPACE*4}\${field}${SPACE*4}Alice
+    Import Resource    ${RESOURCE}
+    Fill Field    input[name="email"]
+    Get Property    input[name="email"]    value    ==    Alice
+
+The Toolbar Works Over A Modal Of The Page
+    Keep The Closed Toolbar Root Reachable
+    # Like Radix and similar: body without pointer events, a focus trap, closing on a press outside.
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => {
+    ...    const modal = document.createElement('div'); modal.id = 'page-modal';
+    ...    const input = document.createElement('input'); modal.appendChild(input); document.body.appendChild(modal);
+    ...    document.body.style.pointerEvents = 'none'; modal.style.pointerEvents = 'auto'; input.focus();
+    ...    document.addEventListener('focusin', (e) => { if (!modal.contains(e.target)) input.focus(); });
+    ...    document.addEventListener('focusout', (e) => { if (e.relatedTarget && !modal.contains(e.relatedTarget)) input.focus(); });
+    ...    document.addEventListener('pointerdown', (e) => { if (!modal.contains(e.target)) modal.remove(); });
+    ...    }
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar Is Ready
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('new')
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('nameInput')
+    Keyboard Input    type    Over The Modal
+    Keyboard Key    press    Enter
+    Toolbar State Should Be    recording
+    Get Element Count    id=page-modal    ==    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+The Argument Dialog Shows The Marked Part Without Focus And Survives A Release Outside
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Marked Part    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Click Inside Toolbar    () => [...window.toolbarRoot.querySelectorAll('.cell.pick')].pop()
+    Evaluate JavaScript    ${None}    () => window.toolbarRoot.getElementById('argValue').setSelectionRange(1, 3)
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('argName')
+    Wait For Function
+    ...    () => window.toolbarRoot.activeElement.id === 'argName' && window.toolbarRoot.querySelector('#argMarks mark').textContent === 'li'
+    ...    timeout=2s
+    ${box} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('argValue').getBoundingClientRect(); return [r.x + 10, r.y + 10]; }
+    Mouse Move    ${box}[0]    ${box}[1]
+    Mouse Button    down
+    Mouse Move    3    300
+    Mouse Button    up
+    Toolbar Element Should Be Shown    argModal
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 *** Keywords ***
 Allow Recording Headless
     [Arguments]    ${allow}

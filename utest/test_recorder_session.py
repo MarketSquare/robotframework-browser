@@ -444,7 +444,7 @@ def test_toolbar_budget_counts_escaped_json():
             "call": 0,
             "value": 0,
             "start": 0,
-            "end": 1,
+            "end": 99,
             "name": "a",
             "raw": "#n",
         },

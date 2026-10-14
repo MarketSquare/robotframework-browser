@@ -70,6 +70,8 @@
         host.style.cssText = 'position:fixed;z-index:2147483647;top:0;left:0';
         host.style.setProperty('display', 'block', 'important');
         host.style.setProperty('visibility', 'visible', 'important');
+        // A modal of the page (Radix and others) sets `pointer-events: none` on body.
+        host.style.setProperty('pointer-events', 'auto', 'important');
         glass.appendChild(host);
         const root = host.attachShadow({ mode: 'closed' });
         root.innerHTML = `
@@ -171,6 +173,15 @@
       input, textarea { padding: 6px 8px; border-radius: 4px; border: 1px solid var(--line-strong);
               background: var(--plate); color: var(--ink); font: inherit; }
       textarea { resize: vertical; white-space: pre; }
+      /* The marked part stays visible when the focus moves on, which the native
+         selection of a textarea does not: a layer behind the transparent
+         textarea repeats its text, with the marked part highlighted. */
+      .marked { display: grid; }
+      .marked > * { grid-area: 1 / 1; margin: 0; }
+      .marks { padding: 6px 8px; border: 1px solid transparent; border-radius: 4px; background: var(--plate);
+               white-space: pre; overflow: hidden; color: transparent; }
+      .marks mark { background: rgb(255 107 94 / 45%); color: transparent; border-radius: 2px; }
+      .marked textarea { background: transparent; }
     </style>
     <div class="panel" id="panel">
       <div class="head" id="head">
@@ -221,7 +232,7 @@
     <div class="modal" id="argModal" hidden>
       <div class="dialog">
         <div>Mark the part that becomes an argument (or leave it unmarked for the whole value)</div>
-        <textarea id="argValue" rows="3" readonly></textarea>
+        <div class="marked"><div class="marks" id="argMarks" aria-hidden="true"></div><textarea id="argValue" rows="3" readonly></textarea></div>
         <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off" maxlength="${NAME_LIMIT + 3}">
         <label title="Without a default, every caller must pass a value"><input type="checkbox" id="argDefault" checked> Use the marked value as default</label>
         <div class="err" id="argErr" hidden></div>
@@ -287,6 +298,8 @@
         };
         window.addEventListener('pointerup', endResize);
         window.addEventListener('pointercancel', endResize);
+        // A release over the toolbar does not reach window (see the host's listeners).
+        root.addEventListener('pointerup', endResize);
 
         // -- placement ------------------------------------------------------- //
         // Top left: the top right is where Playwright's overlay grows and
@@ -390,11 +403,6 @@
         $('new').addEventListener('click', openModal);
         $('headNew').addEventListener('click', openModal);
         $('cancel').addEventListener('click', closeModal);
-        // A click on the glass pane cancels, as in any modal - but not once the
-        // name was sent.
-        $('modal').addEventListener('click', (event) => {
-            if (event.target === $('modal') && nameSent === null) closeModal();
-        });
         $('ok').addEventListener('click', () => {
             if (nameSent !== null) return;
             const name = $('nameInput').value.trim();
@@ -429,6 +437,28 @@
             $('argHint').textContent = text;
             $('argHint').hidden = !text;
         };
+        // The selection of a textarea outlives its focus, so the marks can always
+        // follow it. Text nodes only: the value comes from the page under test.
+        const showMarks = () => {
+            const input = $('argValue');
+            const marks = $('argMarks');
+            const { value, selectionStart: from, selectionEnd: to } = input;
+            marks.textContent = '';
+            const marked = document.createElement('mark');
+            marked.textContent = value.slice(from, to);
+            // The final newline keeps a trailing empty line as tall as in the textarea.
+            marks.append(value.slice(0, from), marked, `${value.slice(to)}\n`);
+            marks.scrollTop = input.scrollTop;
+            marks.scrollLeft = input.scrollLeft;
+        };
+        ['select', 'selectionchange', 'keyup', 'mouseup', 'scroll'].forEach((type) =>
+            $('argValue').addEventListener(type, showMarks),
+        );
+        // A selection dragged past the textarea ends outside it.
+        root.addEventListener('pointerup', () => {
+            if (!$('argModal').hidden) showMarks();
+        });
+
         const openArgModal = (call, value, raw) => {
             if (isPending()) return;
             if (raw === null || raw === undefined) {
@@ -440,6 +470,8 @@
             argSent = null;
             $('argOk').disabled = false;
             $('argValue').value = raw;
+            $('argValue').setSelectionRange(0, 0);
+            showMarks();
             $('argName').value = '';
             $('argDefault').checked = true;
             showArgError('');
@@ -473,9 +505,6 @@
                 : "Argument name must start with a letter or '_' and contain only letters, digits and '_'.";
         };
         $('argCancel').addEventListener('click', closeArgModal);
-        $('argModal').addEventListener('click', (event) => {
-            if (event.target === $('argModal')) closeArgModal();
-        });
         $('argOk').addEventListener('click', () => {
             if (!argTarget || argSent || isPending()) return;
             const name = $('argName').value.trim();
@@ -531,6 +560,22 @@
                 if (event.key === 'Enter') $('argOk').click();
             },
         };
+        // A click on a glass pane closes its dialog, as in any modal - but only if
+        // the press started there too: a text selection or a textarea resize
+        // that ends outside the dialog is not a click on the pane.
+        const closeOnPaneClick = (pane, close) => {
+            let pressedOnPane = false;
+            pane.addEventListener('pointerdown', (event) => {
+                pressedOnPane = event.target === pane;
+            });
+            pane.addEventListener('click', (event) => {
+                if (event.target === pane && pressedOnPane) close();
+            });
+        };
+        closeOnPaneClick($('modal'), () => {
+            if (nameSent === null) closeModal();
+        });
+        closeOnPaneClick($('argModal'), closeArgModal);
         // Escape closes the open dialog wherever the focus is inside the toolbar.
         const escapeDialog = () => {
             if (!$('argModal').hidden) closeArgModal();
@@ -544,6 +589,8 @@
         };
         const ISOLATED_EVENTS = [
             'contextmenu',
+            'focusin',
+            'focusout',
             'keydown',
             'keyup',
             'keypress',
@@ -556,7 +603,10 @@
             'copy',
             'cut',
         ];
-        const fromToolbar = (event) => event.composedPath().includes(glass);
+        // A focus event of the page whose other side is the toolbar counts too: a
+        // page modal's focus trap would otherwise pull the focus back from it.
+        const fromToolbar = (event) =>
+            event.composedPath().includes(glass) || (!!event.relatedTarget && glass.contains(event.relatedTarget));
         const isolate = (event) => {
             if (!fromToolbar(event)) return;
             event.stopImmediatePropagation();
@@ -570,6 +620,27 @@
             if (handler) handler(event);
         };
         ISOLATED_EVENTS.forEach((type) => window.addEventListener(type, isolate, true));
+        // Pointer, mouse and wheel events must reach the toolbar's own listeners
+        // first, so they are stopped on the way back up, at the host: the page's
+        // document and window listeners never see them. A page modal would
+        // otherwise close on a toolbar click ("click outside") or block its
+        // scrolling. Playwright's recorder listens in the capture phase and
+        // skips them through `x-pw-glass`.
+        const BUBBLING_EVENTS = [
+            'pointerdown',
+            'pointerup',
+            'pointermove',
+            'mousedown',
+            'mouseup',
+            'click',
+            'dblclick',
+            'auxclick',
+            'touchstart',
+            'touchend',
+            'touchmove',
+            'wheel',
+        ];
+        BUBBLING_EVENTS.forEach((type) => host.addEventListener(type, (event) => event.stopPropagation()));
         const currentOffer = () => (window.__rfbToolbarState && window.__rfbToolbarState.offer) || null;
         $('offerApply').addEventListener('click', () => {
             const offer = currentOffer();
