@@ -187,7 +187,7 @@ class RecorderSession:
         elif cmd in ("argument", "replace", "default"):
             self._argument_command(cmd, command)
         else:
-            self.log.append(f"unknown recorder command {cmd!r}")
+            self.log.append(f"unknown recorder command {cmd[:_NAME_LIMIT]!r}")
 
     def tick(self) -> None:
         if self._pending is None or self._clock() < self._pending[1]:
@@ -258,7 +258,12 @@ class RecorderSession:
         if self._keyword is not None:
             self._error = f"Still recording '{self._keyword.name}'. Finish it first."
             return
-        taken = [*self.keywords, *self.target.existing_names()]
+        try:
+            existing = self.target.existing_names()
+        except (OSError, ValueError) as unreadable:
+            self._error = f"Could not read {self.target.label}: {unreadable}"
+            return
+        taken = [*self.keywords, *existing]
         error = self._guard.error(name, taken=taken)
         if error:
             self._error = error

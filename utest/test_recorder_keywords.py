@@ -172,3 +172,14 @@ def test_symlinked_path_resolves_to_real_file(tmp_path):
     link = tmp_path / "link.resource"
     link.symlink_to(real)
     assert Recorder._target(str(link)).path == real.resolve()
+
+
+def test_directory_target_is_rejected(tmp_path):
+    with pytest.raises(ValueError, match="is a directory"):
+        Recorder._target(str(tmp_path))
+
+
+def test_suite_source_of_a_directory_suite_is_rejected(monkeypatch, tmp_path):
+    monkeypatch.setattr(module, "_suite_source", lambda: str(tmp_path))
+    with pytest.raises(ValueError, match="is a directory"):
+        Recorder._target(SUITE_SOURCE)

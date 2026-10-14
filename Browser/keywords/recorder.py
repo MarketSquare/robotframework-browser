@@ -240,4 +240,11 @@ class Recorder(LibraryComponent):
                     "target file explicitly, e.g. Record Keywords    ${CURDIR}/keywords.resource"
                 )
             file = source
-        return FileTarget(Path(file).resolve())
+        path = Path(file).resolve()
+        if path.is_dir():
+            raise ValueError(
+                f"'file' must be a .robot or .resource file, but {path} is a directory. "
+                "A suite initialisation file cannot hold recorded keywords; give the "
+                "target file explicitly."
+            )
+        return FileTarget(path)

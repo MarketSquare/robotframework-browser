@@ -784,3 +784,28 @@ def test_new_while_a_keyword_is_recording_is_rejected():
     s, _, _ = recording()
     s.handle_command({"cmd": "new", "name": "Other"})
     assert "Still recording 'K'" in s.toolbar_state()["error"]
+
+
+def test_unknown_command_log_entry_is_truncated():
+    s, _, _ = session()
+    s.handle_command({"cmd": "x" * 5000})
+    assert max(len(entry) for entry in s.log) < 300
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        OSError("gone"),
+        ValueError("bad"),
+        UnicodeDecodeError("utf-8", b"\xff", 0, 1, "bad"),
+    ],
+)
+def test_unreadable_target_on_new_is_a_toolbar_error(error):
+    class Unreadable(FakeTarget):
+        def existing_names(self):
+            raise error
+
+    s, _, _ = session(target=Unreadable())
+    s.handle_command({"cmd": "new", "name": "Fresh"})
+    assert s.toolbar_state()["error"].startswith("Could not read fake.resource")
+    assert s.state == "idle"

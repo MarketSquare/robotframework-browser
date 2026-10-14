@@ -29,6 +29,8 @@ from robot.api import logger
 from .session import RecorderSession
 
 POLL_INTERVAL = 0.2
+#: Ignored entries come from the page under test and may be huge (ADR 0010).
+LOGGED_REPR_LIMIT = 200
 
 
 class RecorderClient(Protocol):
@@ -143,7 +145,13 @@ def _safely(
     try:
         handler(session, entry)
     except Exception as error:
-        logger.warn(f"recorder: ignoring {what}: {error!r}")
+        logger.warn(f"recorder: ignoring {_truncate(what)}: {_truncate(repr(error))}")
+
+
+def _truncate(text: str) -> str:
+    if len(text) <= LOGGED_REPR_LIMIT:
+        return text
+    return text[:LOGGED_REPR_LIMIT] + "..."
 
 
 def _drain_log(session: RecorderSession) -> None:

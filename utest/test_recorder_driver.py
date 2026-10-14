@@ -313,3 +313,21 @@ def test_a_non_bool_picking_field_counts_as_off(bad):
     )
     run_session(s, client, clock=clock, sleep=lambda _: None)
     assert client.polls[2][0]["picking"] is False
+
+
+def test_ignored_entries_are_logged_truncated(monkeypatch):
+    from Browser.recorder import driver
+
+    warnings: list[str] = []
+    monkeypatch.setattr(driver.logger, "warn", warnings.append)
+    s, clock = make()
+    client = Client(
+        [
+            reply(events=[{"event": "added", "action": "x" * 5000}]),
+            reply(commands=[{"cmd": "stop"}]),
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert warnings
+    assert max(len(w) for w in warnings) < 600
