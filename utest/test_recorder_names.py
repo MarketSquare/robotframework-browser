@@ -177,6 +177,8 @@ def test_existing_keyword_names():
         assert existing_keyword_names(target) == set()
         target.write_text("*** Keywords ***\nOne\n    Log    a\n\nTwo\n    Log    b\n")
         assert existing_keyword_names(target) == {"One", "Two"}
+        target.write_text("*** Keywords ***\n# only a comment\nOne\n    Log    a\n")
+        assert existing_keyword_names(target) == {"One"}
 
 
 # --------------------------------------------------------------------------- #
@@ -569,3 +571,124 @@ def test_inner_part_keeps_edge_spaces_and_hash():
     assert cell(" #x", at_start=False) == " #x"
     assert cell(" x ") == "${SPACE}x${SPACE}"
     assert cell("#x") == "\\#x"
+
+
+# --------------------------------------------------------------------------- #
+# In-process coverage of the namespace walk, the matcher fallbacks and NameGuard
+# --------------------------------------------------------------------------- #
+
+
+def _fake_context(
+    monkeypatch, *, libraries, resources=None, suite_file=None, prefixes=()
+):
+    store = SimpleNamespace(resources=resources or {}, suite_file=suite_file)
+    namespace = SimpleNamespace(
+        libraries=libraries,
+        _kw_store=store,
+        languages=SimpleNamespace(bdd_prefixes=prefixes),
+    )
+    context = SimpleNamespace(namespace=namespace)
+    monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
+
+
+def _owner(name, *keyword_names):
+    return SimpleNamespace(
+        name=name, keywords=[SimpleNamespace(name=kw) for kw in keyword_names]
+    )
+
+
+def test_collect_known_keywords_reads_libraries_resources_and_suite_file(monkeypatch):
+    _fake_context(
+        monkeypatch,
+        libraries=[_owner("lib", "Plain Lib Kw", "")],
+        resources={"res": _owner("res", "Resource Kw", "Open ${page} Page")},
+        suite_file=_owner("suite", "Suite Kw"),
+        prefixes=("Given",),
+    )
+
+    known = collect_known_keywords()
+
+    assert known.bdd_prefixes == ("Given",)
+    assert {"Plain Lib Kw", "lib.Plain Lib Kw", "Resource Kw", "res.Resource Kw"} <= (
+        known.names
+    )
+    # The suite file's own keywords have no callable qualified form.
+    assert "Suite Kw" in known.names
+    assert "suite.Suite Kw" not in known.names
+    assert "" not in known.names
+    declared = [d for d, _ in known.embedded]
+    assert "Open ${page} Page" in declared
+    assert "res.Open ${page} Page" in declared
+
+
+def test_collect_known_keywords_without_a_suite_file(monkeypatch):
+    _fake_context(monkeypatch, libraries=[_owner("lib", "Kw")], suite_file=None)
+    assert "Kw" in collect_known_keywords().names
+
+
+def test_collect_known_keywords_handles_namespace_without_languages(monkeypatch):
+    namespace = SimpleNamespace(
+        libraries=[_owner("lib", "Kw")],
+        _kw_store=SimpleNamespace(resources={}, suite_file=None),
+    )
+    context = SimpleNamespace(namespace=namespace)
+    monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
+    assert collect_known_keywords().bdd_prefixes == ()
+
+
+def test_bdd_variants_strip_a_prefix_only_when_something_remains():
+    assert names._bdd_variants("Given Alice Signs In", ("Given", "When")) == {
+        "Alice Signs In"
+    }
+    assert names._bdd_variants("Given", ("Given",)) == set()
+    assert names._bdd_variants("Other Name", ("Given",)) == set()
+
+
+def test_embedded_matcher_survives_a_name_robot_cannot_parse(monkeypatch):
+    def broken(name):
+        raise ValueError("bad pattern")
+
+    monkeypatch.setattr(names.EmbeddedArguments, "from_name", broken)
+    assert _embedded_matcher("Open ${page:[} Page") is None
+
+
+def test_embedded_matcher_falls_back_to_roberts_own_matcher(monkeypatch):
+    monkeypatch.setattr(names, "_normalized_embedded_pattern", lambda name: None)
+    matcher = _embedded_matcher("Open ${page} Page")
+    assert matcher("Open Login Page") is True
+    assert matcher("Close Login Page") is False
+
+
+def test_normalized_pattern_is_none_when_the_parser_fails(monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("no parser")
+
+    monkeypatch.setattr(names.EmbeddedArgumentParser, "_parse_arg", broken)
+    assert names._normalized_embedded_pattern("Open ${page} Page") is None
+
+
+def test_normalized_pattern_is_none_for_a_literal_name():
+    assert names._normalized_embedded_pattern("Open Login Page") is None
+
+
+def test_name_guard_rejects_what_an_embedded_keyword_would_claim():
+    known = KnownKeywords(
+        embedded=(("Open ${page} Page", _embedded_matcher("Open ${page} Page")),)
+    )
+    message = NameGuard(known).error("open_login_page")
+    assert "Open ${page} Page" in message
+
+
+def test_name_guard_ignores_an_embedded_matcher_that_raises():
+    def explode(name):
+        raise RuntimeError("boom")
+
+    known = KnownKeywords(embedded=(("Broken ${x}", explode),))
+    assert NameGuard(known).error("Something Fresh") is None
+
+
+def test_name_guard_skips_a_non_matching_embedded_keyword():
+    known = KnownKeywords(
+        embedded=(("Open ${page} Page", _embedded_matcher("Open ${page} Page")),)
+    )
+    assert NameGuard(known).error("Close It") is None

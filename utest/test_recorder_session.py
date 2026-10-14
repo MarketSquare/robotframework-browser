@@ -4,7 +4,7 @@ import pytest
 
 from Browser.recorder.model import RecordedKeyword
 from Browser.recorder.names import KnownKeywords
-from Browser.recorder.session import SETTLE_SECONDS, RecorderSession
+from Browser.recorder.session import _STARTING, SETTLE_SECONDS, RecorderSession
 
 
 class FakeTarget:
@@ -719,3 +719,68 @@ def test_picking_is_off_by_default_and_follows_set_picking():
     assert s.toolbar_state()["picking"] is True
     s.set_picking(False)
     assert s.toolbar_state()["picking"] is False
+
+
+# -- remaining branches of the state machine ------------------------------- #
+
+
+def test_text_is_empty_before_any_keyword_is_finished():
+    s, _, _ = session()
+    assert s.text() == ""
+
+
+def test_close_drops_a_running_keyword_without_calls():
+    s, target, _ = session()
+    start(s, "K")
+    assert s.close() == []
+    assert s.state == "idle"
+    assert target.finished == []
+
+
+def test_stop_after_a_pending_discard_with_the_keyword_gone_is_harmless():
+    s, _, clock = recording()
+    s.handle_command({"cmd": "discard"})
+    s.handle_command({"cmd": "stop"})
+    s._keyword = None
+    settle(s, clock)
+    assert s.stopped
+
+
+def test_a_starting_command_without_a_name_does_nothing():
+    s, _, clock = session()
+    s._pending = (_STARTING, clock.now)
+    s._starting = None
+    s.tick()
+    assert s.state == "idle"
+
+
+def test_undo_with_nothing_to_undo_changes_nothing():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_command({"cmd": "undo"})
+    assert target.saved == []
+    assert s.toolbar_state()["calls"] == []
+
+
+def test_save_without_a_running_keyword_is_a_no_op():
+    s, target, _ = session()
+    s._save()
+    assert target.saved == []
+
+
+def test_a_notice_from_the_target_reaches_the_toolbar():
+    class NoticeTarget(FakeTarget):
+        def save(self, keyword):
+            super().save(keyword)
+            return "File changed on disk."
+
+    s, _, _ = session(target=NoticeTarget())
+    start(s, "K")
+    s.handle_event("added", FILL)
+    assert s.toolbar_state()["notice"] == "File changed on disk."
+
+
+def test_new_while_a_keyword_is_recording_is_rejected():
+    s, _, _ = recording()
+    s.handle_command({"cmd": "new", "name": "Other"})
+    assert "Still recording 'K'" in s.toolbar_state()["error"]
