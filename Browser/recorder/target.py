@@ -194,7 +194,13 @@ class FileTarget:
             return File(source=str(self.path))
         data = self.path.read_bytes()
         bom = data.startswith(codecs.BOM_UTF8)
-        text = data[len(codecs.BOM_UTF8) if bom else 0 :].decode("utf-8", "replace")
+        try:
+            text = data[len(codecs.BOM_UTF8) if bom else 0 :].decode("utf-8")
+        except UnicodeDecodeError as error:
+            # Replacing the byte would rewrite a part of the file not ours.
+            raise ValueError(
+                f"it is not valid UTF-8 (byte {error.start + bom * 3})"
+            ) from None
         crlf = "\r\n" in text
         if self._format is None:
             self._format = _Format(

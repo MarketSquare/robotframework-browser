@@ -21,6 +21,7 @@ is injected, so the whole interaction model is unit-testable in milliseconds.
 from __future__ import annotations
 
 import json
+import math
 import time
 from collections.abc import Callable
 
@@ -38,14 +39,19 @@ IDLE = "idle"
 RECORDING = "recording"
 
 #: Playwright holds a left click and a navigation back for 500 ms before
-#: reporting them (ADR 0011). Finish, Discard and Stop wait this long so such an
-#: Action still lands in the keyword it was made in (AC-19); New waits this long
-#: so one made while idle does not land in the new keyword.
-SETTLE_SECONDS = 0.6
+#: reporting them (ADR 0011). Finish, Discard and Stop wait until this long
+#: after the last click or page load so such an Action still lands in the
+#: keyword it was made in (AC-19); New waits so one made while idle does not
+#: land in the new keyword. The toolbar reports how long the page has been
+#: quiet (``quietMs``); without it the whole time is waited.
+SETTLE_SECONDS = 0.8
 _WRITE_FAILED = "Could not write"
 _PAIR = 2
-_NAME_LIMIT = 80
+_LOGGED_NAME_LIMIT = 80
+#: Longer command ids are ignored; the toolbar's are far shorter.
+_ID_LIMIT = 64
 _STILL_FINISHING = "Still finishing the last command - please wait."
+_STILL_STARTING = "Still starting the keyword - please wait."
 _DEFERRED = ("finish", "discard", "stop")
 _STARTING = "new"
 #: The toolbar shows at most this many characters of one text.
@@ -83,6 +89,7 @@ class RecorderSession:
         self._skipped = False
         self._discard_on_stop = False
         self._picking = False
+        self._answered: str | None = None
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
@@ -131,6 +138,7 @@ class RecorderSession:
             "notice": self._notice,
             "error": self._error,
             "picking": self._picking,
+            "answered": self._answered,
         }
 
     @staticmethod
@@ -187,7 +195,7 @@ class RecorderSession:
             raw_name = action.get("name")
             name = raw_name if isinstance(raw_name, str) else "?"
             if name not in SILENT_ACTIONS:
-                name = name[:_NAME_LIMIT]
+                name = name[:_LOGGED_NAME_LIMIT]
                 self._notice = f"'{name}' has no Browser keyword and was not recorded."
                 self.log.append(f"action {name!r} has no Browser keyword equivalent")
                 self._skipped = True
@@ -208,29 +216,39 @@ class RecorderSession:
     # -- commands ---------------------------------------------------------- #
 
     def handle_command(self, command: dict) -> None:
+        """Apply one toolbar command.
+
+        A command's ``id`` comes back as ``answered`` in the toolbar state, with
+        ``error`` saying whether it was refused.
+        """
         self._error = None
         self._notice = None
+        command_id = command.get("id")
+        if isinstance(command_id, str) and len(command_id) <= _ID_LIMIT:
+            self._answered = command_id
         cmd = str(command.get("cmd", ""))
         if self._pending is not None and cmd != "stop":
-            self._error = _STILL_FINISHING
+            self._error = (
+                _STILL_STARTING if self._pending[0] == _STARTING else _STILL_FINISHING
+            )
             return
         if cmd in _DEFERRED:
-            self._defer(cmd)
+            self._defer(cmd, _settle_seconds(command))
         elif cmd == "new":
-            self._new(command.get("name"))
+            self._new(command.get("name"), _settle_seconds(command))
         elif cmd == "undo":
             self._undo()
         elif cmd in ("argument", "replace"):
             self._argument_command(cmd, command)
         else:
-            self.log.append(f"unknown recorder command {cmd[:_NAME_LIMIT]!r}")
+            self.log.append(f"unknown recorder command {cmd[:_LOGGED_NAME_LIMIT]!r}")
 
     def tick(self) -> None:
         if self._pending is None or self._clock() < self._pending[1]:
             return
         cmd = self._pending[0]
         self._pending = None
-        if self._error == _STILL_FINISHING:
+        if self._error in (_STILL_FINISHING, _STILL_STARTING):
             self._error = None
         if self._discard_on_stop:
             self._discard_on_stop = False
@@ -265,7 +283,7 @@ class RecorderSession:
 
     # -- command handlers -------------------------------------------------- #
 
-    def _defer(self, cmd: str) -> None:
+    def _defer(self, cmd: str, settle: float) -> None:
         if cmd != "stop":
             if self._keyword is None:
                 self._error = "No keyword is being recorded."
@@ -282,9 +300,9 @@ class RecorderSession:
             if self._pending[0] != "stop":
                 self._pending = ("stop", self._pending[1])
             return
-        self._pending = (cmd, self._clock() + SETTLE_SECONDS)
+        self._pending = (cmd, self._clock() + settle)
 
-    def _new(self, name: object) -> None:
+    def _new(self, name: object, settle: float) -> None:
         if not isinstance(name, str):
             self._error = "'name' must be text."
             return
@@ -305,7 +323,7 @@ class RecorderSession:
             self._error = error
             return
         self._starting = name
-        self._pending = (_STARTING, self._clock() + SETTLE_SECONDS)
+        self._pending = (_STARTING, self._clock() + settle)
 
     def _start(self) -> None:
         name = self._starting
@@ -426,6 +444,19 @@ class RecorderSession:
 
 
 _MISSING: object = object()
+
+
+def _settle_seconds(command: dict) -> float:
+    """How much of `SETTLE_SECONDS` is still to wait after the page was quiet."""
+    quiet = command.get("quietMs")
+    if (
+        isinstance(quiet, bool)
+        or not isinstance(quiet, int | float)
+        or not math.isfinite(quiet)
+        or quiet < 0
+    ):
+        return SETTLE_SECONDS
+    return max(0.0, SETTLE_SECONDS - quiet / 1000)
 
 
 def _text(command: dict, key: str) -> str:

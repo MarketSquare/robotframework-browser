@@ -18,8 +18,10 @@
 //     throws, a stop drops the event sink. Sessions switch `__pw_recorderSetMode`.
 //  2. The sink delivers the whole `ActionInContext` on <= 1.62, the bare `Action`
 //     from 1.63; `toAction` accepts both.
-//  3. Toolbar interactions arrive as Actions on the toolbar host (closed shadow
-//     root) and are dropped by `isToolbarAction`.
+//  3. The toolbar sits in an `x-pw-glass` element. The injected recorder ignores
+//     every event whose composed path holds one (`_ignoreOverlayEvent`), so a
+//     toolbar click is never an Action - nor Playwright's last Action, which
+//     would swallow a navigation in the next 5 s.
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -30,7 +32,6 @@ import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
-export const TOOLBAR_TAG = 'rfb-recorder-toolbar';
 const RECORDER = Symbol.for('robotframework-browser.recorder.state');
 // Modes that mean "the user is no longer recording". Everything else
 // (`recording`, `recording-inspecting`, `asserting*`) is part of a recording.
@@ -44,22 +45,29 @@ const STOPPED_MODE = 'none';
 // session bounds to 64 KiB of ASCII-escaped JSON (`MAX_RAW_LENGTH`).
 export const MAX_COMMAND_BYTES = 256 * 1024;
 export const MAX_BUFFERED_COMMANDS = 100;
-export const MAX_REPLY_COMMAND_BYTES = 1024 * 1024;
 export const MAX_EVENT_BYTES = 1024 * 1024;
-export const MAX_EVENTS_PER_POLL = 500;
-export const MAX_REPLY_EVENT_BYTES = 2 * 1024 * 1024;
+export const MAX_ENTRIES_PER_POLL = 500;
+export const MAX_REPLY_BYTES = 3 * 1024 * 1024;
 
 export type Action = Record<string, unknown> & { name: string; selector?: string };
-interface Buffered {
+interface EventEntry {
     event: 'added' | 'updated' | 'signal';
     action: Record<string, unknown>;
 }
+interface CommandEntry {
+    command: unknown;
+}
+export type Entry = EventEntry | CommandEntry;
 export interface RecorderBuffers {
-    events: Buffered[];
-    commands: unknown[];
+    // Actions, signals and toolbar commands in the order they happened: an Undo
+    // clicked before an Action must not undo that Action.
+    entries: Entry[];
+    commandCount: number;
     armed: boolean;
     // A Recording Session is running: set by the reset poll, cleared by `recorderStop`.
     active: boolean;
+    // The toolbar state each page shows, so an unchanged state is not sent again.
+    rendered: WeakMap<Page, string>;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -82,14 +90,6 @@ export function isPicking(mode: string | undefined): boolean {
     return mode !== undefined && PICKING_MODES.has(mode);
 }
 
-export function isToolbarAction(action: Action): boolean {
-    return typeof action.selector === 'string' && action.selector.includes(TOOLBAR_TAG);
-}
-
-export function drain<T>(list: T[]): T[] {
-    return list.splice(0, list.length);
-}
-
 function jsonLength(value: unknown): number {
     try {
         const json = JSON.stringify(value);
@@ -99,33 +99,35 @@ function jsonLength(value: unknown): number {
     }
 }
 
+const isCommand = (entry: Entry): entry is CommandEntry => 'command' in entry;
+
 // The oldest entries that fit one poll reply; the rest wait for the next poll.
-function drainWithin<T>(list: T[], maxCount: number, maxBytes: number): T[] {
+export function drainEntries(buffers: RecorderBuffers): Entry[] {
     let count = 0;
     let bytes = 0;
-    while (count < list.length && count < maxCount) {
-        bytes += jsonLength(list[count]);
-        if (count > 0 && bytes > maxBytes) break;
+    while (count < buffers.entries.length && count < MAX_ENTRIES_PER_POLL) {
+        bytes += jsonLength(buffers.entries[count]);
+        if (count > 0 && bytes > MAX_REPLY_BYTES) break;
         count += 1;
     }
-    return list.splice(0, count);
+    const drained = buffers.entries.splice(0, count);
+    buffers.commandCount -= drained.filter(isCommand).length;
+    return drained;
 }
 
-export function drainEvents(events: Buffered[]): Buffered[] {
-    return drainWithin(events, MAX_EVENTS_PER_POLL, MAX_REPLY_EVENT_BYTES);
-}
-
-export function drainCommands(commands: unknown[]): unknown[] {
-    return drainWithin(commands, MAX_BUFFERED_COMMANDS, MAX_REPLY_COMMAND_BYTES);
+function clearEntries(buffers: RecorderBuffers): void {
+    buffers.entries.length = 0;
+    buffers.commandCount = 0;
 }
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
-    if (!buffers.active || buffers.commands.length >= MAX_BUFFERED_COMMANDS) return;
+    if (!buffers.active || buffers.commandCount >= MAX_BUFFERED_COMMANDS) return;
     if (jsonLength(command) > MAX_COMMAND_BYTES) {
         logger.info('recorder: ignoring an oversized toolbar command');
         return;
     }
-    buffers.commands.push(command);
+    buffers.entries.push({ command });
+    buffers.commandCount += 1;
 }
 
 let toolbarSource: string | undefined;
@@ -207,19 +209,24 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
                 '(BrowserContext._startRecording), which Record Keyword and Record Keywords need.',
         );
     }
-    const buffers: RecorderBuffers = { events: [], commands: [], armed: false, active: false };
-    const buffer = (entry: Buffered) => {
+    const buffers: RecorderBuffers = {
+        entries: [],
+        commandCount: 0,
+        armed: false,
+        active: false,
+        rendered: new WeakMap(),
+    };
+    const buffer = (entry: EventEntry) => {
         if (!buffers.active) return;
         if (jsonLength(entry) > MAX_EVENT_BYTES) {
             logger.info(`recorder: ignoring an oversized '${String(entry.action.name)}' event`);
             return;
         }
-        buffers.events.push(entry);
+        buffers.entries.push(entry);
     };
     const forward = (event: 'added' | 'updated') => (_page: unknown, payload: unknown) => {
         const action = toAction(payload);
-        if (!action || isToolbarAction(action)) return;
-        buffer({ event, action });
+        if (action) buffer({ event, action });
     };
     // `language` only selects the generator of the `code` Playwright passes
     // along with every event, which is not used.
@@ -247,16 +254,21 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     return buffers;
 }
 
-function renderToolbars(context: BrowserContext, toolbarState: unknown): Promise<void> {
+// The state can hold up to a MiB of recorded values; a page gets it only when it
+// changed, or when the page lost the toolbar by navigating.
+function renderToolbars(context: BrowserContext, buffers: RecorderBuffers, toolbarState: unknown): Promise<void> {
+    const json = JSON.stringify(toolbarState);
     return onEveryPage(context, async (page) => {
         const installed = await page.evaluate(
             () => typeof (window as unknown as { __rfbToolbarRender?: unknown }).__rfbToolbarRender === 'function',
         );
+        if (installed && buffers.rendered.get(page) === json) return;
         if (!installed) await page.evaluate(toolbarScript());
         await page.evaluate((s) => {
             const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
-            return w.__rfbToolbarRender && w.__rfbToolbarRender(s);
-        }, toolbarState);
+            return w.__rfbToolbarRender && w.__rfbToolbarRender(JSON.parse(s));
+        }, json);
+        buffers.rendered.set(page, json);
     });
 }
 
@@ -279,8 +291,7 @@ export async function resetSession(
     buffers.armed = false;
     buffers.active = true;
     await wait(HELD_BACK_MS);
-    drain(buffers.events);
-    drain(buffers.commands);
+    clearEntries(buffers);
     await writeMode(context, 'recording');
 }
 
@@ -296,19 +307,21 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
     }
     const buffers = await ensureRecorder(context);
     if (reset) await resetSession(context, buffers);
-    if (toolbarState) await renderToolbars(context, toolbarState);
+    if (toolbarState) await renderToolbars(context, buffers, toolbarState);
     const mode = await readMode(context);
     // Only honour a stop once the recorder has actually been seen recording,
     // otherwise a slow start would end the session immediately.
     if (mode !== undefined && !STOP_MODES.has(mode)) buffers.armed = true;
+    // The reset finds no page to switch when the only one is navigating; until
+    // the recorder is seen recording, every poll tries again.
+    else if (!buffers.armed) await writeMode(context, 'recording');
     const stopped = buffers.armed && mode !== undefined && STOP_MODES.has(mode);
     return jsonResponse(
         JSON.stringify({
             mode: stopped ? 'stopped' : 'recording',
             picking: isPicking(mode),
             pages: context.pages().length,
-            events: drainEvents(buffers.events),
-            commands: drainCommands(buffers.commands),
+            entries: drainEntries(buffers),
         }),
         '',
     );

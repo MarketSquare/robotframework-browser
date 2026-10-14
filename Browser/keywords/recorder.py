@@ -23,12 +23,12 @@ from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.driver import run_session
-from ..recorder.names import KnownKeywords, collect_known_keywords
+from ..recorder.names import collect_known_keywords
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target
 from ..utils import keyword, logger
 
-__all__ = ["KnownKeywords", "Recorder"]
+__all__ = ["Recorder"]
 
 SUITE_SOURCE = "${SUITE_SOURCE}"
 DEFAULT_IDLE_TIMEOUT = timedelta(minutes=5)
@@ -55,14 +55,15 @@ class _GrpcRecorderClient:
         )
         with self._library.playwright.grpc_channel() as stub:
             response = stub.RecorderPoll(Request().Json(body=body))
-        if not response.json:
-            return {}
         try:
             reply = json.loads(response.json)
         except ValueError:
-            logger.debug("Ignoring a recorder reply that is not valid JSON")
-            return {}
-        return reply if isinstance(reply, dict) else {}
+            reply = None
+        if not isinstance(reply, dict):
+            raise RuntimeError(
+                f"The recorder sent an unreadable reply: {response.json[:200]!r}"
+            )
+        return reply
 
     def stop(self) -> None:
         with self._library.playwright.grpc_channel() as stub:

@@ -200,6 +200,10 @@ _ROUNDTRIP_VALUES = [
     ["css=.x", "back\\slash"],
     ["css=.x", "\\${not a var}"],
     ["css=.x", "tab\tand\nnewline"],
+    # `${SPACE}[x]` would be item access on the emitted `${SPACE}`.
+    ["css=.x", "[\n  [1, 2],\n  [3]\n]"],
+    ["css=.x", " [lead"],
+    ["css=.x", "a  [0]"],
     ['role=button[name="Save & exit"i]'],
     # -- hostile payloads ---------------------------------------------------- #
     # Selectors and typed text come from the page under test, so they are
@@ -330,6 +334,8 @@ def test_named_argument_shaped_values_roundtrip_through_a_real_robot_run(tmp_pat
     values = ["txt=hello", "clear=yes", "selector=x", "a b=c", "=lead"]
     for text in values:
         kw.add(Call("Fill", [Value.literal("css=.x", False), Value.literal(text)]))
+    # An unknown keyword may take any name, so a selector is escaped too.
+    kw.add(Call("Fill", [Value.literal("text=hello", False), Value.literal("x")]))
     FileTarget(resource).finish(kw)
     assert "txt\\=hello" in resource.read_text()
     (tmp_path / "run.robot").write_text(
@@ -349,11 +355,75 @@ def test_named_argument_shaped_values_roundtrip_through_a_real_robot_run(tmp_pat
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert json.loads((tmp_path / "named.json").read_text()) == [
-        ["css=.x", text, None] for text in values
+        *(["css=.x", text, None] for text in values),
+        ["text=hello", "x", None],
     ]
 
 
 def test_fixed_named_argument_stays_named(tmp_path):
     kw = RecordedKeyword("Dialog")
-    kw.add(Call("Handle Future Dialogs", [Value.literal("action=accept", False)]))
+    kw.add(
+        Call(
+            "Handle Future Dialogs",
+            [Value(["action=accept"], selectable=False, named=True)],
+        )
+    )
     assert "Handle Future Dialogs    action=accept" in kw.block()
+
+
+def test_a_value_shaped_like_a_parameter_of_the_called_keyword_is_escaped():
+    kw = RecordedKeyword("K")
+    kw.add(Call("Click", [Value.literal("text=Log in", False)]))
+    kw.add(Call("Fill Text", [Value.literal("id=name", False), Value.literal("txt=a")]))
+    kw.add(
+        Call("Fill Text", [Value.literal("css=.x", False), Value.literal("force=1")])
+    )
+    assert kw.lines()[1:] == [
+        "Click    text=Log in",
+        "Fill Text    id=name    txt\\=a",
+        "Fill Text    css=.x    force\\=1",
+    ]
+
+
+def test_a_bracket_after_an_argument_is_not_item_access(tmp_path):
+    (tmp_path / "BracketSpy.py").write_text(
+        "import json, pathlib\n"
+        "def spy(value):\n"
+        "    out = pathlib.Path(__file__).with_name('bracket.json')\n"
+        "    calls = json.loads(out.read_text()) if out.exists() else []\n"
+        "    out.write_text(json.dumps(calls + [value]))\n"
+    )
+    resource = tmp_path / "recorded.resource"
+    kw = RecordedKeyword("Recorded")
+    kw.add(Call("Spy", [Value.literal("id[0]")]))
+    kw.make_argument(0, 0, 0, 2, "id")
+    FileTarget(resource).finish(kw)
+    assert "${id}\\[0]" in resource.read_text()
+    (tmp_path / "run.robot").write_text(
+        "*** Settings ***\n"
+        "Library     BracketSpy.py\n"
+        "Resource    recorded.resource\n\n"
+        "*** Test Cases ***\n"
+        "T\n"
+        "    Recorded\n"
+        "    Recorded    abc\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), "run.robot"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads((tmp_path / "bracket.json").read_text()) == ["id[0]", "abc[0]"]
+
+
+@pytest.mark.parametrize("bom", [b"", b"\xef\xbb\xbf"])
+def test_a_file_that_is_not_utf8_is_refused_and_left_alone(tmp_path, bom):
+    path = tmp_path / "k.resource"
+    data = bom + b"*** Keywords ***\nExisting\n    Log    caf\xe9\n"
+    path.write_bytes(data)
+    with pytest.raises(ValueError, match=f"not valid UTF-8 \\(byte {len(bom) + 40}\\)"):
+        FileTarget(path).save(keyword())
+    assert path.read_bytes() == data

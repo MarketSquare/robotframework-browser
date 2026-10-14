@@ -468,6 +468,23 @@ Recording Fails In A Headless Browser
     END
     File Should Not Exist    ${RESOURCE}
 
+Toolbar Clicks Are Neither Recorded Nor Swallow A Navigation
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Go To After Toolbar    ${RESOURCE}
+    Toolbar State Should Be    recording
+    # The hint, not the header: Playwright's overlay may cover the header at the top centre.
+    ${point} =    Toolbar Element Point    hint
+    Mouse Button    click    ${point}[0]    ${point}[1]
+    Mouse Button    click    ${point}[0]    ${point}[1]    button=right
+    # Playwright credits a navigation within 5 s to the last Action it saw.
+    Go To    ${FORM_URL}?after_toolbar
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    Go To${SPACE*4}${FORM_URL}?after_toolbar
+    Should Not Contain    ${file}    Click
+
 *** Keywords ***
 Allow Recording Headless
     [Arguments]    ${allow}
@@ -550,6 +567,13 @@ Toolbar Header Point
     ${point} =    Evaluate JavaScript
     ...    ${None}
     ...    () => { const r = window.toolbarRoot.getElementById('title').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }
+    RETURN    ${point}
+
+Toolbar Element Point
+    [Arguments]    ${id}
+    ${point} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('${id}').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }
     RETURN    ${point}
 
 Toolbar Left

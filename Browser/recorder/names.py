@@ -62,11 +62,19 @@ def _surrogates(name: str) -> bool:
     return False
 
 
+#: Keyword and argument names are typed by a person; a longer one is a mistake,
+#: or a page under test filling the user's file through the command binding.
+NAME_LIMIT = 200
+
 #: Shapes Robot's lexer would read as something other than one plain name cell,
 #: in the order they are reported. Checked after `_exotic_whitespace_error`,
 #: which needs the offending character for its message.
 _NAME_RULES: tuple[tuple[Callable[[str], object], str], ...] = (
     (lambda name: not name, "Keyword name must not be empty."),
+    (
+        lambda name: len(name) > NAME_LIMIT,
+        f"Keyword name must not be longer than {NAME_LIMIT} characters.",
+    ),
     (_surrogates, "Keyword name must not contain unpaired surrogate characters."),
     (
         _CONTROL_CHARS.search,
@@ -450,6 +458,22 @@ def plain_argument_name(name: str) -> str:
     return match.group(1) if match else name
 
 
+_ARGUMENT_RULES: tuple[tuple[Callable[[str], object], str], ...] = (
+    (lambda name: not name, "Argument name must not be empty."),
+    (
+        lambda name: len(name) > NAME_LIMIT,
+        f"Argument name must not be longer than {NAME_LIMIT} characters.",
+    ),
+    (
+        lambda name: not _ARGUMENT_NAME.fullmatch(name),
+        (
+            "Argument name must start with a letter or '_' and contain only "
+            "letters, digits and '_'."
+        ),
+    ),
+)
+
+
 def argument_name_error(name: object) -> str | None:
     """Why ``name`` is unusable as a Keyword Argument name, or ``None``.
 
@@ -462,13 +486,9 @@ def argument_name_error(name: object) -> str | None:
         if plain == name or not _ARGUMENT_NAME.fullmatch(plain):
             return "Write the argument as a variable like ${email}, or just email."
         name = plain
-    if not name:
-        return "Argument name must not be empty."
-    if not _ARGUMENT_NAME.fullmatch(name):
-        return (
-            "Argument name must start with a letter or '_' and contain only "
-            "letters, digits and '_'."
-        )
+    for is_unusable, message in _ARGUMENT_RULES:
+        if is_unusable(name):
+            return message
     if normalize_keyword_name(name) in _BUILTIN_VARIABLES:
         return f"Argument name '{name}' is a Robot Framework built-in variable."
     return None

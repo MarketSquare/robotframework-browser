@@ -3,25 +3,33 @@ import { describe, expect, it } from '@jest/globals';
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
 
 import {
-    drain,
     ensureRecorder,
+    Entry,
     HELD_BACK_MS,
     isPicking,
-    isToolbarAction,
     MAX_BUFFERED_COMMANDS,
     MAX_COMMAND_BYTES,
+    MAX_ENTRIES_PER_POLL,
     MAX_EVENT_BYTES,
-    MAX_EVENTS_PER_POLL,
-    MAX_REPLY_COMMAND_BYTES,
-    MAX_REPLY_EVENT_BYTES,
+    MAX_REPLY_BYTES,
+    RecorderBuffers,
     recorderPoll,
     recorderStop,
     resetSession,
     toAction,
-    TOOLBAR_TAG,
     toolbarScript,
     writeMode,
 } from '../recorder';
+
+const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
+const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
+const freshBuffers = (armed = false): RecorderBuffers => ({
+    entries: [],
+    commandCount: 0,
+    armed,
+    active: false,
+    rendered: new WeakMap(),
+});
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -66,25 +74,10 @@ describe('isPicking', () => {
     });
 });
 
-describe('isToolbarAction', () => {
-    it('matches actions on the toolbar host', () => {
-        expect(isToolbarAction({ name: 'click', selector: `internal:role=button >> ${TOOLBAR_TAG}` })).toBe(true);
-        expect(isToolbarAction({ name: 'click', selector: '#other' })).toBe(false);
-    });
-});
-
-describe('drain', () => {
-    it('empties in place', () => {
-        const list = [1, 2];
-        expect(drain(list)).toEqual([1, 2]);
-        expect(list).toEqual([]);
-    });
-});
-
 describe('toolbarScript', () => {
-    it('is a self-invoking script that defines the toolbar tag', () => {
+    it('is a self-invoking script that hides the toolbar from the recorder in x-pw-glass', () => {
         const source = toolbarScript();
-        expect(source).toContain(TOOLBAR_TAG);
+        expect(source).toContain("document.createElement('x-pw-glass')");
         // eslint-disable-next-line @typescript-eslint/no-implied-eval
         expect(() => new Function(source)).not.toThrow();
     });
@@ -122,16 +115,21 @@ describe('ensureRecorder', () => {
         expect(context._startRecording).toHaveBeenCalledTimes(1);
     });
 
-    it('buffers actions, updates and signals, but not toolbar actions', async () => {
+    it('buffers actions, updates, signals and commands in the order they happen', async () => {
         const context = fakeContext();
         const state = await ensureRecorder(context);
         await resetSession(context, state, async () => undefined);
         const sink = context.sinks[0];
         sink.actionAdded({}, { name: 'click', selector: '#a' });
+        context.exposeBinding.mock.calls[0][1]({}, { cmd: 'undo' });
         sink.actionUpdated({}, { name: 'fill', selector: '#a', text: 'x' });
         sink.signalAdded({}, { name: 'popup', popupPageGuid: 'g' });
-        sink.actionAdded({}, { name: 'click', selector: TOOLBAR_TAG });
-        expect(state.events.map((e) => e.event)).toEqual(['added', 'updated', 'signal']);
+        expect(state.entries.map((e) => ('command' in e ? 'command' : e.event))).toEqual([
+            'added',
+            'command',
+            'updated',
+            'signal',
+        ]);
     });
 
     it('fails clearly without the programmatic recorder', async () => {
@@ -163,31 +161,34 @@ describe('writeMode', () => {
 
 describe('resetSession', () => {
     it('drops an Action Playwright held back from before the session', async () => {
-        const buffers = { events: [] as any[], commands: [] as unknown[], armed: true, active: false };
+        const buffers = freshBuffers(true);
         const context = { pages: () => [] } as any;
         const wait = jest.fn(async (ms: number) => {
             expect(ms).toBe(HELD_BACK_MS);
-            buffers.events.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
+            buffers.entries.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
+            buffers.entries.push({ command: { cmd: 'stop' } });
+            buffers.commandCount = 1;
         });
         await resetSession(context, buffers, wait);
         expect(wait).toHaveBeenCalledTimes(1);
-        expect(buffers.events).toEqual([]);
+        expect(buffers.entries).toEqual([]);
+        expect(buffers.commandCount).toBe(0);
         expect(buffers.armed).toBe(false);
     });
 
     it('waits and drains while still stopped, then starts recording', async () => {
         const order: string[] = [];
-        const buffers = { events: [] as any[], commands: [] as unknown[], armed: false, active: false };
+        const buffers = freshBuffers();
         const page = {
             evaluate: jest.fn(async (_fn: unknown, mode: string) => {
-                order.push(`mode:${mode}:events=${buffers.events.length}`);
+                order.push(`mode:${mode}:events=${buffers.entries.length}`);
                 return true;
             }),
         };
         const context = { pages: () => [page] } as any;
         const wait = jest.fn(async () => {
             order.push('wait');
-            buffers.events.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
+            buffers.entries.push({ event: 'added', action: { name: 'navigate', url: 'http://before' } });
         });
         await resetSession(context, buffers, wait);
         expect(order).toEqual(['wait', 'mode:recording:events=0']);
@@ -204,8 +205,9 @@ interface FakeWindow {
     __rfbToolbarRemove?: () => void;
 }
 
-function fakePage(mode: string | undefined = 'recording', { closed = false } = {}) {
-    const win: FakeWindow = { mode, toolbar: undefined, removed: 0 };
+function fakePage(mode: string | undefined = 'recording', { closed = false, failures = 0 } = {}) {
+    const win: FakeWindow & { renders: number } = { mode, toolbar: undefined, removed: 0, renders: 0 };
+    let failing = failures;
     if (mode !== undefined) {
         win.__pw_recorderState = () => ({ mode: win.mode });
         win.__pw_recorderSetMode = (m: string) => {
@@ -214,12 +216,17 @@ function fakePage(mode: string | undefined = 'recording', { closed = false } = {
     }
     const evaluate = jest.fn(async (fn: unknown, arg?: unknown) => {
         if (closed) throw new Error('Target page, context or browser has been closed');
+        if (failing > 0) {
+            failing -= 1;
+            throw new Error('Execution context was destroyed, most likely because of a navigation');
+        }
         const global = globalThis as unknown as { window?: unknown };
         global.window = win;
         try {
             if (typeof fn === 'string') {
                 win.__rfbToolbarRender = (state: unknown) => {
                     win.toolbar = state;
+                    win.renders += 1;
                 };
                 win.__rfbToolbarRemove = () => {
                     win.removed += 1;
@@ -316,6 +323,41 @@ describe('recorderPoll', () => {
         expect(second.win.toolbar).toEqual({ state: 'idle' });
     });
 
+    it('sends a page the state only when it changed or the page lost the toolbar', async () => {
+        const page = fakePage();
+        const context = fakeRecorderContext([page]);
+        await poll(context, { state: { state: 'idle' } });
+        await poll(context, { state: { state: 'idle' } });
+        expect(page.win.renders).toBe(1);
+        await poll(context, { state: { state: 'recording' } });
+        expect(page.win.renders).toBe(2);
+        delete page.win.__rfbToolbarRender;
+        await poll(context, { state: { state: 'recording' } });
+        expect(page.win.toolbar).toEqual({ state: 'recording' });
+        expect(page.win.renders).toBe(3);
+    });
+
+    it('switches the recorder on with a later poll when the reset found no page to switch', async () => {
+        const page = fakePage('none', { failures: 1 });
+        const context = fakeRecorderContext([page]);
+        const buffers = await ensureRecorder(context);
+        await resetSession(context, buffers, async () => undefined);
+        expect(page.win.mode).toBe('none');
+        expect((await poll(context)).mode).toBe('recording');
+        expect(page.win.mode).toBe('recording');
+        await poll(context);
+        expect(buffers.armed).toBe(true);
+    });
+
+    it('does not switch the recorder on again once it was seen recording', async () => {
+        const page = fakePage('recording');
+        const context = fakeRecorderContext([page]);
+        await poll(context);
+        page.win.mode = 'none';
+        expect((await poll(context)).mode).toBe('stopped');
+        expect(page.win.mode).toBe('none');
+    });
+
     it('fails clearly without an active context', async () => {
         await expect(recorderPoll(pollBody({}), stateFor(undefined))).rejects.toThrow('No browser context');
     });
@@ -325,16 +367,18 @@ describe('recorderPoll', () => {
         const context = fakeRecorderContext([page]);
         const buffers = await ensureRecorder(context);
         buffers.armed = true;
-        buffers.events.push({ event: 'added', action: { name: 'click', selector: '#stale' } });
-        buffers.commands.push({ cmd: 'stop' });
+        buffers.entries.push({ event: 'added', action: { name: 'click', selector: '#stale' } });
+        buffers.entries.push({ command: { cmd: 'stop' } });
         const reply = await poll(context, { reset: true });
-        expect(reply).toMatchObject({ mode: 'recording', events: [], commands: [] });
+        expect(reply).toMatchObject({ mode: 'recording', entries: [] });
         expect(page.win.mode).toBe('recording');
-        context.sinks[0].actionAdded({}, { name: 'click', selector: '#fresh' });
         context.bindings.__rfbCommand({}, { cmd: 'undo' });
+        context.sinks[0].actionAdded({}, { name: 'click', selector: '#fresh' });
         const next = await poll(context);
-        expect(next.events).toEqual([{ event: 'added', action: { name: 'click', selector: '#fresh' } }]);
-        expect(next.commands).toEqual([{ cmd: 'undo' }]);
+        expect(next.entries).toEqual([
+            { command: { cmd: 'undo' } },
+            { event: 'added', action: { name: 'click', selector: '#fresh' } },
+        ]);
     });
 });
 
@@ -350,55 +394,45 @@ describe('the command channel', () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         context.bindings.__rfbCommand({}, { cmd: 'stop' });
-        expect(buffers.commands).toEqual([]);
+        expect(commandsIn(buffers.entries)).toEqual([]);
     });
 
     it('drops commands after the session stopped', async () => {
         const { context, buffers, send } = await activeContext();
         await recorderStop({}, stateFor(context));
         send({ cmd: 'new', name: 'Late' });
-        expect(buffers.commands).toEqual([]);
+        expect(commandsIn(buffers.entries)).toEqual([]);
     });
 
     it('drops an oversized command', async () => {
         const { buffers, send } = await activeContext();
         send({ cmd: 'new', name: 'x'.repeat(MAX_COMMAND_BYTES) });
         send('x'.repeat(5_000_000));
-        expect(buffers.commands).toEqual([]);
+        expect(commandsIn(buffers.entries)).toEqual([]);
         send({ cmd: 'undo' });
-        expect(buffers.commands).toEqual([{ cmd: 'undo' }]);
+        expect(commandsIn(buffers.entries)).toEqual([{ cmd: 'undo' }]);
     });
 
     it('accepts an argument command quoting a long value', async () => {
         const { buffers, send } = await activeContext();
         const command = { cmd: 'argument', call: 0, value: 1, start: 0, end: 1, name: 'a', raw: 'x'.repeat(64 * 1024) };
         send(command);
-        expect(buffers.commands).toEqual([command]);
+        expect(commandsIn(buffers.entries)).toEqual([command]);
     });
 
     it('measures a command in UTF-8 bytes', async () => {
         const { buffers, send } = await activeContext();
         send({ cmd: 'new', name: '\u6f22'.repeat(MAX_COMMAND_BYTES / 3 + 1) });
-        expect(buffers.commands).toEqual([]);
+        expect(commandsIn(buffers.entries)).toEqual([]);
     });
 
-    it('keeps one poll reply within MAX_REPLY_COMMAND_BYTES and delivers the rest next poll', async () => {
+    it('buffers at most MAX_BUFFERED_COMMANDS commands, counting only undelivered ones', async () => {
         const { context, buffers, send } = await activeContext();
-        const raw = 'x'.repeat(MAX_COMMAND_BYTES - 1000);
-        const count = Math.ceil(MAX_REPLY_COMMAND_BYTES / raw.length) + 2;
-        for (let i = 0; i < count; i++) send({ cmd: 'argument', raw });
-        const first = (await poll(context)).commands;
-        expect(JSON.stringify(first).length).toBeLessThanOrEqual(MAX_REPLY_COMMAND_BYTES);
-        expect(first.length).toBeGreaterThan(0);
-        let total = first.length;
-        while (buffers.commands.length) total += (await poll(context)).commands.length;
-        expect(total).toBe(count);
-    });
-
-    it('buffers at most MAX_BUFFERED_COMMANDS commands', async () => {
-        const { buffers, send } = await activeContext();
         for (let i = 0; i < MAX_BUFFERED_COMMANDS + 10; i++) send({ cmd: 'undo' });
-        expect(buffers.commands).toHaveLength(MAX_BUFFERED_COMMANDS);
+        expect(commandsIn(buffers.entries)).toHaveLength(MAX_BUFFERED_COMMANDS);
+        await poll(context);
+        send({ cmd: 'stop' });
+        expect(commandsIn(buffers.entries)).toEqual([{ cmd: 'stop' }]);
     });
 });
 
@@ -407,7 +441,7 @@ describe('event buffering', () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         context.sinks[0].actionAdded({}, { name: 'click', selector: '#a' });
-        expect(buffers.events).toEqual([]);
+        expect(buffers.entries).toEqual([]);
     });
 
     it('drops an oversized Action', async () => {
@@ -415,7 +449,7 @@ describe('event buffering', () => {
         const buffers = await ensureRecorder(context);
         await resetSession(context, buffers, async () => undefined);
         context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x'.repeat(MAX_EVENT_BYTES) });
-        expect(buffers.events).toEqual([]);
+        expect(buffers.entries).toEqual([]);
     });
 
     it('measures an Action in UTF-8 bytes', async () => {
@@ -426,39 +460,44 @@ describe('event buffering', () => {
             {},
             { name: 'fill', selector: '#a', text: '\u6f22'.repeat(MAX_EVENT_BYTES / 3 + 1) },
         );
-        expect(buffers.events).toEqual([]);
+        expect(buffers.entries).toEqual([]);
     });
 
-    it('delivers at most MAX_EVENTS_PER_POLL events per poll and keeps the rest', async () => {
+    it('delivers at most MAX_ENTRIES_PER_POLL entries per poll and keeps the rest', async () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         await resetSession(context, buffers, async () => undefined);
-        for (let i = 0; i < MAX_EVENTS_PER_POLL + 3; i++) {
+        for (let i = 0; i < MAX_ENTRIES_PER_POLL + 3; i++) {
             context.sinks[0].actionAdded({}, { name: 'click', selector: `#e${i}` });
         }
-        expect((await poll(context)).events).toHaveLength(MAX_EVENTS_PER_POLL);
-        const rest = (await poll(context)).events;
+        expect((await poll(context)).entries).toHaveLength(MAX_ENTRIES_PER_POLL);
+        const rest = eventsIn((await poll(context)).entries);
         expect(rest.map((e: any) => e.action.selector)).toEqual([
-            `#e${MAX_EVENTS_PER_POLL}`,
-            `#e${MAX_EVENTS_PER_POLL + 1}`,
-            `#e${MAX_EVENTS_PER_POLL + 2}`,
+            `#e${MAX_ENTRIES_PER_POLL}`,
+            `#e${MAX_ENTRIES_PER_POLL + 1}`,
+            `#e${MAX_ENTRIES_PER_POLL + 2}`,
         ]);
     });
 
-    it('keeps one poll reply within MAX_REPLY_EVENT_BYTES', async () => {
+    it('keeps one poll reply within MAX_REPLY_BYTES, Actions and commands together', async () => {
         const context = fakeRecorderContext([fakePage()]);
         const buffers = await ensureRecorder(context);
         await resetSession(context, buffers, async () => undefined);
         const text = 'x'.repeat(MAX_EVENT_BYTES - 100);
-        const count = Math.ceil(MAX_REPLY_EVENT_BYTES / text.length) + 2;
-        for (let i = 0; i < count; i++) context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text });
-        const first = (await poll(context)).events;
-        expect(Buffer.byteLength(JSON.stringify(first))).toBeLessThanOrEqual(MAX_REPLY_EVENT_BYTES);
+        const raw = 'y'.repeat(MAX_COMMAND_BYTES - 1000);
+        const count = Math.ceil(MAX_REPLY_BYTES / text.length) + 2;
+        for (let i = 0; i < count; i++) {
+            context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text });
+            context.bindings.__rfbCommand({}, { cmd: 'argument', raw });
+        }
+        const first = (await poll(context)).entries;
+        expect(Buffer.byteLength(JSON.stringify(first))).toBeLessThanOrEqual(MAX_REPLY_BYTES);
         expect(first.length).toBeGreaterThan(0);
-        expect(first.length).toBeLessThan(count);
+        expect(first.length).toBeLessThan(2 * count);
         let total = first.length;
-        while (buffers.events.length) total += (await poll(context)).events.length;
-        expect(total).toBe(count);
+        while (buffers.entries.length) total += (await poll(context)).entries.length;
+        expect(total).toBe(2 * count);
+        expect(buffers.commandCount).toBe(0);
     });
 });
 

@@ -676,7 +676,8 @@ export class PlaywrightServer {
         }
     }
 
-    recorderPoll = this.wrapping(recorder.recorderPoll);
+    // Polled every 200 ms for a whole session: info logging would flood playwright-log.txt.
+    recorderPoll = this.wrappingDebug(recorder.recorderPoll);
 
     recorderStop = this.wrapping(recorder.recorderStop);
 }

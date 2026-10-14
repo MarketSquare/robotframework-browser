@@ -27,6 +27,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from Browser.recorder import names
 from Browser.recorder.cells import cell
 from Browser.recorder.names import (
+    NAME_LIMIT,
     KnownKeywords,
     NameGuard,
     _embedded_matcher,
@@ -694,3 +695,11 @@ def test_name_guard_skips_a_non_matching_embedded_keyword():
         embedded=(("Open ${page} Page", _embedded_matcher("Open ${page} Page")),)
     )
     assert NameGuard(known).error("Close It") is None
+
+
+def test_names_up_to_the_limit_are_accepted_and_longer_ones_reported():
+    assert keyword_name_error("K" * NAME_LIMIT) is None
+    assert "200 characters" in keyword_name_error("K" * (NAME_LIMIT + 1))
+    assert argument_name_error("a" * NAME_LIMIT) is None
+    assert "200 characters" in argument_name_error("a" * (NAME_LIMIT + 1))
+    assert "200 characters" in argument_name_error("${" + "a" * (NAME_LIMIT + 1) + "}")

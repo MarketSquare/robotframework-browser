@@ -14,9 +14,10 @@ finished source and would have to be parsed back.
 - **A core keyword depends on a private Playwright API.** `_startRecording` and the shape of
   its event payloads are not public and have already changed twice: up to 1.62 an Action
   arrives wrapped in its `ActionInContext`, from 1.63 bare; 1.64 replaced `_enableRecorder`
-  with `_startRecording`. Every Playwright upgrade must
-  re-check the recorder. If the API is missing, the keyword fails with a clear message
-  instead of recording nothing.
+  with `_startRecording`. The toolbar also relies on the injected recorder ignoring events
+  from inside an `x-pw-glass` element. Every Playwright upgrade must re-check the recorder
+  (the checklist is in `Browser/recorder/README.md`). If the API is missing, the keyword
+  fails with a clear message instead of recording nothing.
 - **What Playwright does before the sink shapes what we get.** Consecutive keystrokes of a
   fill arrive as one `actionAdded` followed by `actionUpdated`, a double click as one
   `click` with `clickCount: 2`, and left clicks only after a 500 ms buffer. Popups,

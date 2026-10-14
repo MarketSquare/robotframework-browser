@@ -8,6 +8,7 @@ import pytest
 from Browser.keywords import recorder as module
 from Browser.keywords.recorder import SUITE_SOURCE, Recorder
 from Browser.recorder import session as session_module
+from Browser.recorder.names import KnownKeywords
 from Browser.recorder.target import FileTarget, LogTarget
 
 
@@ -46,9 +47,7 @@ def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
 
     monkeypatch.setattr(module, "run_session", fake_run)
     monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
-    monkeypatch.setattr(
-        module, "collect_known_keywords", lambda: module.KnownKeywords()
-    )
+    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
     recorder = Recorder.__new__(Recorder)
     recorder._client = lambda: object()
     text = recorder.record_keywords(str(tmp_path / "k.resource"), timedelta(seconds=3))
@@ -70,9 +69,7 @@ def test_idle_timeout_default_and_none(monkeypatch, tmp_path, given, expected):
         return "stop"
 
     monkeypatch.setattr(module, "run_session", fake_run)
-    monkeypatch.setattr(
-        module, "collect_known_keywords", lambda: module.KnownKeywords()
-    )
+    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
     recorder = Recorder.__new__(Recorder)
     recorder._client = lambda: object()
     recorder.record_keywords(str(tmp_path / "k.resource"), *given)
@@ -83,7 +80,7 @@ def test_record_keyword_rejects_a_shadowing_name(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module,
         "collect_known_keywords",
-        lambda: module.KnownKeywords(names=frozenset({"Click"})),
+        lambda: KnownKeywords(names=frozenset({"Click"})),
     )
     recorder = Recorder.__new__(Recorder)
     recorder._client = lambda: object()
@@ -92,7 +89,7 @@ def test_record_keyword_rejects_a_shadowing_name(monkeypatch, tmp_path):
 
 
 class _FakeStub:
-    def __init__(self, reply_json=""):
+    def __init__(self, reply_json="{}"):
         self.reply_json = reply_json
         self.bodies = []
         self.stopped = False
@@ -137,8 +134,9 @@ def test_poll_passes_the_headless_test_switch():
 
 
 @pytest.mark.parametrize("raw", ["", "not json", "[1]"])
-def test_poll_tolerates_empty_and_malformed_replies(raw):
-    assert _client(_FakeStub(raw)).poll({}, False) == {}
+def test_an_unreadable_reply_is_a_protocol_error(raw):
+    with pytest.raises(RuntimeError, match="unreadable reply"):
+        _client(_FakeStub(raw)).poll({}, False)
 
 
 def test_stop_calls_recorder_stop():
@@ -166,9 +164,7 @@ def _fake_run(session, client, idle_timeout=None):
 def _recorder(monkeypatch):
     monkeypatch.setattr(module, "run_session", _fake_run)
     monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
-    monkeypatch.setattr(
-        module, "collect_known_keywords", lambda: module.KnownKeywords()
-    )
+    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
     recorder = Recorder.__new__(Recorder)
     recorder._client = lambda: object()
     return recorder
@@ -181,9 +177,7 @@ def test_record_keyword_happy_path(monkeypatch, tmp_path):
         return "stop"
 
     monkeypatch.setattr(module, "run_session", run)
-    monkeypatch.setattr(
-        module, "collect_known_keywords", lambda: module.KnownKeywords()
-    )
+    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
     recorder = Recorder.__new__(Recorder)
     recorder._client = lambda: object()
     path = tmp_path / "k.resource"

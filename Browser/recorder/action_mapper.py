@@ -176,6 +176,10 @@ def _fixed(text: str) -> Value:
     return Value.literal(text, selectable=False)
 
 
+def _named(text: str) -> Value:
+    return Value([text], selectable=False, named=True)
+
+
 def _data(text: object) -> Value:
     return Value.literal("" if text is None else str(text))
 
@@ -206,7 +210,7 @@ class ActionMapper:
             return SignalEffect([], [Call("Switch Page", [_fixed("NEW")])])
         if name == "dialog":
             return SignalEffect(
-                [Call("Handle Future Dialogs", [_fixed("action=accept")])], []
+                [Call("Handle Future Dialogs", [_named("action=accept")])], []
             )
         if name == "download":
             variable = unique("download")
@@ -243,7 +247,7 @@ class ActionMapper:
             args.append(_fixed(button))
         args.extend(_fixed(m) for m in modifiers)
         if count > 1:
-            args.append(_fixed(f"clickCount={count}"))
+            args.append(_named(f"clickCount={count}"))
         return Call("Click With Options", args)
 
     def _map_fill(self, action: dict) -> Call:

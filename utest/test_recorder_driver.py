@@ -13,10 +13,12 @@
 # limitations under the License.
 from __future__ import annotations
 
+import math
+
 import pytest
 
-from Browser.recorder.driver import run_session
-from Browser.recorder.session import RecorderSession
+from Browser.recorder.driver import POLL_INTERVAL, run_session
+from Browser.recorder.session import SETTLE_SECONDS, RecorderSession
 
 from .test_recorder_session import FILL, Clock, FakeTarget
 
@@ -24,8 +26,8 @@ FAIL_ON_POLL = 2
 DRAIN_POLLS = 3
 BAD_REPLY_POLLS = 2
 IDLE_POLL_LIMIT = 6
-#: Polls (0.2 s each) until a New has settled and the keyword is recording.
-SETTLE_POLLS = 3
+#: Polls until a New has settled and the keyword is recording.
+SETTLE_POLLS = math.ceil(SETTLE_SECONDS / POLL_INTERVAL - 1e-9)
 
 
 class Client:
@@ -42,19 +44,17 @@ class Client:
             self.clock.now += self.step
         if self.replies:
             return self.replies.pop(0)
-        return {"mode": "recording", "pages": 1, "events": [], "commands": []}
+        return {"mode": "recording", "pages": 1, "entries": []}
 
     def stop(self):
         self.stopped = True
 
 
-def reply(events=(), commands=(), mode="recording", pages=1):
-    return {
-        "mode": mode,
-        "pages": pages,
-        "events": list(events),
-        "commands": list(commands),
-    }
+def reply(events=(), commands=(), mode="recording", pages=1, entries=None):
+    """A reply with ``events`` before ``commands``, unless ``entries`` are given."""
+    if entries is None:
+        entries = [*events, *({"command": c} for c in commands)]
+    return {"mode": mode, "pages": pages, "entries": list(entries)}
 
 
 def settling():
@@ -191,14 +191,11 @@ def test_stop_failure_does_not_mask_the_real_error():
 @pytest.mark.parametrize(
     "bad",
     [
-        None,
-        [],
-        "text",
-        {"mode": "recording", "pages": 1, "events": 5, "commands": "abc"},
-        {"mode": "recording", "pages": 1, "events": "abc", "commands": 5},
+        {"mode": "recording", "pages": 1, "entries": 5},
+        {"mode": "recording", "pages": 1, "entries": "abc"},
     ],
 )
-def test_malformed_reply_shapes_do_not_kill_the_loop(bad):
+def test_malformed_reply_fields_do_not_kill_the_loop(bad):
     s, clock = make()
     client = Client([bad, reply(commands=[{"cmd": "stop"}])], clock)
     assert run_session(s, client, clock=clock, sleep=lambda _: None) == "stop"
@@ -259,7 +256,7 @@ def test_junk_entries_do_not_count_as_activity():
     assert len(client.polls) <= IDLE_POLL_LIMIT
 
 
-def test_events_are_applied_before_commands_within_one_reply():
+def test_an_action_before_new_in_the_same_reply_stays_in_the_previous_keyword():
     s, clock = make()
     client = Client(
         [
@@ -331,3 +328,26 @@ def test_ignored_entries_are_logged_truncated(monkeypatch):
     run_session(s, client, clock=clock, sleep=lambda _: None)
     assert warnings
     assert max(len(w) for w in warnings) < 600
+
+
+def test_entries_apply_in_the_order_they_happened():
+    s, clock = make()
+    s.handle_command({"cmd": "new", "name": "K"})
+    clock.now += 1
+    s.tick()
+    s.handle_event("added", FILL)
+    client = Client(
+        [
+            reply(
+                entries=[
+                    {"command": {"cmd": "undo"}},
+                    {"event": "added", "action": {**FILL, "text": "Bob"}},
+                    {"command": {"cmd": "stop"}},
+                ]
+            )
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert s.text().count("Fill Text") == 1
+    assert "Bob" in s.text()

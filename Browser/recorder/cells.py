@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 
 # Robot's variable/list/dict/environment syntax, which must not be resolved in
 # a recorded literal.
@@ -23,10 +24,15 @@ VARIABLE_START = re.compile(r"[$@&%]\{")
 _MULTI_SPACE = re.compile(r"  +")
 # `txt=hello` in a Keyword Call is a named argument when `txt` is an argument name.
 _NAMED_ARGUMENT = re.compile(r"^([^\W\d]\w*)=")
+_SPACE = "${SPACE}"
 
 
 def cell(
-    value: str, *, at_start: bool = True, at_end: bool = True, data: bool = False
+    value: str,
+    *,
+    at_start: bool = True,
+    at_end: bool = True,
+    parameters: Collection[str] | None = (),
 ) -> str:
     """Escape a recorded value so Robot reads it back as that exact string.
 
@@ -51,9 +57,13 @@ def cell(
     by part, and only the real cell edges need the `#`, edge-space and empty
     rules.
 
-    ``data`` marks recorded data, as opposed to a selector or a fixed value
-    such as ``action=accept``: an identifier followed by ``=`` at its start
-    gets the ``=`` escaped, so ``txt=hello`` is not passed as a named argument.
+    ``parameters`` are the names the called keyword accepts as named
+    arguments: ``txt=hello`` gets its ``=`` escaped when ``txt`` is one of
+    them, so it is not passed as a named argument. ``None`` means the keyword
+    is unknown, and every identifier followed by ``=`` is escaped.
+
+    A ``[`` right after an emitted ``${SPACE}`` is escaped too: Robot would read
+    ``${SPACE}[x]`` as item access.
     """
     if value == "":
         return "${EMPTY}" if at_start and at_end else ""
@@ -65,13 +75,28 @@ def cell(
         for char in cell
     )
     cell = VARIABLE_START.sub(r"\\\g<0>", cell)
-    if at_start and data:
-        cell = _NAMED_ARGUMENT.sub(r"\1\\=", cell, count=1)
+    if at_start:
+        cell = _escape_named_argument(cell, parameters)
     if at_start and cell.startswith("#"):
         cell = "\\" + cell
-    cell = _MULTI_SPACE.sub(lambda m: "${SPACE}" * len(m.group()), cell)
+    cell = _MULTI_SPACE.sub(lambda m: _SPACE * len(m.group()), cell)
     if at_start and cell.startswith(" "):
-        cell = "${SPACE}" + cell[1:]
+        cell = _SPACE + cell[1:]
     if at_end and cell.endswith(" "):
-        cell = cell[:-1] + "${SPACE}"
-    return cell
+        cell = cell[:-1] + _SPACE
+    return cell.replace(_SPACE + "[", _SPACE + "\\[")
+
+
+def _escape_named_argument(cell: str, parameters: Collection[str] | None) -> str:
+    match = _NAMED_ARGUMENT.match(cell)
+    if match is None:
+        return cell
+    if parameters is not None and _normalized(match.group(1)) not in {
+        _normalized(name) for name in parameters
+    }:
+        return cell
+    return f"{match.group(1)}\\={cell[match.end() :]}"
+
+
+def _normalized(name: str) -> str:
+    return name.lower().replace("_", "")

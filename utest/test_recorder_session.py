@@ -935,3 +935,58 @@ def test_unreadable_target_on_new_is_a_toolbar_error(error):
     s.handle_command({"cmd": "new", "name": "Fresh"})
     assert s.toolbar_state()["error"].startswith("Could not read fake.resource")
     assert s.state == "idle"
+
+
+def test_the_state_names_the_last_answered_command():
+    s, _, _ = session()
+    assert s.toolbar_state()["answered"] is None
+    s.handle_command({"cmd": "new", "name": "", "id": "t1-1"})
+    state = s.toolbar_state()
+    assert (state["answered"], bool(state["error"])) == ("t1-1", True)
+    s.handle_command({"cmd": "new", "name": "K", "id": "t1-2"})
+    state = s.toolbar_state()
+    assert (state["answered"], state["error"]) == ("t1-2", None)
+
+
+@pytest.mark.parametrize("command_id", [None, 7, "x" * 65])
+def test_an_unusable_command_id_keeps_the_last_answer(command_id):
+    s, _, _ = session()
+    s.handle_command({"cmd": "undo", "id": "t1-1"})
+    s.handle_command({"cmd": "undo", "id": command_id})
+    assert s.toolbar_state()["answered"] == "t1-1"
+
+
+def test_a_command_while_starting_says_so():
+    s, _, _ = session()
+    s.handle_command({"cmd": "new", "name": "K"})
+    s.handle_command({"cmd": "undo"})
+    assert s.toolbar_state()["error"] == "Still starting the keyword - please wait."
+
+
+@pytest.mark.parametrize(
+    ("quiet_ms", "wait"), [(0, 0.8), (300, 0.5), (800, 0.0), (5000, 0.0), (0.5, 0.7995)]
+)
+def test_finish_waits_only_until_the_page_was_quiet_long_enough(quiet_ms, wait):
+    s, target, clock = recording()
+    s.handle_command({"cmd": "finish", "quietMs": quiet_ms})
+    clock.now += max(wait - 0.001, 0)
+    s.tick()
+    assert (s.state == "idle") is (wait == 0)
+    clock.now += 0.002
+    s.tick()
+    assert s.state == "idle"
+    assert target.finished
+
+
+@pytest.mark.parametrize(
+    "quiet_ms", [None, -1, True, "900", float("nan"), float("inf")]
+)
+def test_an_unusable_quiet_time_waits_the_whole_settle_time(quiet_ms):
+    s, _, clock = session()
+    s.handle_command({"cmd": "new", "name": "K", "quietMs": quiet_ms})
+    clock.now += SETTLE_SECONDS - 0.001
+    s.tick()
+    assert s.state == "idle"
+    clock.now += 0.001
+    s.tick()
+    assert s.state == "recording"

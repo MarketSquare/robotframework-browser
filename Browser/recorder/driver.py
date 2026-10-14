@@ -14,7 +14,7 @@
 """The poll loop of a Recording Session.
 
 Python is the only clock: each poll pushes the toolbar state down and drains
-Actions, signals and toolbar commands up. That keeps every end condition -
+Actions, signals and toolbar commands up, in the order they happened. That keeps every end condition -
 Stop, Playwright's Record button, closed pages, the idle timeout - in one place.
 """
 
@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from typing import Any, Protocol
+from typing import Protocol
 
 from robot.api import logger
 
@@ -34,7 +34,9 @@ LOGGED_REPR_LIMIT = 200
 
 
 class RecorderClient(Protocol):
-    def poll(self, state: dict, reset: bool) -> dict: ...
+    def poll(self, state: dict, reset: bool) -> dict:
+        """One poll reply; raises if Node's reply cannot be read."""
+        ...
 
     def stop(self) -> None: ...
 
@@ -51,7 +53,7 @@ def run_session(
     reset = True
     try:
         while True:
-            reply = _as_dict(client.poll(session.toolbar_state(), reset))
+            reply = client.poll(session.toolbar_state(), reset)
             reset = False
             session.set_picking(reply.get("picking") is True)
             if _apply(session, reply):
@@ -90,49 +92,54 @@ def run_session(
         logger.info(f"Recorded {len(names)} keyword(s): {', '.join(names) or '-'}")
 
 
-def _as_dict(reply: Any) -> dict:
-    """The reply crosses a process boundary; anything but a dict is an empty, healthy reply."""
-    return reply if isinstance(reply, dict) else {"mode": "recording", "pages": 1}
+def _entries(reply: dict) -> list[dict]:
+    """The well-formed entries of the reply, in the order they happened.
 
-
-def _entries(reply: dict, key: str) -> list[dict]:
-    """The well-formed (dict) entries of a list field; anything else is dropped."""
-    value = reply.get(key)
+    An entry is an Action or signal (``{"event": ..., "action": ...}``) or a
+    toolbar command (``{"command": {...}}``); anything else is dropped.
+    """
+    value = reply.get("entries")
     if not isinstance(value, list):
         return []
-    return [entry for entry in value if isinstance(entry, dict)]
+    return [
+        entry
+        for entry in value
+        if isinstance(entry, dict)
+        and ("command" not in entry or isinstance(entry["command"], dict))
+    ]
 
 
 def _drain_after_stop(session: RecorderSession, client: RecorderClient) -> None:
     try:
-        _apply(session, _as_dict(client.poll(session.toolbar_state(), False)))
+        _apply(session, client.poll(session.toolbar_state(), False))
     except Exception as error:
         logger.warn(f"recorder: final poll failed: {error!r}")
 
 
 def _apply(session: RecorderSession, reply: dict) -> bool:
-    """Apply one poll reply, events before commands.
+    """Apply one poll reply in order: an Undo clicked before an Action undoes
+    the Action before it, not that one.
 
-    True if it carried any well-formed Action or command: junk from the page
-    under test must not keep an idle session alive.
+    True if it carried any well-formed entry: junk from the page under test
+    must not keep an idle session alive.
     """
-    events = _entries(reply, "events")
-    commands = _entries(reply, "commands")
-    for event in events:
-        _safely(f"event {event!r}", _handle_event, session, event)
-    for command in commands:
-        _safely(f"command {command!r}", _handle_command, session, command)
-    return bool(events or commands)
+    entries = _entries(reply)
+    for entry in entries:
+        if "command" in entry:
+            _safely(f"command {entry['command']!r}", _handle_command, session, entry)
+        else:
+            _safely(f"event {entry!r}", _handle_event, session, entry)
+    return bool(entries)
 
 
-def _handle_event(session: RecorderSession, event: dict) -> None:
+def _handle_event(session: RecorderSession, entry: dict) -> None:
     session.handle_event(
-        str(event.get("event", "added")), dict(event.get("action") or {})
+        str(entry.get("event", "added")), dict(entry.get("action") or {})
     )
 
 
-def _handle_command(session: RecorderSession, command: dict) -> None:
-    session.handle_command(command)
+def _handle_command(session: RecorderSession, entry: dict) -> None:
+    session.handle_command(entry["command"])
 
 
 def _safely(

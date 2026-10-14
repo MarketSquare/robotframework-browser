@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 
 from .cells import cell
 from .names import argument_name_error, normalize_keyword_name
+from .parameters import KEYWORD_PARAMETERS
 
 TAG = "recorded"
 _INDENT = "    "
@@ -44,10 +45,13 @@ class Value:
 
     ``selectable`` is False for selectors and for structural values (buttons,
     operators, option strategies): those can never become Keyword Arguments.
+    ``named`` marks a deliberate named argument such as ``action=accept``; every
+    other value that looks like one is escaped.
     """
 
     segments: list[str | ArgRef]
     selectable: bool = True
+    named: bool = False
 
     @classmethod
     def literal(cls, text: str, selectable: bool = True) -> Value:
@@ -63,16 +67,27 @@ class Value:
     def references(self) -> set[str]:
         return {s.name for s in self.segments if isinstance(s, ArgRef)}
 
-    def render(self) -> str:
+    def render(self, parameters: frozenset[str] | None = frozenset()) -> str:
+        """The cell; ``parameters`` are those of the called keyword (see `cell`)."""
         if not self.segments:
             return "${EMPTY}"
         last = len(self.segments) - 1
-        return "".join(
-            f"${{{s.name}}}"
-            if isinstance(s, ArgRef)
-            else cell(s, at_start=i == 0, at_end=i == last, data=self.selectable)
-            for i, s in enumerate(self.segments)
-        )
+        rendered = []
+        for i, segment in enumerate(self.segments):
+            if isinstance(segment, ArgRef):
+                rendered.append(f"${{{segment.name}}}")
+                continue
+            text = cell(
+                segment,
+                at_start=i == 0,
+                at_end=i == last,
+                parameters=frozenset() if self.named else parameters,
+            )
+            # `${name}[0]` would be item access.
+            if i > 0 and isinstance(self.segments[i - 1], ArgRef) and text[:1] == "[":
+                text = "\\" + text
+            rendered.append(text)
+        return "".join(rendered)
 
 
 @dataclass
@@ -86,7 +101,8 @@ class Call:
     def render(self) -> str:
         cells = [f"${{{self.assign}}}="] if self.assign else []
         cells.append(self.keyword)
-        cells.extend(value.render() for value in self.args)
+        parameters = KEYWORD_PARAMETERS.get(self.keyword)
+        cells.extend(value.render(parameters) for value in self.args)
         return _INDENT.join(cells)
 
 
@@ -290,7 +306,9 @@ class RecordedKeyword:
         if argument is None:
             return new
         argument.default = text[len(prefix) : len(text) - len(suffix)]
-        return Value([*_nonempty(prefix), refs[0], *_nonempty(suffix)], old.selectable)
+        return Value(
+            [*_nonempty(prefix), refs[0], *_nonempty(suffix)], old.selectable, old.named
+        )
 
     def _drop_unused(self) -> None:
         used: set[str] = set()

@@ -14,12 +14,12 @@
 
 // The Robot Framework recorder toolbar, injected into the page under test.
 //
-// It lives in a *closed* shadow root. That is load-bearing, not cosmetic:
-// Playwright's injected recorder resolves an event's target with
-// `composedPath()`, which does not cross a closed shadow boundary, so every
-// interaction with this toolbar is attributed to the host element and can be
-// filtered out of the recording by tag name alone. An open shadow root, or
-// plain DOM, would record the user's own toolbar clicks as keyword calls.
+// The host sits in an `x-pw-glass` element: Playwright's injected recorder
+// ignores every event whose composed path holds one (`_ignoreOverlayEvent`),
+// so a toolbar click is never recorded, and never becomes the last Action
+// that Playwright attributes the next navigation to. Only `contextmenu` is not
+// checked there, so it is stopped before it reaches the recorder. The shadow
+// root is closed to keep the page's scripts out of the toolbar.
 
 (function () {
     function installToolbar(TAG) {
@@ -30,19 +30,21 @@
         const POSITION_KEY = 'rfb.toolbar.position';
         const COLLAPSED_KEY = 'rfb.toolbar.collapsed';
         const SIZE_KEY = 'rfb.toolbar.size';
+        // Mirrors NAME_LIMIT in Browser/recorder/names.py.
+        const NAME_LIMIT = 200;
 
         const read = (key, fallback) => {
             try {
                 const raw = window.sessionStorage.getItem(key);
                 return raw === null ? fallback : JSON.parse(raw);
-            } catch (e) {
+            } catch {
                 return fallback;
             }
         };
         const write = (key, value) => {
             try {
                 window.sessionStorage.setItem(key, JSON.stringify(value));
-            } catch (e) {
+            } catch {
                 /* storage disabled - layout simply does not persist */
             }
         };
@@ -60,8 +62,15 @@
             undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
             save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
         };
+        // Inline and important, so no page style hides them - such as the common
+        // `:not(:defined) { visibility: hidden }`, which matches both elements.
+        const glass = document.createElement('x-pw-glass');
+        glass.style.setProperty('display', 'contents', 'important');
         const host = document.createElement(TAG);
         host.style.cssText = 'position:fixed;z-index:2147483647;top:0;left:0';
+        host.style.setProperty('display', 'block', 'important');
+        host.style.setProperty('visibility', 'visible', 'important');
+        glass.appendChild(host);
         const root = host.attachShadow({ mode: 'closed' });
         root.innerHTML = `
     <style>
@@ -200,7 +209,7 @@
     <div class="modal" id="modal" hidden>
       <div class="dialog" id="nameDialog">
         <div>Name of the keyword to record</div>
-        <input id="nameInput" placeholder="e.g. Login As Admin" autocomplete="off">
+        <input id="nameInput" placeholder="e.g. Login As Admin" autocomplete="off" maxlength="${NAME_LIMIT}">
         <div class="err" id="modalErr" hidden></div>
         <div class="status" id="starting" hidden><span class="spinner"></span>Starting recording…</div>
         <div class="row">
@@ -213,7 +222,7 @@
       <div class="dialog">
         <div>Mark the part that becomes an argument (or leave it unmarked for the whole value)</div>
         <textarea id="argValue" rows="3" readonly></textarea>
-        <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off">
+        <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off" maxlength="${NAME_LIMIT + 3}">
         <label title="Without a default, every caller must pass a value"><input type="checkbox" id="argDefault" checked> Use the marked value as default</label>
         <div class="err" id="argErr" hidden></div>
         <div class="row"><button id="argCancel" title="Close without making an argument">Cancel</button><button class="primary" id="argOk" title="Make the marked part an argument of the keyword">Make argument</button></div>
@@ -222,11 +231,30 @@
 
         const $ = (id) => root.getElementById(id);
         const panel = $('panel');
-        const send = (command) => {
-            if (!window.__rfbCommand) return false;
-            window.__rfbCommand(command);
-            return true;
+
+        // -- page quiet time --------------------------------------------------- //
+        // Playwright holds a click and a navigation back for 500 ms. Each command
+        // says how long the page has had neither, so Python waits only as long
+        // as such an Action can still arrive.
+        const navigation = performance.getEntriesByType('navigation')[0];
+        let lastPageActivity = (navigation && navigation.domInteractive) || performance.now();
+        const notePageClick = (event) => {
+            if (event.isTrusted && !event.composedPath().includes(glass)) lastPageActivity = performance.now();
         };
+        const PAGE_CLICK_EVENTS = ['click', 'dblclick', 'auxclick'];
+        PAGE_CLICK_EVENTS.forEach((type) => window.addEventListener(type, notePageClick, true));
+
+        // Every command carries an id; the state names the last one Python
+        // answered (`answered`), with `error` saying whether it was refused.
+        const instance = Math.random().toString(36).slice(2, 10);
+        let sentCount = 0;
+        const send = (command) => {
+            if (!window.__rfbCommand) return null;
+            const id = `${instance}-${++sentCount}`;
+            window.__rfbCommand({ ...command, id, quietMs: Math.round(performance.now() - lastPageActivity) });
+            return id;
+        };
+        const answered = (id) => !!id && (window.__rfbToolbarState || {}).answered === id;
 
         // -- size -------------------------------------------------------------- //
         // A manually-chosen *width* is restored as an explicit inline style, which
@@ -242,17 +270,20 @@
         if (size && typeof size.width === 'number') {
             panel.style.width = `${size.width}px`;
         }
-        let resizing = false;
+        // The width before a press near the native resize grip (the bottom-right
+        // corner), or null. A button reaching into that corner is clicked, not
+        // resized, so only a changed width is kept.
+        let widthBeforeResize = null;
         panel.addEventListener('pointerdown', (event) => {
             const rect = panel.getBoundingClientRect();
-            // The native resize grip lives in the bottom-right corner; anywhere
-            // else on the panel is ordinary content, not a resize gesture.
-            resizing = rect.right - event.clientX <= 16 && rect.bottom - event.clientY <= 16;
+            const nearGrip = rect.right - event.clientX <= 16 && rect.bottom - event.clientY <= 16;
+            widthBeforeResize = nearGrip ? rect.width : null;
         });
         const endResize = () => {
-            if (!resizing) return;
-            resizing = false;
-            write(SIZE_KEY, { width: Math.round(panel.getBoundingClientRect().width) });
+            if (widthBeforeResize === null) return;
+            const width = panel.getBoundingClientRect().width;
+            if (width !== widthBeforeResize) write(SIZE_KEY, { width: Math.round(width) });
+            widthBeforeResize = null;
         };
         window.addEventListener('pointerup', endResize);
         window.addEventListener('pointercancel', endResize);
@@ -281,7 +312,7 @@
         let drag = null;
         $('head').addEventListener('pointerdown', (event) => {
             // The header doubles as the drag handle; its buttons must still click.
-            if (event.target.closest('button')) return;
+            if (event.button !== 0 || event.target.closest('button')) return;
             // Start from where the toolbar is drawn, so a drop past an edge
             // does not make the next drag wait until the pointer is back.
             position.x = shown.x;
@@ -297,6 +328,11 @@
         });
         $('head').addEventListener('pointerup', () => {
             if (drag) write(POSITION_KEY, position);
+            drag = null;
+        });
+        // A pointer the browser took away (touch gesture, pen) must end the drag
+        // too, or the next hover over the header would move the toolbar.
+        $('head').addEventListener('lostpointercapture', () => {
             drag = null;
         });
 
@@ -328,32 +364,27 @@
         });
 
         // -- commands -------------------------------------------------------- //
-        // A `new` command is only answered by a later poll, so the modal cannot be
-        // closed when it is sent: a rejected name (duplicate, unusable) must come
-        // back *inside* the panel, with what was typed still there to correct.
-        let pending = false;
-        // The state a poll renders right after the `new` was sent can still be
-        // the one from before it - including the error of an earlier rejected
-        // name. Only a state that differs from the one at send time, or the
-        // second render after it (by then the command has been processed), answers it.
-        let sentKey = null;
-        let rendersSinceSend = 0;
-        const setStarting = (starting) => {
-            pending = starting;
+        // A `new` command is only answered by a later poll, so the modal stays
+        // open until then: a rejected name (duplicate, unusable) comes back
+        // *inside* it, with what was typed still there to correct.
+        let nameSent = null;
+        const setStarting = (id) => {
+            nameSent = id;
+            const starting = id !== null;
             $('ok').disabled = starting;
             $('nameInput').disabled = starting;
             $('nameDialog').classList.toggle('starting', starting);
             $('starting').hidden = !starting;
         };
         const openModal = () => {
-            setStarting(false);
+            setStarting(null);
             $('nameInput').value = '';
             $('modalErr').hidden = true;
             $('modal').hidden = false;
             $('nameInput').focus();
         };
         const closeModal = () => {
-            setStarting(false);
+            setStarting(null);
             $('modal').hidden = true;
         };
         $('new').addEventListener('click', openModal);
@@ -362,21 +393,20 @@
         // A click on the glass pane cancels, as in any modal - but not once the
         // name was sent.
         $('modal').addEventListener('click', (event) => {
-            if (event.target === $('modal') && !pending) closeModal();
+            if (event.target === $('modal') && nameSent === null) closeModal();
         });
         $('ok').addEventListener('click', () => {
-            if (pending) return;
+            if (nameSent !== null) return;
             const name = $('nameInput').value.trim();
             if (!name) {
                 $('modalErr').textContent = 'Keyword name must not be empty.';
                 $('modalErr').hidden = false;
                 return;
             }
-            if (!send({ cmd: 'new', name })) return;
+            const id = send({ cmd: 'new', name });
+            if (id === null) return;
             $('modalErr').hidden = true;
-            setStarting(true);
-            sentKey = lastKey;
-            rendersSinceSend = 0;
+            setStarting(id);
         });
         $('stop').addEventListener('click', () => send({ cmd: 'stop' }));
         $('undo').addEventListener('click', () => send({ cmd: 'undo' }));
@@ -388,6 +418,9 @@
         // `raw` is the literal cell text the offsets refer to (the rendered text
         // differs for escapes); Python rejects the command if it changed meanwhile.
         let argTarget = null;
+        // Like the name modal, the dialog stays open until Python answered, so
+        // a rejected name is shown here and can be corrected.
+        let argSent = null;
         // While Python is finishing a keyword nothing may be sent.
         const isPending = () => !!(window.__rfbToolbarState && window.__rfbToolbarState.pending);
         // The hint is owned by the toolbar itself (render never touches it except
@@ -413,9 +446,6 @@
             $('argModal').hidden = false;
             $('argValue').focus();
         };
-        // Like the name modal, the dialog stays open until Python answered, so
-        // a rejected name is shown here and can be corrected.
-        let argSent = null;
         const closeArgModal = () => {
             $('argModal').hidden = true;
             argTarget = null;
@@ -429,6 +459,8 @@
         // checks again and also rejects built-in and taken names.
         const argumentNameError = (name) => {
             if (!name) return 'Argument name must not be empty.';
+            if (name.replace(/^\$\{(.*)\}$/, '$1').length > NAME_LIMIT)
+                return `Argument name must not be longer than ${NAME_LIMIT} characters.`;
             const plain = /^[A-Za-z_][A-Za-z0-9_]*$/;
             if (name.startsWith('${')) {
                 const inner = /^\$\{(.*)\}$/.exec(name);
@@ -470,28 +502,27 @@
                 start = 0;
                 end = points(argTarget.raw);
             }
-            if (
-                !send({
-                    cmd: 'argument',
-                    call: argTarget.call,
-                    value: argTarget.value,
-                    start,
-                    end,
-                    name,
-                    useDefault: $('argDefault').checked,
-                    raw: argTarget.raw,
-                })
-            )
-                return;
-            argSent = { key: lastKey, renders: 0 };
-            $('argOk').disabled = true;
+            argSent = send({
+                cmd: 'argument',
+                call: argTarget.call,
+                value: argTarget.value,
+                start,
+                end,
+                name,
+                useDefault: $('argDefault').checked,
+                raw: argTarget.raw,
+            });
+            $('argOk').disabled = argSent !== null;
         });
-        // -- keyboard isolation ---------------------------------------------- //
+        // -- event isolation ------------------------------------------------- //
         // Keyboard events are composed, so typing in the toolbar would reach the
         // page's key handlers (shortcuts, typeahead) retargeted to the host. A
         // capture listener on window runs before any listener of the document
         // and stops them there; the text still gets typed (default action), and
         // the toolbar's own keys are handled here, as its inputs no longer see them.
+        // `contextmenu` is stopped the same way: Playwright's recorder would
+        // record a right click on the toolbar, as it skips `x-pw-glass` for every
+        // other event but not for this one.
         const toolbarKeys = {
             nameInput: (event) => {
                 if (event.key === 'Enter') $('ok').click();
@@ -503,7 +534,7 @@
         // Escape closes the open dialog wherever the focus is inside the toolbar.
         const escapeDialog = () => {
             if (!$('argModal').hidden) closeArgModal();
-            else if (!$('modal').hidden && !pending) closeModal();
+            else if (!$('modal').hidden && nameSent === null) closeModal();
         };
         const toolbarInput = {
             argName: () => {
@@ -511,7 +542,8 @@
                 showArgError(name ? argumentNameError(name) : '');
             },
         };
-        const KEYBOARD_EVENTS = [
+        const ISOLATED_EVENTS = [
+            'contextmenu',
             'keydown',
             'keyup',
             'keypress',
@@ -524,8 +556,9 @@
             'copy',
             'cut',
         ];
-        const isolateKeyboard = (event) => {
-            if (event.target !== host) return;
+        const fromToolbar = (event) => event.composedPath().includes(glass);
+        const isolate = (event) => {
+            if (!fromToolbar(event)) return;
             event.stopImmediatePropagation();
             if (event.type === 'keydown' && event.key === 'Escape') {
                 escapeDialog();
@@ -536,7 +569,7 @@
             const handler = handlers && focused ? handlers[focused.id] : undefined;
             if (handler) handler(event);
         };
-        KEYBOARD_EVENTS.forEach((type) => window.addEventListener(type, isolateKeyboard, true));
+        ISOLATED_EVENTS.forEach((type) => window.addEventListener(type, isolate, true));
         const currentOffer = () => (window.__rfbToolbarState && window.__rfbToolbarState.offer) || null;
         $('offerApply').addEventListener('click', () => {
             const offer = currentOffer();
@@ -553,21 +586,18 @@
         });
 
         // -- render ---------------------------------------------------------- //
-        // Polling re-sends the state every 200 ms. Rebuilding the DOM that often
-        // would swallow clicks straddling a poll, reset the scroll position and
-        // the offer's checkboxes, so an unchanged state renders nothing.
-        let lastKey = null;
+        // Node sends a state only when it changed, so every render rebuilds.
         let offerKey = null;
         let offerChecked = {};
         window.__rfbToolbarRender = (state) => {
             if (!state) return;
             window.__rfbToolbarState = state;
-            const key = JSON.stringify(state);
-            if (key !== lastKey) {
-                lastKey = key;
-                renderBody(state);
-            }
-            finishRender(state, key);
+            renderBody(state);
+            // The panel's content-driven width can change with every render (a
+            // longer Keyword Call just got added); re-clamp so growth never pushes it
+            // past the right edge of the viewport.
+            place();
+            answerDialogs(state);
         };
         const renderBody = (state) => {
             setHint('');
@@ -669,26 +699,20 @@
             $('err').textContent = state.error || '';
             $('err').hidden = !state.error;
         };
-        const finishRender = (state, key) => {
-            const recording = state.state === 'recording';
-            // The panel's content-driven width can change with every render (a
-            // longer Keyword Call just got added); re-clamp so growth never pushes it
-            // past the right edge of the viewport.
-            place();
-            if (pending && (key !== sentKey || ++rendersSinceSend >= 2)) {
+        const answerDialogs = (state) => {
+            if (answered(nameSent)) {
                 if (state.error) {
-                    // Rejected: keep the panel and the typed name, let them retry.
+                    // Rejected: keep the dialog and the typed name, let them retry.
                     $('modalErr').textContent = state.error;
                     $('modalErr').hidden = false;
-                    setStarting(false);
+                    setStarting(null);
                     $('nameInput').focus();
-                } else if (recording) {
-                    // Accepted only once the session actually reports recording;
-                    // `error === null` alone can still be the pre-command state.
+                } else if (state.state === 'recording' || !state.pending) {
+                    // Accepted: the dialog shows "Starting" until the keyword records.
                     closeModal();
                 }
             }
-            if (argSent && (key !== argSent.key || ++argSent.renders >= 2)) {
+            if (answered(argSent)) {
                 if (state.error) {
                     showArgError(state.error);
                     argSent = null;
@@ -705,14 +729,15 @@
             // it here is enough - no "stay away" flag is needed.
             window.removeEventListener('pointerup', endResize);
             window.removeEventListener('pointercancel', endResize);
-            KEYBOARD_EVENTS.forEach((type) => window.removeEventListener(type, isolateKeyboard, true));
-            host.remove();
+            ISOLATED_EVENTS.forEach((type) => window.removeEventListener(type, isolate, true));
+            PAGE_CLICK_EVENTS.forEach((type) => window.removeEventListener(type, notePageClick, true));
+            glass.remove();
             delete window.__rfbToolbarRender;
             delete window.__rfbToolbarState;
             delete window.__rfbToolbarRemove;
         };
 
-        const attach = () => document.body && document.body.appendChild(host);
+        const attach = () => document.body && document.body.appendChild(glass);
         if (document.body) attach();
         else document.addEventListener('DOMContentLoaded', attach);
     }
