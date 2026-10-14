@@ -102,8 +102,9 @@
                display: flex; align-items: center; justify-content: center; }
       .dialog { background: #1e1e1e; color: #eee; padding: 16px; border-radius: 6px;
                 width: 320px; display: flex; flex-direction: column; gap: 10px; }
-      input { padding: 6px 8px; border-radius: 4px; border: 1px solid #555;
-              background: #141414; color: #eee; }
+      input, textarea { padding: 6px 8px; border-radius: 4px; border: 1px solid #555;
+              background: #141414; color: #eee; font: inherit; }
+      textarea { resize: vertical; white-space: pre; }
     </style>
     <div class="panel" id="panel">
       <div class="head" id="head">
@@ -150,7 +151,7 @@
     <div class="modal" id="argModal" hidden>
       <div class="dialog">
         <div>Mark the part that becomes an argument (or leave it unmarked for the whole value)</div>
-        <input id="argValue" readonly>
+        <textarea id="argValue" rows="3" readonly></textarea>
         <input id="argName" placeholder="argument name, e.g. email" autocomplete="off">
         <div class="err" id="argErr" hidden></div>
         <div class="row"><button id="argCancel">Cancel</button><button class="primary" id="argOk">Make argument</button></div>
@@ -326,8 +327,17 @@
             const input = $('argValue');
             // Selection offsets are UTF-16 code units; Python indexes by code point.
             const points = (text) => Array.from(text).length;
-            const from = input.selectionStart ?? 0;
-            const to = input.selectionEnd ?? 0;
+            // A textarea reads "\r\n" and a lone "\r" as "\n"; map its offsets back to the raw value.
+            const rawOffset = (offset) => {
+                const raw = argTarget.raw;
+                let index = 0;
+                for (let unit = 0; unit < offset && index < raw.length; unit++) {
+                    index += raw[index] === '\r' && raw[index + 1] === '\n' ? 2 : 1;
+                }
+                return index;
+            };
+            const from = rawOffset(input.selectionStart ?? 0);
+            const to = rawOffset(input.selectionEnd ?? 0);
             let start = points(argTarget.raw.slice(0, from));
             let end = points(argTarget.raw.slice(0, to));
             if (from === to) {

@@ -107,6 +107,27 @@ Keyword Arguments With Partial Value And Default
     Fill Parametrised    number=7
     Get Property    id=input_name    value    ==    id-7
 
+Part Of A Multi-Line Value Becomes An Argument
+    Open The Toolbar Shadow Root For Inspection
+    ${promise} =    Promise To    Record Keyword    Comment On Lines    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    textarea[name="comment"]    first line\nsecond line
+    Wait Until Calls    1
+    # Untrusted clicks and values, so the recorder does not record the toolbar itself.
+    Evaluate JavaScript    rfb-recorder-toolbar >> .cell.pick >> nth=-1    (element) => element.click()
+    Evaluate JavaScript
+    ...    rfb-recorder-toolbar >> #argValue
+    ...    (element) => { const at = element.value.indexOf('second'); element.setSelectionRange(at, at + 6); }
+    Evaluate JavaScript    rfb-recorder-toolbar >> #argName    (element) => { element.value = 'which'; }
+    Evaluate JavaScript    rfb-recorder-toolbar >> #argOk    (element) => element.click()
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${which}=second
+    Should Contain    ${file}    first line\\n\${which} line
+    Should Not Contain    ${file}    Make argument
+
 Popup Becomes Switch Page New
     Go To    ${CREATE_POPUPS_URL}
     ${promise} =    Promise To    Record Keyword    Open Popup    ${RESOURCE}
