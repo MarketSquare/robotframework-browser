@@ -29,6 +29,7 @@ Two pure, side-effect-free pieces (unit tested without a browser):
 
 from __future__ import annotations
 
+import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -79,30 +80,94 @@ def _split_parts(selector: str) -> list[str]:
     return [p.strip() for p in parts if p.strip()]
 
 
-# `internal:text="Log in"i` - the quoted body plus a case-sensitivity flag.
-# Only a body without quotes, backslashes or edge whitespace can be rewritten
-# to the public `text=` engine without changing what it matches.
-_TEXT_RE = re.compile(r'^internal:text="([^"\\]*)"([is])$')
+# A text body: a JSON-quoted string with an optional flag, or a regex.
+_QUOTED_TEXT_RE = re.compile(r'^("(?:[^"\\]|\\.)*")([is]?)$')
+_REGEX_TEXT_RE = re.compile(r"^/(.+)/([a-z]*)$", re.DOTALL)
+_REGEX_SPECIALS = re.compile(r"[\\^$.*+?()[\]{}|/]")
 
 
-def _translate_text(body: str, flag: str) -> str | None:
+def _text_pattern(text: str) -> str:
+    """A JS regex source for ``text`` that tolerates the whitespace Playwright
+    normalizes away: Playwright compares ``text`` with the element's text after
+    collapsing whitespace, a regex sees the text as it is."""
+    escaped = _REGEX_SPECIALS.sub(lambda m: "\\" + m.group(), text)
+    return r"\s+".join(escaped.split(" "))
+
+
+def _exact_pattern(text: str) -> str:
+    return r"^\s*" + _text_pattern(text) + r"\s*$"
+
+
+@dataclass(frozen=True)
+class _TextBody:
+    """A parsed text selector body: a literal, exact or not, or a regex."""
+
+    value: str
+    exact: bool = False
+    regex_flags: str | None = None
+
+
+def _parse_text(body: str) -> _TextBody | None:
+    if regex := _REGEX_TEXT_RE.match(body):
+        return _TextBody(regex.group(1), regex_flags=regex.group(2))
+    quoted = _QUOTED_TEXT_RE.match(body)
+    if quoted is None:
+        return None
+    try:
+        text = json.loads(quoted.group(1))
+    except ValueError:
+        return None
+    if not isinstance(text, str) or not text or text != " ".join(text.split()):
+        return None
+    # Like Playwright: a quoted body without the `i` flag is exact.
+    return _TextBody(text, exact=quoted.group(2) != "i")
+
+
+def _translate_text(body: str) -> str | None:
     """Public `text=` equivalent of an `internal:text=` body, or None.
 
-    Verified against Playwright 1.63 (identical match sets):
-    `internal:text="X"i` == `text=X` (substring, case-insensitive) and
-    `internal:text="X"s` == `text="X"` (exact, case-sensitive).
-
-    Note that `text="X"i` is *not* valid - the public text engine has no `i`
-    flag - which is why this cannot be a plain prefix swap.
+    Verified against Playwright 1.64 (`createTextMatcher`): the internal engine
+    compares the element's whole normalized text - exactly with `s`, as a
+    case-insensitive substring with `i` - and the public `text=X` does the
+    latter too. The public `text="X"` compares only the element's own text
+    nodes, so an exact text becomes an anchored regex, which matches the same
+    elements or, if the text contains characters Playwright strips, fewer.
     """
-    if not body or body != body.strip():
+    parsed = _parse_text(body)
+    if parsed is None:
         return None
-    if flag == "s":
-        return f'text="{body}"'
-    # An unquoted body starting with "/" would be parsed as a regex.
-    if body.startswith("/"):
+    if parsed.regex_flags is not None:
+        return f"text=/{parsed.value}/{parsed.regex_flags}"
+    if parsed.exact:
+        return f"text=/{_exact_pattern(parsed.value)}/"
+    # Unquoted, the public engine reads a leading quote or slash as syntax and
+    # `>>` as the next part of the chain.
+    if parsed.value[0] in "\"'/" or ">>" in parsed.value:
+        return f"text=/{_text_pattern(parsed.value)}/i"
+    return f"text={parsed.value}"
+
+
+def _css_string(text: str) -> str:
+    return '"' + text.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _translate_has_text(body: str) -> str | None:
+    """Public pseudo-class for an `internal:has-text=` filter, or None.
+
+    The internal engine keeps the element whose whole text matches. The public
+    `:has-text("X")` is the same for a substring; for an exact text or a regex,
+    `:text-matches()` additionally requires that no child element matches on
+    its own, so it finds the same element or none, never another.
+    """
+    parsed = _parse_text(body)
+    if parsed is None:
         return None
-    return f"text={body}"
+    if parsed.regex_flags is not None:
+        flags = f", {_css_string(parsed.regex_flags)}" if parsed.regex_flags else ""
+        return f":text-matches({_css_string(parsed.value)}{flags})"
+    if parsed.exact:
+        return f":text-matches({_css_string(_exact_pattern(parsed.value))})"
+    return f":has-text({_css_string(parsed.value)})"
 
 
 # `internal:attr=[placeholder="Email"i]` - one attribute, a quoted value and a flag.
@@ -129,12 +194,51 @@ def _translate_attribute(body: str) -> str | None:
     return f"[{name}*={value}i]"
 
 
+# One `[attribute=value]` of a role body: a quoted value with an optional flag,
+# a regular expression, or a bare word (`level=2`, `pressed=true`, `include-hidden`).
+_ROLE_ATTRIBUTE_RE = re.compile(
+    r'\[([a-z-]+)(?:=(?:("(?:[^"\\]|\\.)*")\s*([isIS]?)|(/(?:[^/\\]|\\.)+/[a-z]*)|([\w.-]+)))?\]'
+)
+_ROLE_NAME_RE = re.compile(r"[a-z]+")
+
+
+def _translate_role(body: str) -> str | None:
+    """Public `role=` equivalent of an `internal:role=` body, or None.
+
+    Verified against Playwright 1.64 (`queryRole`): the engines differ in one
+    point only - the internal one matches a `name` or `description` without
+    the `s` flag as a substring (`*=`), the public one exactly. So
+    `[name="Save"i]` becomes `[name*="Save"i]`; everything else is kept.
+    """
+    role = _ROLE_NAME_RE.match(body)
+    if role is None:
+        return None
+    out = [role.group()]
+    position = role.end()
+    while position < len(body):
+        attribute = _ROLE_ATTRIBUTE_RE.match(body, position)
+        if attribute is None:
+            return None
+        name, quoted, flag = attribute.group(1, 2, 3)
+        if (
+            quoted is not None
+            and name in ("name", "description")
+            and flag.lower() == "i"
+        ):
+            out.append(f"[{name}*={quoted}i]")
+        else:
+            out.append(attribute.group())
+        position = attribute.end()
+    return "role=" + "".join(out)
+
+
 def _translate_part(part: str) -> str:
-    # `role` has a public engine with identical body syntax.
     if part.startswith("internal:role="):
-        return "role=" + part[len("internal:role=") :]
-    if match := _TEXT_RE.match(part):
-        return _translate_text(*match.groups()) or part
+        return _translate_role(part[len("internal:role=") :]) or part
+    if part.startswith("internal:text="):
+        return _translate_text(part[len("internal:text=") :]) or part
+    if part.startswith("internal:has-text="):
+        return _translate_has_text(part[len("internal:has-text=") :]) or part
     for engine in ("internal:testid=", "internal:attr="):
         if part.startswith(engine):
             return _translate_attribute(part[len(engine) :]) or part
@@ -149,15 +253,42 @@ def to_browser_selector(selector: str) -> str:
         return selector
     parts = _split_parts(selector)
     translated = [_translate_part(p) for p in parts]
-    # Rebuild, turning frame boundaries into Browser's ">>>" piercing separator.
+    # Rebuild, turning frame boundaries into Browser's ">>>" piercing separator
+    # and attaching a text filter to the part it filters.
     out: list[str] = []
     for part in translated:
         if part == _ENTER_FRAME:
             if out:
                 out[-1] = out[-1] + " >>>"
-            continue
-        out.append(part)
+        elif not part.startswith(":"):
+            out.append(part)
+        elif out and _is_plain_css(out[-1]):
+            out[-1] += part
+        else:
+            out.append(":scope" + part)
     return " >> ".join(out).replace(" >>> >> ", " >>> ")
+
+
+# A css part a pseudo-class can be appended to: no engine prefix, no list.
+_ENGINE_PREFIX_RE = re.compile(r"^[\w-]+=")
+
+
+def _is_plain_css(part: str) -> bool:
+    return (
+        not part.endswith(">>>")
+        and (part.startswith("css=") or not _ENGINE_PREFIX_RE.match(part))
+        and "," not in part
+        and not part.startswith(("//", ".."))
+    )
+
+
+def internal_engines(selector: str) -> list[str]:
+    """The Playwright-internal engines a translated selector still uses."""
+    return [
+        part.split("=", 1)[0]
+        for part in _split_parts(selector.replace(">>>", ">>"))
+        if part.startswith("internal:")
+    ]
 
 
 # --------------------------------------------------------------------------- #
@@ -202,6 +333,22 @@ def _named(text: str) -> Value:
 
 def _data(text: object) -> Value:
     return Value.literal("" if text is None else str(text))
+
+
+def internal_selector_notice(action: dict) -> str | None:
+    """The toolbar notice for an Action whose selector stays Playwright-internal."""
+    selector = action.get("selector")
+    engines = (
+        internal_engines(to_browser_selector(selector))
+        if isinstance(selector, str)
+        else []
+    )
+    if not engines:
+        return None
+    return (
+        f"The selector uses Playwright-internal syntax ({', '.join(dict.fromkeys(engines))}), "
+        "which has no public equivalent and may break with a Playwright upgrade."
+    )
 
 
 class ActionMapper:

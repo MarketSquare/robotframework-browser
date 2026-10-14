@@ -7,6 +7,7 @@ import pytest
 from Browser.recorder.action_mapper import (
     SILENT_ACTIONS,
     ActionMapper,
+    internal_selector_notice,
     to_browser_selector,
 )
 from Browser.recorder.model import RecordedKeyword
@@ -20,17 +21,45 @@ def rendered(action: dict) -> str | None:
 @pytest.mark.parametrize(
     ("internal", "expected"),
     [
-        ('internal:role=button[name="Submit"i]', 'role=button[name="Submit"i]'),
-        # The public text engine has no `i` flag, so this is not a prefix swap.
-        # Equivalences verified against a live Playwright 1.62 page.
+        # The internal role engine matches a name without `s` as a substring;
+        # the public one needs `*=` for that. Verified against Playwright 1.64.
+        ('internal:role=button[name="Submit"i]', 'role=button[name*="Submit"i]'),
+        ('internal:role=button[name="Submit"s]', 'role=button[name="Submit"s]'),
+        ('internal:role=button[name="Submit"]', 'role=button[name="Submit"]'),
+        ("internal:role=button[name=/^Sub/i]", "role=button[name=/^Sub/i]"),
+        (
+            'internal:role=heading[name="A ] \\" b"i][level=2]',
+            'role=heading[name*="A ] \\" b"i][level=2]',
+        ),
+        (
+            'internal:role=checkbox[checked=true][include-hidden][description="d"I]',
+            'role=checkbox[checked=true][include-hidden][description*="d"i]',
+        ),
+        ("internal:role=button[name=unclosed", "internal:role=button[name=unclosed"),
+        # `i` is a case-insensitive substring of the whole text, which public
+        # `text=X` is too; an exact text becomes an anchored regex, because the
+        # public `text="X"` looks at the element's own text nodes only.
+        # Verified against Playwright 1.64 by the "Translated Selectors Match
+        # Like Playwright" acceptance test.
         ('internal:text="Log in"i', "text=Log in"),
-        ('internal:text="Log in"s', 'text="Log in"'),
-        # Bodies that cannot be rewritten safely stay as the internal engine,
-        # which `page.locator()` accepts verbatim.
+        ('internal:text="Log in"s', r"text=/^\s*Log\s+in\s*$/"),
+        ('internal:text="Log in"', r"text=/^\s*Log\s+in\s*$/"),
+        ('internal:text="/re/"i', r"text=/\/re\//i"),
+        ('internal:text="a >> b"i', r"text=/a\s+>>\s+b/i"),
+        ('internal:text="say \\"hi\\" (1.5)"i', 'text=say "hi" (1.5)'),
+        ('internal:text="\\"quoted\\""i', r'text=/"quoted"/i'),
+        ("internal:text=/^Log in$/i", "text=/^Log in$/i"),
         ('internal:text=" pad "i', 'internal:text=" pad "i'),
-        ('internal:text="/re/"i', 'internal:text="/re/"i'),
-        ('internal:text="say \\"hi\\""i', 'internal:text="say \\"hi\\""i'),
-        ("internal:text=/^Log in$/i", "internal:text=/^Log in$/i"),
+        # A text filter is attached to the css part it filters.
+        ('div >> internal:has-text="Twin"i', 'div:has-text("Twin")'),
+        ("div >> internal:has-text=/^Twin$/", 'div:text-matches("^Twin$")'),
+        ("div >> internal:has-text=/^a\\/b$/i", 'div:text-matches("^a\\\\/b$", "i")'),
+        ('div >> internal:has-text="Twin"s', r'div:text-matches("^\\s*Twin\\s*$")'),
+        (
+            'internal:role=paragraph >> internal:has-text="Card one"i >> i',
+            'role=paragraph >> :scope:has-text("Card one") >> i',
+        ),
+        # No public equivalent: kept, and the toolbar says so.
         ('internal:label="Email"i', 'internal:label="Email"i'),
         # `s` is exact and case-sensitive (CSS has no `s` flag), `i` is a
         # case-insensitive substring. Verified against Playwright 1.64.
@@ -42,7 +71,7 @@ def rendered(action: dict) -> str | None:
         ("internal:attr=[alt=/re/]", "internal:attr=[alt=/re/]"),
         (
             'internal:testid=[data-testid="main"s] >> internal:role=button[name="Open Report"i]',
-            '[data-testid="main"] >> role=button[name="Open Report"i]',
+            '[data-testid="main"] >> role=button[name*="Open Report"i]',
         ),
         ("css=.foo", "css=.foo"),
         ("//button", "//button"),
@@ -62,6 +91,23 @@ def test_to_browser_selector(internal, expected):
     assert to_browser_selector(internal) == expected
 
 
+@pytest.mark.parametrize(
+    ("selector", "engines"),
+    [
+        ('internal:label="Map"i', ["internal:label"]),
+        ('internal:text="Map"i', []),
+        ('#frame >>> internal:label="Map"i >> internal:label="x"i', ["internal:label"]),
+    ],
+)
+def test_internal_selector_notice_names_the_engines_left(selector, engines):
+    notice = internal_selector_notice({"name": "click", "selector": selector})
+    if not engines:
+        assert notice is None
+    else:
+        assert f"({', '.join(engines)})" in notice
+    assert internal_selector_notice({"name": "navigate", "url": "x"}) is None
+
+
 def test_map_click_plain():
     action = {
         "name": "click",
@@ -70,7 +116,7 @@ def test_map_click_plain():
         "clickCount": 1,
         "modifiers": 0,
     }
-    assert rendered(action) == 'Click    role=button[name="OK"i]'
+    assert rendered(action) == 'Click    role=button[name*="OK"i]'
 
 
 def test_map_double_click():

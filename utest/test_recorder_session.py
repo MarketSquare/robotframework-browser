@@ -990,3 +990,14 @@ def test_an_unusable_quiet_time_waits_the_whole_settle_time(quiet_ms):
     clock.now += 0.001
     s.tick()
     assert s.state == "recording"
+
+
+def test_a_selector_left_internal_is_recorded_with_a_notice():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event(
+        "added",
+        {"name": "click", "selector": 'internal:label="Map"i', "button": "left"},
+    )
+    assert "internal:label" in s.toolbar_state()["notice"]
+    assert 'Click    internal:label="Map"i' in target.saved[-1]

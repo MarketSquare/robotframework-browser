@@ -25,7 +25,7 @@ import math
 import time
 from collections.abc import Callable
 
-from .action_mapper import SILENT_ACTIONS, ActionMapper
+from .action_mapper import SILENT_ACTIONS, ActionMapper, internal_selector_notice
 from .model import RecordedKeyword
 from .names import (
     KnownKeywords,
@@ -205,12 +205,14 @@ class RecorderSession:
                 return
             if not self._skipped and keyword.update_last(call):
                 self._offer = None
+                self._notice = internal_selector_notice(action) or self._notice
                 self._save()
                 return
         keyword.add(call)
         self._offer = None
         self._undone = False
         self._skipped = False
+        self._notice = internal_selector_notice(action) or self._notice
         self._save()
 
     # -- commands ---------------------------------------------------------- #

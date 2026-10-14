@@ -88,21 +88,47 @@ of the signal values is selectable.
 
 ## Selector mapping
 
+Playwright's selector generator uses eight engines; each is rewritten into public syntax
+with the same meaning (`action_mapper.to_browser_selector`), except `internal:label`.
+
 | Playwright internal | Browser selector |
 |---------------------|------------------|
-| `internal:role=button[name="Submit"i]` | `role=button[name="Submit"i]` |
-| `internal:text="Log in"i` | `text=Log in` |
-| `internal:text="Log in"s` | `text="Log in"` |
+| `internal:role=button[name="Submit"i]` (case-insensitive substring) | `role=button[name*="Submit"i]` |
+| `internal:role=button[name="Submit"s]` (exact) | `role=button[name="Submit"s]` |
+| `internal:text="Log in"i` (case-insensitive substring) | `text=Log in`, or `text=/Log\s+in/i` when the text starts with a quote or slash or holds `>>` |
+| `internal:text="Log in"s` (exact, whole text) | `text=/^\s*Log\s+in\s*$/` |
+| `div >> internal:has-text="Twin"i` | `div:has-text("Twin")` |
+| `div >> internal:has-text=/^Twin$/` | `div:text-matches("^Twin$")` |
 | `internal:testid=[data-testid="x"s]` (exact) | `[data-testid="x"]` |
 | `internal:attr=[placeholder="Email"i]` (case-insensitive substring) | `[placeholder*="Email"i]` |
 | `... >> internal:control=enter-frame >> ...` | `... >>> ...` |
-| anything else | unchanged (Browser resolves it with `page.locator`) |
+| `css`, `nth` | unchanged |
+| `internal:label="Map"i` | unchanged, with a toolbar notice |
 
-An `internal:attr` / `internal:testid` value without a flag or with `s` is matched exactly,
-with `i` as a case-insensitive substring (Playwright's `createAttributeMatcher`); CSS has no
-`s` flag. An empty `i` value or a regular expression is passed through.
-`internal:text` is rewritten only when the body has no quotes, backslashes or edge
-whitespace and (for the `i` flag) does not start with `/`; otherwise it is passed through.
+Why each form, all read from Playwright 1.64:
+
+- Role (`queryRole`): the internal engine matches a `name` or `description` without the `s`
+  flag as a substring, the public one exactly; `*=` restores the substring.
+- Text (`createTextMatcher`): the internal engine compares the element's whole normalized
+  text; the public `text="X"` compares only its own text nodes, so `<button>Split
+  <b>text</b></button>` is not `text="Split text"`. An anchored regex that tolerates the
+  whitespace Playwright normalizes away is.
+- Has-text: the public `:has-text()` matches like the internal substring filter. The public
+  `:text-matches()` additionally skips an element whose whole text sits in one child, so it
+  finds the clicked element or none, never another one.
+- Attributes (`createAttributeMatcher`): without a flag or with `s` an exact match, with `i`
+  a case-insensitive substring; CSS has no `s` flag. An empty `i` value is passed through.
+- Label (`getElementLabels`): matches `aria-labelledby`, `aria-label` or a `<label>`, which no
+  public selector can express. The generator picks it for an element without a role that
+  can carry a name, such as `<div aria-label="Map">`. The selector stays internal; the
+  toolbar says so, as it may break with a Playwright upgrade. Any other form that cannot
+  be rewritten safely stays internal with the same notice.
+
+Two acceptance tests guard this: "Translated Selectors Match Like Playwright" compares each
+rewritten form with its internal original in a browser, and "Every Recorded Selector Finds
+Exactly The Clicked Element" records a click on every element of
+`node/dynamic-test-app/static/recorder/selectors.html` and checks that the translated
+selector finds exactly that element.
 
 ## Toolbar contract
 
@@ -233,9 +259,11 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
    the overlay (`recorderStop` writes it). `recording-inspecting`
    and `inspecting` (Pick locator, `PICKING_MODES`) are not stops; a new mode must be
    classified as stop, part of the recording, or picking.
-6. `internal:attr` / `internal:testid` still match exactly without a flag or with `s`, and
-   as a case-insensitive substring with `i` (the atest "Translated Selectors Match Like
-   Playwright" compares both in a browser).
+6. The selector translation still holds: the atests "Translated Selectors Match Like
+   Playwright" (every rewritten form against its internal original) and "Every Recorded
+   Selector Finds Exactly The Clicked Element" (the generator's real output on
+   `recorder/selectors.html`) pass. If the generator uses a new engine, add an element for
+   it to that page.
 7. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps
    it, see `toAction`), and `Get Aria Snapshot ... yaml ==` still accepts it.
 8. The action names and fields in the table above (`assertVisible`, `assertChecked`, ...)
