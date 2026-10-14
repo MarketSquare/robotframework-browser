@@ -197,7 +197,7 @@ These are deliberately not part of v1. The design should not block them.
 - A non-blocking `Start Recording` / `Stop Recording` pair, with the test continuing
 - An own element picker in the toolbar that shows a picked element's Browser selector to copy
   (Playwright's *Pick locator* result is not delivered in api mode)
-- Recording file uploads and hovers (Playwright 1.63 does not report them in api mode)
+- Recording file uploads and hovers (Playwright 1.64 does not report them in api mode)
 - A tolerant ARIA snapshot comparison like Playwright's `toMatchAriaSnapshot`
 - Merging Actions beyond what Playwright merges itself (e.g. `Fill Text` + `Enter`)
 - Optional treatment of password fields, e.g. `Fill Secret` behind a toolbar switch
@@ -243,7 +243,7 @@ These are deliberately not part of v1. The design should not block them.
   - what Playwright does before the sink (fill merging, click buffer, signals)
   - **a checklist for Playwright upgrades**: what to check and which tests cover it
 - Code comments where something is surprising without context (e.g. why
-  `_disableRecorder` is never called)
+  `_stopRecording` is never called)
 
 **Release**
 - A release notes entry: new feature, experimental dependency on the private Playwright API,

@@ -94,7 +94,7 @@ describe('ensureRecorder', () => {
         const sinks: any[] = [];
         return {
             sinks,
-            _enableRecorder: jest.fn(async (_params: unknown, sink: unknown) => {
+            _startRecording: jest.fn(async (_params: unknown, sink: unknown) => {
                 sinks.push(sink);
             }),
             exposeBinding: jest.fn(async () => undefined),
@@ -102,18 +102,23 @@ describe('ensureRecorder', () => {
         } as any;
     }
 
-    it('enables the recorder once per context', async () => {
+    it('starts the recording once per context', async () => {
         const context = fakeContext();
         await ensureRecorder(context);
         await ensureRecorder(context);
-        expect(context._enableRecorder).toHaveBeenCalledTimes(1);
+        expect(context._startRecording).toHaveBeenCalledTimes(1);
         expect(context.exposeBinding).toHaveBeenCalledTimes(1);
     });
 
-    it('enables the recorder once for concurrent calls', async () => {
+    it('fails clearly when Playwright offers no programmatic recorder', async () => {
+        const context = { exposeBinding: jest.fn(), pages: () => [] } as any;
+        await expect(ensureRecorder(context)).rejects.toThrow('BrowserContext._startRecording');
+    });
+
+    it('starts the recording once for concurrent calls', async () => {
         const context = fakeContext();
         await Promise.all([ensureRecorder(context), ensureRecorder(context)]);
-        expect(context._enableRecorder).toHaveBeenCalledTimes(1);
+        expect(context._startRecording).toHaveBeenCalledTimes(1);
     });
 
     it('buffers actions, updates and signals, but not toolbar actions', async () => {
@@ -237,7 +242,7 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
         sinks,
         bindings,
         pages: () => pages,
-        _enableRecorder: jest.fn(async (_params: unknown, sink: unknown) => {
+        _startRecording: jest.fn(async (_params: unknown, sink: unknown) => {
             sinks.push(sink);
         }),
         exposeBinding: jest.fn(async (name: string, fn: (source: unknown, arg: unknown) => void) => {

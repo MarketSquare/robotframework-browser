@@ -23,17 +23,18 @@
 // the toolbar requires.
 //
 // Four things here are load-bearing, established by testing against Playwright
-// 1.63, the version in use:
+// 1.64, the version in use:
 //
-//  1. `_enableRecorder` must be called once per context. Playwright caches the
-//     `Recorder` per context and ignores the params of any later call, while
-//     `ProgrammaticRecorderApp.run` registers a fresh event listener every time,
-//     so calling it twice delivers every Action twice.
-//  2. Never call `_disableRecorder()`: it drops the event sink. Re-arming a
-//     later recording uses `__pw_recorderSetMode('recording')` instead.
+//  1. `_startRecording` is called once per context, and the recording it starts
+//     is never stopped. A second call throws "Recording is already in progress".
+//     (1.63 called it `_enableRecorder`, which accepted a second call but then
+//     delivered every Action twice.)
+//  2. Never call `_stopRecording()`: it drops the event sink. Sessions switch
+//     the mode with `__pw_recorderSetMode` instead, `recording` to start and
+//     `none` to stop.
 //  3. The recorder sink delivers the whole `ActionInContext` on <= 1.62 and the
 //     bare `Action` on >= 1.63; `toAction` accepts both. `actionUpdated` still
-//     exists in 1.63.
+//     exists in 1.64.
 //  4. Interactions with our own toolbar arrive as Actions targeting the toolbar
 //     host element (its shadow root is closed, so `composedPath()` cannot see
 //     inside) and are dropped by `isToolbarAction`.
@@ -52,7 +53,7 @@ const RECORDER = Symbol.for('robotframework-browser.recorder.state');
 // Modes that mean "the user is no longer recording". Everything else
 // (`recording`, `recording-inspecting`, `asserting*`) is part of a recording.
 const STOP_MODES = new Set(['none', 'standby']);
-// The mode written when a session ends: in Playwright 1.63 only `none` hides its overlay.
+// The mode written when a session ends: in Playwright 1.64 only `none` hides its overlay.
 const STOPPED_MODE = 'none';
 
 // The command binding is callable by any page script (ADR 0010), and one poll
@@ -189,7 +190,7 @@ export async function writeMode(context: BrowserContext, mode: string): Promise<
 }
 
 // The in-flight promise is stored on the context, so concurrent calls and a
-// retry after a partial failure can never run `_enableRecorder` twice.
+// retry after a partial failure can never run `_startRecording` twice.
 export function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers> {
     const existing = existingRecorder(context);
     if (existing) return existing;
@@ -203,11 +204,11 @@ function existingRecorder(context: BrowserContext): Promise<RecorderBuffers> | u
 }
 
 async function createRecorder(context: BrowserContext): Promise<RecorderBuffers> {
-    const enable = (context as unknown as { _enableRecorder?: (...args: unknown[]) => Promise<void> })._enableRecorder;
-    if (typeof enable !== 'function') {
+    const start = (context as unknown as { _startRecording?: (...args: unknown[]) => Promise<void> })._startRecording;
+    if (typeof start !== 'function') {
         throw new Error(
             'This Playwright version does not offer the programmatic recorder ' +
-                '(BrowserContext._enableRecorder), which Record Keyword and Record Keywords need.',
+                '(BrowserContext._startRecording), which Record Keyword and Record Keywords need.',
         );
     }
     const buffers: RecorderBuffers = { events: [], commands: [], armed: false, active: false };
@@ -224,9 +225,11 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
         if (!action || isToolbarAction(action)) return;
         buffer({ event, action });
     };
-    await enable.call(
+    // `language` only selects the generator of the `code` Playwright passes
+    // along with every event, which is not used.
+    await start.call(
         context,
-        { mode: 'recording', recorderMode: 'api' },
+        { language: 'python' },
         {
             actionAdded: forward('added'),
             actionUpdated: forward('updated'),
@@ -328,8 +331,8 @@ export async function recorderStop(_request: pb.Request_Empty, state: Playwright
     } catch {
         // The recorder never started; nothing buffers commands.
     }
-    // Deliberately not `_disableRecorder()`: it drops the event sink, and
-    // re-installing it would deliver every Action of the next session twice.
+    // Deliberately not `_stopRecording()`: it drops the event sink, and the
+    // next session would have to start a new recording.
     await writeMode(context, STOPPED_MODE);
     for (const page of context.pages()) {
         try {

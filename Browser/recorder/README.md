@@ -13,7 +13,7 @@ How `Record Keyword` / `Record Keywords` work. Vocabulary: `CONTEXT.md`. Require
     Browser/recorder/action_mapper.py  Action -> Call, signal -> calls around it
     Browser/recorder/target.py     FileTarget (re-read, own block only) / LogTarget
     Browser/recorder/names.py      name validation and collision checks (ADR 0010)
-    node/playwright-wrapper/recorder.ts         _enableRecorder, buffering, toolbar injection
+    node/playwright-wrapper/recorder.ts         _startRecording, buffering, toolbar injection
     node/playwright-wrapper/static/recorder-toolbar.js   toolbar in a closed shadow root
 
 Python is the only clock. The toolbar renders the state Python sends and sends commands
@@ -45,7 +45,7 @@ option strategies, states) never are.
 | `hover` | `Hover    <selector>` | none |
 | `setInputFiles` | `Upload File By Selector    <selector>    <file>...` | each file |
 
-`hover` and `setInputFiles` are mapped, but Playwright 1.63 never emits them in api mode, so
+`hover` and `setInputFiles` are mapped, but Playwright 1.64 never emits them in api mode, so
 in practice they are not recorded. Any other action name produces no Keyword Call and a
 toolbar notice ("... has no Browser keyword and was not recorded."). A later
 `actionUpdated` for that Action never updates the previous Keyword Call: if Playwright's
@@ -141,12 +141,12 @@ bytes of JSON.
 - A session reset (first poll, `reset=true`) waits `HELD_BACK_MS` (600 ms) while the
   recorder is still stopped, drains buffered events and commands, and only then
   switches to `recording`, so no Action made after the switch is dropped with stale ones.
-- The end of a session writes mode `none`: in Playwright 1.63 only `none` hides its overlay.
+- The end of a session writes mode `none`: in Playwright 1.64 only `none` hides its overlay.
   Its Record button switches to `standby`; both count as stopped once the session was seen
   recording.
 - Python polls every 200 ms (`POLL_INTERVAL`).
 
-## What Playwright does before our sink (1.63)
+## What Playwright does before our sink (1.64)
 
 - `fill`: one `actionAdded`, then one `actionUpdated` per keystroke.
 - Double click: one `click` with `clickCount: 2`.
@@ -154,7 +154,8 @@ bytes of JSON.
 - `openPage` is reported for existing pages and hand-opened tabs; we ignore it.
 - Main-frame navigation within 5 s of a click/fill/press is swallowed by Playwright.
 - The in-page Playwright overlay cannot be hidden in api mode.
-- `_enableRecorder` must be called once per context; `_disableRecorder` drops the sink.
+- `_startRecording` is called once per context (a second call throws); `_stopRecording`
+  drops the sink. In 1.63 the same was `_enableRecorder` / `_disableRecorder`.
 
 ## Limitations
 
@@ -174,15 +175,15 @@ bytes of JSON.
   acceptance suite sets the internal `Browser.recorder_allows_headless` to drive scripted
   sessions headless. Connected and adopted browsers count as visible.
 - One browser context: the recorder works in the active context.
-- `_enableRecorder` registers the recorder in the context for good. After a session it
+- `_startRecording` registers the recorder in the context for good. After a session it
   stays registered (in mode `none`), as do the `__rfbCommand` binding and the Action sink;
   the toolbar itself is removed.
 - It rests on a private Playwright API (ADR 0011).
 
 ## Playwright upgrade checklist
 
-1. `context._enableRecorder` still exists (`coreBundle.js`); `_disableRecorder` is still
-   never called.
+1. `context._startRecording` still exists (`coreBundle.js`, `ProgrammaticRecorderApp`);
+   `_stopRecording` is still never called.
 2. The sink still has `actionAdded`, `actionUpdated`, `signalAdded`; the payload shape is
    still handled by `toAction` (`npm run test -- recorder`).
 3. Signal names `popup`, `dialog`, `download` unchanged.

@@ -219,7 +219,7 @@ Second Session In Same Context Records Nothing Twice
     END
     ${file} =    Get File    ${RESOURCE}
     Should Contain X Times    ${file}    Fill Text    2
-    # Playwright 1.63 hides its own overlay only in mode none.
+    # Playwright 1.64 hides its own overlay only in mode none.
     ${mode} =    Evaluate JavaScript    ${None}    async () => (await window.__pw_recorderState()).mode
     Should Be Equal    ${mode}    none
 
