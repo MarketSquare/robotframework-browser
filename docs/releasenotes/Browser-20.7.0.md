@@ -60,6 +60,13 @@ only to the log. See the keyword documentation.
   readable by scripts on the recorded pages.
 - Playwright's own recorder toolbar is shown at the top centre of the page while recording
   and cannot be hidden.
+- A session ends after 5 minutes without activity by default (`idle_timeout`), so a
+  forgotten recording cannot block a run for good. Recording needs a visible browser; in a
+  headless one both keywords fail.
+
+### New Persistent Context records headless correctly
+A context opened with `New Persistent Context    headless=False` was recorded internally as
+headless. This came out of the recorder work.
 
 ### Promise To converts non-string positional arguments
 `Promise To` now converts non-string positional arguments like string ones, so the

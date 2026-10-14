@@ -26,10 +26,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-01** `Record Keyword` and `Record Keywords` are keywords of the Browser library itself.
   They need no plugin import and can be called at any point of a running test, for example
   at a breakpoint.
-- **AC-02** `Record Keyword    name    file='${SUITE_SOURCE}'    idle_timeout=None` starts a
+- **AC-02** `Record Keyword    name    file='${SUITE_SOURCE}'    idle_timeout=5 min` starts a
   Recording Session with exactly one Keyword Recording, which starts immediately under the
   given name.
-- **AC-03** `Record Keywords    file='${SUITE_SOURCE}'    idle_timeout=None` starts a
+- **AC-03** `Record Keywords    file='${SUITE_SOURCE}'    idle_timeout=5 min` starts a
   Recording Session in which any number of Keyword Recordings are named and recorded one
   after another from the toolbar.
 - **AC-04** The default value of `file` is the string `${SUITE_SOURCE}`. It is resolved as a
@@ -40,9 +40,9 @@ Defined in `Browser/recorder/CONTEXT.md`.
 - **AC-06** Both keywords return the text of the recorded keywords. `Record Keyword` returns
   the text of its one keyword, `Record Keywords` the text of all keywords recorded in the
   session.
-- **AC-07** With `idle_timeout`, the session ends after that long with neither an Action
-  reported nor a toolbar command given. Actions while idle reset the timer too. Without
-  `idle_timeout`, the session waits until it is ended.
+- **AC-07** The session ends after `idle_timeout` (default 5 minutes) with neither an Action
+  reported nor a toolbar command given. Actions while idle reset the timer too. With
+  `idle_timeout=${None}`, the session waits until it is ended.
 - **AC-08** If the installed Playwright version does not offer the programmatic recorder,
   the keyword fails with a clear error message.
 - **AC-48** If the active browser was launched headless, both keywords fail before the

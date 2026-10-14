@@ -57,6 +57,28 @@ def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
     assert Path(tmp_path / "k.resource").exists()
 
 
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [((), 300.0), ((None,), None)],
+    ids=["default 5 minutes", "None waits without limit"],
+)
+def test_idle_timeout_default_and_none(monkeypatch, tmp_path, given, expected):
+    seen = {}
+
+    def fake_run(session, client, idle_timeout=None):
+        seen["idle"] = idle_timeout
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", fake_run)
+    monkeypatch.setattr(
+        module, "collect_known_keywords", lambda: module.KnownKeywords()
+    )
+    recorder = Recorder.__new__(Recorder)
+    recorder._client = lambda: object()
+    recorder.record_keywords(str(tmp_path / "k.resource"), *given)
+    assert seen["idle"] == expected
+
+
 def test_record_keyword_rejects_a_shadowing_name(monkeypatch, tmp_path):
     monkeypatch.setattr(
         module,

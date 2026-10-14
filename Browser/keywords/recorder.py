@@ -31,6 +31,7 @@ from ..utils import keyword, logger
 __all__ = ["KnownKeywords", "Recorder"]
 
 SUITE_SOURCE = "${SUITE_SOURCE}"
+DEFAULT_IDLE_TIMEOUT = timedelta(minutes=5)
 
 
 def _suite_source() -> str | None:
@@ -74,7 +75,7 @@ class Recorder(LibraryComponent):
         self,
         name: str,
         file: str | None = SUITE_SOURCE,
-        idle_timeout: timedelta | None = None,
+        idle_timeout: timedelta | None = DEFAULT_IDLE_TIMEOUT,
     ) -> str:
         """Record browser interactions as one User Keyword named ``name``.
 
@@ -105,7 +106,7 @@ class Recorder(LibraryComponent):
         | =Arguments= | =Description= |
         | ``name`` | Name of the User Keyword to create. It must not exist in ``file`` and must not shadow any keyword the running suite can call. |
         | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
+        | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
 
@@ -138,7 +139,7 @@ class Recorder(LibraryComponent):
 
         Example:
         | ${text} =    Record Keyword    Login As Admin
-        | Record Keyword    Search Product    ${CURDIR}/shop.resource    idle_timeout=5 min
+        | Record Keyword    Search Product    ${CURDIR}/shop.resource    idle_timeout=15 min
         | Record Keyword    Try Something    file=${None}
 
         See `Record Keywords` to record several keywords in one session.
@@ -149,7 +150,7 @@ class Recorder(LibraryComponent):
     def record_keywords(
         self,
         file: str | None = SUITE_SOURCE,
-        idle_timeout: timedelta | None = None,
+        idle_timeout: timedelta | None = DEFAULT_IDLE_TIMEOUT,
     ) -> str:
         """Record several User Keywords in one session.
 
@@ -188,7 +189,7 @@ class Recorder(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keywords are logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without activity. Must be greater than zero. Default: no timeout. |
+        | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
 
         Returns the text of all keywords recorded in the session, under one
         ``*** Keywords ***`` header.
@@ -222,7 +223,7 @@ class Recorder(LibraryComponent):
 
         Example:
         | ${text} =    Record Keywords
-        | Record Keywords    ${CURDIR}/resources/shop.resource    idle_timeout=10 min
+        | Record Keywords    ${CURDIR}/resources/shop.resource    idle_timeout=${None}
 
         See `Record Keyword` to record exactly one keyword.
         """
