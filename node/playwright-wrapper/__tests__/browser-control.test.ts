@@ -13,7 +13,7 @@ jest.mock('../browser_logger', () => ({
     logger: { info: jest.fn(), error: jest.fn() },
 }));
 
-import { takeScreenshot } from '../browser-control';
+import { executePlaywright, takeScreenshot } from '../browser-control';
 import { findLocator } from '../playwright-invoke';
 
 const mockFindLocator = jest.mocked(findLocator);
@@ -103,5 +103,32 @@ describe('takeScreenshot', () => {
         const state = makeMockState(undefined);
         const req = makeRequest('', { path: 'no.png' }, []);
         await expect(takeScreenshot(req, state)).rejects.toThrow('Tried to take screenshot, but no page was open.');
+    });
+});
+
+describe('executePlaywright', () => {
+    function makeJsonRequest(args: string[]) {
+        return { body: JSON.stringify(args) } as any;
+    }
+
+    it('runs a Playwright CLI command', async () => {
+        const res = await executePlaywright(makeJsonRequest(['install', '--dry-run', 'chromium']));
+
+        expect(res.log).toBe('Executed Playwright command: install --dry-run chromium');
+    });
+
+    it('runs a second command after the first one', async () => {
+        await executePlaywright(makeJsonRequest(['install', '--dry-run', 'chromium']));
+
+        const res = await executePlaywright(makeJsonRequest(['install', '--dry-run', 'firefox']));
+
+        expect(res.log).toBe('Executed Playwright command: install --dry-run firefox');
+    });
+
+    it('rejects an unknown command instead of exiting the process', async () => {
+        expect.assertions(1);
+        await expect(executePlaywright(makeJsonRequest(['no-such-command']))).rejects.toMatchObject({
+            code: 'commander.unknownCommand',
+        });
     });
 });
