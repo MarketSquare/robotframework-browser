@@ -32,8 +32,18 @@ def rendered(action: dict) -> str | None:
         ('internal:text="say \\"hi\\""i', 'internal:text="say \\"hi\\""i'),
         ("internal:text=/^Log in$/i", "internal:text=/^Log in$/i"),
         ('internal:label="Email"i', 'internal:label="Email"i'),
-        ('internal:testid=[data-testid="login"]', '[data-testid="login"]'),
-        ('internal:attr=[placeholder="Email"i]', '[placeholder="Email"i]'),
+        # `s` is exact and case-sensitive (CSS has no `s` flag), `i` is a
+        # case-insensitive substring. Verified against Playwright 1.64.
+        ('internal:testid=[data-testid="login"s]', '[data-testid="login"]'),
+        ('internal:attr=[placeholder="Email"s]', '[placeholder="Email"]'),
+        ('internal:attr=[placeholder="Email"i]', '[placeholder*="Email"i]'),
+        ('internal:attr=[title="say \\"hi\\""i]', '[title*="say \\"hi\\""i]'),
+        ('internal:attr=[alt=""i]', 'internal:attr=[alt=""i]'),
+        ("internal:attr=[alt=/re/]", "internal:attr=[alt=/re/]"),
+        (
+            'internal:testid=[data-testid="main"s] >> internal:role=button[name="Open Report"i]',
+            '[data-testid="main"] >> role=button[name="Open Report"i]',
+        ),
         ("css=.foo", "css=.foo"),
         ("//button", "//button"),
         # chaining is preserved
@@ -91,7 +101,7 @@ def test_map_fill():
         "selector": 'internal:attr=[placeholder="Email"i]',
         "text": "a@b.c",
     }
-    assert rendered(action) == 'Fill Text    [placeholder="Email"i]    a@b.c'
+    assert rendered(action) == 'Fill Text    [placeholder*="Email"i]    a@b.c'
 
 
 @pytest.mark.parametrize(

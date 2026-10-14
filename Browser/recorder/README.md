@@ -93,11 +93,14 @@ of the signal values is selectable.
 | `internal:role=button[name="Submit"i]` | `role=button[name="Submit"i]` |
 | `internal:text="Log in"i` | `text=Log in` |
 | `internal:text="Log in"s` | `text="Log in"` |
-| `internal:testid=[data-testid="x"]` | `[data-testid="x"]` |
-| `internal:attr=[placeholder="Email"i]` | `[placeholder="Email"i]` |
+| `internal:testid=[data-testid="x"s]` (exact) | `[data-testid="x"]` |
+| `internal:attr=[placeholder="Email"i]` (case-insensitive substring) | `[placeholder*="Email"i]` |
 | `... >> internal:control=enter-frame >> ...` | `... >>> ...` |
 | anything else | unchanged (Browser resolves it with `page.locator`) |
 
+An `internal:attr` / `internal:testid` value without a flag or with `s` is matched exactly,
+with `i` as a case-insensitive substring (Playwright's `createAttributeMatcher`); CSS has no
+`s` flag. An empty `i` value or a regular expression is passed through.
 `internal:text` is rewritten only when the body has no quotes, backslashes or edge
 whitespace and (for the `i` flag) does not start with `/`; otherwise it is passed through.
 
@@ -230,14 +233,17 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
    the overlay (`recorderStop` writes it). `recording-inspecting`
    and `inspecting` (Pick locator, `PICKING_MODES`) are not stops; a new mode must be
    classified as stop, part of the recording, or picking.
-6. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps
+6. `internal:attr` / `internal:testid` still match exactly without a flag or with `s`, and
+   as a case-insensitive substring with `i` (the atest "Translated Selectors Match Like
+   Playwright" compares both in a browser).
+7. `assertSnapshot` still carries its snapshot in `ariaSnapshot` (the only action that keeps
    it, see `toAction`), and `Get Aria Snapshot ... yaml ==` still accepts it.
-7. The action names and fields in the table above (`assertVisible`, `assertChecked`, ...)
+8. The action names and fields in the table above (`assertVisible`, `assertChecked`, ...)
    are unchanged; re-check whether `hover` / `setInputFiles` are emitted now (neither is
    mapped, as Playwright never emitted them).
-8. The injected recorder still skips events whose composed path holds an `x-pw-glass`
+9. The injected recorder still skips events whose composed path holds an `x-pw-glass`
    element (`_ignoreOverlayEvent`) for clicks, input and keys, and `contextmenu` is still the
    only one it records without that check; Playwright does not restyle other `x-pw-glass`
    elements (it only styles its own instance inline).
-9. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
+10. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.

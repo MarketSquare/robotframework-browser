@@ -105,17 +105,39 @@ def _translate_text(body: str, flag: str) -> str | None:
     return f"text={body}"
 
 
+# `internal:attr=[placeholder="Email"i]` - one attribute, a quoted value and a flag.
+_ATTRIBUTE_RE = re.compile(r'^\[([A-Za-z_][\w-]*)=("(?:[^"\\]|\\.)*")\s*([isIS]?)\]$')
+
+
+def _translate_attribute(body: str) -> str | None:
+    """CSS equivalent of an `internal:attr` / `internal:testid` body, or None.
+
+    Verified against Playwright 1.64 (`createAttributeMatcher`): the `s` flag,
+    like no flag, is an exact, case-sensitive match, which plain CSS `[a="v"]`
+    is; the `i` flag is a case-insensitive *substring* match, which is
+    `[a*="v"i]`. CSS knows no `s` flag, so `[a="v"s]` would not even parse.
+    """
+    match = _ATTRIBUTE_RE.match(body)
+    if match is None:
+        return None
+    name, value, flag = match.groups()
+    if flag.lower() != "i":
+        return f"[{name}={value}]"
+    # An empty substring matches every element in Playwright, none in CSS.
+    if value == '""':
+        return None
+    return f"[{name}*={value}i]"
+
+
 def _translate_part(part: str) -> str:
     # `role` has a public engine with identical body syntax.
     if part.startswith("internal:role="):
         return "role=" + part[len("internal:role=") :]
     if match := _TEXT_RE.match(part):
         return _translate_text(*match.groups()) or part
-    # testid / attr bodies are already `[attr="value"]` css selectors.
-    if part.startswith("internal:testid="):
-        return part[len("internal:testid=") :]
-    if part.startswith("internal:attr="):
-        return part[len("internal:attr=") :]
+    for engine in ("internal:testid=", "internal:attr="):
+        if part.startswith(engine):
+            return _translate_attribute(part[len(engine) :]) or part
     # Everything else passes through: Playwright's locator parser accepts its
     # own internal engines verbatim, so this is always correct, just less readable.
     return part

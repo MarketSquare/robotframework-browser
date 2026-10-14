@@ -549,6 +549,29 @@ The Argument Dialog Shows The Marked Part Without Focus And Survives A Release O
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+Translated Selectors Match Like Playwright
+    [Documentation]    The recorder rewrites Playwright's internal selectors into public ones;
+    ...    both must find the same elements.
+    New Page
+    ...    data:text/html,<div data-testid="main">a</div><div data-testid="main-2">b</div><div data-testid="MAIN">c</div><input placeholder="Email address"><input placeholder="email"><input placeholder="Email"><img alt="x" title='say "hi" now'><div role="button">Open Report</div>
+    FOR    ${internal}    IN
+    ...    internal:testid=[data-testid="main"s]
+    ...    internal:attr=[placeholder="Email"i]
+    ...    internal:attr=[placeholder="Email"s]
+    ...    internal:attr=[placeholder="Email"]
+    ...    internal:attr=[placeholder="email" I]
+    ...    internal:attr=[title="say \\"hi\\""i]
+    ...    internal:text="Report"i
+    ...    internal:role=button[name="Open Report"i]
+        ${translated} =    Evaluate
+        ...    Browser.recorder.action_mapper.to_browser_selector($internal)
+        ...    modules=Browser.recorder.action_mapper
+        Should Not Be Equal    ${translated}    ${internal}
+        ${expected} =    Get Element Count    ${internal}
+        Should Be True    ${expected} > 0
+        Get Element Count    ${translated}    ==    ${expected}
+    END
+
 *** Keywords ***
 Allow Recording Headless
     [Arguments]    ${allow}
