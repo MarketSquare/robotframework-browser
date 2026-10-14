@@ -220,6 +220,22 @@ Assert Snapshot Becomes Get Aria Snapshot
     Should Match Regexp    ${file}    Get Aria Snapshot\\s+\\S+\\s+yaml\\s+==\\s+- text
     Recorded Keyword Replays    ${RESOURCE}    Check Heading Snapshot
 
+Toolbar Collapse Persists And The Toolbar Is Removed After The Session
+    Open The Toolbar Shadow Root For Inspection
+    ${promise} =    Promise To    Record Keyword    Toolbar Collapse    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Click Toolbar Collapse Button
+    Get Element States    rfb-recorder-toolbar >> #body    *=    hidden
+    ${stored} =    Evaluate JavaScript    ${None}    () => window.sessionStorage.getItem('rfb.toolbar.collapsed')
+    Should Be Equal    ${stored}    true
+    Click Toolbar Collapse Button
+    Get Element States    rfb-recorder-toolbar >> #body    *=    visible
+    Fill Text    id=input_name    after collapse
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    Get Element Count    css=rfb-recorder-toolbar    ==    0
+
 *** Keywords ***
 Open Form And Name Resource
     New Page    ${FORM_URL}
@@ -262,3 +278,7 @@ Open The Toolbar Shadow Root For Inspection
     ...    const attach = Element.prototype.attachShadow;
     ...    Element.prototype.attachShadow = function (init) { return attach.call(this, { ...init, mode: 'open' }); };
     ...    }
+
+Click Toolbar Collapse Button
+    Evaluate JavaScript    ${None}
+    ...    () => document.querySelector('rfb-recorder-toolbar').shadowRoot.querySelector('#collapse').click()
