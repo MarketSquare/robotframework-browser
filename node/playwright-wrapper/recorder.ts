@@ -292,7 +292,13 @@ export async function resetSession(
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
     const context = state.getActiveContext();
     if (!context) throw new Error('No browser context is open. Open a page before recording.');
-    const { state: toolbarState, reset } = JSON.parse(request.body || '{}');
+    const { state: toolbarState, reset, allowHeadless } = JSON.parse(request.body || '{}');
+    if (reset && !allowHeadless && state.activeBrowser?.headless) {
+        throw new Error(
+            'Recording needs a visible browser, but the active browser runs headless. ' +
+                'Open it with New Browser    headless=False.',
+        );
+    }
     const buffers = await ensureRecorder(context);
     if (reset) await resetSession(context, buffers);
     if (toolbarState) await renderToolbars(context, toolbarState);

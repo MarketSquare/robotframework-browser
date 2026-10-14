@@ -247,7 +247,8 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
     return context as any;
 }
 
-const stateFor = (context: unknown) => ({ getActiveContext: () => context }) as any;
+const stateFor = (context: unknown, headless = false) =>
+    ({ getActiveContext: () => context, activeBrowser: { headless } }) as any;
 const pollBody = (body: Record<string, unknown>) => ({ body: JSON.stringify(body) }) as any;
 async function poll(context: unknown, body: Record<string, unknown> = {}) {
     const response = await recorderPoll(pollBody(body), stateFor(context));
@@ -255,6 +256,20 @@ async function poll(context: unknown, body: Record<string, unknown> = {}) {
 }
 
 describe('recorderPoll', () => {
+    it('refuses to start a session in a headless browser', async () => {
+        const context = fakeRecorderContext([fakePage()]);
+        await expect(recorderPoll(pollBody({ reset: true }), stateFor(context, true))).rejects.toThrow(
+            'Recording needs a visible browser',
+        );
+        expect(context.bindings.__rfbCommand).toBeUndefined();
+    });
+
+    it('starts a session in a headless browser when the test switch allows it', async () => {
+        const context = fakeRecorderContext([fakePage()]);
+        await recorderPoll(pollBody({ reset: true, allowHeadless: true }), stateFor(context, true));
+        expect(typeof context.bindings.__rfbCommand).toBe('function');
+    });
+
     it('does not treat standby before the recorder was seen recording as a stop', async () => {
         const context = fakeRecorderContext([fakePage('standby')]);
         await ensureRecorder(context);

@@ -1,15 +1,17 @@
 *** Settings ***
-Documentation    Scripted recording sessions. The toolbar's closed shadow root cannot be
-...              clicked from a test, so commands go through `window.__rfbCommand`, the
-...              same channel the toolbar uses, and the page is driven by Browser keywords.
+Documentation     Scripted recording sessions. The toolbar's closed shadow root cannot be
+...               clicked from a test, so commands go through `window.__rfbCommand`, the
+...               same channel the toolbar uses, and the page is driven by Browser keywords.
 
-Resource         imports.resource
-Library          OperatingSystem
+Resource          imports.resource
+Library           OperatingSystem
 
-Test Setup       Open Form And Name Resource
-Test Teardown    Run Keywords    End Any Recording Session    AND    Close Page    ALL    AND    Wait For All Promises
+Suite Setup       Allow Recording Headless    ${True}
+Suite Teardown    Allow Recording Headless    ${False}
+Test Setup        Open Form And Name Resource
+Test Teardown     Run Keywords    End Any Recording Session    AND    Close Page    ALL    AND    Wait For All Promises
 
-Test Tags        recorder
+Test Tags         recorder
 
 *** Test Cases ***
 Session Records Two Keywords And Skips Idle Actions
@@ -298,7 +300,25 @@ The Toolbar Is Removed From All Pages After The Session
     Switch Page    ${second}[0]
     Get Element Count    css=rfb-recorder-toolbar    ==    0
 
+Recording Fails In A Headless Browser
+    Allow Recording Headless    ${False}
+    New Browser    ${BROWSER}    headless=True
+    New Page    ${FORM_URL}
+    TRY
+        Run Keyword And Expect Error    *Recording needs a visible browser*
+        ...    Record Keywords    ${RESOURCE}
+    FINALLY
+        Allow Recording Headless    ${True}
+        Close Browser    CURRENT
+    END
+    File Should Not Exist    ${RESOURCE}
+
 *** Keywords ***
+Allow Recording Headless
+    [Arguments]    ${allow}
+    ${lib} =    Get Library Instance    Browser
+    Evaluate    setattr($lib, "recorder_allows_headless", $allow)
+
 Open Form And Name Resource
     New Page    ${FORM_URL}
     ${slug} =    Evaluate    "${TEST_NAME}".lower().replace(" ", "_")

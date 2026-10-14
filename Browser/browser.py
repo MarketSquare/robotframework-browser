@@ -663,6 +663,9 @@ class Browser(DynamicCore):
         self._keyword_formatters: dict = {}
         self.is_test_case_running = False
         self.auto_closing_default_run_before_unload: bool = False
+        # Test switch: lets Record Keyword(s) run in a headless browser, driven by
+        # scripted toolbar commands.
+        self.recorder_allows_headless: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
         self.tracing_contexts: list[str] = []
 

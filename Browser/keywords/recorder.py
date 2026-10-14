@@ -45,7 +45,13 @@ class _GrpcRecorderClient:
         self._library = library
 
     def poll(self, state: dict, reset: bool) -> dict:
-        body = json.dumps({"state": state, "reset": reset})
+        body = json.dumps(
+            {
+                "state": state,
+                "reset": reset,
+                "allowHeadless": self._library.recorder_allows_headless,
+            }
+        )
         with self._library.playwright.grpc_channel() as stub:
             response = stub.RecorderPoll(Request().Json(body=body))
         if not response.json:
@@ -113,6 +119,10 @@ class Recorder(LibraryComponent):
         While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
         are not recorded, because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
+
+        Needs a visible browser: fails if the active browser was opened headless, since
+        nobody could use the toolbar there. A browser attached with `Connect To Browser`
+        is assumed to be visible.
 
         Limitations: only the *current* browser context is recorded; other contexts are
         ignored. Playwright's own recorder toolbar is shown at the top centre of the page
@@ -193,6 +203,10 @@ class Recorder(LibraryComponent):
         While Playwright's Pick locator is on, nothing is recorded. File uploads and hovers
         are not recorded, because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
+
+        Needs a visible browser: fails if the active browser was opened headless, since
+        nobody could use the toolbar there. A browser attached with `Connect To Browser`
+        is assumed to be visible.
 
         Limitations: only the *current* browser context is recorded; other contexts are
         ignored. Playwright's own recorder toolbar is shown at the top centre of the page

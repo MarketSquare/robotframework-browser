@@ -166,6 +166,9 @@ bytes of JSON.
   the page; its Record button ends the session too. It is hidden after the session.
 - A value longer than about 64 KiB, or one past the first MiB of values in the keyword,
   cannot be made an argument in the toolbar; edit the file instead.
+- Headless: the reset poll fails if the active browser was launched headless. The
+  acceptance suite sets the internal `Browser.recorder_allows_headless` to drive scripted
+  sessions headless. Connected and adopted browsers count as visible.
 - One browser context: the recorder works in the active context.
 - `_enableRecorder` registers the recorder in the context for good. After a session it
   stays registered (in mode `none`), as do the `__rfbCommand` binding and the Action sink;

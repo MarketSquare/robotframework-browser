@@ -83,7 +83,7 @@ class _FakeStub:
         self.stopped = True
 
 
-def _client(stub):
+def _client(stub, allows_headless=False):
     from contextlib import contextmanager
 
     @contextmanager
@@ -93,7 +93,10 @@ def _client(stub):
     library = type(
         "L",
         (),
-        {"playwright": type("P", (), {"grpc_channel": staticmethod(channel)})()},
+        {
+            "playwright": type("P", (), {"grpc_channel": staticmethod(channel)})(),
+            "recorder_allows_headless": allows_headless,
+        },
     )()
     return module._GrpcRecorderClient(library)
 
@@ -102,6 +105,13 @@ def test_poll_parses_valid_json():
     stub = _FakeStub('{"events": []}')
     assert _client(stub).poll({"a": 1}, True) == {"events": []}
     assert '"reset": true' in stub.bodies[0]
+    assert '"allowHeadless": false' in stub.bodies[0]
+
+
+def test_poll_passes_the_headless_test_switch():
+    stub = _FakeStub()
+    _client(stub, allows_headless=True).poll({}, True)
+    assert '"allowHeadless": true' in stub.bodies[0]
 
 
 @pytest.mark.parametrize("raw", ["", "not json", "[1]"])

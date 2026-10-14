@@ -45,6 +45,9 @@ Defined in `Browser/recorder/CONTEXT.md`.
   `idle_timeout`, the session waits until it is ended.
 - **AC-08** If the installed Playwright version does not offer the programmatic recorder,
   the keyword fails with a clear error message.
+- **AC-48** If the active browser was launched headless, both keywords fail before the
+  session starts, with an error that asks for `headless=False`, and write nothing. A browser
+  attached with `Connect To Browser` counts as visible.
 
 ### Toolbar and operation
 
@@ -159,7 +162,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-47**. Anything not
+AC-48**. Anything not
 stated there is not part of v1.
 
 ## Out of scope (possible future extensions)
