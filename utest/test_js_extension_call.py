@@ -2,14 +2,14 @@ import inspect
 import json
 from contextlib import contextmanager
 from datetime import timedelta
+from types import SimpleNamespace
 
 from Browser import Browser
 from Browser.base import LibraryComponent
+from Browser.utils.data_types import Scope
 
 
 class RecordingPlaywright:
-    """Stands in for the Node process and records the extension calls."""
-
     def __init__(self):
         self.requests = []
 
@@ -20,6 +20,9 @@ class RecordingPlaywright:
     def CallExtensionKeyword(self, request):  # noqa: N802 - the name of the gRPC method
         self.requests.append(request)
         return []
+
+    def SetTimeout(self, request):  # noqa: N802 - the name of the gRPC method
+        return SimpleNamespace(log="")
 
     def payload(self) -> dict:
         return json.loads(self.requests[-1].arguments)
@@ -57,9 +60,8 @@ def test_generated_keyword_passes_the_library_timeout_as_default_timeout(
 def test_generated_keyword_reads_the_library_timeout_at_each_call(tmpdir, monkeypatch):
     library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
     keyword = generated_keyword(library, "openOwnContext", "defaultTimeout")
-    library.scope_stack["timeout"].setter_function = None
 
-    library.scope_stack["timeout"].set(3000.0)
+    library.set_browser_timeout(timedelta(seconds=3), Scope.Global)
     keyword()
 
     assert playwright.payload() == {"arguments": [["defaultTimeout", 3000]]}

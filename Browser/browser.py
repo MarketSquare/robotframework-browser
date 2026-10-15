@@ -444,7 +444,6 @@ class Browser(DynamicCore):
     _context_cache = ContextCache()
     _suite_cleanup_done = False
     _output_dir = "."
-    # Parameter names the Node side fills in for JavaScript extension functions.
     _js_injected_arguments = (
         "logger",
         "playwright",
@@ -514,29 +513,11 @@ class Browser(DynamicCore):
                 ``playwright``, ``adoptContext`` and ``defaultTimeout`` are filled in by
                 the library rather than taken from the keyword call. ``defaultTimeout``
                 is the library timeout in milliseconds. ``adoptContext(context, options)``
-                registers a BrowserContext that the function created itself, for
-                example with ``playwright.chromium.launchPersistentContext`` or as
-                ``app.context()`` of an app from ``playwright._electron.launch``, as a
-                new active browser and makes its first page the active page, so the
-                other keywords work on it. It keeps its own default timeout;
-                ``context.setDefaultTimeout(defaultTimeout)`` gives it the library
-                timeout, like the contexts the library creates. It returns the new
-                browser and context ids, and the page id if the context has a page.
-                Closing that browser closes the context. The optional ``options`` are
-                ``name``, which `Get Browser Catalog` reports as the browser's type,
-                ``adopted`` by default; ``headless``, ``false`` by default;
-                ``onClose``, an async function that runs once after the context is
-                closed, so the function can release what the context does not own,
-                such as a device connection; ``tracing``, the absolute path of a
-                ``.zip`` trace file or of a folder, in which the trace is saved as
-                ``trace_<context id>.zip``; and ``contextOptions``, the options the
-                context was created with, in the form of Playwright's browser context
-                options. With ``tracing``, the library starts tracing the context and
-                saves the trace before it closes the context. With ``contextOptions``,
-                keywords that depend on them work on the context, such as `Download`
-                with ``acceptDownloads``. Can be a single path, a comma-separated list
-                of paths or a real list of strings. See
-                https://robotframework-browser.org/docs/extending/javascript-extensions
+                makes a BrowserContext that the function created itself, such as the
+                context of an Electron app, the active browser, so the other keywords
+                work on it. Can be a single path, a comma-separated list of paths or a
+                real list of strings. The options of ``adoptContext`` and examples are
+                in https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and
                 documentation.
           - ``playwright_process_host``: Hostname / Host address which should be used
@@ -836,7 +817,6 @@ class Browser(DynamicCore):
             if arg_name in self._js_injected_arguments:
                 arg_set_texts.append(f'("{arg_name}", "RESERVED")')
             elif arg_name == "defaultTimeout":
-                # The library timeout at the time of the call.
                 arg_set_texts.append('("defaultTimeout", int(self.timeout))')
             else:
                 arg_set_texts.append(f'("{arg_name}", {arg_name})')
