@@ -724,13 +724,14 @@ class AdoptedContextOptions(TypedDict):
     creates and hands over with ``adoptContext``, as ``adopted_context_options``
     returns them. ``None`` means off.
 
-    The keys are named like the options of `New Context`, so that they can be
+    The keys are named like the options they are meant for, so that they can be
     passed on to the extension function as keyword arguments.
     """
 
     tracing: str | None
     recordVideo: dict[str, Any] | None
     recordHar: dict[str, Any] | None
+    tracesDir: str
 
 
 class _HttpCredentials(TypedDict):

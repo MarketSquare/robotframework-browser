@@ -14,6 +14,7 @@
 
 import json
 import os
+from collections.abc import Mapping
 from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
@@ -33,6 +34,7 @@ from ..assertion_engine import assertion_formatter_used, with_assertion_polling
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
+    AdoptedContextOptions,
     ClientCertificate,
     ColorScheme,
     DownloadInfo,
@@ -846,7 +848,11 @@ class PlaywrightState(LibraryComponent):
                 "No browser was open. New browser was automatically opened "
                 "when this context is created."
             )
-        self.context_cache.add(response.id, self._get_video_size(params))
+        self._register_context(
+            response.id,
+            trace_file,
+            self._video_size(params.get("recordVideo"), params.get("viewport")),
+        )
         return response.id
 
     @keyword()
@@ -961,8 +967,11 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            self.add_context_and_keyword_call_stack_to_trace(
-                trace_file=trace_file, ctx_id=response.id
+            video_path = self._register_context(
+                response.id,
+                trace_file,
+                self._video_size(params.get("recordVideo"), params.get("viewport")),
+                json.loads(response.video),
             )
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
@@ -992,13 +1001,44 @@ class PlaywrightState(LibraryComponent):
                         self.close_browser()
                         logger.debug("Teardown: Closed new persistent context.")
                     raise e
-            self.context_cache.add(response.id, self._get_video_size(params))
-            video_path = self._embed_video(json.loads(response.video))
             return (
                 browser_id,
                 response.id,
                 NewPageDetails(page_id=response.pageId, video_path=video_path),
             )
+
+    def adopted_context_options(
+        self,
+        tracing: bool | Path | None = None,
+        recordVideo: RecordVideo | None = None,
+        recordHar: RecordHar | None = None,
+        viewport: ViewportDimensions | None = None,
+    ) -> AdoptedContextOptions:
+        return {
+            "tracing": self._resolve_trace_file(tracing) or None,
+            "recordVideo": self._record_video(recordVideo, viewport),
+            "recordHar": self._record_har(recordHar),
+            "tracesDir": str(self.traces_temp / str(uuid4())),
+        }
+
+    def register_adopted_context(
+        self,
+        context_id: str,
+        options: AdoptedContextOptions,
+        video_path: str | None = None,
+    ) -> str:
+        record_video = options["recordVideo"]
+        video = (
+            {"video_path": video_path, "contextUuid": context_id}
+            if record_video is not None
+            else None
+        )
+        return self._register_context(
+            context_id,
+            options["tracing"] or "",
+            self._video_size(record_video, None),
+            video,
+        )
 
     def _resolve_trace_file(self, tracing: bool | Path | None) -> str:
         if isinstance(tracing, str):
@@ -1023,9 +1063,12 @@ class PlaywrightState(LibraryComponent):
 
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)
-        params = self._set_video_path(params)
-        params = self._set_video_size_to_int(params)
-        params = self._set_har_path(params)
+        if "recordVideo" in params:
+            params["recordVideo"] = self._record_video(
+                params["recordVideo"], params.get("viewport")
+            )
+        if "recordHar" in params:
+            params["recordHar"] = self._record_har(params["recordHar"])
         reduced_motion = str(params.get("reducedMotion"))
         reduced_motion = reduced_motion.replace("_", "-")
         params["reducedMotion"] = reduced_motion
@@ -1058,17 +1101,13 @@ class PlaywrightState(LibraryComponent):
 
     def _new_context(self, options: str, trace_file: Path | str):
         with self.playwright.grpc_channel() as stub:
-            context = stub.NewContext(
+            return stub.NewContext(
                 Request().Context(
                     rawOptions=options,
                     defaultTimeout=int(self.timeout),
                     traceFile=str(trace_file),
                 )
             )
-            self.add_context_and_keyword_call_stack_to_trace(
-                trace_file=trace_file, ctx_id=context.id
-            )
-        return context
 
     def add_context_and_keyword_call_stack_to_trace(self, trace_file, ctx_id):
         if (
@@ -1096,44 +1135,58 @@ class PlaywrightState(LibraryComponent):
             data["httpCredentials"] = "XXX"
         return data
 
-    def _set_video_path(self, params: dict) -> dict:
-        record_video = params.get("recordVideo", {})
-        video_path = record_video.get("dir")
-        if not record_video:
-            return params
-        if video_path is None:
-            vid_path = self.video_output
-        elif Path(video_path).is_absolute():
-            vid_path = params["recordVideo"]["dir"]
+    def _register_context(
+        self,
+        context_id: str,
+        trace_file: str,
+        video_size: dict,
+        video: dict | None = None,
+    ) -> str:
+        self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
+        self.context_cache.add(context_id, video_size)
+        return self._embed_video(video) if video else ""
+
+    def _record_video(
+        self,
+        record_video: Mapping[str, Any] | None,
+        viewport: Mapping[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        if record_video is None:
+            return None
+        video_dir = record_video.get("dir")
+        if video_dir is None:
+            resolved_dir = self.video_output
+        elif Path(video_dir).is_absolute():
+            resolved_dir = Path(video_dir)
         else:
-            vid_path = self.video_output / video_path
-        params["recordVideo"]["dir"] = Path(vid_path).resolve().absolute()
-        return params
+            resolved_dir = self.video_output / video_dir
+        return {
+            **record_video,
+            "dir": str(resolved_dir.resolve()),
+            "size": self._video_size(record_video, viewport),
+        }
 
-    def _set_har_path(self, params: dict) -> dict:
-        record_har = params.get("recordHar")
-        if record_har and record_har.get("path"):
-            record_har["path"] = str(Path(self.outputdir, record_har["path"]).resolve())
-        return params
+    def _video_size(
+        self,
+        record_video: Mapping[str, Any] | None,
+        viewport: Mapping[str, Any] | None,
+    ) -> dict:
+        size = (record_video or {}).get("size") or {}
+        if size.get("width") and size.get("height"):
+            return {"width": int(size["width"]), "height": int(size["height"])}
+        return dict(viewport) if viewport else {"width": 1280, "height": 720}
 
-    def _get_record_video_size(self, params) -> tuple[int | None, int | None]:
-        width = params.get("recordVideo", {}).get("size", {}).get("width")
-        height = params.get("recordVideo", {}).get("size", {}).get("height")
-        return int(width) if width else None, int(height) if height else None
-
-    def _set_video_size_to_int(self, params: dict) -> dict:
-        if "recordVideo" not in params:
-            return params
-        params["recordVideo"]["size"] = self._get_video_size(params)
-        return params
-
-    def _get_video_size(self, params: dict) -> dict:
-        width, height = self._get_record_video_size(params)
-        if width and height:
-            return {"width": width, "height": height}
-        if "viewport" in params:
-            return params["viewport"]
-        return {"width": 1280, "height": 720}
+    def _record_har(
+        self, record_har: Mapping[str, Any] | None
+    ) -> dict[str, Any] | None:
+        if record_har is None:
+            return None
+        if not record_har.get("path"):
+            return {**record_har}
+        return {
+            **record_har,
+            "path": str(Path(self.outputdir, record_har["path"]).resolve()),
+        }
 
     @keyword(tags=("Setter", "BrowserControl"))
     def new_page(

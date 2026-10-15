@@ -90,6 +90,7 @@ from .utils.data_types import (
     SelectionType,
     SupportedBrowsers,
     TracingGroupMode,
+    ViewportDimensions,
 )
 from .version import __version__ as VERSION
 
@@ -904,39 +905,30 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         tracing: bool | Path | None = None,
         recordVideo: RecordVideo | None = None,
         recordHar: RecordHar | None = None,
+        viewport: ViewportDimensions | None = None,
     ) -> AdoptedContextOptions:
         """Returns the tracing and recording options for a context that a JavaScript
         extension creates and hands over with ``adoptContext``.
 
         They follow the rules of `New Context`: ``tracing`` gives the trace path or
         folder, also when ``ROBOT_FRAMEWORK_BROWSER_TRACING`` is set.
-        ``recordVideo`` gets the video folder and size, Browser's video folder and
-        1280x720 by default, and keeps its other keys. A relative ``path`` of
-        ``recordHar`` becomes relative to the output directory. ``None`` means off.
+        ``recordVideo`` gets the video folder, Browser's video folder by default, and
+        the size, and keeps its other keys, so an empty dictionary records with the
+        defaults. Without a ``size``, the video has the size of ``viewport``, the
+        viewport that the extension creates the context with, or 1280x720. A
+        relative ``path`` of ``recordHar`` becomes relative to the output directory.
+        ``None`` means off. ``tracesDir`` is a new folder for Playwright's temporary
+        trace files, as Browser gives one to each browser that it launches.
+
         The keys can be passed to the extension function as keyword arguments:
         ``tracing`` for the ``tracing`` option of ``adoptContext``, ``recordVideo``
-        and ``recordHar`` for Playwright when the extension creates the context.
-        After the extension returns, call `register_adopted_context` with these
-        options.
+        and ``recordHar`` for Playwright when the extension creates the context, and
+        ``tracesDir`` when it launches a browser or an application. After the
+        extension returns, call ``register_adopted_context`` with these options.
         """
-        state = self._playwright_state
-        options: AdoptedContextOptions = {
-            "tracing": state._resolve_trace_file(tracing) or None,
-            "recordVideo": None,
-            "recordHar": None,
-        }
-        if recordVideo is not None:
-            params = {"recordVideo": {"dir": None, **recordVideo}}
-            params = state._set_video_size_to_int(state._set_video_path(params))
-            options["recordVideo"] = {
-                **params["recordVideo"],
-                "dir": str(params["recordVideo"]["dir"]),
-            }
-        if recordHar is not None:
-            options["recordHar"] = state._set_har_path({"recordHar": {**recordHar}})[
-                "recordHar"
-            ]
-        return options
+        return self._playwright_state.adopted_context_options(
+            tracing, recordVideo, recordHar, viewport
+        )
 
     def register_adopted_context(
         self,
@@ -947,20 +939,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         """Registers a context that a JavaScript extension handed over with
         ``adoptContext`` the way `New Context` registers its own.
 
-        ``options`` are those of `adopted_context_options`. With ``tracing``, the
+        ``options`` are those of ``adopted_context_options``. With ``tracing``, the
         keyword calls become groups in the trace. With ``recordVideo``, the log
         embeds the video at ``video_path``. Returns ``video_path``, or an empty
         string if there is no video.
         """
-        state = self._playwright_state
-        if options["tracing"]:
-            state.add_context_and_keyword_call_stack_to_trace(
-                options["tracing"], context_id
-            )
-        if not options["recordVideo"]:
-            return ""
-        state.context_cache.add(context_id, options["recordVideo"]["size"])
-        return state._embed_video({"video_path": video_path, "contextUuid": context_id})
+        return self._playwright_state.register_adopted_context(
+            context_id, options, video_path
+        )
 
     @property
     def outputdir(self) -> str:
