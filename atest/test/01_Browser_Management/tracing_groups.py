@@ -10,6 +10,14 @@ def get_trace_lines(path: Path) -> list[dict]:
         ]
 
 
+def get_trace_group_titles(path: Path) -> list[str]:
+    return [
+        line["title"]
+        for line in get_trace_lines(path)
+        if line.get("method") == "tracingGroup"
+    ]
+
+
 def get_file_line(file: Union[Path, None], line: int, column: int) -> str:
     if file is None:
         return None
