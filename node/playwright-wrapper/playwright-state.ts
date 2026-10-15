@@ -166,8 +166,6 @@ export async function extensionKeywordCall(
     const namedArguments = Object.fromEntries(args['arguments']);
     const apiArguments = new Map();
     const argNames = getArgumentNamesFromJavascriptKeyword(keyword);
-    // Resolve the browser only when the keyword asks for something that needs
-    // one. So if it has arguments like page, context or browser.
     if (argNames.some((name) => name === 'page' || name === 'context' || name === 'browser')) {
         apiArguments.set('browser', state.getActiveBrowser().browser);
     }
@@ -178,8 +176,7 @@ export async function extensionKeywordCall(
     apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
         state.adoptContext(context, options),
     );
-    // Injected values can be null or undefined, for example the browser of a
-    // persistent or adopted context, so they must not fall back to the marker.
+    // Injected values can be null, for example the browser of an adopted context.
     const functionArguments = argNames.map((argName) =>
         apiArguments.has(argName) ? apiArguments.get(argName) : namedArguments[argName],
     );
@@ -330,10 +327,7 @@ async function _createIndexedContext(
     return indexedContext;
 }
 
-/*
- * Indexes a context and every page it already has. The context's first page
- * ends up last in the page stack, so it becomes the active page.
- */
+// The context's first page ends up last in the page stack, so it becomes the active page.
 async function _indexContextWithPages(
     context: BrowserContext,
     defaultTimeout: number | undefined,
@@ -563,18 +557,6 @@ export class PlaywrightState {
         return browserState;
     }
 
-    /*
-     * Adds a context that was created outside the library, for example by a
-     * JavaScript extension, as a new active browser without a browser object.
-     * Its first page becomes the active page. It keeps its default timeout; an
-     * extension gives it the library timeout with the injected defaultTimeout.
-     * Closing the context closes the browser, as with a persistent context. options.onClose runs once after that,
-     * so the creator can release what the context does not own, such as a device.
-     * The browser is named 'adopted' and not headless unless the creator says otherwise.
-     * With options.tracing, the context is traced like one created with a trace file.
-     * options.contextOptions are the options the context was created with, kept like
-     * those of New Context, so that keywords depending on them, such as Download, work.
-     */
     public async adoptContext(context: BrowserContext, options: AdoptContextOptions = {}): Promise<AdoptedContext> {
         const browserState = new BrowserState({
             browser: null,
@@ -875,7 +857,6 @@ export async function closeContext(request: Request_Bool, openBrowsers: Playwrig
         await _saveCoverageReport(page);
     }
     // A persistent or adopted context is the only context of a browser without a browser object.
-    // Closing it closes that browser too, which runs its onClose, even if closing the context fails.
     const closesBrowser = activeBrowser.browser === null && activeBrowser.contextStack.length === 1;
     try {
         await openBrowsers.getActiveContext()?.close();
