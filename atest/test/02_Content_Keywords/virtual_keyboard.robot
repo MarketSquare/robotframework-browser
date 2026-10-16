@@ -35,7 +35,7 @@ Keyboard Key Press Without Delay Does Not Hold The Key
     Click    id=event_test_input
     Keyboard Key    press    b
     ${log} =    Get Text    id=event_log_text
-    Assert Key Timings    ${log}    b    expected_press_duration_ms=0
+    Assert Key Timings    ${log}    b    expected_press_duration_ms=0    max_press_duration_ms=60ms
 
 Keyboard Key Delay Is Only Valid For Press
     Run Keyword And Expect Error

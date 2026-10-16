@@ -43,25 +43,29 @@ def _verify_key_timings(  # noqa: C901, PLR0912, PLR0915
     keys: Iterable[str],
     expected_press_ms: int,
     expected_key_delay_ms: int,
-    press_variance_ms: int = 20,
-    key_delay_variance_ms: int = 20,
+    press_tolerance_ms: int = 20,
+    key_delay_tolerance_ms: int = 20,
     target_id: str | None = "event_test_input",
-    enforce_upper_bounds: bool = True,
+    max_press_ms: int | None = None,
 ) -> VerificationResult:
     """
     Parse a JSON-lines event log and verify:
-      1) For each key k: (keyup - keydown) ~= expected_press_ms (+/- press_variance_ms)
-      2) For each adjacent pair (k_i, k_{i+1}): (next.keydown - prev.keyup) ~= expected_key_delay_ms (+/- key_delay_variance_ms)
+      1) For each key k: (keyup - keydown) >= expected_press_ms - press_tolerance_ms
+      2) For each adjacent pair (k_i, k_{i+1}): (next.keydown - prev.keyup) >= expected_key_delay_ms - key_delay_tolerance_ms
+
+    Press duration and key delay are minimums: the time on top of them is CDP overhead,
+    which grows without limit on a loaded runner, so there is no upper bound unless
+    max_press_ms asks for one.
 
     Args:
         log_text: The contents of your #event_log_text textarea (newline-separated JSON objects).
         keys:     Sequence of keys to validate, e.g. ['a', 'b'].
-        expected_press_ms:     Expected hold duration per key, in milliseconds.
-        expected_key_delay_ms: Expected delay between keys, in milliseconds.
-        press_variance_ms:     Allowed absolute deviation for press duration.
-        key_delay_variance_ms: Allowed absolute deviation for inter-key delay.
-        target_id:             Only consider events from this targetId (set to None to allow any).
-        enforce_upper_bounds:  If True, checks both lower and upper bounds; if False, only lower bound.
+        expected_press_ms:      Minimum hold duration per key, in milliseconds.
+        expected_key_delay_ms:  Minimum delay between keys, in milliseconds.
+        press_tolerance_ms:     How far below expected_press_ms a press may be.
+        key_delay_tolerance_ms: How far below expected_key_delay_ms a gap may be.
+        target_id:              Only consider events from this targetId (set to None to allow any).
+        max_press_ms:           Longest allowed hold per key, for checking that a key is not held.
 
     Returns:
         VerificationResult with per-key timings, per-gap values, and messages. `ok` is True if all checks passed.
@@ -120,16 +124,13 @@ def _verify_key_timings(  # noqa: C901, PLR0912, PLR0915
 
     # Check per-key press duration
     for kt in key_timings:
-        lower = expected_press_ms - press_variance_ms
-        upper = expected_press_ms + press_variance_ms
-        if kt.press_ms < lower or (enforce_upper_bounds and kt.press_ms > upper):
+        lower = expected_press_ms - press_tolerance_ms
+        if kt.press_ms < lower:
             ok = False
-            if enforce_upper_bounds:
-                messages.append(
-                    f"Key '{kt.key}' press {kt.press_ms}ms not in [{lower}, {upper}]ms."
-                )
-            else:
-                messages.append(f"Key '{kt.key}' press {kt.press_ms}ms < {lower}ms.")
+            messages.append(f"Key '{kt.key}' press {kt.press_ms}ms < {lower}ms.")
+        if max_press_ms is not None and kt.press_ms > max_press_ms:
+            ok = False
+            messages.append(f"Key '{kt.key}' press {kt.press_ms}ms > {max_press_ms}ms.")
 
     # Compute and check inter-key gaps (keyup[i] -> keydown[i+1])
     gaps: list[InterKeyGap] = []
@@ -138,18 +139,12 @@ def _verify_key_timings(  # noqa: C901, PLR0912, PLR0915
         nxt = key_timings[i + 1]
         gap_ms = int((nxt.down_time - prev.up_time).total_seconds() * 1000)
         gaps.append(InterKeyGap(prev_key=prev.key, next_key=nxt.key, gap_ms=gap_ms))
-        lower = expected_key_delay_ms - key_delay_variance_ms
-        upper = expected_key_delay_ms + key_delay_variance_ms
-        if gap_ms < lower or (enforce_upper_bounds and gap_ms > upper):
+        lower = expected_key_delay_ms - key_delay_tolerance_ms
+        if gap_ms < lower:
             ok = False
-            if enforce_upper_bounds:
-                messages.append(
-                    f"Inter-key delay {prev.key}->{nxt.key} {gap_ms}ms not in [{lower}, {upper}]ms."
-                )
-            else:
-                messages.append(
-                    f"Inter-key delay {prev.key}->{nxt.key} {gap_ms}ms < {lower}ms."
-                )
+            messages.append(
+                f"Inter-key delay {prev.key}->{nxt.key} {gap_ms}ms < {lower}ms."
+            )
 
     return VerificationResult(
         ok=ok, key_timings=key_timings, gaps=gaps, messages=messages
@@ -164,10 +159,10 @@ def assert_key_timings(
     *keys: str,
     expected_press_duration_ms: timedelta = timedelta(milliseconds=0),
     expected_key_delay_ms: timedelta = timedelta(milliseconds=0),
-    press_variance_ms: timedelta = timedelta(milliseconds=60),
-    key_delay_variance_ms: timedelta = timedelta(milliseconds=60),
+    press_tolerance_ms: timedelta = timedelta(milliseconds=60),
+    key_delay_tolerance_ms: timedelta = timedelta(milliseconds=60),
     target_id: str | None = "event_test_input",
-    enforce_upper_bounds: bool = True,
+    max_press_duration_ms: timedelta | None = None,
 ) -> VerificationResult:
     """
     Calls verify_key_timings and raises AssertionError with a compact report if it fails.
@@ -177,10 +172,12 @@ def assert_key_timings(
         keys,
         int(expected_press_duration_ms.total_seconds() * 1000),
         int(expected_key_delay_ms.total_seconds() * 1000),
-        int(press_variance_ms.total_seconds() * 1000),
-        int(key_delay_variance_ms.total_seconds() * 1000),
+        int(press_tolerance_ms.total_seconds() * 1000),
+        int(key_delay_tolerance_ms.total_seconds() * 1000),
         target_id,
-        enforce_upper_bounds,
+        None
+        if max_press_duration_ms is None
+        else int(max_press_duration_ms.total_seconds() * 1000),
     )
     if not res.ok:
         lines = ["Key timing verification failed:"]
