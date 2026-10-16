@@ -65,16 +65,14 @@ Save PDF With Emulate Media
     Dictionaries Should Be Equal    ${media}    ${expected_media}
 
 Save PDF With Firefox Should Not Work
-    [Documentation]    Generating a pdf is currently only supported in Chromium headless.
     New Browser    Firefox    headless=True
     New Page    ${WEBCOMPONENT_PAGE}
     TRY
         Save Page As Pdf    welcome7.pdf
     EXCEPT    Error: page.pdf*    type=GLOB
         No Operation
-    FINALLY
-        Close Browser    CURRENT
     END
+    [Teardown]    Close Browser    CURRENT
 
 *** Keywords ***
 Open Headless Chrome
