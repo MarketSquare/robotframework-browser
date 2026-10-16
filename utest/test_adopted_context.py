@@ -4,6 +4,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
+
 from Browser import Browser
 from Browser.base.cache import ContextCache
 from Browser.utils.data_types import KeywordCallStackEntry, TracingGroupMode
@@ -122,6 +124,24 @@ def test_video_keeps_its_other_keys(tmpdir, monkeypatch):
     )
 
     assert options["recordVideo"]["showActions"] == {"duration": 500}
+
+
+def test_video_options_are_converted_like_new_context(tmpdir, monkeypatch):
+    browser = library(tmpdir, monkeypatch)
+
+    options = browser.adopted_context_options(
+        recordVideo={"fps": "10", "showActions": {"duration": "300"}}
+    )
+
+    assert options["recordVideo"]["fps"] == 10
+    assert options["recordVideo"]["showActions"] == {"duration": 300}
+
+
+def test_unknown_video_option_fails_like_new_context(tmpdir, monkeypatch):
+    browser = library(tmpdir, monkeypatch)
+
+    with pytest.raises(ValueError, match="RecordVideo"):
+        browser.adopted_context_options(recordVideo={"framerate": 10})
 
 
 def test_video_folder_and_size_follow_new_context(tmpdir, monkeypatch):

@@ -26,7 +26,7 @@ from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_type_hints
 
 from assertionengine import AssertionOperator
 from overrides import overrides
@@ -64,7 +64,7 @@ from .keywords import (
 )
 from .keywords.crawling import Crawling
 from .playwright import Playwright
-from .python_arguments import add_argument_conversion
+from .python_arguments import add_argument_conversion, converting_proxy
 from .utils import (
     AutoClosingLevel,
     PlaywrightLogTypes,
@@ -912,9 +912,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
         They follow the rules of `New Context`: ``tracing`` gives the trace path or
         folder, also when ``ROBOT_FRAMEWORK_BROWSER_TRACING`` is set.
-        ``recordVideo`` gets the video folder, Browser's video folder by default, and
-        the size, and keeps its other keys, so an empty dictionary records with the
-        defaults. Without a ``size``, the video has the size of ``viewport``, the
+        ``recordVideo``, ``recordHar`` and ``viewport`` are converted like the
+        arguments of `New Context`, so an unknown key fails. ``recordVideo`` gets
+        the video folder, Browser's video folder by default, and the size, so an
+        empty dictionary records with the defaults. Without a ``size``, the video has the size of ``viewport``, the
         viewport that the extension creates the context with, or 1280x720. A
         relative ``path`` of ``recordHar`` becomes relative to the output directory.
         ``None`` means off. ``tracesDir`` is a new folder for Playwright's temporary
@@ -926,7 +927,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ``tracesDir`` when it launches a browser or an application. After the
         extension returns, call ``register_adopted_context`` with these options.
         """
-        return self._playwright_state.adopted_context_options(
+        options = self._playwright_state.adopted_context_options
+        return converting_proxy(options, get_type_hints(options))(
             tracing, recordVideo, recordHar, viewport
         )
 

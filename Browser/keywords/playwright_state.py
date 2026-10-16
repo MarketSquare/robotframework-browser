@@ -1139,7 +1139,7 @@ class PlaywrightState(LibraryComponent):
         self,
         context_id: str,
         trace_file: str,
-        video_size: dict,
+        video_size: ViewportDimensions,
         video: dict | None = None,
     ) -> str:
         self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
@@ -1148,9 +1148,9 @@ class PlaywrightState(LibraryComponent):
 
     def _record_video(
         self,
-        record_video: Mapping[str, Any] | None,
+        record_video: RecordVideo | None,
         viewport: Mapping[str, Any] | None,
-    ) -> dict[str, Any] | None:
+    ) -> RecordVideo | None:
         if record_video is None:
             return None
         video_dir = record_video.get("dir")
@@ -1170,15 +1170,15 @@ class PlaywrightState(LibraryComponent):
         self,
         record_video: Mapping[str, Any] | None,
         viewport: Mapping[str, Any] | None,
-    ) -> dict:
+    ) -> ViewportDimensions:
         size = (record_video or {}).get("size") or {}
         if size.get("width") and size.get("height"):
             return {"width": int(size["width"]), "height": int(size["height"])}
-        return dict(viewport) if viewport else {"width": 1280, "height": 720}
+        if viewport:
+            return {"width": viewport["width"], "height": viewport["height"]}
+        return {"width": 1280, "height": 720}
 
-    def _record_har(
-        self, record_har: Mapping[str, Any] | None
-    ) -> dict[str, Any] | None:
+    def _record_har(self, record_har: RecordHar | None) -> RecordHar | None:
         if record_har is None:
             return None
         if not record_har.get("path"):
