@@ -161,6 +161,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
 | `notice` / `error` | one-shot message, cleared by the next command |
 | `picking` | Playwright's Pick locator mode is on |
+| `paused` | the keyword is recording but paused: Actions and signals are ignored until `resume` |
 | `answered` | `id` of the last command Python handled; with `error` it tells a dialog whether its command was refused |
 
 Every displayed text (`text`, `default`, the offer's `text`) is cut to `TOOLBAR_TEXT_LIMIT`
@@ -177,7 +178,7 @@ ago the page saw its last click or finished loading, see Timing):
 | `cmd` | Fields |
 |-------|--------|
 | `new` | `name` |
-| `finish`, `discard`, `stop`, `undo` | - |
+| `finish`, `discard`, `stop`, `undo`, `pause`, `resume` | - |
 | `argument` | `call`, `value`, `start`, `end` (code point offsets into the value), `name`, `raw`, `useDefault` (boolean, default `true`: the marked text becomes the default) |
 | `replace` | `argument`, `occurrences` (`[[call, value], ...]`, possibly empty) |
 
@@ -196,7 +197,7 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
 
 - Playwright holds back left clicks and navigations for 500 ms before reporting them
   (`kActionBufferTimeout`).
-- Hence `new`, `finish`, `discard` and `stop` wait (`pending`) until `SETTLE_SECONDS`
+- Hence `new`, `finish`, `discard`, `stop`, `pause` and `resume` wait (`pending`) until `SETTLE_SECONDS`
   (0.8 s) after the page's last click or load, so a held-back Action lands in the keyword it
   was made in, and one made while idle does not land in the next keyword. The toolbar
   measures that quiet time (`quietMs`, from trusted `click`/`dblclick`/`auxclick` outside the

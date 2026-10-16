@@ -91,6 +91,8 @@ class Recorder(LibraryComponent):
         - *Minimize* in the header (a dash): minimizes the toolbar.
         - *Discard*: drops the Keyword Calls recorded so far and starts the keyword again, empty.
         - *Undo*: removes the Keyword Calls of the last Action.
+        - *Pause* (two bars): stops recording until *Resume*; Actions in between are not
+          recorded.
 
         The toolbar is in the recording state from the start. Click a value or a selector in
         the toolbar to turn the whole of it, or a marked part, into a Keyword Argument, named
@@ -181,6 +183,8 @@ class Recorder(LibraryComponent):
         - *Record keyword*: names and starts a keyword.
         - *Discard*: drops the keyword being recorded, also from ``file``, and returns to idle.
         - *Undo*: removes the Keyword Calls of the last Action.
+        - *Pause* (two bars): stops recording until *Resume*; Actions in between are not
+          recorded.
         - *Save*: saves the keyword being recorded and returns to idle.
 
         While the toolbar is minimized, its header offers *Start* (idle) or *Save*

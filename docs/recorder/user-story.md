@@ -95,6 +95,10 @@ Defined in `Browser/recorder/CONTEXT.md`.
   <define_path_to_file>/<file name>` before the Action that opened the chooser and
   `Wait For    ${upload}` after it; without such an Action, as `Upload File By Selector`. The
   toolbar says that the folder has to be filled in.
+- **AC-56** *Pause*, an icon-only button between *Undo* and *Save* with a tooltip, stops
+  recording; it then becomes *Resume*, with icon and text. Actions while paused are not
+  recorded; an Action made right before *Pause* still is, one made right before *Resume*
+  is not. The toolbar shows that the recording is paused.
 - **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
   shows a clear notice saying so for as long as the mode is on.
 
@@ -200,7 +204,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-55**. Anything not
+AC-56**. Anything not
 stated there is not part of v1.
 
 ## Changes outside the recorder

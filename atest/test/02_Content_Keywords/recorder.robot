@@ -566,6 +566,30 @@ An Upload Into A File Input Becomes Upload File By Selector
     Should Not Contain    ${file}    Promise To Upload File
     Upload Replays    ${file}    Upload Into The Input
 
+Actions While Paused Are Not Recorded
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Fill Around A Pause    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    before
+    Wait Until Calls    1
+    Toolbar Element Should Be Hidden    resume
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('pause')
+    Wait For Function    () => window.__rfbToolbarState.paused === true && !window.__rfbToolbarState.pending
+    Toolbar Element Should Be Hidden    pause
+    Toolbar Element Should Be Shown    resume
+    Fill Text    input[name="email"]    while paused
+    Sleep    1s
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('resume')
+    Wait For Function    () => window.__rfbToolbarState.paused === false && !window.__rfbToolbarState.pending
+    Fill Text    input[name="website"]    after
+    Wait Until Calls    2
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    before
+    Should Contain    ${file}    after
+    Should Not Contain    ${file}    while paused
+
 Every Recorded Selector Finds Exactly The Clicked Element
     [Documentation]    Playwright's generator picks a different selector shape for each element
     ...    of the page. Each translated selector must find the element that was clicked, and only it.

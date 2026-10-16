@@ -45,10 +45,10 @@ IDLE = "idle"
 RECORDING = "recording"
 
 #: Playwright holds a left click and a navigation back for 500 ms before
-#: reporting them (ADR 0011). Finish, Discard and Stop wait until this long
-#: after the last click or page load so such an Action still lands in the
-#: keyword it was made in (AC-19); New waits so one made while idle does not
-#: land in the new keyword. The toolbar reports how long the page has been
+#: reporting them (ADR 0011). Finish, Discard, Stop and Pause wait until this
+#: long after the last click or page load so such an Action still lands in the
+#: keyword it was made in (AC-19); New and Resume wait so one made while idle or
+#: paused does not land in the keyword. The toolbar reports how long the page has been
 #: quiet (``quietMs``); without it the whole time is waited.
 SETTLE_SECONDS = 0.8
 _WRITE_FAILED = "Could not write"
@@ -58,7 +58,7 @@ _LOGGED_NAME_LIMIT = 80
 _ID_LIMIT = 64
 _STILL_FINISHING = "Still finishing the last command - please wait."
 _STILL_STARTING = "Still starting the keyword - please wait."
-_DEFERRED = ("finish", "discard", "stop")
+_DEFERRED = ("finish", "discard", "stop", "pause", "resume")
 _STARTING = "new"
 #: The toolbar shows at most this many characters of one text.
 TOOLBAR_TEXT_LIMIT = 200
@@ -95,6 +95,7 @@ class RecorderSession:
         self._skipped = False
         self._discard_on_stop = False
         self._picking = False
+        self._paused = False
         self._answered: str | None = None
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
@@ -144,6 +145,7 @@ class RecorderSession:
             "notice": self._notice,
             "error": self._error,
             "picking": self._picking,
+            "paused": self._paused,
             "answered": self._answered,
         }
 
@@ -183,7 +185,7 @@ class RecorderSession:
 
     def handle_event(self, event: str, action: dict) -> None:
         keyword = self._keyword
-        if keyword is None:
+        if keyword is None or self._paused:
             return
         if event == "signal":
             effect = self._mapper.map_signal(action, keyword.unique_variable)
@@ -286,6 +288,10 @@ class RecorderSession:
             self._finish()
         elif cmd == "discard":
             self._discard()
+        elif cmd == "pause":
+            self._pause()
+        elif cmd == "resume":
+            self._paused = False
         else:
             self.stopped = True
 
@@ -316,6 +322,12 @@ class RecorderSession:
                 return
             if cmd == "finish" and self._fixed_name is not None:
                 self._error = "Use Stop to end this recording."
+                return
+            if cmd == "pause" and self._paused:
+                self._error = "The recording is already paused."
+                return
+            if cmd == "resume" and not self._paused:
+                self._error = "The recording is not paused."
                 return
         if cmd == "stop" and self._pending is not None:
             # Keep the running settle time; a discard still happens first and
@@ -357,13 +369,20 @@ class RecorderSession:
         if name is None:
             return
         self._keyword = RecordedKeyword(name)
-        self._undone = self._skipped = False
+        self._undone = self._skipped = self._paused = False
+
+    def _pause(self) -> None:
+        self._paused = True
+        # A signal reported after Resume belongs to an Action made while paused,
+        # not to the last recorded one.
+        self._skipped = True
 
     def _finish(self) -> None:
         keyword = self._keyword
         assert keyword is not None
         self._keyword = None
         self._offer = None
+        self._paused = False
         if not len(keyword):
             self.log.append(f"'{keyword.name}' had no Keyword Calls and was discarded")
             self._remove(keyword.name)
@@ -393,7 +412,7 @@ class RecorderSession:
             else None
         )
         self._offer = None
-        self._undone = self._skipped = False
+        self._undone = self._skipped = self._paused = False
         self.log.append(f"discarded '{keyword.name}'")
         self._remove(keyword.name)
 

@@ -1071,3 +1071,62 @@ def test_a_cancelled_file_chooser_records_nothing():
     s.handle_event("added", UPLOAD_CLICK)
     s.handle_event("added", {"name": "setInputFiles", "selector": "#f", "files": []})
     assert "Upload" not in target.saved[-1]
+
+
+def pause(s, clock, cmd="pause"):
+    s.handle_command({"cmd": cmd})
+    settle(s, clock)
+
+
+def test_actions_while_paused_are_not_recorded():
+    s, target, clock = recording()
+    pause(s, clock)
+    assert s.toolbar_state()["paused"] is True
+    s.handle_event("added", CLICK)
+    s.handle_event("signal", {"name": "popup"})
+    pause(s, clock, "resume")
+    assert s.toolbar_state()["paused"] is False
+    s.handle_event("added", {**FILL, "text": "Bob"})
+    assert target.saved[-1].count("Fill Text") == 2
+    assert "Click" not in target.saved[-1]
+
+
+def test_an_action_right_before_pause_still_lands():
+    s, target, clock = recording()
+    s.handle_command({"cmd": "pause", "quietMs": 100})
+    s.handle_event("added", CLICK)
+    settle(s, clock)
+    assert "Click" in target.saved[-1]
+    assert s.toolbar_state()["paused"] is True
+
+
+def test_a_signal_after_resume_does_not_attach_to_the_action_before_pause():
+    s, target, clock = recording()
+    pause(s, clock)
+    pause(s, clock, "resume")
+    s.handle_event("signal", {"name": "dialog"})
+    assert "Handle Future Dialogs" not in target.saved[-1]
+
+
+@pytest.mark.parametrize(
+    ("first", "second", "error"),
+    [("pause", "pause", "already paused"), ("resume", None, "not paused")],
+)
+def test_pause_and_resume_only_where_they_make_sense(first, second, error):
+    s, _, clock = recording()
+    pause(s, clock, first)
+    if second:
+        s.handle_command({"cmd": second})
+    assert error in s.toolbar_state()["error"]
+
+
+def test_pause_needs_a_keyword_and_ends_with_it():
+    s, _, clock = session()
+    s.handle_command({"cmd": "pause"})
+    assert s.toolbar_state()["error"] == "No keyword is being recorded."
+    start(s, "K")
+    pause(s, clock)
+    s.handle_command({"cmd": "finish"})
+    settle(s, clock)
+    start(s, "L")
+    assert s.toolbar_state()["paused"] is False

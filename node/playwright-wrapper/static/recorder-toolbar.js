@@ -58,6 +58,8 @@
             minimize: icon('<path d="M3.5 8h9"/>'),
             expand: icon('<path d="M3.5 8h9M8 3.5v9"/>'),
             record: icon('<circle cx="8" cy="8" r="4.5" fill="currentColor" stroke="none"/>'),
+            pause: icon('<path d="M5.5 3.5v9M10.5 3.5v9"/>'),
+            resume: icon('<path d="M5 3.2l7.5 4.8L5 12.8z" fill="currentColor"/>'),
             bin: icon('<path d="M2.5 4.5h11M6.5 4.5V3h3v1.5M4 4.5l.7 9h6.6l.7-9M6.8 7v4.5M9.2 7v4.5"/>'),
             undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
             save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
@@ -110,6 +112,7 @@
       @media (prefers-reduced-motion: reduce) { .head button.quick.rec { animation: none; } }
       .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
       .dot.rec { background: var(--red); animation: pulse 1.4s ease-in-out infinite; }
+      .dot.paused { background: var(--amber); }
       @keyframes pulse { 50% { opacity: .25; } }
       @media (prefers-reduced-motion: reduce) { .dot.rec { animation: none; } }
       .title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -139,7 +142,10 @@
               font-size: 11px; }
       .calls li::marker { color: var(--faint); }
       .calls:empty::after { content: 'no keyword calls yet'; color: var(--faint); }
-      .calls li { white-space: pre; }
+      .calls li, .call-line { white-space: pre; }
+      .call-line { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+                   font-size: 11px; }
+      .call-line * { font-family: inherit; font-size: inherit; }
       .cell { margin-left: 3ch; }
       .assign { margin-right: 3ch; color: var(--amber); }
       .cell.pick { cursor: pointer; text-decoration: underline dotted var(--teal); }
@@ -150,9 +156,13 @@
       input[type=checkbox] { accent-color: var(--red); }
       .offer { background: var(--chrome); border: 1px solid var(--line); border-radius: 4px; padding: 6px;
                display: flex; flex-direction: column; gap: 6px; }
+      #offerList { overflow-x: auto; }
       .busy button { opacity: .5; pointer-events: none; }
       .row { display: flex; gap: 6px; }
       .row > button { flex: 1; }
+      /* Pause is a quiet, icon-only button; Resume, its replacement, asks to be pressed. */
+      .row > button.icon-only { flex: none; width: 34px; padding: 4px 0; }
+      .row > button.resume { color: var(--amber); border-color: var(--amber); }
       .hint { color: var(--dim); }
       .err { color: var(--red); }
       [hidden] { display: none !important; }
@@ -213,6 +223,8 @@
         <div class="row" id="recRow" hidden>
           <button class="danger" id="discard" title="Drop this keyword - nothing of it is saved">${ICONS.bin}Discard</button>
           <button id="undo" title="Remove the Keyword Calls of the last recorded action">${ICONS.undo}Undo</button>
+          <button class="icon-only" id="pause" title="Pause recording - actions are not recorded until you resume" aria-label="Pause recording">${ICONS.pause}</button>
+          <button class="resume" id="resume" title="Resume recording - actions are recorded again" hidden>${ICONS.resume}Resume</button>
           <button class="primary" id="finish" title="Save this keyword and stop recording it. The session stays open for the next one.">${ICONS.save}Save</button>
         </div>
       </div>
@@ -420,6 +432,8 @@
         $('undo').addEventListener('click', () => send({ cmd: 'undo' }));
         $('discard').addEventListener('click', () => send({ cmd: 'discard' }));
         $('finish').addEventListener('click', () => send({ cmd: 'finish' }));
+        $('pause').addEventListener('click', () => send({ cmd: 'pause' }));
+        $('resume').addEventListener('click', () => send({ cmd: 'resume' }));
         $('headSave').addEventListener('click', () => send({ cmd: 'finish' }));
 
         // -- keyword arguments -------------------------------------------------- //
@@ -670,13 +684,39 @@
             place();
             answerDialogs(state);
         };
+        // One Keyword Call as the file shows it: cells three character widths apart.
+        // `onPick(valueIndex, value)` makes the selectable values clickable.
+        const callLine = (container, call, onPick) => {
+            if (call.assign) {
+                const assign = document.createElement('span');
+                assign.className = 'assign';
+                assign.textContent = call.assign;
+                container.appendChild(assign);
+            }
+            const kw = document.createElement('span');
+            kw.textContent = call.keyword ?? '';
+            container.appendChild(kw);
+            (call.values || []).forEach((value, valueIndex) => {
+                const cell = document.createElement('span');
+                const pick = !!onPick && !!value.selectable;
+                cell.className = pick ? 'cell pick' : 'cell';
+                cell.textContent = value.text ?? '';
+                if (pick) {
+                    cell.title = 'Make this value an argument';
+                    cell.addEventListener('click', () => onPick(valueIndex, value));
+                }
+                container.appendChild(cell);
+            });
+            return container;
+        };
         const renderBody = (state) => {
             setHint('');
             const recording = state.state === 'recording';
             const calls = Array.isArray(state.calls) ? state.calls : [];
             const keywords = Array.isArray(state.keywords) ? state.keywords : [];
             const argumentList = Array.isArray(state.arguments) ? state.arguments : [];
-            $('dot').className = recording ? 'dot rec' : 'dot';
+            const paused = recording && !!state.paused;
+            $('dot').className = paused ? 'dot paused' : recording ? 'dot rec' : 'dot';
             $('title').textContent = recording ? state.name || 'Recording' : 'Idle';
             $('title').classList.toggle('rec', recording || state.pending === 'new');
             // Nothing is recorded while idle, so an empty call list would only confuse.
@@ -688,28 +728,8 @@
             const oldCount = list.children.length;
             list.textContent = '';
             calls.forEach((call, callIndex) => {
-                const item = document.createElement('li');
-                if (call.assign) {
-                    const assign = document.createElement('span');
-                    assign.className = 'assign';
-                    assign.textContent = call.assign;
-                    item.appendChild(assign);
-                }
-                const kw = document.createElement('span');
-                kw.textContent = call.keyword ?? '';
-                item.appendChild(kw);
-                (call.values || []).forEach((value, valueIndex) => {
-                    const cell = document.createElement('span');
-                    const pick = !!value.selectable && recording;
-                    cell.className = pick ? 'cell pick' : 'cell';
-                    cell.textContent = value.text ?? '';
-                    if (pick) {
-                        cell.title = 'Make this value an argument';
-                        cell.addEventListener('click', () => openArgModal(callIndex, valueIndex, value.raw));
-                    }
-                    item.appendChild(cell);
-                });
-                list.appendChild(item);
+                const onPick = recording ? (valueIndex, value) => openArgModal(callIndex, valueIndex, value.raw) : null;
+                list.appendChild(callLine(document.createElement('li'), call, onPick));
             });
             // Keep the reader's place; follow new calls only if already at the end.
             list.scrollTop = calls.length > oldCount && wasAtBottom ? list.scrollHeight : oldTop;
@@ -742,7 +762,11 @@
                     check.dataset.c = String(c);
                     check.dataset.v = String(v);
                     label.appendChild(check);
-                    label.append(` ${calls[c] ? (calls[c].text ?? '') : ''}`);
+                    label.append(' ');
+                    if (calls[c])
+                        label
+                            .appendChild(callLine(document.createElement('span'), calls[c], null))
+                            .classList.add('call-line');
                     box.appendChild(label);
                 });
             }
@@ -756,17 +780,23 @@
                 });
             }
             $('panel').classList.toggle('busy', !!state.pending);
-            if (state.pending === 'new') $('title').textContent = `${state.name || 'Keyword'} - starting…`;
-            else if (state.pending) $('title').textContent = `${state.name || 'Recording'} - finishing…`;
+            const pendingLabel =
+                { new: 'starting', pause: 'pausing', resume: 'resuming' }[state.pending] || 'finishing';
+            if (state.pending) $('title').textContent = `${state.name || 'Keyword'} - ${pendingLabel}…`;
+            else if (paused) $('title').textContent = `${state.name || 'Recording'} - paused`;
             $('idleRow').hidden = recording;
             $('recRow').hidden = !recording;
             // A fixed-name recording writes exactly one keyword: no New, no Finish.
             $('new').hidden = !!state.fixedName;
             $('finish').hidden = !!state.fixedName;
+            $('pause').hidden = paused;
+            $('resume').hidden = !paused;
             updateQuickButtons();
-            $('hint').textContent = recording
-                ? `writing to ${state.target}`
-                : `${keywords.length} keyword(s) recorded into ${state.target}`;
+            $('hint').textContent = paused
+                ? 'Paused - nothing is recorded until you resume.'
+                : recording
+                  ? `writing to ${state.target}`
+                  : `${keywords.length} keyword(s) recorded into ${state.target}`;
             $('err').textContent = state.error || '';
             $('err').hidden = !state.error;
         };
