@@ -758,7 +758,8 @@ class PlaywrightState(LibraryComponent):
                 Make sure to close the context for the HAR to be saved.
           - ``recordVideo``: Enables video recording for all pages into a folder. If not
                 specified videos are not recorded. Make sure to close the context for
-                videos to be saved. Video is not supported in remote browsers.
+                videos to be saved. Video is not supported in remote browsers. See
+                `RecordVideo` for the folder, size, frame rate and action annotations.
           - ``reducedMotion``: Emulates the ``prefers-reduced-motion`` media feature,
                 supported values are ``reduce`` and ``no-preference``. Defaults to
                 ``no-preference``.
