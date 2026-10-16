@@ -915,11 +915,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         ``recordVideo``, ``recordHar`` and ``viewport`` are converted like the
         arguments of `New Context`, so an unknown key fails. ``recordVideo`` gets
         the video folder, Browser's video folder by default, and the size, so an
-        empty dictionary records with the defaults. Without a ``size``, the video has the size of ``viewport``, the
-        viewport that the extension creates the context with, or 1280x720. A
-        relative ``path`` of ``recordHar`` becomes relative to the output directory.
-        ``None`` means off. ``tracesDir`` is a new folder for Playwright's temporary
-        trace files, as Browser gives one to each browser that it launches.
+        empty dictionary records with the defaults. Without a ``size``, the video
+        has the size of ``viewport``, the viewport that the extension creates the
+        context with, or 1280x720. A relative ``path`` of ``recordHar`` becomes
+        relative to the output directory. ``None`` means off. ``tracesDir`` is a
+        new folder for Playwright's temporary trace files, as Browser gives one to
+        each browser that it launches.
 
         The keys can be passed to the extension function as keyword arguments:
         ``tracing`` for the ``tracing`` option of ``adoptContext``, ``recordVideo``

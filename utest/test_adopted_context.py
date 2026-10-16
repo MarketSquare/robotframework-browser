@@ -137,11 +137,11 @@ def test_video_options_are_converted_like_new_context(tmpdir, monkeypatch):
     assert options["recordVideo"]["showActions"] == {"duration": 300}
 
 
-def test_unknown_video_option_fails_like_new_context(tmpdir, monkeypatch):
+def test_deprecated_font_size_fails_like_new_context(tmpdir, monkeypatch):
     browser = library(tmpdir, monkeypatch)
 
     with pytest.raises(ValueError, match="RecordVideo"):
-        browser.adopted_context_options(recordVideo={"framerate": 10})
+        browser.adopted_context_options(recordVideo={"showActions": {"fontSize": 20}})
 
 
 def test_video_folder_and_size_follow_new_context(tmpdir, monkeypatch):
