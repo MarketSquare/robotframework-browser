@@ -772,8 +772,8 @@ class AdoptedContextOptions(TypedDict):
     """
 
     tracing: str | None
-    recordVideo: dict[str, Any] | None
-    recordHar: dict[str, Any] | None
+    recordVideo: RecordVideo | None
+    recordHar: RecordHar | None
     tracesDir: str
 
 
