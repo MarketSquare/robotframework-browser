@@ -686,16 +686,59 @@ class Dimensions(ViewportDimensions):
     """Dimensions of an object in pixels."""
 
 
+class ShowActionsPosition(str, Enum):
+    top_left = "top-left"
+    top = "top"
+    top_right = "top-right"
+    bottom_left = "bottom-left"
+    bottom = "bottom"
+    bottom_right = "bottom-right"
+
+
+class ShowActionsCursor(str, Enum):
+    pointer = "pointer"
+    none = "none"
+
+
+class ShowActionsStyle(TypedDict, total=False):
+    point: str
+    highlight: str
+    title: str
+
+
+class ShowActions(TypedDict, total=False):
+    duration: int
+    position: ShowActionsPosition
+    cursor: ShowActionsCursor
+    style: ShowActionsStyle
+
+
 class RecordVideo(TypedDict, total=False):
     """Enables Video recording
+
+    | =Key= | =Description= |
+    | ``dir`` | Folder of the videos. |
+    | ``size`` | `ViewportDimensions` of the videos. |
+    | ``fps`` | Frame rate of the videos. Defaults to 25. Firefox and WebKit record at most 25 frames per second. |
+    | ``showActions`` | Annotates the interacted elements in the videos, with the keys below. |
+
+    Keys of ``showActions``:
+    | =Key= | =Description= |
+    | ``duration`` | How long each annotation is shown, in milliseconds. Defaults to 500. |
+    | ``position`` | Position of the action title: ``top-left``, ``top``, ``top-right`` (default), ``bottom-left``, ``bottom`` or ``bottom-right``. |
+    | ``cursor`` | ``pointer`` (default) shows a mouse pointer that moves from one action point to the next, ``none`` shows no cursor. |
+    | ``style`` | CSS declarations of the annotations: ``point`` for the marker on the action point and ``highlight`` for the box over the element, both shown only when given, and ``title`` for the action title. |
 
     Examples:
     |  New Context  recordVideo={'dir':'videos', 'size':{'width':400, 'height':200}}
     |  New Context  recordVideo={'dir': 'd:/automation/video'}
+    |  New Context  recordVideo={'showActions': {'position': 'bottom', 'style': {'title': 'font-size: 32px'}}}
     """
 
     dir: str
     size: ViewportDimensions
+    fps: int
+    showActions: ShowActions
 
 
 class RecordHar(TypedDict, total=False):

@@ -253,3 +253,28 @@ def test_new_persistent_context_resolves_a_relative_har_path(tmpdir, monkeypatch
     assert options["recordHar"] == {
         "path": str(Path(tmpdir, "persistent.har").resolve())
     }
+
+
+def test_new_context_sends_frame_rate_and_action_annotations(tmpdir, monkeypatch):
+    browser = library(tmpdir, monkeypatch)
+    show_actions = {
+        "duration": 300,
+        "position": "bottom-left",
+        "cursor": "none",
+        "style": {"title": "font-size: 32px"},
+    }
+
+    browser.new_context(recordVideo={"fps": 10, "showActions": show_actions})
+
+    options = sent_options(browser._playwright.stub.NewContext)
+    assert options["recordVideo"]["fps"] == 10
+    assert options["recordVideo"]["showActions"] == show_actions
+
+
+def test_new_persistent_context_sends_action_annotations(tmpdir, monkeypatch):
+    browser = library(tmpdir, monkeypatch)
+
+    browser.new_persistent_context(recordVideo={"showActions": {"position": "top"}})
+
+    options = sent_options(browser._playwright.stub.NewPersistentContext)
+    assert options["recordVideo"]["showActions"] == {"position": "top"}
