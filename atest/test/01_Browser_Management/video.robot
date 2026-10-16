@@ -75,6 +75,15 @@ Create Video With VideoSize
     New Page    file://${details}[video_path]
     Get BoundingBox    video    ALL    validate    value['width'] == 300 and value['height'] == 200
 
+Create Video With Action Annotations And Frame Rate
+    VAR    &{show_actions} =    position=bottom-left    cursor=none    style={'title': 'font-size: 32px'}
+    VAR    &{record_video} =    dir=annotated_video    fps=${10}    showActions=${show_actions}
+    New Context    recordVideo=${record_video}
+    ${details} =    New Page    ${LOGIN_URL}
+    Click    input#login_button
+    Close Context
+    Wait Until File Exists    ${details}[video_path]
+
 Create Video With Viewport
     [Documentation]
     ...    LOG 4:3    INFO    GLOB:    *width="400" height="250"*.webm"*
