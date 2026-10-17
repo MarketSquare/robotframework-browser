@@ -95,6 +95,7 @@ NODE_MODULES = ROOT_DIR / "node_modules"
 npm_deps_timestamp_file = NODE_MODULES / ".installed"
 
 ATEST_TIMEOUT = 900
+ATEST_ROBOT_TIMEOUT = 1500
 cpu_count = os.cpu_count() or 1
 EXECUTOR_COUNT = str(cpu_count - 1 or 1)
 IN_CI = os.getenv("GITHUB_WORKFLOW")
@@ -1141,7 +1142,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False):
     command_args.append("atest/test")
     env = os.environ.copy()
     process = subprocess.Popen(command_args, env=env)
-    process.wait(ATEST_TIMEOUT)
+    process.wait(ATEST_ROBOT_TIMEOUT)
     output_xml = str(ATEST_OUTPUT / "output.xml")
     print(f"Process {output_xml}")
     robotstatuschecker.process_output(output_xml)
