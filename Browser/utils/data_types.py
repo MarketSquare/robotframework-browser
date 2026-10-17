@@ -405,6 +405,16 @@ class AriaSnapshotReturnType(Enum):
     parsed = auto()
 
 
+class ContextVideo(TypedDict):
+    """The video of a context as the Node side reports it.
+
+    ``video_path`` is ``None`` when the context records no video.
+    """
+
+    video_path: str | None
+    contextUuid: str
+
+
 class KeywordCallStackEntry(TypedDict):
     """Information about the keyword call stack.
 
