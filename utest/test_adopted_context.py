@@ -35,12 +35,23 @@ def browser(tmpdir, monkeypatch) -> Browser:
     return browser
 
 
+VIEWPORT = {"width": 800, "height": 600}
+VIDEO_SIZES = [
+    ({}, {"width": 800, "height": 600}),
+    ({"size": {"width": 640, "height": 480}}, {"width": 640, "height": 480}),
+]
+
+
 def keyword_call(name: str) -> KeywordCallStackEntry:
     return {"name": name, "file": "", "line": 0, "kwname": name, "args": []}
 
 
-def sent_options(request) -> dict:
-    return json.loads(request.call_args.args[0].rawOptions)
+def sent_request(stub_method):
+    return stub_method.call_args.args[0]
+
+
+def sent_options(stub_method) -> dict:
+    return json.loads(sent_request(stub_method).rawOptions)
 
 
 def test_no_tracing_and_no_recording_by_default(browser: Browser):
@@ -199,14 +210,14 @@ def test_registered_context_outside_a_keyword_is_traced_without_trace_groups(
 
 def test_registered_context_embeds_its_video(browser: Browser, caplog):
     caplog.set_level("INFO")
-    options = browser.adopted_context_options(recordVideo={})
+    options = browser.adopted_context_options(recordVideo={}, viewport=VIEWPORT)
     video = str(Path(options["recordVideo"]["dir"], "page.webm"))
 
     video_path = browser.register_adopted_context("context=1", options, video)
 
     assert video_path == video
     assert (
-        '<video width="1280" height="720" controls>'
+        '<video width="800" height="600" controls>'
         '<source src="browser/video/page.webm" type="video/webm"></video>'
     ) in caplog.text
 
@@ -362,5 +373,50 @@ def test_adopted_trace_file_matches_what_new_context_sends(browser: Browser):
     adopted = browser.adopted_context_options(tracing=Path("app.zip"))
     browser.new_context(tracing=Path("app.zip"))
 
-    request = browser._playwright.stub.NewContext.call_args.args[0]
-    assert adopted["tracing"] == request.traceFile
+    assert (
+        adopted["tracing"]
+        == sent_request(browser._playwright.stub.NewContext).traceFile
+    )
+
+
+@pytest.mark.parametrize(
+    ("record_video", "video_size"), VIDEO_SIZES, ids=["viewport", "size"]
+)
+def test_new_context_caches_its_video_size(
+    browser: Browser, record_video: dict, video_size: dict
+):
+    browser._playwright.stub.NewContext.return_value = MagicMock(
+        id="context=1", contextOptions="{}"
+    )
+
+    browser.new_context(recordVideo=record_video, viewport=VIEWPORT)
+
+    assert browser._playwright_state.context_cache.get("context=1") == video_size
+
+
+@pytest.mark.parametrize(
+    ("record_video", "video_size"), VIDEO_SIZES, ids=["viewport", "size"]
+)
+def test_new_persistent_context_caches_its_video_size(
+    browser: Browser, record_video: dict, video_size: dict
+):
+    persistent_context_with_video(browser)
+
+    browser.new_persistent_context(recordVideo=record_video, viewport=VIEWPORT)
+
+    assert browser._playwright_state.context_cache.get("context=1") == video_size
+
+
+@pytest.mark.parametrize(
+    ("record_video", "video_size"), VIDEO_SIZES, ids=["viewport", "size"]
+)
+def test_registered_context_caches_its_video_size(
+    browser: Browser, record_video: dict, video_size: dict
+):
+    options = browser.adopted_context_options(
+        recordVideo=record_video, viewport=VIEWPORT
+    )
+
+    browser.register_adopted_context("context=1", options, "page.webm")
+
+    assert browser._playwright_state.context_cache.get("context=1") == video_size
