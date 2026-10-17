@@ -1117,7 +1117,10 @@ class PlaywrightState(LibraryComponent):
         ):
             return None
         self.library.tracing_contexts.append(ctx_id)
-        if self.library.tracing_group_mode == TracingGroupMode.Browser:
+        if (
+            self.library.tracing_group_mode == TracingGroupMode.Browser
+            and self.library.keyword_call_stack
+        ):
             return self.open_trace_group(
                 **self.library._trace_group_arguments(
                     self.library.keyword_call_stack[-1]

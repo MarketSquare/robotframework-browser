@@ -210,6 +210,19 @@ def test_playwright_tracing_group_mode_adds_no_trace_groups(tmpdir, monkeypatch)
     assert browser.tracing_contexts == []
 
 
+def test_registered_context_outside_a_keyword_is_traced_without_trace_groups(
+    tmpdir, monkeypatch
+):
+    browser = library(tmpdir, monkeypatch)
+    browser.tracing_group_mode = TracingGroupMode.Browser
+    options = browser.adopted_context_options(tracing=True)
+
+    browser.register_adopted_context("context=1", options)
+
+    assert not browser._playwright.stub.OpenTraceGroup.called
+    assert browser.tracing_contexts == ["context=1"]
+
+
 def test_registered_context_embeds_its_video(tmpdir, monkeypatch):
     browser = library(tmpdir, monkeypatch)
     options = browser.adopted_context_options(recordVideo={})
