@@ -420,3 +420,16 @@ def test_registered_context_caches_its_video_size(
     browser.register_adopted_context("context=1", options, "page.webm")
 
     assert browser._playwright_state.context_cache.get("context=1") == video_size
+
+
+def test_context_without_video_caches_no_video_size(browser: Browser):
+    stub = browser._playwright.stub
+    stub.NewContext.return_value = MagicMock(id="context=1", contextOptions="{}")
+    stub.NewPersistentContext.return_value.id = "context=2"
+
+    browser.new_context(viewport=VIEWPORT)
+    browser.new_persistent_context(viewport=VIEWPORT)
+    browser.register_adopted_context("context=3", browser.adopted_context_options())
+
+    cache = browser._playwright_state.context_cache
+    assert [cache.get(f"context={n}") for n in (1, 2, 3)] == [None, None, None]

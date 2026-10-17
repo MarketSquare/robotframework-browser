@@ -14,7 +14,6 @@
 
 import json
 import os
-from collections.abc import Mapping
 from contextlib import suppress
 from copy import copy
 from datetime import datetime, timedelta, timezone
@@ -27,7 +26,7 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 from robot.utils.robottypes import is_truthy
 
-from Browser.utils.data_types import BrowserInfo, TracingGroupMode
+from Browser.utils.data_types import BrowserInfo, ContextVideo, TracingGroupMode
 from Browser.utils.misc import get_download_id
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
@@ -849,11 +848,7 @@ class PlaywrightState(LibraryComponent):
                 "No browser was open. New browser was automatically opened "
                 "when this context is created."
             )
-        self._register_context(
-            response.id,
-            trace_file,
-            self._video_size(params.get("recordVideo"), params.get("viewport")),
-        )
+        self._register_context(response.id, trace_file, params.get("recordVideo"))
         return response.id
 
     @keyword()
@@ -998,9 +993,7 @@ class PlaywrightState(LibraryComponent):
                         logger.debug("Teardown: Closed new persistent context.")
                     raise e
             video_path = self._cache_context(
-                response.id,
-                self._video_size(params.get("recordVideo"), params.get("viewport")),
-                json.loads(response.video),
+                response.id, params.get("recordVideo"), json.loads(response.video)
             )
             return (
                 browser_id,
@@ -1029,16 +1022,13 @@ class PlaywrightState(LibraryComponent):
         video_path: str | None = None,
     ) -> str:
         record_video = options["recordVideo"]
-        video = (
+        video: ContextVideo | None = (
             {"video_path": video_path, "contextUuid": context_id}
             if record_video is not None
             else None
         )
         return self._register_context(
-            context_id,
-            options["tracing"] or "",
-            self._video_size(record_video, None),
-            video,
+            context_id, options["tracing"] or "", record_video, video
         )
 
     def _resolve_trace_file(self, tracing: bool | Path | None) -> str:
@@ -1142,25 +1132,26 @@ class PlaywrightState(LibraryComponent):
         self,
         context_id: str,
         trace_file: str,
-        video_size: ViewportDimensions,
-        video: dict | None = None,
+        record_video: RecordVideo | None,
+        video: ContextVideo | None = None,
     ) -> str:
         self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
-        return self._cache_context(context_id, video_size, video)
+        return self._cache_context(context_id, record_video, video)
 
     def _cache_context(
         self,
         context_id: str,
-        video_size: ViewportDimensions,
-        video: dict | None = None,
+        record_video: RecordVideo | None,
+        video: ContextVideo | None = None,
     ) -> str:
-        self.context_cache.add(context_id, video_size)
+        if record_video is not None:
+            self.context_cache.add(context_id, record_video["size"])
         return self._embed_video(video) if video else ""
 
     def _record_video(
         self,
         record_video: RecordVideo | None,
-        viewport: Mapping[str, Any] | None,
+        viewport: ViewportDimensions | None,
     ) -> RecordVideo | None:
         if record_video is None:
             return None
@@ -1179,11 +1170,11 @@ class PlaywrightState(LibraryComponent):
 
     def _video_size(
         self,
-        record_video: Mapping[str, Any] | None,
-        viewport: Mapping[str, Any] | None,
+        record_video: RecordVideo,
+        viewport: ViewportDimensions | None,
     ) -> ViewportDimensions:
-        size = (record_video or {}).get("size") or {}
-        if size.get("width") and size.get("height"):
+        size = record_video.get("size")
+        if size and size.get("width") and size.get("height"):
             return {"width": int(size["width"]), "height": int(size["height"])}
         if viewport:
             return {"width": viewport["width"], "height": viewport["height"]}
@@ -1278,7 +1269,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.RemoveFailedPage(Request().FailedPage(token=token))
         logger.info(response.log)
 
-    def _embed_video(self, video: dict) -> str:
+    def _embed_video(self, video: ContextVideo) -> str:
         if not video.get("video_path"):
             logger.debug("Video is not enabled.")
             return ""
