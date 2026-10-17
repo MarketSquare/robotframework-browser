@@ -516,11 +516,12 @@ class Browser(DynamicCore):
                 argument names ``page``, ``context``, ``browser``, ``logger``,
                 ``playwright``, ``adoptContext`` and ``defaultTimeout`` are filled in by
                 the library rather than taken from the keyword call. ``defaultTimeout``
-                is the library timeout in milliseconds. ``adoptContext(context, options)``
-                makes a BrowserContext that the function created itself, such as the
-                context of an Electron app, the active browser, so the other keywords
-                work on it. Can be a single path, a comma-separated list of paths or a
-                real list of strings. The options of ``adoptContext`` and examples are
+                is the library timeout in milliseconds; a Python library that calls the
+                function with ``call_js_keyword`` may pass its own instead.
+                ``adoptContext(context, options)`` makes a BrowserContext that the
+                function created itself, such as the context of an Electron app, the
+                active browser, so the other keywords work on it. Can be a single path,
+                a comma-separated list of paths or a real list of strings. The options of ``adoptContext`` and examples are
                 in https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and
                 documentation.
@@ -821,7 +822,7 @@ class Browser(DynamicCore):
             if arg_name in self._js_injected_arguments:
                 call_argument_texts.append(f"{arg_name}=None")
             elif arg_name == "defaultTimeout":
-                call_argument_texts.append("defaultTimeout=int(self.timeout)")
+                continue
             else:
                 call_argument_texts.append(f"{arg_name}={arg_name}")
                 if arg_name == "args":
@@ -851,6 +852,17 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             raise DataError(f"{e.msg} in {name}")
 
     def call_js_keyword(self, keyword_name: str, **args) -> Any:
+        """Calls the function ``keyword_name`` of a ``jsextension`` module and returns
+        what it returns.
+
+        ``args`` are matched to the function's arguments by name; arguments that the
+        function does not declare are ignored. The library fills in ``page``,
+        ``context``, ``browser``, ``logger``, ``playwright`` and ``adoptContext``,
+        whatever ``args`` gives for them. ``defaultTimeout`` is the library timeout in
+        milliseconds unless ``args`` gives one, for example when a library keeps a
+        timeout of its own.
+        """
+        args.setdefault("defaultTimeout", int(self.timeout))
         _args_browser_internal = {
             "arguments": [
                 (

@@ -79,13 +79,17 @@ def test_generated_keyword_reads_the_library_timeout_at_each_call(
     assert playwright.payload() == {"arguments": [["defaultTimeout", 3000]]}
 
 
-def test_other_generated_keywords_send_only_their_arguments(
+def test_generated_keyword_sends_injected_arguments_as_reserved(
     library: Browser, playwright: RecordingPlaywright
 ):
     generated_keyword(library, "clickTwice", "selector, page")("#button")
 
     assert playwright.payload() == {
-        "arguments": [["selector", "#button"], ["page", "RESERVED"]]
+        "arguments": [
+            ["selector", "#button"],
+            ["page", "RESERVED"],
+            ["defaultTimeout", 7000],
+        ]
     }
 
 
@@ -96,6 +100,30 @@ def test_call_js_keyword_sends_the_arguments_as_given(
 
     assert playwright.payload() == {
         "arguments": [["url", "https://a.b"], ["defaultTimeout", 5000]]
+    }
+
+
+def test_call_js_keyword_fills_in_the_library_timeout_when_it_is_left_out(
+    library: Browser, playwright: RecordingPlaywright
+):
+    library.call_js_keyword("openOwnContext", url="https://a.b")
+
+    assert playwright.payload() == {
+        "arguments": [["url", "https://a.b"], ["defaultTimeout", 7000]]
+    }
+
+
+def test_call_js_keyword_ignores_a_value_given_for_an_injected_argument(
+    library: Browser, playwright: RecordingPlaywright
+):
+    library.call_js_keyword("clickTwice", selector="#button", page="my own page")
+
+    assert playwright.payload() == {
+        "arguments": [
+            ["selector", "#button"],
+            ["page", "RESERVED"],
+            ["defaultTimeout", 7000],
+        ]
     }
 
 
@@ -132,6 +160,7 @@ def test_generated_keyword_sends_its_varargs_as_one_args_list(
             ["selector", "#field"],
             ["args", ["first", "second"]],
             ["logger", "RESERVED"],
+            ["defaultTimeout", 7000],
         ]
     }
 
