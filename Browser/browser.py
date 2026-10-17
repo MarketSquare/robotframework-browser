@@ -815,15 +815,15 @@ class Browser(DynamicCore):
             if arg
         ]
         argument_names_and_default_values_texts = []
-        arg_set_texts = []
+        call_argument_texts = []
         for item in argument_names_and_vals:
             arg_name = item[0]
             if arg_name in self._js_injected_arguments:
-                arg_set_texts.append(f'("{arg_name}", "RESERVED")')
+                call_argument_texts.append(f"{arg_name}=None")
             elif arg_name == "defaultTimeout":
-                arg_set_texts.append('("defaultTimeout", int(self.timeout))')
+                call_argument_texts.append("defaultTimeout=int(self.timeout)")
             else:
-                arg_set_texts.append(f'("{arg_name}", {arg_name})')
+                call_argument_texts.append(f"{arg_name}={arg_name}")
                 if arg_name == "args":
                     argument_names_and_default_values_texts.append("*args")
                 elif len(item) > 1:
@@ -836,31 +836,12 @@ class Browser(DynamicCore):
 @keyword
 def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     \"\"\"{doc}\"\"\"
-    _args_browser_internal = dict()
-    _args_browser_internal["arguments"] = [{", ".join(arg_set_texts)}]
-    with self.playwright.grpc_channel() as stub:
-        responses = stub.CallExtensionKeyword(
-            Request().KeywordCall(name="{name}", arguments=json.dumps(_args_browser_internal))
-        )
-        body_parts: list[str] = []
-        last_json = ""
-        for response in responses:
-            logger.info(response.log)
-            if response.bodyPart:
-                body_parts.append(response.bodyPart)
-            if response.json:
-                last_json = response.json
-        if body_parts:
-            body = "".join(body_parts)
-            return json.loads(body)
-        if not last_json:
-            return
-        return json.loads(last_json)
+    return self.library.call_js_keyword("{name}", {", ".join(call_argument_texts)})
 """
         try:
             exec(
                 text,
-                {**globals(), "keyword": keyword, "json": json},
+                {"keyword": keyword},
                 component.__dict__,
             )
             setattr(
@@ -886,19 +867,13 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 )
             )
             body_parts: list[str] = []
-            last_json = ""
             for response in responses:
                 logger.info(response.log)
                 if response.bodyPart:
                     body_parts.append(response.bodyPart)
-                if response.json:
-                    last_json = response.json
-            if body_parts:
-                body = "".join(body_parts)
-                return json.loads(body)
-            if not last_json:
+            if not body_parts:
                 return None
-            return json.loads(last_json)
+            return json.loads("".join(body_parts))
 
     def adopted_context_options(
         self,
