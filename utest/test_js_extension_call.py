@@ -1,5 +1,6 @@
 import inspect
 import json
+import math
 from contextlib import contextmanager
 from datetime import timedelta
 from types import SimpleNamespace
@@ -12,6 +13,7 @@ from Browser.utils.data_types import Scope
 class RecordingPlaywright:
     def __init__(self):
         self.requests = []
+        self.responses = []
 
     @contextmanager
     def grpc_channel(self):
@@ -19,7 +21,7 @@ class RecordingPlaywright:
 
     def CallExtensionKeyword(self, request):  # noqa: N802 - the name of the gRPC method
         self.requests.append(request)
-        return []
+        return self.responses
 
     def SetTimeout(self, request):  # noqa: N802 - the name of the gRPC method
         return SimpleNamespace(log="")
@@ -35,6 +37,10 @@ def library_with_recorded_calls(
     library = Browser(timeout=timedelta(seconds=7))
     library._playwright = RecordingPlaywright()
     return library, library._playwright
+
+
+def response(log: str, body_part: str = ""):
+    return SimpleNamespace(log=log, bodyPart=body_part, json="")
 
 
 def generated_keyword(library: Browser, name: str, arguments: str):
@@ -85,3 +91,79 @@ def test_call_js_keyword_sends_the_arguments_as_given(tmpdir, monkeypatch):
     assert playwright.payload() == {
         "arguments": [["url", "https://a.b"], ["defaultTimeout", 5000]]
     }
+
+
+def test_generated_keyword_joins_the_body_parts_of_a_chunked_result(
+    tmpdir, monkeypatch
+):
+    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+    playwright.responses = [
+        response("ok chunk 0", '{"name": "J'),
+        response("ok", 'örn", "size": 2}'),
+    ]
+
+    result = generated_keyword(library, "describe", "")()
+
+    assert result == {"name": "Jörn", "size": 2}
+
+
+def test_generated_keyword_returns_none_when_the_function_returns_nothing(
+    tmpdir, monkeypatch
+):
+    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+    playwright.responses = [response("ok")]
+
+    assert generated_keyword(library, "closeAll", "")() is None
+
+
+def test_generated_keyword_sends_its_varargs_as_one_args_list(tmpdir, monkeypatch):
+    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+    keyword = generated_keyword(library, "typeAll", "selector, args, logger")
+
+    keyword("#field", "first", "second")
+
+    assert playwright.payload() == {
+        "arguments": [
+            ["selector", "#field"],
+            ["args", ["first", "second"]],
+            ["logger", "RESERVED"],
+        ]
+    }
+
+
+def test_generated_keyword_takes_its_defaults_from_the_javascript_signature(
+    tmpdir, monkeypatch
+):
+    library, _ = library_with_recorded_calls(tmpdir, monkeypatch)
+    keyword = generated_keyword(
+        library,
+        "measure",
+        'label = "width", count = 3, ratio = NaN, upper = Infinity, '
+        "lower = -Infinity, strict = false, limit = null, unit = undefined",
+    )
+
+    defaults = {
+        name: parameter.default
+        for name, parameter in inspect.signature(keyword).parameters.items()
+    }
+
+    assert math.isnan(defaults.pop("ratio"))
+    assert defaults == {
+        "label": "width",
+        "count": 3,
+        "upper": math.inf,
+        "lower": -math.inf,
+        "strict": False,
+        "limit": None,
+        "unit": None,
+    }
+
+
+def test_generated_keyword_sends_a_test_scoped_timeout(tmpdir, monkeypatch):
+    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+    keyword = generated_keyword(library, "openOwnContext", "defaultTimeout")
+
+    library.set_browser_timeout(timedelta(milliseconds=1500), Scope.Test)
+    keyword()
+
+    assert playwright.payload() == {"arguments": [["defaultTimeout", 1500]]}
