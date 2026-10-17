@@ -3,7 +3,7 @@ Library      ../../library/AdoptingLibrary.py    jsextension=${CURDIR}/adopt.js
 Library      ArchiveLibrary
 Library      Collections
 Library      OperatingSystem
-Library      ../01_Browser_Management/tracing_groups.py
+Library      ../../library/tracing_groups.py
 Resource     ../variables.resource
 
 Test Tags    no-iframe
