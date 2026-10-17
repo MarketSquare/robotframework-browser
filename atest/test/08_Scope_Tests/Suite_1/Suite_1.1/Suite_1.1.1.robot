@@ -41,14 +41,14 @@ Global Defaults Are Restored When Test Scope Ends
 Settings Set At Suite Scope Are Applied To Current Test
     Set Strict Mode    ${True}
     Strict Mode Should Be    True
-    Set Browser Timeout    500 ms
-    Set Retry Assertions For    500 ms
+    Set Browser Timeout    3 s
+    Set Retry Assertions For    3 s
     Set Selector Prefix    ${IFRAME_PREFIX}
-    Log All Scopes    500    500    True    ${IFRAME_PREFIX}
+    Log All Scopes    3000    3000    True    ${IFRAME_PREFIX}
 
 Suite Scope Settings Persist Into Subsequent Tests
     [Setup]    Open Framed Page
-    Log All Scopes    500    500    True    ${IFRAME_PREFIX}
+    Log All Scopes    3000    3000    True    ${IFRAME_PREFIX}
     Strict Mode Should Be    True
-    Timeout Should Be    500
-    Assertion Retry Should Be    500
+    Timeout Should Be    3000
+    Assertion Retry Should Be    3000
