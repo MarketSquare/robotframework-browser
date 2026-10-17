@@ -968,12 +968,7 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            video_path = self._register_context(
-                response.id,
-                trace_file,
-                self._video_size(params.get("recordVideo"), params.get("viewport")),
-                json.loads(response.video),
-            )
+            self.add_context_and_keyword_call_stack_to_trace(trace_file, response.id)
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
             )
@@ -1002,6 +997,11 @@ class PlaywrightState(LibraryComponent):
                         self.close_browser()
                         logger.debug("Teardown: Closed new persistent context.")
                     raise e
+            video_path = self._remember_context(
+                response.id,
+                self._video_size(params.get("recordVideo"), params.get("viewport")),
+                json.loads(response.video),
+            )
             return (
                 browser_id,
                 response.id,
@@ -1144,6 +1144,14 @@ class PlaywrightState(LibraryComponent):
         video: dict | None = None,
     ) -> str:
         self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
+        return self._remember_context(context_id, video_size, video)
+
+    def _remember_context(
+        self,
+        context_id: str,
+        video_size: ViewportDimensions,
+        video: dict | None = None,
+    ) -> str:
         self.context_cache.add(context_id, video_size)
         return self._embed_video(video) if video else ""
 

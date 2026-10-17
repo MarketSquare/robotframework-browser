@@ -298,3 +298,28 @@ def test_new_persistent_context_sends_action_annotations(tmpdir, monkeypatch):
 
     options = sent_options(browser._playwright.stub.NewPersistentContext)
     assert options["recordVideo"]["showActions"] == {"position": "top"}
+
+
+def test_new_persistent_context_registers_nothing_when_its_url_fails_to_open(
+    tmpdir, monkeypatch, caplog
+):
+    caplog.set_level("INFO")
+    browser = library(tmpdir, monkeypatch)
+    browser.keyword_call_stack.append(keyword_call("New Persistent Context"))
+    stub = browser._playwright.stub
+    stub.NewPersistentContext.return_value = MagicMock(
+        id="context=1",
+        browserId="browser=1",
+        contextOptions="{}",
+        video=json.dumps({"video_path": "page.webm", "contextUuid": "context=1"}),
+    )
+    stub.GoTo.side_effect = RuntimeError("net::ERR_CONNECTION_REFUSED")
+
+    with pytest.raises(RuntimeError, match="ERR_CONNECTION_REFUSED"):
+        browser.new_persistent_context(
+            url="http://localhost:1", tracing=True, recordVideo={}
+        )
+
+    assert stub.OpenTraceGroup.call_args.args[0].contextId == "context=1"
+    assert browser._playwright_state.context_cache.get("context=1") is None
+    assert "<video" not in caplog.text
