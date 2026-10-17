@@ -313,12 +313,7 @@ def test_new_persistent_context_sends_action_annotations(tmpdir, monkeypatch):
     assert options["recordVideo"]["showActions"] == {"position": "top"}
 
 
-def test_new_persistent_context_registers_nothing_when_its_url_fails_to_open(
-    tmpdir, monkeypatch, caplog
-):
-    caplog.set_level("INFO")
-    browser = library(tmpdir, monkeypatch)
-    browser.keyword_call_stack.append(keyword_call("New Persistent Context"))
+def persistent_context_with_video(browser: Browser) -> MagicMock:
     stub = browser._playwright.stub
     stub.NewPersistentContext.return_value = MagicMock(
         id="context=1",
@@ -326,13 +321,47 @@ def test_new_persistent_context_registers_nothing_when_its_url_fails_to_open(
         contextOptions="{}",
         video=json.dumps({"video_path": "page.webm", "contextUuid": "context=1"}),
     )
+    return stub
+
+
+def test_new_persistent_context_caches_and_embeds_its_video_once_its_url_opened(
+    tmpdir, monkeypatch, caplog
+):
+    caplog.set_level("INFO")
+    browser = library(tmpdir, monkeypatch)
+    persistent_context_with_video(browser)
+
+    browser.new_persistent_context(url="http://localhost:1", recordVideo={})
+
+    assert browser._playwright_state.context_cache.get("context=1") == {
+        "width": 1280,
+        "height": 720,
+    }
+    assert "<video" in caplog.text
+
+
+def test_new_persistent_context_is_traced_before_its_url_opens(tmpdir, monkeypatch):
+    browser = library(tmpdir, monkeypatch)
+    browser.keyword_call_stack.append(keyword_call("New Persistent Context"))
+    stub = persistent_context_with_video(browser)
+    stub.GoTo.side_effect = RuntimeError("net::ERR_CONNECTION_REFUSED")
+
+    with pytest.raises(RuntimeError):
+        browser.new_persistent_context(url="http://localhost:1", tracing=True)
+
+    assert stub.OpenTraceGroup.call_args.args[0].contextId == "context=1"
+
+
+def test_new_persistent_context_is_not_cached_when_its_url_fails_to_open(
+    tmpdir, monkeypatch, caplog
+):
+    caplog.set_level("INFO")
+    browser = library(tmpdir, monkeypatch)
+    stub = persistent_context_with_video(browser)
     stub.GoTo.side_effect = RuntimeError("net::ERR_CONNECTION_REFUSED")
 
     with pytest.raises(RuntimeError, match="ERR_CONNECTION_REFUSED"):
-        browser.new_persistent_context(
-            url="http://localhost:1", tracing=True, recordVideo={}
-        )
+        browser.new_persistent_context(url="http://localhost:1", recordVideo={})
 
-    assert stub.OpenTraceGroup.call_args.args[0].contextId == "context=1"
     assert browser._playwright_state.context_cache.get("context=1") is None
     assert "<video" not in caplog.text
