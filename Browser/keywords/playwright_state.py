@@ -997,7 +997,7 @@ class PlaywrightState(LibraryComponent):
                         self.close_browser()
                         logger.debug("Teardown: Closed new persistent context.")
                     raise e
-            video_path = self._remember_context(
+            video_path = self._cache_context(
                 response.id,
                 self._video_size(params.get("recordVideo"), params.get("viewport")),
                 json.loads(response.video),
@@ -1117,10 +1117,9 @@ class PlaywrightState(LibraryComponent):
         ):
             return None
         self.library.tracing_contexts.append(ctx_id)
-        if (
-            self.library.tracing_group_mode == TracingGroupMode.Browser
-            and self.library.keyword_call_stack
-        ):
+        if self.library.tracing_group_mode == TracingGroupMode.Browser:
+            if not self.library.keyword_call_stack:
+                return None
             return self.open_trace_group(
                 **self.library._trace_group_arguments(
                     self.library.keyword_call_stack[-1]
@@ -1147,9 +1146,9 @@ class PlaywrightState(LibraryComponent):
         video: dict | None = None,
     ) -> str:
         self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
-        return self._remember_context(context_id, video_size, video)
+        return self._cache_context(context_id, video_size, video)
 
-    def _remember_context(
+    def _cache_context(
         self,
         context_id: str,
         video_size: ViewportDimensions,
