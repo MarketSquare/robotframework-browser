@@ -197,17 +197,18 @@ def test_registered_context_outside_a_keyword_is_traced_without_trace_groups(
     assert browser.tracing_contexts == ["context=1"]
 
 
-def test_registered_context_embeds_its_video(browser: Browser):
+def test_registered_context_embeds_its_video(browser: Browser, caplog):
+    caplog.set_level("INFO")
     options = browser.adopted_context_options(recordVideo={})
     video = str(Path(options["recordVideo"]["dir"], "page.webm"))
 
     video_path = browser.register_adopted_context("context=1", options, video)
 
     assert video_path == video
-    assert browser._playwright_state.context_cache.get("context=1") == {
-        "width": 1280,
-        "height": 720,
-    }
+    assert (
+        '<video width="1280" height="720" controls>'
+        '<source src="browser/video/page.webm" type="video/webm"></video>'
+    ) in caplog.text
 
 
 def test_video_path_without_record_video_is_ignored(browser: Browser):
@@ -326,3 +327,40 @@ def test_new_persistent_context_is_not_cached_when_its_url_fails_to_open(
 
     assert browser._playwright_state.context_cache.get("context=1") is None
     assert "<video" not in caplog.text
+
+
+def test_new_context_with_empty_video_options_records_into_the_video_folder(
+    browser: Browser,
+):
+    browser.new_context(recordVideo={})
+
+    options = sent_options(browser._playwright.stub.NewContext)
+    assert options["recordVideo"] == {
+        "dir": str(browser.video_output.resolve()),
+        "size": {"width": 1280, "height": 720},
+    }
+
+
+def test_adopted_recording_options_match_what_new_context_sends(browser: Browser):
+    record_video = {"dir": "clips", "fps": 10}
+    record_har = {"path": "app.har"}
+    viewport = {"width": 800, "height": 600}
+
+    adopted = browser.adopted_context_options(
+        recordVideo=record_video, recordHar=record_har, viewport=viewport
+    )
+    browser.new_context(
+        recordVideo=record_video, recordHar=record_har, viewport=viewport
+    )
+
+    sent = sent_options(browser._playwright.stub.NewContext)
+    assert adopted["recordVideo"] == sent["recordVideo"]
+    assert adopted["recordHar"] == sent["recordHar"]
+
+
+def test_adopted_trace_file_matches_what_new_context_sends(browser: Browser):
+    adopted = browser.adopted_context_options(tracing=Path("app.zip"))
+    browser.new_context(tracing=Path("app.zip"))
+
+    request = browser._playwright.stub.NewContext.call_args.args[0]
+    assert adopted["tracing"] == request.traceFile
