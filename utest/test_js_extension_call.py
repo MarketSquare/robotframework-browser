@@ -5,6 +5,8 @@ from contextlib import contextmanager
 from datetime import timedelta
 from types import SimpleNamespace
 
+import pytest
+
 from Browser import Browser
 from Browser.base import LibraryComponent
 from Browser.utils.data_types import Scope
@@ -30,16 +32,20 @@ class RecordingPlaywright:
         return json.loads(self.requests[-1].arguments)
 
 
-def library_with_recorded_calls(
-    tmpdir, monkeypatch
-) -> tuple[Browser, RecordingPlaywright]:
+@pytest.fixture
+def playwright() -> RecordingPlaywright:
+    return RecordingPlaywright()
+
+
+@pytest.fixture
+def library(tmpdir, monkeypatch, playwright: RecordingPlaywright) -> Browser:
     monkeypatch.setattr(Browser, "_output_dir", tmpdir)
     library = Browser(timeout=timedelta(seconds=7))
-    library._playwright = RecordingPlaywright()
-    return library, library._playwright
+    library._playwright = playwright
+    return library
 
 
-def response(log: str, body_part: str = ""):
+def extension_response(log: str, body_part: str = "") -> SimpleNamespace:
     return SimpleNamespace(log=log, bodyPart=body_part, json="")
 
 
@@ -50,9 +56,8 @@ def generated_keyword(library: Browser, name: str, arguments: str):
 
 
 def test_generated_keyword_passes_the_library_timeout_as_default_timeout(
-    tmpdir, monkeypatch
+    library: Browser, playwright: RecordingPlaywright
 ):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
     keyword = generated_keyword(library, "openOwnContext", "url, defaultTimeout")
 
     keyword("https://a.b")
@@ -63,8 +68,9 @@ def test_generated_keyword_passes_the_library_timeout_as_default_timeout(
     }
 
 
-def test_generated_keyword_reads_the_library_timeout_at_each_call(tmpdir, monkeypatch):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+def test_generated_keyword_reads_the_library_timeout_at_each_call(
+    library: Browser, playwright: RecordingPlaywright
+):
     keyword = generated_keyword(library, "openOwnContext", "defaultTimeout")
 
     library.set_browser_timeout(timedelta(seconds=3), Scope.Global)
@@ -73,9 +79,9 @@ def test_generated_keyword_reads_the_library_timeout_at_each_call(tmpdir, monkey
     assert playwright.payload() == {"arguments": [["defaultTimeout", 3000]]}
 
 
-def test_other_generated_keywords_send_only_their_arguments(tmpdir, monkeypatch):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
-
+def test_other_generated_keywords_send_only_their_arguments(
+    library: Browser, playwright: RecordingPlaywright
+):
     generated_keyword(library, "clickTwice", "selector, page")("#button")
 
     assert playwright.payload() == {
@@ -83,9 +89,9 @@ def test_other_generated_keywords_send_only_their_arguments(tmpdir, monkeypatch)
     }
 
 
-def test_call_js_keyword_sends_the_arguments_as_given(tmpdir, monkeypatch):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
-
+def test_call_js_keyword_sends_the_arguments_as_given(
+    library: Browser, playwright: RecordingPlaywright
+):
     library.call_js_keyword("openOwnContext", url="https://a.b", defaultTimeout=5000)
 
     assert playwright.payload() == {
@@ -94,12 +100,11 @@ def test_call_js_keyword_sends_the_arguments_as_given(tmpdir, monkeypatch):
 
 
 def test_generated_keyword_joins_the_body_parts_of_a_chunked_result(
-    tmpdir, monkeypatch
+    library: Browser, playwright: RecordingPlaywright
 ):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
     playwright.responses = [
-        response("ok chunk 0", '{"name": "J'),
-        response("ok", 'örn", "size": 2}'),
+        extension_response("ok chunk 0", '{"name": "J'),
+        extension_response("ok", 'örn", "size": 2}'),
     ]
 
     result = generated_keyword(library, "describe", "")()
@@ -108,16 +113,16 @@ def test_generated_keyword_joins_the_body_parts_of_a_chunked_result(
 
 
 def test_generated_keyword_returns_none_when_the_function_returns_nothing(
-    tmpdir, monkeypatch
+    library: Browser, playwright: RecordingPlaywright
 ):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
-    playwright.responses = [response("ok")]
+    playwright.responses = [extension_response("ok")]
 
     assert generated_keyword(library, "closeAll", "")() is None
 
 
-def test_generated_keyword_sends_its_varargs_as_one_args_list(tmpdir, monkeypatch):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+def test_generated_keyword_sends_its_varargs_as_one_args_list(
+    library: Browser, playwright: RecordingPlaywright
+):
     keyword = generated_keyword(library, "typeAll", "selector, args, logger")
 
     keyword("#field", "first", "second")
@@ -132,9 +137,8 @@ def test_generated_keyword_sends_its_varargs_as_one_args_list(tmpdir, monkeypatc
 
 
 def test_generated_keyword_takes_its_defaults_from_the_javascript_signature(
-    tmpdir, monkeypatch
+    library: Browser,
 ):
-    library, _ = library_with_recorded_calls(tmpdir, monkeypatch)
     keyword = generated_keyword(
         library,
         "measure",
@@ -159,8 +163,9 @@ def test_generated_keyword_takes_its_defaults_from_the_javascript_signature(
     }
 
 
-def test_generated_keyword_sends_a_test_scoped_timeout(tmpdir, monkeypatch):
-    library, playwright = library_with_recorded_calls(tmpdir, monkeypatch)
+def test_generated_keyword_sends_a_test_scoped_timeout(
+    library: Browser, playwright: RecordingPlaywright
+):
     keyword = generated_keyword(library, "openOwnContext", "defaultTimeout")
 
     library.set_browser_timeout(timedelta(milliseconds=1500), Scope.Test)
