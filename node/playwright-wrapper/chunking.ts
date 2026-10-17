@@ -18,22 +18,29 @@ export function splitUtf8ByMaxBytes(text: string, maxBytes: number): string[] {
     if (!text) {
         return [];
     }
-    const chunks: string[] = [];
-    let current = '';
-    let currentBytes = 0;
-    for (const char of text) {
-        const charBytes = Buffer.byteLength(char, 'utf8');
-        if (currentBytes + charBytes > maxBytes && current.length > 0) {
-            chunks.push(current);
-            current = char;
-            currentBytes = charBytes;
-        } else {
-            current += char;
-            currentBytes += charBytes;
-        }
+    if (Buffer.byteLength(text, 'utf8') <= maxBytes) {
+        return [text];
     }
-    if (current.length > 0) {
-        chunks.push(current);
+    const bytes = Buffer.from(text, 'utf8');
+    const chunks: string[] = [];
+    let start = 0;
+    while (start < bytes.length) {
+        let end = Math.min(start + maxBytes, bytes.length);
+        while (end > start && end < bytes.length && isContinuationByte(bytes[end])) {
+            end--;
+        }
+        if (end === start) {
+            end = start + 1;
+            while (end < bytes.length && isContinuationByte(bytes[end])) {
+                end++;
+            }
+        }
+        chunks.push(bytes.toString('utf8', start, end));
+        start = end;
     }
     return chunks;
+}
+
+function isContinuationByte(byte: number): boolean {
+    return (byte & 0xc0) === 0x80;
 }

@@ -67,4 +67,22 @@ describe('splitUtf8ByMaxBytes', () => {
         const result = splitUtf8ByMaxBytes(text, 3);
         expect(result).toEqual(['aaa', 'aaa', 'aaa', 'a']);
     });
+
+    it('fills each chunk up to the last whole character that fits', () => {
+        const result = splitUtf8ByMaxBytes('ab日本c', 5);
+        expect(result).toEqual(['ab日', '本c']);
+    });
+
+    it('gives a character larger than maxBytes a chunk of its own', () => {
+        const result = splitUtf8ByMaxBytes('a🔥b', 3);
+        expect(result).toEqual(['a', '🔥', 'b']);
+    });
+
+    it('splits a body of many megabytes into full chunks', () => {
+        const text = '日'.repeat(4_000_000) + 'a';
+        const result = splitUtf8ByMaxBytes(text, 1_000_000);
+        expect(result.length).toBe(13);
+        expect(result.slice(0, -1).every((chunk) => Buffer.byteLength(chunk, 'utf8') === 999_999)).toBe(true);
+        expect(result.join('')).toBe(text);
+    });
 });
