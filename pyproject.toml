@@ -151,12 +151,6 @@ select = [
 "bootstrap.py" = [
     "T201",
 ]
-# A standalone diagnostic run by hand against a playwright-log.txt, not part of
-# any package and not imported by anything.
-"tools/measure_highlight_theft.py" = [
-    "T201",
-    "INP001",
-]
 ".claude/skills/parse-rf-results/scripts/parse_results.py" = [
     "T201",
 ]
