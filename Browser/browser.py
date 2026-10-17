@@ -516,13 +516,15 @@ class Browser(DynamicCore):
                 argument names ``page``, ``context``, ``browser``, ``logger``,
                 ``playwright``, ``adoptContext`` and ``defaultTimeout`` are filled in by
                 the library rather than taken from the keyword call. ``defaultTimeout``
-                is the library timeout in milliseconds; a Python library that calls the
-                function with ``call_js_keyword`` may pass its own instead.
+                is the library timeout in milliseconds, as `Set Browser Timeout` sets
+                it; only a Python library that calls the function with
+                ``call_js_keyword`` may pass its own instead.
                 ``adoptContext(context, options)`` makes a BrowserContext that the
                 function created itself, such as the context of an Electron app, the
                 active browser, so the other keywords work on it. Can be a single path,
-                a comma-separated list of paths or a real list of strings. The options of ``adoptContext`` and examples are
-                in https://robotframework-browser.org/docs/extending/javascript-extensions
+                a comma-separated list of paths or a real list of strings. The options
+                of ``adoptContext`` and examples are in
+                https://robotframework-browser.org/docs/extending/javascript-extensions
           - ``language``: Defines language which is used to translate keyword names and
                 documentation.
           - ``playwright_process_host``: Hostname / Host address which should be used
@@ -851,7 +853,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except SyntaxError as e:
             raise DataError(f"{e.msg} in {name}")
 
-    def call_js_keyword(self, keyword_name: str, **args) -> Any:
+    def call_js_keyword(self, keyword_name: str, /, **args) -> Any:
         """Calls the function ``keyword_name`` of a ``jsextension`` module and returns
         what it returns.
 

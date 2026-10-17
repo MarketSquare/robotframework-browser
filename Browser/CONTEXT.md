@@ -42,8 +42,9 @@ outstanding. It answers "did the page never load, or did the wait miss it?"
 _Avoid_: load state (that is the `waitUntil` value a keyword waits for), load diagnostics
 
 **JavaScript extension keyword**:
-A keyword whose body is a function in a `jsextension` module. Robot Framework calls it as a
-generated keyword; a Python library built on Browser calls it by name with `call_js_keyword`.
+A keyword whose body is a function in a `jsextension` module. It is called like any other
+keyword, over the **Robot Framework path** or the **Python path**, and a Python library built
+on Browser can also call the function by name with `call_js_keyword`.
 _Avoid_: JS keyword, extension function (that is the JavaScript side only)
 
 **Injected argument**:
@@ -65,10 +66,10 @@ _Avoid_: reserved argument, API argument
 - A **load report** belongs to a page, not to a keyword: every keyword that waits for a page to
   load gives one when that wait times out. When `New Page` times out, it is the report of the
   **failed page**.
-- **Injected arguments** are filled on both routes into a **JavaScript extension keyword**.
-  Only `defaultTimeout` yields to a caller: a Python caller of `call_js_keyword` may pass its
-  own value, which wins over the library timeout. A generated keyword has no `defaultTimeout`
-  argument, so it always sends the library timeout.
+- **Injected arguments** are filled however a **JavaScript extension keyword** is called.
+  Only `defaultTimeout` yields to a caller, and only to a library calling the function by name
+  with `call_js_keyword`. Called as a keyword, it always gets the library timeout, which a test
+  changes with `Set Browser Timeout`.
 
 ## Example dialogue
 

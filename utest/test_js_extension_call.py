@@ -46,7 +46,7 @@ def library(tmpdir, monkeypatch, playwright: RecordingPlaywright) -> Browser:
 
 
 def extension_response(log: str, body_part: str = "") -> SimpleNamespace:
-    return SimpleNamespace(log=log, bodyPart=body_part, json="")
+    return SimpleNamespace(log=log, bodyPart=body_part)
 
 
 def generated_keyword(library: Browser, name: str, arguments: str):
@@ -93,7 +93,7 @@ def test_generated_keyword_sends_injected_arguments_as_reserved(
     }
 
 
-def test_call_js_keyword_sends_the_arguments_as_given(
+def test_call_js_keyword_keeps_the_default_timeout_its_caller_passes(
     library: Browser, playwright: RecordingPlaywright
 ):
     library.call_js_keyword("openOwnContext", url="https://a.b", defaultTimeout=5000)
@@ -125,6 +125,14 @@ def test_call_js_keyword_ignores_a_value_given_for_an_injected_argument(
             ["defaultTimeout", 7000],
         ]
     }
+
+
+def test_generated_keyword_sends_an_argument_named_keyword_name(
+    library: Browser, playwright: RecordingPlaywright
+):
+    generated_keyword(library, "lookUp", "keyword_name")("Click")
+
+    assert playwright.payload()["arguments"][0] == ["keyword_name", "Click"]
 
 
 def test_generated_keyword_joins_the_body_parts_of_a_chunked_result(
