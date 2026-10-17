@@ -3,7 +3,7 @@ Resource    ../variables.resource
 Library     Browser    auto_delete_passed_tracing=True    tracing_group_mode=Full
 Library     OperatingSystem
 Library     ArchiveLibrary
-Library     tracing_groups.py
+Library     ../../library/tracing_groups.py
 Library     Collections
 
 *** Variables ***
