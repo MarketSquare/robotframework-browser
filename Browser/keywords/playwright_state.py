@@ -26,7 +26,12 @@ from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.utils import get_link_path
 from robot.utils.robottypes import is_truthy
 
-from Browser.utils.data_types import BrowserInfo, ContextVideo, TracingGroupMode
+from Browser.utils.data_types import (
+    AdoptedContextReport,
+    BrowserInfo,
+    ContextVideo,
+    TracingGroupMode,
+)
 from Browser.utils.misc import get_download_id
 
 from ..assertion_engine import assertion_formatter_used, with_assertion_polling
@@ -1015,21 +1020,17 @@ class PlaywrightState(LibraryComponent):
             "tracesDir": str(self.traces_temp / str(uuid4())),
         }
 
-    def register_adopted_context(
-        self,
-        context_id: str,
-        options: AdoptedContextOptions,
-        video_path: str | None = None,
-    ) -> str:
-        record_video = options["recordVideo"]
-        video: ContextVideo | None = (
-            {"video_path": video_path, "contextUuid": context_id}
-            if record_video is not None
-            else None
-        )
-        return self._register_context(
-            context_id, options["tracing"] or "", record_video, video
-        )
+    def _register_adopted_context(self, report: AdoptedContextReport) -> None:
+        options = report["contextOptions"]
+        video = report["video"]
+        record_video: RecordVideo | None = None
+        if options.get("recordVideo") is not None or video["video_path"]:
+            requested: RecordVideo = options.get("recordVideo") or RecordVideo()
+            record_video = {
+                **requested,
+                "size": self._video_size(requested, options.get("viewport")),
+            }
+        self._register_context(report["id"], report["traceFile"], record_video, video)
 
     def _resolve_trace_file(self, tracing: bool | Path | None) -> str:
         if isinstance(tracing, str):

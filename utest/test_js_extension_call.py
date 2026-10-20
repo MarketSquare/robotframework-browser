@@ -46,7 +46,7 @@ def library(tmpdir, monkeypatch, playwright: RecordingPlaywright) -> Browser:
 
 
 def extension_response(log: str, body_part: str = "") -> SimpleNamespace:
-    return SimpleNamespace(log=log, bodyPart=body_part)
+    return SimpleNamespace(log=log, bodyPart=body_part, adoptedContext="")
 
 
 def generated_keyword(library: Browser, name: str, arguments: str):

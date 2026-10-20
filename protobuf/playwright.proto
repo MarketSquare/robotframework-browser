@@ -467,6 +467,7 @@ message Response {
     string log = 1;
     string json = 2;
     string bodyPart = 3;
+    string adoptedContext = 4;
   }
 
   message JavascriptExecutionResult {

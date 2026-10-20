@@ -415,6 +415,20 @@ class ContextVideo(TypedDict):
     contextUuid: str
 
 
+class AdoptedContextReport(TypedDict):
+    """A context that a JavaScript extension handed over with ``adoptContext``, as
+    the Node side reports it so that Browser registers it like its own contexts.
+
+    ``traceFile`` is empty when the context is not traced. ``contextOptions`` are
+    the options the extension passed to ``adoptContext``.
+    """
+
+    id: str
+    traceFile: str
+    contextOptions: dict[str, Any]
+    video: ContextVideo
+
+
 class KeywordCallStackEntry(TypedDict):
     """Information about the keyword call stack.
 

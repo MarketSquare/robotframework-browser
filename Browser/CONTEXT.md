@@ -47,6 +47,12 @@ keyword, over the **Robot Framework path** or the **Python path**, and a Python 
 on Browser can also call the function by name with `call_js_keyword`.
 _Avoid_: JS keyword, extension function (that is the JavaScript side only)
 
+**Adopted context**:
+A browser context that a **JavaScript extension keyword** created itself, such as the context of
+an Electron app, and handed over with `adoptContext`. From then on Browser owns its lifecycle and
+registers it like a context of `New Context`.
+_Avoid_: external context, foreign context
+
 **Injected argument**:
 An argument of a **JavaScript extension keyword**'s function that the library supplies by
 name instead of taking it from the caller: `page`, `context`, `browser`, `logger`,
@@ -70,6 +76,8 @@ _Avoid_: reserved argument, API argument
   Only `defaultTimeout` yields to a caller, and only to a library calling the function by name
   with `call_js_keyword`. Called as a keyword, it always gets the library timeout, which a test
   changes with `Set Browser Timeout`.
+- An **adopted context** is registered by `call_js_keyword`, from what Node reports when
+  `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 
 ## Example dialogue
 

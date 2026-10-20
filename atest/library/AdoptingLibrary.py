@@ -18,8 +18,7 @@ class AdoptingLibrary(Browser):
         viewport: ViewportDimensions | None = None,
     ) -> str:
         """Opens a persistent context in the JavaScript extension with the options of
-        ``adopted_context_options``, registers it with ``register_adopted_context``
-        and returns the path of its video."""
+        ``adopted_context_options`` and returns the path of its video."""
         options = self.adopted_context_options(
             tracing=tracing, recordVideo=record_video, viewport=viewport
         )
@@ -31,9 +30,7 @@ class AdoptingLibrary(Browser):
             viewport=viewport,
             **options,
         )
-        return self.register_adopted_context(
-            adopted["contextId"], options, adopted["videoPath"]
-        )
+        return adopted["videoPath"]
 
     @keyword
     def video_size_of_the_active_context(self) -> ViewportDimensions | None:

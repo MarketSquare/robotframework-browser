@@ -74,6 +74,7 @@ import { HighlightDisposableCache } from './highlight-cache';
 import { trackRequests, withLoadReport } from './load-report';
 import { exists } from './playwright-invoke';
 import {
+    adoptedContextResponse,
     emptyWithLog,
     getConsoleLogResponse,
     getErrorMessagesResponse,
@@ -173,9 +174,15 @@ export async function extensionKeywordCall(
     apiArguments.set('context', state.getActiveContext());
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
-    apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
-        state.adoptContext(context, options, namedArguments.defaultTimeout as number | undefined),
-    );
+    apiArguments.set('adoptContext', async (context: BrowserContext, options?: AdoptContextOptions) => {
+        const { adopted, report } = await state.adoptContext(
+            context,
+            options,
+            namedArguments.defaultTimeout as number | undefined,
+        );
+        call.write(adoptedContextResponse(report, `Adopted ${adopted.contextId}`));
+        return adopted;
+    });
     // Injected values can be null, for example the browser of an adopted context.
     const functionArguments = argNames.map((argName) =>
         apiArguments.has(argName) ? apiArguments.get(argName) : namedArguments[argName],
@@ -556,7 +563,7 @@ export class PlaywrightState {
         context: BrowserContext,
         options: AdoptContextOptions = {},
         defaultTimeout?: number,
-    ): Promise<AdoptedContext> {
+    ): Promise<{ adopted: AdoptedContext; report: string }> {
         const browserState = new BrowserState({
             browser: null,
             name: options.name ?? 'adopted',
@@ -572,11 +579,16 @@ export class PlaywrightState {
         browserState.pushContext(indexedContext);
         this.browserStack.push(browserState);
         const page = browserState.page;
+        const videoPath = (await page?.p.video()?.path()) ?? null;
+        const report = JSON.stringify({
+            id: indexedContext.id,
+            traceFile: indexedContext.traceFile,
+            contextOptions: indexedContext.options ?? {},
+            video: { video_path: videoPath, contextUuid: indexedContext.id },
+        });
         return {
-            browserId: browserState.id,
-            contextId: indexedContext.id,
-            pageId: page?.id,
-            videoPath: (await page?.p.video()?.path()) ?? null,
+            adopted: { browserId: browserState.id, contextId: indexedContext.id, pageId: page?.id, videoPath },
+            report,
         };
     }
 

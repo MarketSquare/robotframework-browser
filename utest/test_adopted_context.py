@@ -165,21 +165,42 @@ def test_video_without_size_has_the_size_of_the_viewport(browser: Browser):
     assert options["recordVideo"]["size"] == {"width": 1024, "height": 768}
 
 
-def test_registered_context_gets_the_keyword_calls_as_trace_groups(browser: Browser):
-    browser.keyword_call_stack.append(keyword_call("Open Application"))
-    options = browser.adopted_context_options(tracing=True)
+def adopt(browser: Browser, *reports: dict):
+    browser._playwright.stub.CallExtensionKeyword.return_value = [
+        SimpleNamespace(log="", bodyPart="", adoptedContext=json.dumps(report))
+        for report in reports
+    ]
+    browser.call_js_keyword("openApplication")
 
-    browser.register_adopted_context("context=1", options)
+
+def report(
+    context_id: str = "context=1",
+    trace_file: str = "",
+    context_options: dict | None = None,
+    video_path: str | None = None,
+) -> dict:
+    return {
+        "id": context_id,
+        "traceFile": trace_file,
+        "contextOptions": context_options or {},
+        "video": {"video_path": video_path, "contextUuid": context_id},
+    }
+
+
+def test_adopted_context_gets_the_keyword_calls_as_trace_groups(browser: Browser):
+    browser.keyword_call_stack.append(keyword_call("Open Application"))
+
+    adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     group = browser._playwright.stub.OpenTraceGroup.call_args.args[0]
     assert (group.name, group.contextId) == ("Open Application", "context=1")
     assert browser.tracing_contexts == ["context=1"]
 
 
-def test_registered_context_without_tracing_gets_no_trace_groups(browser: Browser):
+def test_adopted_context_without_tracing_gets_no_trace_groups(browser: Browser):
     browser.keyword_call_stack.append(keyword_call("Open Application"))
 
-    browser.register_adopted_context("context=1", browser.adopted_context_options())
+    adopt(browser, report())
 
     assert not browser._playwright.stub.OpenTraceGroup.called
     assert browser.tracing_contexts == []
@@ -188,46 +209,79 @@ def test_registered_context_without_tracing_gets_no_trace_groups(browser: Browse
 def test_playwright_tracing_group_mode_adds_no_trace_groups(browser: Browser):
     browser.tracing_group_mode = TracingGroupMode.Playwright
     browser.keyword_call_stack.append(keyword_call("Open Application"))
-    options = browser.adopted_context_options(tracing=True)
 
-    browser.register_adopted_context("context=1", options)
+    adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     assert not browser._playwright.stub.OpenTraceGroup.called
     assert browser.tracing_contexts == []
 
 
-def test_registered_context_outside_a_keyword_is_traced_without_trace_groups(
+def test_adopted_context_outside_a_keyword_is_traced_without_trace_groups(
     browser: Browser,
 ):
     browser.tracing_group_mode = TracingGroupMode.Browser
-    options = browser.adopted_context_options(tracing=True)
 
-    browser.register_adopted_context("context=1", options)
+    adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     assert not browser._playwright.stub.OpenTraceGroup.called
     assert browser.tracing_contexts == ["context=1"]
 
 
-def test_registered_context_embeds_its_video(browser: Browser, caplog):
+def test_every_context_adopted_in_one_call_is_registered(browser: Browser):
+    adopt(
+        browser,
+        report("context=1", trace_file="/traces/one.zip"),
+        report("context=2", trace_file="/traces/two.zip"),
+    )
+
+    assert browser.tracing_contexts == ["context=1", "context=2"]
+
+
+def test_context_adopted_before_the_extension_function_fails_is_registered(
+    browser: Browser,
+):
+    def stream():
+        yield SimpleNamespace(
+            log="",
+            bodyPart="",
+            adoptedContext=json.dumps(report(trace_file="/traces/one.zip")),
+        )
+        raise RuntimeError("window did not open")
+
+    browser._playwright.stub.CallExtensionKeyword.return_value = stream()
+
+    with pytest.raises(RuntimeError, match="window did not open"):
+        browser.call_js_keyword("openApplication")
+    assert browser.tracing_contexts == ["context=1"]
+
+
+def test_adopted_context_embeds_its_video(browser: Browser, caplog):
     caplog.set_level("INFO")
     options = browser.adopted_context_options(recordVideo={}, viewport=VIEWPORT)
     video = str(Path(options["recordVideo"]["dir"], "page.webm"))
 
-    video_path = browser.register_adopted_context("context=1", options, video)
+    adopt(
+        browser,
+        report(
+            context_options={"recordVideo": options["recordVideo"]}, video_path=video
+        ),
+    )
 
-    assert video_path == video
     assert (
         '<video width="800" height="600" controls>'
         '<source src="browser/video/page.webm" type="video/webm"></video>'
     ) in caplog.text
 
 
-def test_video_path_without_record_video_is_ignored(browser: Browser):
-    options = browser.adopted_context_options()
+def test_video_of_a_context_adopted_without_its_options_has_the_fallback_size(
+    browser: Browser, caplog
+):
+    caplog.set_level("INFO")
+    video = str(Path(browser.video_output, "page.webm"))
 
-    video_path = browser.register_adopted_context("context=1", options, "page.webm")
+    adopt(browser, report(video_path=video))
 
-    assert video_path == ""
+    assert '<video width="1280" height="720" controls>' in caplog.text
 
 
 def test_relative_har_path_is_relative_to_the_output_directory(
@@ -410,16 +464,52 @@ def test_new_persistent_context_caches_its_video_size(
 @pytest.mark.parametrize(
     ("record_video", "video_size"), VIDEO_SIZES, ids=["viewport", "size"]
 )
-def test_registered_context_caches_its_video_size(
+def test_adopted_context_caches_its_video_size(
     browser: Browser, record_video: dict, video_size: dict
 ):
     options = browser.adopted_context_options(
         recordVideo=record_video, viewport=VIEWPORT
     )
 
-    browser.register_adopted_context("context=1", options, "page.webm")
+    adopt(
+        browser,
+        report(
+            context_options={"recordVideo": options["recordVideo"]},
+            video_path="page.webm",
+        ),
+    )
 
     assert browser._playwright_state.context_cache.get("context=1") == video_size
+
+
+def test_adopted_context_without_its_video_options_takes_the_size_of_its_viewport(
+    browser: Browser,
+):
+    adopt(
+        browser,
+        report(
+            context_options={"recordVideo": {"dir": "/videos"}, "viewport": VIEWPORT},
+            video_path="page.webm",
+        ),
+    )
+
+    assert browser._playwright_state.context_cache.get("context=1") == VIEWPORT
+
+
+def test_adopted_context_without_pages_caches_the_size_of_the_video_it_records(
+    browser: Browser,
+):
+    options = browser.adopted_context_options(recordVideo={}, viewport=VIEWPORT)
+
+    adopt(browser, report(context_options={"recordVideo": options["recordVideo"]}))
+
+    assert browser._playwright_state.context_cache.get("context=1") == VIEWPORT
+
+
+def test_adopted_context_with_video_turned_off_caches_no_video_size(browser: Browser):
+    adopt(browser, report(context_options={"recordVideo": None}))
+
+    assert browser._playwright_state.context_cache.get("context=1") is None
 
 
 def test_context_without_video_caches_no_video_size(browser: Browser):
@@ -429,7 +519,7 @@ def test_context_without_video_caches_no_video_size(browser: Browser):
 
     browser.new_context(viewport=VIEWPORT)
     browser.new_persistent_context(viewport=VIEWPORT)
-    browser.register_adopted_context("context=3", browser.adopted_context_options())
+    adopt(browser, report("context=3"))
 
     cache = browser._playwright_state.context_cache
     assert [cache.get(f"context={n}") for n in (1, 2, 3)] == [None, None, None]
