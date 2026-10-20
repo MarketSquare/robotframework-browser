@@ -1,8 +1,12 @@
+from collections.abc import Mapping
+from typing import Any
+
+
 class ContextCache:
     def __init__(self):
         self.cache = {}
 
-    def add(self, cache_uuid: str, item: dict):
+    def add(self, cache_uuid: str, item: Mapping[str, Any]):
         self.cache[cache_uuid] = item
 
     def remove(self, cache_uuid: str):
