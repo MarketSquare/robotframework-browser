@@ -174,7 +174,7 @@ export async function extensionKeywordCall(
     apiArguments.set('logger', (msg: string) => call.write(jsonResponse('', msg)));
     apiArguments.set('playwright', playwright);
     apiArguments.set('adoptContext', (context: BrowserContext, options?: AdoptContextOptions) =>
-        state.adoptContext(context, options),
+        state.adoptContext(context, options, namedArguments.defaultTimeout as number | undefined),
     );
     // Injected values can be null, for example the browser of an adopted context.
     const functionArguments = argNames.map((argName) =>
@@ -525,7 +525,7 @@ export class PlaywrightState {
         );
     }
 
-    public addBrowser(browserAndConfs: BrowserAndConfs): BrowserState {
+    public async addBrowser(browserAndConfs: BrowserAndConfs): Promise<BrowserState> {
         const adding_browser = browserAndConfs.browser;
         logger.info(`Adding browser to stack: ${browserAndConfs.browserType}, version: ${adding_browser?.version()}`);
         let browserState = this.browserStack.find((b) => b.browser === adding_browser);
@@ -538,26 +538,25 @@ export class PlaywrightState {
         if (browserContexts !== undefined) {
             logger.info(`Adding ${browserContexts.length} contexts to browser`);
             for (const context of browserContexts) {
-                const indexedPages = context.pages().map((page) => indexedPage(page));
-                logger.info(`Adding ${indexedPages.length} pages to context`);
-                const indexedContext = {
-                    id: `context=${uuidv4()}`,
-                    c: context,
-                    pageStack: indexedPages,
-                    options: {},
-                    traceFile: '',
-                };
-                indexedContext.c.on('page', async (page) => {
-                    indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
-                });
-                browserState?.pushContext(indexedContext);
+                const indexedContext = await _createIndexedContext(context, undefined, '', {});
+                for (const page of context.pages()) {
+                    if (!indexedContext.pageStack.some((indexed) => indexed.p === page)) {
+                        indexedContext.pageStack.push(await _newPage(indexedContext, page));
+                    }
+                }
+                logger.info(`Adding ${indexedContext.pageStack.length} pages to context`);
+                browserState.pushContext(indexedContext);
             }
         }
         this.browserStack.push(browserState);
         return browserState;
     }
 
-    public async adoptContext(context: BrowserContext, options: AdoptContextOptions = {}): Promise<AdoptedContext> {
+    public async adoptContext(
+        context: BrowserContext,
+        options: AdoptContextOptions = {},
+        defaultTimeout?: number,
+    ): Promise<AdoptedContext> {
         const browserState = new BrowserState({
             browser: null,
             name: options.name ?? 'adopted',
@@ -566,13 +565,19 @@ export class PlaywrightState {
         browserState.onClose = options.onClose;
         const indexedContext = await _indexContextWithPages(
             context,
-            undefined,
+            defaultTimeout,
             options.tracing ?? '',
             options.contextOptions,
         );
         browserState.pushContext(indexedContext);
         this.browserStack.push(browserState);
-        return { browserId: browserState.id, contextId: indexedContext.id, pageId: browserState.page?.id };
+        const page = browserState.page;
+        return {
+            browserId: browserState.id,
+            contextId: indexedContext.id,
+            pageId: page?.id,
+            videoPath: (await page?.p.video()?.path()) ?? null,
+        };
     }
 
     public addBrowserServer = (browserServer: BrowserServer): void => {
@@ -694,6 +699,7 @@ type AdoptedContext = {
     browserId: Uuid;
     contextId: Uuid;
     pageId: Uuid | undefined;
+    videoPath: string | null;
 };
 
 type FailedPage = {
@@ -962,7 +968,10 @@ export async function newContext(
     logger.info(`Trace file: ${traceFile}`);
 
     if (browserState.browser.browser === null) {
-        throw new Error('Trying to create a new context when a persistentContext is active');
+        throw new Error(
+            `Cannot create a new context in ${browserState.browser.name}, because its context is persistent or ` +
+                'adopted. Open a new browser first.',
+        );
     }
     const indexedContext = await _createIndexedContext(
         await browserState.browser.browser.newContext(options),
@@ -1003,7 +1012,7 @@ export async function newBrowser(request: Request_Browser, openBrowsers: Playwri
         options['timeout'] as number,
         options,
     );
-    const browserState = openBrowsers.addBrowser(browserAndConfs);
+    const browserState = await openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully created browser with options: ' + JSON.stringify(options));
 }
 
@@ -1044,7 +1053,7 @@ export async function newPersistentContext(
         browser: null,
         headless: options?.headless || true,
     } as BrowserAndConfs;
-    openBrowsers.addBrowser(browserAndConfs);
+    await openBrowsers.addBrowser(browserAndConfs);
     const browserState = await openBrowsers.getOrCreateActiveBrowser(null, timeout);
     if (browserState.newBrowser === true) {
         throw new Error('A new browser was created in error while trying to create a persistent context');
@@ -1073,7 +1082,7 @@ export async function connectToBrowser(
     const connectCDP = request.connectCDP;
     const timeout = request.timeout;
     const browserAndConfs = await _connectBrowser(browserType, url, connectCDP, timeout);
-    const browserState = openBrowsers.addBrowser(browserAndConfs);
+    const browserState = await openBrowsers.addBrowser(browserAndConfs);
     return stringResponse(browserState.id, 'Successfully connected to browser');
 }
 

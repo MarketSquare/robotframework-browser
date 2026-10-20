@@ -19,6 +19,7 @@ import {
     closeContext,
     extensionKeywordCall,
     locatorCache,
+    newContext,
     newPage,
     PlaywrightState,
     removeFailedPage,
@@ -484,7 +485,7 @@ describe('removeFailedPage', () => {
 });
 
 function makeMockPage() {
-    return { on: jest.fn() } as any;
+    return { on: jest.fn(), video: () => null } as any;
 }
 
 function makeMockContext(pages: any[], close = jest.fn().mockResolvedValue(undefined)) {
@@ -574,6 +575,33 @@ describe('adoptContext', () => {
         expect(adopted.pageId).toBe(state.activeBrowser?.page?.id);
     });
 
+    it('returns the video path of the active page', async () => {
+        const state = new PlaywrightState();
+        const first = { on: jest.fn(), video: () => ({ path: async () => '/videos/first.webm' }) } as any;
+        const second = { on: jest.fn(), video: () => ({ path: async () => '/videos/second.webm' }) } as any;
+
+        const adopted = await state.adoptContext(makeMockContext([first, second]));
+
+        expect(adopted.videoPath).toBe('/videos/first.webm');
+    });
+
+    it('returns no video path when the context records no video', async () => {
+        const state = new PlaywrightState();
+        const page = { on: jest.fn(), video: () => null } as any;
+
+        const adopted = await state.adoptContext(makeMockContext([page]));
+
+        expect(adopted.videoPath).toBeNull();
+    });
+
+    it('returns no video path when the context has no pages', async () => {
+        const state = new PlaywrightState();
+
+        const adopted = await state.adoptContext(makeMockContext([]));
+
+        expect(adopted.videoPath).toBeNull();
+    });
+
     it('keeps an existing browser state with a null browser separate', async () => {
         const state = new PlaywrightState();
 
@@ -638,6 +666,50 @@ describe('adoptContext', () => {
     });
 });
 
+describe('newContext', () => {
+    it('explains that an adopted context cannot get a sibling context', async () => {
+        const state = new PlaywrightState();
+        await state.adoptContext(makeMockContext([makeMockPage()]), { name: 'electron' });
+
+        await expect(newContext({ rawOptions: '{}', defaultTimeout: 0, traceFile: '' }, state)).rejects.toThrow(
+            'Cannot create a new context in electron, because its context is persistent or adopted. ' +
+                'Open a new browser first.',
+        );
+    });
+});
+
+describe('addBrowser', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('removes a page that existed when the browser was connected once it closes', async () => {
+        const listeners: Record<string, () => void> = {};
+        const page = { on: (event: string, listener: () => void) => (listeners[event] = listener), video: () => null };
+        const context = makeMockContext([page]);
+        const browser = { version: () => '1', contexts: () => [context] } as any;
+        const state = new PlaywrightState();
+
+        await state.addBrowser({ browser, browserType: 'chromium', headless: true });
+        listeners['close']?.();
+
+        expect(state.activeBrowser?.context?.pageStack).toEqual([]);
+    });
+
+    it('indexes a page once when the context reports it while the browser is being added', async () => {
+        const page = makeMockPage();
+        const context = makeMockContext([page]);
+        context.on = (event: string, listener: (page: unknown) => void) => event === 'page' && listener(page);
+        const browser = { version: () => '1', contexts: () => [context] } as any;
+        const state = new PlaywrightState();
+
+        await state.addBrowser({ browser, browserType: 'chromium', headless: true });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        expect(state.activeBrowser?.context?.pageStack.map((indexed) => indexed.p)).toEqual([page]);
+    });
+});
+
 describe('extensionKeywordCall', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -646,11 +718,7 @@ describe('extensionKeywordCall', () => {
     it('lets an extension function adopt a context it created', async () => {
         const state = new PlaywrightState();
         const context = makeMockContext([makeMockPage()]);
-        async function openOwnContext(
-            defaultTimeout: number,
-            adoptContext: (c: unknown, options?: unknown) => Promise<unknown>,
-        ) {
-            context.setDefaultTimeout(defaultTimeout);
+        async function openOwnContext(adoptContext: (c: unknown, options?: unknown) => Promise<unknown>) {
             return adoptContext(context, { name: 'own' });
         }
         state.extensions.push({ openOwnContext } as any);
@@ -660,10 +728,7 @@ describe('extensionKeywordCall', () => {
             {
                 name: 'openOwnContext',
                 arguments: JSON.stringify({
-                    arguments: [
-                        ['defaultTimeout', 5000],
-                        ['adoptContext', 'RESERVED'],
-                    ],
+                    arguments: [['adoptContext', 'RESERVED']],
                 }),
             },
             call,
@@ -674,6 +739,30 @@ describe('extensionKeywordCall', () => {
         expect(adopted.browserId).toBe(state.activeBrowser?.id);
         expect(state.activeBrowser?.context?.c).toBe(context);
         expect(state.activeBrowser?.name).toBe('own');
+    });
+
+    it('gives an adopted context the default timeout of the call', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makeMockPage()]);
+        async function openOwnContext(adoptContext: (c: unknown) => Promise<unknown>) {
+            return adoptContext(context);
+        }
+        state.extensions.push({ openOwnContext } as any);
+
+        await extensionKeywordCall(
+            {
+                name: 'openOwnContext',
+                arguments: JSON.stringify({
+                    arguments: [
+                        ['adoptContext', 'RESERVED'],
+                        ['defaultTimeout', 5000],
+                    ],
+                }),
+            },
+            { write: jest.fn() } as any,
+            state,
+        );
+
         expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
     });
 

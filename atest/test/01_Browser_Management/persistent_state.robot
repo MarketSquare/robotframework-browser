@@ -45,7 +45,7 @@ Switching Between Two Persistent Contexts Works
 New Context Fails With Persistent Context
     New Persistent Context
     Run Keyword And Expect Error
-    ...    Error: Trying to create a new context when a persistentContext is active
+    ...    Error: Cannot create a new context in chromium, because its context is persistent or adopted. Open a new browser first.
     ...    New Context
 
 New Persistent Context Can Use An URL
