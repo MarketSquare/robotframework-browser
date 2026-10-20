@@ -1,13 +1,12 @@
 let adoptedContextClosed = false;
 let onCloseCalled = false;
 
-async function openAdoptedPersistentContext(userDataDir, url, headless, playwright, adoptContext, defaultTimeout) {
+async function openAdoptedPersistentContext(userDataDir, url, headless, playwright, adoptContext) {
     const context = await playwright.chromium.launchPersistentContext(userDataDir, {
         headless: String(headless).toLowerCase() !== 'false',
     });
     context.on('close', () => (adoptedContextClosed = true));
     await context.pages()[0].goto(url);
-    context.setDefaultTimeout(defaultTimeout);
     return adoptContext(context, {
         onClose: async () => {
             onCloseCalled = true;
@@ -49,10 +48,8 @@ async function openAdoptedPersistentContextWithRecording(userDataDir, url, headl
         tracesDir,
         ...contextOptions,
     });
-    const page = context.pages()[0];
-    await page.goto(url);
-    const adopted = await adoptContext(context, { tracing, contextOptions });
-    return { ...adopted, videoPath: await page.video().path() };
+    await context.pages()[0].goto(url);
+    return adoptContext(context, { tracing, contextOptions });
 }
 
 exports.__esModule = true;
