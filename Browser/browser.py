@@ -521,7 +521,9 @@ class Browser(DynamicCore):
                 ``call_js_keyword`` may pass its own instead.
                 ``adoptContext(context, options)`` makes a BrowserContext that the
                 function created itself, such as the context of an Electron app, the
-                active browser, so the other keywords work on it. Can be a single path,
+                active browser, so the other keywords work on it. The context gets the
+                library timeout, and is traced and recorded like a context of
+                `New Context`. Can be a single path,
                 a comma-separated list of paths or a real list of strings. The options
                 of ``adoptContext`` and examples are in
                 https://robotframework-browser.org/docs/extending/javascript-extensions
@@ -887,6 +889,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             body_parts: list[str] = []
             for response in responses:
                 logger.info(response.log)
+                if response.adoptedContext:
+                    self._playwright_state._register_adopted_context(
+                        json.loads(response.adoptedContext)
+                    )
                 if response.bodyPart:
                     body_parts.append(response.bodyPart)
             if not body_parts:
@@ -918,30 +924,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         The keys can be passed to the extension function as keyword arguments:
         ``tracing`` for the ``tracing`` option of ``adoptContext``, ``recordVideo``
         and ``recordHar`` for Playwright when the extension creates the context, and
-        ``tracesDir`` when it launches a browser or an application. After the
-        extension returns, call ``register_adopted_context`` with these options.
+        ``tracesDir`` when it launches a browser or an application. Pass the options
+        the context was created with as ``contextOptions`` of ``adoptContext``:
+        Browser then registers the context like `New Context` registers its own, so
+        the keyword calls become groups in the trace and the log embeds the video in
+        its size.
         """
         options = self._playwright_state.adopted_context_options
         return converting_proxy(options, get_type_hints(options))(
             tracing, recordVideo, recordHar, viewport
-        )
-
-    def register_adopted_context(
-        self,
-        context_id: str,
-        options: AdoptedContextOptions,
-        video_path: str | None = None,
-    ) -> str:
-        """Registers a context that a JavaScript extension handed over with
-        ``adoptContext`` the way `New Context` registers its own.
-
-        ``options`` are those of ``adopted_context_options``. With ``tracing``, the
-        keyword calls become groups in the trace. With ``recordVideo``, the log
-        embeds the video at ``video_path``. Returns ``video_path``, or an empty
-        string if there is no video.
-        """
-        return self._playwright_state.register_adopted_context(
-            context_id, options, video_path
         )
 
     @property

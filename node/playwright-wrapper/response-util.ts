@@ -56,14 +56,14 @@ export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, messa
     const consoleMessages = page.consoleMessages;
     const responseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
     page.consoleIndex = consoleMessages.length;
-    return { log: message, json: JSON.stringify(responseMessages), bodyPart: '' };
+    return { log: message, json: JSON.stringify(responseMessages), bodyPart: '', adoptedContext: '' };
 }
 
 export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const pageErrors = page.pageErrors;
     const responseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
     page.errorIndex = pageErrors.length;
-    return { log: message, json: JSON.stringify(responseErrors), bodyPart: '' };
+    return { log: message, json: JSON.stringify(responseErrors), bodyPart: '', adoptedContext: '' };
 }
 
 function definedString(body: string): string {
@@ -79,7 +79,11 @@ export function listStringResponse(body: string[], logMessage: string): Response
 }
 
 export function jsonResponse(body: string, logMessage: string, bodyPart: string = ''): Response_Json {
-    return { json: definedString(body), log: logMessage, bodyPart };
+    return { json: definedString(body), log: logMessage, bodyPart, adoptedContext: '' };
+}
+
+export function adoptedContextResponse(adoptedContext: string, logMessage: string): Response_Json {
+    return { json: '', log: logMessage, bodyPart: '', adoptedContext };
 }
 
 export function intResponse(body: number, logMessage: string): Response_Int {

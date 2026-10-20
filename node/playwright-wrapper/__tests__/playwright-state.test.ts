@@ -502,7 +502,7 @@ describe('adoptContext', () => {
         const state = new PlaywrightState();
         state.browserStack.push(makeBrowserState('browser=existing'));
 
-        const adopted = await state.adoptContext(makeMockContext([makeMockPage()]));
+        const { adopted } = await state.adoptContext(makeMockContext([makeMockPage()]));
 
         expect(state.browserStack).toHaveLength(2);
         expect(state.activeBrowser?.id).toBe(adopted.browserId);
@@ -568,7 +568,7 @@ describe('adoptContext', () => {
         const first = makeMockPage();
         const second = makeMockPage();
 
-        const adopted = await state.adoptContext(makeMockContext([first, second]));
+        const { adopted } = await state.adoptContext(makeMockContext([first, second]));
 
         expect(state.activeBrowser?.context?.pageStack.map((page) => page.p)).toEqual([second, first]);
         expect(state.activeBrowser?.page?.p).toBe(first);
@@ -580,7 +580,7 @@ describe('adoptContext', () => {
         const first = { on: jest.fn(), video: () => ({ path: async () => '/videos/first.webm' }) } as any;
         const second = { on: jest.fn(), video: () => ({ path: async () => '/videos/second.webm' }) } as any;
 
-        const adopted = await state.adoptContext(makeMockContext([first, second]));
+        const { adopted } = await state.adoptContext(makeMockContext([first, second]));
 
         expect(adopted.videoPath).toBe('/videos/first.webm');
     });
@@ -589,7 +589,7 @@ describe('adoptContext', () => {
         const state = new PlaywrightState();
         const page = { on: jest.fn(), video: () => null } as any;
 
-        const adopted = await state.adoptContext(makeMockContext([page]));
+        const { adopted } = await state.adoptContext(makeMockContext([page]));
 
         expect(adopted.videoPath).toBeNull();
     });
@@ -597,7 +597,7 @@ describe('adoptContext', () => {
     it('returns no video path when the context has no pages', async () => {
         const state = new PlaywrightState();
 
-        const adopted = await state.adoptContext(makeMockContext([]));
+        const { adopted } = await state.adoptContext(makeMockContext([]));
 
         expect(adopted.videoPath).toBeNull();
     });
@@ -605,8 +605,8 @@ describe('adoptContext', () => {
     it('keeps an existing browser state with a null browser separate', async () => {
         const state = new PlaywrightState();
 
-        const one = await state.adoptContext(makeMockContext([makeMockPage()]));
-        const two = await state.adoptContext(makeMockContext([makeMockPage()]));
+        const { adopted: one } = await state.adoptContext(makeMockContext([makeMockPage()]));
+        const { adopted: two } = await state.adoptContext(makeMockContext([makeMockPage()]));
 
         expect(state.browserStack).toHaveLength(2);
         expect(state.browserStack.map((browser) => browser.id)).toEqual([one.browserId, two.browserId]);
@@ -710,6 +710,13 @@ describe('addBrowser', () => {
     });
 });
 
+function reportsWrittenTo(call: { write: jest.Mock }): { id: string }[] {
+    return call.write.mock.calls
+        .map(([response]) => (response as { adoptedContext: string }).adoptedContext)
+        .filter(Boolean)
+        .map((report) => JSON.parse(report));
+}
+
 describe('extensionKeywordCall', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -764,6 +771,53 @@ describe('extensionKeywordCall', () => {
         );
 
         expect(context.setDefaultTimeout).toHaveBeenCalledWith(5000);
+    });
+
+    it('reports an adopted context on the stream with what Browser needs to register it', async () => {
+        const state = new PlaywrightState();
+        const page = { on: jest.fn(), video: () => ({ path: async () => '/videos/app.webm' }) } as any;
+        const context = makeMockContext([page]);
+        const contextOptions = { recordVideo: { dir: '/videos' }, viewport: { width: 800, height: 600 } };
+        async function openOwnContext(adoptContext: (c: unknown, options?: unknown) => Promise<unknown>) {
+            return adoptContext(context, { tracing: '/traces/app.zip', contextOptions });
+        }
+        state.extensions.push({ openOwnContext } as any);
+        const call = { write: jest.fn() } as any;
+
+        await extensionKeywordCall(
+            { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [['adoptContext', 'RESERVED']] }) },
+            call,
+            state,
+        );
+
+        expect(reportsWrittenTo(call)).toEqual([
+            {
+                id: state.activeBrowser?.context?.id,
+                traceFile: '/traces/app.zip',
+                contextOptions,
+                video: { video_path: '/videos/app.webm', contextUuid: state.activeBrowser?.context?.id },
+            },
+        ]);
+    });
+
+    it('reports an adopted context even if the extension function fails after adopting it', async () => {
+        expect.assertions(2);
+        const state = new PlaywrightState();
+        async function openOwnContext(adoptContext: (c: unknown) => Promise<unknown>) {
+            await adoptContext(makeMockContext([makeMockPage()]));
+            throw new Error('window did not open');
+        }
+        state.extensions.push({ openOwnContext } as any);
+        const call = { write: jest.fn() } as any;
+
+        await expect(
+            extensionKeywordCall(
+                { name: 'openOwnContext', arguments: JSON.stringify({ arguments: [['adoptContext', 'RESERVED']] }) },
+                call,
+                state,
+            ),
+        ).rejects.toThrow('window did not open');
+        expect(reportsWrittenTo(call).map((report) => report.id)).toEqual([state.activeBrowser?.context?.id]);
     });
 
     it('passes null as the browser of an adopted context', async () => {

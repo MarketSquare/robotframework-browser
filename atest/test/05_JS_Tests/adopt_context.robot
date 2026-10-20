@@ -1,6 +1,9 @@
 *** Settings ***
 Library      Browser    jsextension=${CURDIR}/adopt.js
+Library      ArchiveLibrary
+Library      Collections
 Library      OperatingSystem
+Library      ../../library/tracing_groups.py
 Resource     ../variables.resource
 
 Test Tags    no-iframe
@@ -24,11 +27,14 @@ An Adopted Context Gets The Library Timeout
     Should Contain    ${message}    Timeout 1000ms exceeded
     [Teardown]    Close Browser
 
-An Adopted Context Is Traced And Accepts Downloads
+An Adopted Context Is Traced With Keyword Groups And Accepts Downloads
     Open Adopted Persistent Context With Tracing And Downloads
     ...    ${OUTPUT_DIR}/adopted-profile-traced    ${LOGIN_URL}    ${HEADLESS}    ${OUTPUT_DIR}/adopted-trace.zip
     ${download_url} =    Get Property    id=file_download    href
     ${download} =    Download    ${download_url}
     File Should Exist    ${download}[saveAs]
     Close Browser
-    File Should Exist    ${OUTPUT_DIR}/adopted-trace.zip
+    Extract Zip File    ${OUTPUT_DIR}/adopted-trace.zip    ${OUTPUT_DIR}/adopted-trace
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/adopted-trace/trace.trace
+    Should Contain Match    ${groups}    Browser.Open Adopted Persistent Context With Tracing And Downloads*
+    Should Contain Match    ${groups}    Browser.Download*
