@@ -33,6 +33,7 @@ from ..utils.data_types import (
     HighLightElement,
 )
 from ..utils.types import Secret
+from .cache import ContextCache
 
 if TYPE_CHECKING:
     from ..browser import Browser
@@ -180,8 +181,8 @@ class LibraryComponent:
         self.library._unresolved_promises = value
 
     @property
-    def context_cache(self):
-        return self.library._context_cache
+    def context_cache(self) -> ContextCache:
+        return self.library.context_cache
 
     @property
     def outputdir(self) -> str:

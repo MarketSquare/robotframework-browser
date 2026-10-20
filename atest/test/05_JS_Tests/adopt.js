@@ -42,8 +42,8 @@ async function adoptedContextOnCloseWasCalled() {
     return onCloseCalled;
 }
 
-async function openAdoptedPersistentContextWithRecording(userDataDir, url, headless, tracing, recordVideo, tracesDir, playwright, adoptContext) {
-    const contextOptions = { recordVideo };
+async function openAdoptedPersistentContextWithRecording(userDataDir, url, headless, viewport, tracing, recordVideo, tracesDir, playwright, adoptContext) {
+    const contextOptions = viewport ? { viewport, recordVideo } : { recordVideo };
     const context = await playwright.chromium.launchPersistentContext(userDataDir, {
         headless: String(headless).toLowerCase() !== 'false',
         tracesDir,

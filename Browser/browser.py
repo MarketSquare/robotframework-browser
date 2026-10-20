@@ -737,6 +737,10 @@ class Browser(DynamicCore):
         return self.scope_stack["timeout"].get()
 
     @property
+    def context_cache(self) -> ContextCache:
+        return self._context_cache
+
+    @property
     def retry_assertions_for(self) -> float:
         return self.scope_stack["retry_assertions_for"].get()
 
