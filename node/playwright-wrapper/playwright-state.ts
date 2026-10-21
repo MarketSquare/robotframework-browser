@@ -227,6 +227,7 @@ export interface AdoptContextOptions {
     onClose?: () => Promise<void>;
     tracing?: string;
     contextOptions?: Record<string, unknown>;
+    activePage?: Page;
 }
 
 async function _newBrowser(
@@ -564,6 +565,9 @@ export class PlaywrightState {
         options: AdoptContextOptions = {},
         defaultTimeout?: number,
     ): Promise<{ adopted: AdoptedContext; report: string }> {
+        if (options.activePage && !context.pages().includes(options.activePage)) {
+            throw new Error('The active page of adoptContext must be a page of the adopted context.');
+        }
         const browserState = new BrowserState({
             browser: null,
             name: options.name ?? 'adopted',
@@ -577,6 +581,8 @@ export class PlaywrightState {
             options.contextOptions,
         );
         browserState.pushContext(indexedContext);
+        const activePage = indexedContext.pageStack.find((indexed) => indexed.p === options.activePage);
+        if (activePage) browserState.pushPage(activePage);
         this.browserStack.push(browserState);
         const page = browserState.page;
         const videoPath = (await page?.p.video()?.path()) ?? null;

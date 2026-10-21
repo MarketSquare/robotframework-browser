@@ -20,6 +20,13 @@ Browser Keywords Work On A Context Adopted By A JavaScript Extension
     ${on_close_called} =    Adopted Context On Close Was Called
     Should Be True    ${on_close_called}
 
+The Creator Of An Adopted Context Chooses Its Active Page
+    ${adopted} =    Open Adopted Persistent Context On Its Second Page
+    ...    ${OUTPUT_DIR}/adopted-profile-active-page    ${LOGIN_URL}    ${HEADLESS}
+    Get Url    ==    ${LOGIN_URL}
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    ==    ${adopted}[pageId]
+    [Teardown]    Close Browser
+
 An Adopted Context Gets The Library Timeout
     Set Browser Timeout    1s    scope=Test
     Open Adopted Persistent Context    ${OUTPUT_DIR}/adopted-profile-timeout    ${LOGIN_URL}    ${HEADLESS}
