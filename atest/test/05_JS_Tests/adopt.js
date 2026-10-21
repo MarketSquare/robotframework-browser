@@ -52,6 +52,15 @@ async function openAdoptedPersistentContextWithRecording(userDataDir, url, headl
     return adoptContext(context, { tracing, contextOptions });
 }
 
+async function openAdoptedPersistentContextOnItsSecondPage(userDataDir, url, headless, playwright, adoptContext) {
+    const context = await playwright.chromium.launchPersistentContext(userDataDir, {
+        headless: String(headless).toLowerCase() !== 'false',
+    });
+    const second = await context.newPage();
+    await second.goto(url);
+    return adoptContext(context, { activePage: second });
+}
+
 exports.__esModule = true;
 exports.openAdoptedPersistentContext = openAdoptedPersistentContext;
 exports.openAdoptedPersistentContextWithTracingAndDownloads = openAdoptedPersistentContextWithTracingAndDownloads;
@@ -59,3 +68,4 @@ exports.messageOfAFailedWait = messageOfAFailedWait;
 exports.adoptedContextIsClosed = adoptedContextIsClosed;
 exports.adoptedContextOnCloseWasCalled = adoptedContextOnCloseWasCalled;
 exports.openAdoptedPersistentContextWithRecording = openAdoptedPersistentContextWithRecording;
+exports.openAdoptedPersistentContextOnItsSecondPage = openAdoptedPersistentContextOnItsSecondPage;

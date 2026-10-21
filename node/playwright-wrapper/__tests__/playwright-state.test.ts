@@ -602,6 +602,28 @@ describe('adoptContext', () => {
         expect(adopted.videoPath).toBeNull();
     });
 
+    it('makes the page that the creator names the active page and reports its video', async () => {
+        const state = new PlaywrightState();
+        const view = { on: jest.fn(), video: () => ({ path: async () => '/videos/view.webm' }) } as any;
+        const window = { on: jest.fn(), video: () => ({ path: async () => '/videos/window.webm' }) } as any;
+
+        const { adopted } = await state.adoptContext(makeMockContext([view, window]), { activePage: window });
+
+        expect(state.activeBrowser?.page?.p).toBe(window);
+        expect(adopted.pageId).toBe(state.activeBrowser?.page?.id);
+        expect(adopted.videoPath).toBe('/videos/window.webm');
+    });
+
+    it('adopts nothing when the active page belongs to another context', async () => {
+        expect.assertions(2);
+        const state = new PlaywrightState();
+
+        await expect(
+            state.adoptContext(makeMockContext([makeMockPage()]), { activePage: makeMockPage() }),
+        ).rejects.toThrow('The active page of adoptContext must be a page of the adopted context.');
+        expect(state.browserStack).toHaveLength(0);
+    });
+
     it('keeps an existing browser state with a null browser separate', async () => {
         const state = new PlaywrightState();
 
