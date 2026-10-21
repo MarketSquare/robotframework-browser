@@ -5,6 +5,7 @@ USER root
 RUN apt-get update
 RUN apt install -y software-properties-common
 RUN add-apt-repository -y ppa:deadsnakes/ppa
+RUN apt-get update
 RUN apt install -y python3.14 python3.14-venv
 
 # Clean up
