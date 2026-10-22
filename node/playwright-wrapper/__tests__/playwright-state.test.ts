@@ -11,6 +11,8 @@ jest.mock('uuid', () => ({
     v4: jest.fn().mockReturnValue('test-uuid'),
 }));
 
+jest.mock('monocart-coverage-reports', () => ({ CoverageReport: jest.fn() }));
+
 import {
     BrowserState,
     closeAllBrowsers,
