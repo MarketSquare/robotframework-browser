@@ -16,7 +16,7 @@ import json
 import os
 from contextlib import suppress
 from copy import copy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -1548,10 +1548,9 @@ class PlaywrightState(LibraryComponent):
         if not isinstance(last, timedelta):
             return message
         returned_messages = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for msg in reversed(message):
-            if datetime.strptime(msg["time"], "%Y-%m-%dT%H:%M:%S.%f%z") < now - last:
-                # Only from python 3.11 and later... datetime.fromisoformat(msg["time"]) < now - last:
+            if datetime.fromisoformat(msg["time"]) < now - last:
                 break
             returned_messages.append(msg)
         return returned_messages

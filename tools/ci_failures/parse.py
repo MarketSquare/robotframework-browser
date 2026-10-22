@@ -341,7 +341,7 @@ def generator_line(path: Path) -> str | None:
     """The `generator` attribute of output.xml's root element.
 
     Read from the file rather than from `Result.generator`, which does not
-    exist before Robot Framework 7.2 - and this CI runs 7.1.1 alongside 7.4.2,
+    exist before Robot Framework 7.2 - and this CI runs 7.1.1 alongside 7.5,
     so reading it off the object raised `AttributeError` on half the matrix and
     took every test that parses an output.xml with it. The attribute itself has
     been on the root element for as long as output.xml has had one.

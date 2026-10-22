@@ -16,7 +16,7 @@ import tempfile
 import zipfile
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from robot.errors import DataError
@@ -65,7 +65,7 @@ def _mark_unusable(
             run.id,
             artifact.name,
             reason,
-            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         ),
     )
 
@@ -107,7 +107,7 @@ def _insert_leg(
             info.platform,
             info.node_version,
             info.generated_at,
-            datetime.now(timezone.utc).isoformat(),
+            datetime.now(UTC).isoformat(),
             artifact.attempt,
             info.executors,
             info.node_process,
@@ -174,7 +174,7 @@ KEEP_DAYS = 120
 
 
 def _prune_cutoff(now: datetime) -> str:
-    cutoff = (now - timedelta(days=KEEP_DAYS)).astimezone(timezone.utc)
+    cutoff = (now - timedelta(days=KEEP_DAYS)).astimezone(UTC)
     return cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -451,7 +451,7 @@ def ingest(
         # let the database grow.
         _prune_or_say_what_would_go(
             connection,
-            now or datetime.now(timezone.utc),
+            now or datetime.now(UTC),
             dry_run=dry_run,
             out=out,
         )
@@ -534,7 +534,7 @@ def ingest(
 
     connection.commit()
     totals["pruned"] = _prune_or_say_what_would_go(
-        connection, now or datetime.now(timezone.utc), dry_run=dry_run, out=out
+        connection, now or datetime.now(UTC), dry_run=dry_run, out=out
     )
     connection.close()
     leftover = workspace.artifacts(db_path)

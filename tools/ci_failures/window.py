@@ -39,7 +39,7 @@ tables, and a view would refuse the writes anyway.
 """
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from sqlite3 import Connection
 
 # The run ids in the window, then the leg and result ids that hang off them.
@@ -162,7 +162,7 @@ def of_days(days: int, now: datetime | None = None) -> Window:
         days=days,
         # Spelled the way `run.created_at` is, so the comparison is the string
         # one SQLite is already indexing.
-        cutoff=start.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        cutoff=start.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         first_day=first_day,
         last_day=last_day,
     )

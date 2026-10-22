@@ -12,6 +12,7 @@ import sysconfig
 import tarfile
 import tempfile
 import time
+import tomllib
 import traceback
 import urllib.request
 import zipfile
@@ -22,12 +23,6 @@ from pathlib import Path, PurePath
 
 from invoke import Exit, task
 from invoke.context import Context
-
-try:
-    import tomllib
-except ModuleNotFoundError:
-    # Python 3.10, which the on-push.yml testing matrix still runs tasks.py on.
-    import tomli as tomllib
 
 try:
     import bs4
@@ -143,7 +138,7 @@ If you upgrading from previous release with [pip](http://pip-installer.org), run
 Alternatively you can download the source distribution from
 [PyPI](https://pypi.org/project/robotframework-browser/) and
 install it manually. Browser library {version} was released on {date}.
-Browser supports Python 3.10+, Node 22/24 LTS and Node 26, and Robot Framework 7.1.1+.
+Browser supports Python 3.11+, Node 22/24 LTS and Node 26, and Robot Framework 7.1.1+.
 Library was tested with Playwright REPLACE_PW_VERSION. BrowserBatteries package was
 released with NodeJS REPLACE_BB_NODE_VERSION.
 
