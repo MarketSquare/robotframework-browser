@@ -13,7 +13,7 @@
 # limitations under the License.
 import re
 from datetime import timedelta
-from enum import Enum, IntFlag, auto
+from enum import Enum, IntFlag, StrEnum, auto
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
@@ -710,7 +710,7 @@ class Dimensions(ViewportDimensions):
     """Dimensions of an object in pixels."""
 
 
-class ShowActionsPosition(str, Enum):
+class ShowActionsPosition(StrEnum):
     top_left = "top-left"
     top = "top"
     top_right = "top-right"
@@ -719,7 +719,7 @@ class ShowActionsPosition(str, Enum):
     bottom_right = "bottom-right"
 
 
-class ShowActionsCursor(str, Enum):
+class ShowActionsCursor(StrEnum):
     pointer = "pointer"
     none = "none"
 

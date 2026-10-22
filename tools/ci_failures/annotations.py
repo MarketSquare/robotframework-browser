@@ -18,7 +18,7 @@ any reason about version control.
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import workspace
@@ -140,7 +140,7 @@ def write_snapshot(db_path: Path, entries: list[tuple[str, str | None, int]]) ->
     destination.write_text(
         json.dumps(
             {
-                "taken_at": datetime.now(timezone.utc).isoformat(),
+                "taken_at": datetime.now(UTC).isoformat(),
                 "groups": [
                     {"subject": subject, "signature": signature, "failures": failures}
                     for subject, signature, failures in entries

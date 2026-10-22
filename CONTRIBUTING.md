@@ -32,7 +32,7 @@ Install Python and nodejs.
 - https://www.python.org/downloads/
 - https://nodejs.org/
 
-N.B. The minimum Python version is 3.10.
+N.B. The minimum Python version is 3.11.
 
 Run `python bootstrap.py` to create a virtual environment with correct dependencies.
 After that, make sure to activate the virtual env before running other development commands.

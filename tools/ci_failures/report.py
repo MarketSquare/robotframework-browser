@@ -18,7 +18,7 @@ a question SQL can answer.
 
 import math
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import reading
@@ -857,7 +857,7 @@ def _short_window(window: Window, begins: str | None) -> ShortWindow | None:
         return None
     holds_from = (
         datetime.strptime(begins, "%Y-%m-%dT%H:%M:%SZ")
-        .replace(tzinfo=timezone.utc)
+        .replace(tzinfo=UTC)
         .astimezone()
         .date()
     )

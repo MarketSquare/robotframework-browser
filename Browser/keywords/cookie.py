@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from robot.libraries.DateTime import convert_date
 from robot.utils import DotDict
@@ -76,7 +76,7 @@ class Cookie(LibraryComponent):
             if key == "expires":
                 # In Windows OS, expires value might be -1 and it causes OSError.
                 try:
-                    dot_dict[key] = datetime.fromtimestamp(cookie[key], tz=timezone.utc)
+                    dot_dict[key] = datetime.fromtimestamp(cookie[key], tz=UTC)
                 except OSError:
                     logger.debug(
                         f"Invalid expiry seen in: {cookie}, setting expiry as None"

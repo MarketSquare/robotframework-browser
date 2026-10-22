@@ -10,7 +10,7 @@ the task.
 
 import webbrowser
 from collections.abc import Callable
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from . import ingest as ingesting
@@ -187,7 +187,7 @@ def verify_fixes(
     to the checkout's file, which `--mark` writes.
     """
     db_path = workspace.database(db)
-    today = today or datetime.now(timezone.utc).date()
+    today = today or datetime.now(UTC).date()
     checked = check(
         db_path, known_causes, history=history or Git(_CHECKOUT), today=today
     )

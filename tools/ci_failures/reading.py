@@ -45,7 +45,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from sqlite3 import Connection, Cursor
-from typing import Any
+from typing import Any, Self
 
 from . import subject
 from .db import connect
@@ -86,8 +86,7 @@ class Reading:
     def close(self) -> None:
         self.connection.close()
 
-    # `typing.Self` is 3.11; this repo still supports 3.10.
-    def __enter__(self) -> "Reading":  # noqa: PYI034
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_: object) -> None:

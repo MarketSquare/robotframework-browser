@@ -11,7 +11,7 @@ encoding.
 """
 
 import html
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .report import (
@@ -1141,12 +1141,12 @@ def page(report: Report) -> str:
     )
 
     # Formatted outside the page template: a nested same-quote f-string needs
-    # Python 3.12 and this repo supports 3.10, and `ruff format` will happily
+    # Python 3.12+, above the supported floor, and `ruff format` will happily
     # rewrite it back into one if the expression sits inline.
     changes_section = _changes_html(report.since_last_report, summary.bounded)
     about_section = _about_html(report.about)
     result_count = f"{summary.results:,}"
-    generated = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    generated = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     newest = summary.latest_run
     # A first-attempt rate is a floor while any leg is unplaced, and a page that
     # does not say so is a page that reads as if it were not.

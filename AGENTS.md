@@ -2,7 +2,7 @@
 
 A Robot Framework library on top of Playwright. Python keywords (`Browser/`) call a Node.js
 Playwright wrapper (`node/playwright-wrapper/`) over gRPC (`protobuf/playwright.proto`), so a
-keyword change usually touches all three. Supports Python 3.10+, Node 22/24/26 and Robot
+keyword change usually touches all three. Supports Python 3.11+, Node 22/24/26 and Robot
 Framework 7.1.1+. The Robot Framework floor lives in `pyproject.toml` and in the `rf-version`
 of the CI matrix; change both together.
 
