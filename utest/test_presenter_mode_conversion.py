@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import MagicMock
 
 import pytest
 from approvaltests.approvals import verify  # type: ignore
@@ -65,3 +66,13 @@ def test_invalid_presenter_mode_type(browser: Browser):
         match=r"'Presenter Mode' got value 123 \(int\) that cannot be converted to HighLightElement or boolean.",
     ):
         browser.presenter_mode = 123  # type: ignore
+
+
+def test_presenter_mode_highlight_failure_does_not_record_selector():
+    library = MagicMock()
+    library.presenter_mode = {"duration": timedelta(seconds=0)}
+    library.selector_prefix = None
+    library.highlight_elements.side_effect = Exception("element not found")
+    ctx = LibraryComponent(library)
+    assert ctx.presenter_mode("id=missing", True) == "id=missing"
+    library.record_selector.assert_not_called()
