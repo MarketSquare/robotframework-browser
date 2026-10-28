@@ -86,6 +86,8 @@ class RecorderSession:
         self._clock = clock
         self._fixed_name = fixed_name
         self._finished: list[RecordedKeyword] = []
+        #: Finished keywords the target could not write; retried on close.
+        self.unsaved: list[RecordedKeyword] = []
         self._keyword: RecordedKeyword | None = None
         self._pending: tuple[str, float] | None = None
         self._starting: str | None = None
@@ -97,6 +99,8 @@ class RecorderSession:
         self._discard_on_stop = False
         self._picking = False
         self._paused = False
+        #: The last write error of a keyword left in `unsaved`.
+        self.write_error: str | None = None
         self._answered: str | None = None
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
@@ -311,7 +315,18 @@ class RecorderSession:
                 self._finish()
             else:
                 self._keyword = None
+        self._retry_unsaved()
         return self.keywords
+
+    def _retry_unsaved(self) -> None:
+        """Write what failed before once more: the reason may be gone by now."""
+        unsaved, self.unsaved = self.unsaved, []
+        for keyword in unsaved:
+            try:
+                self.target.finish(keyword)
+            except (OSError, ValueError) as error:
+                self.unsaved.append(keyword)
+                self.write_error = f"{_WRITE_FAILED} {self.target.label}: {error}"
 
     # -- command handlers -------------------------------------------------- #
 
@@ -391,6 +406,7 @@ class RecorderSession:
             self.target.finish(keyword)
         except (OSError, ValueError) as error:
             self._error = f"{_WRITE_FAILED} {self.target.label}: {error}"
+            self.unsaved.append(keyword)
         self._finished.append(keyword)
         self.log.append(f"finished '{keyword.name}' with {len(keyword)} Keyword Calls")
 

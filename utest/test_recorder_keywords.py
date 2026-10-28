@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from datetime import timedelta
 from pathlib import Path
 
@@ -205,7 +206,65 @@ def test_directory_target_is_rejected(tmp_path):
         Recorder._target(str(tmp_path))
 
 
-def test_suite_source_of_a_directory_suite_is_rejected(monkeypatch, tmp_path):
+def test_a_directory_suite_records_into_its_init_file(monkeypatch, tmp_path):
+    (tmp_path / "__init__.robot").write_text("*** Settings ***\n")
     monkeypatch.setattr(module, "_suite_source", lambda: str(tmp_path))
-    with pytest.raises(ValueError, match="is a directory"):
+    assert (
+        Recorder._target(SUITE_SOURCE).path == (tmp_path / "__init__.robot").resolve()
+    )
+
+
+@pytest.mark.parametrize("init", [None, "__init__.rst"])
+def test_a_directory_suite_without_init_robot_is_refused(monkeypatch, tmp_path, init):
+    if init:
+        (tmp_path / init).write_text("")
+    monkeypatch.setattr(module, "_suite_source", lambda: str(tmp_path))
+    with pytest.raises(ValueError, match="has no __init__.robot"):
         Recorder._target(SUITE_SOURCE)
+
+
+def test_a_file_in_a_missing_folder_is_refused_before_recording(tmp_path):
+    with pytest.raises(ValueError, match="does not exist"):
+        Recorder._target(str(tmp_path / "missing" / "k.resource"))
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="chmod does not make files read-only"
+)
+def test_a_read_only_file_is_refused_before_recording(tmp_path):
+    path = tmp_path / "k.resource"
+    path.write_text("*** Keywords ***\n")
+    path.chmod(0o444)
+    try:
+        with pytest.raises(ValueError, match="is read-only"):
+            Recorder._target(str(path))
+    finally:
+        path.chmod(0o644)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="chmod does not make files read-only"
+)
+def test_a_keyword_that_could_not_be_written_fails_the_call_and_is_logged(
+    monkeypatch, tmp_path
+):
+    path = tmp_path / "k.resource"
+    warnings = []
+    monkeypatch.setattr(module.logger, "warn", warnings.append)
+
+    def run(session, client, idle_timeout=None):
+        session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
+        path.chmod(0o444)
+        session.close()
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", run)
+    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
+    recorder = Recorder.__new__(Recorder)
+    recorder._client = lambda: object()
+    try:
+        with pytest.raises(RuntimeError, match="'Fill Name' not saved"):
+            recorder.record_keyword("Fill Name", str(path))
+    finally:
+        path.chmod(0o644)
+    assert "Fill Name\n    [Tags]    recorded\n    Fill Text" in warnings[0]

@@ -590,6 +590,10 @@ Actions While Paused Are Not Recorded
     Should Contain    ${file}    after
     Should Not Contain    ${file}    while paused
 
+Recording Into A Missing Folder Fails Before It Starts
+    Run Keyword And Expect Error    *does not exist*
+    ...    Record Keyword    Never Recorded    ${OUTPUT_DIR}${/}no${/}such${/}folder${/}k.resource
+
 Every Recorded Selector Finds Exactly The Clicked Element
     [Documentation]    Playwright's generator picks a different selector shape for each element
     ...    of the page. Each translated selector must find the element that was clicked, and only it.

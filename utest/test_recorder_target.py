@@ -484,3 +484,23 @@ def test_an_argument_next_to_partial_variable_syntax_roundtrips(tmp_path):
             t for kind, t in tokens(call.rendered_args()[0]) if kind == "variable"
         ]
         assert variables == [f"${{who{index}}}"]
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="chmod does not make files read-only"
+)
+def test_a_read_only_file_is_not_overwritten(tmp_path):
+    path = tmp_path / "k.resource"
+    path.write_text(ORIGINAL)
+    path.chmod(0o444)
+    try:
+        with pytest.raises(PermissionError, match="is read-only"):
+            FileTarget(path).save(keyword())
+        assert path.read_text() == ORIGINAL
+    finally:
+        path.chmod(0o644)
+
+
+def test_a_missing_folder_is_named_in_the_error(tmp_path):
+    with pytest.raises(PermissionError, match="does not exist"):
+        FileTarget(tmp_path / "missing" / "k.resource").save(keyword())

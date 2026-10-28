@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import codecs
 import io
+import os
 import shutil
 import tempfile
 from collections.abc import Callable, Iterator
@@ -93,6 +94,20 @@ class _Format:
     bom: bool = False
     eol: str = _EOL
     final_newline: bool = True
+
+
+def unwritable_reason(path: Path) -> str | None:
+    """Why ``path`` cannot be written, or ``None``.
+
+    The write itself replaces the file by renaming a temporary one, which only
+    needs the folder's permission - so a read-only file is checked here, or it
+    would be overwritten anyway.
+    """
+    if not path.parent.is_dir():
+        return f"the folder {path.parent} does not exist"
+    if path.exists() and not os.access(path, os.W_OK):
+        return f"{path.name} is read-only"
+    return None
 
 
 class FileTarget:
@@ -221,6 +236,9 @@ class FileTarget:
         data = text.replace("\n", fmt.eol).encode("utf-8")
         if fmt.bom:
             data = codecs.BOM_UTF8 + data
+        reason = unwritable_reason(self.path)
+        if reason:
+            raise PermissionError(reason)
         directory = self.path.parent
         with tempfile.NamedTemporaryFile(
             "wb", dir=directory, prefix=f".{self.path.name}.", delete=False

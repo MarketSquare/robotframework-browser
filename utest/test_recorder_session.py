@@ -1169,3 +1169,36 @@ def test_the_toolbar_shows_a_value_escaped_as_in_the_file():
 @pytest.mark.parametrize("written", ["${part", "${a}[", "${{1+"])
 def test_partial_variable_syntax_is_shown_uncoloured_rather_than_failing(written):
     assert tokens(written) == [("argument", written)]
+
+
+class FlakyFinishTarget(FakeTarget):
+    """Fails to finish until it is told the problem is gone."""
+
+    def __init__(self):
+        super().__init__()
+        self.broken = True
+
+    def finish(self, keyword):
+        if self.broken:
+            raise OSError("locked")
+        super().finish(keyword)
+
+
+def test_a_keyword_that_could_not_be_finished_is_written_on_close():
+    s, _, clock = recording(target=FlakyFinishTarget())
+    s.handle_command({"cmd": "finish"})
+    settle(s, clock)
+    assert [k.name for k in s.unsaved] == ["K"]
+    s.target.broken = False
+    s.close()
+    assert s.unsaved == []
+    assert s.target.finished
+
+
+def test_a_keyword_still_not_written_on_close_stays_unsaved():
+    s, _, clock = recording(target=FlakyFinishTarget())
+    s.handle_command({"cmd": "finish"})
+    settle(s, clock)
+    s.close()
+    assert [k.name for k in s.unsaved] == ["K"]
+    assert "locked" in s.write_error

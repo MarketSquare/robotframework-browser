@@ -289,3 +289,15 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
    elements (it only styles its own instance inline).
 10. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.
+
+## Where keywords go when something is in the way
+
+- `file` not given: `${SUITE_SOURCE}`. In a suite initialisation file Robot reports the
+  directory and keeps no record of the init file it read, so `_suite_file` takes the
+  directory's `__init__.robot`; without one the keyword fails.
+- Before recording starts, `unwritable_reason` checks that the folder exists and an existing
+  file is writable. `FileTarget._write` checks again before every write: it replaces the
+  file by renaming a temporary one, which needs only the folder's permission, so without
+  the check a read-only file would be overwritten.
+- A keyword whose final write fails is kept in `RecorderSession.unsaved` and written once
+  more on close. If that fails too, `Record Keyword(s)` logs its text as a warning and fails.

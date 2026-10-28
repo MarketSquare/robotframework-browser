@@ -25,7 +25,7 @@ from ..generated.playwright_pb2 import Request
 from ..recorder.driver import run_session
 from ..recorder.names import collect_known_keywords
 from ..recorder.session import RecorderSession
-from ..recorder.target import FileTarget, LogTarget, Target
+from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
 from ..utils import keyword, logger
 
 __all__ = ["Recorder"]
@@ -39,6 +39,30 @@ def _suite_source() -> str | None:
         return BuiltIn().get_variable_value("${SUITE_SOURCE}")
     except RobotNotRunningError:
         return None
+
+
+def _suite_file() -> Path:
+    """The file of the running suite; for a directory suite its ``__init__.robot``.
+
+    Robot reports a directory suite's source as the directory, and keeps no
+    record of which initialisation file it read.
+    """
+    source = _suite_source()
+    if not source:
+        raise ValueError(
+            "No 'file' given and no running suite to record into. Give the "
+            "target file explicitly, e.g. Record Keywords    ${CURDIR}/keywords.resource"
+        )
+    path = Path(source).resolve()
+    if not path.is_dir():
+        return path
+    init = path / "__init__.robot"
+    if init.is_file():
+        return init
+    raise ValueError(
+        f"The running suite is the directory {path}, which has no __init__.robot to "
+        "record into. Give the target file explicitly, e.g. file=${CURDIR}/keywords.resource"
+    )
 
 
 class _GrpcRecorderClient:
@@ -109,10 +133,13 @@ class Recorder(LibraryComponent):
 
         | =Arguments= | =Description= |
         | ``name`` | Name of the User Keyword to create. It must not exist in ``file`` and must not shadow any keyword the running suite can call. |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
+        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite; in a suite initialisation file that is its ``__init__.robot``, and a keyword recorded there can only be used in that file. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. The folder must exist and an existing file must be writable; both are checked before recording starts. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
         | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
+        If a recorded keyword cannot be written - the file became read-only, the disk is
+        full - the keyword fails, and the recorded text is logged as a warning so
+        nothing is lost.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
@@ -205,11 +232,14 @@ class Recorder(LibraryComponent):
         has no Keyword Calls.
 
         | =Arguments= | =Description= |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. With ``${None}`` nothing is written; the keywords are logged to the console and to the log at INFO level instead. |
+        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite; in a suite initialisation file that is its ``__init__.robot``, and a keyword recorded there can only be used in that file. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. The folder must exist and an existing file must be writable; both are checked before recording starts. With ``${None}`` nothing is written; the keywords are logged to the console and to the log at INFO level instead. |
         | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
 
         Returns the text of all keywords recorded in the session, under one
         ``*** Keywords ***`` header.
+        If a recorded keyword cannot be written - the file became read-only, the disk is
+        full - the keyword fails, and the recorded text is logged as a warning so
+        nothing is lost.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
         becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
@@ -264,13 +294,27 @@ class Recorder(LibraryComponent):
             target, fixed_name=fixed_name, known=collect_known_keywords()
         )
         logger.info(f"Recording into {target.label}")
-        run_session(
-            session,
-            self._client(),
-            idle_timeout=idle_timeout.total_seconds()
-            if idle_timeout is not None
-            else None,
-        )
+        try:
+            run_session(
+                session,
+                self._client(),
+                idle_timeout=idle_timeout.total_seconds()
+                if idle_timeout is not None
+                else None,
+            )
+        finally:
+            # Nothing recorded may be lost silently: what could not be written
+            # is logged in full, to be copied from there.
+            if session.unsaved:
+                logger.warn(
+                    "Recorded keyword(s) that could not be written:\n*** Keywords ***\n"
+                    + "\n".join(keyword.block() for keyword in session.unsaved)
+                )
+        if session.unsaved:
+            names = ", ".join(f"'{keyword.name}'" for keyword in session.unsaved)
+            raise RuntimeError(
+                f"{session.write_error}. {names} not saved; the recorded text is in the log."
+            )
         return session
 
     def _client(self) -> _GrpcRecorderClient:
@@ -281,18 +325,14 @@ class Recorder(LibraryComponent):
         if file is None:
             return LogTarget()
         if file == SUITE_SOURCE:
-            source = _suite_source()
-            if not source:
+            path = _suite_file()
+        else:
+            path = Path(file).resolve()
+            if path.is_dir():
                 raise ValueError(
-                    "No 'file' given and no running suite to record into. Give the "
-                    "target file explicitly, e.g. Record Keywords    ${CURDIR}/keywords.resource"
+                    f"'file' must be a .robot or .resource file, but {path} is a directory."
                 )
-            file = source
-        path = Path(file).resolve()
-        if path.is_dir():
-            raise ValueError(
-                f"'file' must be a .robot or .resource file, but {path} is a directory. "
-                "A suite initialisation file cannot hold recorded keywords; give the "
-                "target file explicitly."
-            )
+        reason = unwritable_reason(path)
+        if reason:
+            raise ValueError(f"Cannot record into {path}: {reason}.")
         return FileTarget(path)
