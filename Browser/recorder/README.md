@@ -155,7 +155,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `fixedName` | true for `Record Keyword` (name is fixed, only ✕ ends it) |
 | `target` | label of the file or log the keywords go to |
 | `keywords` | names finished in this session |
-| `calls` | `[{text, assign, keyword, values: [{text, selectable, raw}]}]`; `assign` is `${name}=` or `null`; `raw` is the literal text of the value, `null` once it holds a reference |
+| `calls` | `[{assign, keyword, values: [{tokens, selectable, raw}]}]`; `assign` is `${name}=` or `null`; `tokens` is the value as written into the file, split by Robot's own tokenizer into `["argument" or "variable", text]` pairs for the toolbar's syntax colours; `raw` is the literal text of the value, `null` once it holds a reference |
 | `arguments` | `[{name, default, useDefault}]` |
 | `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null` |
 | `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
@@ -164,7 +164,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `paused` | the keyword is recording but paused: Actions and signals are ignored until `resume` |
 | `answered` | `id` of the last command Python handled; with `error` it tells a dialog whether its command was refused |
 
-Every displayed text (`text`, `default`, the offer's `text`) is cut to `TOOLBAR_TEXT_LIMIT`
+Every displayed text (a value's `tokens` together, `default`, the offer's `text`) is cut to `TOOLBAR_TEXT_LIMIT`
 (200) characters. `raw` is sent only up to `MAX_RAW_LENGTH` (64 KiB of JSON) per value and
 `MAX_RAW_TOTAL` (1 MiB) per state, in call order; a value beyond either limit is sent with
 `selectable: false` and `raw: null`. So the state and the commands quoting `raw` stay below

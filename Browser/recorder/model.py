@@ -98,11 +98,15 @@ class Call:
     args: list[Value]
     assign: str | None = None
 
+    def rendered_args(self) -> list[str]:
+        """The argument cells as written into the file."""
+        parameters = KEYWORD_PARAMETERS.get(self.keyword)
+        return [value.render(parameters) for value in self.args]
+
     def render(self) -> str:
         cells = [f"${{{self.assign}}}="] if self.assign else []
         cells.append(self.keyword)
-        parameters = KEYWORD_PARAMETERS.get(self.keyword)
-        cells.extend(value.render(parameters) for value in self.args)
+        cells.extend(self.rendered_args())
         return _INDENT.join(cells)
 
 

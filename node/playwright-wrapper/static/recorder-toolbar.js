@@ -81,7 +81,9 @@
       /* The dark palette of robotframework-browser.org (app/assets/css/tokens.css). */
       :host { --paper: #1c2227; --chrome: #232a30; --plate: #12171a; --line: #38424a;
               --line-strong: #4e5a63; --ink: #e2e1d7; --dim: #a3afb5; --faint: #8b979d;
-              --red: #ff6b5e; --red-soft: #2e1b19; --teal: #00c0b5; --amber: #ffb86b; }
+              --red: #ff6b5e; --red-soft: #2e1b19; --teal: #00c0b5; --amber: #ffb86b;
+              /* Robot Framework syntax colours, as in the site's code blocks. */
+              --tok-keyword: var(--teal); --tok-argument: #e6d7ad; --tok-variable: var(--amber); }
       * { box-sizing: border-box; font: 12px/1.4 'IBM Plex Sans', system-ui, sans-serif; }
       /* Content-driven width: the panel grows to the widest recorded Keyword Call line
          (the .calls list below is white-space: pre, so its max-content width is
@@ -147,7 +149,10 @@
                    font-size: 11px; }
       .call-line * { font-family: inherit; font-size: inherit; }
       .cell { margin-left: 3ch; }
-      .assign { margin-right: 3ch; color: var(--amber); }
+      .assign { margin-right: 3ch; color: var(--tok-variable); }
+      .tok-keyword { color: var(--tok-keyword); }
+      .tok-argument { color: var(--tok-argument); }
+      .tok-variable { color: var(--tok-variable); }
       .cell.pick { cursor: pointer; text-decoration: underline dotted var(--teal); }
       .cell.pick:hover { background: rgb(0 192 181 / 20%); }
       .notice { color: var(--amber); }
@@ -684,6 +689,16 @@
             place();
             answerDialogs(state);
         };
+        // A value as Robot reads it: `argument` and `variable` tokens, coloured.
+        const appendTokens = (container, tokens) => {
+            (Array.isArray(tokens) ? tokens : []).forEach(([kind, text]) => {
+                const token = document.createElement('span');
+                token.className = kind === 'variable' ? 'tok-variable' : 'tok-argument';
+                token.textContent = text ?? '';
+                container.appendChild(token);
+            });
+            return container;
+        };
         // One Keyword Call as the file shows it: cells three character widths apart.
         // `onPick(valueIndex, value)` makes the selectable values clickable.
         const callLine = (container, call, onPick) => {
@@ -694,13 +709,14 @@
                 container.appendChild(assign);
             }
             const kw = document.createElement('span');
+            kw.className = 'tok-keyword';
             kw.textContent = call.keyword ?? '';
             container.appendChild(kw);
             (call.values || []).forEach((value, valueIndex) => {
                 const cell = document.createElement('span');
                 const pick = !!onPick && !!value.selectable;
                 cell.className = pick ? 'cell pick' : 'cell';
-                cell.textContent = value.text ?? '';
+                appendTokens(cell, value.tokens);
                 if (pick) {
                     cell.title = 'Make this value an argument';
                     cell.addEventListener('click', () => onPick(valueIndex, value));
@@ -775,8 +791,9 @@
             if (recording) {
                 argumentList.forEach((arg) => {
                     const line = document.createElement('div');
-                    line.textContent = arg.useDefault ? `\${${arg.name}}=${arg.default ?? ''}` : `\${${arg.name}}`;
-                    args.appendChild(line);
+                    const tokens = [['variable', `\${${arg.name}}`]];
+                    if (arg.useDefault) tokens.push(['argument', `=${arg.default ?? ''}`]);
+                    args.appendChild(appendTokens(line, tokens));
                 });
             }
             $('panel').classList.toggle('busy', !!state.pending);

@@ -18,6 +18,9 @@ from __future__ import annotations
 import re
 from collections.abc import Collection
 
+from robot.api.parsing import Token
+from robot.errors import DataError
+
 # Robot's variable/list/dict/environment syntax, which must not be resolved in
 # a recorded literal.
 VARIABLE_START = re.compile(r"[$@&%]\{")
@@ -85,6 +88,24 @@ def cell(
     if at_end and cell.endswith(" "):
         cell = cell[:-1] + _SPACE
     return cell.replace(_SPACE + "[", _SPACE + "\\[")
+
+
+def tokens(cell: str) -> list[tuple[str, str]]:
+    r"""How Robot reads a written cell: its ``argument`` and ``variable`` parts.
+
+    Robot's own tokenizer, so escapes count as Robot counts them: ``\${x}`` is
+    an argument, ``${SPACE}`` a variable.
+    """
+    try:
+        parts = Token(Token.ARGUMENT, cell).tokenize_variables()
+        return [
+            ("variable" if token.type == Token.VARIABLE else "argument", token.value)
+            for token in parts
+        ]
+    except DataError:
+        # Partial syntax like an unclosed `${x`, which `cell()` never writes; shown
+        # uncoloured if one turns up anyway.
+        return [("argument", cell)]
 
 
 def _escape_named_argument(cell: str, parameters: Collection[str] | None) -> str:

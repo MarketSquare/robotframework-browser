@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from Browser.recorder.cells import tokens
 from Browser.recorder.model import Call, RecordedKeyword, Value
 from Browser.recorder.target import FileTarget, LogTarget
 
@@ -427,3 +428,59 @@ def test_a_file_that_is_not_utf8_is_refused_and_left_alone(tmp_path, bom):
     with pytest.raises(ValueError, match=f"not valid UTF-8 \\(byte {len(bom) + 40}\\)"):
         FileTarget(path).save(keyword())
     assert path.read_bytes() == data
+
+
+#: Typed text, and the part of it that becomes the argument ``${who}``: the
+#: argument borders on partial variable syntax, which Robot is picky about.
+_NEXT_TO_PARTIAL_SYNTAX = [
+    ("${who}", 2, 5),
+    ("a$who", 2, 5),
+    ("@who", 1, 4),
+    ("x\\who", 2, 5),
+    ("who{", 0, 3),
+    ("who}", 0, 3),
+    ("{who}", 1, 4),
+    ("%{who}", 2, 5),
+    ("who[0]", 0, 3),
+    ("${part", 2, 6),
+]
+
+
+def test_an_argument_next_to_partial_variable_syntax_roundtrips(tmp_path):
+    (tmp_path / "PartSpy.py").write_text(
+        "import json, pathlib\n"
+        "OUT = []\n"
+        "def spy(value):\n"
+        "    OUT.append(value)\n"
+        "    pathlib.Path(__file__).with_name('part.json').write_text(json.dumps(OUT))\n"
+    )
+    resource = tmp_path / "recorded.resource"
+    kw = RecordedKeyword("Recorded")
+    for index, (text, start, end) in enumerate(_NEXT_TO_PARTIAL_SYNTAX):
+        kw.add(Call("Spy", [Value.literal(text)]))
+        kw.make_argument(index, 0, start, end, f"who{index}")
+    FileTarget(resource).finish(kw)
+    (tmp_path / "run.robot").write_text(
+        "*** Settings ***\n"
+        "Library     PartSpy.py\n"
+        "Resource    recorded.resource\n\n"
+        "*** Test Cases ***\n"
+        "T\n"
+        "    Recorded\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), "run.robot"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads((tmp_path / "part.json").read_text()) == [
+        text for text, _, _ in _NEXT_TO_PARTIAL_SYNTAX
+    ]
+    for index, call in enumerate(kw.calls()):
+        variables = [
+            t for kind, t in tokens(call.rendered_args()[0]) if kind == "variable"
+        ]
+        assert variables == [f"${{who{index}}}"]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from Browser.recorder.cells import tokens
 from Browser.recorder.model import RecordedKeyword
 from Browser.recorder.names import KnownKeywords
 from Browser.recorder.session import (
@@ -284,7 +285,10 @@ def test_argument_offer_and_replace():
     s.handle_command({"cmd": "replace", "argument": "who", "occurrences": [[1, 1]]})
     state = s.toolbar_state()
     assert state["offer"] is None
-    assert [c["values"][1]["text"] for c in state["calls"]] == ["${who}", "${who}"]
+    assert [c["values"][1]["tokens"] for c in state["calls"]] == [
+        [["variable", "${who}"]],
+        [["variable", "${who}"]],
+    ]
 
 
 def test_argument_written_as_a_variable_gets_its_plain_name():
@@ -367,9 +371,9 @@ def test_toolbar_shortens_long_texts_but_quotes_the_whole_value():
     text = "a" * (TOOLBAR_TEXT_LIMIT * 2)
     s.handle_event("added", {**FILL, "text": text})
     call = s.toolbar_state()["calls"][0]
-    assert len(call["text"]) == TOOLBAR_TEXT_LIMIT
-    assert call["text"].endswith("\u2026")
-    assert len(call["values"][1]["text"]) == TOOLBAR_TEXT_LIMIT
+    shown = "".join(text for _, text in call["values"][1]["tokens"])
+    assert len(shown) == TOOLBAR_TEXT_LIMIT
+    assert shown.endswith("\u2026")
     assert call["values"][1]["raw"] == text
     s.handle_command(
         {
@@ -406,7 +410,11 @@ def test_toolbar_state_quotes_values_up_to_a_total_budget():
     values = [c["values"][1] for c in s.toolbar_state()["calls"]]
     assert len(values) == count
     assert values[0]["raw"] == text
-    assert values[-1] == {"text": values[-1]["text"], "selectable": False, "raw": None}
+    assert values[-1] == {
+        "tokens": values[-1]["tokens"],
+        "selectable": False,
+        "raw": None,
+    }
     quoted = sum(len(v["raw"]) for v in values if v["raw"] is not None)
     assert quoted <= MAX_RAW_TOTAL
 
@@ -1130,3 +1138,34 @@ def test_pause_needs_a_keyword_and_ends_with_it():
     settle(s, clock)
     start(s, "L")
     assert s.toolbar_state()["paused"] is False
+
+
+def test_the_toolbar_shows_each_value_as_robot_reads_it():
+    s, _, _ = session()
+    start(s, "K")
+    s.handle_event("added", {**FILL, "text": "id-42  ${HOME}"})
+    s.handle_command(arg(start=3, end=5, name="number", raw="id-42  ${HOME}"))
+    call = s.toolbar_state()["calls"][0]
+    assert call["keyword"] == "Fill Text"
+    assert call["values"][0]["tokens"] == [["argument", "\\#n"]]
+    assert call["values"][1]["tokens"] == [
+        ["argument", "id-"],
+        ["variable", "${number}"],
+        ["variable", "${SPACE}"],
+        ["variable", "${SPACE}"],
+        ["argument", "\\${HOME}"],
+    ]
+
+
+def test_the_toolbar_shows_a_value_escaped_as_in_the_file():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", {**FILL, "text": "txt=hello"})
+    tokens = s.toolbar_state()["calls"][0]["values"][1]["tokens"]
+    assert tokens == [["argument", "txt\\=hello"]]
+    assert "txt\\=hello" in target.saved[-1]
+
+
+@pytest.mark.parametrize("written", ["${part", "${a}[", "${{1+"])
+def test_partial_variable_syntax_is_shown_uncoloured_rather_than_failing(written):
+    assert tokens(written) == [("argument", written)]

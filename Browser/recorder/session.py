@@ -32,6 +32,7 @@ from .action_mapper import (
     internal_selector_notice,
     uploaded_files,
 )
+from .cells import tokens
 from .model import RecordedKeyword
 from .names import (
     KnownKeywords,
@@ -155,7 +156,7 @@ class RecorderSession:
         calls = []
         for call in keyword.calls() if keyword is not None else []:
             values = []
-            for value in call.args:
+            for value, written in zip(call.args, call.rendered_args(), strict=True):
                 raw = value.text
                 selectable = value.selectable
                 if selectable and raw is not None:
@@ -166,14 +167,13 @@ class RecorderSession:
                         budget -= size
                 values.append(
                     {
-                        "text": _shown(value.render()),
+                        "tokens": _shown_tokens(tokens(written)),
                         "selectable": selectable,
                         "raw": raw,
                     }
                 )
             calls.append(
                 {
-                    "text": _shown(call.render()),
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
                     "keyword": call.keyword,
                     "values": values,
@@ -533,6 +533,21 @@ def _pairs(value: object) -> list[tuple[int, int]]:
             raise ValueError("Each occurrence must be [call, value].")
         pairs.append((item[0], item[1]))
     return pairs
+
+
+def _shown_tokens(parts: list[tuple[str, str]]) -> list[list[str]]:
+    """The tokens of a value, cut like `_shown` cuts a text."""
+    if sum(len(text) for _, text in parts) <= TOOLBAR_TEXT_LIMIT:
+        return [[kind, text] for kind, text in parts]
+    shown: list[list[str]] = []
+    room = TOOLBAR_TEXT_LIMIT - 1
+    for kind, text in parts:
+        if len(text) >= room:
+            shown.append([kind, text[:room] + "\u2026"])
+            break
+        shown.append([kind, text])
+        room -= len(text)
+    return shown
 
 
 def _shown(text: str) -> str:
