@@ -681,6 +681,9 @@
         let offerChecked = {};
         window.__rfbToolbarRender = (state) => {
             if (!state) return;
+            // A page that swaps its body without navigating (Turbo, htmx, a
+            // framework re-bootstrap) takes the toolbar with it.
+            if (!glass.isConnected) attach();
             window.__rfbToolbarState = state;
             renderBody(state);
             // The panel's content-driven width can change with every render (a
@@ -853,9 +856,11 @@
             delete window.__rfbToolbarRender;
             delete window.__rfbToolbarState;
             delete window.__rfbToolbarRemove;
+            delete window.__rfbToolbarConnected;
         };
 
         const attach = () => document.body && document.body.appendChild(glass);
+        window.__rfbToolbarConnected = () => glass.isConnected;
         if (document.body) attach();
         else document.addEventListener('DOMContentLoaded', attach);
     }

@@ -318,7 +318,7 @@ def _embedded_matcher(name: str) -> Callable[[str], bool] | None:
     underscores, and ``KeywordStore._select_best_matches`` prefers such a normal
     match over an embedded one. So a recorded ``Open_Login_Page`` is a normal
     match for the call ``Open Login Page`` and beats the embedded owner, while
-    ``EmbeddedArguments.matches`` says no. Verified against a real `robot` run:
+    ``EmbeddedArguments`` says no. Verified against a real `robot` run:
     the call ran the recorded body, rc=0. `_normalized_embedded_pattern` closes
     that by matching the *normalized* candidate, and both checks are kept.
     """
@@ -329,16 +329,55 @@ def _embedded_matcher(name: str) -> Callable[[str], bool] | None:
         return None
     if embedded is None:
         return None
+    literal_match = _literal_matcher(embedded)
     pattern = _normalized_embedded_pattern(name)
     if pattern is None:
-        return embedded.matches
+        return literal_match
 
     def matches(candidate: str) -> bool:
-        return embedded.matches(candidate) or bool(
+        return literal_match(candidate) or bool(
             pattern.fullmatch(normalize_keyword_name(candidate))
         )
 
     return matches
+
+
+def _literal_matcher(embedded: EmbeddedArguments) -> Callable[[str], bool]:
+    """``EmbeddedArguments.matches`` (Robot 7.3+), or its older ``match``."""
+    matches = getattr(embedded, "matches", None)
+    if matches is not None:
+        return matches
+    return lambda candidate: embedded.match(candidate) is not None
+
+
+def _custom_pattern(parser: EmbeddedArgumentParser, base: str) -> str | None:
+    """The custom pattern of an embedded argument (``n:\\d+``), or ``None``.
+
+    Robot keeps this split private and renamed it in 7.3 (``_parse_arg``, which
+    also reads a type) from ``_get_name_and_pattern``.
+    """
+    parse_arg = getattr(parser, "_parse_arg", None)
+    if parse_arg is not None:
+        return parse_arg(base)[2]
+    get_name_and_pattern = getattr(parser, "_get_name_and_pattern")  # noqa: B009
+    _name, pattern, custom = get_name_and_pattern(base)
+    return pattern if custom else None
+
+
+_warned_without_normalized_check = False
+
+
+def _warn_without_normalized_check(error: Exception) -> None:
+    global _warned_without_normalized_check  # noqa: PLW0603 - warn once per run
+    if _warned_without_normalized_check:
+        return
+    _warned_without_normalized_check = True
+    logger.warn(
+        "recorder: this Robot Framework version does not offer the embedded-argument "
+        f"parser the recorder reuses ({error}); a recorded name such as "
+        "'Open_Login_Page' is not checked against an embedded 'Open ${page} Page'. "
+        "Exact embedded-argument matches are still rejected."
+    )
 
 
 def _normalized_embedded_pattern(name: str) -> re.Pattern | None:
@@ -367,7 +406,7 @@ def _normalized_embedded_pattern(name: str) -> re.Pattern | None:
     try:
         after = string = " ".join(name.split())
         for match in VariableMatches(string, identifiers="$"):
-            _arg, _type, custom = parser._parse_arg(match.base)
+            custom = _custom_pattern(parser, match.base)
             group = ".+?" if custom is None else parser._format_custom_regexp(custom)
             parts.extend(
                 [re.escape(normalize_keyword_name(match.before)), "(", group, ")"]
@@ -378,6 +417,10 @@ def _normalized_embedded_pattern(name: str) -> re.Pattern | None:
             return None
         parts.append(re.escape(normalize_keyword_name(after)))
         return re.compile("".join(parts), re.IGNORECASE)
+    except AttributeError as error:
+        # Robot's private parser changed again; see `_custom_pattern`.
+        _warn_without_normalized_check(error)
+        return None
     except Exception as error:
         logger.debug(f"recorder: no normalized matcher for {name!r}: {error}")
         return None

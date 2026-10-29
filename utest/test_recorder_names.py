@@ -666,8 +666,48 @@ def test_normalized_pattern_is_none_when_the_parser_fails(monkeypatch):
     def broken(*args, **kwargs):
         raise RuntimeError("no parser")
 
-    monkeypatch.setattr(names.EmbeddedArgumentParser, "_parse_arg", broken)
+    monkeypatch.setattr(names, "_custom_pattern", broken)
     assert names._normalized_embedded_pattern("Open ${page} Page") is None
+
+
+class _OldParser:
+    """Robot 7.1/7.2: the split is called `_get_name_and_pattern`."""
+
+    def _get_name_and_pattern(self, name):
+        if ":" in name:
+            arg, pattern = name.split(":", 1)
+            return arg, pattern, True
+        return name, ".*?", False
+
+
+def test_custom_pattern_reads_the_older_parser_too():
+    assert names._custom_pattern(_OldParser(), "n:\\d+") == "\\d+"
+    assert names._custom_pattern(_OldParser(), "page") is None
+
+
+def test_a_parser_without_either_method_warns_once_and_keeps_the_literal_check(
+    monkeypatch,
+):
+    warnings = []
+    monkeypatch.setattr(names.logger, "warn", warnings.append)
+    monkeypatch.setattr(names, "_warned_without_normalized_check", False)
+    monkeypatch.setattr(names, "EmbeddedArgumentParser", object)
+    assert names._normalized_embedded_pattern("Open ${page} Page") is None
+    assert names._normalized_embedded_pattern("Close ${page} Page") is None
+    assert len(warnings) == 1
+    matches = _embedded_matcher("Open ${page} Page")
+    assert matches("Open Login Page")
+    assert not matches("Open_Login_Page")
+
+
+def test_the_literal_matcher_falls_back_to_match():
+    class OldEmbedded:
+        def match(self, name):
+            return name if name == "Open Login Page" else None
+
+    matches = names._literal_matcher(OldEmbedded())
+    assert matches("Open Login Page")
+    assert not matches("Close Login Page")
 
 
 def test_normalized_pattern_is_none_for_a_literal_name():

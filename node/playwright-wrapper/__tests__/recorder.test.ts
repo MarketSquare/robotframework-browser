@@ -358,8 +358,28 @@ describe('recorderPoll', () => {
         expect(page.win.mode).toBe('none');
     });
 
-    it('fails clearly without an active context', async () => {
-        await expect(recorderPoll(pollBody({}), stateFor(undefined))).rejects.toThrow('No browser context');
+    it('fails clearly without an active context at the start of a session', async () => {
+        await expect(recorderPoll(pollBody({ reset: true }), stateFor(undefined))).rejects.toThrow(
+            'No browser context',
+        );
+    });
+
+    it('reports no pages once the context was closed during the session', async () => {
+        const response = await recorderPoll(pollBody({}), stateFor(undefined));
+        expect(JSON.parse(response.json)).toEqual({ mode: 'recording', picking: false, pages: 0, entries: [] });
+    });
+
+    it('renders again to a page that dropped the toolbar, even with an unchanged state', async () => {
+        const page = fakePage();
+        const context = fakeRecorderContext([page]);
+        await poll(context, { state: { state: 'idle' } });
+        expect(page.win.renders).toBe(1);
+        (page.win as any).__rfbToolbarConnected = () => false;
+        await poll(context, { state: { state: 'idle' } });
+        expect(page.win.renders).toBe(2);
+        (page.win as any).__rfbToolbarConnected = () => true;
+        await poll(context, { state: { state: 'idle' } });
+        expect(page.win.renders).toBe(2);
     });
 
     it('drains stale events and commands on reset, arms recording and accepts later ones', async () => {

@@ -594,6 +594,30 @@ Recording Into A Missing Folder Fails Before It Starts
     Run Keyword And Expect Error    *does not exist*
     ...    Record Keyword    Never Recorded    ${OUTPUT_DIR}${/}no${/}such${/}folder${/}k.resource
 
+The Toolbar Comes Back When The Page Swaps Its Body
+    ${promise} =    Promise To    Record Keyword    Fill After A Swap    ${RESOURCE}
+    Toolbar State Should Be    recording
+    # As Turbo, htmx or a framework re-bootstrap would, without a navigation.
+    Evaluate JavaScript    ${None}    () => { document.body.innerHTML = '<input id="swapped">'; }
+    Get Element Count    css=rfb-recorder-toolbar    ==    1
+    Fill Text    id=swapped    after the swap
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    after the swap
+
+Closing The Context Ends The Session And Keeps The Keyword
+    ${promise} =    Promise To    Record Keyword    Fill Before Closing    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Wait Until Calls    1
+    Close Context
+    ${text} =    Wait For    ${promise}
+    Should Contain    ${text}    Fill Text
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    Fill Before Closing
+
 Every Recorded Selector Finds Exactly The Clicked Element
     [Documentation]    Playwright's generator picks a different selector shape for each element
     ...    of the page. Each translated selector must find the element that was clicked, and only it.

@@ -253,7 +253,10 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
 - Headless: the reset poll fails if the active browser was launched headless. The
   acceptance suite sets the internal `Browser.recorder_allows_headless` to drive scripted
   sessions headless. Connected and adopted browsers count as visible.
-- One browser context: the recorder works in the active context.
+- One browser context: the recorder works in the active context. Closing that context during a session ends
+  the session like closing its last page; what was recorded is saved.
+- A page that swaps its `body` without navigating (Turbo, htmx) drops the toolbar; the next
+  poll finds it detached and attaches it again.
 - `_startRecording` registers the recorder in the context for good. After a session it
   stays registered (in mode `none`), as do the `__rfbCommand` binding and the Action sink;
   the toolbar itself is removed.
@@ -290,6 +293,22 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
    elements (it only styles its own instance inline).
 10. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.
+
+## Robot Framework upgrade checklist
+
+`names.py` reuses parts of Robot Framework that are not public API, to know which keywords a
+recorded name would collide with or shadow:
+
+1. `BuiltIn()._get_context().namespace._kw_store` (`resources`, `suite_file`) - without it a
+   warning is logged and only library keywords are checked.
+2. `EmbeddedArgumentParser._parse_arg` (7.3+) or `_get_name_and_pattern` (7.1, 7.2), and
+   `_format_custom_regexp` - without them a warning is logged once and only exact
+   embedded-argument matches are rejected, not normalized ones such as `Open_Login_Page`.
+3. `EmbeddedArguments.matches` (7.3+) or `match` (all versions) - public; `_literal_matcher`
+   takes whichever exists.
+
+Run `utest/test_recorder_names.py` against the lowest supported Robot Framework too; CI does on
+its 7.1.1 leg.
 
 ## Where keywords go when something is in the way
 

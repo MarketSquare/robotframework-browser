@@ -259,10 +259,15 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
 function renderToolbars(context: BrowserContext, buffers: RecorderBuffers, toolbarState: unknown): Promise<void> {
     const json = JSON.stringify(toolbarState);
     return onEveryPage(context, async (page) => {
-        const installed = await page.evaluate(
-            () => typeof (window as unknown as { __rfbToolbarRender?: unknown }).__rfbToolbarRender === 'function',
-        );
-        if (installed && buffers.rendered.get(page) === json) return;
+        // `missing` after a navigation, `detached` when the page dropped the
+        // toolbar from its DOM; rendering re-attaches it, even with an unchanged state.
+        const toolbar = await page.evaluate(() => {
+            const w = window as unknown as { __rfbToolbarRender?: unknown; __rfbToolbarConnected?: () => boolean };
+            if (typeof w.__rfbToolbarRender !== 'function') return 'missing';
+            return w.__rfbToolbarConnected && !w.__rfbToolbarConnected() ? 'detached' : 'shown';
+        });
+        const installed = toolbar !== 'missing';
+        if (toolbar === 'shown' && buffers.rendered.get(page) === json) return;
         if (!installed) await page.evaluate(toolbarScript());
         await page.evaluate((s) => {
             const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
@@ -297,8 +302,12 @@ export async function resetSession(
 
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
     const context = state.getActiveContext();
-    if (!context) throw new Error('No browser context is open. Open a page before recording.');
     const { state: toolbarState, reset, allowHeadless } = JSON.parse(request.body || '{}');
+    if (!context) {
+        if (reset) throw new Error('No browser context is open. Open a page before recording.');
+        // Closed during the session, with its pages: ends it like closing the last page.
+        return jsonResponse(JSON.stringify({ mode: 'recording', picking: false, pages: 0, entries: [] }), '');
+    }
     if (reset && !allowHeadless && state.activeBrowser?.headless) {
         throw new Error(
             'Recording needs a visible browser, but the active browser runs headless. ' +
