@@ -68,6 +68,13 @@ Invalid Config Dict Literal Should Fail
     ...    Set Presenter Mode
     ...    {'duration': '2sec', 'width': '3px'
 
+Click On Missing Element Fails With Click Timeout In Presenter Mode
+    Set Browser Timeout    500ms    scope=Test
+    Set Presenter Mode    {"duration": "100ms"}
+    Run Keyword And Expect Error
+    ...    *locator.click: Timeout 500ms exceeded*
+    ...    Click    id=not_here
+
 *** Keywords ***
 Test Presenter Mode
     [Arguments]    &{expected_mode}
