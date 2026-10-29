@@ -193,6 +193,9 @@ _ROUNDTRIP_VALUES = [
     ["#pw"],
     ["css=.x", "a${b}"],
     ["css=.x", "@{a} &{b} %{c}"],
+    # `*{` is syntax Robot reserves; unclosed it fails the keyword at run time.
+    ["css=.x", "*{abc"],
+    ["css=.x", "a *{b} c"],
     # Two or more spaces are a cell separator, edge spaces are stripped.
     ["css=.x", "two    spaces"],
     ["css=.x", " padded "],

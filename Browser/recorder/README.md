@@ -32,7 +32,7 @@ it does not check this way; the toolbar stops it on `window` before the recorder
 ## Writing values
 
 `cells.py` escapes every value so Robot reads back exactly the recorded string: `#`, variable
-syntax, runs of spaces, edge spaces and exotic whitespace. A `[` right after an emitted
+syntax (including the reserved `*{`), runs of spaces, edge spaces and exotic whitespace. A `[` right after an emitted
 `${SPACE}` or a Keyword Argument is written `\[`, as `${x}[0]` is item access. A value
 starting with `name=` gets its `=` escaped when `name` is a parameter of the called keyword
 (`parameters.py`, checked against the real signatures by `test_recorder_parameters.py`):
@@ -74,6 +74,7 @@ with every name. Either becomes an upload of `<define_path_to_file>/<name>`
 | one file, after an Action (the click that opened the chooser) | `${upload}=    Promise To Upload File    <path>` before that Action, `Wait For    ${upload}` after it; Undo removes them together |
 | no such Action (it was undone, or the click went straight to the file input, which Playwright does not record), or several files | `Upload File By Selector    <file input>    <path>...` |
 | an empty file list (chooser cancelled) | nothing |
+| a name that is not a plain file name (`../x`, `a\\b`, `..`, empty, control characters) | nothing, and a toolbar notice: the page can rewrite the reported value, and a path would make a later run upload another file |
 
 Playwright 1.64 never emits `hover` in api mode, so it is not mapped.
 Any other action name produces no Keyword Call and a

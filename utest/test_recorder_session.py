@@ -1202,3 +1202,22 @@ def test_a_keyword_still_not_written_on_close_stays_unsaved():
     s.close()
     assert [k.name for k in s.unsaved] == ["K"]
     assert "locked" in s.write_error
+
+
+@pytest.mark.parametrize(
+    "upload",
+    [
+        {**CHOSEN, "text": "C:\\fakepath\\../../.ssh/id_rsa"},
+        {**CHOSEN, "text": "C:\\fakepath\\"},
+        {"name": "setInputFiles", "selector": "#f", "files": ["a.txt", ".."]},
+        {"name": "setInputFiles", "selector": "#f", "files": ["dir\\a.txt"]},
+    ],
+    ids=["traversal", "empty", "dot_dot", "backslash"],
+)
+def test_an_upload_without_a_plain_file_name_is_not_recorded(upload):
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", UPLOAD_CLICK)
+    s.handle_event("added", upload)
+    assert "Upload" not in target.saved[-1]
+    assert "not a plain file name" in s.toolbar_state()["notice"]

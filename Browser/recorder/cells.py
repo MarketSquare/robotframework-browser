@@ -21,9 +21,9 @@ from collections.abc import Collection
 from robot.api.parsing import Token
 from robot.errors import DataError
 
-# Robot's variable/list/dict/environment syntax, which must not be resolved in
-# a recorded literal.
-VARIABLE_START = re.compile(r"[$@&%]\{")
+# Robot's variable/list/dict/environment syntax, and the `*{` it reserves for
+# future use, none of which may be resolved in a recorded literal.
+VARIABLE_START = re.compile(r"[$@&%*]\{")
 _MULTI_SPACE = re.compile(r"  +")
 # `txt=hello` in a Keyword Call is a named argument when `txt` is an argument name.
 _NAMED_ARGUMENT = re.compile(r"^([^\W\d]\w*)=")

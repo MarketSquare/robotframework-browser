@@ -30,6 +30,7 @@ from .action_mapper import (
     UPLOAD_FOLDER,
     ActionMapper,
     internal_selector_notice,
+    is_plain_file_name,
     uploaded_files,
 )
 from .cells import tokens
@@ -234,6 +235,16 @@ class RecorderSession:
     def _upload(self, keyword: RecordedKeyword, action: dict, files: list[str]) -> None:
         """Wrap the Action that opened the file chooser, as Browser needs the
         promise before it; without one, set the files on the input itself."""
+        refused = [name for name in files if not is_plain_file_name(name)]
+        if refused:
+            self._notice = (
+                f"Not recorded: an upload of {_shown(repr(refused[0]))}, which is not a "
+                "plain file name."
+            )
+            self.log.append(
+                "upload with a file name that is not plain was not recorded"
+            )
+            return
         if not files:
             return
         effect = self._mapper.map_upload(files[0], keyword.unique_variable)

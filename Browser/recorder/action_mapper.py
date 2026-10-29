@@ -319,6 +319,22 @@ UPLOAD_FOLDER = "<define_path_to_file>"
 _FAKE_PATH = "C:\\fakepath\\"
 
 
+# Path separators and control characters.
+_NOT_IN_A_FILE_NAME = re.compile(r"[/\\\x00-\x1f\x7f]")
+
+
+def is_plain_file_name(name: str) -> bool:
+    """Whether ``name`` is a bare file name, as a real file chooser reports it.
+
+    The name comes from the page under test, which can rewrite the value a fill
+    reports. A path in it - `../../.ssh/id_rsa` - would make a later run upload
+    another file once the folder placeholder is filled in.
+    """
+    return (
+        bool(name) and name not in (".", "..") and not _NOT_IN_A_FILE_NAME.search(name)
+    )
+
+
 def uploaded_files(action: dict) -> list[str] | None:
     """The names of the files an Action uploads, or None if it uploads nothing.
 
