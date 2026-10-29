@@ -7,12 +7,12 @@
 
 # This is the runtime that ends up on the user's machine, not the NodeJS that
 # builds the library.
-version = "24.22.2"
+version = "26.13.0"
 
 # sha256 of the SHASUMS256.txt nodejs.org publishes for `version`. Checked
 # before anything trusts that manifest, because on its own the manifest only
 # proves an archive arrived intact from whoever served it.
-shasums_sha256 = "aec92ae945293821c22aed4c37b97741688254bac353b861fc9fb25b81ce4567"
+shasums_sha256 = "9b0d4aa4d20a4f1afaf2cdcf99175ad90d1856d24c7d31dc46f72369b73e2d35"
 
 # Oldest platforms the official NodeJS builds above run on, from
 # https://github.com/nodejs/node/blob/main/BUILDING.md. These decide the wheel

@@ -29,7 +29,7 @@ of these packages is not supported.
 # Purpose
 When using BrowserBatteries package, user can skip NodeJS installation and does not
 need to install the NodeJS dependencies, like Playwright and GRPC. The wheel contains
-a NodeJS 24 runtime together with those dependencies, and a wheel is published for
+a NodeJS 26 runtime together with those dependencies, and a wheel is published for
 each of these platforms:
 
 | Platform | Architecture | Minimum version                        |
@@ -40,7 +40,7 @@ each of these platforms:
 | MacOs    | arm64        | macOS 13.5                             |
 | MacOs    | x64          | macOS 13.5                             |
 
-The minimum versions are the ones the official NodeJS 24 builds require, and the
+The minimum versions are the ones the official NodeJS 26 builds require, and the
 wheels are tagged accordingly, so `pip` will not install BrowserBatteries on a
 platform where the shipped NodeJS cannot start. On an older platform, install
 plain `robotframework-browser` and provide NodeJS yourself.
