@@ -63,6 +63,8 @@
             bin: icon('<path d="M2.5 4.5h11M6.5 4.5V3h3v1.5M4 4.5l.7 9h6.6l.7-9M6.8 7v4.5M9.2 7v4.5"/>'),
             undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
             save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
+            target: icon('<circle cx="8" cy="8" r="5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/>'),
+            highlight: icon('<rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke-dasharray="2.2 1.8"/>'),
         };
         // Inline and important, so no page style hides them - such as the common
         // `:not(:defined) { visibility: hidden }`, which matches both elements.
@@ -202,6 +204,21 @@
       /* The same mark on the part an offer would replace. */
       .call-line mark { background: rgb(255 107 94 / 45%); color: inherit; border-radius: 2px; }
       .marked textarea { background: transparent; }
+      /* Record Selector: the selector, coloured like the site's code, under a
+         transparent textarea that takes the typing. */
+      .gens { gap: 0; }
+      .gens > button { border-radius: 0; }
+      .gens > button:first-child { border-radius: 4px 0 0 4px; }
+      .gens > button:last-child { border-radius: 0 4px 4px 0; }
+      .gens > button[aria-pressed=true] { background: var(--chrome); border-color: var(--teal); color: var(--teal); }
+      .sel > *, .sel textarea { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+                                'DejaVu Sans Mono', monospace; font-size: 11px; white-space: pre-wrap;
+                                word-break: break-all; }
+      .sel .marks { color: var(--tok-argument); }
+      .sel textarea { color: transparent; caret-color: var(--ink); resize: none; min-height: 3.4em; }
+      .tok-sep { color: var(--faint); }
+      .match-one { color: var(--teal); }
+      .match-many { color: var(--amber); }
     </style>
     <div class="panel" id="panel">
       <div class="head" id="head">
@@ -227,6 +244,17 @@
         <div class="args" id="args"></div>
         <div class="err" id="err" hidden></div>
         <div class="notice" id="argHint" hidden></div>
+        <div id="selectorBox" hidden>
+          <div class="hint" id="selHint"></div>
+          <div class="row gens" id="selGens"></div>
+          <div class="marked sel" id="selEditor"><div class="marks" id="selMarks" aria-hidden="true"></div><textarea id="selInput" rows="2" spellcheck="false" autocomplete="off" aria-label="Selector"></textarea></div>
+          <div id="selCount"></div>
+          <div class="row" id="selRow">
+            <button id="selHighlight" title="Highlight the elements the selector finds">${ICONS.highlight}Highlight</button>
+            <button id="selReselect" title="Pick another element">${ICONS.target}Reselect</button>
+            <button class="primary" id="selUse" title="Return this selector">${ICONS.save}Use</button>
+          </div>
+        </div>
         <div class="row" id="idleRow">
           <button class="primary" id="new" title="Name a new keyword and start recording it">${ICONS.record}Record keyword</button>
         </div>
@@ -377,7 +405,7 @@
         // only when minimized and only when the body would offer the same.
         const updateQuickButtons = () => {
             const state = window.__rfbToolbarState || {};
-            const offered = collapsed && !state.fixedName;
+            const offered = collapsed && !state.fixedName && state.mode !== 'selector';
             $('headNew').hidden = !offered || state.state === 'recording';
             $('headSave').hidden = !offered || state.state !== 'recording';
             $('headNew').disabled = !!state.pending;
@@ -583,6 +611,12 @@
             argName: (event) => {
                 if (event.key === 'Enter') $('argOk').click();
             },
+            selInput: (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    $('selUse').click();
+                }
+            },
         };
         // A click on a glass pane closes its dialog, as in any modal - but only if
         // the press started there too: a text selection or a textarea resize
@@ -604,12 +638,14 @@
         const escapeDialog = () => {
             if (!$('argModal').hidden) closeArgModal();
             else if (!$('modal').hidden && nameSent === null) closeModal();
+            else if ((window.__rfbToolbarState || {}).mode === 'selector') send({ cmd: 'stop' });
         };
         const toolbarInput = {
             argName: () => {
                 const name = $('argName').value.trim();
                 showArgError(name ? argumentNameError(name) : '');
             },
+            selInput: () => editSelector(),
         };
         const ISOLATED_EVENTS = [
             'contextmenu',
@@ -679,6 +715,119 @@
             const offer = currentOffer();
             if (offer && !isPending()) send({ cmd: 'replace', argument: offer.argument, occurrences: [] });
         });
+
+        // -- Record Selector ------------------------------------------------- //
+        // The selector in colour: engines teal, frame and chain separators faint,
+        // the rest like a value. Text nodes only: selectors come from the page.
+        const selectorTokens = (selector) =>
+            selector.split(/( >>> | >> )/).map((part) => {
+                if (part === ' >>> ' || part === ' >> ') return [['tok-sep', part]];
+                const engine = /^(internal:[a-z-]+=|[a-z-]+=)/.exec(part);
+                return engine
+                    ? [
+                          ['tok-keyword', engine[0]],
+                          ['tok-argument', part.slice(engine[0].length)],
+                      ]
+                    : [['tok-argument', part]];
+            });
+        const showSelectorMarks = () => {
+            const marks = $('selMarks');
+            marks.textContent = '';
+            selectorTokens($('selInput').value).forEach((tokens) =>
+                tokens.forEach(([kind, text]) => {
+                    const span = document.createElement('span');
+                    span.className = kind;
+                    span.textContent = text;
+                    marks.appendChild(span);
+                }),
+            );
+            // A trailing newline keeps the layer as tall as the textarea.
+            marks.append('\n');
+            marks.scrollTop = $('selInput').scrollTop;
+        };
+        $('selInput').addEventListener('scroll', showSelectorMarks);
+        // Each change is counted on the page; typing sends it once it pauses.
+        let editTimer = null;
+        const sendEdit = () => {
+            if (editTimer === null) return;
+            clearTimeout(editTimer);
+            editTimer = null;
+            send({ cmd: 'edit', selector: $('selInput').value });
+        };
+        const editSelector = () => {
+            showSelectorMarks();
+            $('selCount').textContent = '';
+            if (editTimer !== null) clearTimeout(editTimer);
+            editTimer = setTimeout(sendEdit, 250);
+        };
+        $('selHighlight').addEventListener('click', () => {
+            sendEdit();
+            send({ cmd: 'highlight' });
+        });
+        $('selReselect').addEventListener('click', () => send({ cmd: 'reselect' }));
+        $('selUse').addEventListener('click', () => {
+            sendEdit();
+            send({ cmd: 'use' });
+        });
+        const GENERATOR_LABELS = { playwright: 'Playwright', css: 'CSS' };
+        let shownVersion = null;
+        const renderSelector = (state) => {
+            const picking = state.phase === 'picking';
+            $('dot').className = picking ? 'dot rec' : 'dot';
+            $('title').classList.remove('rec');
+            $('title').textContent = state.label ? `Record Selector - ${state.label}` : 'Record Selector';
+            $('count').textContent = '';
+            $('stop').title = 'Cancel - Record Selector fails';
+            $('selHint').textContent = picking
+                ? 'Click an element in the page to pick it.'
+                : 'Edit the selector if needed, then use it.';
+            const gens = $('selGens');
+            gens.textContent = '';
+            const unavailable = state.unavailable || {};
+            (Array.isArray(state.generators) ? state.generators : []).forEach((name) => {
+                const button = document.createElement('button');
+                button.textContent = GENERATOR_LABELS[name] || name;
+                button.setAttribute('aria-pressed', String(name === state.generator));
+                button.disabled = !picking && name in unavailable;
+                button.title = button.disabled ? String(unavailable[name]) : `Use the ${button.textContent} selector`;
+                button.addEventListener('click', () => send({ cmd: 'generator', name }));
+                gens.appendChild(button);
+            });
+            $('selEditor').hidden = picking;
+            $('selRow').hidden = false;
+            $('selHighlight').hidden = picking;
+            $('selReselect').hidden = picking;
+            $('selUse').hidden = picking;
+            if (state.version !== shownVersion) {
+                shownVersion = state.version;
+                $('selInput').value = state.selector || '';
+                showSelectorMarks();
+            }
+            const count = state.count;
+            const counter = $('selCount');
+            counter.className = '';
+            counter.textContent = '';
+            if (!picking && count && count.selector === $('selInput').value) {
+                if (typeof count.error === 'string') {
+                    counter.className = 'err';
+                    counter.textContent = count.error;
+                } else if (count.count === 1) {
+                    counter.className = 'match-one';
+                    counter.textContent = '1 match';
+                } else if (count.count === 0) {
+                    counter.className = 'err';
+                    counter.textContent = 'No match';
+                } else {
+                    counter.className = 'match-many';
+                    counter.textContent = `${count.count} matches`;
+                }
+            }
+            $('notice').textContent = state.notice || '';
+            $('notice').hidden = !state.notice;
+            $('err').textContent = state.error || '';
+            $('err').hidden = !state.error;
+            updateQuickButtons();
+        };
 
         // -- render ---------------------------------------------------------- //
         // Node sends a state only when it changed, so every render rebuilds.
@@ -770,7 +919,20 @@
             });
             return container;
         };
+        const RECORDER_PARTS = ['picking', 'calls', 'hint', 'offer', 'args', 'argHint', 'idleRow', 'recRow'];
         const renderBody = (state) => {
+            const selectorMode = state.mode === 'selector';
+            $('selectorBox').hidden = !selectorMode;
+            if (selectorMode) {
+                RECORDER_PARTS.forEach((id) => {
+                    $(id).hidden = true;
+                });
+                renderSelector(state);
+                return;
+            }
+            $('stop').title = 'End the recording session. The keyword being recorded is saved; the test continues.';
+            $('hint').hidden = false;
+            $('args').hidden = false;
             setHint('');
             const recording = state.state === 'recording';
             const calls = Array.isArray(state.calls) ? state.calls : [];

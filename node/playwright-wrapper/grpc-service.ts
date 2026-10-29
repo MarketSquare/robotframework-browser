@@ -35,6 +35,7 @@ import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 import * as recorder from './recorder';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
+import * as selectorPicker from './selector-picker';
 
 @class_async_logger
 export class PlaywrightServer {
@@ -470,8 +471,6 @@ export class PlaywrightServer {
 
     evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
 
-    recordSelector = this.wrapping(evaluation.recordSelector);
-
     async health(
         call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
         callback: sendUnaryData<pb.Response_String>,
@@ -680,4 +679,9 @@ export class PlaywrightServer {
     recorderPoll = this.wrappingDebug(recorder.recorderPoll);
 
     recorderStop = this.wrapping(recorder.recorderStop);
+
+    // Polled every 200 ms while a selector is picked, like recorderPoll.
+    selectorPickerPoll = this.wrappingDebug(selectorPicker.selectorPickerPoll);
+
+    selectorPickerStop = this.wrapping(selectorPicker.selectorPickerStop);
 }

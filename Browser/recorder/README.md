@@ -199,6 +199,35 @@ over `MAX_EVENT_BYTES` (1 MiB) is dropped and logged. One poll reply carries at 
 the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are at most
 `NAME_LIMIT` (200) characters. A reply Python cannot read fails the keyword.
 
+## Record Selector
+
+`Record Selector` reuses the toolbar in its `selector` mode and the `__rfbCommand` channel,
+but not Playwright's recording: Node calls the public `page.pickLocator()` on the active
+page (`selector-picker.ts`), so the hover highlight, the tooltip and a pick that never
+reaches the page are Playwright's. Python drives it like a Recording Session, polling
+`SelectorPickerPoll` every 200 ms (`picker.py`); it translates the picked selector with
+`to_browser_selector` and owns the toolbar state.
+
+- `__rfbCommand` is exposed once per context (`commandListeners`); the recorder and the
+  picker each register their buffers, and a command reaches the session that is running.
+  A picker refuses to start while a Recording Session runs in the context:
+  `pickLocator()` would switch Playwright's recorder off.
+- The `css` generator is `@medv/finder`, bundled by `node/build.wrapper.js` from
+  `node/playwright-wrapper/page/css-selector.ts` into `static/css-selector.js` and evaluated
+  in the frame of the picked element, then of each `iframe` element outward, joined by
+  ` >>> `. Inside an open shadow root the host's selector and the inner one are joined by
+  ` >> `.
+- State, Python -> toolbar: `mode` (`selector`), `label`, `phase` (`picking`/`picked`),
+  `generator`, `generators`, `unavailable` (generator -> why it has no selector),
+  `selector`, `version` (raised when the selector changes other than by typing; only then
+  the toolbar replaces its input), `count` (`{selector, count}` or `{selector, error}`),
+  `notice`, `error`, `answered`.
+- Commands: `generator` (`name`), `edit` (`selector`, at most 10 000 characters, sent once
+  typing pauses for 250 ms), `highlight`, `reselect`, `use`, `stop`.
+- Poll request fields besides `state` and `reset`: `pick` (keep a pick running), `count`
+  (a selector to count with `findLocator`, not strict) and `highlight`. The reply carries
+  `picked` (`{selector, css}` or `{error}`), the toolbar `entries` and `count`.
+
 ## Timing
 
 - Playwright holds back left clicks and navigations for 500 ms before reporting them
@@ -296,7 +325,10 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
    element (`_ignoreOverlayEvent`) for clicks, input and keys, and `contextmenu` is still the
    only one it records without that check; Playwright does not restyle other `x-pw-glass`
    elements (it only styles its own instance inline).
-10. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
+10. `page.pickLocator()` and `page.cancelPickLocator()` still exist, and the returned
+   locator still carries the selector in `_selector` (`internalSelector` in
+   `selector-picker.ts`); `inv atest --suite record_selector` passes.
+11. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.
 
 ## Robot Framework upgrade checklist

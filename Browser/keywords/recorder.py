@@ -24,9 +24,10 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.driver import run_session
 from ..recorder.names import collect_known_keywords
+from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
-from ..utils import keyword, logger
+from ..utils import SelectorGenerator, keyword, logger
 
 __all__ = ["Recorder"]
 
@@ -92,6 +93,36 @@ class _GrpcRecorderClient:
     def stop(self) -> None:
         with self._library.playwright.grpc_channel() as stub:
             stub.RecorderStop(Request().Empty())
+
+
+class _GrpcPickerClient:
+    def __init__(self, library: LibraryComponent) -> None:
+        self._library = library
+
+    def poll(self, state: dict, request: dict, reset: bool) -> dict:
+        body = json.dumps(
+            {
+                **request,
+                "state": state,
+                "reset": reset,
+                "allowHeadless": self._library.recorder_allows_headless,
+            }
+        )
+        with self._library.playwright.grpc_channel() as stub:
+            response = stub.SelectorPickerPoll(Request().Json(body=body))
+        try:
+            reply = json.loads(response.json)
+        except ValueError:
+            reply = None
+        if not isinstance(reply, dict):
+            raise RuntimeError(
+                f"The selector picker sent an unreadable reply: {response.json[:200]!r}"
+            )
+        return reply
+
+    def stop(self) -> None:
+        with self._library.playwright.grpc_channel() as stub:
+            stub.SelectorPickerStop(Request().Empty())
 
 
 class Recorder(LibraryComponent):
@@ -281,6 +312,69 @@ class Recorder(LibraryComponent):
         See `Record Keyword` to record exactly one keyword.
         """
         return self._record(file, idle_timeout, fixed_name=None).text()
+
+    @keyword(tags=("Recorder", "PageContent"))
+    def record_selector(
+        self,
+        label: str | None = None,
+        generator: SelectorGenerator = SelectorGenerator.playwright,
+        idle_timeout: timedelta | None = DEFAULT_IDLE_TIMEOUT,
+    ) -> str:
+        """Pick an element on the active page and return a selector for it.
+
+        Shows the Robot Framework toolbar on the active page and blocks until a selector
+        is chosen. Move the pointer over the page: Playwright highlights the element under
+        it and names it in a tooltip. Click to pick it; the click does not reach the page.
+        Elements inside frames and open shadow roots can be picked too.
+
+        The toolbar then shows the selector for the picked element:
+
+        - *Playwright* / *CSS*: switches between the selector generators for the same
+          element, see `SelectorGenerator`.
+        - The selector itself can be edited. Below it, the toolbar counts the elements it
+          finds on the page while you type: one is what most keywords need, several are
+          shown as a warning, none as an error.
+        - *Highlight*: highlights the elements the selector finds.
+        - *Reselect*: picks another element.
+        - *Use*: returns the selector, also when it does not find exactly one element.
+        - *✕* in the header, or Escape: cancels, and the keyword fails.
+
+        | =Arguments= | =Description= |
+        | ``label`` | Shown in the toolbar header, to say which element to pick. |
+        | ``generator`` | The generator the toolbar starts with; the toolbar can switch it. ``playwright`` (default) or ``css``. |
+        | ``idle_timeout`` | Fails the keyword after this long without a pick or toolbar command. Must be greater than zero. Default: 5 minutes. ``${None}`` waits without limit. |
+
+        Fails in a headless browser, while a `Record Keyword` or `Record Keywords` session
+        runs in the browser context, when the page is closed, on cancel and when the
+        ``idle_timeout`` passes.
+
+        Like the recorder toolbar, the toolbar's commands are reachable by scripts of the
+        page under test: use it on applications you trust, and check the selector you get.
+
+        Example:
+        | ${selector} =    `Record Selector`    Login button
+        | `Click`    ${selector}
+        | ${heading} =    `Record Selector`    Page header    generator=css
+        | `Get Text`    ${heading}    ==    Expected text
+
+        [https://forum.robotframework.org/t//4315|Comment >>]
+        """
+        if idle_timeout is not None and idle_timeout <= timedelta(0):
+            raise ValueError(
+                f"'idle_timeout' must be greater than zero, got {idle_timeout}."
+            )
+        picker = SelectorPicker(label or None, generator.name)
+        selector = run_picker(
+            picker,
+            _GrpcPickerClient(self),
+            idle_timeout=idle_timeout.total_seconds()
+            if idle_timeout is not None
+            else None,
+        )
+        shown = selector.replace("#", "\\#")
+        logger.console(f"\nSelector{' for ' + label if label else ''}: {shown}")
+        logger.info(f"Selector{' for ' + label if label else ''}: {shown}")
+        return selector
 
     def _record(
         self, file: str | None, idle_timeout: timedelta | None, fixed_name: str | None

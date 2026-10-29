@@ -547,35 +547,6 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=("PageContent",))
-    def record_selector(
-        self,
-        label: str | None = None,
-    ):
-        """Record the selector that is under mouse.
-
-        *Arguments:*
-          - ``label``: Text to show in the box on the page while recording.
-
-        Focus on the page and move the mouse over the element you want to select.
-
-        Example:
-        | ${selector} =    `Record Selector`   Button
-        | `Click`  ${selector}
-        | ${selector2} =    `Record Selector`  Page header
-        | `Get Text`  ${selector2}  ==  Expected text
-
-        [https://forum.robotframework.org/t//4315|Comment >>]
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(Request.Label(label=label or ""))
-            selector_repr = response.result.replace("#", "\\#")
-            logger.console(
-                f"\nSelector{' for ' + label if label else ''}: {selector_repr}"
-            )
-            logger.info(f"Selector{' for ' + label if label else ''}: {selector_repr}")
-            return json.loads(response.result)
-
     @keyword(tags=("Setter", "PageContent"))
     def hover(
         self,

@@ -33,6 +33,7 @@ import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 const RECORDER = Symbol.for('robotframework-browser.recorder.state');
+const COMMANDS = Symbol.for('robotframework-browser.recorder.commands');
 // Modes that mean "the user is no longer recording". Everything else
 // (`recording`, `recording-inspecting`, `asserting*`) is part of a recording.
 const STOP_MODES = new Set(['none', 'standby']);
@@ -120,6 +121,10 @@ function clearEntries(buffers: RecorderBuffers): void {
     buffers.commandCount = 0;
 }
 
+export function newBuffers(): RecorderBuffers {
+    return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap() };
+}
+
 export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
     if (!buffers.active || buffers.commandCount >= MAX_BUFFERED_COMMANDS) return;
     if (jsonLength(command) > MAX_COMMAND_BYTES) {
@@ -187,6 +192,23 @@ export async function writeMode(context: BrowserContext, mode: string): Promise<
     return written === true;
 }
 
+// `__rfbCommand` can be exposed only once per context, but Record Keyword(s)
+// and Record Selector both talk through it: each registers its buffers, and a
+// command goes to those of the session that is running.
+export function commandListeners(context: BrowserContext): Promise<Set<RecorderBuffers>> {
+    const store = context as unknown as Record<symbol, Promise<Set<RecorderBuffers>> | undefined>;
+    const existing = store[COMMANDS];
+    if (existing) return existing;
+    const listeners = new Set<RecorderBuffers>();
+    const exposed = context
+        .exposeBinding('__rfbCommand', (_source: unknown, command: unknown) => {
+            listeners.forEach((buffers) => acceptCommand(buffers, command));
+        })
+        .then(() => listeners);
+    store[COMMANDS] = exposed;
+    return exposed;
+}
+
 // The in-flight promise is stored on the context, so concurrent calls and a
 // retry after a partial failure can never run `_startRecording` twice.
 export function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers> {
@@ -197,7 +219,7 @@ export function ensureRecorder(context: BrowserContext): Promise<RecorderBuffers
     return created;
 }
 
-function existingRecorder(context: BrowserContext): Promise<RecorderBuffers> | undefined {
+export function existingRecorder(context: BrowserContext): Promise<RecorderBuffers> | undefined {
     return (context as unknown as Record<symbol, Promise<RecorderBuffers> | undefined>)[RECORDER];
 }
 
@@ -209,13 +231,7 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
                 '(BrowserContext._startRecording), which Record Keyword and Record Keywords need.',
         );
     }
-    const buffers: RecorderBuffers = {
-        entries: [],
-        commandCount: 0,
-        armed: false,
-        active: false,
-        rendered: new WeakMap(),
-    };
+    const buffers = newBuffers();
     const buffer = (entry: EventEntry) => {
         if (!buffers.active) return;
         if (jsonLength(entry) > MAX_EVENT_BYTES) {
@@ -243,9 +259,7 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
             },
         },
     );
-    await context.exposeBinding('__rfbCommand', (_source: unknown, command: unknown) => {
-        acceptCommand(buffers, command);
-    });
+    (await commandListeners(context)).add(buffers);
     // Deliberately no `context.addInitScript(toolbarScript())`: an init script
     // cannot be un-registered, so the toolbar would keep re-appearing on every
     // navigation long after the session ended. `renderToolbars` re-injects it
@@ -258,22 +272,31 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
 // changed, or when the page lost the toolbar by navigating.
 function renderToolbars(context: BrowserContext, buffers: RecorderBuffers, toolbarState: unknown): Promise<void> {
     const json = JSON.stringify(toolbarState);
-    return onEveryPage(context, async (page) => {
-        // `missing` after a navigation, `detached` when the page dropped the
-        // toolbar from its DOM; rendering re-attaches it, even with an unchanged state.
-        const toolbar = await page.evaluate(() => {
-            const w = window as unknown as { __rfbToolbarRender?: unknown; __rfbToolbarConnected?: () => boolean };
-            if (typeof w.__rfbToolbarRender !== 'function') return 'missing';
-            return w.__rfbToolbarConnected && !w.__rfbToolbarConnected() ? 'detached' : 'shown';
-        });
-        const installed = toolbar !== 'missing';
-        if (toolbar === 'shown' && buffers.rendered.get(page) === json) return;
-        if (!installed) await page.evaluate(toolbarScript());
-        await page.evaluate((s) => {
-            const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
-            return w.__rfbToolbarRender && w.__rfbToolbarRender(JSON.parse(s));
-        }, json);
-        buffers.rendered.set(page, json);
+    return onEveryPage(context, (page) => renderToolbar(page, buffers, json));
+}
+
+export async function renderToolbar(page: Page, buffers: RecorderBuffers, json: string): Promise<void> {
+    // `missing` after a navigation, `detached` when the page dropped the
+    // toolbar from its DOM; rendering re-attaches it, even with an unchanged state.
+    const toolbar = await page.evaluate(() => {
+        const w = window as unknown as { __rfbToolbarRender?: unknown; __rfbToolbarConnected?: () => boolean };
+        if (typeof w.__rfbToolbarRender !== 'function') return 'missing';
+        return w.__rfbToolbarConnected && !w.__rfbToolbarConnected() ? 'detached' : 'shown';
+    });
+    const installed = toolbar !== 'missing';
+    if (toolbar === 'shown' && buffers.rendered.get(page) === json) return;
+    if (!installed) await page.evaluate(toolbarScript());
+    await page.evaluate((s) => {
+        const w = window as unknown as { __rfbToolbarRender?: (state: unknown) => void };
+        return w.__rfbToolbarRender && w.__rfbToolbarRender(JSON.parse(s));
+    }, json);
+    buffers.rendered.set(page, json);
+}
+
+export function removeToolbar(page: Page): Promise<void> {
+    return page.evaluate(() => {
+        const w = window as unknown as { __rfbToolbarRemove?: () => void };
+        w.__rfbToolbarRemove?.();
     });
 }
 
@@ -348,11 +371,6 @@ export async function recorderStop(_request: pb.Request_Empty, state: Playwright
     // Deliberately not `_stopRecording()`: it drops the event sink, and the
     // next session would have to start a new recording.
     await writeMode(context, STOPPED_MODE);
-    await onEveryPage(context, (page) =>
-        page.evaluate(() => {
-            const w = window as unknown as { __rfbToolbarRemove?: () => void };
-            w.__rfbToolbarRemove?.();
-        }),
-    );
+    await onEveryPage(context, removeToolbar);
     return emptyWithLog('Recording stopped.');
 }

@@ -64,6 +64,20 @@ only to the log. See the keyword documentation.
   forgotten recording cannot block a run for good. Recording needs a visible browser; in a
   headless one both keywords fail.
 
+### Record Selector rebuilt on the recorder toolbar
+`Record Selector` now uses Playwright's own element picker and the recorder toolbar. Hover an
+element, click to pick it - the click does not reach the page - and use, edit or re-pick the
+selector in the toolbar, which counts the elements it finds while you type.
+
+- **Backwards incompatible:** the default selector is now Playwright's, in Browser syntax,
+  for example `role=button[name="Save"s]`, instead of a CSS selector. `generator=css` keeps
+  CSS selectors (now from the current release of the same finder library), and the toolbar
+  switches between both for the picked element.
+- Picking needs a click; the 3 second hover countdown and the variant list are gone.
+- New `idle_timeout` argument, 5 minutes by default; cancelling with *✕* or Escape fails the
+  keyword. Record Selector fails while a Record Keyword(s) session runs in the same context.
+- Works without `bypassCSP=True` on pages with a Content Security Policy.
+
 ### New Persistent Context records headless correctly
 A context opened with `New Persistent Context    headless=False` was recorded internally as
 headless. This came out of the recorder work.

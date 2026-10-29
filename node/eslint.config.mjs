@@ -4,14 +4,14 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-    // The recorder toolbar in playwright-wrapper/static is ours and linted; the
-    // other static files are a third-party copy and test pages.
+    // The recorder toolbar in playwright-wrapper/static is ours and linted;
+    // css-selector.js there is built from page/css-selector.ts.
     {
         ignores: [
             '**/generated/**',
             '**/dist/**',
             '**/dynamic-test-app/static/**',
-            '**/playwright-wrapper/static/selector-finder.js',
+            '**/playwright-wrapper/static/css-selector.js',
         ],
     },
     eslint.configs.recommended,
