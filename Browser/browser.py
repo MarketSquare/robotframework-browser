@@ -280,6 +280,15 @@ class Browser(DynamicCore):
 
     | Click    id=iframe >>> id=btn
 
+    A selector that starts with ``>>>`` searches in every frame of the page, the
+    main frame included, so the frames around the element need not be named. The
+    rest of the selector must match inside a single frame; elements in several
+    frames are an error. With a selector prefix set, the prefix comes first and
+    ``>>>`` enters the frame it selects, as before.
+
+    | Click    >>> id=btn                   # a button in any frame, or the page itself
+    | Click    >>> id=inner >>> id=btn      # a button in the frame inner, wherever that frame is
+
     For several keywords inside one frame, set a prefix with `Set Selector Prefix`.
 
     == Shadow DOM ==

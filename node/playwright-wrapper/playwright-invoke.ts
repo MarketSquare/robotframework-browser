@@ -17,12 +17,15 @@ import { Locator, Page } from 'playwright';
 import { logger } from './browser_logger';
 import { PlaywrightState } from './playwright-state';
 
+const ANY_FRAME_PREFIX = '>>> ';
+
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
  *
  * @param state A reference to current PlaywrightState object.
  * @param selector A valid Playwright selector, or a frame piercing selector such as
- *  "#iframe >>> //button". A selector returned by `Get Element` can be used as the
+ *  "#iframe >>> //button"; a leading ">>> " searches in any frame of the page.
+ *  A selector returned by `Get Element` can be used as the
  *  first clause of one. There is no `element=` engine -- see getElement in
  *  evaluation.ts.
  * @param strictMode Used with combination on firstOnly param. When strictMode is false, firstOnly is applied.
@@ -37,6 +40,10 @@ export async function findLocator(
 ): Promise<Locator> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
+    // A leading `>>> ` searches in any frame, like `page.frameLocator()` without a selector.
+    if (selector.startsWith(ANY_FRAME_PREFIX)) {
+        selector = `internal:control=any-frame >> ${selector.slice(ANY_FRAME_PREFIX.length)}`;
+    }
     if (strictMode) {
         selector = selector.replaceAll(' >>> ', ' >> internal:control=enter-frame >> ');
     } else {

@@ -35,3 +35,34 @@ Pierce IFrame Nested Selectors
     [Setup]    Ensure Location    ${FRAMES_URL}
     Click    body >> [src="left.html"] >>> body >> //input[@name="searchbutton"]
     Get Text    xpath=//body >> css=#right >>> xpath=/html >> css=body > p    ==    You're looking at search results.
+
+A Leading Frame Piercing Separator Searches Every Frame
+    Get Text    >>> id=cc    ==    This is c
+    Get Text    >>> id=bb    ==    B HTML
+    Get Text    >>> h1    ==    A HTML
+
+A Leading Frame Piercing Separator Continues Into Frames
+    Get Text    >>> id=c >>> id=cc    ==    This is c
+    Click    >>> id=c >>> id=cc
+
+A Leading Frame Piercing Separator Also Searches The Main Frame
+    Get Element Count    >>> id=b    ==    1
+
+A Leading Frame Piercing Separator Fails When Several Frames Match
+    Run Keyword And Expect Error    *    Get Text    >>> body
+
+A Leading Frame Piercing Separator Works Without Strict Mode
+    ${old} =    Set Strict Mode    False
+    TRY
+        Get Text    >>> id=cc    ==    This is c
+    FINALLY
+        Set Strict Mode    ${old}
+    END
+
+A Selector Prefix Still Comes First
+    ${old} =    Set Selector Prefix    id=b
+    TRY
+        Get Text    >>> id=bb    ==    B HTML
+    FINALLY
+        Set Selector Prefix    ${old}
+    END
