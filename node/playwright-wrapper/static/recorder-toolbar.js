@@ -196,6 +196,8 @@
       .marks { padding: 6px 8px; border: 1px solid transparent; border-radius: 4px; background: var(--plate);
                white-space: pre; overflow: hidden; color: transparent; }
       .marks mark { background: rgb(255 107 94 / 45%); color: transparent; border-radius: 2px; }
+      /* The same mark on the part an offer would replace. */
+      .call-line mark { background: rgb(255 107 94 / 45%); color: inherit; border-radius: 2px; }
       .marked textarea { background: transparent; }
     </style>
     <div class="panel" id="panel">
@@ -702,9 +704,45 @@
             });
             return container;
         };
+        // Wraps every occurrence of `text` in the tokens of `cell` in a mark, also
+        // where an occurrence spans tokens. Text nodes only: values come from the page.
+        const markText = (cell, text) => {
+            if (!text) return;
+            const tokens = [...cell.children];
+            const whole = tokens.map((token) => token.textContent).join('');
+            const ranges = [];
+            for (let at = whole.indexOf(text); at !== -1; at = whole.indexOf(text, at + text.length))
+                ranges.push([at, at + text.length]);
+            if (!ranges.length) return;
+            let offset = 0;
+            tokens.forEach((token) => {
+                const own = token.textContent;
+                const start = offset;
+                offset += own.length;
+                const cuts = new Set([0, own.length]);
+                ranges.forEach(([from, to]) => {
+                    if (from > start && from < offset) cuts.add(from - start);
+                    if (to > start && to < offset) cuts.add(to - start);
+                });
+                const points = [...cuts].sort((a, b) => a - b);
+                token.textContent = '';
+                points.slice(1).forEach((end, i) => {
+                    const piece = own.slice(points[i], end);
+                    const inside = ranges.some(([from, to]) => start + points[i] >= from && start + end <= to);
+                    if (!inside) {
+                        token.append(piece);
+                        return;
+                    }
+                    const mark = document.createElement('mark');
+                    mark.textContent = piece;
+                    token.appendChild(mark);
+                });
+            });
+        };
         // One Keyword Call as the file shows it: cells three character widths apart.
-        // `onPick(valueIndex, value)` makes the selectable values clickable.
-        const callLine = (container, call, onPick) => {
+        // `onPick(valueIndex, value)` makes the selectable values clickable;
+        // `marked` ({value, text}) highlights `text` in that value.
+        const callLine = (container, call, onPick, marked = null) => {
             if (call.assign) {
                 const assign = document.createElement('span');
                 assign.className = 'assign';
@@ -720,6 +758,7 @@
                 const pick = !!onPick && !!value.selectable;
                 cell.className = pick ? 'cell pick' : 'cell';
                 appendTokens(cell, value.tokens);
+                if (marked && marked.value === valueIndex) markText(cell, marked.text);
                 if (pick) {
                     cell.title = 'Make this value an argument';
                     cell.addEventListener('click', () => onPick(valueIndex, value));
@@ -784,7 +823,12 @@
                     label.append(' ');
                     if (calls[c])
                         label
-                            .appendChild(callLine(document.createElement('span'), calls[c], null))
+                            .appendChild(
+                                callLine(document.createElement('span'), calls[c], null, {
+                                    value: v,
+                                    text: offer.text,
+                                }),
+                            )
                             .classList.add('call-line');
                     box.appendChild(label);
                 });

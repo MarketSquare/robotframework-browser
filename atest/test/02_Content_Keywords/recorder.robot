@@ -526,6 +526,20 @@ The Toolbar Works Over A Modal Of The Page
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+The Replace Offer Marks The Part It Would Replace
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Offer Marks    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    jane
+    Fill Text    css=input[name=email]    jane@example.com
+    Wait Until Calls    2
+    Send Command    {cmd: 'argument', call: 0, value: 1, start: 0, end: 4, name: 'name', raw: 'jane'}
+    Wait For Function
+    ...    () => [...window.toolbarRoot.querySelectorAll('#offerList mark')].map((m) => m.textContent).join('|') === 'jane'
+    ...    timeout=2s
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 The Argument Dialog Shows The Marked Part Without Focus And Survives A Release Outside
     Keep The Closed Toolbar Root Reachable
     ${promise} =    Promise To    Record Keyword    Marked Part    ${RESOURCE}
