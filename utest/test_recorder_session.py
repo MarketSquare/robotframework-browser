@@ -1151,9 +1151,7 @@ def test_the_toolbar_shows_each_value_as_robot_reads_it():
     assert call["values"][1]["tokens"] == [
         ["argument", "id-"],
         ["variable", "${number}"],
-        ["variable", "${SPACE}"],
-        ["variable", "${SPACE}"],
-        ["argument", "\\${HOME}"],
+        ["argument", " \\ \\${HOME}"],
     ]
 
 

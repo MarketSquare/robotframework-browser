@@ -199,12 +199,16 @@ _ROUNDTRIP_VALUES = [
     # Two or more spaces are a cell separator, edge spaces are stripped.
     ["css=.x", "two    spaces"],
     ["css=.x", " padded "],
+    ["css=.x", "trailing  "],
+    ["css=.x", "  leading"],
+    ["css=.x", " "],
+    ["css=.x", "back\\  "],
     ["css=.x", ""],
     ["css=.x", "   "],
     ["css=.x", "back\\slash"],
     ["css=.x", "\\${not a var}"],
     ["css=.x", "tab\tand\nnewline"],
-    # `${SPACE}[x]` would be item access on the emitted `${SPACE}`.
+    # `[` after escaped spaces must stay a literal bracket.
     ["css=.x", "[\n  [1, 2],\n  [3]\n]"],
     ["css=.x", " [lead"],
     ["css=.x", "a  [0]"],
@@ -434,7 +438,7 @@ def test_a_file_that_is_not_utf8_is_refused_and_left_alone(tmp_path, bom):
 
 
 #: Typed text, and the part of it that becomes the argument ``${who}``: the
-#: argument borders on partial variable syntax, which Robot is picky about.
+#: argument borders on partial variable syntax or on spaces, which Robot is picky about.
 _NEXT_TO_PARTIAL_SYNTAX = [
     ("${who}", 2, 5),
     ("a$who", 2, 5),
@@ -446,6 +450,10 @@ _NEXT_TO_PARTIAL_SYNTAX = [
     ("%{who}", 2, 5),
     ("who[0]", 0, 3),
     ("${part", 2, 6),
+    # Escaped spaces on either side of the argument.
+    ("a  who  b", 3, 6),
+    ("  who  ", 2, 5),
+    ("x  who", 3, 6),
 ]
 
 

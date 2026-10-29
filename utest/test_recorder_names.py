@@ -572,8 +572,32 @@ def test_name_guard_rejects_a_known_library_keyword():
 def test_inner_part_keeps_edge_spaces_and_hash():
     assert cell("price ", at_end=False) == "price "
     assert cell(" #x", at_start=False) == " #x"
-    assert cell(" x ") == "${SPACE}x${SPACE}"
+    assert cell(" x ") == "\\ x \\"
     assert cell("#x") == "\\#x"
+
+
+@pytest.mark.parametrize(
+    ("value", "written"),
+    [
+        ("test  ", "test \\ \\"),
+        ("test ", "test \\"),
+        ("  lead", "\\ \\ lead"),
+        ("a b", "a b"),
+        ("a  b", "a \\ b"),
+        ("a     b", "a \\ \\ \\ \\ b"),
+        (" ", "\\ \\"),
+        ("  ", "\\ \\ \\"),
+        ("x  [0]", "x \\ [0]"),
+        ("#  x", "\\# \\ x"),
+    ],
+)
+def test_spaces_are_escaped_with_backslashes(value, written):
+    assert cell(value) == written
+
+
+def test_spaces_at_the_edge_of_an_inner_part_stay_plain():
+    assert cell("  b", at_start=False) == " \\ b"
+    assert cell("a  ", at_end=False) == "a \\ "
 
 
 # --------------------------------------------------------------------------- #

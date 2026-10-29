@@ -32,8 +32,11 @@ it does not check this way; the toolbar stops it on `window` before the recorder
 ## Writing values
 
 `cells.py` escapes every value so Robot reads back exactly the recorded string: `#`, variable
-syntax (including the reserved `*{`), runs of spaces, edge spaces and exotic whitespace. A `[` right after an emitted
-`${SPACE}` or a Keyword Argument is written `\[`, as `${x}[0]` is item access. A value
+syntax (including the reserved `*{`), runs of spaces, edge spaces and exotic whitespace.
+Spaces are escaped with backslashes so that no two plain spaces meet: `a \ b` inside a cell,
+`\ \ lead` at its start and `trail \ \` at its end, where Robot drops a backslash before the
+next separator or the line end. A `[` right after a Keyword Argument is written `\[`, as
+`${x}[0]` is item access. A value
 starting with `name=` gets its `=` escaped when `name` is a parameter of the called keyword
 (`parameters.py`, checked against the real signatures by `test_recorder_parameters.py`):
 `Fill Text    #n    txt\=hello`, but `Click    text=Log in`. A keyword not in that table may

@@ -24,10 +24,9 @@ from robot.errors import DataError
 # Robot's variable/list/dict/environment syntax, and the `*{` it reserves for
 # future use, none of which may be resolved in a recorded literal.
 VARIABLE_START = re.compile(r"[$@&%*]\{")
-_MULTI_SPACE = re.compile(r"  +")
+_SPACES = re.compile(r" +")
 # `txt=hello` in a Keyword Call is a named argument when `txt` is an argument name.
 _NAMED_ARGUMENT = re.compile(r"^([^\W\d]\w*)=")
-_SPACE = "${SPACE}"
 
 
 def cell(
@@ -65,8 +64,8 @@ def cell(
     them, so it is not passed as a named argument. ``None`` means the keyword
     is unknown, and every identifier followed by ``=`` is escaped.
 
-    A ``[`` right after an emitted ``${SPACE}`` is escaped too: Robot would read
-    ``${SPACE}[x]`` as item access.
+    Spaces Robot would strip or read as a separator are escaped with
+    backslashes: ``\\ \\ lead``, ``a \\ b``, ``trail \\ \\``.
     """
     if value == "":
         return "${EMPTY}" if at_start and at_end else ""
@@ -82,12 +81,28 @@ def cell(
         cell = _escape_named_argument(cell, parameters)
     if at_start and cell.startswith("#"):
         cell = "\\" + cell
-    cell = _MULTI_SPACE.sub(lambda m: _SPACE * len(m.group()), cell)
-    if at_start and cell.startswith(" "):
-        cell = _SPACE + cell[1:]
-    if at_end and cell.endswith(" "):
-        cell = cell[:-1] + _SPACE
-    return cell.replace(_SPACE + "[", _SPACE + "\\[")
+    return _SPACES.sub(lambda m: _escaped_spaces(m, cell, at_start, at_end), cell)
+
+
+def _escaped_spaces(run: re.Match, cell: str, at_start: bool, at_end: bool) -> str:
+    r"""A run of spaces, written so that no two plain spaces meet.
+
+    At the start of a cell the run begins with a backslash (``\ \ a``), at
+    its end it ends with one (``a \ \``): Robot strips spaces at cell edges,
+    and a backslash before the next separator or the line end is dropped. A
+    cell of spaces only gets both (``\ \ \``). Inside a cell only runs of two
+    or more change: ``a \ b``.
+    """
+    count = len(run.group())
+    starts = at_start and run.start() == 0
+    ends = at_end and run.end() == len(cell)
+    if starts:
+        return "\\ " * count + ("\\" if ends else "")
+    if ends:
+        return " \\" * count
+    if count == 1:
+        return " "
+    return " " + "\\ " * (count - 1)
 
 
 def tokens(cell: str) -> list[tuple[str, str]]:

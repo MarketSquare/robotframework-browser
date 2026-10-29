@@ -452,7 +452,7 @@ _ARGUMENT_NAME = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 #: Robot's built-in variables. An argument of that name would shadow them in
-#: the recorded keyword - `cell()` itself writes `${SPACE}` and `${EMPTY}`.
+#: the recorded keyword - `cell()` itself writes `${EMPTY}`.
 _BUILTIN_VARIABLES = frozenset(
     normalize_keyword_name(variable)
     for variable in [
