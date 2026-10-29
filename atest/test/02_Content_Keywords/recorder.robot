@@ -703,6 +703,27 @@ Every Recorded Selector Finds Exactly The Clicked Element
         Should Be Equal As Integers    ${clicked}    ${index}    ${targets}[${index}] was recorded as ${selector}
     END
 
+A Click Two Frames Deep Keeps The Any-Frame Selector And Says So
+    [Documentation]    Playwright shortens a frame path of two or more frames to
+    ...    `internal:control=any-frame`, which has no Browser syntax yet.
+    New Page    ${RECORDER_SELECTORS_URL}
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { sessionStorage.setItem('rfb.toolbar.position', JSON.stringify({x: 5000, y: 5000})); sessionStorage.setItem('rfb.toolbar.collapsed', 'true'); }
+    Mark Clicked Elements    id=frame >>> id=inner >>> body
+    ${promise} =    Promise To    Record Keyword    Click Deep    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Click    id=frame >>> id=inner >>> text=Two frames deep
+    Wait Until Calls    1
+    ${selector} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.calls[0].values[0].raw
+    Should Start With    ${selector}    internal:control=any-frame >>
+    Wait For Function    () => (window.__rfbToolbarState.notice || '').includes('internal:control')
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${clicked} =    Evaluate JavaScript    ${selector}    (element) => element.__clicked
+    Should Be Equal As Integers    ${clicked}    0
+    Recorded Keyword Replays    ${RESOURCE}    Click Deep    ${RECORDER_SELECTORS_URL}
+
 Translated Selectors Match Like Playwright
     [Documentation]    Each form the recorder rewrites must find the same elements as
     ...    Playwright's internal original; forms passed through verbatim are not listed.

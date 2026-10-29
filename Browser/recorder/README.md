@@ -104,7 +104,8 @@ of the signal values is selectable.
 ## Selector mapping
 
 Playwright's selector generator uses eight engines; each is rewritten into public syntax
-with the same meaning (`action_mapper.to_browser_selector`), except `internal:label`.
+with the same meaning (`action_mapper.to_browser_selector`), except `internal:label` and
+`internal:control=any-frame`.
 
 | Playwright internal | Browser selector |
 |---------------------|------------------|
@@ -119,6 +120,7 @@ with the same meaning (`action_mapper.to_browser_selector`), except `internal:la
 | `... >> internal:control=enter-frame >> ...` | `... >>> ...` |
 | `css`, `nth` | unchanged |
 | `internal:label="Map"i` | unchanged, with a toolbar notice |
+| `internal:control=any-frame >> iframe[name="b"] >> internal:control=enter-frame >> ...` (a frame path of two or more frames, shortened) | `internal:control=any-frame >> iframe[name="b"] >>> ...`, with a toolbar notice |
 
 Why each form, all read from Playwright 1.64:
 
