@@ -209,6 +209,7 @@ class Browser(DynamicCore):
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
+    | ``label``        | Label, as Playwright's ``getByLabel``.       | ``label=Email``                    |
 
     An attribute engine is equivalent to the matching css attribute selector:
     ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
@@ -266,19 +267,32 @@ class Browser(DynamicCore):
 
     Clauses are separated by ``>>`` and each searches inside the result of the
     previous one. The chain returns what the last clause matched; prefix a clause
-    with ``*`` to return that one instead. A value containing ``>>`` must be
-    quoted, as in ``text="some >> text"``.
+    with ``*`` to return that one instead. A value containing ``>>`` or ``>>>``
+    must be quoted, as in ``text="some >> text"``; a regular expression
+    (``text=/a>>b/``) cannot contain them.
 
     | Click    css=.checkout >> text=Confirm
     | Get Element    *css=article >> text=Hello    # returns the article
 
     == iFrames ==
 
-    A chain does not cross a frame boundary. ``>>>`` combines a selector for the
-    frame element with a selector inside it; the clause immediately before ``>>>``
-    must select the frame itself.
+    A chain does not cross a frame boundary. ``>>>``, with whitespace around it,
+    combines a selector for the frame element with a selector inside it; the
+    clause immediately before ``>>>`` must select the frame itself. Without
+    whitespace, ``a>>>b`` is read as ``a >> >b``, as it always was.
 
     | Click    id=iframe >>> id=btn
+
+    A selector that starts with ``>>>`` searches in every frame of the page, the
+    main frame included, so the frames around the element need not be named. The
+    rest of the selector must match inside a single frame; elements in several
+    frames are an error, also without strict mode and in keywords that count or
+    list elements such as `Get Element Count`. With a selector prefix set, the
+    prefix comes first and ``>>>`` enters the frame it selects, as before; a
+    prefix of only ``>>>`` searches every frame.
+
+    | Click    >>> id=btn                   # a button in any frame, or the page itself
+    | Click    >>> id=inner >>> id=btn      # a button in the frame inner, wherever that frame is
 
     For several keywords inside one frame, set a prefix with `Set Selector Prefix`.
 
@@ -287,8 +301,8 @@ class Browser(DynamicCore):
     All engines, except ``css:light`` and ``xpath``, pierce open shadow roots automatically:
     every descendant combinator, including the implicit one at the start of a
     selector, crosses any number of them. Light DOM is searched first, then open
-    shadow roots, in document order. Closed shadow roots and iframes are never
-    entered.
+    shadow roots, in document order. Closed shadow roots are never entered, and
+    iframes only with ``>>>``.
 
     Use ``css:light`` to stop at the shadow boundary. Worked examples of what
     each matches:

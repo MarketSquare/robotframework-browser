@@ -28,6 +28,7 @@ import {
     parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
+import { toPlaywrightSelector } from './selector-syntax';
 
 /** Resolve a Locator and return the selector string Playwright built for it.
  */
@@ -161,8 +162,12 @@ export async function getByX(request: pb.Request_GetByOptions, state: Playwright
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
     let document: Page | FrameLocator = activePage;
-    if (frameSelector) {
-        document = activePage.frameLocator(frameSelector);
+    if (frameSelector.trim() === '>>>') {
+        // A selector prefix of only `>>>` searches every frame: Playwright's
+        // public frameLocator() without a selector.
+        document = activePage.frameLocator();
+    } else if (frameSelector) {
+        document = activePage.frameLocator(toPlaywrightSelector(frameSelector, strictMode));
         if (!strictMode) {
             document = document.first();
         }
