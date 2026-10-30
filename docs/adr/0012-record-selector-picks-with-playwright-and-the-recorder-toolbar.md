@@ -26,5 +26,5 @@ selectors stay available as a second generator (`SelectorGenerator`), from the c
 - **Backwards incompatible default.** The selector is Playwright's unless
   `generator=css` is given; the hover countdown and the variant list are gone.
 - **Further generators** are a new `SelectorGenerator` value and a function in
-  `selector-picker.ts`; a public plugin API for them is not built, but nothing in the
+  `element-picker.ts`; a public plugin API for them is not built, but nothing in the
   toolbar or the protocol rules one out.

@@ -62,7 +62,8 @@ function cssSelectorScript(): string {
 // iframe element inward, joined by Browser's frame-piercing ` >>> `.
 export async function cssSelectorOf(locator: Locator): Promise<string> {
     const parts: string[] = [];
-    let element: ElementHandle<Node> = await locator.elementHandle();
+    // The element may be gone right after the pick; then there is no css selector.
+    let element: ElementHandle<Node> = await locator.elementHandle({ timeout: 1000 });
     for (;;) {
         const frame = await element.ownerFrame();
         if (!frame) break;
@@ -107,6 +108,8 @@ export function startPick(pick: Pick): void {
     pick.page
         .pickLocator()
         .then(async (locator) => {
+            // Stopped meanwhile (Reselect, Cancel, Stop): the pick is not wanted any more.
+            if (!pick.picking) return;
             const selector = internalSelector(locator);
             const css = await cssSelectorOf(locator).catch((e: unknown) => {
                 return { error: `The css selector could not be generated: ${String(e)}` };

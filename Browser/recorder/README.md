@@ -204,10 +204,10 @@ the next poll. All sizes are UTF-8 bytes of JSON. Keyword and argument names are
 
 `Record Selector` reuses the toolbar in its `selector` mode and the `__rfbCommand` channel,
 but not Playwright's recording: Node calls the public `page.pickLocator()` on the active
-page (`selector-picker.ts`), so the hover highlight, the tooltip and a pick that never
-reaches the page are Playwright's. Python drives it like a Recording Session, polling
-`SelectorPickerPoll` every 200 ms (`picker.py`); it translates the picked selector with
-`to_browser_selector` and owns the toolbar state.
+page (`element-picker.ts`, driven by `selector-picker.ts` and `recorder.ts`), so the hover
+highlight, the tooltip and a pick that never reaches the page are Playwright's. Python
+drives it like a Recording Session, polling `SelectorPickerPoll` every 200 ms (`picker.py`);
+it translates the picked selector with `to_browser_selector` and owns the toolbar state.
 
 - `__rfbCommand` is exposed once per context (`commandListeners`); the recorder and the
   picker each register their buffers, and a command reaches the session that is running.
@@ -348,7 +348,7 @@ reaches the page are Playwright's. Python drives it like a Recording Session, po
    Has Its Own Pointer Again"). Once Playwright clears it itself, the workaround can go.
 11. `page.pickLocator()` and `page.cancelPickLocator()` still exist, and the returned
    locator still carries the selector in `_selector` (`internalSelector` in
-   `selector-picker.ts`); `inv atest --suite record_selector` passes.
+   `element-picker.ts`); `inv atest --suite record_selector` passes.
 12. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.
 

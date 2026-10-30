@@ -2,6 +2,8 @@ import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn(), debug: jest.fn() } }));
 jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
+// css-selector.js is built by `inv node-build`; these tests must not need a build.
+jest.mock('fs', () => ({ ...jest.requireActual('fs'), readFileSync: () => '/* css-selector.js */' }));
 
 import { countOf, cssSelectorOf, drivePick, Pick, startPick, stopPick } from '../element-picker';
 import { findLocator } from '../playwright-invoke';
@@ -86,6 +88,20 @@ describe('startPick', () => {
         await flush();
         expect(s.picked).toBeUndefined();
         expect(cancel).toHaveBeenCalled();
+    });
+});
+
+describe('startPick after stopPick', () => {
+    it('drops a pick that resolves after it was stopped', async () => {
+        let resolve: (locator: unknown) => void = () => undefined;
+        const s = session(() => new Promise((r) => (resolve = r)));
+        startPick(s);
+        await stopPick(s);
+        resolve({ _selector: 'css=a', elementHandle: async () => null });
+        await flush();
+        await flush();
+        expect(s.picked).toBeUndefined();
+        expect(s.picking).toBe(false);
     });
 });
 

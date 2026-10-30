@@ -147,9 +147,14 @@ class RecorderSession:
             self._picker.handle_count(count)
 
     def request_pick(self) -> None:
-        """Playwright's Pick locator was turned on; the toolbar picks instead."""
+        """Playwright's Pick locator was turned on; the toolbar picks instead.
+
+        With a selector already picked it picks again, like Reselect.
+        """
         if self._picker is None:
             self._open_picker()
+        elif not self._picker.picking:
+            self._picker.handle_command({"cmd": "reselect"})
 
     def toolbar_state(self) -> dict:
         keyword = self._keyword
@@ -215,9 +220,20 @@ class RecorderSession:
 
     # -- events ------------------------------------------------------------ #
 
+    def _records(self) -> bool:
+        """Whether Actions and signals go into the keyword now.
+
+        Not while paused, and not once a selector is picked: the page may be
+        tried out until Use or Cancel. While picking, Playwright records
+        nothing; what still arrives is an Action it held back from before the
+        pick, which belongs to the keyword.
+        """
+        picked = self._picker is not None and not self._picker.picking
+        return self._keyword is not None and not self._paused and not picked
+
     def handle_event(self, event: str, action: dict) -> None:
         keyword = self._keyword
-        if keyword is None or self._paused:
+        if keyword is None or not self._records():
             return
         if event == "signal":
             effect = self._mapper.map_signal(action, keyword.unique_variable)
@@ -432,6 +448,7 @@ class RecorderSession:
         if name is None:
             return
         self._keyword = RecordedKeyword(name)
+        self._picker = None
         self._undone = self._skipped = self._paused = False
 
     def _pause(self) -> None:
@@ -444,6 +461,7 @@ class RecorderSession:
         keyword = self._keyword
         assert keyword is not None
         self._keyword = None
+        self._picker = None
         self._offer = None
         self._paused = False
         if not len(keyword):
@@ -459,6 +477,11 @@ class RecorderSession:
         self.log.append(f"finished '{keyword.name}' with {len(keyword)} Keyword Calls")
 
     def _open_picker(self) -> None:
+        if self._pending is not None:
+            self._error = (
+                _STILL_STARTING if self._pending[0] == _STARTING else _STILL_FINISHING
+            )
+            return
         if self._keyword is None:
             self._notice = "Start recording a keyword to pick a selector into it."
             return
@@ -487,8 +510,11 @@ class RecorderSession:
         if self._keyword is None:
             self._error = "No keyword is being recorded."
             return
+        comment = self._keyword.last_is_comment()
         if self._keyword.undo():
-            self._undone = True
+            # Undoing a picked selector leaves the Action before it as it was:
+            # Playwright may still refine it.
+            self._undone = self._undone if comment else True
             self._offer = None
             self._save()
 
@@ -500,6 +526,7 @@ class RecorderSession:
             if restart and self._fixed_name is not None
             else None
         )
+        self._picker = None
         self._offer = None
         self._undone = self._skipped = self._paused = False
         self.log.append(f"discarded '{keyword.name}'")

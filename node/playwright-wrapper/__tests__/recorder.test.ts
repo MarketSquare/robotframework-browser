@@ -554,6 +554,8 @@ describe('recorderPoll with the toolbar Pick button', () => {
         const page = {
             pickLocator: jest.fn(() => new Promise((r) => (resolve = r))),
             cancelPickLocator: jest.fn(async () => undefined),
+            isClosed: () => false,
+            frames: () => [],
         };
         return { page, pick: (selector: string) => resolve({ _selector: selector, elementHandle: async () => null }) };
     }
@@ -604,5 +606,29 @@ describe('recorderPoll with the toolbar Pick button', () => {
         await pollWith(context, picker.page, { pick: true });
         await pollWith(context, picker.page, {});
         expect(picker.page.cancelPickLocator).toHaveBeenCalled();
+    });
+
+    it('moves a pick from a closed page to the active one', async () => {
+        const page = fakePage('recording');
+        const context = fakeRecorderContext([page]);
+        const first = pickPage();
+        const second = pickPage();
+        await poll(context);
+        await pollWith(context, first.page, { pick: true });
+        (first.page as any).isClosed = () => true;
+        await pollWith(context, second.page, { pick: true });
+        expect(second.page.pickLocator).toHaveBeenCalledTimes(1);
+    });
+
+    it('gives the page its own pointer back when Playwright leaves a hand-pointer mode', async () => {
+        const page = fakePage('assertingText');
+        const frameEvaluate = jest.fn(async () => undefined);
+        (page as any).frames = () => [{ evaluate: frameEvaluate }];
+        const context = fakeRecorderContext([page]);
+        await poll(context);
+        expect(frameEvaluate).not.toHaveBeenCalled();
+        page.win.mode = 'recording';
+        await poll(context);
+        expect(frameEvaluate).toHaveBeenCalledTimes(1);
     });
 });

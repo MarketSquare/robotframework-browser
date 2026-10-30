@@ -30,6 +30,8 @@ from robot.api import logger
 from .action_mapper import internal_engines, to_browser_selector
 
 POLL_INTERVAL = 0.2
+#: A longer command id is not echoed, as in the recorder session.
+_ID_LIMIT = 64
 GENERATORS = ("playwright", "css")
 #: An edited selector longer than this is not counted or used.
 MAX_SELECTOR_LENGTH = 10_000
@@ -102,19 +104,27 @@ class SelectorPicker:
 
     def handle_picked(self, picked: dict) -> None:
         selector = picked.get("selector")
-        if not isinstance(selector, str) or not selector:
+        if (
+            not isinstance(selector, str)
+            or not selector
+            or len(selector) > MAX_SELECTOR_LENGTH
+        ):
             error = picked.get("error")
-            self.error = f"Picking failed: {error}" if error else "Picking failed."
+            self.error = (
+                f"Picking failed: {str(error)[:200]}" if error else "Picking failed."
+            )
             return
         browser_selector = to_browser_selector(selector)
         self.candidates = {"playwright": browser_selector}
         self.unavailable = {}
+        # The css generator runs in the page under test (ADR 0010).
         css = picked.get("css")
-        if isinstance(css, str) and css:
+        if isinstance(css, str) and css and len(css) <= MAX_SELECTOR_LENGTH:
             self.candidates["css"] = css
         else:
-            self.unavailable["css"] = str(
-                picked.get("error") or "No css selector found."
+            error = picked.get("error")
+            self.unavailable["css"] = (
+                error[:200] if isinstance(error, str) else "No usable css selector."
             )
         engines = internal_engines(browser_selector)
         self.notice = (
@@ -151,7 +161,7 @@ class SelectorPicker:
             self.error = str(error)
         finally:
             command_id = command.get("id")
-            if isinstance(command_id, str):
+            if isinstance(command_id, str) and len(command_id) <= _ID_LIMIT:
                 self.answered = command_id
 
     def _highlight(self, command: dict) -> None:
@@ -179,7 +189,9 @@ class SelectorPicker:
 
     def _edit(self, command: dict) -> None:
         selector = command.get("selector")
-        if not isinstance(selector, str) or len(selector) > MAX_SELECTOR_LENGTH:
+        if not isinstance(selector, str):
+            raise ValueError("'selector' must be a string.")
+        if len(selector) > MAX_SELECTOR_LENGTH:
             raise ValueError("The selector is too long.")
         self.selector = selector
         self.count = None
@@ -247,11 +259,13 @@ def _apply(picker: SelectorPicker, reply: dict) -> bool:
         command = entry.get("command") if isinstance(entry, dict) else None
         if not isinstance(command, dict):
             continue
-        active = True
         try:
             picker.handle_command(command)
         except Exception as error:
+            # Junk from the page under test does not keep the pick alive.
             logger.warn(f"selector picker: ignoring command: {str(error)[:200]}")
+            continue
+        active = True
     count = reply.get("count")
     if isinstance(count, dict):
         picker.handle_count(count)

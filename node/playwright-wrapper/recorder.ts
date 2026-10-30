@@ -348,6 +348,11 @@ async function pickInRecording(
         buffers.pick = undefined;
         return {};
     }
+    // A page closed during the pick hands it over to the page that is active now.
+    if (buffers.pick?.page.isClosed()) {
+        await endPick(buffers.pick);
+        buffers.pick = undefined;
+    }
     if (!buffers.pick) {
         const page = state.getActivePage();
         if (!page) return { picked: { error: 'No page is open to pick in.' } };

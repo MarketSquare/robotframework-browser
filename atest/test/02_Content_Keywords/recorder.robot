@@ -282,6 +282,9 @@ A Picked Selector Becomes A Comment And Recording Goes On
     ...    () => { const p = window.__rfbToolbarState.picker; return p && p.phase === 'picked' && p.count && p.count.count === 1; }
     ${selector} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.picker.selector
     Get Element Count    ${selector}    ==    1
+    # Trying the page out before Use records nothing.
+    Fill Text    id=input_name    while picked
+    Sleep    0.8s
     Send Command    {cmd: 'pick-use'}
     Wait For Function    () => window.__rfbToolbarState.picker === null
     Wait Until Calls    1
@@ -293,6 +296,7 @@ A Picked Selector Becomes A Comment And Recording Goes On
     ${file} =    Get File    ${RESOURCE}
     Should Contain    ${file}    \n${SPACE*4}\# Picked Selector${SPACE*4}${selector}\n
     Should Contain    ${file}    after the pick
+    Should Not Contain    ${file}    while picked
     Recorded Keyword Replays    ${RESOURCE}    Pick And Fill
 
 A Minimized Toolbar Offers Only The Pick's Buttons While Picking

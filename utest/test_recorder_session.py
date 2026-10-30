@@ -5,6 +5,7 @@ import pytest
 from Browser.recorder.cells import tokens
 from Browser.recorder.model import RecordedKeyword
 from Browser.recorder.names import KnownKeywords
+from Browser.recorder.picker import SelectorPicker
 from Browser.recorder.session import (
     _STARTING,
     MAX_RAW_LENGTH,
@@ -1247,12 +1248,13 @@ def test_pick_while_idle_asks_for_a_keyword():
     assert "Start recording a keyword" in s.toolbar_state()["notice"]
 
 
-def test_playwrights_pick_locator_opens_the_picker_once():
+def test_playwrights_pick_locator_opens_the_picker_and_then_picks_again():
     s, _, _ = session(fixed_name="K")
     s.request_pick()
+    assert s.toolbar_state()["picker"]["phase"] == "picking"
     s.handle_picked(PICKED)
     s.request_pick()
-    assert s.toolbar_state()["picker"]["phase"] == "picked"
+    assert s.toolbar_state()["picker"]["phase"] == "picking"
 
 
 def test_a_pick_reaches_the_picker_and_is_counted():
@@ -1346,3 +1348,67 @@ def test_keyword_commands_wait_until_the_pick_is_used_or_cancelled(cmd):
     assert state["error"] == "Use or cancel the picked selector first."
     assert state["picker"]["phase"] == "picked"
     assert state["pending"] is None
+
+
+def test_a_pick_cannot_open_while_save_is_settling():
+    s, _, clock = session()
+    start(s, "K")
+    s.handle_command({"cmd": "finish", "quietMs": 0})
+    s.request_pick()
+    assert s.toolbar_state()["picker"] is None
+    settle(s, clock)
+    assert s.state == "idle"
+    assert s.request() == {}
+
+
+@pytest.mark.parametrize("cmd", ["finish", "discard"])
+def test_the_end_of_a_keyword_closes_a_picker_opened_meanwhile(cmd):
+    s, _, clock = session()
+    start(s, "K")
+    s.handle_event("added", FILL)
+    s.handle_command({"cmd": cmd, "quietMs": 0})
+    # Opened through the page's command channel while the command settles.
+    s._picker = SelectorPicker(None, "playwright")
+    settle(s, clock)
+    assert s.toolbar_state()["picker"] is None
+    assert s.request() == {}
+
+
+def test_actions_after_the_pick_are_not_recorded_until_use():
+    s, target = picking()
+    s.handle_event("added", FILL)
+    s.handle_picked(PICKED)
+    s.handle_event("added", {**FILL, "text": "tried out"})
+    s.handle_event("signal", {"name": "popup", "popupPageGuid": "g"})
+    s.handle_command({"cmd": "pick-use"})
+    calls = s.toolbar_state()["calls"]
+    assert [c["keyword"] for c in calls] == ["Fill Text", "# Picked Selector"]
+
+
+def test_undoing_a_picked_selector_keeps_refining_the_action_before_it():
+    s, _ = picking()
+    s.handle_command({"cmd": "pick-cancel"})
+    s.handle_event("added", FILL)
+    s.handle_command({"cmd": "pick"})
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-use"})
+    s.handle_command({"cmd": "undo"})
+    s.handle_event("updated", {**FILL, "text": "Alice B"})
+    calls = s.toolbar_state()["calls"]
+    assert [c["values"][1]["raw"] for c in calls] == ["Alice B"]
+
+
+@pytest.mark.parametrize(
+    ("selector", "written"),
+    [
+        ("#save", "\\#save"),
+        ("text=${HOME}", "text=\\${HOME}"),
+        ("text=a  b", "text=a \\ b"),
+        ("text=a\nb", "text=a\\nb"),
+    ],
+)
+def test_a_picked_selector_is_written_as_a_cell(selector, written):
+    s, target = picking()
+    s.handle_picked({"selector": selector, "css": "x"})
+    s.handle_command({"cmd": "pick-use"})
+    assert f"    # Picked Selector    {written}\n" in target.saved[-1]

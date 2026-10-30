@@ -238,3 +238,41 @@ def test_highlight_needs_a_boolean():
     picker = picked()
     picker.handle_command({"cmd": "highlight", "on": "yes"})
     assert picker.toolbar_state()["error"] == "'on' must be true or false."
+
+
+def test_an_oversized_pick_is_refused():
+    picker = SelectorPicker(None, "playwright")
+    picker.handle_picked({"selector": "x" * 10_001, "css": "#a"})
+    assert picker.toolbar_state()["error"] == "Picking failed."
+    assert picker.request()["pick"] is True
+
+
+def test_an_oversized_css_selector_is_unavailable():
+    picker = SelectorPicker(None, "css")
+    picker.handle_picked({"selector": "css=b", "css": "x" * 10_001})
+    assert picker.selector == ""
+    assert "css" in picker.toolbar_state()["unavailable"]
+
+
+def test_a_long_command_id_is_not_echoed():
+    picker = picked()
+    picker.handle_command({"cmd": "reselect", "id": "x" * 65})
+    assert picker.toolbar_state()["answered"] is None
+
+
+def test_refused_commands_do_not_keep_the_pick_alive():
+    now = [0.0]
+
+    def clock():
+        now[0] += 1
+        return now[0]
+
+    junk = {"pages": 1, "entries": [{"command": {"cmd": "format-disk"}}]}
+    with pytest.raises(TimeoutError):
+        run_picker(
+            SelectorPicker(None, "css"),
+            FakeClient([junk] * 10),
+            idle_timeout=3,
+            clock=clock,
+            sleep=lambda _seconds: None,
+        )

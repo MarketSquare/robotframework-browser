@@ -658,7 +658,10 @@
         const escapeDialog = () => {
             if (!$('argModal').hidden) closeArgModal();
             else if (!$('modal').hidden && nameSent === null) closeModal();
-            else if (selectorState()) sendSelector({ cmd: 'cancel' });
+            else if (selectorState()) {
+                dropEdit();
+                sendSelector({ cmd: 'cancel' });
+            }
         };
         const toolbarInput = {
             argName: () => {
@@ -786,6 +789,11 @@
             editTimer = null;
             sendSelector({ cmd: 'edit', selector: $('selInput').value });
         };
+        // A pending edit belongs to the selector shown when it was typed.
+        const dropEdit = () => {
+            if (editTimer !== null) clearTimeout(editTimer);
+            editTimer = null;
+        };
         const editSelector = () => {
             showSelectorMarks();
             $('selCount').textContent = '';
@@ -793,19 +801,31 @@
             if (editTimer !== null) clearTimeout(editTimer);
             editTimer = setTimeout(sendEdit, 1000);
         };
-        $('selReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
+        $('selReselect').addEventListener('click', () => {
+            dropEdit();
+            sendSelector({ cmd: 'reselect' });
+        });
         $('selHighlight').addEventListener('click', () => {
             sendEdit();
             sendSelector({ cmd: 'highlight', on: $('selHighlight').getAttribute('aria-pressed') !== 'true' });
         });
-        $('selCancel').addEventListener('click', () => sendSelector({ cmd: 'cancel' }));
+        $('selCancel').addEventListener('click', () => {
+            dropEdit();
+            sendSelector({ cmd: 'cancel' });
+        });
         $('selUse').addEventListener('click', () => {
             sendEdit();
             sendSelector({ cmd: 'use' });
         });
         $('headPick').addEventListener('click', () => send({ cmd: 'pick' }));
-        $('headReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
-        $('headCancel').addEventListener('click', () => sendSelector({ cmd: 'cancel' }));
+        $('headReselect').addEventListener('click', () => {
+            dropEdit();
+            sendSelector({ cmd: 'reselect' });
+        });
+        $('headCancel').addEventListener('click', () => {
+            dropEdit();
+            sendSelector({ cmd: 'cancel' });
+        });
         $('headUse').addEventListener('click', () => {
             sendEdit();
             sendSelector({ cmd: 'use' });
@@ -853,6 +873,7 @@
             $('selCancel').hidden = keyword === null;
             if (state.version !== shownVersion) {
                 shownVersion = state.version;
+                dropEdit();
                 $('selInput').value = state.selector || '';
                 showSelectorMarks();
             }
@@ -1120,6 +1141,8 @@
             overlayWatch.disconnect();
             window.removeEventListener('pointerup', release);
             window.removeEventListener('pointercancel', release);
+            window.removeEventListener('blur', release);
+            following.abort();
             glass.remove();
             delete window.__rfbToolbarRender;
             delete window.__rfbToolbarState;
@@ -1175,17 +1198,26 @@
             pressed = true;
         });
         root.addEventListener('pointerup', release);
+        root.addEventListener('lostpointercapture', release);
         window.addEventListener('pointerup', release);
         window.addEventListener('pointercancel', release);
+        // A press released outside the window reports no pointerup.
+        window.addEventListener('blur', release);
+        // Listeners on Playwright's panes, removed with the toolbar.
+        const following = new AbortController();
         root.addEventListener('focusout', () => setTimeout(catchUp));
         const followed = new WeakSet();
         const followPlaywright = () => {
             document.querySelectorAll('x-pw-glass').forEach((pane) => {
                 if (pane === glass || followed.has(pane)) return;
                 followed.add(pane);
-                pane.addEventListener('toggle', (event) => {
-                    if (event.newState === 'open') followToFront();
-                });
+                pane.addEventListener(
+                    'toggle',
+                    (event) => {
+                        if (event.newState === 'open') followToFront();
+                    },
+                    { signal: following.signal },
+                );
             });
         };
         const overlayWatch = new MutationObserver(followPlaywright);

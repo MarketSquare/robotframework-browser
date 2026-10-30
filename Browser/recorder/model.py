@@ -207,6 +207,9 @@ class RecordedKeyword:
         group.after.extend(after)
         return True
 
+    def last_is_comment(self) -> bool:
+        return bool(self._groups) and self._groups[-1].primary.comment
+
     def undo(self) -> bool:
         if not self._groups:
             return False
