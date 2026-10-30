@@ -1949,6 +1949,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Checkmk",
+      "name": "Checkmk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/47812383?v=4",
+      "profile": "https://checkmk.com",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
