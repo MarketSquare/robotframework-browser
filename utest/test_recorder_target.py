@@ -164,7 +164,7 @@ def test_written_keyword_runs_in_a_real_robot_run(tmp_path):
     FileTarget(path).finish(kw)
     suite = tmp_path / "s.robot"
     suite.write_text(
-        f"*** Settings ***\nResource    {path}\n*** Test Cases ***\nT\n    Echo\n"
+        "*** Settings ***\nResource    ${CURDIR}/k.resource\n*** Test Cases ***\nT\n    Echo\n"
     )
     result = subprocess.run(
         [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), str(suite)],

@@ -197,6 +197,12 @@ Send Command
 Picker Should Be Picking
     Wait For Function
     ...    () => window.__rfbToolbarState && window.__rfbToolbarState.mode === 'selector' && window.__rfbToolbarState.phase === 'picking'
+    Playwright Should Be Picking
+
+Playwright Should Be Picking
+    [Documentation]    The toolbar shows the pick at once; Playwright takes it up with the
+    ...    next poll. Its pick tool turns the pointer into a hand once it listens.
+    Wait For Function    () => document.body.getAttribute('data-pw-cursor') === 'pointer'
 
 Picker Should Have Picked
     Wait For Function    () => window.__rfbToolbarState && window.__rfbToolbarState.phase === 'picked'
