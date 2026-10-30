@@ -1233,6 +1233,9 @@ class Getters(LibraryComponent):
             return self._disable_selector_prefix(json.loads(response.json))
 
     def get_frame_selector(self) -> str:
+        # A prefix of only `>>>` searches every frame.
+        if self.selector_prefix and self.selector_prefix.strip() == ">>>":
+            return ">>>"
         if (
             self.selector_prefix
             and self.selector_prefix.strip().endswith(">>>")

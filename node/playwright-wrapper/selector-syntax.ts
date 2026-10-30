@@ -23,9 +23,12 @@
 const ENTER_FRAME = 'internal:control=enter-frame';
 const ANY_FRAME = 'internal:control=any-frame';
 const QUOTES = new Set(['"', "'", '`']);
-// Playwright reads the quotes of an unquoted `text=` body as text.
+// Playwright reads the quotes of an unquoted `text=` body as text; Browser does
+// the same for an unquoted `label=` body, where apostrophes are common.
 const UNQUOTED_TEXT = /^\s*text\s*=(.+)$/;
-const LABEL = /^(\s*\*?)label(\s*=)/;
+const UNQUOTED_LABEL = /^\s*\*?label\s*=\s*[^\s"'/]/;
+const LABEL = /^(\s*\*?)label\s*=\s*/;
+const WHITESPACE = /\s/;
 
 export interface SplitSelector {
     // The clauses between the separators, as written.
@@ -47,11 +50,16 @@ export function splitSelector(selector: string): SplitSelector {
         } else if (c === quote) {
             quote = undefined;
             index++;
-        } else if (!quote && QUOTES.has(c) && !UNQUOTED_TEXT.test(selector.substring(start, index))) {
+        } else if (!quote && QUOTES.has(c) && !unquotedBody(selector.substring(start, index))) {
             quote = c;
             index++;
         } else if (!quote && c === '>' && selector[index + 1] === '>') {
-            const frame = selector[index + 2] === '>';
+            // `>>>` needs whitespace (or the start or end) around it: `a>>>b` was always
+            // `a >> >b`, and stays so.
+            const frame =
+                selector[index + 2] === '>' &&
+                (index === 0 || WHITESPACE.test(selector[index - 1])) &&
+                (index + 3 >= selector.length || WHITESPACE.test(selector[index + 3]));
             clauses.push(selector.substring(start, index));
             separators.push(frame ? '>>>' : '>>');
             index += frame ? 3 : 2;
@@ -64,8 +72,18 @@ export function splitSelector(selector: string): SplitSelector {
     return { clauses, separators };
 }
 
+function unquotedBody(prefix: string): boolean {
+    return UNQUOTED_TEXT.test(prefix) || UNQUOTED_LABEL.test(prefix);
+}
+
+// `label=Customer's name` becomes `internal:label="Customer's name"i`, the same
+// match written so that Playwright's parser reads the apostrophe as text.
 function translateClause(clause: string): string {
-    return clause.replace(LABEL, '$1internal:label$2');
+    const label = LABEL.exec(clause);
+    if (!label) return clause;
+    const body = clause.slice(label[0].length).trim();
+    const quotedOrRegex = body.startsWith('"') || body.startsWith("'") || body.startsWith('/');
+    return `${label[1]}internal:label=${quotedOrRegex ? body : `${JSON.stringify(body)}i`}`;
 }
 
 // The selector as Playwright reads it. Without strict mode, a frame selector
@@ -75,6 +93,13 @@ export function toPlaywrightSelector(selector: string, strictMode: boolean): str
     const { clauses, separators } = splitSelector(selector);
     const enterFrame = strictMode ? ` >> ${ENTER_FRAME} >> ` : ` >> nth=0 >> ${ENTER_FRAME} >> `;
     let result = '';
+    separators.forEach((separator, i) => {
+        if (separator !== '>>>') return;
+        const before = clauses[i].trim();
+        if ((before === '' && i > 0) || clauses[i + 1].trim() === '') {
+            throw new Error(`Selector "${selector}" has an empty part next to ">>>".`);
+        }
+    });
     clauses.forEach((clause, i) => {
         const separator = separators[i];
         if (i === 0 && separator === '>>>' && clause.trim() === '') {

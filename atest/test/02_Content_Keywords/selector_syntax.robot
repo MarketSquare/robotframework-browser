@@ -59,3 +59,33 @@ A Selector Prefix Of Nested Frames Works For Get Element By
     FINALLY
         Set Selector Prefix    ${old}
     END
+
+A Label With An Apostrophe Needs No Quotes
+    Fill Text    label=Customer's name >> nth=0    Ada
+    Get Property    id=customer    value    ==    Ada
+
+Frame Separators Without Whitespace Keep Their Old Meaning
+    Get Element Count    body>>>button    ==    2
+
+A Part Next To A Frame Separator Must Not Be Empty
+    Run Keyword And Expect Error    *has an empty part next to ">>>"*    Get Text    id=outer >>>
+
+A Leading Frame Separator Fails On Matches In Several Frames Even Without Strict Mode
+    ${old} =    Set Strict Mode    False
+    TRY
+        Run Keyword And Expect Error    *multiple frames*    Get Element Count    >>> css=label
+    FINALLY
+        Set Strict Mode    ${old}
+    END
+
+A Selector Prefix Of Only A Frame Separator Works For Get Element By
+    ${old} =    Set Selector Prefix    >>>
+    TRY
+        ${element} =    Get Element By    Label    Frame code
+        Get Attribute    ${element}    id    ==    code
+    FINALLY
+        Set Selector Prefix    ${old}
+    END
+
+A Quoted Frame Separator Is No Frame For Focus States
+    Wait For Elements State    text="Save >>> later"    defocused    timeout=2s

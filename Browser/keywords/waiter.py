@@ -32,6 +32,7 @@ from ..utils import (
     keyword,
     logger,
 )
+from ..utils.selector_syntax import crosses_frames
 
 
 class Waiter(LibraryComponent):
@@ -88,10 +89,8 @@ class Waiter(LibraryComponent):
 
         [https://forum.robotframework.org/t//4345|Comment >>]
         """
-        if state in [ElementState.focused, ElementState.defocused] and (
-            (self.selector_prefix and ">>>" in self.selector_prefix)
-            or ">>>" in selector
-            or "internal:control=enter-frame" in selector
+        if state in [ElementState.focused, ElementState.defocused] and crosses_frames(
+            self.resolve_selector(selector)
         ):
             escaped_selector = re.sub(r"^#", "\\#", selector)
             raise ValueError(
