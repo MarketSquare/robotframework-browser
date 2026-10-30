@@ -1090,6 +1090,8 @@
             ISOLATED_EVENTS.forEach((type) => window.removeEventListener(type, isolate, true));
             PAGE_CLICK_EVENTS.forEach((type) => window.removeEventListener(type, notePageClick, true));
             overlayWatch.disconnect();
+            window.removeEventListener('pointerup', release);
+            window.removeEventListener('pointercancel', release);
             glass.remove();
             delete window.__rfbToolbarRender;
             delete window.__rfbToolbarState;
@@ -1121,13 +1123,40 @@
                 if (selection) focused.setSelectionRange(selection[0], selection[1]);
             }
         };
+        // Playwright brings its overlay to the front several times a second while
+        // it highlights. Re-showing the toolbar in the middle of a press would cut
+        // a resize, a drag or a text selection, and typing would lose its
+        // composition; so the toolbar follows only once the press or the typing ends.
+        let pressed = false;
+        let behind = false;
+        const interacting = () => pressed || ['INPUT', 'TEXTAREA'].includes(root.activeElement?.tagName ?? '');
+        const followToFront = () => {
+            if (interacting()) behind = true;
+            else toFront();
+        };
+        const catchUp = () => {
+            if (!behind || interacting()) return;
+            behind = false;
+            toFront();
+        };
+        const release = () => {
+            pressed = false;
+            catchUp();
+        };
+        root.addEventListener('pointerdown', () => {
+            pressed = true;
+        });
+        root.addEventListener('pointerup', release);
+        window.addEventListener('pointerup', release);
+        window.addEventListener('pointercancel', release);
+        root.addEventListener('focusout', () => setTimeout(catchUp));
         const followed = new WeakSet();
         const followPlaywright = () => {
             document.querySelectorAll('x-pw-glass').forEach((pane) => {
                 if (pane === glass || followed.has(pane)) return;
                 followed.add(pane);
                 pane.addEventListener('toggle', (event) => {
-                    if (event.newState === 'open') toFront();
+                    if (event.newState === 'open') followToFront();
                 });
             });
         };
