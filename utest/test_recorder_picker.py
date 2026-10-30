@@ -100,13 +100,6 @@ def test_an_oversized_edit_is_refused():
     assert picker.selector == 'role=button[name*="Save"i]'
 
 
-def test_highlight_asks_node_to_highlight_the_selector():
-    picker = picked()
-    picker.request()
-    picker.handle_command({"cmd": "highlight"})
-    assert picker.request() == {"pick": False, "highlight": picker.selector}
-
-
 def test_reselect_picks_again():
     picker = picked()
     picker.handle_command({"cmd": "reselect"})

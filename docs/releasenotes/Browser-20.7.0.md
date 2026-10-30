@@ -73,7 +73,12 @@ selector in the toolbar, which counts the elements it finds while you type.
   for example `role=button[name="Save"s]`, instead of a CSS selector. `generator=css` keeps
   CSS selectors (now from the current release of the same finder library), and the toolbar
   switches between both for the picked element.
-- Picking needs a click; the 3 second hover countdown and the variant list are gone.
+- Picking needs a click; the 3 second hover countdown and the variant list are gone. The
+  selector's matches stay highlighted with Playwright's highlight until it is used, re-picked
+  or the keyword ends; an edited selector is counted and highlighted once typing pauses.
+- The recorder toolbar of Record Keyword(s) has the same picker behind a *Pick* button, and
+  Playwright's own Pick locator opens it too: the picked selector is added to the keyword as
+  a comment row `# Picked Selector    <selector>`.
 - New `idle_timeout` argument, 5 minutes by default; cancelling with *✕* or Escape fails the
   keyword. Record Selector fails while a Record Keyword(s) session runs in the same context.
 - Works without `bypassCSP=True` on pages with a Content Security Policy.

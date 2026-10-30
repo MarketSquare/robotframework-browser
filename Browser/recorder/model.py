@@ -90,17 +90,28 @@ class Value:
         return "".join(rendered)
 
 
+#: The first cell of the comment row a picked selector is written as.
+PICKED_SELECTOR = "# Picked Selector"
+
+
 @dataclass
 class Call:
-    """One Keyword Call: ``[${assign}=]    Keyword    args...``."""
+    """One Keyword Call: ``[${assign}=]    Keyword    args...``.
+
+    A ``comment`` is a comment row instead, ``keyword`` its first cell: the
+    picked selector of the toolbar's Pick button, written as a cell.
+    """
 
     keyword: str
     args: list[Value]
     assign: str | None = None
+    comment: bool = False
 
     def rendered_args(self) -> list[str]:
         """The argument cells as written into the file."""
-        parameters = KEYWORD_PARAMETERS.get(self.keyword)
+        parameters = (
+            frozenset() if self.comment else KEYWORD_PARAMETERS.get(self.keyword)
+        )
         return [value.render(parameters) for value in self.args]
 
     def render(self) -> str:
@@ -149,15 +160,35 @@ class RecordedKeyword:
     def add(self, call: Call) -> None:
         self._groups.append(_Group(call))
 
+    def add_picked_selector(self, selector: str) -> None:
+        """A comment row with a selector picked with the toolbar's Pick button."""
+        self._groups.append(
+            _Group(
+                Call(
+                    PICKED_SELECTOR,
+                    [Value.literal(selector, selectable=False)],
+                    comment=True,
+                )
+            )
+        )
+
+    def _last_action(self) -> _Group | None:
+        """The group of the last Action: Playwright refines and wraps it even
+        after a picked selector was added."""
+        for group in reversed(self._groups):
+            if not group.primary.comment:
+                return group
+        return None
+
     def update_last(self, call: Call) -> bool:
         """Replace the last Action's Keyword Call with Playwright's refinement.
 
         Values that were turned into Keyword Arguments stay arguments; their
         default follows the newly typed text (AC-33).
         """
-        if not self._groups:
+        group = self._last_action()
+        if group is None:
             return False
-        group = self._groups[-1]
         old = group.primary
         if old.keyword == call.keyword and len(old.args) == len(call.args):
             call.args = [
@@ -169,10 +200,11 @@ class RecordedKeyword:
 
     def attach(self, before: list[Call], after: list[Call]) -> bool:
         """Wrap the last Action's Keyword Call with signal handling."""
-        if not self._groups:
+        group = self._last_action()
+        if group is None:
             return False
-        self._groups[-1].before.extend(before)
-        self._groups[-1].after.extend(after)
+        group.before.extend(before)
+        group.after.extend(after)
         return True
 
     def undo(self) -> bool:

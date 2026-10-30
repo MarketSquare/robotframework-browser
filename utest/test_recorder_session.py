@@ -1219,3 +1219,107 @@ def test_an_upload_without_a_plain_file_name_is_not_recorded(upload):
     s.handle_event("added", upload)
     assert "Upload" not in target.saved[-1]
     assert "not a plain file name" in s.toolbar_state()["notice"]
+
+
+# -- the toolbar's Pick button ------------------------------------------------ #
+
+PICKED = {"selector": 'internal:role=button[name="Save"i]', "css": "#save"}
+
+
+def picking(**kwargs):
+    s, target, clock = session(fixed_name="K", **kwargs)
+    s.handle_command({"cmd": "pick", "id": "p-1"})
+    return s, target
+
+
+def test_pick_opens_the_picker_while_recording():
+    s, _ = picking()
+    state = s.toolbar_state()
+    assert state["picker"]["phase"] == "picking"
+    assert state["answered"] == "p-1"
+    assert s.request() == {"pick": True}
+
+
+def test_pick_while_idle_asks_for_a_keyword():
+    s, _, _ = session()
+    s.handle_command({"cmd": "pick"})
+    assert s.toolbar_state()["picker"] is None
+    assert "Start recording a keyword" in s.toolbar_state()["notice"]
+
+
+def test_playwrights_pick_locator_opens_the_picker_once():
+    s, _, _ = session(fixed_name="K")
+    s.request_pick()
+    s.handle_picked(PICKED)
+    s.request_pick()
+    assert s.toolbar_state()["picker"]["phase"] == "picked"
+
+
+def test_a_pick_reaches_the_picker_and_is_counted():
+    s, _ = picking()
+    s.handle_picked(PICKED)
+    assert s.toolbar_state()["picker"]["selector"] == 'role=button[name*="Save"i]'
+    assert s.request() == {"pick": False, "count": 'role=button[name*="Save"i]'}
+    s.handle_count({"selector": 'role=button[name*="Save"i]', "count": 1})
+    assert s.toolbar_state()["picker"]["count"]["count"] == 1
+
+
+def test_picker_commands_are_prefixed():
+    s, _ = picking()
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-generator", "name": "css"})
+    assert s.toolbar_state()["picker"]["selector"] == "#save"
+
+
+def test_use_writes_the_selector_as_a_comment_row():
+    s, target = picking()
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-use"})
+    state = s.toolbar_state()
+    assert state["picker"] is None
+    assert state["calls"][0]["keyword"] == "# Picked Selector"
+    assert state["calls"][0]["comment"] is True
+    assert state["calls"][0]["values"][0]["selectable"] is False
+    assert '    # Picked Selector    role=button[name*="Save"i]' in target.saved[-1]
+    assert s.request() == {}
+
+
+def test_cancel_closes_the_picker_without_a_row():
+    s, target = picking()
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-cancel"})
+    assert s.toolbar_state()["picker"] is None
+    assert s.toolbar_state()["calls"] == []
+
+
+def test_an_action_refined_after_a_pick_stays_the_same_keyword_call():
+    s, target = picking()
+    s.handle_command({"cmd": "pick-cancel"})
+    s.handle_event("added", FILL)
+    s.handle_command({"cmd": "pick"})
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-use"})
+    s.handle_event("updated", {**FILL, "text": "Alice B"})
+    calls = s.toolbar_state()["calls"]
+    assert [c["keyword"] for c in calls] == ["Fill Text", "# Picked Selector"]
+    assert calls[0]["values"][1]["raw"] == "Alice B"
+
+
+def test_undo_removes_a_picked_selector():
+    s, _ = picking()
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": "pick-use"})
+    s.handle_command({"cmd": "undo"})
+    assert s.toolbar_state()["calls"] == []
+
+
+def test_a_picker_command_without_a_picker_is_an_error():
+    s, _, _ = session(fixed_name="K")
+    s.handle_command({"cmd": "pick-use"})
+    assert s.toolbar_state()["error"] == "No selector is being picked."
+
+
+def test_stop_closes_the_picker():
+    s, _ = picking()
+    s.handle_command({"cmd": "stop"})
+    assert s.toolbar_state()["picker"] is None

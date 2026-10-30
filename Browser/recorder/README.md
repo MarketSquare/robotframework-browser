@@ -166,7 +166,8 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null` |
 | `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
 | `notice` / `error` | one-shot message, cleared by the next command |
-| `picking` | Playwright's Pick locator mode is on |
+| `picking` | Playwright's Pick locator mode is on and could not be handed to the toolbar's picker |
+| `picker` | the toolbar picker's state while the Pick button is in use, else `null` (see Record Selector) |
 | `paused` | the keyword is recording but paused: Actions and signals are ignored until `resume` |
 | `answered` | `id` of the last command Python handled; with `error` it tells a dialog whether its command was refused |
 
@@ -224,9 +225,22 @@ reaches the page are Playwright's. Python drives it like a Recording Session, po
   `notice`, `error`, `answered`.
 - Commands: `generator` (`name`), `edit` (`selector`, at most 10 000 characters, sent once
   typing pauses for 250 ms), `highlight`, `reselect`, `use`, `stop`.
-- Poll request fields besides `state` and `reset`: `pick` (keep a pick running), `count`
-  (a selector to count with `findLocator`, not strict) and `highlight`. The reply carries
-  `picked` (`{selector, css}` or `{error}`), the toolbar `entries` and `count`.
+- Poll request fields besides `state` and `reset`: `pick` (keep a pick running) and
+  `count` (a selector to count with `findLocator`, not strict, and to highlight with
+  Playwright's `locator.highlight()` until the next count, a new pick or the end). The
+  reply carries `picked` (`{selector, css}` or `{error}`), the toolbar `entries` and
+  `count`. `element-picker.ts` does this for both keywords.
+- **The Pick button of Record Keyword(s)** opens the same picker inside a Recording
+  Session (`RecorderSession._picker`, state field `picker`, commands `pick` and
+  `pick-<command>`, `pick-cancel` instead of `stop`). *Use* adds the selector as a comment
+  row `# Picked Selector    <selector>` (`RecordedKeyword.add_picked_selector`), which
+  Undo removes like a Keyword Call; Playwright's later refinement of the previous Action
+  still updates that Action (`_last_action`). The recorder poll carries the same `pick`
+  and `count` fields. `pickLocator()` sets Playwright's mode to `inspecting` and then to
+  `none`; `RecorderBuffers.ownPick` keeps that from ending the session until the poll has
+  switched back to `recording`. Playwright's own Pick locator (mode `recording-inspecting`
+  or `inspecting` outside our pick) is switched back to `recording` and reported as
+  `pickRequested`, which opens our picker: its pick would never reach us.
 
 ## Timing
 
@@ -263,9 +277,9 @@ reaches the page are Playwright's. Python drives it like a Recording Session, po
 
 ## Limitations
 
-- Pick locator: while it is on, Playwright's recorder is disabled and nothing is recorded
-  (the toolbar shows a notice, from `picking`). The picked locator is not delivered in api
-  mode, so it cannot be used.
+- Playwright's Pick locator does not deliver its pick in api mode; the toolbar's own picker
+  takes over (see Record Selector). While picking, nothing is recorded. `picking` (the
+  notice) is left for the case that Playwright's mode cannot be switched back.
 - Hovers are not recorded (Playwright does not emit them in api mode).
 - An uploaded file's folder is unknown to the page; the recorded path has to be completed.
 - Playwright's own overlay cannot be hidden during a session and covers the top centre of

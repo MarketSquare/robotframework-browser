@@ -126,6 +126,14 @@ Cancel Fails The Keyword
 The Idle Timeout Fails The Keyword
     Run Keyword And Expect Error    *timed out*    Record Selector    idle_timeout=1s
 
+Record Selector Fails In A Headless Browser
+    [Setup]    Run Keywords    Open The Selector Page    AND    Allow Recording Headless    ${False}
+    TRY
+        Run Keyword And Expect Error    *needs a visible browser*    Record Selector
+    FINALLY
+        Allow Recording Headless    ${True}
+    END
+
 Record Selector Is Refused While A Recording Session Runs
     ${recording} =    Promise To    Record Keyword    Not Now    ${None}
     Wait For Function    () => window.__rfbToolbarState && window.__rfbToolbarState.state === 'recording'

@@ -64,8 +64,8 @@ class SelectorPicker:
         self.answered: str | None = None
         self.result: str | None = None
         self.cancelled = False
+        # Node counts this selector on the page and highlights what it finds.
         self._count_wanted: str | None = None
-        self._highlight_wanted: str | None = None
 
     # -- toward Node -------------------------------------------------------- #
 
@@ -75,9 +75,6 @@ class SelectorPicker:
         if self._count_wanted is not None:
             request["count"] = self._count_wanted
             self._count_wanted = None
-        if self._highlight_wanted is not None:
-            request["highlight"] = self._highlight_wanted
-            self._highlight_wanted = None
         return request
 
     def toolbar_state(self) -> dict:
@@ -135,7 +132,6 @@ class SelectorPicker:
         handler = {
             "generator": self._generator,
             "edit": self._edit,
-            "highlight": self._highlight,
             "reselect": self._reselect,
             "use": self._use,
             "stop": self._stop,
@@ -173,10 +169,6 @@ class SelectorPicker:
         self.selector = selector
         self.count = None
         self._count_wanted = selector if selector.strip() else None
-
-    def _highlight(self, _command: dict) -> None:
-        if self.selector.strip():
-            self._highlight_wanted = self.selector
 
     def _reselect(self, _command: dict) -> None:
         self.picking = True

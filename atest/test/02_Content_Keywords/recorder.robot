@@ -255,14 +255,14 @@ Name Dialog Closes When A Name Is Accepted After A Rejected One
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
-Pick Locator Mode Shows A Notice And Records Nothing
+Playwright's Pick Locator Opens The Toolbar's Picker And Records Nothing Meanwhile
     ${promise} =    Promise To    Record Keyword    Fill After Picking    ${RESOURCE}
     Toolbar State Should Be    recording
     Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
-    Wait For Function    () => window.__rfbToolbarState.picking === true
+    Picker Should Be Picking
     Fill Text    id=input_name    while picking
-    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording')
-    Wait For Function    () => window.__rfbToolbarState.picking === false
+    Send Command    {cmd: 'pick-cancel'}
+    Wait For Function    () => window.__rfbToolbarState.picker === null
     Fill Text    id=input_name    after picking
     Wait Until Calls    1
     Send Command    {cmd: 'stop'}
@@ -270,6 +270,51 @@ Pick Locator Mode Shows A Notice And Records Nothing
     ${file} =    Get File    ${RESOURCE}
     Should Contain    ${file}    after picking
     Should Not Contain    ${file}    while picking
+
+A Picked Selector Becomes A Comment And Recording Goes On
+    ${promise} =    Promise To    Record Keyword    Pick And Fill    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Send Command    {cmd: 'pick'}
+    Picker Should Be Picking
+    Click    id=input_name
+    Wait For Function
+    ...    () => { const p = window.__rfbToolbarState.picker; return p && p.phase === 'picked' && p.count && p.count.count === 1; }
+    ${selector} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.picker.selector
+    Get Element Count    ${selector}    ==    1
+    Send Command    {cmd: 'pick-use'}
+    Wait For Function    () => window.__rfbToolbarState.picker === null
+    Wait Until Calls    1
+    Fill Text    id=input_name    after the pick
+    Wait Until Calls    2
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    \n${SPACE*4}\# Picked Selector${SPACE*4}${selector}\n
+    Should Contain    ${file}    after the pick
+    Recorded Keyword Replays    ${RESOURCE}    Pick And Fill
+
+Undo Removes A Picked Selector
+    ${promise} =    Promise To    Record Keyword    Pick Undone    ${None}
+    Toolbar State Should Be    recording
+    Send Command    {cmd: 'pick'}
+    Picker Should Be Picking
+    Click    id=input_name
+    Wait For Function    () => (window.__rfbToolbarState.picker || {}).phase === 'picked'
+    Send Command    {cmd: 'pick-use'}
+    Wait Until Calls    1
+    Send Command    {cmd: 'undo'}
+    Wait Until Calls    0
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Picking While Idle Asks For A Keyword First
+    ${promise} =    Promise To    Record Keywords    ${None}
+    Toolbar State Should Be    idle
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
+    Wait For Function    () => (window.__rfbToolbarState.notice || '').includes('Start recording a keyword')
+    Wait For Function    () => window.__rfbToolbarState.picker === null
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
 
 Assert Snapshot Becomes Get Aria Snapshot
     ${promise} =    Promise To    Record Keyword    Check Heading Snapshot    ${RESOURCE}
@@ -807,6 +852,10 @@ Toolbar State Should Be
     [Arguments]    ${state}
     Wait For Function
     ...    () => window.__rfbToolbarState && window.__rfbToolbarState.state === '${state}' && !window.__rfbToolbarState.pending
+
+Picker Should Be Picking
+    Wait For Function
+    ...    () => window.__rfbToolbarState.picker && window.__rfbToolbarState.picker.phase === 'picking'
 
 Wait Until Calls
     [Arguments]    ${count}

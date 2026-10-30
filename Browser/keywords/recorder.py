@@ -70,9 +70,10 @@ class _GrpcRecorderClient:
     def __init__(self, library: LibraryComponent) -> None:
         self._library = library
 
-    def poll(self, state: dict, reset: bool) -> dict:
+    def poll(self, state: dict, reset: bool, request: dict | None = None) -> dict:
         body = json.dumps(
             {
+                **(request or {}),
                 "state": state,
                 "reset": reset,
                 "allowHeadless": self._library.recorder_allows_headless,
@@ -148,6 +149,11 @@ class Recorder(LibraryComponent):
         - *Undo*: removes the Keyword Calls of the last Action.
         - *Pause* (two bars): stops recording until *Resume*; Actions in between are not
           recorded.
+        - *Pick* in the header: picks an element on the page, as `Record Selector` does,
+          and adds its selector to the keyword as a comment row
+          ``# Picked Selector    <selector>``. Playwright's own Pick locator button opens
+          the same picker. While picking, nothing is recorded; *Cancel* returns to
+          recording without a row.
 
         The toolbar is in the recording state from the start. Click a value or a selector in
         the toolbar to turn the whole of it, or a marked part, into a Keyword Argument, named
@@ -183,7 +189,7 @@ class Recorder(LibraryComponent):
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
         key press into that Action, so it is not recorded as a ``Go To`` of its own.
-        While Playwright's Pick locator is on, nothing is recorded. Hovers are not recorded,
+        Hovers are not recorded,
         because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
@@ -243,6 +249,11 @@ class Recorder(LibraryComponent):
         - *Undo*: removes the Keyword Calls of the last Action.
         - *Pause* (two bars): stops recording until *Resume*; Actions in between are not
           recorded.
+        - *Pick* in the header: picks an element on the page, as `Record Selector` does,
+          and adds its selector to the keyword as a comment row
+          ``# Picked Selector    <selector>``. Playwright's own Pick locator button opens
+          the same picker. While picking, nothing is recorded; *Cancel* returns to
+          recording without a row.
         - *Save*: saves the keyword being recorded and returns to idle.
 
         While the toolbar is minimized, its header offers *Start* (idle) or *Save*
@@ -283,7 +294,7 @@ class Recorder(LibraryComponent):
         comparison, and Assert visibility becomes ``Get Element States    ...    *=    visible``.
         Playwright folds a navigation that happens within 5 seconds after a click, fill or
         key press into that Action, so it is not recorded as a ``Go To`` of its own.
-        While Playwright's Pick locator is on, nothing is recorded. Hovers are not recorded,
+        Hovers are not recorded,
         because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
@@ -331,10 +342,10 @@ class Recorder(LibraryComponent):
 
         - *Playwright* / *CSS*: switches between the selector generators for the same
           element, see `SelectorGenerator`.
-        - The selector itself can be edited. Below it, the toolbar counts the elements it
-          finds on the page while you type: one is what most keywords need, several are
-          shown as a warning, none as an error.
-        - *Highlight*: highlights the elements the selector finds.
+        - The selector itself can be edited. The elements it finds stay highlighted on the
+          page, and the toolbar counts them; after an edit both follow once typing pauses
+          for a second. One match is what most keywords need, several are shown as a
+          warning, none as an error. The highlight ends with the keyword.
         - *Reselect*: picks another element.
         - *Use*: returns the selector, also when it does not find exactly one element.
         - *✕* in the header, or Escape: cancels, and the keyword fails.

@@ -41,6 +41,7 @@ from .names import (
     argument_name_error,
     plain_argument_name,
 )
+from .picker import SelectorPicker
 from .target import Target
 
 IDLE = "idle"
@@ -99,6 +100,8 @@ class RecorderSession:
         self._skipped = False
         self._discard_on_stop = False
         self._picking = False
+        #: The toolbar's Pick button: picks a selector into a comment row.
+        self._picker: SelectorPicker | None = None
         self._paused = False
         #: The last write error of a keyword left in `unsaved`.
         self.write_error: str | None = None
@@ -128,6 +131,23 @@ class RecorderSession:
         """Playwright's Pick locator mode is on: nothing is recorded meanwhile."""
         self._picking = picking
 
+    def request(self) -> dict:
+        """What the next poll asks Node to do for the toolbar's Pick button."""
+        return self._picker.request() if self._picker is not None else {}
+
+    def handle_picked(self, picked: dict) -> None:
+        if self._picker is not None:
+            self._picker.handle_picked(picked)
+
+    def handle_count(self, count: dict) -> None:
+        if self._picker is not None:
+            self._picker.handle_count(count)
+
+    def request_pick(self) -> None:
+        """Playwright's Pick locator was turned on; the toolbar picks instead."""
+        if self._picker is None:
+            self._open_picker()
+
     def toolbar_state(self) -> dict:
         keyword = self._keyword
         offer = self._offer and {**self._offer, "text": _shown(self._offer["text"])}
@@ -152,6 +172,9 @@ class RecorderSession:
             "error": self._error,
             "picking": self._picking,
             "paused": self._paused,
+            "picker": self._picker.toolbar_state()
+            if self._picker is not None
+            else None,
             "answered": self._answered,
         }
 
@@ -182,6 +205,7 @@ class RecorderSession:
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
                     "keyword": call.keyword,
                     "values": values,
+                    "comment": call.comment,
                 }
             )
         return calls
@@ -275,7 +299,12 @@ class RecorderSession:
                 _STILL_STARTING if self._pending[0] == _STARTING else _STILL_FINISHING
             )
             return
-        if cmd in _DEFERRED:
+        if cmd == "pick":
+            self._open_picker()
+        elif cmd.startswith("pick-"):
+            self._picker_command(cmd[len("pick-") :], command)
+        elif cmd in _DEFERRED:
+            self._picker = None
             self._defer(cmd, _settle_seconds(command))
         elif cmd == "new":
             self._new(command.get("name"), _settle_seconds(command))
@@ -312,6 +341,7 @@ class RecorderSession:
 
     def close(self) -> list[str]:
         """End the session now; a running Keyword Recording is saved (AC-18)."""
+        self._picker = None
         pending = self._pending
         self._pending = None
         self._starting = None
@@ -420,6 +450,30 @@ class RecorderSession:
             self.unsaved.append(keyword)
         self._finished.append(keyword)
         self.log.append(f"finished '{keyword.name}' with {len(keyword)} Keyword Calls")
+
+    def _open_picker(self) -> None:
+        if self._keyword is None:
+            self._notice = "Start recording a keyword to pick a selector into it."
+            return
+        self._offer = None
+        self._picker = SelectorPicker(None, "playwright")
+
+    def _picker_command(self, cmd: str, command: dict) -> None:
+        picker = self._picker
+        if picker is None or self._keyword is None:
+            self._error = "No selector is being picked."
+            return
+        if cmd == "cancel":
+            self._picker = None
+            return
+        picker.handle_command({**command, "cmd": cmd})
+        if picker.cancelled:
+            self._picker = None
+        elif picker.result is not None:
+            self._keyword.add_picked_selector(picker.result)
+            self._picker = None
+            self._undone = False
+            self._save()
 
     def _undo(self) -> None:
         if self._keyword is None:

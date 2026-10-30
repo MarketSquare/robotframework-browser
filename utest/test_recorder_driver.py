@@ -38,7 +38,7 @@ class Client:
         self.clock = clock
         self.step = step
 
-    def poll(self, state, reset):
+    def poll(self, state, reset, request=None):
         self.polls.append((state, reset))
         if self.clock is not None:
             self.clock.now += self.step
@@ -95,7 +95,7 @@ def test_failing_drain_poll_after_playwright_stop_is_ignored():
     s, clock = make()
 
     class DrainBoom(Client):
-        def poll(self, state, reset):
+        def poll(self, state, reset, request=None):
             if len(self.polls) == FAIL_ON_POLL + SETTLE_POLLS:
                 raise RuntimeError("late")
             return super().poll(state, reset)
@@ -141,7 +141,7 @@ def test_exception_still_saves_and_stops():
     s, clock = make()
 
     class Boom(Client):
-        def poll(self, state, reset):
+        def poll(self, state, reset, request=None):
             if len(self.polls) == FAIL_ON_POLL + SETTLE_POLLS:
                 raise RuntimeError("grpc down")
             return super().poll(state, reset)
@@ -178,7 +178,7 @@ def test_stop_failure_does_not_mask_the_real_error():
     s, clock = make()
 
     class Both(Client):
-        def poll(self, state, reset):
+        def poll(self, state, reset, request=None):
             raise RuntimeError("real")
 
         def stop(self):
@@ -211,7 +211,7 @@ def test_close_failure_still_stops_client_and_keeps_loop_error(monkeypatch):
     monkeypatch.setattr(s, "close", broken_close)
 
     class Boom(Client):
-        def poll(self, state, reset):
+        def poll(self, state, reset, request=None):
             raise RuntimeError("loop error")
 
     client = Boom([], clock)
@@ -351,3 +351,43 @@ def test_entries_apply_in_the_order_they_happened():
     run_session(s, client, clock=clock, sleep=lambda _: None)
     assert s.text().count("Fill Text") == 1
     assert "Bob" in s.text()
+
+
+def test_the_pick_request_and_reply_go_through_the_session():
+    s, clock = make(fixed_name="K")
+
+    class PickClient(Client):
+        def __init__(self, replies, clock):
+            super().__init__(replies, clock)
+            self.requests = []
+
+        def poll(self, state, reset, request=None):
+            self.requests.append(request)
+            return super().poll(state, reset, request)
+
+    picked = {"selector": "css=#a", "css": "#a"}
+    client = PickClient(
+        [
+            {**reply(), "pickRequested": True},
+            {**reply(), "picked": picked},
+            {**reply(), "count": {"selector": "css=#a", "count": 1}},
+            reply(commands=[{"cmd": "pick-use"}]),
+            reply(commands=[{"cmd": "stop"}]),
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert client.requests[:4] == [
+        {},
+        {"pick": True},
+        {"pick": False, "count": "css=#a"},
+        {"pick": False},
+    ]
+    assert client.requests[4] == {}
+    assert [state["picker"] is not None for state, _ in client.polls][:5] == [
+        False,
+        True,
+        True,
+        True,
+        False,
+    ]

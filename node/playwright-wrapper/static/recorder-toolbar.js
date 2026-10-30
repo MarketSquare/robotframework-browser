@@ -64,7 +64,6 @@
             undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
             save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
             target: icon('<circle cx="8" cy="8" r="5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/>'),
-            highlight: icon('<rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke-dasharray="2.2 1.8"/>'),
         };
         // Inline and important, so no page style hides them - such as the common
         // `:not(:defined) { visibility: hidden }`, which matches both elements.
@@ -158,6 +157,8 @@
       .tok-keyword { color: var(--tok-keyword); }
       .tok-argument { color: var(--tok-argument); }
       .tok-variable { color: var(--tok-variable); }
+      /* A picked selector is a comment row of the keyword. */
+      .tok-comment, .tok-comment .tok-argument, .tok-comment .tok-variable { color: var(--faint); font-style: italic; }
       .cell.pick { cursor: pointer; text-decoration: underline dotted var(--teal); }
       .cell.pick:hover { background: rgb(0 192 181 / 20%); }
       .notice { color: var(--amber); }
@@ -206,6 +207,7 @@
       .marked textarea { background: transparent; }
       /* Record Selector: the selector, coloured like the site's code, under a
          transparent textarea that takes the typing. */
+      #selectorBox { display: flex; flex-direction: column; gap: 8px; }
       .gens { gap: 0; }
       .gens > button { border-radius: 0; }
       .gens > button:first-child { border-radius: 4px 0 0 4px; }
@@ -215,7 +217,12 @@
                                 'DejaVu Sans Mono', monospace; font-size: 11px; white-space: pre-wrap;
                                 word-break: break-all; }
       .sel .marks { color: var(--tok-argument); }
+      /* The coloured tokens must set the text exactly as the textarea does, or the
+         caret drifts away from it: the universal font rule above applies to them too. */
+      .sel .marks * { font: inherit; letter-spacing: inherit; }
       .sel textarea { color: transparent; caret-color: var(--ink); resize: none; min-height: 3.4em; }
+      /* Focus shows on the field's own border, not as an outline over its neighbours. */
+      .sel textarea:focus-visible { outline: none; border-color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
       .tok-sep { color: var(--faint); }
       .match-one { color: var(--teal); }
       .match-many { color: var(--amber); }
@@ -228,6 +235,7 @@
         <span class="count" id="count"></span>
         <button class="primary quick" id="headNew" title="Name a new keyword and start recording it" hidden>${ICONS.record}Start</button>
         <button class="primary quick rec" id="headSave" title="Save this keyword and stop recording it. The session stays open for the next one." hidden>${ICONS.save}Save</button>
+        <button class="quick" id="headPick" title="Pick an element on the page and add its selector to the keyword as a comment" hidden>${ICONS.target}Pick</button>
         <button id="collapse" title="Minimize the toolbar">${ICONS.minimize}</button>
         <button id="stop" title="End the recording session. The keyword being recorded is saved; the test continues.">${ICONS.close}</button>
       </div>
@@ -250,7 +258,7 @@
           <div class="marked sel" id="selEditor"><div class="marks" id="selMarks" aria-hidden="true"></div><textarea id="selInput" rows="2" spellcheck="false" autocomplete="off" aria-label="Selector"></textarea></div>
           <div id="selCount"></div>
           <div class="row" id="selRow">
-            <button id="selHighlight" title="Highlight the elements the selector finds">${ICONS.highlight}Highlight</button>
+            <button id="selCancel" title="Back to recording, without a selector" hidden>Cancel</button>
             <button id="selReselect" title="Pick another element">${ICONS.target}Reselect</button>
             <button class="primary" id="selUse" title="Return this selector">${ICONS.save}Use</button>
           </div>
@@ -638,7 +646,7 @@
         const escapeDialog = () => {
             if (!$('argModal').hidden) closeArgModal();
             else if (!$('modal').hidden && nameSent === null) closeModal();
-            else if ((window.__rfbToolbarState || {}).mode === 'selector') send({ cmd: 'stop' });
+            else if (selectorState()) sendSelector({ cmd: 'cancel' });
         };
         const toolbarInput = {
             argName: () => {
@@ -746,38 +754,55 @@
             marks.scrollTop = $('selInput').scrollTop;
         };
         $('selInput').addEventListener('scroll', showSelectorMarks);
-        // Each change is counted on the page; typing sends it once it pauses.
+        // The selector panel serves Record Selector (`mode: selector`) and the Pick
+        // button of a recording (`picker`), whose commands are prefixed `pick-`.
+        // Cancel ends Record Selector, but only the pick of a recording.
+        const selectorState = () => {
+            const state = window.__rfbToolbarState || {};
+            return state.mode === 'selector' ? state : state.picker || null;
+        };
+        const sendSelector = (command) => {
+            const standalone = (window.__rfbToolbarState || {}).mode === 'selector';
+            if (standalone) return send(command.cmd === 'cancel' ? { cmd: 'stop' } : command);
+            return send({ ...command, cmd: `pick-${command.cmd}` });
+        };
+        // Each change is counted and highlighted on the page once typing pauses.
         let editTimer = null;
         const sendEdit = () => {
             if (editTimer === null) return;
             clearTimeout(editTimer);
             editTimer = null;
-            send({ cmd: 'edit', selector: $('selInput').value });
+            sendSelector({ cmd: 'edit', selector: $('selInput').value });
         };
         const editSelector = () => {
             showSelectorMarks();
             $('selCount').textContent = '';
+            $('selCount').hidden = true;
             if (editTimer !== null) clearTimeout(editTimer);
-            editTimer = setTimeout(sendEdit, 250);
+            editTimer = setTimeout(sendEdit, 1000);
         };
-        $('selHighlight').addEventListener('click', () => {
-            sendEdit();
-            send({ cmd: 'highlight' });
-        });
-        $('selReselect').addEventListener('click', () => send({ cmd: 'reselect' }));
+        $('selReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
+        $('selCancel').addEventListener('click', () => sendSelector({ cmd: 'cancel' }));
         $('selUse').addEventListener('click', () => {
             sendEdit();
-            send({ cmd: 'use' });
+            sendSelector({ cmd: 'use' });
         });
+        $('headPick').addEventListener('click', () => send({ cmd: 'pick' }));
         const GENERATOR_LABELS = { playwright: 'Playwright', css: 'CSS' };
         let shownVersion = null;
-        const renderSelector = (state) => {
+        // `keyword` is the keyword being recorded, or null for Record Selector.
+        const renderSelector = (state, keyword) => {
             const picking = state.phase === 'picking';
-            $('dot').className = picking ? 'dot rec' : 'dot';
-            $('title').classList.remove('rec');
-            $('title').textContent = state.label ? `Record Selector - ${state.label}` : 'Record Selector';
+            $('title').classList.toggle('rec', keyword !== null);
             $('count').textContent = '';
-            $('stop').title = 'Cancel - Record Selector fails';
+            if (keyword === null) {
+                $('dot').className = picking ? 'dot rec' : 'dot';
+                $('title').textContent = state.label ? `Record Selector - ${state.label}` : 'Record Selector';
+                $('stop').title = 'Cancel - Record Selector fails';
+            } else {
+                $('dot').className = 'dot rec';
+                $('title').textContent = `${keyword} - pick a selector`;
+            }
             $('selHint').textContent = picking
                 ? 'Click an element in the page to pick it.'
                 : 'Edit the selector if needed, then use it.';
@@ -790,14 +815,14 @@
                 button.setAttribute('aria-pressed', String(name === state.generator));
                 button.disabled = !picking && name in unavailable;
                 button.title = button.disabled ? String(unavailable[name]) : `Use the ${button.textContent} selector`;
-                button.addEventListener('click', () => send({ cmd: 'generator', name }));
+                button.addEventListener('click', () => sendSelector({ cmd: 'generator', name }));
                 gens.appendChild(button);
             });
             $('selEditor').hidden = picking;
             $('selRow').hidden = false;
-            $('selHighlight').hidden = picking;
             $('selReselect').hidden = picking;
             $('selUse').hidden = picking;
+            $('selCancel').hidden = keyword === null;
             if (state.version !== shownVersion) {
                 shownVersion = state.version;
                 $('selInput').value = state.selector || '';
@@ -822,6 +847,7 @@
                     counter.textContent = `${count.count} matches`;
                 }
             }
+            counter.hidden = !counter.textContent;
             $('notice').textContent = state.notice || '';
             $('notice').hidden = !state.notice;
             $('err').textContent = state.error || '';
@@ -902,13 +928,13 @@
                 container.appendChild(assign);
             }
             const kw = document.createElement('span');
-            kw.className = 'tok-keyword';
+            kw.className = call.comment ? 'tok-comment' : 'tok-keyword';
             kw.textContent = call.keyword ?? '';
             container.appendChild(kw);
             (call.values || []).forEach((value, valueIndex) => {
                 const cell = document.createElement('span');
                 const pick = !!onPick && !!value.selectable;
-                cell.className = pick ? 'cell pick' : 'cell';
+                cell.className = pick ? 'cell pick' : call.comment ? 'cell tok-comment' : 'cell';
                 appendTokens(cell, value.tokens);
                 if (marked && marked.value === valueIndex) markText(cell, marked.text);
                 if (pick) {
@@ -922,12 +948,14 @@
         const RECORDER_PARTS = ['picking', 'calls', 'hint', 'offer', 'args', 'argHint', 'idleRow', 'recRow'];
         const renderBody = (state) => {
             const selectorMode = state.mode === 'selector';
-            $('selectorBox').hidden = !selectorMode;
-            if (selectorMode) {
+            const picker = !selectorMode && state.state === 'recording' ? state.picker : null;
+            $('selectorBox').hidden = !selectorMode && !picker;
+            $('headPick').hidden = selectorMode || !!picker || state.state !== 'recording' || !!state.pending;
+            if (selectorMode || picker) {
                 RECORDER_PARTS.forEach((id) => {
                     $(id).hidden = true;
                 });
-                renderSelector(state);
+                renderSelector(selectorMode ? state : picker, selectorMode ? null : state.name || 'Keyword');
                 return;
             }
             $('stop').title = 'End the recording session. The keyword being recorded is saved; the test continues.';

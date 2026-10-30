@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
+jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
 
 import {
     ensureRecorder,
@@ -29,6 +30,7 @@ const freshBuffers = (armed = false): RecorderBuffers => ({
     armed,
     active: false,
     rendered: new WeakMap(),
+    ownPick: false,
 });
 
 beforeEach(() => jest.clearAllMocks());
@@ -259,8 +261,8 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
     return context as any;
 }
 
-const stateFor = (context: unknown, headless = false) =>
-    ({ getActiveContext: () => context, activeBrowser: { headless } }) as any;
+const stateFor = (context: unknown, headless = false, activePage: unknown = undefined) =>
+    ({ getActiveContext: () => context, getActivePage: () => activePage, activeBrowser: { headless } }) as any;
 const pollBody = (body: Record<string, unknown>) => ({ body: JSON.stringify(body) }) as any;
 async function poll(context: unknown, body: Record<string, unknown> = {}) {
     const response = await recorderPoll(pollBody(body), stateFor(context));
@@ -298,15 +300,16 @@ describe('recorderPoll', () => {
         }
     });
 
-    it('reports picking while an inspecting mode is on', async () => {
-        const page = fakePage('recording-inspecting');
-        const context = fakeRecorderContext([page]);
-        const reply = await poll(context);
-        expect(reply.picking).toBe(true);
-        expect(reply.mode).toBe('recording');
-        page.win.mode = 'recording';
-        expect((await poll(context)).picking).toBe(false);
-    });
+    it.each(['recording-inspecting', 'inspecting'])(
+        'hands an inspecting mode (%s) over to the toolbar picker',
+        async (mode) => {
+            const page = fakePage(mode);
+            const context = fakeRecorderContext([page]);
+            const reply = await poll(context);
+            expect(reply).toMatchObject({ picking: false, pickRequested: true, mode: 'recording' });
+            expect(page.win.mode).toBe('recording');
+        },
+    );
 
     it('reports how many pages the context has', async () => {
         const context = fakeRecorderContext([fakePage(), fakePage()]);
@@ -542,5 +545,64 @@ describe('recorderStop', () => {
         await expect(recorderStop({} as any, stateFor(undefined))).resolves.toEqual({
             log: 'No context to stop recording in.',
         });
+    });
+});
+
+describe('recorderPoll with the toolbar Pick button', () => {
+    function pickPage() {
+        let resolve: (locator: unknown) => void = () => undefined;
+        const page = {
+            pickLocator: jest.fn(() => new Promise((r) => (resolve = r))),
+            cancelPickLocator: jest.fn(async () => undefined),
+        };
+        return { page, pick: (selector: string) => resolve({ _selector: selector, elementHandle: async () => null }) };
+    }
+    const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+    async function pollWith(context: unknown, active: unknown, body: Record<string, unknown>) {
+        const response = await recorderPoll(pollBody(body), stateFor(context, false, active));
+        return JSON.parse(response.json);
+    }
+
+    it("turns Playwright's Pick locator back into recording and asks Python to pick", async () => {
+        const page = fakePage('recording');
+        const context = fakeRecorderContext([page]);
+        await poll(context);
+        page.win.mode = 'recording-inspecting';
+        const reply = await poll(context);
+        expect(reply.pickRequested).toBe(true);
+        expect(reply.picking).toBe(false);
+        expect(page.win.mode).toBe('recording');
+    });
+
+    it('does not end the session while its own pick holds the mode at none', async () => {
+        const page = fakePage('recording');
+        const context = fakeRecorderContext([page]);
+        const picker = pickPage();
+        await poll(context);
+        await pollWith(context, picker.page, { pick: true });
+        expect(picker.page.pickLocator).toHaveBeenCalledTimes(1);
+        page.win.mode = 'inspecting';
+        expect((await pollWith(context, picker.page, { pick: true })).mode).toBe('recording');
+        page.win.mode = 'none';
+        picker.pick('css=#a');
+        await flush();
+        const picked = await pollWith(context, picker.page, { pick: true });
+        expect(picked.mode).toBe('recording');
+        expect(picked.picked.selector).toBe('css=#a');
+        expect(page.win.mode).toBe('recording');
+        // Recording again: from now on a stop is a stop.
+        expect((await pollWith(context, picker.page, { pick: false })).mode).toBe('recording');
+        page.win.mode = 'none';
+        expect((await pollWith(context, picker.page, {})).mode).toBe('stopped');
+    });
+
+    it('cancels its pick when Python closes the picker', async () => {
+        const page = fakePage('recording');
+        const context = fakeRecorderContext([page]);
+        const picker = pickPage();
+        await poll(context);
+        await pollWith(context, picker.page, { pick: true });
+        await pollWith(context, picker.page, {});
+        expect(picker.page.cancelPickLocator).toHaveBeenCalled();
     });
 });

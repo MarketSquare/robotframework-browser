@@ -99,8 +99,14 @@ Defined in `Browser/recorder/CONTEXT.md`.
   recording; it then becomes *Resume*, with icon and text. Actions while paused are not
   recorded; an Action made right before *Pause* still is, one made right before *Resume*
   is not. The toolbar shows that the recording is paused.
-- **AC-45** While Playwright's *Pick locator* mode is active, nothing is recorded; the toolbar
-  shows a clear notice saying so for as long as the mode is on.
+- **AC-45** Playwright's *Pick locator* button opens the toolbar's own picker (AC-57), as its
+  pick is not delivered in api mode. While picking, nothing is recorded.
+- **AC-57** *Pick* in the toolbar header picks an element as `Record Selector` does: the
+  selector panel replaces the Keyword Call list, with the generator switch, the editable
+  selector, its live count and Playwright's highlight. *Use* adds a comment row
+  `# Picked Selector    <selector>` to the keyword, which *Undo* removes; *Cancel* adds
+  nothing. Recording goes on afterwards in both cases; while idle, the toolbar asks to
+  start a keyword first.
 
 ### Ending
 
@@ -204,7 +210,7 @@ See ADR 0010.
 ## Feature scope
 
 The feature scope is fully described by acceptance criteria **AC-01 to AC-41 and AC-45 to
-AC-56**. Anything not
+AC-57**. Anything not
 stated there is not part of v1.
 
 ## Changes outside the recorder
@@ -229,8 +235,6 @@ These are deliberately not part of v1. The design should not block them.
 **Recording**
 - Several browser contexts in one session
 - A non-blocking `Start Recording` / `Stop Recording` pair, with the test continuing
-- An own element picker in the toolbar that shows a picked element's Browser selector to copy
-  (Playwright's *Pick locator* result is not delivered in api mode)
 - Recording hovers (Playwright 1.64 does not report them in api mode)
 - A tolerant ARIA snapshot comparison like Playwright's `toMatchAriaSnapshot`
 - Merging Actions beyond what Playwright merges itself (e.g. `Fill Text` + `Enter`)

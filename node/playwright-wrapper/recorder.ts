@@ -28,6 +28,7 @@ import * as path from 'path';
 import { BrowserContext, Page } from 'playwright';
 
 import { logger } from './browser_logger';
+import { drivePick, endPick, Pick, PickRequest } from './element-picker';
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
@@ -69,6 +70,12 @@ export interface RecorderBuffers {
     active: boolean;
     // The toolbar state each page shows, so an unchanged state is not sent again.
     rendered: WeakMap<Page, string>;
+    // The toolbar's Pick button: an element picked with `page.pickLocator()`.
+    pick?: Pick;
+    // From the start of our own pick until the recorder records again:
+    // `pickLocator()` switches Playwright's mode to `inspecting` and then to
+    // `none`, which is neither a stop nor Playwright's Pick locator.
+    ownPick: boolean;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -122,7 +129,7 @@ function clearEntries(buffers: RecorderBuffers): void {
 }
 
 export function newBuffers(): RecorderBuffers {
-    return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap() };
+    return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap(), ownPick: false };
 }
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
@@ -323,9 +330,30 @@ export async function resetSession(
     await writeMode(context, 'recording');
 }
 
+// Python's picker sends `pick` while it is open; without it, a pick ends.
+async function pickInRecording(
+    state: PlaywrightState,
+    buffers: RecorderBuffers,
+    request: PickRequest,
+): Promise<Record<string, unknown>> {
+    if (request.pick === undefined) {
+        if (buffers.pick) await endPick(buffers.pick);
+        buffers.pick = undefined;
+        return {};
+    }
+    if (!buffers.pick) {
+        const page = state.getActivePage();
+        if (!page) return { picked: { error: 'No page is open to pick in.' } };
+        buffers.pick = { page, picking: false };
+    }
+    if (request.pick === true && !buffers.pick.picking && !buffers.pick.picked) buffers.ownPick = true;
+    return drivePick(state, buffers.pick, request);
+}
+
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
     const context = state.getActiveContext();
-    const { state: toolbarState, reset, allowHeadless } = JSON.parse(request.body || '{}');
+    const body = JSON.parse(request.body || '{}');
+    const { state: toolbarState, reset, allowHeadless } = body;
     if (!context) {
         if (reset) throw new Error('No browser context is open. Open a page before recording.');
         // Closed during the session, with its pages: ends it like closing the last page.
@@ -340,20 +368,36 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
     const buffers = await ensureRecorder(context);
     if (reset) await resetSession(context, buffers);
     if (toolbarState) await renderToolbars(context, buffers, toolbarState);
+    const picked = await pickInRecording(state, buffers, body);
     const mode = await readMode(context);
-    // Only honour a stop once the recorder has actually been seen recording,
-    // otherwise a slow start would end the session immediately.
-    if (mode !== undefined && !STOP_MODES.has(mode)) buffers.armed = true;
-    // The reset finds no page to switch when the only one is navigating; until
-    // the recorder is seen recording, every poll tries again.
-    else if (!buffers.armed) await writeMode(context, 'recording');
-    const stopped = buffers.armed && mode !== undefined && STOP_MODES.has(mode);
+    let pickRequested = false;
+    if (buffers.ownPick) {
+        // Our pick is over: record again, and stop ignoring the modes once it does.
+        if (!buffers.pick?.picking) {
+            if (mode === 'recording') buffers.ownPick = false;
+            else await writeMode(context, 'recording');
+        }
+    } else if (isPicking(mode)) {
+        // Playwright's Pick locator: its pick never reaches us, so ours takes over.
+        pickRequested = await writeMode(context, 'recording');
+    } else if (mode !== undefined && !STOP_MODES.has(mode)) {
+        // Only honour a stop once the recorder has actually been seen recording,
+        // otherwise a slow start would end the session immediately.
+        buffers.armed = true;
+    } else if (!buffers.armed) {
+        // The reset finds no page to switch when the only one is navigating; until
+        // the recorder is seen recording, every poll tries again.
+        await writeMode(context, 'recording');
+    }
+    const stopped = !buffers.ownPick && buffers.armed && mode !== undefined && STOP_MODES.has(mode);
     return jsonResponse(
         JSON.stringify({
             mode: stopped ? 'stopped' : 'recording',
-            picking: isPicking(mode),
+            picking: !buffers.ownPick && !pickRequested && isPicking(mode),
+            pickRequested,
             pages: context.pages().length,
             entries: drainEntries(buffers),
+            ...picked,
         }),
         '',
     );
@@ -364,7 +408,13 @@ export async function recorderStop(_request: pb.Request_Empty, state: Playwright
     if (!context) return emptyWithLog('No context to stop recording in.');
     try {
         const recorder = existingRecorder(context);
-        if (recorder) (await recorder).active = false;
+        if (recorder) {
+            const buffers = await recorder;
+            buffers.active = false;
+            if (buffers.pick) await endPick(buffers.pick);
+            buffers.pick = undefined;
+            buffers.ownPick = false;
+        }
     } catch {
         // The recorder never started; nothing buffers commands.
     }

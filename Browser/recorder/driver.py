@@ -34,8 +34,9 @@ LOGGED_REPR_LIMIT = 200
 
 
 class RecorderClient(Protocol):
-    def poll(self, state: dict, reset: bool) -> dict:
-        """One poll reply; raises if Node's reply cannot be read."""
+    def poll(self, state: dict, reset: bool, request: dict | None = None) -> dict:
+        """One poll reply; raises if Node's reply cannot be read. ``request``
+        carries what the toolbar's Pick button needs of Node."""
         ...
 
     def stop(self) -> None: ...
@@ -53,9 +54,11 @@ def run_session(
     reset = True
     try:
         while True:
-            reply = client.poll(session.toolbar_state(), reset)
+            reply = client.poll(session.toolbar_state(), reset, session.request())
             reset = False
             session.set_picking(reply.get("picking") is True)
+            if _apply_pick(session, reply):
+                last_activity = clock()
             if _apply(session, reply):
                 last_activity = clock()
             session.tick()
@@ -107,6 +110,22 @@ def _entries(reply: dict) -> list[dict]:
         if isinstance(entry, dict)
         and ("command" not in entry or isinstance(entry["command"], dict))
     ]
+
+
+def _apply_pick(session: RecorderSession, reply: dict) -> bool:
+    """The Pick button's part of a reply; True if something was picked or asked for."""
+    active = False
+    if reply.get("pickRequested") is True:
+        session.request_pick()
+        active = True
+    picked = reply.get("picked")
+    if isinstance(picked, dict):
+        session.handle_picked(picked)
+        active = True
+    count = reply.get("count")
+    if isinstance(count, dict):
+        session.handle_count(count)
+    return active
 
 
 def _drain_after_stop(session: RecorderSession, client: RecorderClient) -> None:
