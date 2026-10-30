@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-210-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-211-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -547,6 +547,9 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/msbt-saab"><img src="https://avatars.githubusercontent.com/u/192189929?v=4?s=100" width="100px;" alt="msbt-saab"/><br /><sub><b>msbt-saab</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Amsbt-saab" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/wesleyke2"><img src="https://avatars.githubusercontent.com/u/44478671?v=4?s=100" width="100px;" alt="wesleyke2"/><br /><sub><b>wesleyke2</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3Awesleyke2" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ShryukGrandhi"><img src="https://avatars.githubusercontent.com/u/85529990?v=4?s=100" width="100px;" alt="ShryukGrandhi"/><br /><sub><b>ShryukGrandhi</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=ShryukGrandhi" title="Code">💻</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://checkmk.com"><img src="https://avatars.githubusercontent.com/u/47812383?v=4?s=100" width="100px;" alt="Checkmk"/><br /><sub><b>Checkmk</b></sub></a><br /><a href="#financial-Checkmk" title="Financial">💵</a></td>
     </tr>
   </tbody>
 </table>
