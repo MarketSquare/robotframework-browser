@@ -104,8 +104,8 @@ of the signal values is selectable.
 ## Selector mapping
 
 Playwright's selector generator uses eight engines; each is rewritten into public syntax
-with the same meaning (`action_mapper.to_browser_selector`), except `internal:label` and
-`internal:control=any-frame`.
+with the same meaning (`action_mapper.to_browser_selector`). Only what has no public form
+stays internal, with a toolbar notice, such as an attribute with an empty value.
 
 | Playwright internal | Browser selector |
 |---------------------|------------------|
@@ -119,8 +119,8 @@ with the same meaning (`action_mapper.to_browser_selector`), except `internal:la
 | `internal:attr=[placeholder="Email"i]` (case-insensitive substring) | `[placeholder*="Email"i]` |
 | `... >> internal:control=enter-frame >> ...` | `... >>> ...` |
 | `css`, `nth` | unchanged |
-| `internal:label="Map"i` | unchanged, with a toolbar notice |
-| `internal:control=any-frame >> iframe[name="b"] >> internal:control=enter-frame >> ...` (a frame path of two or more frames, shortened) | `internal:control=any-frame >> iframe[name="b"] >>> ...`, with a toolbar notice |
+| `internal:label="Map"i` | `label="Map"i` (Browser's label engine takes the same values) |
+| `internal:control=any-frame >> iframe[name="b"] >> internal:control=enter-frame >> ...` (a frame path of two or more frames, shortened) | `>>> iframe[name="b"] >>> ...` (a leading `>>>` searches every frame) |
 
 Why each form, all read from Playwright 1.64:
 

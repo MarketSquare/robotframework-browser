@@ -59,8 +59,10 @@ def rendered(action: dict) -> str | None:
             'internal:role=paragraph >> internal:has-text="Card one"i >> i',
             'role=paragraph >> :scope:has-text("Card one") >> i',
         ),
-        # No public equivalent: kept, and the toolbar says so.
-        ('internal:label="Email"i', 'internal:label="Email"i'),
+        # Browser's label engine takes Playwright's values as they are.
+        ('internal:label="Email"i', 'label="Email"i'),
+        ('internal:label="Email"s', 'label="Email"s'),
+        ("internal:label=/e-?mail/i", "label=/e-?mail/i"),
         # `s` is exact and case-sensitive (CSS has no `s` flag), `i` is a
         # case-insensitive substring. Verified against Playwright 1.64.
         ('internal:testid=[data-testid="login"s]', '[data-testid="login"]'),
@@ -85,6 +87,13 @@ def rendered(action: dict) -> str | None:
             'internal:attr=[id="frame"] >> internal:control=enter-frame >> internal:role=textbox',
             '[id="frame"] >>> role=textbox',
         ),
+        # a shortened path to a deep frame becomes a leading ">>>"
+        (
+            'internal:control=any-frame >> internal:attr=[name="b"s]'
+            ' >> internal:control=enter-frame >> internal:label="Pin"i',
+            '>>> [name="b"] >>> label="Pin"i',
+        ),
+        ("internal:control=any-frame >> internal:role=button", ">>> role=button"),
     ],
 )
 def test_to_browser_selector(internal, expected):
@@ -94,9 +103,10 @@ def test_to_browser_selector(internal, expected):
 @pytest.mark.parametrize(
     ("selector", "engines"),
     [
-        ('internal:label="Map"i', ["internal:label"]),
+        ('internal:label="Map"i', []),
         ('internal:text="Map"i', []),
-        ('#frame >>> internal:label="Map"i >> internal:label="x"i', ["internal:label"]),
+        ("internal:control=any-frame >> internal:role=button", []),
+        ('internal:attr=[alt=""i] >> internal:attr=[alt=/x/]', ["internal:attr"]),
     ],
 )
 def test_internal_selector_notice_names_the_engines_left(selector, engines):

@@ -60,8 +60,8 @@ def test_a_generator_without_a_selector_is_unavailable():
 
 def test_an_internal_selector_comes_with_a_notice():
     picker = SelectorPicker(None, "playwright")
-    picker.handle_picked({"selector": 'internal:label="Map"i', "css": ".map"})
-    assert "internal:label" in picker.toolbar_state()["notice"]
+    picker.handle_picked({"selector": 'internal:attr=[alt=""i]', "css": ".map"})
+    assert "internal:attr" in picker.toolbar_state()["notice"]
 
 
 def test_a_failed_pick_is_an_error_and_keeps_picking():

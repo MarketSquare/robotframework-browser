@@ -1004,12 +1004,28 @@ def test_an_unusable_quiet_time_waits_the_whole_settle_time(quiet_ms):
 def test_a_selector_left_internal_is_recorded_with_a_notice():
     s, target, _ = session()
     start(s, "K")
+    # An empty attribute value has no public form.
     s.handle_event(
         "added",
-        {"name": "click", "selector": 'internal:label="Map"i', "button": "left"},
+        {"name": "click", "selector": 'internal:attr=[alt=""i]', "button": "left"},
     )
-    assert "internal:label" in s.toolbar_state()["notice"]
-    assert 'Click    internal:label="Map"i' in target.saved[-1]
+    assert "internal:attr" in s.toolbar_state()["notice"]
+    assert 'Click    internal:attr=[alt=""i]' in target.saved[-1]
+
+
+def test_labels_and_deep_frames_are_recorded_in_browser_syntax():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event(
+        "added",
+        {
+            "name": "click",
+            "selector": 'internal:control=any-frame >> internal:label="Map"i',
+            "button": "left",
+        },
+    )
+    assert s.toolbar_state()["notice"] is None
+    assert 'Click    >>> label="Map"i' in target.saved[-1]
 
 
 UPLOAD_CLICK = {**CLICK, "selector": 'internal:role=button[name="Open Report"i]'}

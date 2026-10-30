@@ -790,9 +790,9 @@ Every Recorded Selector Finds Exactly The Clicked Element
         Should Be Equal As Integers    ${clicked}    ${index}    ${targets}[${index}] was recorded as ${selector}
     END
 
-A Click Two Frames Deep Keeps The Any-Frame Selector And Says So
+A Click Two Frames Deep Is Recorded With A Leading Frame Separator
     [Documentation]    Playwright shortens a frame path of two or more frames to
-    ...    `internal:control=any-frame`, which has no Browser syntax yet.
+    ...    `internal:control=any-frame`, which Browser writes as a leading `>>>`.
     New Page    ${RECORDER_SELECTORS_URL}
     Evaluate JavaScript
     ...    ${None}
@@ -803,8 +803,9 @@ A Click Two Frames Deep Keeps The Any-Frame Selector And Says So
     Click    id=frame >>> id=inner >>> text=Two frames deep
     Wait Until Calls    1
     ${selector} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.calls[0].values[0].raw
-    Should Start With    ${selector}    internal:control=any-frame >>
-    Wait For Function    () => (window.__rfbToolbarState.notice || '').includes('internal:control')
+    Should Start With    ${selector}    >>>${SPACE}
+    ${notice} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.notice
+    Should Be Equal    ${notice}    ${None}
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
     ${clicked} =    Evaluate JavaScript    ${selector}    (element) => element.__clicked
@@ -857,6 +858,11 @@ Translated Selectors Match Like Playwright
     ...    internal:attr=[alt="logo"i]
     ...    internal:attr=[id="frame"s] >> internal:control=enter-frame >> internal:role=button[name="In frame"i]
     ...    internal:attr=[id="frame"s] >> internal:control=enter-frame >> internal:attr=[placeholder="email"i]
+    ...    internal:label="Map widget"i
+    ...    internal:label="map"i
+    ...    internal:label="Full name"s
+    ...    internal:control=any-frame >> internal:role=button[name="In frame"i]
+    ...    internal:control=any-frame >> internal:attr=[id="inner"s] >> internal:control=enter-frame >> internal:role=button[name="Two frames deep"i]
         ${translated} =    Evaluate    Browser.recorder.action_mapper.to_browser_selector($internal)
         ...    modules=Browser.recorder.action_mapper
         Should Not Be Equal    ${translated}    ${internal}

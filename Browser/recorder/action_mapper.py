@@ -42,6 +42,9 @@ from .model import ArgRef, Call, Value
 # --------------------------------------------------------------------------- #
 
 _ENTER_FRAME = "internal:control=enter-frame"
+# Playwright's shortened path to a frame two or more frames deep; Browser writes
+# it as a leading `>>>`, which searches every frame.
+_ANY_FRAME = "internal:control=any-frame"
 
 
 def _split_parts(selector: str) -> list[str]:
@@ -242,6 +245,9 @@ def _translate_part(part: str) -> str:
     for engine in ("internal:testid=", "internal:attr="):
         if part.startswith(engine):
             return _translate_attribute(part[len(engine) :]) or part
+    if part.startswith("internal:label="):
+        # Browser's `label=` is Playwright's label engine, with the same values.
+        return "label=" + part[len("internal:label=") :]
     # Everything else passes through: Playwright's locator parser accepts its
     # own internal engines verbatim, so this is always correct, just less readable.
     return part
@@ -252,7 +258,8 @@ def to_browser_selector(selector: str) -> str:
     if not selector:
         return selector
     parts = _split_parts(selector)
-    translated = [_translate_part(p) for p in parts]
+    any_frame = parts[:1] == [_ANY_FRAME]
+    translated = [_translate_part(p) for p in (parts[1:] if any_frame else parts)]
     # Rebuild, turning frame boundaries into Browser's ">>>" piercing separator
     # and attaching a text filter to the part it filters.
     out: list[str] = []
@@ -266,7 +273,8 @@ def to_browser_selector(selector: str) -> str:
             out[-1] += part
         else:
             out.append(":scope" + part)
-    return " >> ".join(out).replace(" >>> >> ", " >>> ")
+    browser_selector = " >> ".join(out).replace(" >>> >> ", " >>> ")
+    return f">>> {browser_selector}" if any_frame else browser_selector
 
 
 # A css part a pseudo-class can be appended to: no engine prefix, no list.
