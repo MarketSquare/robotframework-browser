@@ -144,12 +144,14 @@ A Pick Does Not Reach The Page
     Wait For    ${promise}
     ${clicks} =    Evaluate JavaScript    ${None}    () => window.__pageClicks
     Should Be Equal As Integers    ${clicks}    0
+    The Page Has Its Own Pointer Again
 
 Cancel Fails The Keyword
     ${promise} =    Promise To    Record Selector
     Picker Should Be Picking
     Send Command    {cmd: 'stop'}
     Run Keyword And Expect Error    *Record Selector was cancelled.    Wait For    ${promise}
+    The Page Has Its Own Pointer Again
     Wait For Function    () => !window.__rfbToolbarState
 
 The Idle Timeout Fails The Keyword
@@ -218,3 +220,9 @@ Click In Toolbar
     ...    ${None}
     ...    () => { const r = window.toolbarRoot.getElementById('${id}').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }
     Mouse Button    click    ${box}[0]    ${box}[1]
+
+The Page Has Its Own Pointer Again
+    [Documentation]    Playwright's pick turns the pointer into a hand on every frame's body.
+    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
+    Wait For Function    () => !document.querySelector('#frame').contentDocument.body.hasAttribute('data-pw-cursor')
+    ...    timeout=2s

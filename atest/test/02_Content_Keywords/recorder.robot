@@ -263,6 +263,7 @@ Playwright's Pick Locator Opens The Toolbar's Picker And Records Nothing Meanwhi
     Fill Text    id=input_name    while picking
     Send Command    {cmd: 'pick-cancel'}
     Wait For Function    () => window.__rfbToolbarState.picker === null
+    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
     Fill Text    id=input_name    after picking
     Wait Until Calls    1
     Send Command    {cmd: 'stop'}
@@ -284,6 +285,7 @@ A Picked Selector Becomes A Comment And Recording Goes On
     Send Command    {cmd: 'pick-use'}
     Wait For Function    () => window.__rfbToolbarState.picker === null
     Wait Until Calls    1
+    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
     Fill Text    id=input_name    after the pick
     Wait Until Calls    2
     Send Command    {cmd: 'stop'}
@@ -337,6 +339,18 @@ Picking While Idle Asks For A Keyword First
     Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
     Wait For Function    () => (window.__rfbToolbarState.notice || '').includes('Start recording a keyword')
     Wait For Function    () => window.__rfbToolbarState.picker === null
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+An Assertion Tool Leaves The Page Its Own Pointer
+    ${promise} =    Promise To    Record Keyword    Assert And Back    ${None}
+    Toolbar State Should Be    recording
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('assertingVisibility')
+    Wait For Function    () => document.body.getAttribute('data-pw-cursor') === 'pointer'
+    # A person stays in the tool longer than one poll of the recorder (200 ms).
+    Sleep    0.5s
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording')
+    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 

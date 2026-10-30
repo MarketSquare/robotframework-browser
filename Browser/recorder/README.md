@@ -342,10 +342,14 @@ reaches the page are Playwright's. Python drives it like a Recording Session, po
    element (`_ignoreOverlayEvent`) for clicks, input and keys, and `contextmenu` is still the
    only one it records without that check; Playwright does not restyle other `x-pw-glass`
    elements (it only styles its own instance inline).
-10. `page.pickLocator()` and `page.cancelPickLocator()` still exist, and the returned
+10. Playwright still leaves `body[data-pw-cursor=pointer]` behind when it switches from
+   Pick locator or an assertion tool to a tool without a cursor; `resetPlaywrightCursor`
+   removes it (atests "An Assertion Tool Leaves The Page Its Own Pointer" and "The Page
+   Has Its Own Pointer Again"). Once Playwright clears it itself, the workaround can go.
+11. `page.pickLocator()` and `page.cancelPickLocator()` still exist, and the returned
    locator still carries the selector in `_selector` (`internalSelector` in
    `selector-picker.ts`); `inv atest --suite record_selector` passes.
-11. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
+12. `inv atest --suite "Recorder"` passes (`atest/test/02_Content_Keywords/recorder.robot`);
    it replays a recorded keyword end to end.
 
 ## Robot Framework upgrade checklist

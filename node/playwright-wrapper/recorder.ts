@@ -28,7 +28,7 @@ import * as path from 'path';
 import { BrowserContext, Page } from 'playwright';
 
 import { logger } from './browser_logger';
-import { drivePick, endPick, Pick, PickRequest } from './element-picker';
+import { drivePick, endPick, Pick, PickRequest, resetPlaywrightCursor } from './element-picker';
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
@@ -76,6 +76,8 @@ export interface RecorderBuffers {
     // `pickLocator()` switches Playwright's mode to `inspecting` and then to
     // `none`, which is neither a stop nor Playwright's Pick locator.
     ownPick: boolean;
+    // Playwright's mode at the last poll, to see it leave a mode with a hand pointer.
+    lastMode?: string;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -93,6 +95,11 @@ export function toAction(payload: unknown): Action | null {
 // Playwright's "Pick locator" overlay button toggles these modes. While on, the
 // recorder is disabled: no Actions, no signals, and the pick is not delivered.
 const PICKING_MODES = new Set(['recording-inspecting', 'inspecting']);
+
+// The modes whose tools turn the pointer into a hand.
+export function handPointer(mode: string | undefined): boolean {
+    return mode !== undefined && (PICKING_MODES.has(mode) || mode.startsWith('asserting'));
+}
 
 export function isPicking(mode: string | undefined): boolean {
     return mode !== undefined && PICKING_MODES.has(mode);
@@ -370,6 +377,10 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
     if (toolbarState) await renderToolbars(context, buffers, toolbarState);
     const picked = await pickInRecording(state, buffers, body);
     const mode = await readMode(context);
+    if (handPointer(buffers.lastMode) && !handPointer(mode)) {
+        await onEveryPage(context, resetPlaywrightCursor);
+    }
+    buffers.lastMode = mode;
     let pickRequested = false;
     if (buffers.ownPick) {
         // Our pick is over: record again, and stop ignoring the modes once it does.
@@ -422,5 +433,6 @@ export async function recorderStop(_request: pb.Request_Empty, state: Playwright
     // next session would have to start a new recording.
     await writeMode(context, STOPPED_MODE);
     await onEveryPage(context, removeToolbar);
+    await onEveryPage(context, resetPlaywrightCursor);
     return emptyWithLog('Recording stopped.');
 }

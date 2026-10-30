@@ -85,6 +85,23 @@ function internalSelector(locator: Locator): string {
     return selector;
 }
 
+// Playwright switches the pointer to a hand for Pick locator and its assertion
+// tools (`body[data-pw-cursor=pointer]`), but leaves it when switching to a tool
+// without a cursor, such as recording in api mode or none (Playwright 1.64).
+export async function resetPlaywrightCursor(page: Page): Promise<void> {
+    let frames;
+    try {
+        frames = page.frames();
+    } catch {
+        return;
+    }
+    await Promise.all(
+        frames.map((frame) =>
+            frame.evaluate(() => document.body?.removeAttribute('data-pw-cursor')).catch(() => undefined),
+        ),
+    );
+}
+
 export function startPick(pick: Pick): void {
     pick.picking = true;
     pick.page
@@ -102,6 +119,7 @@ export function startPick(pick: Pick): void {
         })
         .finally(() => {
             pick.picking = false;
+            void resetPlaywrightCursor(pick.page);
         });
 }
 
