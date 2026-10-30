@@ -209,6 +209,14 @@ class Browser(DynamicCore):
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
+    | ``label``        | The element's label, as Playwright's ``getByLabel``. | ``label=Email``            |
+
+    ``label`` finds a form field, or any element, by its label: a ``<label>``
+    pointing at it or wrapping it, the elements named in ``aria-labelledby``, or
+    ``aria-label``. ``label=Email`` matches a label containing ``email`` in any
+    case, ``label="Email"`` (or ``"Email"s``) only exactly ``Email``,
+    ``label="Email"i`` any case again, and ``label=/^e-?mail/i`` a regular
+    expression. Whitespace is normalized in all forms.
 
     An attribute engine is equivalent to the matching css attribute selector:
     ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
@@ -266,8 +274,8 @@ class Browser(DynamicCore):
 
     Clauses are separated by ``>>`` and each searches inside the result of the
     previous one. The chain returns what the last clause matched; prefix a clause
-    with ``*`` to return that one instead. A value containing ``>>`` must be
-    quoted, as in ``text="some >> text"``.
+    with ``*`` to return that one instead. A value containing ``>>`` or ``>>>``
+    must be quoted, as in ``text="some >> text"``.
 
     | Click    css=.checkout >> text=Confirm
     | Get Element    *css=article >> text=Hello    # returns the article

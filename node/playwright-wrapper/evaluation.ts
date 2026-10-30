@@ -28,6 +28,7 @@ import {
     parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
+import { toPlaywrightSelector } from './selector-syntax';
 
 /** Resolve a Locator and return the selector string Playwright built for it.
  */
@@ -162,7 +163,7 @@ export async function getByX(request: pb.Request_GetByOptions, state: Playwright
     exists(activePage, 'Could not find active page');
     let document: Page | FrameLocator = activePage;
     if (frameSelector) {
-        document = activePage.frameLocator(frameSelector);
+        document = activePage.frameLocator(toPlaywrightSelector(frameSelector, strictMode));
         if (!strictMode) {
             document = document.first();
         }

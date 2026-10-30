@@ -16,15 +16,14 @@ import { Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
 import { PlaywrightState } from './playwright-state';
-
-const ANY_FRAME_PREFIX = '>>> ';
+import { toPlaywrightSelector } from './selector-syntax';
 
 /**
  * Resolve the playwright Locator on active page, frame or elementHandle.
  *
  * @param state A reference to current PlaywrightState object.
- * @param selector A valid Playwright selector, or a frame piercing selector such as
- *  "#iframe >>> //button"; a leading ">>> " searches in any frame of the page.
+ * @param selector A Browser selector: Playwright's syntax plus `>>>`, a leading `>>>`
+ *  and `label=` (see selector-syntax.ts), e.g. "#iframe >>> //button".
  *  A selector returned by `Get Element` can be used as the
  *  first clause of one. There is no `element=` engine -- see getElement in
  *  evaluation.ts.
@@ -40,15 +39,7 @@ export async function findLocator(
 ): Promise<Locator> {
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    // A leading `>>> ` searches in any frame, like `page.frameLocator()` without a selector.
-    if (selector.startsWith(ANY_FRAME_PREFIX)) {
-        selector = `internal:control=any-frame >> ${selector.slice(ANY_FRAME_PREFIX.length)}`;
-    }
-    if (strictMode) {
-        selector = selector.replaceAll(' >>> ', ' >> internal:control=enter-frame >> ');
-    } else {
-        selector = selector.replaceAll(' >>> ', ' >> nth=0 >> internal:control=enter-frame >> ');
-    }
+    selector = toPlaywrightSelector(selector, strictMode);
     if (strictMode) {
         logger.info(`Strict mode is enabled, find Locator with ${selector} in page.`);
         return activePage.locator(selector);
