@@ -209,17 +209,7 @@ class Browser(DynamicCore):
     | ``data-test-id`` | ``data-test-id`` attribute.                  | ``data-test-id=login``             |
     | ``data-test``    | ``data-test`` attribute.                     | ``data-test=login``                |
     | ``css:light``    | As ``css``, but does not pierce shadow DOM.  | ``css:light=.class``               |
-    | ``label``        | The element's label, as Playwright's ``getByLabel``. | ``label=Email``            |
-
-    ``label`` finds a form field, or any element, by its label: a ``<label>``
-    pointing at it or wrapping it, the elements named in ``aria-labelledby``, or
-    ``aria-label``. ``label=Email`` matches a label containing ``email`` in any
-    case, and so does ``label="Email"i``; ``label="Email"`` (or ``"Email"s``)
-    matches only exactly ``Email``, and ``label=/^e-?mail/i`` is a regular
-    expression. Whitespace is normalized in all forms. Quotes in an unquoted
-    label are part of it: ``label=Customer's name``. ``label`` is a clause of
-    its own; it is not translated inside Playwright's nested selectors such as
-    ``internal:has="..."``.
+    | ``label``        | Label, as Playwright's ``getByLabel``.       | ``label=Email``                    |
 
     An attribute engine is equivalent to the matching css attribute selector:
     ``data-test-id=foo`` is ``css=[data-test-id="foo"]``.
