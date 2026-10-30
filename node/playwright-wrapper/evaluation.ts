@@ -161,10 +161,11 @@ export async function getByX(request: pb.Request_GetByOptions, state: Playwright
     const frameSelector = request.frameSelector;
     const activePage = state.getActivePage();
     exists(activePage, 'Could not find active page');
-    let document: Page | FrameLocator | Locator = activePage;
+    let document: Page | FrameLocator = activePage;
     if (frameSelector.trim() === '>>>') {
-        // A selector prefix of only `>>>` searches every frame.
-        document = activePage.locator('internal:control=any-frame');
+        // A selector prefix of only `>>>` searches every frame: Playwright's
+        // public frameLocator() without a selector.
+        document = activePage.frameLocator();
     } else if (frameSelector) {
         document = activePage.frameLocator(toPlaywrightSelector(frameSelector, strictMode));
         if (!strictMode) {
