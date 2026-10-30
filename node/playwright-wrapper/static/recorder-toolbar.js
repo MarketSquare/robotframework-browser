@@ -69,7 +69,10 @@
         const glass = document.createElement('x-pw-glass');
         glass.style.setProperty('display', 'contents', 'important');
         const host = document.createElement(TAG);
-        host.style.cssText = 'position:fixed;z-index:2147483647;top:0;left:0';
+        // `right`, `bottom` and the rest undo the user agent's popover styles (below).
+        host.style.cssText =
+            'position:fixed;z-index:2147483647;top:0;left:0;right:auto;bottom:auto;margin:0;padding:0;' +
+            'border:0;background:transparent;overflow:visible;width:auto;height:auto;max-width:none;max-height:none';
         host.style.setProperty('display', 'block', 'important');
         host.style.setProperty('visibility', 'visible', 'important');
         // A modal of the page (Radix and others) sets `pointer-events: none` on body.
@@ -896,6 +899,7 @@
             window.removeEventListener('pointercancel', endResize);
             ISOLATED_EVENTS.forEach((type) => window.removeEventListener(type, isolate, true));
             PAGE_CLICK_EVENTS.forEach((type) => window.removeEventListener(type, notePageClick, true));
+            overlayWatch.disconnect();
             glass.remove();
             delete window.__rfbToolbarRender;
             delete window.__rfbToolbarState;
@@ -903,7 +907,48 @@
             delete window.__rfbToolbarConnected;
         };
 
-        const attach = () => document.body && document.body.appendChild(glass);
+        // Playwright draws its highlight and Pick locator overlay in the top layer
+        // (a manual popover), above every z-index, and brings it to the front each
+        // time it installs it. The toolbar is a manual popover too and follows it
+        // to the front: the top layer paints the popover opened last on top.
+        const popover = typeof host.showPopover === 'function';
+        if (popover) host.setAttribute('popover', 'manual');
+        const toFront = () => {
+            if (!popover || !host.isConnected) return;
+            const focused = root.activeElement;
+            const selection =
+                focused && typeof focused.selectionStart === 'number'
+                    ? [focused.selectionStart, focused.selectionEnd]
+                    : null;
+            try {
+                if (host.matches(':popover-open')) host.hidePopover();
+                host.showPopover();
+            } catch {
+                /* not in a document that supports it - stays a fixed element */
+            }
+            if (focused && root.activeElement !== focused) {
+                focused.focus({ preventScroll: true });
+                if (selection) focused.setSelectionRange(selection[0], selection[1]);
+            }
+        };
+        const followed = new WeakSet();
+        const followPlaywright = () => {
+            document.querySelectorAll('x-pw-glass').forEach((pane) => {
+                if (pane === glass || followed.has(pane)) return;
+                followed.add(pane);
+                pane.addEventListener('toggle', (event) => {
+                    if (event.newState === 'open') toFront();
+                });
+            });
+        };
+        const overlayWatch = new MutationObserver(followPlaywright);
+        overlayWatch.observe(document.documentElement, { childList: true });
+        followPlaywright();
+        const attach = () => {
+            if (!document.body) return;
+            document.body.appendChild(glass);
+            toFront();
+        };
         window.__rfbToolbarConnected = () => glass.isConnected;
         if (document.body) attach();
         else document.addEventListener('DOMContentLoaded', attach);
