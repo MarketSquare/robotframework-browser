@@ -1,8 +1,8 @@
 import logging
 import os
+import sys
 
 import requests
-from robot.api import logger
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
@@ -28,8 +28,10 @@ def _post(event: str, data, status: str | None = None) -> None:
             timeout=2,
         )
     except Exception as error:  # noqa: BLE001
-        logger.debug(
-            f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server} - {error!r}"
+        # Not robot.api.logger: a message from start_test lands in the test body, ahead of its keywords.
+        print(
+            f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server} - {error!r}",
+            file=sys.__stderr__,
         )
 
 
