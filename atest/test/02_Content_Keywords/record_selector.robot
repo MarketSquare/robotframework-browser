@@ -133,9 +133,11 @@ Reselect Picks Another Element
     Get Text    ${selector}    ==    Heading Level Two
 
 A Pick Does Not Reach The Page
+    # The page's own handlers listen as most do, bubbling. A capture listener registered
+    # before Playwright's pick tool would see the click before Playwright consumes it.
     Evaluate JavaScript
     ...    ${None}
-    ...    () => { window.__pageClicks = 0; document.addEventListener('click', () => window.__pageClicks++, true); }
+    ...    () => { window.__pageClicks = 0; document.addEventListener('click', () => window.__pageClicks++); }
     ${promise} =    Promise To    Record Selector
     Picker Should Be Picking
     Click    text=Pressed

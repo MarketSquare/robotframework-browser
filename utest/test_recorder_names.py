@@ -290,7 +290,9 @@ def _run_probe(tmp_path, call, via_symlink=False):
         "Given User Is Logged In\n"
         "    Log    z\n\n"
         "Open ${thing} From Suite\n"
-        "    Log    ${thing}\n"
+        "    Log    ${thing}\n",
+        # The call may hold non-ASCII names; Robot reads UTF-8 on every platform.
+        encoding="utf-8",
     )
     suite = "run.robot"
     if via_symlink:
