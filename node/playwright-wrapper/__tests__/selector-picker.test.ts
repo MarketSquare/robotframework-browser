@@ -145,6 +145,16 @@ describe('drivePick', () => {
         expect(pick.highlight).toBeUndefined();
     });
 
+    it('switches the highlight off and counts without highlighting', async () => {
+        const dispose = highlighter(1);
+        const pick: Pick = { page: {} as any, picking: false };
+        await drivePick({} as any, pick, { pick: false, count: 'css=b' });
+        const reply = await drivePick({} as any, pick, { pick: false, highlight: false, count: 'css=c' });
+        expect(dispose).toHaveBeenCalledTimes(1);
+        expect(pick.highlight).toBeUndefined();
+        expect(reply.count).toEqual({ selector: 'css=c', count: 1 });
+    });
+
     it('drops the highlight when picking again', async () => {
         const dispose = highlighter(1);
         const pick: Pick = { page: { pickLocator: () => new Promise(() => undefined) } as any, picking: false };

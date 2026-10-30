@@ -13,7 +13,7 @@ def picked(generator="playwright"):
 
 def test_a_new_picker_picks_and_shows_its_label():
     picker = SelectorPicker("Save button", "playwright")
-    assert picker.request() == {"pick": True}
+    assert picker.request() == {"pick": True, "highlight": True}
     state = picker.toolbar_state()
     assert state["mode"] == "selector"
     assert state["label"] == "Save button"
@@ -30,8 +30,12 @@ def test_a_pick_shows_the_translated_playwright_selector_and_counts_it():
     picker = picked()
     assert picker.selector == 'role=button[name*="Save"i]'
     assert picker.toolbar_state()["phase"] == "picked"
-    assert picker.request() == {"pick": False, "count": 'role=button[name*="Save"i]'}
-    assert picker.request() == {"pick": False}
+    assert picker.request() == {
+        "pick": False,
+        "highlight": True,
+        "count": 'role=button[name*="Save"i]',
+    }
+    assert picker.request() == {"pick": False, "highlight": True}
 
 
 def test_a_pick_with_the_css_generator_shows_the_css_selector():
@@ -155,7 +159,7 @@ def test_run_picker_returns_the_used_selector_and_stops():
         SelectorPicker(None, "css"), client, sleep=lambda _seconds: None
     )
     assert selector == "#save"
-    assert client.requests[0] == ({"pick": True}, True)
+    assert client.requests[0] == ({"pick": True, "highlight": True}, True)
     assert client.stopped
 
 
@@ -208,3 +212,29 @@ def test_run_picker_ignores_malformed_entries():
         )
         == 'role=button[name*="Save"i]'
     )
+
+
+def test_highlight_is_on_by_default_and_can_be_switched_off():
+    picker = picked()
+    assert picker.toolbar_state()["highlight"] is True
+    picker.request()
+    picker.handle_command({"cmd": "highlight", "on": False})
+    assert picker.request() == {"pick": False, "highlight": False}
+
+
+def test_switching_highlight_on_again_highlights_the_shown_selector():
+    picker = picked()
+    picker.handle_command({"cmd": "highlight", "on": False})
+    picker.request()
+    picker.handle_command({"cmd": "highlight", "on": True})
+    assert picker.request() == {
+        "pick": False,
+        "highlight": True,
+        "count": picker.selector,
+    }
+
+
+def test_highlight_needs_a_boolean():
+    picker = picked()
+    picker.handle_command({"cmd": "highlight", "on": "yes"})
+    assert picker.toolbar_state()["error"] == "'on' must be true or false."

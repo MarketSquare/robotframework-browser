@@ -46,6 +46,8 @@ export interface Pick {
 export interface PickRequest {
     pick?: unknown;
     count?: unknown;
+    // `false` switches the highlight off; anything else leaves it on.
+    highlight?: unknown;
 }
 
 let cssSource: string | undefined;
@@ -148,10 +150,11 @@ export async function drivePick(state: PlaywrightState, pick: Pick, request: Pic
         reply.picked = pick.picked;
         pick.picked = undefined;
     }
+    if (request.highlight === false) await clearHighlight(pick);
     if (typeof request.count === 'string') {
         const counted = await countOf(state, request.count);
         reply.count = { selector: request.count, ...counted };
-        await highlightSelector(state, pick, request.count, counted.count);
+        if (request.highlight !== false) await highlightSelector(state, pick, request.count, counted.count);
     }
     return reply;
 }

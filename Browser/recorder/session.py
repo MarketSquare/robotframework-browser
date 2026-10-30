@@ -102,6 +102,8 @@ class RecorderSession:
         self._picking = False
         #: The toolbar's Pick button: picks a selector into a comment row.
         self._picker: SelectorPicker | None = None
+        #: The highlight switch of the last pick, kept for the next one.
+        self._pick_highlight = True
         self._paused = False
         #: The last write error of a keyword left in `unsaved`.
         self.write_error: str | None = None
@@ -456,7 +458,7 @@ class RecorderSession:
             self._notice = "Start recording a keyword to pick a selector into it."
             return
         self._offer = None
-        self._picker = SelectorPicker(None, "playwright")
+        self._picker = SelectorPicker(None, "playwright", self._pick_highlight)
 
     def _picker_command(self, cmd: str, command: dict) -> None:
         picker = self._picker
@@ -467,6 +469,7 @@ class RecorderSession:
             self._picker = None
             return
         picker.handle_command({**command, "cmd": cmd})
+        self._pick_highlight = picker.highlight
         if picker.cancelled:
             self._picker = None
         elif picker.result is not None:

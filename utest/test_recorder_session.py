@@ -1237,7 +1237,7 @@ def test_pick_opens_the_picker_while_recording():
     state = s.toolbar_state()
     assert state["picker"]["phase"] == "picking"
     assert state["answered"] == "p-1"
-    assert s.request() == {"pick": True}
+    assert s.request() == {"pick": True, "highlight": True}
 
 
 def test_pick_while_idle_asks_for_a_keyword():
@@ -1259,7 +1259,11 @@ def test_a_pick_reaches_the_picker_and_is_counted():
     s, _ = picking()
     s.handle_picked(PICKED)
     assert s.toolbar_state()["picker"]["selector"] == 'role=button[name*="Save"i]'
-    assert s.request() == {"pick": False, "count": 'role=button[name*="Save"i]'}
+    assert s.request() == {
+        "pick": False,
+        "highlight": True,
+        "count": 'role=button[name*="Save"i]',
+    }
     s.handle_count({"selector": 'role=button[name*="Save"i]', "count": 1})
     assert s.toolbar_state()["picker"]["count"]["count"] == 1
 
@@ -1323,3 +1327,11 @@ def test_stop_closes_the_picker():
     s, _ = picking()
     s.handle_command({"cmd": "stop"})
     assert s.toolbar_state()["picker"] is None
+
+
+def test_the_next_pick_keeps_the_highlight_switch():
+    s, _ = picking()
+    s.handle_command({"cmd": "pick-highlight", "on": False})
+    s.handle_command({"cmd": "pick-cancel"})
+    s.handle_command({"cmd": "pick"})
+    assert s.toolbar_state()["picker"]["highlight"] is False

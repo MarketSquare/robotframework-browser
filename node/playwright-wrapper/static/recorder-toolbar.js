@@ -63,6 +63,7 @@
             bin: icon('<path d="M2.5 4.5h11M6.5 4.5V3h3v1.5M4 4.5l.7 9h6.6l.7-9M6.8 7v4.5M9.2 7v4.5"/>'),
             undo: icon('<path d="M5.5 3.5L2.5 6.5l3 3"/><path d="M2.5 6.5h7a3.5 3.5 0 010 7H7"/>'),
             save: icon('<path d="M3 8.5l3.2 3.2L13 4.8"/>'),
+            highlight: icon('<rect x="2.5" y="2.5" width="11" height="11" rx="1.5" stroke-dasharray="2.2 1.8"/>'),
             target: icon('<circle cx="8" cy="8" r="5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/>'),
         };
         // Inline and important, so no page style hides them - such as the common
@@ -212,7 +213,7 @@
       .gens > button { border-radius: 0; }
       .gens > button:first-child { border-radius: 4px 0 0 4px; }
       .gens > button:last-child { border-radius: 0 4px 4px 0; }
-      .gens > button[aria-pressed=true] { background: var(--chrome); border-color: var(--teal); color: var(--teal); }
+      #selHighlight[aria-pressed=true], .gens > button[aria-pressed=true] { background: var(--chrome); border-color: var(--teal); color: var(--teal); }
       .sel > *, .sel textarea { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
                                 'DejaVu Sans Mono', monospace; font-size: 11px; white-space: pre-wrap;
                                 word-break: break-all; }
@@ -235,6 +236,8 @@
         <span class="count" id="count"></span>
         <button class="primary quick" id="headNew" title="Name a new keyword and start recording it" hidden>${ICONS.record}Start</button>
         <button class="primary quick rec" id="headSave" title="Save this keyword and stop recording it. The session stays open for the next one." hidden>${ICONS.save}Save</button>
+        <button id="headReselect" title="Pick another element" aria-label="Pick another element" hidden>${ICONS.target}</button>
+        <button class="primary quick" id="headUse" title="Use this selector" hidden>${ICONS.save}Use</button>
         <button class="quick" id="headPick" title="Pick an element on the page and add its selector to the keyword as a comment" hidden>${ICONS.target}Pick</button>
         <button id="collapse" title="Minimize the toolbar">${ICONS.minimize}</button>
         <button id="stop" title="End the recording session. The keyword being recorded is saved; the test continues.">${ICONS.close}</button>
@@ -259,6 +262,7 @@
           <div id="selCount"></div>
           <div class="row" id="selRow">
             <button id="selCancel" title="Back to recording, without a selector" hidden>Cancel</button>
+            <button class="icon-only" id="selHighlight" aria-pressed="true" title="Highlight the elements the selector finds" aria-label="Highlight the matches">${ICONS.highlight}</button>
             <button id="selReselect" title="Pick another element">${ICONS.target}Reselect</button>
             <button class="primary" id="selUse" title="Return this selector">${ICONS.save}Use</button>
           </div>
@@ -413,7 +417,12 @@
         // only when minimized and only when the body would offer the same.
         const updateQuickButtons = () => {
             const state = window.__rfbToolbarState || {};
-            const offered = collapsed && !state.fixedName && state.mode !== 'selector';
+            // A minimized selector panel offers its two decisions in the header.
+            const selector = state.mode === 'selector' ? state : state.picker || null;
+            const decide = collapsed && !!selector && selector.phase === 'picked';
+            $('headReselect').hidden = !decide;
+            $('headUse').hidden = !decide;
+            const offered = collapsed && !state.fixedName && state.mode !== 'selector' && !state.picker;
             $('headNew').hidden = !offered || state.state === 'recording';
             $('headSave').hidden = !offered || state.state !== 'recording';
             $('headNew').disabled = !!state.pending;
@@ -782,12 +791,21 @@
             editTimer = setTimeout(sendEdit, 1000);
         };
         $('selReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
+        $('selHighlight').addEventListener('click', () => {
+            sendEdit();
+            sendSelector({ cmd: 'highlight', on: $('selHighlight').getAttribute('aria-pressed') !== 'true' });
+        });
         $('selCancel').addEventListener('click', () => sendSelector({ cmd: 'cancel' }));
         $('selUse').addEventListener('click', () => {
             sendEdit();
             sendSelector({ cmd: 'use' });
         });
         $('headPick').addEventListener('click', () => send({ cmd: 'pick' }));
+        $('headReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
+        $('headUse').addEventListener('click', () => {
+            sendEdit();
+            sendSelector({ cmd: 'use' });
+        });
         const GENERATOR_LABELS = { playwright: 'Playwright', css: 'CSS' };
         let shownVersion = null;
         // `keyword` is the keyword being recorded, or null for Record Selector.
@@ -821,6 +839,12 @@
             $('selEditor').hidden = picking;
             $('selRow').hidden = false;
             $('selReselect').hidden = picking;
+            $('selHighlight').hidden = picking;
+            $('selHighlight').setAttribute('aria-pressed', String(state.highlight !== false));
+            $('selHighlight').title =
+                state.highlight !== false
+                    ? 'Highlighting the matches - click to stop'
+                    : 'Not highlighting - click to highlight the matches';
             $('selUse').hidden = picking;
             $('selCancel').hidden = keyword === null;
             if (state.version !== shownVersion) {

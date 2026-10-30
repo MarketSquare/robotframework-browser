@@ -346,9 +346,12 @@ class Recorder(LibraryComponent):
           page, and the toolbar counts them; after an edit both follow once typing pauses
           for a second. One match is what most keywords need, several are shown as a
           warning, none as an error. The highlight ends with the keyword.
+        - *Highlight* (a dashed square): switches the highlight off and on; it is on by
+          default.
         - *Reselect*: picks another element.
         - *Use*: returns the selector, also when it does not find exactly one element.
         - *✕* in the header, or Escape: cancels, and the keyword fails.
+        - Minimized, the header offers *Reselect* and *Use* once an element is picked.
 
         | =Arguments= | =Description= |
         | ``label`` | Shown in the toolbar header, to say which element to pick. |

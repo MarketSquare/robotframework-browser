@@ -46,7 +46,9 @@ class PickerClient(Protocol):
 class SelectorPicker:
     """What the toolbar shows while a selector is recorded, and what was chosen."""
 
-    def __init__(self, label: str | None, generator: str) -> None:
+    def __init__(
+        self, label: str | None, generator: str, highlight: bool = True
+    ) -> None:
         if generator not in GENERATORS:
             raise ValueError(f"Unknown selector generator '{generator}'.")
         self.label = label
@@ -64,6 +66,8 @@ class SelectorPicker:
         self.answered: str | None = None
         self.result: str | None = None
         self.cancelled = False
+        #: Whether the shown selector's matches are highlighted on the page.
+        self.highlight = highlight
         # Node counts this selector on the page and highlights what it finds.
         self._count_wanted: str | None = None
 
@@ -71,7 +75,7 @@ class SelectorPicker:
 
     def request(self) -> dict:
         """What the next poll asks Node to do besides rendering the toolbar."""
-        request: dict = {"pick": self.picking}
+        request: dict = {"pick": self.picking, "highlight": self.highlight}
         if self._count_wanted is not None:
             request["count"] = self._count_wanted
             self._count_wanted = None
@@ -87,6 +91,7 @@ class SelectorPicker:
             "unavailable": self.unavailable,
             "selector": self.selector,
             "version": self.version,
+            "highlight": self.highlight,
             "count": self.count,
             "notice": self.notice,
             "error": self.error,
@@ -131,6 +136,7 @@ class SelectorPicker:
         name = command.get("cmd")
         handler = {
             "generator": self._generator,
+            "highlight": self._highlight,
             "edit": self._edit,
             "reselect": self._reselect,
             "use": self._use,
@@ -147,6 +153,15 @@ class SelectorPicker:
             command_id = command.get("id")
             if isinstance(command_id, str):
                 self.answered = command_id
+
+    def _highlight(self, command: dict) -> None:
+        on = command.get("on")
+        if not isinstance(on, bool):
+            raise ValueError("'on' must be true or false.")
+        self.highlight = on
+        # Highlighting again needs a count: Node highlights what it counts.
+        if on and not self.picking and self.selector.strip():
+            self._count_wanted = self.selector
 
     def _show(self, selector: str) -> None:
         self.selector = selector

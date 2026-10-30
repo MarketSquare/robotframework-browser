@@ -379,9 +379,9 @@ def test_the_pick_request_and_reply_go_through_the_session():
     run_session(s, client, clock=clock, sleep=lambda _: None)
     assert client.requests[:4] == [
         {},
-        {"pick": True},
-        {"pick": False, "count": "css=#a"},
-        {"pick": False},
+        {"pick": True, "highlight": True},
+        {"pick": False, "highlight": True, "count": "css=#a"},
+        {"pick": False, "highlight": True},
     ]
     assert client.requests[4] == {}
     assert [state["picker"] is not None for state, _ in client.polls][:5] == [

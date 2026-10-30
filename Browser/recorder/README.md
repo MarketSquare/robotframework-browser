@@ -224,8 +224,11 @@ reaches the page are Playwright's. Python drives it like a Recording Session, po
   the toolbar replaces its input), `count` (`{selector, count}` or `{selector, error}`),
   `notice`, `error`, `answered`.
 - Commands: `generator` (`name`), `edit` (`selector`, at most 10 000 characters, sent once
-  typing pauses for 250 ms), `highlight`, `reselect`, `use`, `stop`.
-- Poll request fields besides `state` and `reset`: `pick` (keep a pick running) and
+  typing pauses for a second), `highlight` (`on`: boolean), `reselect`, `use`, `stop`.
+  State field `highlight` says whether the matches are highlighted; a recording session
+  keeps it for its next pick.
+- Poll request fields besides `state` and `reset`: `pick` (keep a pick running),
+  `highlight` (`false` removes the highlight and counts without one) and
   `count` (a selector to count with `findLocator`, not strict, and to highlight with
   Playwright's `locator.highlight()` until the next count, a new pick or the end). The
   reply carries `picked` (`{selector, css}` or `{error}`), the toolbar `entries` and

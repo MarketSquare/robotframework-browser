@@ -90,6 +90,35 @@ An Element In A Shadow Root Gets A Piercing Css Selector
     Should Contain    ${css}    ${SPACE}>>${SPACE}
     Get Text    ${css}    ==    In shadow
 
+The Highlight Can Be Switched Off And On
+    ${promise} =    Promise To    Record Selector
+    Picker Should Be Picking
+    Click    text=Pressed
+    Picker Should Have Picked
+    Wait For Function    () => window.__rfbToolbarState.highlight === true
+    Send Command    {cmd: 'highlight', on: false}
+    Wait For Function    () => window.__rfbToolbarState.highlight === false
+    Send Command    {cmd: 'highlight', on: true}
+    Wait For Function    () => window.__rfbToolbarState.highlight === true && !!window.__rfbToolbarState.count
+    Send Command    {cmd: 'use'}
+    ${selector} =    Wait For    ${promise}
+    Get Text    ${selector}    ==    Pressed
+
+A Minimized Toolbar Offers Reselect And Use
+    Evaluate JavaScript    ${None}    () => sessionStorage.setItem('rfb.toolbar.collapsed', 'true')
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Selector
+    Picker Should Be Picking
+    Click    text=Pressed
+    Picker Should Have Picked
+    Click In Toolbar    headReselect
+    Picker Should Be Picking
+    Click    css=h2
+    Picker Should Have Picked
+    Click In Toolbar    headUse
+    ${selector} =    Wait For    ${promise}
+    Get Text    ${selector}    ==    Heading Level Two
+
 Reselect Picks Another Element
     ${promise} =    Promise To    Record Selector
     Picker Should Be Picking
@@ -173,3 +202,19 @@ Picker Should Have Picked
 Picker Selector
     ${selector} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.selector
     RETURN    ${selector}
+
+Keep The Closed Toolbar Root Reachable
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => {
+    ...    const attach = Element.prototype.attachShadow;
+    ...    Element.prototype.attachShadow = function (init) { const root = attach.call(this, init); if (this.localName === 'rfb-recorder-toolbar') window.toolbarRoot = root; return root; };
+    ...    }
+
+Click In Toolbar
+    [Arguments]    ${id}
+    Wait For Function    () => !window.toolbarRoot.getElementById('${id}').hidden
+    ${box} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('${id}').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }
+    Mouse Button    click    ${box}[0]    ${box}[1]
