@@ -184,7 +184,7 @@ class RecordedKeyword:
         """Replace the last Action's Keyword Call with Playwright's refinement.
 
         Values that were turned into Keyword Arguments stay arguments; their
-        default follows the newly typed text (AC-33).
+        default follows the newly typed text.
         """
         group = self._last_action()
         if group is None:
@@ -252,7 +252,7 @@ class RecordedKeyword:
 
         With ``use_default`` the marked text becomes the argument's default.
         Returns the other values that contain the same text, for the toolbar
-        to offer (AC-31).
+        to offer.
         """
         error = argument_name_error(name)
         if error:

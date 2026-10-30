@@ -14,7 +14,7 @@
 """Where a recorded keyword goes: a `.robot`/`.resource` file, or the log.
 
 `FileTarget` re-reads the file before every save and owns only the block of the
-keyword it is recording (AC-35, AC-36): everything outside that block is
+keyword it is recording: everything outside that block is
 whatever is on disk at that moment, so edits made in an IDE meanwhile survive.
 """
 

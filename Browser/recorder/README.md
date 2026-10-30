@@ -1,8 +1,8 @@
 # Recorder internals
 
-How `Record Keyword` / `Record Keywords` work. Vocabulary: `CONTEXT.md`. Requirements:
-`docs/recorder/user-story.md`. Why: ADR 0010 (page under test is untrusted) and ADR 0011
-(action stream instead of codegen). Usage: the keyword documentation.
+How `Record Keyword` / `Record Keywords` work. Vocabulary: `CONTEXT.md`. Why: ADR 0010
+(page under test is untrusted) and ADR 0011 (action stream instead of codegen). Usage: the
+keyword documentation.
 
 ## Architecture
 
@@ -64,8 +64,8 @@ operators, option strategies) never are.
 | `assertText` | `Get Text    <selector>    contains    <text>` (`==` when not a substring assertion) | selector, text |
 | `assertValue` | `Get Property    <selector>    value    ==    <value>` | selector, value |
 | `assertChecked` | `Get Checkbox State    <selector>    ==    checked` (or `unchecked`) | selector, state |
-| `assertVisible` | `Get Element States    <selector>    *=    visible` (AC-47) | selector |
-| `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>` (AC-46); the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
+| `assertVisible` | `Get Element States    <selector>    *=    visible` | selector |
+| `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>`; the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
 
 A file chosen in a file chooser arrives in api mode as a `fill` of the browser's fake path
 `C:\fakepath\<name>` (only the first file), from other recorder tools as `setInputFiles`

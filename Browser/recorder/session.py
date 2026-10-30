@@ -50,7 +50,7 @@ RECORDING = "recording"
 #: Playwright holds a left click and a navigation back for 500 ms before
 #: reporting them (ADR 0011). Finish, Discard, Stop and Pause wait until this
 #: long after the last click or page load so such an Action still lands in the
-#: keyword it was made in (AC-19); New and Resume wait so one made while idle or
+#: keyword it was made in; New and Resume wait so one made while idle or
 #: paused does not land in the keyword. The toolbar reports how long the page has been
 #: quiet (``quietMs``); without it the whole time is waited.
 SETTLE_SECONDS = 0.8
@@ -363,7 +363,7 @@ class RecorderSession:
             self.stopped = True
 
     def close(self) -> list[str]:
-        """End the session now; a running Keyword Recording is saved (AC-18)."""
+        """End the session now; a running Keyword Recording is saved."""
         self._picker = None
         pending = self._pending
         self._pending = None

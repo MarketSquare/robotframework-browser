@@ -159,7 +159,7 @@ def test_map_fill():
     ],
 )
 def test_fill_on_a_password_field_keeps_the_typed_value_verbatim(selector):
-    # AC-27: no special treatment - no Fill Secret, no masking.
+    # Password fields get no special treatment - no Fill Secret, no masking.
     line = rendered({"name": "fill", "selector": selector, "text": "hunter2"})
     assert line.startswith("Fill Text    ")
     assert line.endswith("    hunter2")
