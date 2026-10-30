@@ -647,7 +647,8 @@ def _node_release_state() -> tuple:
     with tempfile.TemporaryDirectory() as tmp:
         index = Path(tmp) / "index.json"
         _download(NODE_DIST_INDEX, index)
-        releases = json.loads(index.read_text(encoding="utf-8"))
+        listed = json.loads(index.read_text(encoding="utf-8"))
+    releases = [r for r in listed if "-" not in r["version"]]
     pinned = _as_version(NODE_VERSION)
     same_line = [r for r in releases if _as_version(r["version"])[0] == pinned[0]]
     if not same_line:
