@@ -293,6 +293,30 @@ A Picked Selector Becomes A Comment And Recording Goes On
     Should Contain    ${file}    after the pick
     Recorded Keyword Replays    ${RESOURCE}    Pick And Fill
 
+A Minimized Toolbar Offers Only The Pick's Buttons While Picking
+    Keep The Closed Toolbar Root Reachable
+    Evaluate JavaScript    ${None}    () => sessionStorage.setItem('rfb.toolbar.collapsed', 'true')
+    ${promise} =    Promise To    Record Keywords    ${None}
+    Toolbar State Should Be    idle
+    Send Command    {cmd: 'new', name: 'Pick Minimized'}
+    Toolbar State Should Be    recording
+    Send Command    {cmd: 'pick'}
+    Picker Should Be Picking
+    Toolbar Element Should Be Hidden    headSave
+    Toolbar Element Should Be Shown    headCancel
+    Click    id=input_name
+    Wait For Function    () => (window.__rfbToolbarState.picker || {}).phase === 'picked'
+    Toolbar Element Should Be Hidden    headSave
+    Toolbar Element Should Be Shown    headUse
+    Toolbar Element Should Be Shown    headReselect
+    Send Command    {cmd: 'finish'}
+    Wait For Function    () => window.__rfbToolbarState.error === 'Use or cancel the picked selector first.'
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('headCancel')
+    Wait For Function    () => window.__rfbToolbarState.picker === null
+    Toolbar Element Should Be Shown    headSave
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 Undo Removes A Picked Selector
     ${promise} =    Promise To    Record Keyword    Pick Undone    ${None}
     Toolbar State Should Be    recording

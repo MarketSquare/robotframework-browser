@@ -1335,3 +1335,14 @@ def test_the_next_pick_keeps_the_highlight_switch():
     s.handle_command({"cmd": "pick-cancel"})
     s.handle_command({"cmd": "pick"})
     assert s.toolbar_state()["picker"]["highlight"] is False
+
+
+@pytest.mark.parametrize("cmd", ["finish", "discard", "undo", "pause", "resume"])
+def test_keyword_commands_wait_until_the_pick_is_used_or_cancelled(cmd):
+    s, target = picking()
+    s.handle_picked(PICKED)
+    s.handle_command({"cmd": cmd})
+    state = s.toolbar_state()
+    assert state["error"] == "Use or cancel the picked selector first."
+    assert state["picker"]["phase"] == "picked"
+    assert state["pending"] is None

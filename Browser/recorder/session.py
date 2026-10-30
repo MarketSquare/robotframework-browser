@@ -61,6 +61,7 @@ _LOGGED_NAME_LIMIT = 80
 _ID_LIMIT = 64
 _STILL_FINISHING = "Still finishing the last command - please wait."
 _STILL_STARTING = "Still starting the keyword - please wait."
+_STILL_PICKING = "Use or cancel the picked selector first."
 _DEFERRED = ("finish", "discard", "stop", "pause", "resume")
 _STARTING = "new"
 #: The toolbar shows at most this many characters of one text.
@@ -300,6 +301,10 @@ class RecorderSession:
             self._error = (
                 _STILL_STARTING if self._pending[0] == _STARTING else _STILL_FINISHING
             )
+            return
+        if self._picker is not None and not cmd.startswith("pick") and cmd != "stop":
+            # The keyword's buttons are hidden while picking; only ✕ ends everything.
+            self._error = _STILL_PICKING
             return
         if cmd == "pick":
             self._open_picker()

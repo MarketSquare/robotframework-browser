@@ -238,6 +238,7 @@
         <button class="primary quick rec" id="headSave" title="Save this keyword and stop recording it. The session stays open for the next one." hidden>${ICONS.save}Save</button>
         <button id="headReselect" title="Pick another element" aria-label="Pick another element" hidden>${ICONS.target}</button>
         <button class="primary quick" id="headUse" title="Use this selector" hidden>${ICONS.save}Use</button>
+        <button class="quick" id="headCancel" title="Back to recording, without a selector" hidden>Cancel</button>
         <button class="quick" id="headPick" title="Pick an element on the page and add its selector to the keyword as a comment" hidden>${ICONS.target}Pick</button>
         <button id="collapse" title="Minimize the toolbar">${ICONS.minimize}</button>
         <button id="stop" title="End the recording session. The keyword being recorded is saved; the test continues.">${ICONS.close}</button>
@@ -422,6 +423,8 @@
             const decide = collapsed && !!selector && selector.phase === 'picked';
             $('headReselect').hidden = !decide;
             $('headUse').hidden = !decide;
+            // While a recording picks, only the pick can be ended from the header (and ✕).
+            $('headCancel').hidden = !(collapsed && !!state.picker && state.mode !== 'selector');
             const offered = collapsed && !state.fixedName && state.mode !== 'selector' && !state.picker;
             $('headNew').hidden = !offered || state.state === 'recording';
             $('headSave').hidden = !offered || state.state !== 'recording';
@@ -802,6 +805,7 @@
         });
         $('headPick').addEventListener('click', () => send({ cmd: 'pick' }));
         $('headReselect').addEventListener('click', () => sendSelector({ cmd: 'reselect' }));
+        $('headCancel').addEventListener('click', () => sendSelector({ cmd: 'cancel' }));
         $('headUse').addEventListener('click', () => {
             sendEdit();
             sendSelector({ cmd: 'use' });
