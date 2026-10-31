@@ -457,14 +457,17 @@ export class PlaywrightState {
         }
     }
 
-    public async closeAll(): Promise<void> {
-        const browsers = this.browserStack;
-        for (const browser of browsers) {
+    public async closeAll(): Promise<string[]> {
+        const failures = [];
+        for (const browser of this.browserStack) {
             try {
                 await browser.close();
-            } catch (e) {} // eslint-disable-line
+            } catch (error) {
+                failures.push(closeFailure(browser, error));
+            }
         }
         this.browserStack = [];
+        return failures;
     }
 
     public async closeAllServers(): Promise<void> {
@@ -860,14 +863,23 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     try {
         await currentBrowser.close();
         return stringResponse(currentBrowser.id, 'Closed browser');
-    } catch {
-        return stringResponse('', `Browser ${currentBrowser.id} was already closed`);
+    } catch (error) {
+        return stringResponse('', closeFailure(currentBrowser, error));
     }
 }
 
+function closeFailure(browser: BrowserState, error: unknown): string {
+    if (error instanceof Error && error.name === 'TargetClosedError') {
+        return `Browser ${browser.id} was already closed`;
+    }
+    const message = `Closing browser ${browser.id} failed: ${String(error)}`;
+    logger.error(message);
+    return message;
+}
+
 export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response_Empty> {
-    await openBrowsers.closeAll();
-    return emptyWithLog('Closed all browsers');
+    const failures = await openBrowsers.closeAll();
+    return emptyWithLog(['Closed all browsers', ...failures].join('\n'));
 }
 
 export async function closeContext(request: Request_Bool, openBrowsers: PlaywrightState): Promise<Response_Empty> {
