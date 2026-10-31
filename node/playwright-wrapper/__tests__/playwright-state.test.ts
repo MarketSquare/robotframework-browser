@@ -306,9 +306,45 @@ describe('close helpers', () => {
         expect(response.body).toBe('browser=to-close');
     });
 
+    it('closeBrowser reports why closing the browser failed', async () => {
+        const state = new PlaywrightState();
+        const close = jest.fn().mockRejectedValue(new Error('trace not writable'));
+        state.browserStack.push({ id: 'browser=1', close } as any);
+
+        const response = await closeBrowser(state);
+
+        expect(response.log).toBe('Closing browser browser=1 failed: Error: trace not writable');
+        expect(state.browserStack).toHaveLength(0);
+    });
+
+    it('closeBrowser reports an already closed browser', async () => {
+        const state = new PlaywrightState();
+        const closed = Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
+        state.browserStack.push({ id: 'browser=1', close: jest.fn().mockRejectedValue(closed) } as any);
+
+        const response = await closeBrowser(state);
+
+        expect(response.log).toBe('Browser browser=1 was already closed');
+    });
+
+    it('closeAllBrowsers closes every browser and reports the failures', async () => {
+        const state = new PlaywrightState();
+        const close = jest.fn().mockResolvedValue(undefined);
+        state.browserStack.push(
+            { id: 'browser=1', close: jest.fn().mockRejectedValue(new Error('onClose failed')) } as any,
+            { id: 'browser=2', close } as any,
+        );
+
+        const response = await closeAllBrowsers(state);
+
+        expect(close).toHaveBeenCalledTimes(1);
+        expect(state.browserStack).toHaveLength(0);
+        expect(response.log).toBe('Closed all browsers\nClosing browser browser=1 failed: Error: onClose failed');
+    });
+
     it('closeAllBrowsers delegates to PlaywrightState.closeAll', async () => {
         const state = new PlaywrightState();
-        const spy = jest.spyOn(state, 'closeAll').mockResolvedValue(undefined);
+        const spy = jest.spyOn(state, 'closeAll').mockResolvedValue([]);
 
         const response = await closeAllBrowsers(state);
 
