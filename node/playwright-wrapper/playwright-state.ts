@@ -874,20 +874,23 @@ export async function closeContext(request: Request_Bool, openBrowsers: Playwrig
     const saveTrace = request.value;
     const activeBrowser = openBrowsers.getActiveBrowser();
     const traceFile = openBrowsers.getTraceFile();
-    if (traceFile && saveTrace) {
-        await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
-    }
-    for (const page of activeBrowser.context?.pageStack || []) {
-        await _saveCoverageReport(page);
-    }
     // A persistent or adopted context is the only context of a browser without a browser object.
     const closesBrowser = activeBrowser.browser === null && activeBrowser.contextStack.length === 1;
     try {
-        await openBrowsers.getActiveContext()?.close();
-        activeBrowser.popContext();
+        if (traceFile && saveTrace) {
+            await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
+        }
+        for (const page of activeBrowser.context?.pageStack || []) {
+            await _saveCoverageReport(page);
+        }
     } finally {
-        if (closesBrowser) {
-            await closeBrowser(openBrowsers);
+        try {
+            await openBrowsers.getActiveContext()?.close();
+            activeBrowser.popContext();
+        } finally {
+            if (closesBrowser) {
+                await closeBrowser(openBrowsers);
+            }
         }
     }
     return emptyWithLog('Successfully closed Context');
