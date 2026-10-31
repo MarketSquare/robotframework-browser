@@ -59,7 +59,7 @@ operators, option strategies) never are.
 | `uncheck` | `Uncheck Checkbox    <selector>` | selector |
 | `select` | `Select Options By    <selector>    value    <option>...` | selector, each option |
 | `navigate` | `Go To    <url>` (never `New Page`: a recorded keyword does not create its page) | url |
-| `closePage` | `Close Page` | - |
+| `closePage` | nothing: Playwright drops it, because its page is gone; the wrapper reports a closed page as a `closed` event instead (see Pages) | - |
 | `openPage` | nothing, silently (existing pages, hand-opened tabs; a page opened by an Action arrives as a `popup` signal) | - |
 | `assertText` | `Get Text    <selector>    contains    <text>` (`==` when not a substring assertion) | selector, text |
 | `assertValue` | `Get Property    <selector>    value    ==    <value>` | selector, value |
@@ -97,6 +97,24 @@ them together.
 | `popup` | - | `Switch Page    NEW` |
 | `dialog` | `Handle Future Dialogs    action=accept` | - |
 | `download` | `${download}=    Promise To Wait For Download` | `Wait For    ${download}` |
+
+### Pages
+
+Every event carries the guid of its page (`page`), as Playwright's `popupPageGuid` names
+pages, and the first poll reply names Browser's active page (`activePage`). The session
+keeps the page the keyword is on:
+
+- An Action on another page gets `Switch Page    ${page_n}` in its group's `before`.
+- The variable is the return value of the Switch Page that left that page: the `popup`'s
+  `Switch Page    NEW` or an earlier switch. It gets its `${page_n}=` only when first
+  used, and loses it again when Undo removes the last use.
+- `closed` (from the wrapper's own `page.once('close')`) becomes `Close Page` for the
+  active page, `Close Page    ${page_n}` for another one with an id, and nothing for a
+  page without one. After closing the active page, the next Action switches to its page
+  if it has an id; otherwise Browser's fallback to the previous page is relied on.
+- A page without an id, opened before the recording or by hand, gets no switch and a
+  toolbar notice.
+- Each keyword starts on the page the last one ended on, with no ids.
 
 The variable name is made unique within the keyword (`download`, `download_2`, ...). None
 of the signal values is selectable.

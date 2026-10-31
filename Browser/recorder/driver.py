@@ -56,6 +56,7 @@ def run_session(
         while True:
             reply = client.poll(session.toolbar_state(), reset, session.request())
             reset = False
+            session.set_active_page(reply.get("activePage"))
             session.set_picking(reply.get("picking") is True)
             if _apply_pick(session, reply):
                 last_activity = clock()
@@ -164,8 +165,11 @@ def _apply(session: RecorderSession, reply: dict) -> bool:
 
 
 def _handle_event(session: RecorderSession, entry: dict) -> bool:
+    page = entry.get("page")
     session.handle_event(
-        str(entry.get("event", "added")), dict(entry.get("action") or {})
+        str(entry.get("event", "added")),
+        dict(entry.get("action") or {}),
+        page if isinstance(page, str) else None,
     )
     return True
 

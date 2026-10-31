@@ -175,7 +175,7 @@ class Recorder(LibraryComponent):
 
         The keyword is always created new: an existing keyword is never extended.
 
-        The recording ends with *✕* in the toolbar header, with Playwright's Record button,
+        The recording ends with *Save* or *✕* in the toolbar, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
         pages are closed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
@@ -191,7 +191,12 @@ class Recorder(LibraryComponent):
         nothing is lost.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
-        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
+        becomes ``Switch Page    NEW``. An Action on another open page gets a
+        ``Switch Page`` to it first, using the id the Switch Page that left that page
+        returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
+        ``Close Page``, or ``Close Page    ${page}`` when it is not the active one. A page
+        the keyword has no id of, for example one open before the recording, cannot be
+        switched to, and the toolbar says so. A dialog gets ``Handle Future Dialogs    action=accept``
         before the Action (Playwright does not report whether the dialog was accepted);
         a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``. A file
         chosen in a file chooser wraps the click that opened it in ``Promise To Upload File``
@@ -211,7 +216,11 @@ class Recorder(LibraryComponent):
 
         Limitations: only the *current* browser context is recorded; other contexts are
         ignored. Playwright's own recorder toolbar is shown at the top centre of the page
-        during the recording and cannot be hidden, so it covers the page there.
+        during the recording and cannot be hidden, so it covers the page there. The
+        toolbar does not appear on a page whose Content-Security-Policy allows only
+        Trusted Types policies it names, nor in a document without a body, such as an
+        SVG file. A modal ``<dialog>`` of the page covers the toolbar until it is
+        closed, and a click there is recorded on the dialog.
 
         *Review a recorded keyword before you commit it.* Its values come from the page
         under test, including anything typed into password fields. During the session
@@ -296,7 +305,12 @@ class Recorder(LibraryComponent):
         nothing is lost.
 
         What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
-        becomes ``Switch Page    NEW``; a dialog gets ``Handle Future Dialogs    action=accept``
+        becomes ``Switch Page    NEW``. An Action on another open page gets a
+        ``Switch Page`` to it first, using the id the Switch Page that left that page
+        returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
+        ``Close Page``, or ``Close Page    ${page}`` when it is not the active one. A page
+        the keyword has no id of, for example one open before the recording, cannot be
+        switched to, and the toolbar says so. A dialog gets ``Handle Future Dialogs    action=accept``
         before the Action (Playwright does not report whether the dialog was accepted);
         a download is wrapped in ``Promise To Wait For Download`` and ``Wait For``. A file
         chosen in a file chooser wraps the click that opened it in ``Promise To Upload File``
@@ -316,7 +330,11 @@ class Recorder(LibraryComponent):
 
         Limitations: only the *current* browser context is recorded; other contexts are
         ignored. Playwright's own recorder toolbar is shown at the top centre of the page
-        during the recording and cannot be hidden, so it covers the page there.
+        during the recording and cannot be hidden, so it covers the page there. The
+        toolbar does not appear on a page whose Content-Security-Policy allows only
+        Trusted Types policies it names, nor in a document without a body, such as an
+        SVG file. A modal ``<dialog>`` of the page covers the toolbar until it is
+        closed, and a click there is recorded on the dialog.
 
         *Review recorded keywords before you commit them.* Their values come from the page
         under test, including anything typed into password fields. During the session
@@ -373,6 +391,10 @@ class Recorder(LibraryComponent):
         Fails in a headless browser, while a `Record Keyword` or `Record Keywords` session
         runs in the browser context, when the page is closed, on cancel and when the
         ``idle_timeout`` passes.
+
+        The toolbar has the limits of the `Record Keyword` toolbar: it does not appear on a
+        page whose Content-Security-Policy allows only Trusted Types policies it names, nor
+        in a document without a body.
 
         Like the recorder toolbar, the toolbar's commands are reachable by scripts of the
         page under test: use it on applications you trust, and check the selector you get.

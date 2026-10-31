@@ -329,7 +329,9 @@ def _modifier_names(mask: int) -> list[str]:
 #: Actions that never produce a Keyword Call and need no notice: Playwright
 #: reports `openPage` for pages that already exist and for tabs opened by hand,
 #: and a page opened by an Action arrives as a `popup` signal on that Action.
-SILENT_ACTIONS = frozenset({"openPage"})
+#: A closed page is reported by the wrapper itself (`closed`), as Playwright
+#: drops its `closePage`.
+SILENT_ACTIONS = frozenset({"openPage", "closePage"})
 
 
 #: Stands in for the folder of an uploaded file, which the page never reveals.
@@ -396,6 +398,10 @@ def _named(text: str) -> Value:
     return Value([text], selectable=False, named=True)
 
 
+def _variable(name: str) -> Value:
+    return Value([ArgRef(name)], selectable=False)
+
+
 def _data(text: object) -> Value:
     return Value.literal("" if text is None else str(text))
 
@@ -452,6 +458,13 @@ class ActionMapper:
             )
         return None
 
+    def switch_page(self, variable: str) -> Call:
+        return Call("Switch Page", [_variable(variable)])
+
+    def close_page(self, variable: str | None) -> Call:
+        """Close the active page, or the page whose id ``variable`` holds."""
+        return Call("Close Page", [] if variable is None else [_variable(variable)])
+
     def map_upload(self, name: str, unique: Callable[[str], str]) -> SignalEffect:
         """The Keyword Calls around the Action that opened the file chooser."""
         variable = unique("upload")
@@ -474,9 +487,6 @@ class ActionMapper:
         # runs in - browser/page setup stays the caller's job, so an in-page
         # navigation is always `Go To`.
         return Call("Go To", [_data(action.get("url", ""))])
-
-    def _map_close_page(self, action: dict) -> Call:
-        return Call("Close Page", [])
 
     # -- interaction ------------------------------------------------------- #
 
@@ -570,7 +580,6 @@ class ActionMapper:
     # Maps a Playwright action name (see actions.d.ts) to its handler.
     _HANDLERS: ClassVar[dict[str, Callable[[ActionMapper, dict], Call]]] = {
         "navigate": _map_navigate,
-        "closePage": _map_close_page,
         "click": _map_click,
         "fill": _map_fill,
         "press": _map_press,

@@ -34,7 +34,7 @@ from .action_mapper import (
     uploaded_files,
 )
 from .cells import tokens
-from .model import RecordedKeyword
+from .model import Call, RecordedKeyword
 from .names import (
     KnownKeywords,
     NameGuard,
@@ -62,6 +62,12 @@ _ID_LIMIT = 64
 _STILL_FINISHING = "Still finishing the last command - please wait."
 _STILL_STARTING = "Still starting the keyword - please wait."
 _STILL_PICKING = "Use or cancel the picked selector first."
+#: The keyword's page was closed; the next Action decides which page is active.
+_CLOSED = "closed"
+_UNREACHABLE_PAGE = (
+    "This Action happened on a page the keyword has no id of, so no Switch Page "
+    "was recorded before it."
+)
 _DEFERRED = ("finish", "discard", "stop", "pause", "resume")
 _COMMANDS = frozenset({"pick", "new", "undo", "argument", "replace", *_DEFERRED})
 _STARTING = "new"
@@ -110,6 +116,12 @@ class RecorderSession:
         #: The last write error of a keyword left in `unsaved`.
         self.write_error: str | None = None
         self._answered: str | None = None
+        #: The page the keyword's next Keyword Call runs on (a Playwright page guid).
+        self._page: str | None = None
+        #: The page a keyword starts on: where the last one ended.
+        self._start_page: str | None = None
+        #: Per page, the Switch Page that left it: it returns that page's id.
+        self._leaving: dict[str, Call] = {}
         if fixed_name is not None:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
@@ -130,6 +142,11 @@ class RecorderSession:
         if not self._finished:
             return ""
         return "*** Keywords ***\n" + "\n".join(k.block() for k in self._finished)
+
+    def set_active_page(self, page: object) -> None:
+        """The page Browser has active when the session starts."""
+        if isinstance(page, str) and self._start_page is None:
+            self._start_page = self._page = page
 
     def set_picking(self, picking: bool) -> None:
         """Playwright's Pick locator mode is on: nothing is recorded meanwhile."""
@@ -232,24 +249,23 @@ class RecorderSession:
         picked = self._picker is not None and not self._picker.picking
         return self._keyword is not None and not self._paused and not picked
 
-    def handle_event(self, event: str, action: dict) -> None:
+    def handle_event(self, event: str, action: dict, page: str | None = None) -> None:
         keyword = self._keyword
         if keyword is None or not self._records():
             return
-        if event == "signal":
-            effect = self._mapper.map_signal(action, keyword.unique_variable)
-            if (
-                effect
-                and not self._undone
-                and not self._skipped
-                and keyword.attach(effect.before, effect.after)
-            ):
-                self._offer = None
-                self._save()
-            return
+        if event == "closed":
+            self._close_page(keyword, page)
+        elif event == "signal":
+            self._signal(keyword, action)
+        else:
+            self._action(keyword, event, action, page)
+
+    def _action(
+        self, keyword: RecordedKeyword, event: str, action: dict, page: str | None
+    ) -> None:
         files = uploaded_files(action)
         if files is not None:
-            self._upload(keyword, action, files)
+            self._upload(keyword, action, files, page)
             return
         call = self._mapper.map(action) if isinstance(action.get("name"), str) else None
         if call is None:
@@ -269,14 +285,89 @@ class RecorderSession:
                 self._notice = internal_selector_notice(action) or self._notice
                 self._save()
                 return
-        keyword.add(call)
+        keyword.add(call, self._switch_to(keyword, page), self._page)
         self._offer = None
         self._undone = False
         self._skipped = False
         self._notice = internal_selector_notice(action) or self._notice
         self._save()
 
-    def _upload(self, keyword: RecordedKeyword, action: dict, files: list[str]) -> None:
+    def _signal(self, keyword: RecordedKeyword, signal: dict) -> None:
+        effect = self._mapper.map_signal(signal, keyword.unique_variable)
+        if effect is None or self._undone or self._skipped:
+            return
+        popup = signal.get("popupPageGuid")
+        popup = popup if isinstance(popup, str) else None
+        if keyword.attach(effect.before, effect.after, popup):
+            if popup is not None:
+                self._left(effect.after[-1], popup)
+            self._offer = None
+            self._save()
+
+    # -- pages ------------------------------------------------------------- #
+
+    def _left(self, switch: Call, page: str | None) -> None:
+        """``switch`` left the keyword's page for ``page``."""
+        if self._page not in (None, _CLOSED):
+            self._leaving[self._page] = switch
+        self._page = page
+
+    def _page_variable(self, keyword: RecordedKeyword, page: str) -> str | None:
+        """The variable holding the id of ``page``: the Switch Page that left it
+        gets it assigned on first use."""
+        switch = self._leaving.get(page)
+        if switch is None or not keyword.contains(switch):
+            return None
+        if switch.assign is None:
+            switch.assign = keyword.unique_variable("page")
+        return switch.assign
+
+    def _switch_to(self, keyword: RecordedKeyword, page: str | None) -> list[Call]:
+        """The Switch Page before an Action on ``page``, if it is not active."""
+        if page is None or page == self._page:
+            return []
+        if self._page is None:
+            self._page = page
+            return []
+        variable = self._page_variable(keyword, page)
+        if variable is None:
+            if self._page != _CLOSED:
+                self._notice = _UNREACHABLE_PAGE
+            self._page = page
+            return []
+        switch = self._mapper.switch_page(variable)
+        self._left(switch, page)
+        return [switch]
+
+    def _close_page(self, keyword: RecordedKeyword, page: str | None) -> None:
+        if page is None:
+            return
+        if page == self._page:
+            keyword.add(self._mapper.close_page(None), page=_CLOSED)
+            self._page = _CLOSED
+        else:
+            variable = self._page_variable(keyword, page)
+            if variable is None:
+                self.log.append("a page the keyword has no id of was closed")
+                return
+            keyword.add(self._mapper.close_page(variable), page=self._page)
+        self._leaving.pop(page, None)
+        self._offer = None
+        self._undone = self._skipped = False
+        self._save()
+
+    def _reset_pages(self) -> None:
+        """A new keyword starts where the last one ended, with no page ids."""
+        self._start_page = self._page
+        self._leaving = {}
+
+    def _upload(
+        self,
+        keyword: RecordedKeyword,
+        action: dict,
+        files: list[str],
+        page: str | None = None,
+    ) -> None:
         """Wrap the Action that opened the file chooser, as Browser needs the
         promise before it; without one, set the files on the input itself."""
         refused = [name for name in files if not is_plain_file_name(name)]
@@ -294,7 +385,11 @@ class RecorderSession:
         effect = self._mapper.map_upload(files[0], keyword.unique_variable)
         attached = len(files) == 1 and not self._undone and not self._skipped
         if not (attached and keyword.attach(effect.before, effect.after)):
-            keyword.add(self._mapper.map_upload_by_selector(action, files))
+            keyword.add(
+                self._mapper.map_upload_by_selector(action, files),
+                self._switch_to(keyword, page),
+                self._page,
+            )
             self._undone = self._skipped = False
         self._offer = None
         self._notice = f"Replace {UPLOAD_FOLDER} with the folder of the uploaded file."
@@ -456,6 +551,7 @@ class RecorderSession:
         self._keyword = RecordedKeyword(name)
         self._picker = None
         self._undone = self._skipped = self._paused = False
+        self._reset_pages()
 
     def _pause(self) -> None:
         self._paused = True
@@ -521,6 +617,8 @@ class RecorderSession:
             # Undoing a picked selector leaves the Action before it as it was:
             # Playwright may still refine it.
             self._undone = self._undone if comment else True
+            self._page = self._keyword.last_page() or self._start_page
+            self._keyword.drop_unused_assigns(list(self._leaving.values()))
             self._offer = None
             self._save()
 
@@ -535,6 +633,8 @@ class RecorderSession:
         self._picker = None
         self._offer = None
         self._undone = self._skipped = self._paused = False
+        self._page = self._start_page
+        self._leaving = {}
         self.log.append(f"discarded '{keyword.name}'")
         self._remove(keyword.name)
 

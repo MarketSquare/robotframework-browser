@@ -16,6 +16,7 @@ function fakeContext() {
         _startRecording: jest.fn(async () => undefined),
         exposeBinding: jest.fn(async () => undefined),
         pages: () => [],
+        on: jest.fn(),
     } as any;
 }
 

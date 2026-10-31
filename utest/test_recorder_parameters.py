@@ -6,7 +6,6 @@ from Browser.recorder.parameters import KEYWORD_PARAMETERS
 
 ACTIONS = [
     {"name": "navigate", "url": "u"},
-    {"name": "closePage"},
     {"name": "click", "selector": "s", "button": "left", "clickCount": 1},
     {"name": "click", "selector": "s", "button": "right", "clickCount": 2},
     {"name": "fill", "selector": "s", "text": "t"},
@@ -32,6 +31,8 @@ def recorded_keywords() -> set[str]:
     upload = mapper.map_upload("a.txt", lambda base: base)
     names.update(call.keyword for call in [*upload.before, *upload.after])
     names.add(mapper.map_upload_by_selector({"selector": "s"}, ["a.txt"]).keyword)
+    names.add(mapper.switch_page("page").keyword)
+    names.add(mapper.close_page(None).keyword)
     return names
 
 

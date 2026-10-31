@@ -53,8 +53,10 @@ export const MAX_REPLY_BYTES = 3 * 1024 * 1024;
 
 export type Action = Record<string, unknown> & { name: string; selector?: string };
 interface EventEntry {
-    event: 'added' | 'updated' | 'signal';
+    event: 'added' | 'updated' | 'signal' | 'closed';
     action: Record<string, unknown>;
+    // The guid of the page it happened on, as Playwright's `popupPageGuid` names pages.
+    page?: string;
 }
 interface CommandEntry {
     command: unknown;
@@ -112,6 +114,11 @@ function jsonLength(value: unknown): number {
     } catch {
         return Infinity;
     }
+}
+
+export function pageGuid(page: unknown): string | undefined {
+    const guid = (page as { _guid?: unknown } | undefined)?._guid;
+    return typeof guid === 'string' ? guid : undefined;
 }
 
 const isCommand = (entry: Entry): entry is CommandEntry => 'command' in entry;
@@ -254,10 +261,17 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
         }
         buffers.entries.push(entry);
     };
-    const forward = (event: 'added' | 'updated') => (_page: unknown, payload: unknown) => {
+    const forward = (event: 'added' | 'updated') => (page: unknown, payload: unknown) => {
+        logRaw(context, event, page, payload);
         const action = toAction(payload);
-        if (action) buffer({ event, action });
+        if (action) buffer({ event, action, page: pageGuid(page) });
     };
+    // Playwright reports no `closePage`: it drops an Action whose page is gone.
+    const watchClose = (page: Page) => {
+        page.once('close', () => buffer({ event: 'closed', action: { name: 'closePage' }, page: pageGuid(page) }));
+    };
+    context.pages().forEach(watchClose);
+    context.on('page', watchClose);
     // `language` only selects the generator of the `code` Playwright passes
     // along with every event, which is not used.
     await start.call(
@@ -266,9 +280,10 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
         {
             actionAdded: forward('added'),
             actionUpdated: forward('updated'),
-            signalAdded: (_page: unknown, signal: unknown) => {
+            signalAdded: (page: unknown, signal: unknown) => {
+                logRaw(context, 'signal', page, signal);
                 if (signal && typeof signal === 'object' && typeof (signal as Action).name === 'string') {
-                    buffer({ event: 'signal', action: signal as Record<string, unknown> });
+                    buffer({ event: 'signal', action: signal as Record<string, unknown>, page: pageGuid(page) });
                 }
             },
         },
@@ -280,6 +295,29 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     // on every poll instead, which covers navigation and popups and stops by
     // itself once polling stops.
     return buffers;
+}
+
+const MAX_LOGGED_RAW = 2000;
+
+// With `enable_playwright_debug=True`, which sets DEBUG=pw:api, everything
+// Playwright's recorder reports goes to playwright-log.txt with the page it came
+// from: what a recording missed can be read from there.
+const logsRaw = (process.env.DEBUG ?? '').includes('pw:api');
+
+function logRaw(context: BrowserContext, event: string, page: unknown, payload: unknown): void {
+    if (!logsRaw) return;
+    try {
+        const index = context.pages().indexOf(page as Page);
+        const url = typeof (page as Page)?.url === 'function' ? (page as Page).url() : '';
+        let json =
+            JSON.stringify(payload, (key, value: unknown) =>
+                key === 'ariaSnapshot' && typeof value === 'string' ? `<${value.length} characters>` : value,
+            ) ?? String(payload);
+        if (json.length > MAX_LOGGED_RAW) json = `${json.slice(0, MAX_LOGGED_RAW)}...`;
+        logger.info(`recorder: raw ${event} from page ${index} (${url}): ${json}`);
+    } catch (error) {
+        logger.info(`recorder: raw ${event} not loggable: ${String(error)}`);
+    }
 }
 
 // The state can hold up to a MiB of recorded values; a page gets it only when it
@@ -438,6 +476,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             picking: !buffers.ownPick && !pickRequested && isPicking(mode),
             pickRequested,
             pages: context.pages().length,
+            activePage: pageGuid(state.getActivePage()),
             entries: drainEntries(buffers),
             ...picked,
         }),

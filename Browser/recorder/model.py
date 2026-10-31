@@ -138,6 +138,8 @@ class _Group:
     primary: Call
     before: list[Call] = field(default_factory=list)
     after: list[Call] = field(default_factory=list)
+    #: The page the keyword is on after these Keyword Calls.
+    page: str | None = None
 
     def calls(self) -> list[Call]:
         return [*self.before, self.primary, *self.after]
@@ -157,8 +159,28 @@ class RecordedKeyword:
 
     # -- recording --------------------------------------------------------- #
 
-    def add(self, call: Call) -> None:
-        self._groups.append(_Group(call))
+    def add(
+        self, call: Call, before: list[Call] | None = None, page: str | None = None
+    ) -> None:
+        self._groups.append(_Group(call, list(before or []), page=page))
+
+    def last_page(self) -> str | None:
+        """The page the keyword is on after its last Action."""
+        group = self._last_action()
+        return None if group is None else group.page
+
+    def contains(self, call: Call) -> bool:
+        return any(c is call for c in self.calls())
+
+    def drop_unused_assigns(self, calls: list[Call]) -> None:
+        """Remove the assignment of those ``calls`` no other Keyword Call uses."""
+        used: set[str] = set()
+        for call in self.calls():
+            for value in call.args:
+                used |= value.references()
+        for call in calls:
+            if call.assign and call.assign not in used:
+                call.assign = None
 
     def add_picked_selector(self, selector: str) -> None:
         """A comment row with a selector picked with the toolbar's Pick button."""
@@ -198,13 +220,18 @@ class RecordedKeyword:
         self._drop_unused()
         return True
 
-    def attach(self, before: list[Call], after: list[Call]) -> bool:
-        """Wrap the last Action's Keyword Call with signal handling."""
+    def attach(
+        self, before: list[Call], after: list[Call], page: str | None = None
+    ) -> bool:
+        """Wrap the last Action's Keyword Call with signal handling; ``page``
+        is the page a popup switched to."""
         group = self._last_action()
         if group is None:
             return False
         group.before.extend(before)
         group.after.extend(after)
+        if page is not None:
+            group.page = page
         return True
 
     def last_is_comment(self) -> bool:

@@ -178,6 +178,33 @@ Popup Becomes Switch Page New
     Should Contain    ${file}    Switch Page${SPACE*4}NEW
     Should Not Contain    ${file}    New Page
 
+Switching And Closing Pages Is Recorded
+    Add Popup Link
+    ${promise} =    Promise To    Record Keyword    Work On Two Pages    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Click    id=popup_link
+    Wait Until Calls    2
+    ${first} =    Switch Page    NEW
+    Fill Text    id=input_name    on popup
+    Wait Until Calls    3
+    ${popup} =    Switch Page    ${first}
+    Fill Text    id=input_name    on first
+    Wait Until Calls    5
+    Close Page    ${popup}
+    Wait Until Calls    6
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    \${page}=${SPACE*4}Switch Page${SPACE*4}NEW
+    Should Contain    ${file}    \${page_2}=${SPACE*4}Switch Page${SPACE*4}\${page}
+    Should Contain    ${file}    Close Page${SPACE*4}\${page_2}
+    Go To    ${FORM_URL}
+    Add Popup Link
+    Import Resource    ${RESOURCE}
+    Work On Two Pages
+    Get Page Ids    ALL    ==    ${{[$first]}}
+    Get Property    id=input_name    value    ==    on first
+
 Dialog Gets Handled Before The Click
     Go To    ${DIALOGS_URL}
     Handle Future Dialogs    action=accept
@@ -313,6 +340,83 @@ A Picked Selector Becomes A Comment And Recording Goes On
     Should Contain    ${file}    after the pick
     Should Not Contain    ${file}    while picked
     Recorded Keyword Replays    ${RESOURCE}    Pick And Fill
+
+The Toolbar Works On A Strict Page
+    Go To    ${RECORDER_CSP_URL}
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Styled    ${None}
+    Toolbar State Should Be    recording
+    Get Element Count    css=rfb-recorder-toolbar    ==    1
+    ${style} =    Evaluate JavaScript    ${None}
+    ...    () => {
+    ...    const style = (id) => getComputedStyle(window.toolbarRoot.getElementById(id));
+    ...    return [style('panel').backgroundColor, style('panel').direction, style('title').letterSpacing,
+    ...    style('title').wordSpacing, style('title').textTransform, style('calls').cursor];
+    ...    }
+    Should Be Equal    ${style}    ${{['rgb(28, 34, 39)', 'ltr', 'normal', '0px', 'none', 'auto']}}
+    ${host} =    Evaluate JavaScript    rfb-recorder-toolbar
+    ...    (host) => { const style = getComputedStyle(host); return [style.position, style.opacity, style.filter]; }
+    Should Be Equal    ${host}    ${{['fixed', '1', 'none']}}
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+A Resize Released On The Page Records No Click
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    No Resize Click    ${None}
+    Toolbar State Should Be    recording
+    ${grip} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('panel').getBoundingClientRect(); return [r.right - 4, r.bottom - 4]; }
+    Mouse Move    ${grip}[0]    ${grip}[1]
+    Mouse Button    down
+    Mouse Move    ${grip}[0]    ${{$grip[1] + 200}}    steps=5
+    Mouse Button    up
+    Fill Text    id=input_name    after the resize
+    Wait Until Calls    1
+    Sleep    1s
+    Toolbar Calls Should Be    Fill Text
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Keys After A Click On The Toolbar Text Are Not Recorded
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    No Toolbar Keys    ${None}
+    Toolbar State Should Be    recording
+    ${title} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const r = window.toolbarRoot.getElementById('title').getBoundingClientRect(); return [r.x + 5, r.y + r.height / 2]; }
+    Mouse Button    click    ${title}[0]    ${title}[1]
+    Keyboard Key    press    ArrowUp
+    Keyboard Key    press    Control+c
+    Fill Text    id=input_name    after the keys
+    Wait Until Calls    1
+    Sleep    1s
+    Toolbar Calls Should Be    Fill Text
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Save Ends A Record Keyword Session
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Save Ends It    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    saved
+    Wait Until Calls    1
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('finish')
+    ${text} =    Wait For    ${promise}
+    Should Contain    ${text}    saved
+    Recorded Keyword Replays    ${RESOURCE}    Save Ends It
+
+A Minimized Record Keyword Toolbar Offers Save
+    Keep The Closed Toolbar Root Reachable
+    Evaluate JavaScript    ${None}    () => sessionStorage.setItem('rfb.toolbar.collapsed', 'true')
+    ${promise} =    Promise To    Record Keyword    Saved Minimized    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    minimized
+    Wait Until Calls    1
+    Toolbar Element Should Be Hidden    headNew
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('headSave')
+    ${text} =    Wait For    ${promise}
+    Should Contain    ${text}    minimized
 
 A Minimized Toolbar Offers Only The Pick's Buttons While Picking
     Keep The Closed Toolbar Root Reachable
@@ -901,6 +1005,11 @@ Open Form And Name Resource
     Set Test Variable    ${RESOURCE}    ${OUTPUT_DIR}${/}recorded_${slug}.resource
     Remove File    ${RESOURCE}
 
+Add Popup Link
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const a = document.createElement('a'); a.id = 'popup_link'; a.href = location.href; a.target = '_blank'; a.textContent = 'Open popup'; document.body.prepend(a); }
+
 End Any Recording Session
     Run Keyword And Ignore Error    Send Command    {cmd: 'stop'}
 
@@ -933,6 +1042,11 @@ Wait Until Calls
 Finish Keyword
     Send Command    {cmd: 'finish'}
     Toolbar State Should Be    idle
+
+Toolbar Calls Should Be
+    [Arguments]    @{keywords}
+    ${calls} =    Evaluate JavaScript    ${None}    () => window.__rfbToolbarState.calls.map((call) => call.keyword)
+    Should Be Equal    ${calls}    ${keywords}
 
 Recorded Keyword Replays
     [Arguments]    ${resource}    ${name}    ${url}=${FORM_URL}

@@ -8,6 +8,7 @@ from Browser.recorder.names import KnownKeywords
 from Browser.recorder.picker import SelectorPicker
 from Browser.recorder.session import (
     _STARTING,
+    _UNREACHABLE_PAGE,
     MAX_RAW_LENGTH,
     MAX_RAW_TOTAL,
     SETTLE_SECONDS,
@@ -33,7 +34,6 @@ class FakeTarget:
         if self.fail:
             raise OSError("read-only")
         self.saved.append(keyword.block())
-        return None
 
     def remove(self, name):
         self.removed.append(name)
@@ -1428,3 +1428,128 @@ def test_a_picked_selector_is_written_as_a_cell(selector, written):
     s.handle_picked({"selector": selector, "css": "x"})
     s.handle_command({"cmd": "pick-use"})
     assert f"    # Picked Selector    {written}\n" in target.saved[-1]
+
+
+FIRST = "page@first"
+POPUP = "page@popup"
+
+
+def recording_on_pages():
+    s, _, _ = session()
+    s.set_active_page(FIRST)
+    start(s, "K")
+    return s
+
+
+def rows(s) -> list[str]:
+    lines = s._keyword.lines()[1:]
+    return [" | ".join(row.replace("\\#", "#").split("    ")) for row in lines]
+
+
+def open_popup(s):
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_event("signal", {"name": "popup", "popupPageGuid": POPUP}, FIRST)
+
+
+def test_actions_on_the_active_page_switch_nothing():
+    s = recording_on_pages()
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_event("added", FILL, FIRST)
+    assert rows(s) == ["Click | #b", "Fill Text | #n | Alice"]
+
+
+def test_a_popup_keeps_its_page_without_a_variable_until_a_switch_back():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_event("added", FILL, POPUP)
+    assert rows(s) == ["Click | #b", "Switch Page | NEW", "Fill Text | #n | Alice"]
+
+
+def test_switching_back_assigns_the_id_the_popup_switch_returned():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_event("added", FILL, POPUP)
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_event("added", FILL, POPUP)
+    assert rows(s) == [
+        "Click | #b",
+        "${page}= | Switch Page | NEW",
+        "Fill Text | #n | Alice",
+        "${page_2}= | Switch Page | ${page}",
+        "Click | #b",
+        "Switch Page | ${page_2}",
+        "Fill Text | #n | Alice",
+    ]
+
+
+def test_closing_the_active_page_needs_no_switch_to_the_one_browser_falls_back_to():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_event("closed", {"name": "closePage"}, POPUP)
+    s.handle_event("added", FILL, FIRST)
+    assert rows(s) == [
+        "Click | #b",
+        "${page}= | Switch Page | NEW",
+        "Close Page",
+        "Switch Page | ${page}",
+        "Fill Text | #n | Alice",
+    ]
+    assert s.toolbar_state()["notice"] is None
+
+
+def test_closing_another_page_closes_it_by_its_id():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_event("closed", {"name": "closePage"}, FIRST)
+    assert rows(s) == [
+        "Click | #b",
+        "${page}= | Switch Page | NEW",
+        "Close Page | ${page}",
+    ]
+
+
+def test_closing_a_page_the_keyword_has_no_id_of_is_not_recorded():
+    s = recording_on_pages()
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_event("closed", {"name": "closePage"}, "page@other")
+    assert rows(s) == ["Click | #b"]
+
+
+def test_an_action_on_a_page_without_an_id_gets_a_notice():
+    s = recording_on_pages()
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_event("added", FILL, "page@other")
+    assert rows(s) == ["Click | #b", "Fill Text | #n | Alice"]
+    assert s.toolbar_state()["notice"] == _UNREACHABLE_PAGE
+
+
+def test_playwrights_own_close_page_is_silent():
+    s = recording_on_pages()
+    s.handle_event("added", {"name": "closePage"}, FIRST)
+    assert rows(s) == []
+    assert s.toolbar_state()["notice"] is None
+
+
+def test_undoing_the_switch_back_drops_the_unused_assignment():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_event("added", CLICK, FIRST)
+    s.handle_command({"cmd": "undo"})
+    assert rows(s) == ["Click | #b", "Switch Page | NEW"]
+    s.handle_event("added", FILL, POPUP)
+    assert rows(s)[-1] == "Fill Text | #n | Alice"
+
+
+def test_undoing_the_popup_returns_to_the_first_page():
+    s = recording_on_pages()
+    open_popup(s)
+    s.handle_command({"cmd": "undo"})
+    s.handle_event("added", FILL, FIRST)
+    assert rows(s) == ["Fill Text | #n | Alice"]
+
+
+def test_without_page_information_nothing_is_switched():
+    s = recording_on_pages()
+    s.handle_event("added", CLICK)
+    s.handle_event("added", FILL)
+    assert rows(s) == ["Click | #b", "Fill Text | #n | Alice"]

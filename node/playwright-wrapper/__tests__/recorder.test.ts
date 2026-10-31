@@ -88,7 +88,7 @@ describe('toolbarScript', () => {
 });
 
 describe('ensureRecorder', () => {
-    function fakeContext() {
+    function fakeContext(pages: unknown[] = []) {
         const sinks: any[] = [];
         return {
             sinks,
@@ -96,7 +96,8 @@ describe('ensureRecorder', () => {
                 sinks.push(sink);
             }),
             exposeBinding: jest.fn(async () => undefined),
-            pages: () => [],
+            pages: () => pages,
+            on: jest.fn(),
         } as any;
     }
 
@@ -134,6 +135,27 @@ describe('ensureRecorder', () => {
             'updated',
             'signal',
         ]);
+    });
+
+    it('names the page of every entry and reports a closed page itself', async () => {
+        const closeHandlers: Array<() => void> = [];
+        const first = {
+            _guid: 'page@first',
+            once: jest.fn((_event: string, fn: () => void) => closeHandlers.push(fn)),
+        };
+        const context = fakeContext([first]);
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        context.sinks[0].actionAdded(first, { name: 'click', selector: '#a' });
+        const popup = { _guid: 'page@popup', once: jest.fn() };
+        context.on.mock.calls[0][1](popup);
+        closeHandlers[0]();
+        expect(eventsIn(state.entries)).toEqual([
+            { event: 'added', action: { name: 'click', selector: '#a' }, page: 'page@first' },
+            { event: 'closed', action: { name: 'closePage' }, page: 'page@first' },
+        ]);
+        expect(context.on).toHaveBeenCalledWith('page', expect.any(Function));
+        expect(popup.once).toHaveBeenCalledWith('close', expect.any(Function));
     });
 
     it('fails clearly without the programmatic recorder', async () => {
@@ -243,7 +265,7 @@ function fakePage(mode: string | undefined = 'recording', { closed = false, fail
             delete global.window;
         }
     });
-    return { win, evaluate };
+    return { win, evaluate, once: jest.fn() };
 }
 
 function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
@@ -253,6 +275,7 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
         sinks,
         bindings,
         pages: () => pages,
+        on: jest.fn(),
         _startRecording: jest.fn(async (_params: unknown, sink: unknown) => {
             sinks.push(sink);
         }),
