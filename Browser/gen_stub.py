@@ -64,7 +64,7 @@ from Browser.utils import (
     GeoLocation, ForcedColors, ColorScheme, ClientCertificate, HighlightMode, ScreenshotReturnType,
     Scale, ScreenshotFileTypes, BoundingBox, ReducedMotion, ReloadPages, Media, PdfMarging,
     PdfFormat, CoverageType, RequestMethod, ElementState, ScrollPosition,
-    SelectAttribute, SelectOptions, ConditionInputs, FileUploadBuffer, SelectAttribute
+    SelectAttribute, SelectOptions, ConditionInputs, FileUploadBuffer, SelectAttribute, SelectorGenerator
 )
 from Browser.utils .data_types import (
     ClientCredential, MouseButton, KeyboardModifier, ScrollBehavior, ScrollBehavior, DialogAction, MouseButtonAction,

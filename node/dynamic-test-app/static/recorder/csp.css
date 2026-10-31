@@ -1,0 +1,15 @@
+/* Inherited text styles a page may set, which must not reach the toolbar. */
+body {
+  letter-spacing: 3px;
+  word-spacing: 5px;
+  text-transform: uppercase;
+  cursor: wait;
+}
+
+/* A page rule that would move, shrink and fade the toolbar's host. */
+body * {
+  position: relative !important;
+  transform: scale(0.5) !important;
+  filter: blur(2px) !important;
+  opacity: 0.3 !important;
+}

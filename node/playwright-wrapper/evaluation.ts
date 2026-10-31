@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from 'path';
-import { Frame, FrameLocator, Locator, Page } from 'playwright';
+import { FrameLocator, Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
@@ -313,127 +312,6 @@ export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Pro
     const content = request.content;
     await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
-}
-
-const selectorsForPage: { [key: string]: unknown[] } = {};
-
-export async function recordSelector(
-    request: pb.Request_Label,
-    state: PlaywrightState,
-): Promise<pb.Response_JavascriptExecutionResult> {
-    if (state.getActiveBrowser().headless) {
-        throw Error('Record Selector works only with visible browser. Use Open Browser or New Browser  headless=False');
-    }
-    const activeBrowser = state.activeBrowser;
-    if (!activeBrowser) {
-        throw Error('No active browser.');
-    }
-    const indexedPage = activeBrowser.page;
-    if (!indexedPage) {
-        throw Error('No active page.');
-    }
-    const page = indexedPage.p;
-    await page.bringToFront();
-    // If the page already has recorder then skipping creation
-    if (!(indexedPage.id in selectorsForPage)) {
-        const myselectors: unknown[] = [];
-        selectorsForPage[indexedPage.id] = myselectors;
-        await page.exposeFunction('setRecordedSelector', (index: number, item: unknown) => {
-            while (myselectors.length > index) {
-                myselectors.pop();
-            }
-            myselectors.push(item);
-        });
-        await page.exposeFunction('getRecordedSelectors', () => {
-            return myselectors;
-        });
-        await page.exposeFunction('highlightPWSelector', (selector: string) => {
-            void highlightAll(selector, 1000, '3px', 'dotted', 'blue', false, state);
-        });
-    }
-
-    const result = await recordSelectorIterator(request.label, page.mainFrame());
-    // clean old recording array for the next run on the page
-    while (selectorsForPage[indexedPage.id].length) {
-        selectorsForPage[indexedPage.id].pop();
-    }
-    return jsResponse(result, 'Selector recorded.');
-}
-
-async function attachSelectorFinderScript(frame: Frame): Promise<void> {
-    try {
-        await frame.addScriptTag({
-            type: 'module',
-            path: path.join(__dirname, '/static/selector-finder.js'),
-        });
-    } catch (e) {
-        throw new Error(
-            `Adding selector recorder to page failed.\nTry New Context  bypassCSP=True and retry recording.`,
-            { cause: e },
-        );
-    }
-    await Promise.all(frame.childFrames().map((child) => attachSelectorFinderScript(child)));
-}
-
-async function attachSubframeListeners(subframe: Frame, index: number): Promise<void> {
-    await subframe.evaluate((index) => {
-        function rafAsync() {
-            return new Promise((resolve) => {
-                requestAnimationFrame(resolve); //faster than set time out
-            });
-        }
-
-        // @ts-ignore
-        function waitUntilRecorderAvailable() {
-            // @ts-ignore
-            if (!window.subframeSelectorRecorderFindSelector) {
-                // @ts-ignore
-                return rafAsync().then(() => waitUntilRecorderAvailable());
-            } else {
-                // @ts-ignore
-                return Promise.resolve(window.subframeSelectorRecorderFindSelector(index));
-            }
-        }
-
-        return waitUntilRecorderAvailable();
-    }, index);
-    await Promise.all(
-        subframe
-            .childFrames()
-            .filter((f) => f.parentFrame() === subframe)
-            .map((child) => attachSubframeListeners(child, index + 1)),
-    );
-}
-
-async function recordSelectorIterator(label: string, frame: Frame): Promise<string> {
-    await attachSelectorFinderScript(frame);
-    await Promise.all(
-        frame
-            .childFrames()
-            .filter((f) => f.parentFrame() === frame)
-            .map((child) => attachSubframeListeners(child, 1)),
-    );
-    return await frame.evaluate((label) => {
-        function rafAsync() {
-            return new Promise((resolve) => {
-                requestAnimationFrame(resolve); //faster than set time out
-            });
-        }
-
-        // @ts-ignore
-        function waitUntilRecorderAvailable() {
-            // @ts-ignore
-            if (!window.selectorRecorderFindSelector) {
-                // @ts-ignore
-                return rafAsync().then(() => waitUntilRecorderAvailable());
-            } else {
-                // @ts-ignore
-                return Promise.resolve(window.selectorRecorderFindSelector(label));
-            }
-        }
-
-        return waitUntilRecorderAvailable();
-    }, label);
 }
 
 export async function highlightElements(

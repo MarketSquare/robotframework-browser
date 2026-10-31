@@ -71,10 +71,6 @@ message Request {
     string suite_name = 4;
   }
 
-  message Label {
-    string label = 1;
-  }
-
   message GetByOptions {
     string strategy = 1;
     string text = 2;
@@ -600,7 +596,6 @@ service  Playwright {
   /* Evaluates javascript on the active page */
   rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
 
-  rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
@@ -701,4 +696,10 @@ service  Playwright {
   rpc InstallCredential(Request.Empty) returns (Response.Empty);
   rpc GetCredential(Request.CredentialIdAndRpId) returns (Response.GetCredential);
   rpc DeleteCredential(Request.CredentialIdAndRpId) returns (Response.Empty);
+
+  /* Recorder */
+  rpc RecorderPoll(Request.Json) returns (Response.Json);
+  rpc RecorderStop(Request.Empty) returns (Response.Empty);
+  rpc SelectorPickerPoll(Request.Json) returns (Response.Json);
+  rpc SelectorPickerStop(Request.Empty) returns (Response.Empty);
 }

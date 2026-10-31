@@ -1069,7 +1069,7 @@ export async function newPersistentContext(
     const browserAndConfs = {
         browserType: browserName as 'chromium' | 'firefox' | 'webkit',
         browser: null,
-        headless: options?.headless || true,
+        headless: options?.headless ?? true,
     } as BrowserAndConfs;
     await openBrowsers.addBrowser(browserAndConfs);
     const browserState = await openBrowsers.getOrCreateActiveBrowser(null, timeout);

@@ -1011,6 +1011,22 @@ class HighlightMode(Enum):
     both = auto()
 
 
+class SelectorGenerator(Enum):
+    """How `Record Selector` writes the selector of the picked element.
+
+    ``playwright``: Playwright's own selector, the one its codegen and `Record Keyword`
+    use: role, text, label, placeholder or test id where they identify the element,
+    written in Browser selector syntax, for example ``role=button[name="Save"s]``.
+
+    ``css``: A CSS selector built from ids, classes, attributes and the element's
+    position, for example ``#login > div.form > button:nth-child(2)``. Frames are
+    joined with ``>>>`` and open shadow roots with ``>>``.
+    """
+
+    playwright = auto()
+    css = auto()
+
+
 class LambdaFunction:
     @classmethod
     def from_string(cls, string: str) -> "LambdaFunction":

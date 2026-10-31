@@ -94,7 +94,8 @@ exclude = [
     "index.js",
     "package.json",
     "package-lock.json",
-    "selector-finder.js",
+    "css-selector.js",
+    "recorder-toolbar.js",
 ]
 
 [tool.ruff]

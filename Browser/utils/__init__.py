@@ -62,6 +62,7 @@ from .data_types import (
     ScreenshotReturnType,
     ScrollPosition,
     SelectAttribute,
+    SelectorGenerator,
     SelectOptions,
     SelectionType,
     ServiceWorkersPermissions,

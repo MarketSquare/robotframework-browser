@@ -6,6 +6,7 @@ Browser/**/*.pyc
 Browser/rfbrowser.log
 **/.DS_Store
 node/playwright-wrapper/generated
+node/playwright-wrapper/static/css-selector.js
 
 docs/Browser.html
 docs/index.html

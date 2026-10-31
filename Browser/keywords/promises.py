@@ -106,6 +106,20 @@ class Promises(LibraryComponent):
             arg_names.append(arg_name)
 
         for index, arg in enumerate(args):
+            if not isinstance(arg, str):
+                # Only a string can be name=value; anything else, e.g. ${None},
+                # is a positional value, converted like any other.
+                if named:
+                    raise ValueError(
+                        f"Positional argument {arg!r} for keyword '{kw}' "
+                        "follows named arguments."
+                    )
+                positional.append(
+                    self.convert_keyword_arg(
+                        kw, arg_names[min(index, index_of_varargs)], arg
+                    )
+                )
+                continue
             arg_name, has_equal, arg_value = arg.partition("=")
             arg_name = arg_name.strip()
             arg_value = arg_value.strip()
