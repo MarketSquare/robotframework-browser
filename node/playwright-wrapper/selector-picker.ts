@@ -16,16 +16,14 @@
 // toolbar shows the result in its `selector` mode. Python drives the session by
 // polling, as for Record Keyword(s), and translates Playwright's selector.
 
-import { BrowserContext } from 'playwright';
-
 import { drivePick, endPick, Pick } from './element-picker';
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import {
     commandListeners,
     drainEntries,
-    existingRecorder,
     newBuffers,
+    otherSessionRuns,
     RecorderBuffers,
     removeToolbar,
     renderToolbar,
@@ -39,16 +37,6 @@ export interface PickerSession extends Pick {
     buffers: RecorderBuffers;
 }
 
-async function recordingRuns(context: BrowserContext): Promise<boolean> {
-    const recorder = existingRecorder(context);
-    if (!recorder) return false;
-    try {
-        return (await recorder).active;
-    } catch {
-        return false;
-    }
-}
-
 async function startSession(state: PlaywrightState, allowHeadless: boolean): Promise<PickerSession> {
     const page = state.getActivePage();
     if (!page) throw new Error('No page is open. Open a page before recording a selector.');
@@ -59,14 +47,14 @@ async function startSession(state: PlaywrightState, allowHeadless: boolean): Pro
         );
     }
     const context = page.context();
-    if (await recordingRuns(context)) {
+    const previous = sessions.get(state);
+    if (previous) await endSession(state, previous);
+    if (await otherSessionRuns(context)) {
         throw new Error(
-            'A Record Keyword(s) session is running in this browser context. ' +
+            'A Record Keyword(s) session or another Record Selector is running in this browser context. ' +
                 'Record Selector can run only after it ended.',
         );
     }
-    const previous = sessions.get(state);
-    if (previous) await endSession(state, previous);
     const session: PickerSession = { page, buffers: newBuffers(), picking: false };
     session.buffers.active = true;
     (await commandListeners(context)).add(session.buffers);

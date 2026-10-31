@@ -105,6 +105,27 @@ describe('startPick after stopPick', () => {
     });
 });
 
+describe('the size of a pick', () => {
+    it('refuses a selector longer than a reply may carry', async () => {
+        const s = session(async () => ({ _selector: 'x'.repeat(10_001) }));
+        startPick(s);
+        await flush();
+        expect(s.picked).toEqual({ error: 'The picked selector is too long.' });
+    });
+
+    it('drops a css selector the page made too long', async () => {
+        const frame = { evaluate: jest.fn(async () => undefined), parentFrame: () => null };
+        const s = session(async () => ({
+            _selector: 'css=b',
+            elementHandle: async () => element('x'.repeat(10_001), frame),
+        }));
+        startPick(s);
+        await flush();
+        await flush();
+        expect(s.picked).toEqual({ selector: 'css=b', error: 'The css selector is too long.' });
+    });
+});
+
 describe('cssSelectorOf', () => {
     it('joins the selectors of the frames from the outside in', async () => {
         const main = { evaluate: jest.fn(async () => undefined), parentFrame: () => null };

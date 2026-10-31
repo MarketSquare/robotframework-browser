@@ -173,6 +173,8 @@ def _translate_has_text(body: str) -> str | None:
     return f":has-text({_css_string(parsed.value)})"
 
 
+_CONTROL_CHARACTER = re.compile(r"[\x00-\x1f\x7f]")
+
 # `internal:attr=[placeholder="Email"i]` - one attribute, a quoted value and a flag.
 _ATTRIBUTE_RE = re.compile(r'^\[([A-Za-z_][\w-]*)=("(?:[^"\\]|\\.)*")\s*([isIS]?)\]$')
 
@@ -189,6 +191,9 @@ def _translate_attribute(body: str) -> str | None:
     if match is None:
         return None
     name, value, flag = match.groups()
+    # A raw line break or other control character is no valid CSS string.
+    if _CONTROL_CHARACTER.search(value):
+        return None
     if flag.lower() != "i":
         return f"[{name}={value}]"
     # An empty substring matches every element in Playwright, none in CSS.
@@ -263,17 +268,24 @@ def to_browser_selector(selector: str) -> str:
     # Rebuild, turning frame boundaries into Browser's ">>>" piercing separator
     # and attaching a text filter to the part it filters.
     out: list[str] = []
+    # `enters[i]`: a frame boundary follows `out[i]`.
+    enters: list[bool] = []
     for part in translated:
         if part == _ENTER_FRAME:
             if out:
-                out[-1] = out[-1] + " >>>"
+                enters[-1] = True
         elif not part.startswith(":"):
             out.append(part)
-        elif out and _is_plain_css(out[-1]):
+            enters.append(False)
+        elif out and not enters[-1] and _is_plain_css(out[-1]):
             out[-1] += part
         else:
             out.append(":scope" + part)
-    browser_selector = " >> ".join(out).replace(" >>> >> ", " >>> ")
+            enters.append(False)
+    browser_selector = "".join(
+        (" >>> " if enters[i - 1] else " >> ") + part if i else part
+        for i, part in enumerate(out)
+    )
     return f">>> {browser_selector}" if any_frame else browser_selector
 
 
@@ -283,8 +295,7 @@ _ENGINE_PREFIX_RE = re.compile(r"^[\w-]+=")
 
 def _is_plain_css(part: str) -> bool:
     return (
-        not part.endswith(">>>")
-        and (part.startswith("css=") or not _ENGINE_PREFIX_RE.match(part))
+        (part.startswith("css=") or not _ENGINE_PREFIX_RE.match(part))
         and "," not in part
         and not part.startswith(("//", ".."))
     )

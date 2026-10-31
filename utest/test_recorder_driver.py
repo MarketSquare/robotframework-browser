@@ -74,7 +74,7 @@ def test_first_poll_resets_later_ones_do_not():
     assert client.stopped
 
 
-def test_playwright_stop_drains_once_more_then_ends():
+def test_playwright_stop_drains_until_nothing_is_left_then_ends():
     s, clock = make()
     client = Client(
         [
@@ -88,7 +88,41 @@ def test_playwright_stop_drains_once_more_then_ends():
     assert run_session(s, client, clock=clock, sleep=lambda _: None) == "playwright"
     assert s.keywords == ["K"]
     assert "Fill Text" in s.text()
-    assert len(client.polls) == DRAIN_POLLS + SETTLE_POLLS
+    # The drain poll with the Fill, then an empty one.
+    assert len(client.polls) == DRAIN_POLLS + SETTLE_POLLS + 1
+
+
+def test_playwright_stop_drains_every_remaining_batch():
+    s, clock = make()
+    batches = [
+        reply(events=[{"event": "added", "action": {**FILL, "text": f"v{i}"}}])
+        for i in range(3)
+    ]
+    client = Client(
+        [
+            reply(commands=[{"cmd": "new", "name": "K"}]),
+            *settling(),
+            reply(mode="stopped"),
+            *batches,
+        ],
+        clock,
+    )
+    run_session(s, client, clock=clock, sleep=lambda _: None)
+    assert [line.split("    ")[-1] for line in s.text().splitlines()[-3:]] == [
+        "v0",
+        "v1",
+        "v2",
+    ]
+
+
+def test_unknown_commands_do_not_keep_the_session_alive():
+    s, clock = make()
+    junk = reply(commands=[{"cmd": "format-disk"}])
+    client = Client([junk] * 50, clock, step=1)
+    assert (
+        run_session(s, client, idle_timeout=3, clock=clock, sleep=lambda _: None)
+        == "idle"
+    )
 
 
 def test_failing_drain_poll_after_playwright_stop_is_ignored():

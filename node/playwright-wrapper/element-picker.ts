@@ -103,6 +103,14 @@ export async function resetPlaywrightCursor(page: Page): Promise<void> {
     );
 }
 
+// The longest selector a pick hands on. The css generator runs in the page under
+// test (ADR 0010); a reply must stay within gRPC's message limit. Mirrors
+// MAX_SELECTOR_LENGTH in Browser/recorder/picker.py.
+export const MAX_PICKED_LENGTH = 10_000;
+const MAX_ERROR_LENGTH = 1_000;
+
+const errorText = (e: unknown) => String(e).slice(0, MAX_ERROR_LENGTH);
+
 export function startPick(pick: Pick): void {
     pick.picking = true;
     pick.page
@@ -111,14 +119,20 @@ export function startPick(pick: Pick): void {
             // Stopped meanwhile (Reselect, Cancel, Stop): the pick is not wanted any more.
             if (!pick.picking) return;
             const selector = internalSelector(locator);
-            const css = await cssSelectorOf(locator).catch((e: unknown) => {
-                return { error: `The css selector could not be generated: ${String(e)}` };
-            });
+            if (selector.length > MAX_PICKED_LENGTH) {
+                pick.picked = { error: 'The picked selector is too long.' };
+                return;
+            }
+            const css = await cssSelectorOf(locator).then(
+                (generated) =>
+                    generated.length > MAX_PICKED_LENGTH ? { error: 'The css selector is too long.' } : generated,
+                (e: unknown) => ({ error: `The css selector could not be generated: ${errorText(e)}` }),
+            );
             pick.picked = typeof css === 'string' ? { selector, css } : { selector, ...css };
         })
         .catch((e: unknown) => {
             // A cancel (Reselect, Stop, a closed page) is not a result.
-            if (pick.picking) pick.picked = { error: String(e) };
+            if (pick.picking) pick.picked = { error: errorText(e) };
         })
         .finally(() => {
             pick.picking = false;

@@ -33,6 +33,11 @@ POLL_INTERVAL = 0.2
 #: A longer command id is not echoed, as in the recorder session.
 _ID_LIMIT = 64
 GENERATORS = ("playwright", "css")
+#: The commands of the selector panel; inside a recording they are prefixed
+#: `pick-`, and `pick-cancel` ends only the pick.
+PICK_COMMANDS = frozenset(
+    {"generator", "edit", "highlight", "reselect", "use", "stop", "cancel"}
+)
 #: An edited selector longer than this is not counted or used.
 MAX_SELECTOR_LENGTH = 10_000
 
@@ -142,7 +147,8 @@ class SelectorPicker:
         if count.get("selector") == self.selector:
             self.count = count
 
-    def handle_command(self, command: dict) -> None:
+    def handle_command(self, command: dict) -> bool:
+        """Apply one panel command; True if it was accepted."""
         name = command.get("cmd")
         handler = {
             "generator": self._generator,
@@ -159,10 +165,12 @@ class SelectorPicker:
             handler(command)
         except ValueError as error:
             self.error = str(error)
+            return False
         finally:
             command_id = command.get("id")
             if isinstance(command_id, str) and len(command_id) <= _ID_LIMIT:
                 self.answered = command_id
+        return True
 
     def _highlight(self, command: dict) -> None:
         on = command.get("on")
@@ -260,12 +268,11 @@ def _apply(picker: SelectorPicker, reply: dict) -> bool:
         if not isinstance(command, dict):
             continue
         try:
-            picker.handle_command(command)
+            # Junk from the page under test, even a known command it refuses,
+            # does not keep the pick alive.
+            active = picker.handle_command(command) or active
         except Exception as error:
-            # Junk from the page under test does not keep the pick alive.
             logger.warn(f"selector picker: ignoring command: {str(error)[:200]}")
-            continue
-        active = True
     count = reply.get("count")
     if isinstance(count, dict):
         picker.handle_count(count)

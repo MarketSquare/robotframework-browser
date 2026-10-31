@@ -70,6 +70,9 @@ def _suite_file() -> Path:
 class _GrpcRecorderClient:
     def __init__(self, library: LibraryComponent) -> None:
         self._library = library
+        # Set by an accepted reset poll. A start refused because another session
+        # runs in the context must not stop that one.
+        self._started = False
 
     def poll(self, state: dict, reset: bool, request: dict | None = None) -> dict:
         body = json.dumps(
@@ -82,6 +85,7 @@ class _GrpcRecorderClient:
         )
         with self._library.playwright.grpc_channel() as stub:
             response = stub.RecorderPoll(Request().Json(body=body))
+        self._started = True
         try:
             reply = json.loads(response.json)
         except ValueError:
@@ -93,6 +97,8 @@ class _GrpcRecorderClient:
         return reply
 
     def stop(self) -> None:
+        if not self._started:
+            return
         with self._library.playwright.grpc_channel() as stub:
             stub.RecorderStop(Request().Empty())
 
@@ -100,6 +106,8 @@ class _GrpcRecorderClient:
 class _GrpcPickerClient:
     def __init__(self, library: LibraryComponent) -> None:
         self._library = library
+        # As for the recorder: a refused start does not stop the session running.
+        self._started = False
 
     def poll(self, state: dict, request: dict, reset: bool) -> dict:
         body = json.dumps(
@@ -112,6 +120,7 @@ class _GrpcPickerClient:
         )
         with self._library.playwright.grpc_channel() as stub:
             response = stub.SelectorPickerPoll(Request().Json(body=body))
+        self._started = True
         try:
             reply = json.loads(response.json)
         except ValueError:
@@ -123,6 +132,8 @@ class _GrpcPickerClient:
         return reply
 
     def stop(self) -> None:
+        if not self._started:
+            return
         with self._library.playwright.grpc_channel() as stub:
             stub.SelectorPickerStop(Request().Empty())
 

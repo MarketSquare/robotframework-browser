@@ -94,6 +94,18 @@ def rendered(action: dict) -> str | None:
             '>>> [name="b"] >>> label="Pin"i',
         ),
         ("internal:control=any-frame >> internal:role=button", ">>> role=button"),
+        # a frame separator inside a quoted value is text
+        (
+            'internal:role=button[name="a >>> >> b"i]',
+            'role=button[name*="a >>> >> b"i]',
+        ),
+        (
+            'internal:attr=[id="f"s] >> internal:control=enter-frame >> div'
+            ' >> internal:has-text="x"i',
+            '[id="f"] >>> div:has-text("x")',
+        ),
+        # a line break in an attribute value is no valid CSS string: kept internal
+        ('internal:attr=[title="a\nb"s]', 'internal:attr=[title="a\nb"s]'),
     ],
 )
 def test_to_browser_selector(internal, expected):

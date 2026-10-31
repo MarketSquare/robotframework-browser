@@ -4,6 +4,7 @@ jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.f
 jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
 
 import {
+    commandListeners,
     ensureRecorder,
     Entry,
     HELD_BACK_MS,
@@ -13,6 +14,7 @@ import {
     MAX_ENTRIES_PER_POLL,
     MAX_EVENT_BYTES,
     MAX_REPLY_BYTES,
+    newBuffers,
     RecorderBuffers,
     recorderPoll,
     recorderStop,
@@ -630,5 +632,39 @@ describe('recorderPoll with the toolbar Pick button', () => {
         page.win.mode = 'recording';
         await poll(context);
         expect(frameEvaluate).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('one recording session per context', () => {
+    it('refuses a second session in the same context', async () => {
+        const context = fakeRecorderContext([fakePage('recording')]);
+        await recorderPoll(pollBody({ reset: true }), stateFor(context));
+        await expect(recorderPoll(pollBody({ reset: true }), stateFor(context))).rejects.toThrow('already running');
+    });
+
+    it('refuses a session while Record Selector runs in the context', async () => {
+        const context = fakeRecorderContext([fakePage('recording')]);
+        const picker = newBuffers();
+        picker.active = true;
+        (await commandListeners(context)).add(picker);
+        await expect(recorderPoll(pollBody({ reset: true }), stateFor(context))).rejects.toThrow('already running');
+    });
+
+    it('keeps polling the context it started in, and ends when that one closes', async () => {
+        let close: () => void = () => undefined;
+        const recorded = fakeRecorderContext([fakePage('recording')]);
+        recorded.once = (_event: string, listener: () => void) => (close = listener);
+        const other = fakeRecorderContext([fakePage('recording'), fakePage('recording')]);
+        let active = recorded;
+        const state = {
+            getActiveContext: () => active,
+            getActivePage: () => undefined,
+            activeBrowser: { headless: false },
+        } as any;
+        await recorderPoll(pollBody({ reset: true }), state);
+        active = other;
+        expect(JSON.parse((await recorderPoll(pollBody({}), state)).json).pages).toBe(1);
+        close();
+        expect(JSON.parse((await recorderPoll(pollBody({}), state)).json).pages).toBe(0);
     });
 });

@@ -140,10 +140,18 @@ def test_an_unreadable_reply_is_a_protocol_error(raw):
         _client(_FakeStub(raw)).poll({}, False)
 
 
-def test_stop_calls_recorder_stop():
+def test_stop_calls_recorder_stop_after_a_started_session():
+    stub = _FakeStub()
+    client = _client(stub)
+    client.poll({}, True)
+    client.stop()
+    assert stub.stopped
+
+
+def test_stop_leaves_a_session_alone_whose_start_was_refused():
     stub = _FakeStub()
     _client(stub).stop()
-    assert stub.stopped
+    assert not stub.stopped
 
 
 @pytest.mark.parametrize("idle", [timedelta(0), timedelta(seconds=-1)])

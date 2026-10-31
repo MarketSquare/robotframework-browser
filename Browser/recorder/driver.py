@@ -128,9 +128,18 @@ def _apply_pick(session: RecorderSession, reply: dict) -> bool:
     return active
 
 
+#: A reply carries a bounded number of entries; this many more polls take what
+#: Playwright still had when its Record button stopped the recording.
+FINAL_POLLS = 20
+
+
 def _drain_after_stop(session: RecorderSession, client: RecorderClient) -> None:
     try:
-        _apply(session, client.poll(session.toolbar_state(), False))
+        for _ in range(FINAL_POLLS):
+            reply = client.poll(session.toolbar_state(), False)
+            _apply(session, reply)
+            if not _entries(reply):
+                return
     except Exception as error:
         logger.warn(f"recorder: final poll failed: {error!r}")
 
@@ -139,39 +148,44 @@ def _apply(session: RecorderSession, reply: dict) -> bool:
     """Apply one poll reply in order: an Undo clicked before an Action undoes
     the Action before it, not that one.
 
-    True if it carried any well-formed entry: junk from the page under test
-    must not keep an idle session alive.
+    True if it carried an Action or a command the toolbar has: junk from the
+    page under test must not keep an idle session alive.
     """
-    entries = _entries(reply)
-    for entry in entries:
+    active = False
+    for entry in _entries(reply):
         if "command" in entry:
-            _safely(f"command {entry['command']!r}", _handle_command, session, entry)
+            what = f"command {entry['command']!r}"
+            active = _safely(what, _handle_command, session, entry) or active
         else:
-            _safely(f"event {entry!r}", _handle_event, session, entry)
-    return bool(entries)
+            active = (
+                _safely(f"event {entry!r}", _handle_event, session, entry) or active
+            )
+    return active
 
 
-def _handle_event(session: RecorderSession, entry: dict) -> None:
+def _handle_event(session: RecorderSession, entry: dict) -> bool:
     session.handle_event(
         str(entry.get("event", "added")), dict(entry.get("action") or {})
     )
+    return True
 
 
-def _handle_command(session: RecorderSession, entry: dict) -> None:
-    session.handle_command(entry["command"])
+def _handle_command(session: RecorderSession, entry: dict) -> bool:
+    return session.handle_command(entry["command"])
 
 
 def _safely(
     what: str,
-    handler: Callable[[RecorderSession, dict], None],
+    handler: Callable[[RecorderSession, dict], bool],
     session: RecorderSession,
     entry: dict,
-) -> None:
+) -> bool:
     """Survive one malformed event or command: the channel is page-callable (ADR 0010)."""
     try:
-        handler(session, entry)
+        return handler(session, entry)
     except Exception as error:
         logger.warn(f"recorder: ignoring {_truncate(what)}: {_truncate(repr(error))}")
+        return False
 
 
 def _truncate(text: str) -> str:

@@ -515,3 +515,23 @@ def test_a_read_only_file_is_not_overwritten(tmp_path):
 def test_a_missing_folder_is_named_in_the_error(tmp_path):
     with pytest.raises(PermissionError, match="does not exist"):
         FileTarget(tmp_path / "missing" / "k.resource").save(keyword())
+
+
+def test_a_failed_first_write_does_not_claim_a_keyword_added_meanwhile(tmp_path):
+    path = tmp_path / "k.resource"
+    target = FileTarget(path)
+    write = target._write
+
+    def fail_once(*args, **kwargs):
+        target._write = write
+        raise OSError("disk full")
+
+    target._write = fail_once
+    kw = RecordedKeyword("Shared")
+    kw.add(Call("Log", [Value.literal("ours")]))
+    with pytest.raises(OSError):
+        target.save(kw)
+    path.write_text("*** Keywords ***\nShared\n    Log    theirs\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="already exists"):
+        target.save(kw)
+    assert "theirs" in path.read_text(encoding="utf-8")

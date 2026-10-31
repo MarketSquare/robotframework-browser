@@ -276,3 +276,21 @@ def test_refused_commands_do_not_keep_the_pick_alive():
             clock=clock,
             sleep=lambda _seconds: None,
         )
+
+
+def test_a_refused_known_command_does_not_keep_the_pick_alive():
+    now = [0.0]
+
+    def clock():
+        now[0] += 1
+        return now[0]
+
+    refused = {"pages": 1, "entries": [{"command": {"cmd": "highlight", "on": "yes"}}]}
+    with pytest.raises(TimeoutError):
+        run_picker(
+            SelectorPicker(None, "css"),
+            FakeClient([refused] * 10),
+            idle_timeout=3,
+            clock=clock,
+            sleep=lambda _seconds: None,
+        )

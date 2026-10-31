@@ -225,6 +225,21 @@ Closing All Pages Ends The Session
 Shadowing Name Is Rejected
     Run Keyword And Expect Error    *would be shadowed*    Record Keyword    click    ${RESOURCE}
 
+A Second Session In The Same Context Is Refused And Leaves The First Running
+    ${promise} =    Promise To    Record Keyword    First Session    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Run Keyword And Expect Error
+    ...    *already running in this browser context*
+    ...    Record Keyword
+    ...    Second Session
+    ...    ${None}
+    Fill Text    id=input_name    still recorded
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    still recorded
+
 Second Session In Same Context Records Nothing Twice
     FOR    ${name}    IN    First Run    Second Run
         ${promise} =    Promise To    Record Keyword    ${name}    ${RESOURCE}

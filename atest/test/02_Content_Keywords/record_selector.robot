@@ -156,6 +156,17 @@ Cancel Fails The Keyword
     The Page Has Its Own Pointer Again
     Wait For Function    () => !window.__rfbToolbarState
 
+Record Keyword Is Refused While Record Selector Runs And Leaves It Running
+    ${promise} =    Promise To    Record Selector
+    Picker Should Be Picking
+    Run Keyword And Expect Error    *already running in this browser context*    Record Keyword    Not Now    ${None}
+    Wait For Function    () => window.__rfbToolbarState && window.__rfbToolbarState.mode === 'selector'
+    Click    text=Pressed
+    Picker Should Have Picked
+    Send Command    {cmd: 'use'}
+    ${selector} =    Wait For    ${promise}
+    Get Text    ${selector}    ==    Pressed
+
 The Idle Timeout Fails The Keyword
     Run Keyword And Expect Error    *timed out*    Record Selector    idle_timeout=1s
 
@@ -170,7 +181,9 @@ Record Selector Fails In A Headless Browser
 Record Selector Is Refused While A Recording Session Runs
     ${recording} =    Promise To    Record Keyword    Not Now    ${None}
     Wait For Function    () => window.__rfbToolbarState && window.__rfbToolbarState.state === 'recording'
-    Run Keyword And Expect Error    *Record Keyword(s) session is running*    Record Selector
+    Run Keyword And Expect Error
+    ...    *Record Keyword(s) session or another Record Selector is running*
+    ...    Record Selector
     Send Command    {cmd: 'stop'}
     Wait For    ${recording}
 

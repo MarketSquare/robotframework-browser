@@ -160,9 +160,11 @@ class FileTarget:
                 separated,
                 section_separated or (owned.section_separated if owned else False),
             )
+        # Owned only once written: a failed first write must not let a later
+        # retry overwrite a keyword of that name that someone else added meanwhile.
+        self._write(model)
         owned.signature = _signature(block)
         self._owned[key] = owned
-        self._write(model)
         return notice
 
     def finish(self, keyword: RecordedKeyword) -> None:

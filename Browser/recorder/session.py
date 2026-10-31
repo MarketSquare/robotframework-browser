@@ -41,7 +41,7 @@ from .names import (
     argument_name_error,
     plain_argument_name,
 )
-from .picker import SelectorPicker
+from .picker import PICK_COMMANDS, SelectorPicker
 from .target import Target
 
 IDLE = "idle"
@@ -63,6 +63,7 @@ _STILL_FINISHING = "Still finishing the last command - please wait."
 _STILL_STARTING = "Still starting the keyword - please wait."
 _STILL_PICKING = "Use or cancel the picked selector first."
 _DEFERRED = ("finish", "discard", "stop", "pause", "resume")
+_COMMANDS = frozenset({"pick", "new", "undo", "argument", "replace", *_DEFERRED})
 _STARTING = "new"
 #: The toolbar shows at most this many characters of one text.
 TOOLBAR_TEXT_LIMIT = 200
@@ -301,11 +302,12 @@ class RecorderSession:
 
     # -- commands ---------------------------------------------------------- #
 
-    def handle_command(self, command: dict) -> None:
-        """Apply one toolbar command.
+    def handle_command(self, command: dict) -> bool:
+        """Apply one toolbar command; True if it is a command the toolbar has.
 
         A command's ``id`` comes back as ``answered`` in the toolbar state, with
-        ``error`` saying whether it was refused.
+        ``error`` saying whether it was refused. Only a known command counts as
+        activity: the page under test can send anything (ADR 0010).
         """
         self._error = None
         self._notice = None
@@ -313,15 +315,18 @@ class RecorderSession:
         if isinstance(command_id, str) and len(command_id) <= _ID_LIMIT:
             self._answered = command_id
         cmd = str(command.get("cmd", ""))
+        known = cmd in _COMMANDS or (
+            cmd.startswith("pick-") and cmd[len("pick-") :] in PICK_COMMANDS
+        )
         if self._pending is not None and cmd != "stop":
             self._error = (
                 _STILL_STARTING if self._pending[0] == _STARTING else _STILL_FINISHING
             )
-            return
+            return known
         if self._picker is not None and not cmd.startswith("pick") and cmd != "stop":
             # The keyword's buttons are hidden while picking; only ✕ ends everything.
             self._error = _STILL_PICKING
-            return
+            return known
         if cmd == "pick":
             self._open_picker()
         elif cmd.startswith("pick-"):
@@ -337,6 +342,7 @@ class RecorderSession:
             self._argument_command(cmd, command)
         else:
             self.log.append(f"unknown recorder command {cmd[:_LOGGED_NAME_LIMIT]!r}")
+        return known
 
     def tick(self) -> None:
         if self._pending is None or self._clock() < self._pending[1]:

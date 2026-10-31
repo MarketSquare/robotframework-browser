@@ -337,6 +337,23 @@ export async function resetSession(
     await writeMode(context, 'recording');
 }
 
+// The context a session records, from its reset poll on: the active context can
+// change while it runs, and closing the recorded one ends it.
+const recordingContexts = new WeakMap<PlaywrightState, BrowserContext>();
+const closedContexts = new WeakSet<BrowserContext>();
+
+function rememberContext(state: PlaywrightState, context: BrowserContext): void {
+    recordingContexts.set(state, context);
+    const events = context as unknown as { once?: (event: string, listener: () => void) => void };
+    events.once?.('close', () => closedContexts.add(context));
+}
+
+// One session per context: two would share the toolbar and its commands, and
+// either one's stop would end the other.
+export async function otherSessionRuns(context: BrowserContext): Promise<boolean> {
+    return [...(await commandListeners(context))].some((buffers) => buffers.active);
+}
+
 // Python's picker sends `pick` while it is open; without it, a pick ends.
 async function pickInRecording(
     state: PlaywrightState,
@@ -363,10 +380,11 @@ async function pickInRecording(
 }
 
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
-    const context = state.getActiveContext();
     const body = JSON.parse(request.body || '{}');
     const { state: toolbarState, reset, allowHeadless } = body;
-    if (!context) {
+    const remembered = reset ? undefined : recordingContexts.get(state);
+    const context = remembered ?? state.getActiveContext();
+    if (!context || (remembered && closedContexts.has(remembered))) {
         if (reset) throw new Error('No browser context is open. Open a page before recording.');
         // Closed during the session, with its pages: ends it like closing the last page.
         return jsonResponse(JSON.stringify({ mode: 'recording', picking: false, pages: 0, entries: [] }), '');
@@ -377,8 +395,16 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
                 'Open it with New Browser    headless=False.',
         );
     }
+    // Before anything touches the context: starting Playwright's recording
+    // would end the pick of a Record Selector running there.
+    if (reset && (await otherSessionRuns(context))) {
+        throw new Error('A Record Keyword(s) or Record Selector session is already running in this browser context.');
+    }
     const buffers = await ensureRecorder(context);
-    if (reset) await resetSession(context, buffers);
+    if (reset) {
+        rememberContext(state, context);
+        await resetSession(context, buffers);
+    }
     if (toolbarState) await renderToolbars(context, buffers, toolbarState);
     const picked = await pickInRecording(state, buffers, body);
     const mode = await readMode(context);
@@ -420,8 +446,9 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
 }
 
 export async function recorderStop(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
-    const context = state.getActiveContext();
-    if (!context) return emptyWithLog('No context to stop recording in.');
+    const context = recordingContexts.get(state) ?? state.getActiveContext();
+    recordingContexts.delete(state);
+    if (!context || closedContexts.has(context)) return emptyWithLog('No context to stop recording in.');
     try {
         const recorder = existingRecorder(context);
         if (recorder) {
