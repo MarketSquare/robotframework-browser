@@ -180,10 +180,22 @@ class Recorder(LibraryComponent):
         pages are closed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
 
-        | =Arguments= | =Description= |
-        | ``name`` | Name of the User Keyword to create. It must not exist in ``file`` and must not shadow any keyword the running suite can call. |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite; in a suite initialisation file that is its ``__init__.robot``, and a keyword recorded there can only be used in that file. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. The folder must exist and an existing file must be writable; both are checked before recording starts. With ``${None}`` nothing is written; the keyword is logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
+        *Arguments:*
+          - ``name``: Name of the User Keyword to create. It must not exist in
+                ``file`` and must not shadow any keyword the running suite can call.
+          - ``file``: Target ``.robot`` or ``.resource`` file. Defaults to
+                ``${SUITE_SOURCE}``, the file of the running suite; in a suite
+                initialisation file that is its ``__init__.robot``, and a keyword recorded
+                there can only be used in that file. A relative path is resolved against the
+                current working directory, not against the suite; use ``${CURDIR}`` for a
+                file next to the suite. The folder must exist and an existing file must be
+                writable; both are checked before recording starts. With ``${None}`` nothing
+                is written; the keyword is logged to the console and to the log at INFO
+                level instead.
+          - ``idle_timeout``: Ends the recording after this long without an Action or
+                toolbar command. Must be greater than zero. Default: 5 minutes, so a
+                forgotten recording does not block the run for good. ``${None}`` waits
+                without limit.
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
         If a recorded keyword cannot be written - the file became read-only, the disk is
@@ -294,9 +306,20 @@ class Recorder(LibraryComponent):
         pages are closed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
 
-        | =Arguments= | =Description= |
-        | ``file`` | Target ``.robot`` or ``.resource`` file. Defaults to ``${SUITE_SOURCE}``, the file of the running suite; in a suite initialisation file that is its ``__init__.robot``, and a keyword recorded there can only be used in that file. A relative path is resolved against the current working directory, not against the suite; use ``${CURDIR}`` for a file next to the suite. The folder must exist and an existing file must be writable; both are checked before recording starts. With ``${None}`` nothing is written; the keywords are logged to the console and to the log at INFO level instead. |
-        | ``idle_timeout`` | Ends the recording after this long without an Action or toolbar command. Must be greater than zero. Default: 5 minutes, so a forgotten recording does not block the run for good. ``${None}`` waits without limit. |
+        *Arguments:*
+          - ``file``: Target ``.robot`` or ``.resource`` file. Defaults to
+                ``${SUITE_SOURCE}``, the file of the running suite; in a suite
+                initialisation file that is its ``__init__.robot``, and a keyword recorded
+                there can only be used in that file. A relative path is resolved against the
+                current working directory, not against the suite; use ``${CURDIR}`` for a
+                file next to the suite. The folder must exist and an existing file must be
+                writable; both are checked before recording starts. With ``${None}`` nothing
+                is written; the keywords are logged to the console and to the log at INFO
+                level instead.
+          - ``idle_timeout``: Ends the recording after this long without an Action or
+                toolbar command. Must be greater than zero. Default: 5 minutes, so a
+                forgotten recording does not block the run for good. ``${None}`` waits
+                without limit.
 
         Returns the text of all keywords recorded in the session, under one
         ``*** Keywords ***`` header.
@@ -383,10 +406,13 @@ class Recorder(LibraryComponent):
         - *✕* in the header, or Escape in the toolbar: cancels, and the keyword fails.
         - Minimized, the header offers *Reselect* and *Use* once an element is picked.
 
-        | =Arguments= | =Description= |
-        | ``label`` | Shown in the toolbar header, to say which element to pick. |
-        | ``generator`` | The generator the toolbar starts with; the toolbar can switch it. ``playwright`` (default) or ``css``. |
-        | ``idle_timeout`` | Fails the keyword after this long without a pick or toolbar command. Must be greater than zero. Default: 5 minutes. ``${None}`` waits without limit. |
+        *Arguments:*
+          - ``label``: Shown in the toolbar header, to say which element to pick.
+          - ``generator``: The generator the toolbar starts with; the toolbar can
+                switch it. ``playwright`` (default) or ``css``.
+          - ``idle_timeout``: Fails the keyword after this long without a pick or
+                toolbar command. Must be greater than zero. Default: 5 minutes. ``${None}``
+                waits without limit.
 
         Fails in a headless browser, while a `Record Keyword` or `Record Keywords` session
         runs in the browser context, when the page is closed, on cancel and when the

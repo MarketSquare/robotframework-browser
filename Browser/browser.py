@@ -381,10 +381,8 @@ class Browser(DynamicCore):
     Browser library running on the same machine, instead of each one starting its
     own. This can speed up parallel runs. Start it from the directory where the
     Browser package is installed with
-    ```
-    PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT
-    ```
-    , for example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
+    ``PLAYWRIGHT_BROWSERS_PATH=0 node Browser/wrapper/index.js HOST PORT``,
+    for example ``... index.js 127.0.0.1 12345``. Both arguments are required: the
     script reads the host first and exits with ``No port defined`` if only one is
     given. Point runs at it
     with the ``playwright_process_port`` import parameter or the
@@ -499,19 +497,19 @@ class Browser(DynamicCore):
         *Arguments:*
           - ``_``: Positional arguments are ignored. All arguments must be passed as named arguments.
           - ``auto_closing_level``: Configure context and page automatic closing.
-                Default is ``TEST``, for more details, see `AutoClosingLevel`
+                Default is ``TEST``, for more details, see [#type-AutoClosingLevel|AutoClosingLevel]
           - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
                 ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
                 passed tests or suites, depending on the context scope, will not be saved.
                 Also temp files will all be deleted after the whole execution ends.
           - ``enable_playwright_debug``: Enable low level debug information from the
                 playwright to playwright-log.txt file. For more details, see
-                `PlaywrightLogTypes`.
+                [#type-PlaywrightLogTypes|PlaywrightLogTypes].
           - ``enable_presenter_mode``: Automatic highlights the interacted components,
                 slowMo and a small pause at the end. Can be enabled by giving True or
                 can be customized by giving a dictionary: ``{"duration": "2 seconds",
-                "width": "2px", "style": "dotted", "color": "blue"}`` Where `duration` is
-                time format in Robot Framework format, defaults to 2 seconds. `width` is
+                "width": "2px", "style": "dotted", "color": "blue"}`` Where ``duration`` is
+                time format in Robot Framework format, defaults to 2 seconds. ``width`` is
                 width of the marker in pixels, defaults the ``2px``. ``style`` is the style
                 of border, defaults to ``dotted``. ``color`` is the color of the marker,
                 defaults to ``blue``. By default, the call banner keyword is also enabled

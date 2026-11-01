@@ -162,7 +162,7 @@ class NotSet(Enum):
     This is used to differentiate between a value that is set to None and
     a value that is not set at all. Example `ForcedColors` has an options
     active, none and null. If user does not not want to give any of
-    the `ForcedColors` options, user can use `not_set` value. Then keyword
+    the `ForcedColors` options, user can use ``not_set`` value. Then keyword
     will not define `ForcedColors` option at all when underlying Playwright
     method(s) is called.
     """
@@ -771,10 +771,10 @@ class RecordHar(TypedDict, total=False):
     If not specified, the HAR is not recorded. Make sure to await context to close for the
     [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
 
-    `omitContent`: Optional setting to control whether to omit request content
+    ``omitContent``: Optional setting to control whether to omit request content
     from the HAR. Default is False
 
-    `path`: Path on the filesystem to write the HAR file to. A relative path is
+    ``path``: Path on the filesystem to write the HAR file to. A relative path is
     relative to the output directory.
 
     Example:
@@ -1515,7 +1515,7 @@ class PageLoadStates(Enum):
 
 
 class ReduceMotion(Enum):
-    """Emulates `prefers-reduced-motion` media feature, supported values are `reduce`, `no-preference`."""
+    """Emulates ``prefers-reduced-motion`` media feature, supported values are ``reduce``, ``no-preference``."""
 
     reduce = auto()
     no_preference = auto()
@@ -1637,8 +1637,8 @@ class PlaywrightLogTypes(Enum):
     ``disabled``: playwright-log.txt is not created at all. All node side logging is lost.
     ``library``: Default, only logging from Browser library node side is written to the playwright-log.txt file.
     ``playwright``: Also includes Playwright log messages to the playwright-log.txt file.
-    ``false``: Same as `library` and for backwards compatability.
-    ``true``: Same as `playwright` and for backwards compatibility.
+    ``false``: Same as ``library`` and for backwards compatability.
+    ``true``: Same as ``playwright`` and for backwards compatibility.
     """
 
     disabled = auto()
@@ -1769,10 +1769,10 @@ class ClockType(Enum):
     ``fixed``: Sets the fixed time for Date.now() and new Date().
     ``system``: Is only recommended for advanced use cases.
     ``install``: initializes the clock and allows you to:
-            `pause_at`: Pauses the time at a specific time.
-            `fast_forward`: Fast forwards the time.
-            `run_for`: Runs the time for a specific duration.
-            `resume`: Resumes the time.
+            ``pause_at``: Pauses the time at a specific time.
+            ``fast_forward``: Fast forwards the time.
+            ``run_for``: Runs the time for a specific duration.
+            ``resume``: Resumes the time.
     """
 
     fixed = auto()
@@ -1852,9 +1852,9 @@ class TracingGroupMode(Enum):
 class TextType(Enum):
     """Defines which Playwright method is used to get the text of an element.
 
-    ``allInnerTexts``: Returns a list of `node.innerText` values for all matching nodes.
+    ``allInnerTexts``: Returns a list of ``node.innerText`` values for all matching nodes.
 
-    ``allTextContents``: Returns a list of `node.textContent` values for all matching nodes.
+    ``allTextContents``: Returns a list of ``node.textContent`` values for all matching nodes.
 
     ``innerText``: Returns the element node.innerText value, which represents the rendered text content of a node and its descendants.
 
