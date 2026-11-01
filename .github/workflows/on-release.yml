@@ -257,6 +257,7 @@ jobs:
     needs:
       - build_browser_wheels
       - test_browser_wheels
+      - publish-browser-to-pypi
     name: Publish BrowserBatteries to PyPI
     runs-on: ubuntu-latest
     environment:
@@ -286,7 +287,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
 
   wait-for-pypi:
-    needs: publish-browser-to-pypi
+    needs: publish-browserbatteries-to-pypi
     name: Wait for Browser to appear on PyPI
     runs-on: ubuntu-latest
     timeout-minutes: 25
