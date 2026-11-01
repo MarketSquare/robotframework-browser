@@ -1,5 +1,4 @@
 import threading
-from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -157,16 +156,13 @@ def test_failing_removal_is_logged_and_original_error_raised(
     assert "connection lost" in warnings[0]
 
 
-@contextmanager
-def fake_channel(stub):
-    yield stub
-
-
-def test_failing_new_page_removes_the_failed_page_by_its_token(browser: Browser):
+def test_failing_new_page_removes_the_failed_page_by_its_token(
+    browser: Browser, stub_grpc_channel
+):
     stub = MagicMock()
     stub.NewPage.side_effect = AssertionError("page.goto: Timeout 5000ms exceeded")
     stub.RemoveFailedPage.return_value = MagicMock(log="")
-    browser.playwright.grpc_channel = lambda *args, **kwargs: fake_channel(stub)
+    stub_grpc_channel(browser, stub)
 
     with pytest.raises(AssertionError, match="Timeout"):
         browser.new_page("http://slow")
@@ -176,11 +172,13 @@ def test_failing_new_page_removes_the_failed_page_by_its_token(browser: Browser)
     assert stub.RemoveFailedPage.call_args.args[0].token == token
 
 
-def test_each_new_page_call_gets_its_own_failed_page_token(browser: Browser):
+def test_each_new_page_call_gets_its_own_failed_page_token(
+    browser: Browser, stub_grpc_channel
+):
     stub = MagicMock()
     stub.NewPage.side_effect = AssertionError("page.goto: Timeout 5000ms exceeded")
     stub.RemoveFailedPage.return_value = MagicMock(log="")
-    browser.playwright.grpc_channel = lambda *args, **kwargs: fake_channel(stub)
+    stub_grpc_channel(browser, stub)
 
     for _ in range(2):
         with pytest.raises(AssertionError):

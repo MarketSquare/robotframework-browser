@@ -1,15 +1,9 @@
 import json
-from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
 
 from Browser import Browser
-
-
-@contextmanager
-def fake_channel(stub):
-    yield stub
 
 
 def response_chunk(body_part: str, content_type: str = "text/plain", **extra):
@@ -35,9 +29,9 @@ def stub() -> MagicMock:
 
 
 @pytest.fixture
-def browser(stub: MagicMock) -> Browser:
+def browser(stub: MagicMock, stub_grpc_channel) -> Browser:
     browser = Browser()
-    browser.playwright.grpc_channel = lambda *args, **kwargs: fake_channel(stub)
+    stub_grpc_channel(browser, stub)
     return browser
 
 

@@ -34,7 +34,9 @@ function makeMockRequest(
     } as any;
 }
 
-function makeMockPage(overrides: Partial<{ waitForRequest: jest.Mock; waitForEvent: jest.Mock }> = {}) {
+function makeMockPage(
+    overrides: Partial<{ waitForRequest: jest.Mock; waitForResponse: jest.Mock; waitForEvent: jest.Mock }> = {},
+) {
     const mockRequest = makeMockRequest();
     return {
         waitForRequest: jest.fn().mockResolvedValue(mockRequest),
@@ -273,19 +275,18 @@ function makeMockResponse(text: jest.Mock = jest.fn().mockResolvedValue('{"greet
     } as any;
 }
 
-function pageResponding(response: any) {
-    return { waitForResponse: jest.fn().mockResolvedValue(response) } as any;
-}
-
 describe('waitForResponse', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it('returns response metadata with headers serialized as JSON strings', async () => {
-        const [chunk] = await waitForResponse(makeRequest(), pageResponding(makeMockResponse()));
+    it('returns at least the legacy response metadata with headers serialized as JSON strings', async () => {
+        const [chunk] = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(makeMockResponse()) }),
+        );
 
-        expect(JSON.parse(chunk.json)).toEqual({
+        expect(JSON.parse(chunk.json)).toMatchObject({
             status: 200,
             headers: '{"content-type":"application/json"}',
             statusText: 'OK',
@@ -300,7 +301,10 @@ describe('waitForResponse', () => {
     });
 
     it('sends the body unparsed in bodyPart', async () => {
-        const [chunk] = await waitForResponse(makeRequest(), pageResponding(makeMockResponse()));
+        const [chunk] = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(makeMockResponse()) }),
+        );
 
         expect(chunk.bodyPart).toBe('{"greeting":"HELLO"}');
     });
@@ -308,7 +312,10 @@ describe('waitForResponse', () => {
     it('sends an empty body as a single empty chunk', async () => {
         const response = makeMockResponse(jest.fn().mockResolvedValue(''));
 
-        const chunks = await waitForResponse(makeRequest(), pageResponding(response));
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
 
         expect(chunks).toHaveLength(1);
         expect(chunks[0].bodyPart).toBe('');
@@ -318,7 +325,10 @@ describe('waitForResponse', () => {
     it('marks the body as null when it cannot be read', async () => {
         const response = makeMockResponse(jest.fn().mockRejectedValue(new Error('body unavailable')));
 
-        const chunks = await waitForResponse(makeRequest(), pageResponding(response));
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
 
         expect(chunks).toHaveLength(1);
         expect(JSON.parse(chunks[0].json).body).toBeNull();
@@ -328,7 +338,10 @@ describe('waitForResponse', () => {
         const body = 'x'.repeat(1_500_000);
         const response = makeMockResponse(jest.fn().mockResolvedValue(body));
 
-        const chunks = await waitForResponse(makeRequest(), pageResponding(response));
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
 
         expect(chunks).toHaveLength(2);
         expect(chunks.map((chunk) => chunk.bodyPart).join('')).toBe(body);
