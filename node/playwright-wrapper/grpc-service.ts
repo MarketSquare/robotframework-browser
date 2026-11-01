@@ -421,6 +421,7 @@ export class PlaywrightServer {
     tap = this.wrapping(interaction.tap);
     hover = this.wrapping(interaction.hover);
     focus = this.wrapping(interaction.focus);
+    blur = this.wrapping(interaction.blur);
     checkCheckbox = this.wrapping(interaction.checkCheckbox);
     uncheckCheckbox = this.wrapping(interaction.uncheckCheckbox);
     getElement = this.wrapping(evaluation.getElement);

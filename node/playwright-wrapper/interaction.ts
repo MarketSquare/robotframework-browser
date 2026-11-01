@@ -167,6 +167,14 @@ export async function focus(request: pb.Request_ElementSelector, state: Playwrig
     return emptyWithLog(`Focused element: ${selector}`);
 }
 
+export async function blur(request: pb.Request_ElementSelector, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const selector = request.selector;
+    const strictMode = request.strict;
+    const locator = await findLocator(state, selector, strictMode, true);
+    await locator.blur();
+    return emptyWithLog(`Blurred element: ${selector}`);
+}
+
 export async function checkCheckbox(
     request: pb.Request_ElementSelector,
     state: PlaywrightState,

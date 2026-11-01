@@ -589,6 +589,8 @@ service  Playwright {
   rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
   rpc Focus(Request.ElementSelector) returns (Response.Empty);
+  /* Removes focus from element specified by selector */
+  rpc Blur(Request.ElementSelector) returns (Response.Empty);
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page and retries until the expression is true */
