@@ -110,6 +110,11 @@ app.get('/api/get/text', (req, res) => {
     res.send('HELLO');
 });
 
+app.get('/api/get/json-as-text', (req, res) => {
+    res.contentType('text/plain');
+    res.send(JSON.stringify({ greeting: 'HELLO' }));
+});
+
 app.get('/api/get/delay', (req, res) => {
     setTimeout(() => {
         res.header('Content-Type', 'application/json');
@@ -235,9 +240,8 @@ app.post('/posted.html', (req, res) => {
 });
 
 app.get('/api/get/bad_binary', (req, res) => {
-    const data = Buffer.from([123120349139516]);
-    // res.contentType('image/jpeg');
-    res.end(data, 'binary');
+    res.contentType('image/png');
+    res.end(Buffer.from('89504e470d0a1a0a', 'hex'));
 });
 
 app.post('/api/log/context', (req, res) => {
