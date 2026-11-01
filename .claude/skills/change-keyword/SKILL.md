@@ -100,6 +100,20 @@ Done when every argument is described, the rendered page shows no broken links o
 Done when `inv utest`, `inv utest-node` and the affected `inv atest --suite` runs pass, and
 `inv lint` is clean.
 
+### 7. Review
+
+Run this step without being asked, once step 6 is done. The review reads commits, so commit the
+work on its branch first. Then dispatch a subagent to run the `mattpocock-skills:code-review`
+skill, with the branch's merge-base with `main` as the fixed point.
+
+The subagent sees only its prompt, so give it the spec: the issue, plus every decision the
+maintainer made that overrides or adds to it, such as a dropped argument.
+
+Relay both axes to the maintainer, and treat each finding as theirs to accept or reject. Check a
+finding against the code before relaying it. Apply the accepted ones, then repeat step 6.
+
+Done when the maintainer has ruled on every finding and step 6 passes with the accepted fixes in.
+
 ## Removing or renaming a keyword
 
 A keyword is never removed in the release that deprecates it. It is deprecated first, and removed
