@@ -111,6 +111,16 @@ describe('executePlaywright', () => {
         return { body: JSON.stringify(args) } as any;
     }
 
+    let consoleLog: jest.SpyInstance;
+
+    beforeEach(() => {
+        consoleLog = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        consoleLog.mockRestore();
+    });
+
     it('runs a Playwright CLI command', async () => {
         const res = await executePlaywright(makeJsonRequest(['install', '--dry-run', 'chromium']));
 
@@ -127,8 +137,13 @@ describe('executePlaywright', () => {
 
     it('rejects an unknown command instead of exiting the process', async () => {
         expect.assertions(1);
-        await expect(executePlaywright(makeJsonRequest(['no-such-command']))).rejects.toMatchObject({
-            code: 'commander.unknownCommand',
-        });
+        const stderrWrite = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+        try {
+            await expect(executePlaywright(makeJsonRequest(['no-such-command']))).rejects.toMatchObject({
+                code: 'commander.unknownCommand',
+            });
+        } finally {
+            stderrWrite.mockRestore();
+        }
     });
 });
