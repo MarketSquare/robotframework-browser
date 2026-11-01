@@ -5,6 +5,9 @@ Test Setup    Ensure Location    ${LOGIN_URL}
 
 Force Tags    no-iframe
 
+*** Variables ***
+@{REQUEST_KEYS}    url    method    headers    postData
+
 *** Test Cases ***
 Wait For Fails If No Success
     Run Keyword And Expect Error
@@ -25,7 +28,7 @@ Wait For Request Async
     Should Be Equal    ${data.method}    POST
     Should Not Be Empty    ${data.headers}
     Should Be Equal    ${data.postData}    ${None}
-    Length Should Be    ${data}    4
+    List Should Contain Sub List    ${{ list($data) }}    ${REQUEST_KEYS}
 
 Wait For Request Url
     Click    \#delayed_request
@@ -54,7 +57,7 @@ Wait For Request With POST Method
     Should Be Equal    ${data.method}    POST
     Should Contain    ${data.url}    /api/post/json
     Should Not Be Empty    ${data.headers}
-    Length Should Be    ${data}    4
+    List Should Contain Sub List    ${{ list($data) }}    ${REQUEST_KEYS}
 
 Wait For Request With Invalid JSON
     Click    id=delayed_request_invalid_json_post

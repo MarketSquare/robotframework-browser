@@ -9,7 +9,7 @@ jest.mock('uuid', () => ({
 }));
 
 import { logger } from '../browser_logger';
-import { _waitForDownload, waitForRequest } from '../network';
+import { _waitForDownload, waitForRequest, waitForResponse } from '../network';
 
 const mockLogger = jest.mocked(logger);
 
@@ -34,7 +34,9 @@ function makeMockRequest(
     } as any;
 }
 
-function makeMockPage(overrides: Partial<{ waitForRequest: jest.Mock; waitForEvent: jest.Mock }> = {}) {
+function makeMockPage(
+    overrides: Partial<{ waitForRequest: jest.Mock; waitForResponse: jest.Mock; waitForEvent: jest.Mock }> = {},
+) {
     const mockRequest = makeMockRequest();
     return {
         waitForRequest: jest.fn().mockResolvedValue(mockRequest),
@@ -119,6 +121,21 @@ describe('waitForRequest', () => {
         const parsed = JSON.parse(result.json);
         expect(parsed.postData).toBe(binaryData);
         expect(mockLogger.info).toHaveBeenCalledWith(expect.stringContaining('Failed to parse postData as JSON'));
+    });
+
+    it('parses JSON postData regardless of the request content type', async () => {
+        const mockPage = makeMockPage({
+            waitForRequest: jest.fn().mockResolvedValue(
+                makeMockRequest({
+                    headers: jest.fn().mockReturnValue({ 'content-type': 'text/plain' }),
+                    postData: jest.fn().mockReturnValue('42'),
+                }),
+            ),
+        });
+
+        const result = await waitForRequest(makeRequest(), mockPage);
+
+        expect(JSON.parse(result.json).postData).toBe(42);
     });
 
     it('returns request data with null postData when postData is empty', async () => {
@@ -241,6 +258,94 @@ describe('waitForRequest', () => {
         const result = await waitForRequest(makeRequest('.*', 10000), mockPage);
 
         expect(result.log).toContain('10000ms');
+    });
+});
+
+function makeMockResponse(text: jest.Mock = jest.fn().mockResolvedValue('{"greeting":"HELLO"}')) {
+    return {
+        status: jest.fn().mockReturnValue(200),
+        headers: jest.fn().mockReturnValue({ 'content-type': 'application/json' }),
+        statusText: jest.fn().mockReturnValue('OK'),
+        url: jest.fn().mockReturnValue('https://example.com/api'),
+        ok: jest.fn().mockReturnValue(true),
+        text,
+        request: jest
+            .fn()
+            .mockReturnValue(makeMockRequest({ postData: jest.fn().mockReturnValue('{"name":"George"}') })),
+    } as any;
+}
+
+describe('waitForResponse', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('returns at least the legacy response metadata with headers serialized as JSON strings', async () => {
+        const [chunk] = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(makeMockResponse()) }),
+        );
+
+        expect(JSON.parse(chunk.json)).toMatchObject({
+            status: 200,
+            headers: '{"content-type":"application/json"}',
+            statusText: 'OK',
+            url: 'https://example.com/api',
+            ok: true,
+            request: {
+                headers: '{"content-type":"application/json"}',
+                method: 'POST',
+                postData: '{"name":"George"}',
+            },
+        });
+    });
+
+    it('sends the body unparsed in bodyPart', async () => {
+        const [chunk] = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(makeMockResponse()) }),
+        );
+
+        expect(chunk.bodyPart).toBe('{"greeting":"HELLO"}');
+    });
+
+    it('sends an empty body as a single empty chunk', async () => {
+        const response = makeMockResponse(jest.fn().mockResolvedValue(''));
+
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
+
+        expect(chunks).toHaveLength(1);
+        expect(chunks[0].bodyPart).toBe('');
+        expect(JSON.parse(chunks[0].json)).not.toHaveProperty('body');
+    });
+
+    it('marks the body as null when it cannot be read', async () => {
+        const response = makeMockResponse(jest.fn().mockRejectedValue(new Error('body unavailable')));
+
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
+
+        expect(chunks).toHaveLength(1);
+        expect(JSON.parse(chunks[0].json).body).toBeNull();
+    });
+
+    it('splits a body over the chunk size into several chunks with the same metadata', async () => {
+        const body = 'x'.repeat(1_500_000);
+        const response = makeMockResponse(jest.fn().mockResolvedValue(body));
+
+        const chunks = await waitForResponse(
+            makeRequest(),
+            makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+        );
+
+        expect(chunks).toHaveLength(2);
+        expect(chunks.map((chunk) => chunk.bodyPart).join('')).toBe(body);
+        expect(chunks[0].json).toBe(chunks[1].json);
     });
 });
 
