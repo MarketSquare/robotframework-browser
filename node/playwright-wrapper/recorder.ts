@@ -80,6 +80,9 @@ export interface RecorderBuffers {
     ownPick: boolean;
     // Playwright's mode at the last poll, to see it leave a mode with a hand pointer.
     lastMode?: string;
+    // The page the user works on: where the last toolbar command came from, or
+    // the page pressed last when Playwright's Pick locator was pressed. A pick starts there.
+    userPage?: Page;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -146,7 +149,7 @@ export function newBuffers(): RecorderBuffers {
     return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap(), ownPick: false };
 }
 
-export function acceptCommand(buffers: RecorderBuffers, command: unknown): void {
+export function acceptCommand(buffers: RecorderBuffers, command: unknown, page?: Page): void {
     if (!buffers.active || buffers.commandCount >= MAX_BUFFERED_COMMANDS) return;
     if (jsonLength(command) > MAX_COMMAND_BYTES) {
         logger.info('recorder: ignoring an oversized toolbar command');
@@ -154,6 +157,7 @@ export function acceptCommand(buffers: RecorderBuffers, command: unknown): void 
     }
     buffers.entries.push({ command });
     buffers.commandCount += 1;
+    if (page) buffers.userPage = page;
 }
 
 let toolbarSource: string | undefined;
@@ -190,6 +194,18 @@ async function onEveryPage(context: BrowserContext, fn: (page: Page) => Promise<
     });
 }
 
+// The page with the latest press, as the toolbar notes it on every page.
+async function lastPressedPage(context: BrowserContext): Promise<Page | undefined> {
+    let latest: { page: Page; at: number } | undefined;
+    for (const page of context.pages()) {
+        const at = await page
+            .evaluate(() => (window as unknown as { __rfbLastPressAt?: unknown }).__rfbLastPressAt)
+            .catch(() => undefined);
+        if (typeof at === 'number' && (!latest || at > latest.at)) latest = { page, at };
+    }
+    return latest?.page;
+}
+
 function readMode(context: BrowserContext): Promise<string | undefined> {
     return firstOnPages(context, async (page) => {
         const recorderState = await page.evaluate(() => {
@@ -222,8 +238,8 @@ export function commandListeners(context: BrowserContext): Promise<Set<RecorderB
     if (existing) return existing;
     const listeners = new Set<RecorderBuffers>();
     const exposed = context
-        .exposeBinding('__rfbCommand', (_source: unknown, command: unknown) => {
-            listeners.forEach((buffers) => acceptCommand(buffers, command));
+        .exposeBinding('__rfbCommand', (source: { page?: Page }, command: unknown) => {
+            listeners.forEach((buffers) => acceptCommand(buffers, command, source?.page));
         })
         .then(() => listeners);
     store[COMMANDS] = exposed;
@@ -370,6 +386,7 @@ export async function resetSession(
     // switch to `recording` can be dropped with the stale ones.
     buffers.armed = false;
     buffers.active = true;
+    buffers.userPage = undefined;
     await wait(HELD_BACK_MS);
     clearEntries(buffers);
     await writeMode(context, 'recording');
@@ -408,13 +425,19 @@ async function pickInRecording(
         await endPick(buffers.pick);
         buffers.pick = undefined;
     }
-    if (!buffers.pick) {
-        const page = state.getActivePage();
-        if (!page) return { picked: { error: 'No page is open to pick in.' } };
-        buffers.pick = { page, picking: false };
+    const starting = request.pick === true && !buffers.pick?.picking && !buffers.pick?.picked;
+    const userPage = buffers.userPage && !buffers.userPage.isClosed() ? buffers.userPage : state.getActivePage();
+    // A new pick starts on the page the user works on; a shown selector stays on its page.
+    if (buffers.pick && starting && buffers.pick.page !== userPage) {
+        await endPick(buffers.pick);
+        buffers.pick = undefined;
     }
-    if (request.pick === true && !buffers.pick.picking && !buffers.pick.picked) buffers.ownPick = true;
-    return drivePick(state, buffers.pick, request);
+    if (!buffers.pick) {
+        if (!userPage) return { picked: { error: 'No page is open to pick in.' } };
+        buffers.pick = { page: userPage, picking: false };
+    }
+    if (starting) buffers.ownPick = true;
+    return drivePick(buffers.pick, request);
 }
 
 export async function recorderPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
@@ -458,7 +481,9 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             else await writeMode(context, 'recording');
         }
     } else if (isPicking(mode)) {
-        // Playwright's Pick locator: its pick never reaches us, so ours takes over.
+        // Playwright's Pick locator: its pick never reaches us, so ours takes over,
+        // on the page whose Pick locator button was pressed.
+        buffers.userPage = (await lastPressedPage(context)) ?? buffers.userPage;
         pickRequested = await writeMode(context, 'recording');
     } else if (mode !== undefined && !STOP_MODES.has(mode)) {
         // Only honour a stop once the recorder has actually been seen recording,

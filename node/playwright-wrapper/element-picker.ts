@@ -21,8 +21,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ElementHandle, Locator, Page } from 'playwright';
 
-import { findLocator } from './playwright-invoke';
-import { PlaywrightState } from './playwright-state';
+import { locatorOn } from './playwright-invoke';
 
 export interface Picked {
     // Playwright's selector, in its internal syntax; Python translates it.
@@ -152,9 +151,9 @@ export async function clearHighlight(pick: Pick): Promise<void> {
     await highlight?.dispose().catch(() => undefined);
 }
 
-export async function countOf(state: PlaywrightState, selector: string): Promise<{ count?: number; error?: string }> {
+export async function countOf(page: Page, selector: string): Promise<{ count?: number; error?: string }> {
     try {
-        return { count: await (await findLocator(state, selector, false, false)).count() };
+        return { count: await locatorOn(page, selector).count() };
     } catch (e) {
         return { error: e instanceof Error ? e.message.split('\n')[0] : String(e) };
     }
@@ -162,19 +161,19 @@ export async function countOf(state: PlaywrightState, selector: string): Promise
 
 // The counted selector replaces the highlighted one; one that finds nothing,
 // or does not parse, leaves nothing highlighted.
-async function highlightSelector(state: PlaywrightState, pick: Pick, selector: string, count?: number) {
+async function highlightSelector(pick: Pick, selector: string, count?: number) {
     await clearHighlight(pick);
     if (!count) return;
     try {
-        const locator = await findLocator(state, selector, false, false);
-        pick.highlight = await locator.highlight();
+        pick.highlight = await locatorOn(pick.page, selector).highlight();
     } catch {
         // The page navigated or the selector stopped matching meanwhile.
     }
 }
 
-// One poll of a pick: start or stop it, hand over a result, count and highlight.
-export async function drivePick(state: PlaywrightState, pick: Pick, request: PickRequest) {
+// One poll of a pick: start or stop it, hand over a result, count and highlight,
+// all on the page it picks in.
+export async function drivePick(pick: Pick, request: PickRequest) {
     if (request.pick === true && !pick.picking && !pick.picked) {
         await clearHighlight(pick);
         startPick(pick);
@@ -187,9 +186,9 @@ export async function drivePick(state: PlaywrightState, pick: Pick, request: Pic
     }
     if (request.highlight === false) await clearHighlight(pick);
     if (typeof request.count === 'string') {
-        const counted = await countOf(state, request.count);
+        const counted = await countOf(pick.page, request.count);
         reply.count = { selector: request.count, ...counted };
-        if (request.highlight !== false) await highlightSelector(state, pick, request.count, counted.count);
+        if (request.highlight !== false) await highlightSelector(pick, request.count, counted.count);
     }
     return reply;
 }

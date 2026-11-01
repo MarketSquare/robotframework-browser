@@ -472,6 +472,35 @@ A Minimized Toolbar Offers Only The Pick's Buttons While Picking
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+Pick Starts On The Page Its Button Was Pressed On
+    ${promise} =    Promise To    Record Keyword    Pick In Second Window    ${None}
+    Toolbar State Should Be    recording
+    ${second} =    Open Second Window
+    Wait For Function    () => !!window.second.__rfbCommand && !!window.second.__rfbToolbarState
+    # Browser's active page stays the first one; the Pick button is pressed in the second.
+    Evaluate JavaScript    ${None}    () => window.second.__rfbCommand({cmd: 'pick'})
+    Wait For Function    () => window.second.document.body.getAttribute('data-pw-cursor') === 'pointer'
+    Switch Page    ${second}
+    Click    id=input_name
+    Wait For Function    () => (window.__rfbToolbarState.picker || {}).phase === 'picked'
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
+Playwright's Pick Locator Picks On The Page Pressed Last
+    ${promise} =    Promise To    Record Keyword    Pick Where Pressed    ${None}
+    Toolbar State Should Be    recording
+    ${second} =    Open Second Window
+    Wait For Function    () => !!window.second.__rfbToolbarState
+    ${first} =    Switch Page    ${second}
+    Mouse Button    click    700    500
+    Switch Page    ${first}
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
+    Wait For Function    () => (window.__rfbToolbarState.picker || {}).phase === 'picking'
+    # Playwright takes the pick up with a later poll; until then a click is an Action.
+    Wait Until Keyword Succeeds    10s    0.5s    Click Picks On    ${second}    ${first}
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 Undo Removes A Picked Selector
     ${promise} =    Promise To    Record Keyword    Pick Undone    ${None}
     Toolbar State Should Be    recording
@@ -1034,6 +1063,25 @@ Open Form And Name Resource
     ${slug} =    Evaluate    "${TEST_NAME}".lower().replace(" ", "_")
     Set Test Variable    ${RESOURCE}    ${OUTPUT_DIR}${/}recorded_${slug}.resource
     Remove File    ${RESOURCE}
+
+Click Picks On
+    [Arguments]    ${page}    ${back}
+    Switch Page    ${page}
+    Click    id=input_name
+    Switch Page    ${back}
+    Wait For Function    () => (window.__rfbToolbarState.picker || {}).phase === 'picked'    timeout=1s
+
+Open Second Window
+    ${before} =    Get Page Ids
+    Evaluate JavaScript    ${None}    () => { window.second = window.open(location.href, '_blank'); }
+    Wait Until Keyword Succeeds    5s    0.2s    Page Count Should Be    ${{len($before) + 1}}
+    ${after} =    Get Page Ids
+    RETURN    ${{(set($after) - set($before)).pop()}}
+
+Page Count Should Be
+    [Arguments]    ${count}
+    ${ids} =    Get Page Ids
+    Length Should Be    ${ids}    ${count}
 
 Add Popup Link
     Evaluate JavaScript

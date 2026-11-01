@@ -742,6 +742,9 @@
         const notePress = (event) => {
             pressedInToolbar = fromToolbar(event);
             releasePending = pressedInToolbar;
+            // Which page was pressed last tells Node where Playwright's Pick locator
+            // button, which every page shows, was pressed.
+            if (event.isTrusted) window.__rfbLastPressAt = Date.now();
         };
         const endPress = () => (releasePending = false);
         window.addEventListener('pointerdown', notePress, true);
@@ -1221,6 +1224,7 @@
             delete window.__rfbToolbarState;
             delete window.__rfbToolbarRemove;
             delete window.__rfbToolbarConnected;
+            delete window.__rfbLastPressAt;
         };
 
         // Playwright draws its highlight and Pick locator overlay in the top layer

@@ -48,6 +48,12 @@ export async function findLocator(
     }
 }
 
+// Browser's selector syntax on a given page, not strict: what a pick counts and
+// highlights on the page it picked in.
+export function locatorOn(page: Page, selector: string): Locator {
+    return page.locator(toPlaywrightSelector(selector, false));
+}
+
 async function findLocatorNotStrict(activePage: Page, selector: string, firstOnly: boolean): Promise<Locator> {
     if (firstOnly) {
         logger.info(`Strict mode is disabled, return first Locator: ${selector} in page.`);

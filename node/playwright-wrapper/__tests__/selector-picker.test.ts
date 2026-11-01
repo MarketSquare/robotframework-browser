@@ -1,12 +1,12 @@
 import { describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn(), debug: jest.fn() } }));
-jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
+jest.mock('../playwright-invoke', () => ({ locatorOn: jest.fn() }));
 // css-selector.js is built by `inv node-build`; these tests must not need a build.
 jest.mock('fs', () => ({ ...jest.requireActual('fs'), readFileSync: () => '/* css-selector.js */' }));
 
 import { countOf, cssSelectorOf, drivePick, Pick, startPick, stopPick } from '../element-picker';
-import { findLocator } from '../playwright-invoke';
+import { locatorOn } from '../playwright-invoke';
 import { commandListeners, ensureRecorder, newBuffers } from '../recorder';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -142,12 +142,12 @@ describe('cssSelectorOf', () => {
 
 describe('countOf', () => {
     it('counts the elements a selector finds', async () => {
-        (findLocator as jest.Mock).mockResolvedValueOnce({ count: async () => 3 });
+        (locatorOn as jest.Mock).mockReturnValueOnce({ count: async () => 3 });
         expect(await countOf({} as any, 'css=button')).toEqual({ count: 3 });
     });
 
     it('returns the first line of the error for a selector that does not parse', async () => {
-        (findLocator as jest.Mock).mockResolvedValueOnce({
+        (locatorOn as jest.Mock).mockReturnValueOnce({
             count: async () => {
                 throw new Error('Unexpected token\nCall log');
             },
@@ -159,7 +159,7 @@ describe('countOf', () => {
 describe('drivePick', () => {
     function highlighter(count: number) {
         const dispose = jest.fn(async () => undefined);
-        (findLocator as jest.Mock).mockResolvedValue({
+        (locatorOn as jest.Mock).mockReturnValue({
             count: async () => count,
             highlight: jest.fn(async () => ({ dispose })),
         });
@@ -169,25 +169,26 @@ describe('drivePick', () => {
     it('highlights the counted selector until the next one is counted', async () => {
         const dispose = highlighter(2);
         const pick: Pick = { page: {} as any, picking: false };
-        const reply = await drivePick({} as any, pick, { pick: false, count: 'css=b' });
+        const reply = await drivePick(pick, { pick: false, count: 'css=b' });
         expect(reply.count).toEqual({ selector: 'css=b', count: 2 });
+        expect(locatorOn).toHaveBeenCalledWith(pick.page, 'css=b');
         expect(pick.highlight).toBeDefined();
-        await drivePick({} as any, pick, { pick: false, count: 'css=c' });
+        await drivePick(pick, { pick: false, count: 'css=c' });
         expect(dispose).toHaveBeenCalledTimes(1);
     });
 
     it('highlights nothing for a selector that finds nothing', async () => {
         highlighter(0);
         const pick: Pick = { page: {} as any, picking: false };
-        await drivePick({} as any, pick, { pick: false, count: 'css=none' });
+        await drivePick(pick, { pick: false, count: 'css=none' });
         expect(pick.highlight).toBeUndefined();
     });
 
     it('switches the highlight off and counts without highlighting', async () => {
         const dispose = highlighter(1);
         const pick: Pick = { page: {} as any, picking: false };
-        await drivePick({} as any, pick, { pick: false, count: 'css=b' });
-        const reply = await drivePick({} as any, pick, { pick: false, highlight: false, count: 'css=c' });
+        await drivePick(pick, { pick: false, count: 'css=b' });
+        const reply = await drivePick(pick, { pick: false, highlight: false, count: 'css=c' });
         expect(dispose).toHaveBeenCalledTimes(1);
         expect(pick.highlight).toBeUndefined();
         expect(reply.count).toEqual({ selector: 'css=c', count: 1 });
@@ -196,8 +197,8 @@ describe('drivePick', () => {
     it('drops the highlight when picking again', async () => {
         const dispose = highlighter(1);
         const pick: Pick = { page: { pickLocator: () => new Promise(() => undefined) } as any, picking: false };
-        await drivePick({} as any, pick, { pick: false, count: 'css=b' });
-        await drivePick({} as any, pick, { pick: true });
+        await drivePick(pick, { pick: false, count: 'css=b' });
+        await drivePick(pick, { pick: true });
         expect(dispose).toHaveBeenCalledTimes(1);
         expect(pick.picking).toBe(true);
     });

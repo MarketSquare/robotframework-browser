@@ -78,7 +78,7 @@ export async function selectorPickerPoll(request: pb.Request_Json, state: Playwr
         return jsonResponse(JSON.stringify({ pages: 0, entries: [] }), '');
     }
     if (body.state) await renderToolbar(session.page, session.buffers, JSON.stringify(body.state));
-    const picked = await drivePick(state, session, body);
+    const picked = await drivePick(session, body);
     return jsonResponse(JSON.stringify({ pages: 1, entries: drainEntries(session.buffers), ...picked }), '');
 }
 
