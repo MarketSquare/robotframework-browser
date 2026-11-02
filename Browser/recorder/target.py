@@ -276,7 +276,7 @@ class FileTarget:
 
 
 def _umask() -> int:
-    mask = os.umask(0)
+    mask = os.umask(0o077)
     os.umask(mask)
     return mask
 

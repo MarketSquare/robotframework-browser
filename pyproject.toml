@@ -183,6 +183,21 @@ ignore = [
     "too-many-calls-in-test-case",
     "too-long-test-case",
     "line-too-long",
+    "too-long-keyword",
+    "too-many-calls-in-keyword",
+    "too-many-test-cases",
+    "file-too-long",
+    "section-variable-not-uppercase",
+    "non-local-variables-should-be-uppercase",
+    "not-allowed-char-in-name", # Test names quote selectors and option names
+    "not-allowed-char-in-filename", # Scope tests name suites Suite_1.1
+    "wrong-case-in-keyword-call", # Matches names like recordVideo.dir
+    "undefined-argument-value", # Mostly matches = inside plain strings
+    "wrong-import-order",
+    "builtin-imports-not-sorted",
+    "no-global-variable",
+    "no-test-variable",
+    "tag-with-space",
 ]
 configure = [
     "empty-lines-between-sections.empty_lines=1"
