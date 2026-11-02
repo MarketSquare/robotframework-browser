@@ -194,13 +194,13 @@ describe('waitForRequest', () => {
 
         expect(messages).toHaveLength(1);
         expect(messages[0].postDataBytes.toString('utf8')).toBe('{"key": "value"}');
-        expect(JSON.parse(messages[0].json)).not.toHaveProperty('postDataBuffer');
+        expect(JSON.parse(messages[0].json).hasPostData).toBe(true);
     });
 
-    it('marks postDataBuffer as null when the request has no post data', async () => {
+    it('flags a request without post data', async () => {
         const parsed = await capturedRequest();
 
-        expect(parsed.postDataBuffer).toBeNull();
+        expect(parsed.hasPostData).toBe(false);
     });
 
     it('splits post data over the chunk size and sends the metadata only once', async () => {
@@ -349,23 +349,23 @@ describe('waitForResponse', () => {
         expect(messages[0].postDataBytes.toString('utf8')).toBe('{"name":"George"}');
     });
 
-    it('sends an empty body as a single message without a body marker', async () => {
+    it('sends an empty body as a single message that has a body', async () => {
         const messages = await capturedResponse(
             makeMockResponse({ body: jest.fn().mockResolvedValue(Buffer.alloc(0)) }),
         );
 
         expect(messages).toHaveLength(1);
         expect(messages[0].bodyBytes).toHaveLength(0);
-        expect(JSON.parse(messages[0].json)).not.toHaveProperty('body');
+        expect(JSON.parse(messages[0].json).hasBody).toBe(true);
     });
 
-    it('marks the body as null when it cannot be read', async () => {
+    it('flags the body as missing when it cannot be read', async () => {
         const messages = await capturedResponse(
             makeMockResponse({ body: jest.fn().mockRejectedValue(new Error('body unavailable')) }),
         );
 
         expect(messages).toHaveLength(1);
-        expect(JSON.parse(messages[0].json).body).toBeNull();
+        expect(JSON.parse(messages[0].json).hasBody).toBe(false);
     });
 
     it('does not read the body when it is excluded', async () => {
@@ -375,7 +375,7 @@ describe('waitForResponse', () => {
 
         expect(response.body).not.toHaveBeenCalled();
         expect(messages[0].bodyBytes).toHaveLength(0);
-        expect(JSON.parse(messages[0].json).body).toBeNull();
+        expect(JSON.parse(messages[0].json).hasBody).toBe(false);
     });
 
     it('returns a null HTTP version when Playwright cannot read it', async () => {

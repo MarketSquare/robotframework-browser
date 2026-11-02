@@ -448,12 +448,15 @@ export class PlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
+            logger.info({ event_kind: 'grpc', action: capture.name, status: 'started' });
             const results = await capture(request, this.getActivePage(call));
+            logger.info({ event_kind: 'grpc', action: capture.name, status: 'succeeded' });
             for (const result of results) {
                 logger.info(`Sending ${result.log}`);
                 call.write(result);
             }
         } catch (e) {
+            logger.info({ event_kind: 'grpc', action: capture.name, status: 'failed' });
             call.emit('error', errorResponse(e));
         }
         call.end();

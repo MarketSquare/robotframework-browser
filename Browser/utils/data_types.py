@@ -1019,7 +1019,7 @@ class CapturedRequest(TypedDict):
     | ``method`` | The HTTP method, e.g. ``GET`` or ``POST``. |
     | ``headers`` | Dictionary of request headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``cookie``. |
     | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. |
-    | ``headersArray`` | List of `HeaderEntry` dictionaries. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
+    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
     | ``postData`` | Legacy. The request body, parsed as described in Parsing rules below. Prefer ``postDataBuffer`` or ``postDataJSON``. |
     | ``postDataBuffer`` | The raw request body as ``bytes``, or ``None`` if the request has no body. |
     | ``postDataJSON`` | The request body parsed like Playwright's ``postDataJSON()``: a dictionary for a ``application/x-www-form-urlencoded`` body, the parsed value for a JSON body, otherwise ``None``. |
@@ -1027,7 +1027,7 @@ class CapturedRequest(TypedDict):
     | ``isNavigationRequest`` | ``True`` if the request drives a frame navigation. |
     | ``redirectedFrom`` | The URL of the request that was redirected to this one, or ``None``. |
     | ``redirectedTo`` | The URL this request was redirected to, or ``None``. It is ``None`` in `Wait For Request`, because the redirect is not known when the request is sent. |
-    | ``frame`` | The `RequestFrame` that issued the request, or ``None`` if Playwright cannot tell, e.g. for Service Worker requests. |
+    | ``frame`` | Dictionary with the ``url`` and ``name`` of the frame that issued the request, or ``None`` if Playwright cannot tell, e.g. for Service Worker requests. |
 
     = Parsing rules =
 
@@ -1045,8 +1045,8 @@ class CapturedRequest(TypedDict):
 
     ``postDataBuffer`` holds real ``bytes``. The dictionary can still be serialized with
     ``json.dumps``, which writes ``bytes`` as base64 text. Robot Framework's ``&{request} =``
-    assignment copies the dictionary the same way, so assign it with ``${request} =`` to keep
-    the real ``bytes``.
+    assignment copies the dictionary the same way, so after it ``postDataBuffer`` is base64
+    text. Assign it with ``${request} =`` to keep the real ``bytes``.
     """
 
     url: str
@@ -1078,14 +1078,14 @@ class CapturedResponse(TypedDict):
     | ``url`` | The URL of the response. |
     | ``headers`` | Dictionary of response headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``set-cookie``. |
     | ``allHeaders`` | Dictionary of all response headers, including ``set-cookie``. Several ``set-cookie`` headers are joined with a line break. |
-    | ``headersArray`` | List of `HeaderEntry` dictionaries. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
+    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
     | ``body`` | Legacy. The response body, parsed as described in Parsing rules below. Prefer ``json``, ``text`` or ``bytes``. |
     | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
     | ``text`` | The response body decoded as UTF-8, like Playwright's ``text()``. Invalid bytes become the replacement character U+FFFD. |
     | ``json`` | The response body parsed as JSON regardless of the ``content-type``, like Playwright's ``json()``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
     | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it. |
-    | ``serverAddr`` | The `ServerAddress` of the server, or ``None``. |
-    | ``securityDetails`` | The `SecurityDetails` of a HTTPS response. Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
+    | ``serverAddr`` | Dictionary with the ``ipAddress`` and ``port`` of the server, or ``None``. |
+    | ``securityDetails`` | TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
     | ``fromServiceWorker`` | ``True`` if a Service Worker answered the request. |
     | ``request`` | The `CapturedRequest` that this response answers. |
 
@@ -1108,8 +1108,9 @@ class CapturedResponse(TypedDict):
 
     ``bytes`` and ``request.postDataBuffer`` hold real ``bytes``. The dictionary can still be
     serialized with ``json.dumps``, which writes ``bytes`` as base64 text. Robot Framework's
-    ``&{response} =`` assignment copies the dictionary the same way, so assign it with
-    ``${response} =`` to keep the real ``bytes``:
+    ``&{response} =`` assignment copies only the outer dictionary the same way, so after it
+    ``bytes`` is base64 text while ``request.postDataBuffer`` keeps its real ``bytes``. Assign
+    it with ``${response} =`` to keep the real ``bytes`` everywhere:
 
     | ${response} =    `Wait For Response`    **/logo.png
     | Create Binary File    ${OUTPUT_DIR}/logo.png    ${response.bytes}

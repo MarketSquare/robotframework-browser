@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from Browser import Browser
+from Browser.keywords.network import _readable
 
 PNG_SIGNATURE = bytes.fromhex("89504e470d0a1a0a")
 
@@ -23,9 +24,8 @@ def request_metadata(
         "redirectedFrom": None,
         "redirectedTo": None,
         "frame": {"url": "http://localhost/", "name": ""},
+        "hasPostData": post_data is not None,
     }
-    if post_data is None:
-        metadata["postDataBuffer"] = None
     return metadata
 
 
@@ -51,10 +51,9 @@ def response_messages(
         "serverAddr": {"ipAddress": "127.0.0.1", "port": 80},
         "securityDetails": None,
         "fromServiceWorker": False,
+        "hasBody": body is not None,
         "request": request,
     }
-    if body is None:
-        metadata["body"] = None
     post_data = (request["postData"] or "").encode()
     return [message(json.dumps(metadata), body or b"", post_data)]
 
@@ -239,3 +238,15 @@ def test_wait_for_request_keeps_legacy_keys(browser, stub):
     assert request.headers == {"content-type": "text/plain"}
     assert request.postData is None
     assert request.postDataBuffer is None
+
+
+def test_body_is_logged_as_formatted_json():
+    assert _readable(b'{"a":1}') == '{\n  "a": 1\n}'
+
+
+def test_body_is_logged_as_text_when_it_is_utf8():
+    assert _readable("<p>Hyvä</p>".encode()) == "<p>Hyvä</p>"
+
+
+def test_binary_body_is_logged_as_base64():
+    assert _readable(PNG_SIGNATURE) == "8 bytes, base64: iVBORw0KGgo="
