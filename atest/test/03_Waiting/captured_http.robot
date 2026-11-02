@@ -1,4 +1,5 @@
 *** Settings ***
+Library       ../../library/http_headers.py
 Resource      imports.resource
 
 Test Setup    Ensure Location    ${LOGIN_URL}
@@ -14,8 +15,7 @@ Response All Headers Contain Set-Cookie
     Should Contain    ${response.allHeaders}[set-cookie]    session=abc
     Should Contain    ${response.allHeaders}[set-cookie]    theme=dark
     Dictionary Should Not Contain Key    ${response.headers}    set-cookie
-    ${set_cookies} =    Evaluate
-    ...    [entry.value for entry in $response.headersArray if entry.name.lower() == 'set-cookie']
+    ${set_cookies} =    Header Values    ${response.headersArray}    set-cookie
     Length Should Be    ${set_cookies}    2
 
 Binary Response Body Is Returned Unchanged As Bytes

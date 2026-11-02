@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Page, Request } from 'playwright';
+import { Page, Request, Response as PlaywrightResponse } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { logger } from './browser_logger';
@@ -87,6 +87,18 @@ async function orFallback<T>(read: () => Promise<T>, fallback: T, what: string):
     }
 }
 
+async function headersOf(message: Request | PlaywrightResponse, what: string): Promise<Record<string, unknown>> {
+    const headers = message.headers();
+    return {
+        allHeaders: await orFallback(() => message.allHeaders(), headers, `${what} headers`),
+        headersArray: await orFallback(
+            () => message.headersArray(),
+            Object.entries(headers).map(([name, value]) => ({ name, value })),
+            `${what} headers array`,
+        ),
+    };
+}
+
 function frameOf(request: Request): { url: string; name: string } | null {
     try {
         const frame = request.frame();
@@ -99,21 +111,14 @@ function frameOf(request: Request): { url: string; name: string } | null {
 async function requestDetails(request: Request): Promise<Record<string, unknown>> {
     const details: Record<string, unknown> = {
         url: request.url(),
-        allHeaders: await orFallback(() => request.allHeaders(), request.headers(), 'request headers'),
-        headersArray: await orFallback(
-            () => request.headersArray(),
-            Object.entries(request.headers()).map(([name, value]) => ({ name, value })),
-            'request headers array',
-        ),
+        ...(await headersOf(request, 'request')),
         resourceType: request.resourceType(),
         isNavigationRequest: request.isNavigationRequest(),
         redirectedFrom: request.redirectedFrom()?.url() ?? null,
         redirectedTo: request.redirectedTo()?.url() ?? null,
         frame: frameOf(request),
+        hasPostData: request.postDataBuffer() !== null,
     };
-    if (request.postDataBuffer() === null) {
-        details.postDataBuffer = null;
-    }
     return details;
 }
 
@@ -126,7 +131,7 @@ function legacyPostData(request: Request): unknown {
     }
 }
 
-function streamCaptured(captured: CapturedBytes): pb.Response_Json[] {
+function capturedMessages(captured: CapturedBytes): pb.Response_Json[] {
     const postDataChunks = captured.postData ? splitBytes(captured.postData, MAX_RESPONSE_CHUNK_BYTES) : [];
     const bodyChunks = captured.body ? splitBytes(captured.body, MAX_RESPONSE_CHUNK_BYTES) : [];
     const count = Math.max(postDataChunks.length, bodyChunks.length, 1);
@@ -156,16 +161,12 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
         statusText: data.statusText(),
         url: data.url(),
         ok: data.ok(),
-        allHeaders: await orFallback(() => data.allHeaders(), data.headers(), 'response headers'),
-        headersArray: await orFallback(
-            () => data.headersArray(),
-            Object.entries(data.headers()).map(([name, value]) => ({ name, value })),
-            'response headers array',
-        ),
+        ...(await headersOf(data, 'response')),
         httpVersion: await orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version'),
         serverAddr: await orFallback(() => data.serverAddr(), null, 'server address'),
         securityDetails: await orFallback(() => data.securityDetails(), null, 'security details'),
         fromServiceWorker: data.fromServiceWorker(),
+        hasBody: body !== null,
         request: {
             headers: JSON.stringify(capturedRequest.headers()),
             method: capturedRequest.method(),
@@ -173,11 +174,8 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
             ...(await requestDetails(capturedRequest)),
         },
     };
-    if (body === null) {
-        meta.body = null;
-    }
     logger.info(`waitForResponse received: ${data.url()} status: ${data.status()}`);
-    return streamCaptured({
+    return capturedMessages({
         meta,
         log: 'Response received',
         postData: capturedRequest.postDataBuffer(),
@@ -197,7 +195,7 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
     };
     logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);
     const matcherStr = typeof urlOrPredicate === 'string' ? urlOrPredicate : urlOrPredicate.toString();
-    return streamCaptured({
+    return capturedMessages({
         meta,
         log: `Request completed within timeout ${timeout}ms by using matcher: ${matcherStr}`,
         postData: result.postDataBuffer(),
