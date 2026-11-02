@@ -201,6 +201,86 @@ Delete All Cookies When Cookies Does Not Exist
     ${cookies} =    Get Cookies
     Should Be Empty    ${cookies}
 
+Delete All Cookies With Name Keeps Other Cookies
+    Add Cookie    session    1    domain=a.example    path=/
+    Add Cookie    consent    2    domain=a.example    path=/
+    Delete All Cookies    name=session
+    Cookie Names Should Be    consent
+
+Delete All Cookies With Domain Keeps Other Cookies
+    Add Cookie    first    1    domain=a.example    path=/
+    Add Cookie    second    2    domain=b.example    path=/
+    Delete All Cookies    domain=a.example
+    Cookie Names Should Be    second
+
+Delete All Cookies With Path Keeps Other Cookies
+    Add Cookie    first    1    domain=a.example    path=/app
+    Add Cookie    second    2    domain=a.example    path=/other
+    Delete All Cookies    path=/app
+    Cookie Names Should Be    second
+
+Delete All Cookies Requires All Filters To Match
+    Add Cookie    session    1    domain=a.example    path=/
+    Add Cookie    session    2    domain=b.example    path=/
+    Add Cookie    consent    3    domain=a.example    path=/
+    Delete All Cookies    name=session    domain=a.example
+    ${cookies} =    Get Cookies
+    Length Should Be    ${cookies}    2
+    ${remaining} =    Get Cookies    string    urls=https://a.example
+    Should Be Equal    ${remaining}    consent=3
+
+Delete All Cookies With Filter Matching Nothing Keeps Cookies
+    Add Cookie    session    1    domain=a.example    path=/
+    Delete All Cookies    name=missing
+    Cookie Names Should Be    session
+
+Get Cookies With Url Returns Only Cookies Of That Url
+    Add Cookie    match    1    domain=a.example    path=/app
+    Add Cookie    other_path    2    domain=a.example    path=/other
+    Add Cookie    other_domain    3    domain=b.example    path=/
+    ${cookies} =    Get Cookies    urls=https://a.example/app/page
+    Length Should Be    ${cookies}    1
+    Should Be Equal    ${cookies}[0][name]    match
+
+Get Cookies With Url List Returns Cookies Of Every Url
+    Add Cookie    first    1    domain=a.example    path=/
+    Add Cookie    second    2    domain=b.example    path=/
+    Add Cookie    third    3    domain=c.example    path=/
+    VAR    @{urls} =    https://a.example    https://b.example
+    ${cookies} =    Get Cookies    string    urls=${urls}
+    Should Be Equal    first\=1; second\=2    ${cookies}
+
+Get Cookies With Url Leaves Secure Cookies Out Of Http Urls
+    Add Cookie    secured    1    domain=a.example    path=/    secure=True
+    ${cookies} =    Get Cookies    urls=http://a.example
+    Should Be Empty    ${cookies}
+    ${cookies} =    Get Cookies    urls=https://a.example
+    Length Should Be    ${cookies}    1
+
+Get Cookies With Invalid Url Fails
+    Run Keyword And Expect Error
+    ...    *Invalid URL*
+    ...    Get Cookies    urls=not a url
+
+Partitioned Cookie Round Trip
+    Add Cookie    tracker    abc123    url=https://third-party.example    partitionKey=https://site.example
+    ${cookies} =    Get Cookies
+    Should Be Equal    ${cookies}[0][partitionKey]    https://site.example
+    ${cookie} =    Get Cookie    tracker
+    Should Be Equal    ${cookie}[partitionKey]    https://site.example
+
+Unpartitioned Cookie Has No Partition Key
+    Add Cookie    plain    1    url=https://third-party.example
+    ${cookie} =    Get Cookie    plain
+    Dictionary Should Not Contain Key    ${cookie}    partitionKey
+
+Delete All Cookies With Name Deletes Every Partition
+    Add Cookie    tracker    1    url=https://third-party.example    partitionKey=https://site.example
+    Add Cookie    tracker    2    url=https://third-party.example    partitionKey=https://other.example
+    Add Cookie    plain    3    url=https://third-party.example
+    Delete All Cookies    name=tracker
+    Cookie Names Should Be    plain
+
 Eat All Cookies
     Eat All Cookies
 
@@ -278,6 +358,12 @@ Get Cookie And No Expiry
 Open New Context To Form Page
     New Context
     New Page    ${FORM_URL}
+
+Cookie Names Should Be
+    [Arguments]    @{expected}
+    ${cookies} =    Get Cookies
+    VAR    @{names} =    @{{[cookie.name for cookie in $cookies]}}
+    Lists Should Be Equal    ${names}    ${expected}    ignore_order=True
 
 Check Cookie
     [Arguments]    ${cookies}    ${len}    ${name}    ${value}

@@ -187,6 +187,8 @@ export class PlaywrightServer {
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
+    getCookiesForUrls = this.wrapping(cookie.getCookiesForUrls);
+    deleteCookies = this.wrapping(cookie.deleteCookies);
 
     async getCookies(
         call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
