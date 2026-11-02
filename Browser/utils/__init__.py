@@ -14,6 +14,7 @@
 
 # flake8: noqa
 
+from .json_dotdict import JsonDotDict
 from .data_types import (
     AdoptedContextOptions,
     AutoClosingLevel,
@@ -22,6 +23,8 @@ from .data_types import (
     ClientCredential,
     ColorScheme,
     ConditionInputs,
+    CapturedRequest,
+    CapturedResponse,
     CookieSameSite,
     CookieType,
     CoverageType,

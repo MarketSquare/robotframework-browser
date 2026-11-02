@@ -58,6 +58,7 @@ from assertionengine import AssertionOperator
 from robot.utils import DotDict
 
 from Browser.utils import (
+    CapturedRequest, CapturedResponse,
     ClockType, CLockAdvanceType, FormatterTypes, CookieType, CookieSameSite, DownloadInfo, NewPageDetails,
     BrowserInfo, PageLoadStates,ViewportDimensions, ServiceWorkersPermissions,
     ReduceMotion, RecordVideo, RecordHar, Proxy, Permission, HttpCredentials,
