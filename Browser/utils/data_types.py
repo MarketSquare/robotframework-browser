@@ -965,6 +965,171 @@ class DownloadInfo(TypedDict):
     downloadID: str | None
 
 
+class HeaderEntry(TypedDict):
+    """One HTTP header of a `CapturedRequest` or `CapturedResponse`, as listed in ``headersArray``."""
+
+    name: str
+    value: str
+
+
+class ServerAddress(TypedDict):
+    """IP address and port of the server that sent a `CapturedResponse`."""
+
+    ipAddress: str
+    port: int
+
+
+class SecurityDetails(TypedDict, total=False):
+    """TLS details of a `CapturedResponse` received over HTTPS. Each key is optional.
+
+    | =Key= | =Description= |
+    | ``issuer`` | Common Name of the certificate issuer. |
+    | ``protocol`` | The TLS protocol, e.g. ``TLS 1.3``. |
+    | ``subjectName`` | Common Name of the certificate subject. |
+    | ``validFrom`` | Unix timestamp in seconds from when the certificate is valid. |
+    | ``validTo`` | Unix timestamp in seconds until when the certificate is valid. |
+    """
+
+    issuer: str
+    protocol: str
+    subjectName: str
+    validFrom: float
+    validTo: float
+
+
+class RequestFrame(TypedDict):
+    """The frame that issued a `CapturedRequest`."""
+
+    url: str
+    name: str
+
+
+class CapturedRequest(TypedDict):
+    """A request captured by `Wait For Request`, and the ``request`` of a `CapturedResponse`.
+
+    The keys mirror Playwright's
+    [https://playwright.dev/docs/api/class-request|Request]. The value is a Robot Framework
+    dictionary, so keys can be accessed as ``${request.method}`` or ``${request}[method]``.
+
+    | =Key= | =Description= |
+    | ``url`` | The URL of the request. |
+    | ``method`` | The HTTP method, e.g. ``GET`` or ``POST``. |
+    | ``headers`` | Dictionary of request headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``cookie``. |
+    | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. |
+    | ``headersArray`` | List of `HeaderEntry` dictionaries. Unlike the dictionaries it keeps headers that occur several times. |
+    | ``postData`` | Legacy. The request body, parsed as described in Parsing rules below. Prefer ``postDataBuffer`` or ``postDataJSON``. |
+    | ``postDataBuffer`` | The raw request body as ``bytes``, or ``None`` if the request has no body. |
+    | ``postDataJSON`` | The request body parsed like Playwright's ``postDataJSON()``: a dictionary for a ``application/x-www-form-urlencoded`` body, the parsed value for a JSON body, otherwise ``None``. |
+    | ``resourceType`` | The resource type as the browser sees it, e.g. ``document``, ``xhr``, ``fetch`` or ``image``. |
+    | ``isNavigationRequest`` | ``True`` if the request drives a frame navigation. |
+    | ``redirectedFrom`` | The URL of the request that was redirected to this one, or ``None``. |
+    | ``redirectedTo`` | The URL this request was redirected to, or ``None``. It is ``None`` in `Wait For Request`, because the redirect is not known when the request is sent. |
+    | ``frame`` | The `RequestFrame` that issued the request, or ``None`` if Playwright cannot tell, e.g. for Service Worker requests. |
+
+    = Parsing rules =
+
+    ``postData`` is kept as it always was, and its parsing depends on where it is returned:
+    - In `Wait For Request` the body is parsed as JSON regardless of the ``content-type``.
+      A body that is not valid JSON is returned as a string, and a request without a body
+      returns ``None``. JSON is not limited to objects: ``42`` becomes a number and ``true``
+      a boolean.
+    - As ``request.postData`` of `Wait For Response` the body is parsed as JSON only when the
+      request's ``content-type`` contains ``application/json``. Otherwise it is the raw string.
+
+    ``postDataBuffer`` and ``postDataJSON`` are the same in both places.
+
+    = Binary data and JSON =
+
+    ``postDataBuffer`` holds real ``bytes``. The dictionary can still be serialized with
+    ``json.dumps``, which writes ``bytes`` as base64 text. Robot Framework's ``&{request} =``
+    assignment copies the dictionary the same way, so assign it with ``${request} =`` to keep
+    the real ``bytes``.
+    """
+
+    url: str
+    method: str
+    headers: dict[str, str]
+    allHeaders: dict[str, str]
+    headersArray: list[HeaderEntry]
+    postData: Any
+    postDataBuffer: bytes | None
+    postDataJSON: Any
+    resourceType: str
+    isNavigationRequest: bool
+    redirectedFrom: str | None
+    redirectedTo: str | None
+    frame: RequestFrame | None
+
+
+class CapturedResponse(TypedDict):
+    """A response captured by `Wait For Response`.
+
+    The keys mirror Playwright's
+    [https://playwright.dev/docs/api/class-response|Response]. The value is a Robot Framework
+    dictionary, so keys can be accessed as ``${response.status}`` or ``${response}[status]``.
+
+    | =Key= | =Description= |
+    | ``status`` | The HTTP status code, e.g. ``200``. |
+    | ``statusText`` | The status text, e.g. ``OK``. Not all browsers report it. |
+    | ``ok`` | ``True`` if ``status`` is in the range 200-299. |
+    | ``url`` | The URL of the response. |
+    | ``headers`` | Dictionary of response headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``set-cookie``. |
+    | ``allHeaders`` | Dictionary of all response headers, including ``set-cookie``. Several ``set-cookie`` headers are joined with a line break. |
+    | ``headersArray`` | List of `HeaderEntry` dictionaries. Unlike the dictionaries it keeps headers that occur several times. |
+    | ``body`` | Legacy. The response body, parsed as described in Parsing rules below. Prefer ``json``, ``text`` or ``bytes``. |
+    | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
+    | ``text`` | The response body decoded as UTF-8, like Playwright's ``text()``. Invalid bytes become the replacement character U+FFFD. |
+    | ``json`` | The response body parsed as JSON regardless of the ``content-type``, like Playwright's ``json()``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
+    | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it. |
+    | ``serverAddr`` | The `ServerAddress` of the server, or ``None``. |
+    | ``securityDetails`` | The `SecurityDetails` of a HTTPS response, or ``None``. |
+    | ``fromServiceWorker`` | ``True`` if a Service Worker answered the request. |
+    | ``request`` | The `CapturedRequest` that this response answers. |
+
+    ``body``, ``bytes``, ``text`` and ``json`` are ``None`` when the body cannot be read, for
+    example for a redirect response, or when `Wait For Response` was called with
+    ``include_body=False``.
+
+    = Parsing rules =
+
+    ``body`` is kept as it always was: it is parsed as JSON regardless of the ``content-type``,
+    and a body that is not valid JSON is returned as the decoded text. So ``{"a": 1}`` becomes a
+    dictionary, ``[1, 2]`` a list, ``42`` a number and ``true`` a boolean, even when the server
+    sends them as ``text/plain``. An empty body is an empty string. ``NaN`` and ``Infinity`` are
+    not valid JSON and stay text.
+
+    ``json`` follows the same parsing but is ``None`` where ``body`` falls back to text, so it
+    never returns a string by accident.
+
+    = Binary data and JSON =
+
+    ``bytes`` and ``request.postDataBuffer`` hold real ``bytes``. The dictionary can still be
+    serialized with ``json.dumps``, which writes ``bytes`` as base64 text. Robot Framework's
+    ``&{response} =`` assignment copies the dictionary the same way, so assign it with
+    ``${response} =`` to keep the real ``bytes``:
+
+    | ${response} =    `Wait For Response`    **/logo.png
+    | Create Binary File    ${OUTPUT_DIR}/logo.png    ${response.bytes}
+    """
+
+    status: int
+    statusText: str
+    ok: bool
+    url: str
+    headers: dict[str, str]
+    allHeaders: dict[str, str]
+    headersArray: list[HeaderEntry]
+    body: Any
+    bytes: bytes | None
+    text: str | None
+    json: Any
+    httpVersion: str | None
+    serverAddr: ServerAddress | None
+    securityDetails: SecurityDetails | None
+    fromServiceWorker: bool
+    request: CapturedRequest
+
+
 class NewPageDetails(TypedDict):
     """Return value of `New Page` keyword.
 

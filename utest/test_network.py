@@ -101,3 +101,10 @@ def testtest_format_response_with_json_byte_body():
     )
     assert response["body"] == b"byte"
     assert response["headers"]["content-type"] == "application/json"
+
+
+def test_format_response_keeps_nan_body_as_text():
+    response = _format_response(
+        {"headers": '{"content-type": "application/json"}', "body": "NaN"}
+    )
+    assert response["body"] == "NaN"

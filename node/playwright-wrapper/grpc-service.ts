@@ -433,14 +433,24 @@ export class PlaywrightServer {
     clockPauseAt = this.wrapping(clock.clockPauseAt);
     advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
-    waitForRequest = this.wrappingPage(network.waitForRequest);
+    async waitForRequest(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
+        await this.streamCaptured(call, network.waitForRequest);
+    }
+
     async waitForResponse(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
+        await this.streamCaptured(call, network.waitForResponse);
+    }
+
+    private async streamCaptured(
+        call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>,
+        capture: (request: pb.Request_HttpCapture, page: Page) => Promise<pb.Response_Json[]>,
+    ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const results = await network.waitForResponse(request, this.getActivePage(call));
+            const results = await capture(request, this.getActivePage(call));
             for (const result of results) {
-                logger.info(`Sending response ${result.log}`);
+                logger.info(`Sending ${result.log}`);
                 call.write(result);
             }
         } catch (e) {
