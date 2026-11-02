@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import contextlib
 import json
 from datetime import timedelta
@@ -101,15 +102,19 @@ def _post_data_json(post_data: bytes | None, headers: dict) -> Any:
     return _json_or_none(text)
 
 
+RESPONSE_BODY_KEYS = ("body", "bytes", "text", "json")
+REQUEST_BODY_KEYS = ("postData", "postDataBuffer", "postDataJSON")
+
+
 def _add_request_views(request: dict, post_data: bytes) -> None:
-    buffer = None if "postDataBuffer" in request else post_data
+    buffer = post_data if request.pop("hasPostData") else None
     request["postDataBuffer"] = buffer
     request["postDataJSON"] = _post_data_json(buffer, request["headers"])
 
 
 def _add_response_views(response: dict, body: bytes) -> None:
-    if "body" in response:
-        response.update(bytes=None, text=None, json=None)
+    if not response.pop("hasBody"):
+        response.update(dict.fromkeys(RESPONSE_BODY_KEYS))
         return
     text = body.decode("utf-8", errors="replace")
     try:
@@ -121,9 +126,37 @@ def _add_response_views(response: dict, body: bytes) -> None:
     response.update(body=legacy_body, bytes=body, text=text, json=parsed)
 
 
-def _log_without_body(captured: dict) -> None:
-    hidden = {"body", "bytes", "text", "json", "postDataBuffer"}
-    logger.info({key: value for key, value in captured.items() if key not in hidden})
+def _without(data: dict, keys: tuple[str, ...]) -> dict:
+    return {key: value for key, value in data.items() if key not in keys}
+
+
+def _readable(raw: bytes) -> str:
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return f"{len(raw)} bytes, base64: {base64.b64encode(raw).decode('ascii')}"
+    try:
+        return json.dumps(_strict_json_loads(text), indent=2, ensure_ascii=False)
+    except ValueError:
+        return text
+
+
+def _log_request(request: dict) -> None:
+    logger.info(_without(request, REQUEST_BODY_KEYS))
+    if request["postDataBuffer"] is not None:
+        logger.trace(f"Request post data:\n{_readable(request['postDataBuffer'])}")
+
+
+def _log_response(response: dict) -> None:
+    metadata = _without(response, RESPONSE_BODY_KEYS)
+    metadata["request"] = _without(response["request"], REQUEST_BODY_KEYS)
+    logger.info(metadata)
+    if response["bytes"] is not None:
+        logger.trace(f"Response body:\n{_readable(response['bytes'])}")
+    if response["request"]["postDataBuffer"] is not None:
+        logger.trace(
+            f"Request post data:\n{_readable(response['request']['postDataBuffer'])}"
+        )
 
 
 class Network(LibraryComponent):
@@ -200,7 +233,7 @@ class Network(LibraryComponent):
             )
             request, _, post_data = _collect_stream(messages)
         _add_request_views(request, post_data)
-        _log_without_body(request)
+        _log_request(request)
         return request
 
     def _wait_for_http_response(self, matcher, timeout, include_body) -> dict:
@@ -218,7 +251,7 @@ class Network(LibraryComponent):
         request = response["request"]
         _jsonize_content(request, "postData")
         _add_request_views(request, post_data)
-        _log_without_body(response)
+        _log_response(response)
         return response
 
     @keyword(tags=("Wait", "HTTP"))
@@ -235,6 +268,9 @@ class Network(LibraryComponent):
         (``allHeaders`` includes ``cookie``), the raw body as ``postDataBuffer``, the parsed
         body as ``postDataJSON``, the resource type and more. Its documentation lists every key
         and the parsing rules of the legacy ``postData`` key.
+
+        The request is logged without its body. The body is logged at ``TRACE`` level: as
+        formatted JSON when it is JSON, as text when it is UTF-8, otherwise as base64.
 
         *Arguments:*
           - ``matcher``: Request URL matcher. Can be a string (Glob-Pattern), a
@@ -276,6 +312,9 @@ class Network(LibraryComponent):
         (``allHeaders`` includes ``set-cookie``), the body as ``bytes``, ``text`` and ``json``,
         the HTTP version, server address, TLS details and the `CapturedRequest` it answers.
         Its documentation lists every key and the parsing rules of the legacy ``body`` key.
+
+        The response is logged without its body. The body is logged at ``TRACE`` level: as
+        formatted JSON when it is JSON, as text when it is UTF-8, otherwise as base64.
 
         *Arguments:*
           - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
