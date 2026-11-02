@@ -257,6 +257,23 @@ Get Cookies With Url Leaves Secure Cookies Out Of Http Urls
     ${cookies} =    Get Cookies    urls=https://a.example
     Length Should Be    ${cookies}    1
 
+Get Cookies With Empty Urls Returns All Cookies
+    Add Cookie    first    1    domain=a.example    path=/
+    Cookie Names For Urls Should Be    ${EMPTY}    first
+    VAR    @{no_urls} =    @{EMPTY}
+    Cookie Names For Urls Should Be    ${no_urls}    first
+
+Add Partitioned Cookie With Domain And Path
+    Add Cookie
+    ...    tracker
+    ...    1
+    ...    domain=third-party.example
+    ...    path=/
+    ...    secure=True
+    ...    partitionKey=https://site.example
+    ${cookie} =    Get Cookie    tracker
+    Should Be Equal    ${cookie}[partitionKey]    https://site.example
+
 Get Cookies With Invalid Url Fails
     Run Keyword And Expect Error
     ...    *Invalid URL*
@@ -358,6 +375,11 @@ Get Cookie And No Expiry
 Open New Context To Form Page
     New Context
     New Page    ${FORM_URL}
+
+Cookie Names For Urls Should Be
+    [Arguments]    ${urls}    ${expected}
+    ${cookies} =    Get Cookies    string    urls=${urls}
+    Should Be Equal    ${cookies}    ${expected}\=1
 
 Cookie Names Should Be
     [Arguments]    @{expected}

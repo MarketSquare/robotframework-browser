@@ -16,6 +16,7 @@ import { BrowserContext } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
+import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
@@ -40,7 +41,7 @@ interface CookieFilter {
 
 function activeContext(state: PlaywrightState): BrowserContext {
     const context = state.getActiveContext();
-    if (!context) throw Error('no open context.');
+    exists(context, 'no open context.');
     return context;
 }
 

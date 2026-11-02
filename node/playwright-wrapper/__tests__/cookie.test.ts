@@ -1,21 +1,25 @@
+import { beforeEach, describe, expect, it } from '@jest/globals';
+
 import { addCookie, deleteCookies, getCookiesForUrls } from '../cookie';
 import { PlaywrightState } from '../playwright-state';
 
 const contextMock = {
-    addCookies: jest.fn(),
-    clearCookies: jest.fn(),
-    cookies: jest.fn(),
+    addCookies: jest.fn<Promise<void>, [unknown[]]>(),
+    clearCookies: jest.fn<Promise<void>, [unknown]>(),
+    cookies: jest.fn<Promise<{ name: string }[]>, [unknown]>(),
 };
 
 const stateWith = (context: unknown) => ({ getActiveContext: () => context }) as unknown as PlaywrightState;
 const jsonRequest = (body: unknown) => ({ body: JSON.stringify(body) });
 
 describe('cookie', () => {
-    beforeEach(() => jest.resetAllMocks());
+    beforeEach(() => {
+        jest.clearAllMocks();
+        contextMock.cookies.mockResolvedValue([{ name: 'first' }, { name: 'second' }]);
+    });
 
     it('reads cookies for the requested urls', async () => {
         const urls = ['https://a.example', 'https://b.example'];
-        contextMock.cookies.mockResolvedValue([{ name: 'first' }, { name: 'second' }]);
 
         const response = await getCookiesForUrls(jsonRequest(urls), stateWith(contextMock));
 
@@ -42,6 +46,7 @@ describe('cookie', () => {
         ['getCookiesForUrls', () => getCookiesForUrls(jsonRequest('https://a.example'), stateWith(undefined))],
         ['deleteCookies', () => deleteCookies(jsonRequest({ name: 'n' }), stateWith(undefined))],
     ])('%s fails without an open context', async (_name, call) => {
+        expect.assertions(1);
         await expect(call()).rejects.toThrow('no open context.');
     });
 });
