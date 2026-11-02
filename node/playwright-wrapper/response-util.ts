@@ -30,6 +30,8 @@ import {
 import { loadReportOf } from './load-report';
 import { IndexedPage } from './playwright-state';
 
+const NO_BYTES = { bodyBytes: Buffer.alloc(0), postDataBytes: Buffer.alloc(0) };
+
 export function emptyWithLog(text: string): Response_Empty {
     return { log: text };
 }
@@ -56,14 +58,14 @@ export function getConsoleLogResponse(page: IndexedPage, fullLog: boolean, messa
     const consoleMessages = page.consoleMessages;
     const responseMessages = fullLog ? consoleMessages : consoleMessages.slice(page.consoleIndex);
     page.consoleIndex = consoleMessages.length;
-    return { log: message, json: JSON.stringify(responseMessages), bodyPart: '', adoptedContext: '' };
+    return { log: message, json: JSON.stringify(responseMessages), bodyPart: '', adoptedContext: '', ...NO_BYTES };
 }
 
 export function getErrorMessagesResponse(page: IndexedPage, fullLog: boolean, message: string): Response_Json {
     const pageErrors = page.pageErrors;
     const responseErrors = fullLog ? pageErrors : pageErrors.slice(page.errorIndex);
     page.errorIndex = pageErrors.length;
-    return { log: message, json: JSON.stringify(responseErrors), bodyPart: '', adoptedContext: '' };
+    return { log: message, json: JSON.stringify(responseErrors), bodyPart: '', adoptedContext: '', ...NO_BYTES };
 }
 
 function definedString(body: string): string {
@@ -79,11 +81,11 @@ export function listStringResponse(body: string[], logMessage: string): Response
 }
 
 export function jsonResponse(body: string, logMessage: string, bodyPart: string = ''): Response_Json {
-    return { json: definedString(body), log: logMessage, bodyPart, adoptedContext: '' };
+    return { json: definedString(body), log: logMessage, bodyPart, adoptedContext: '', ...NO_BYTES };
 }
 
 export function adoptedContextResponse(adoptedContext: string, logMessage: string): Response_Json {
-    return { json: '', log: logMessage, bodyPart: '', adoptedContext };
+    return { json: '', log: logMessage, bodyPart: '', adoptedContext, ...NO_BYTES };
 }
 
 export function intResponse(body: number, logMessage: string): Response_Int {
