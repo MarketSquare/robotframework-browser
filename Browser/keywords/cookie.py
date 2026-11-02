@@ -39,7 +39,8 @@ class Cookie(LibraryComponent):
           - ``urls``: A URL or a list of URLs. When given, only the cookies that apply to
                 at least one of the URLs are returned: the domain and the path of the cookie
                 must match the URL, and a secure cookie is returned only for an HTTPS or a
-                local URL. Defaults to None, which returns all cookies of the context.
+                local URL. Defaults to None, which returns all cookies of the context. An empty
+                string or an empty list applies no filter and also returns all cookies.
 
         If ``return_type`` is ``dictionary`` or ``dict``, then the keyword returns a list of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries].
@@ -141,7 +142,9 @@ class Cookie(LibraryComponent):
           - ``partitionKey``: Top level site of a partitioned
                 [https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Privacy_sandbox/Partitioned_cookies|CHIPS]
                 cookie, for example ``https://site.example``. Defaults to None, which adds
-                an unpartitioned cookie.
+                an unpartitioned cookie. Support depends on the browser: Firefox ignores the key
+                without an error. Chromium requires a secure cookie, so use an HTTPS ``url``
+                or set ``secure`` with ``domain`` and ``path``, and a key with a scheme.
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
@@ -193,7 +196,8 @@ class Cookie(LibraryComponent):
         deleting nothing is not an error.
 
         *Arguments:*
-          - ``name``: Deletes only the cookies with this name.
+          - ``name``: Deletes only the cookies with this name. A partitioned cookie is deleted
+                from every partition.
           - ``domain``: Deletes only the cookies with this domain.
           - ``path``: Deletes only the cookies with this path.
 
