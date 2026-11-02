@@ -519,7 +519,9 @@ service  Playwright {
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
   rpc GetCookies(Request.Empty) returns (Response.Json);
+  rpc GetCookiesForUrls(Request.Json) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
+  rpc DeleteCookies(Request.Json) returns (Response.Empty);
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */

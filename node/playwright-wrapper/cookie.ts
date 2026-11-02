@@ -16,6 +16,7 @@ import { BrowserContext } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
+import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 interface CookieData {
@@ -28,16 +29,34 @@ interface CookieData {
     httpOnly?: boolean;
     secure?: boolean;
     sameSite?: 'Strict' | 'Lax' | 'None';
+    partitionKey?: string;
+}
+
+interface CookieFilter {
+    name?: string;
+    domain?: string;
+    path?: string;
+}
+
+function activeContext(state: PlaywrightState): BrowserContext {
+    const context = state.getActiveContext();
+    if (!context) throw Error('no open context.');
+    return context;
+}
+
+async function readCookies(context: BrowserContext, urls?: string | string[]): Promise<pb.Response_Json> {
+    const cookies = await context.cookies(urls);
+    logger.info({ 'Cookies: ': cookies });
+    return jsonResponse(JSON.stringify(cookies), cookies.map((cookie) => cookie.name).toString());
 }
 
 export async function getCookies(context: BrowserContext): Promise<pb.Response_Json> {
-    const allCookies = await context.cookies();
-    logger.info({ 'Cookies: ': allCookies });
-    const cookieName = [];
-    for (const cookie of allCookies) {
-        cookieName.push(cookie.name);
-    }
-    return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
+    return readCookies(context);
+}
+
+export async function getCookiesForUrls(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
+    const urls: string | string[] = JSON.parse(request.body);
+    return readCookies(activeContext(state), urls);
 }
 
 export async function addCookie(request: pb.Request_Json, context: BrowserContext): Promise<pb.Response_Empty> {
@@ -50,4 +69,10 @@ export async function addCookie(request: pb.Request_Json, context: BrowserContex
 export async function deleteAllCookies(context: BrowserContext): Promise<pb.Response_Empty> {
     await context.clearCookies();
     return emptyWithLog('All cookies deleted.');
+}
+
+export async function deleteCookies(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const filter: CookieFilter = JSON.parse(request.body);
+    await activeContext(state).clearCookies(filter);
+    return emptyWithLog('Cookies matching ' + request.body + ' deleted.');
 }
