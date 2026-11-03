@@ -1,10 +1,13 @@
+import inspect
 import json
+from itertools import dropwhile, takewhile
 from unittest.mock import MagicMock
 
 import pytest
 
 from Browser import Browser
 from Browser.keywords.network import _readable
+from Browser.utils.data_types import CapturedRequest, CapturedResponse
 
 PNG_SIGNATURE = bytes.fromhex("89504e470d0a1a0a")
 
@@ -238,6 +241,23 @@ def test_wait_for_request_keeps_legacy_keys(browser, stub):
     assert request.headers == {"content-type": "text/plain"}
     assert request.postData is None
     assert request.postDataBuffer is None
+
+
+def documented_example(typed_dict: type) -> dict:
+    after_heading = inspect.getdoc(typed_dict).split("= Example =")[1].splitlines()
+    from_block = dropwhile(lambda line: not line.startswith("| "), after_heading)
+    block = takewhile(lambda line: line.startswith("| "), from_block)
+    return json.loads("\n".join(line[2:] for line in block))
+
+
+@pytest.mark.parametrize("typed_dict", [CapturedRequest, CapturedResponse])
+def test_documented_example_lists_every_key_in_order(typed_dict):
+    assert list(documented_example(typed_dict)) == list(typed_dict.__annotations__)
+
+
+def test_documented_response_example_contains_a_full_request():
+    request = documented_example(CapturedResponse)["request"]
+    assert list(request) == list(CapturedRequest.__annotations__)
 
 
 def test_body_is_logged_as_formatted_json():
