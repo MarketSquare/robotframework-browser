@@ -793,6 +793,25 @@ class Getters(LibraryComponent):
                 message,
             )
 
+    @keyword(tags=("Getter", "PageContent"))
+    def is_element(self, selector: str) -> bool:
+        """Returns ``True`` if at least one element matches ``selector``, otherwise ``False``.
+
+        *Arguments:*
+          - ``selector``: Selector of the element to look for. See the `Finding elements`
+                section for details about the selectors.
+
+        The keyword does not wait for the element to appear; it checks the page as it is
+        at the moment of the call, the same way as `Get Element Count`. Use it for
+        conditional logic. To wait for an element, use `Wait For Elements State`.
+        An invalid selector still fails the keyword.
+
+        Example:
+        | ${is_logged_in} =    `Is Element`    id=logout
+        | IF    ${is_logged_in}    `Click`    id=logout
+        """
+        return self.get_element_count(selector) > 0
+
     @keyword(tags=("Getter", "Assertion", "BrowserControl"))
     @with_assertion_polling
     def get_viewport_size(
