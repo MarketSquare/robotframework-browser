@@ -51,8 +51,8 @@ async function readCookies(context: BrowserContext, urls?: string | string[]): P
     return jsonResponse(JSON.stringify(cookies), cookies.map((cookie) => cookie.name).toString());
 }
 
-export async function getCookies(context: BrowserContext): Promise<pb.Response_Json> {
-    return readCookies(context);
+export async function getCookies(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Json> {
+    return readCookies(activeContext(state));
 }
 
 export async function getCookiesForUrls(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
@@ -60,15 +60,16 @@ export async function getCookiesForUrls(request: pb.Request_Json, state: Playwri
     return readCookies(activeContext(state), urls);
 }
 
-export async function addCookie(request: pb.Request_Json, context: BrowserContext): Promise<pb.Response_Empty> {
+export async function addCookie(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const context = activeContext(state);
     const cookie: CookieData = JSON.parse(request.body);
     logger.info({ 'Cookie data: ': request.body });
     await context.addCookies([cookie]);
     return emptyWithLog('Cookie "' + cookie.name + '" added.');
 }
 
-export async function deleteAllCookies(context: BrowserContext): Promise<pb.Response_Empty> {
-    await context.clearCookies();
+export async function deleteAllCookies(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
+    await activeContext(state).clearCookies();
     return emptyWithLog('All cookies deleted.');
 }
 
