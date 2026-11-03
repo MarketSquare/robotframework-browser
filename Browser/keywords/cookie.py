@@ -67,11 +67,10 @@ class Cookie(LibraryComponent):
         return self._format_cookies_as_string(cookies)
 
     def _get_cookies(self, urls: str | list[str] | None = None):
+        if isinstance(urls, str):
+            urls = [urls] if urls else []
         with self.playwright.grpc_channel() as stub:
-            if urls is None:
-                response = stub.GetCookies(Request().Empty())
-            else:
-                response = stub.GetCookiesForUrls(Request.Json(body=json.dumps(urls)))
+            response = stub.GetCookies(Request.CookieQuery(urls=urls))
             return response, json.loads(response.json)
 
     def _format_cookies_as_string(self, cookies: list[dict]):

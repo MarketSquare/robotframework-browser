@@ -189,7 +189,6 @@ export class PlaywrightServer {
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
     addCookie = this.wrapping(cookie.addCookie);
     getCookies = this.wrapping(cookie.getCookies);
-    getCookiesForUrls = this.wrapping(cookie.getCookiesForUrls);
     deleteAllCookies = this.wrapping(cookie.deleteAllCookies);
     deleteCookies = this.wrapping(cookie.deleteCookies);
 

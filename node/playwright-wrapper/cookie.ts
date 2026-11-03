@@ -45,19 +45,10 @@ function activeContext(state: PlaywrightState): BrowserContext {
     return context;
 }
 
-async function readCookies(context: BrowserContext, urls?: string | string[]): Promise<pb.Response_Json> {
-    const cookies = await context.cookies(urls);
+export async function getCookies(request: pb.Request_CookieQuery, state: PlaywrightState): Promise<pb.Response_Json> {
+    const cookies = await activeContext(state).cookies(request.urls);
     logger.info({ 'Cookies: ': cookies });
     return jsonResponse(JSON.stringify(cookies), cookies.map((cookie) => cookie.name).toString());
-}
-
-export async function getCookies(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Json> {
-    return readCookies(activeContext(state));
-}
-
-export async function getCookiesForUrls(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
-    const urls: string | string[] = JSON.parse(request.body);
-    return readCookies(activeContext(state), urls);
 }
 
 export async function addCookie(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Empty> {

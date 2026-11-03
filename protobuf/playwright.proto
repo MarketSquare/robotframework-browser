@@ -201,6 +201,10 @@ message Request {
     string traceFile = 4;
   }
 
+  message CookieQuery {
+    repeated string urls = 1;
+  }
+
   message Permissions {
     repeated string permissions = 1;
     string origin = 2;
@@ -518,8 +522,7 @@ service  Playwright {
   rpc AriaSnapShot(Request.AriaSnapShot) returns (Response.String);
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
-  rpc GetCookies(Request.Empty) returns (Response.Json);
-  rpc GetCookiesForUrls(Request.Json) returns (Response.Json);
+  rpc GetCookies(Request.CookieQuery) returns (Response.Json);
   rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
   rpc DeleteCookies(Request.Json) returns (Response.Empty);
   /* Screen shot method */
