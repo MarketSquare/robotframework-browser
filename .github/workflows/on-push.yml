@@ -129,8 +129,8 @@ jobs:
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
-        npm ci # NOSONAR: installs from package-lock.json; grpc-tools needs its install script
-        npx playwright install --with-deps # NOSONAR: runs the playwright that npm ci installed from the lock file
+        npm ci # installs from package-lock.json; grpc-tools needs its install script
+        npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v7
       with:
@@ -244,8 +244,8 @@ jobs:
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
-        npm ci # NOSONAR: installs from package-lock.json; grpc-tools needs its install script
-        npx playwright install --with-deps # NOSONAR: runs the playwright that npm ci installed from the lock file
+        npm ci # installs from package-lock.json; grpc-tools needs its install script
+        npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
     - name: Set up Python 3.12
       uses: actions/setup-python@v7
       with:
@@ -670,7 +670,7 @@ jobs:
           cache: 'npm'
       - name: Install nodejs dependencies
         run: |
-          npm ci # NOSONAR: installs from package-lock.json; grpc-tools needs its install script
+          npm ci # installs from package-lock.json; grpc-tools needs its install script
       - name: Set up Python 3.13
         uses: actions/setup-python@v7
         with:

@@ -26,7 +26,7 @@ jobs:
           python-version: 3.12
       - name: Dependencies for building docs
         run: |
-          npm ci # NOSONAR: installs from package-lock.json; grpc-tools needs its install script
+          npm ci # installs from package-lock.json; grpc-tools needs its install script
           python -m pip install --upgrade pip
           pip install uv
           uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
