@@ -87,8 +87,10 @@ class RecorderSession:
         fixed_name: str | None = None,
         known: KnownKeywords | None = None,
         clock: Callable[[], float] = time.monotonic,
+        keyword_names: dict[str, str] | None = None,
     ) -> None:
         self.target = target
+        self._keyword_names = dict(keyword_names or {})
         self.stopped = False
         self.log: list[str] = []
         self._guard = NameGuard(known or KnownKeywords())
@@ -124,7 +126,7 @@ class RecorderSession:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
                 raise ValueError(error)
-            self._keyword = RecordedKeyword(fixed_name)
+            self._keyword = RecordedKeyword(fixed_name, self._keyword_names)
 
     # -- introspection ----------------------------------------------------- #
 
@@ -204,9 +206,14 @@ class RecorderSession:
 
     @staticmethod
     def _toolbar_calls(keyword: RecordedKeyword | None) -> list[dict]:
+        # Guard before the loop because its body now accesses keyword.keyword_names.
+        # A conditional iterable protects keyword.calls(), but mypy does not carry
+        # that non-None guarantee into the loop body.
+        if keyword is None:
+            return []
         budget = MAX_RAW_TOTAL
         calls = []
-        for call in keyword.calls() if keyword is not None else []:
+        for call in keyword.calls():
             values = []
             for value, written in zip(call.args, call.rendered_args(), strict=True):
                 raw = value.text
@@ -227,7 +234,7 @@ class RecorderSession:
             calls.append(
                 {
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
-                    "keyword": call.keyword,
+                    "keyword": call.display_name(keyword.keyword_names),
                     "values": values,
                     "comment": call.comment,
                 }
@@ -544,7 +551,7 @@ class RecorderSession:
         self._starting = None
         if name is None:
             return
-        self._keyword = RecordedKeyword(name)
+        self._keyword = RecordedKeyword(name, self._keyword_names)
         self._picker = None
         self._undone = self._skipped = self._paused = False
         self._reset_pages()
@@ -622,7 +629,7 @@ class RecorderSession:
         keyword = self._keyword
         assert keyword is not None
         self._keyword = (
-            RecordedKeyword(self._fixed_name)
+            RecordedKeyword(self._fixed_name, self._keyword_names)
             if restart and self._fixed_name is not None
             else None
         )

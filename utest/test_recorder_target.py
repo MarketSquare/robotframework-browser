@@ -544,3 +544,56 @@ def test_a_failed_first_write_does_not_claim_a_keyword_added_meanwhile(tmp_path)
     with pytest.raises(ValueError, match="already exists"):
         target.save(kw)
     assert "theirs" in path.read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize(
+    ("declaration", "header"),
+    [
+        ("fr", "Mots-clés"),
+        ("de", "Schlüsselwörter"),
+        ("en", "Keywords"),
+        ("fr\nLanguage: en", "Mots-clés"),
+    ],
+)
+def test_new_section_uses_declared_language(tmp_path, declaration, header):
+    from robot.api import get_model
+    from robot.parsing.model.blocks import KeywordSection
+
+    path = tmp_path / "localized.robot"
+    original = f"Language: {declaration}\n"
+    path.write_text(original, encoding="utf-8")
+    target = FileTarget(path)
+    target.save(keyword())
+    assert f"*** {header} ***" in path.read_text(encoding="utf-8")
+    model = get_model(path)
+    sections = [s for s in model.sections if isinstance(s, KeywordSection)]
+    assert len(sections) == 1
+    assert sections[0].body[0].name == "Fill Name"
+    target.remove("Fill Name")
+    assert path.read_text(encoding="utf-8") == original
+
+
+def test_existing_section_keeps_its_header_in_localized_file(tmp_path):
+    path = tmp_path / "localized.robot"
+    original = "Language: fr\n*** Keywords ***\nExisting\n    No Operation\n"
+    path.write_text(original, encoding="utf-8")
+    FileTarget(path).save(keyword())
+    assert path.read_text(encoding="utf-8").startswith(original)
+    assert "*** Mots-clés ***" not in path.read_text(encoding="utf-8")
+
+
+def test_translated_calls_are_identical_in_file_log_and_returned_text(tmp_path):
+    from robot.api import get_model
+    from robot.parsing.model.blocks import KeywordSection
+
+    kw = RecordedKeyword("Remplir", {"Fill Text": "Remplir Le Texte"})
+    kw.add(Call("Fill Text", [Value.literal("#n"), Value.literal("txt=bonjour")]))
+    path = tmp_path / "localized.robot"
+    path.write_text("Language: fr\n", encoding="utf-8")
+    FileTarget(path).finish(kw)
+    console, info = [], []
+    LogTarget(console.append, info.append).finish(kw)
+    assert console == info == [kw.text()]
+    assert kw.block() in path.read_text(encoding="utf-8")
+    section = next(s for s in get_model(path).sections if isinstance(s, KeywordSection))
+    assert section.body[0].body[1].keyword == "Remplir Le Texte"

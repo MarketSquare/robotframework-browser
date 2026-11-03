@@ -1571,3 +1571,23 @@ def test_undo_keeps_the_id_an_earlier_switch_returned():
         "Click | #b",
     ]
     assert s.toolbar_state()["notice"] is None
+
+
+@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
+def test_translated_calls_reach_toolbar_target_and_returned_text(fixed_name):
+    s, target, clock = session(
+        fixed_name=fixed_name, keyword_names={"Fill Text": "Remplir Le Texte"}
+    )
+    if fixed_name is None:
+        start(s, "Remplir")
+    s.handle_event("added", FILL)
+    assert s.toolbar_state()["calls"][0]["keyword"] == "Remplir Le Texte"
+    s.handle_command({"cmd": "discard"})
+    settle(s, clock)
+    if fixed_name is None:
+        start(s, "Remplir Encore")
+    s.handle_event("added", FILL)
+    assert s.toolbar_state()["calls"][0]["keyword"] == "Remplir Le Texte"
+    s.close()
+    assert "Remplir Le Texte" in target.finished[-1]
+    assert "Remplir Le Texte" in s.text()

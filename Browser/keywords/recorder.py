@@ -19,12 +19,14 @@ from datetime import timedelta
 from pathlib import Path
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
+from robot.utils import printable_name
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.cells import cell
 from ..recorder.driver import run_session
-from ..recorder.names import collect_known_keywords
+from ..recorder.names import collect_known_keywords, normalize_keyword_name
+from ..recorder.parameters import KEYWORD_PARAMETERS
 from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
@@ -460,7 +462,10 @@ class Recorder(LibraryComponent):
             )
         target = self._target(file)
         session = RecorderSession(
-            target, fixed_name=fixed_name, known=collect_known_keywords()
+            target,
+            fixed_name=fixed_name,
+            known=collect_known_keywords(),
+            keyword_names=self._recorder_keyword_names(),
         )
         logger.info(f"Recording into {target.label}")
         try:
@@ -485,6 +490,21 @@ class Recorder(LibraryComponent):
                 f"{session.write_error}. {names} not saved; the recorded text is in the log."
             )
         return session
+
+    def _recorder_keyword_names(self) -> dict[str, str]:
+        """Use the effective names registered by DynamicCore (including translations).
+
+        Match the original method name rather than loading a translation file
+        again, so the recorder uses exactly the same names as this library instance.
+        """
+        canonical = {normalize_keyword_name(name): name for name in KEYWORD_PARAMETERS}
+        names = {}
+        for registered, method in self.library.keywords.items():
+            original = getattr(method, "__name__", "")
+            name = canonical.get(normalize_keyword_name(original))
+            if name is not None:
+                names[name] = printable_name(registered, code_style=True)
+        return names
 
     def _client(self) -> _GrpcRecorderClient:
         return _GrpcRecorderClient(self)

@@ -116,9 +116,15 @@ class Call:
         )
         return [value.render(parameters) for value in self.args]
 
-    def render(self) -> str:
+    def display_name(self, keyword_names: dict[str, str] | None = None) -> str:
+        """Translate only the displayed name, keeping internal names canonical."""
+        if self.comment or not keyword_names:
+            return self.keyword
+        return keyword_names.get(self.keyword, self.keyword)
+
+    def render(self, keyword_names: dict[str, str] | None = None) -> str:
         cells = [f"${{{self.assign}}}="] if self.assign else []
-        cells.append(self.keyword)
+        cells.append(self.display_name(keyword_names))
         cells.extend(self.rendered_args())
         return _INDENT.join(cells)
 
@@ -148,8 +154,9 @@ class _Group:
 
 
 class RecordedKeyword:
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, keyword_names: dict[str, str] | None = None) -> None:
         self.name = name
+        self.keyword_names = dict(keyword_names or {})
         self.arguments: list[Argument] = []
         self._groups: list[_Group] = []
 
@@ -328,7 +335,7 @@ class RecordedKeyword:
                 a for a in self.arguments if a.use_default
             ]
             rows.append(_INDENT.join(["[Arguments]", *(a.render() for a in ordered)]))
-        rows.extend(call.render() for call in self.calls())
+        rows.extend(call.render(self.keyword_names) for call in self.calls())
         return rows
 
     def block(self) -> str:
