@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { addCookie, deleteCookies, getCookiesForUrls } from '../cookie';
+import { addCookie, deleteAllCookies, deleteCookies, getCookies, getCookiesForUrls } from '../cookie';
 import { PlaywrightState } from '../playwright-state';
 
 const contextMock = {
     addCookies: jest.fn<Promise<void>, [unknown[]]>(),
-    clearCookies: jest.fn<Promise<void>, [unknown]>(),
+    clearCookies: jest.fn<Promise<void>, [unknown?]>(),
     cookies: jest.fn<Promise<{ name: string }[]>, [unknown]>(),
 };
 
@@ -18,6 +18,14 @@ describe('cookie', () => {
         contextMock.cookies.mockResolvedValue([{ name: 'first' }, { name: 'second' }]);
     });
 
+    it('reads all cookies of the active context', async () => {
+        const response = await getCookies({}, stateWith(contextMock));
+
+        expect(contextMock.cookies).toHaveBeenCalledWith(undefined);
+        expect(response.log).toBe('first,second');
+        expect(JSON.parse(response.json)).toEqual([{ name: 'first' }, { name: 'second' }]);
+    });
+
     it('reads cookies for the requested urls', async () => {
         const urls = ['https://a.example', 'https://b.example'];
 
@@ -26,6 +34,13 @@ describe('cookie', () => {
         expect(contextMock.cookies).toHaveBeenCalledWith(urls);
         expect(response.log).toBe('first,second');
         expect(JSON.parse(response.json)).toEqual([{ name: 'first' }, { name: 'second' }]);
+    });
+
+    it('clears every cookie of the active context', async () => {
+        const response = await deleteAllCookies({}, stateWith(contextMock));
+
+        expect(contextMock.clearCookies).toHaveBeenCalledWith();
+        expect(response.log).toBe('All cookies deleted.');
     });
 
     it('clears only the cookies matching the filter', async () => {
@@ -37,12 +52,15 @@ describe('cookie', () => {
     it('passes the partition key to Playwright', async () => {
         const cookie = { name: 'n', value: 'v', url: 'https://a.example', partitionKey: 'https://site.example' };
 
-        await addCookie(jsonRequest(cookie), contextMock as never);
+        await addCookie(jsonRequest(cookie), stateWith(contextMock));
 
         expect(contextMock.addCookies).toHaveBeenCalledWith([cookie]);
     });
 
     it.each([
+        ['getCookies', () => getCookies({}, stateWith(undefined))],
+        ['addCookie', () => addCookie(jsonRequest({ name: 'n', value: 'v' }), stateWith(undefined))],
+        ['deleteAllCookies', () => deleteAllCookies({}, stateWith(undefined))],
         ['getCookiesForUrls', () => getCookiesForUrls(jsonRequest('https://a.example'), stateWith(undefined))],
         ['deleteCookies', () => deleteCookies(jsonRequest({ name: 'n' }), stateWith(undefined))],
     ])('%s fails without an open context', async (_name, call) => {

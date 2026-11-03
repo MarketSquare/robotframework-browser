@@ -187,52 +187,11 @@ export class PlaywrightServer {
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
+    addCookie = this.wrapping(cookie.addCookie);
+    getCookies = this.wrapping(cookie.getCookies);
     getCookiesForUrls = this.wrapping(cookie.getCookiesForUrls);
+    deleteAllCookies = this.wrapping(cookie.deleteAllCookies);
     deleteCookies = this.wrapping(cookie.deleteCookies);
-
-    async getCookies(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
-        callback: sendUnaryData<pb.Response_Json>,
-    ): Promise<void> {
-        try {
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.getCookies(context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async addCookie(
-        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.addCookie(request, context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async deleteAllCookies(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.deleteAllCookies(context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
 
     async switchPage(
         call: ServerUnaryCall<pb.Request_IdWithTimeout, pb.Response_String>,
