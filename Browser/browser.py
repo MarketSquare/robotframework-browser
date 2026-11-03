@@ -778,6 +778,22 @@ class Browser(DynamicCore):
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
         args = parts[1:]
+        # The default failure handler uses the English name, which a translation
+        # may replace. Keep an explicitly registered English name if it exists.
+        if (
+            normalized_keyword_name == "take_screenshot"
+            and normalized_keyword_name not in self.keywords
+        ):
+            # Find the translated name by the unchanged Python method name.
+            # If no match exists, leave resolution to the external-keyword path.
+            normalized_keyword_name = next(
+                (
+                    name
+                    for name, method in self.keywords.items()
+                    if getattr(method, "__name__", "") == "take_screenshot"
+                ),
+                normalized_keyword_name,
+            )
         if normalized_keyword_name not in self.keywords:
             return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
         spec = PythonArgumentParser().parse(
@@ -1333,7 +1349,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     )
             if self.run_on_failure_keyword.name in self.keywords:
                 if (
-                    self.run_on_failure_keyword.name == "take_screenshot"
+                    getattr(
+                        self.keywords[self.run_on_failure_keyword.name], "__name__", ""
+                    )
+                    == "take_screenshot"
                     and not varargs
                     and "filename" not in kwargs
                 ):
