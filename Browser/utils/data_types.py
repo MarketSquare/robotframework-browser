@@ -1029,6 +1029,67 @@ class CapturedRequest(TypedDict):
     | ``redirectedTo`` | The URL this request was redirected to, or ``None``. It is ``None`` in `Wait For Request`, because the redirect is not known when the request is sent. |
     | ``frame`` | Dictionary with the ``url`` and ``name`` of the frame that issued the request, or ``None`` if Playwright cannot tell, e.g. for Service Worker requests. |
 
+    = Example =
+
+    A login request sent with ``fetch``, with made-up values, as JSON. ``postDataBuffer`` is shown as base64 text, the way ``json.dumps`` writes it.
+
+    | {
+    |   "url": "https://example.com/api/login",
+    |   "method": "POST",
+    |   "headers": {
+    |     "accept": "application/json",
+    |     "content-type": "application/json",
+    |     "referer": "https://example.com/login",
+    |     "user-agent": "Mozilla/5.0 Chrome/141.0"
+    |   },
+    |   "allHeaders": {
+    |     "accept": "application/json",
+    |     "content-type": "application/json",
+    |     "referer": "https://example.com/login",
+    |     "user-agent": "Mozilla/5.0 Chrome/141.0",
+    |     "cookie": "consent=yes"
+    |   },
+    |   "headersArray": [
+    |     {
+    |       "name": "Accept",
+    |       "value": "application/json"
+    |     },
+    |     {
+    |       "name": "Content-Type",
+    |       "value": "application/json"
+    |     },
+    |     {
+    |       "name": "Cookie",
+    |       "value": "consent=yes"
+    |     },
+    |     {
+    |       "name": "Referer",
+    |       "value": "https://example.com/login"
+    |     },
+    |     {
+    |       "name": "User-Agent",
+    |       "value": "Mozilla/5.0 Chrome/141.0"
+    |     }
+    |   ],
+    |   "postData": {
+    |     "user": "demo",
+    |     "password": "secret"
+    |   },
+    |   "postDataBuffer": "eyJ1c2VyIjoiZGVtbyIsInBhc3N3b3JkIjoic2VjcmV0In0=",
+    |   "postDataJSON": {
+    |     "user": "demo",
+    |     "password": "secret"
+    |   },
+    |   "resourceType": "fetch",
+    |   "isNavigationRequest": false,
+    |   "redirectedFrom": null,
+    |   "redirectedTo": null,
+    |   "frame": {
+    |     "url": "https://example.com/login",
+    |     "name": ""
+    |   }
+    | }
+
     = Parsing rules =
 
     ``postData`` is kept as it always was, and its parsing depends on where it is returned:
@@ -1085,13 +1146,134 @@ class CapturedResponse(TypedDict):
     | ``json`` | The response body parsed as JSON regardless of the ``content-type``, like Playwright's ``json()``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
     | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it. |
     | ``serverAddr`` | Dictionary with the ``ipAddress`` and ``port`` of the server, or ``None``. |
-    | ``securityDetails`` | TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
+    | ``securityDetails`` | ( `SecurityDetails` ) TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
     | ``fromServiceWorker`` | ``True`` if a Service Worker answered the request. |
     | ``request`` | The `CapturedRequest` that this response answers. |
 
     ``body``, ``bytes``, ``text`` and ``json`` are ``None`` when the body cannot be read, for
     example for a redirect response, or when `Wait For Response` was called with
     ``include_body=False``.
+
+    = Example =
+
+    The response to the login request shown in `CapturedRequest`, with made-up values, as JSON. ``bytes`` and ``request.postDataBuffer`` are shown as base64 text, the way ``json.dumps`` writes them.
+
+    | {
+    |   "status": 200,
+    |   "statusText": "OK",
+    |   "ok": true,
+    |   "url": "https://example.com/api/login",
+    |   "headers": {
+    |     "content-type": "application/json; charset=utf-8",
+    |     "content-length": "33"
+    |   },
+    |   "allHeaders": {
+    |     "content-type": "application/json; charset=utf-8",
+    |     "content-length": "33",
+    |     "set-cookie": "session=abc123; Path=/; HttpOnly\\ntheme=dark; Path=/"
+    |   },
+    |   "headersArray": [
+    |     {
+    |       "name": "Content-Type",
+    |       "value": "application/json; charset=utf-8"
+    |     },
+    |     {
+    |       "name": "Content-Length",
+    |       "value": "33"
+    |     },
+    |     {
+    |       "name": "Set-Cookie",
+    |       "value": "session=abc123; Path=/; HttpOnly"
+    |     },
+    |     {
+    |       "name": "Set-Cookie",
+    |       "value": "theme=dark; Path=/"
+    |     }
+    |   ],
+    |   "body": {
+    |     "user": "demo",
+    |     "roles": [
+    |       "admin"
+    |     ]
+    |   },
+    |   "bytes": "eyJ1c2VyIjoiZGVtbyIsInJvbGVzIjpbImFkbWluIl19",
+    |   "text": "{\\"user\\":\\"demo\\",\\"roles\\":[\\"admin\\"]}",
+    |   "json": {
+    |     "user": "demo",
+    |     "roles": [
+    |       "admin"
+    |     ]
+    |   },
+    |   "httpVersion": "h2",
+    |   "serverAddr": {
+    |     "ipAddress": "203.0.113.10",
+    |     "port": 443
+    |   },
+    |   "securityDetails": {
+    |     "issuer": "Example CA",
+    |     "protocol": "TLS 1.3",
+    |     "subjectName": "example.com",
+    |     "validFrom": 1767225600,
+    |     "validTo": 1798761599
+    |   },
+    |   "fromServiceWorker": false,
+    |   "request": {
+    |     "url": "https://example.com/api/login",
+    |     "method": "POST",
+    |     "headers": {
+    |       "accept": "application/json",
+    |       "content-type": "application/json",
+    |       "referer": "https://example.com/login",
+    |       "user-agent": "Mozilla/5.0 Chrome/141.0"
+    |     },
+    |     "allHeaders": {
+    |       "accept": "application/json",
+    |       "content-type": "application/json",
+    |       "referer": "https://example.com/login",
+    |       "user-agent": "Mozilla/5.0 Chrome/141.0",
+    |       "cookie": "consent=yes"
+    |     },
+    |     "headersArray": [
+    |       {
+    |         "name": "Accept",
+    |         "value": "application/json"
+    |       },
+    |       {
+    |         "name": "Content-Type",
+    |         "value": "application/json"
+    |       },
+    |       {
+    |         "name": "Cookie",
+    |         "value": "consent=yes"
+    |       },
+    |       {
+    |         "name": "Referer",
+    |         "value": "https://example.com/login"
+    |       },
+    |       {
+    |         "name": "User-Agent",
+    |         "value": "Mozilla/5.0 Chrome/141.0"
+    |       }
+    |     ],
+    |     "postData": {
+    |       "user": "demo",
+    |       "password": "secret"
+    |     },
+    |     "postDataBuffer": "eyJ1c2VyIjoiZGVtbyIsInBhc3N3b3JkIjoic2VjcmV0In0=",
+    |     "postDataJSON": {
+    |       "user": "demo",
+    |       "password": "secret"
+    |     },
+    |     "resourceType": "fetch",
+    |     "isNavigationRequest": false,
+    |     "redirectedFrom": null,
+    |     "redirectedTo": null,
+    |     "frame": {
+    |       "url": "https://example.com/login",
+    |       "name": ""
+    |     }
+    |   }
+    | }
 
     = Parsing rules =
 

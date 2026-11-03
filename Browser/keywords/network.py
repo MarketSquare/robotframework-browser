@@ -286,11 +286,6 @@ class Network(LibraryComponent):
 
         See `Wait For Response` for more details about the matcher.
 
-        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not need to be in slashes.
-        The most simple way to migrate to the new syntax is to add slashes around the matcher.
-        So ``/api/get/json`` becomes ``//api/get/json/``.
-
         [https://forum.robotframework.org/t//4348|Comment >>]
         """
         request = self._wait_for_http_request(matcher, timeout)
@@ -329,11 +324,6 @@ class Network(LibraryComponent):
           - ``include_body``: If ``False``, the response body is not read and not transferred,
                 and ``body``, ``bytes``, ``text`` and ``json`` are ``None``. Use it when only the
                 status or headers matter and the body is large.
-
-        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not need to be in slashes.
-        The most simple way to migrate to the new syntax is to add slashes around the matcher.
-        So ``/api/get/json`` becomes ``//api/get/json/``.
 
         == Matcher Examples: ==
 
@@ -392,6 +382,7 @@ class Network(LibraryComponent):
         | ${response} =      `Wait For`      ${promise}
         | Should Be Equal    ${response.json.user}    demo
         | Should Contain     ${response.allHeaders}[set-cookie]    sessionid=
+        |
         | ${logo} =          `Promise To`    `Wait For Response`    matcher=**/logo.png
         | `Go To`            ${URL}
         | ${response} =      `Wait For`      ${logo}
