@@ -32,7 +32,7 @@ class ExamplePlugin(LibraryComponent):
     def new_plugin_cookie_keyword(self) -> dict:
         """Uses grpc to directly call node side function."""
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetCookies(Request().Empty())
+            response = stub.GetCookies(Request.CookieQuery())
             cookies = json.loads(response.json)
         assert len(cookies) == 1, "Too many cookies."
         return {"name": cookies[0]["name"], "value": cookies[0]["value"]}
