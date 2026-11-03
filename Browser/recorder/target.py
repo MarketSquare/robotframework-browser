@@ -32,6 +32,7 @@ from typing import Protocol
 
 from robot.api import get_model, logger
 from robot.api.parsing import EmptyLine, SectionHeader, Token
+from robot.conf.languages import Languages
 from robot.parsing.model.blocks import Block, File, Keyword, KeywordSection
 from robot.parsing.model.statements import Statement
 
@@ -267,8 +268,12 @@ class FileTarget:
         separated = False
         if model.sections:
             separated = _ensure_blank_line(model.sections[-1].body)
+        language = next(iter(Languages(model.languages)))
         header = SectionHeader(
-            [Token(Token.KEYWORD_HEADER, "*** Keywords ***"), Token(Token.EOL, _EOL)]
+            [
+                Token(Token.KEYWORD_HEADER, f"*** {language.keywords_header} ***"),
+                Token(Token.EOL, _EOL),
+            ]
         )
         section = KeywordSection(header=header)
         model.sections.append(section)

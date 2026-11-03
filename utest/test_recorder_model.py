@@ -265,3 +265,22 @@ def test_a_refinement_keeps_a_value_whose_argument_is_unknown_to_the_keyword():
     kw.add(Call("Fill Text", [Value.literal("#n", False), Value([ArgRef("ghost")])]))
     assert kw.update_last(fill("typed"))
     assert kw.calls()[0].args[1].text == "typed"
+
+
+def test_translated_render_keeps_canonical_names_and_argument_escaping():
+    names = {"Fill Text": "Remplir Le Texte", "Switch Page": "Changer De Page"}
+    kw = RecordedKeyword("Remplir", names)
+    call = fill("txt=bonjour")
+    kw.add(call)
+    kw.add(Call("Switch Page", [Value.literal("CURRENT")], assign="page"))
+    kw.add(Call("Unknown", []))
+    kw.add(Call("Fill Text", [], comment=True))
+    assert call.keyword == "Fill Text"
+    assert "Remplir Le Texte" in kw.block()
+    assert r"txt\=bonjour" in kw.block()
+    assert "${page}=    Changer De Page" in kw.block()
+    assert Call("Unknown", []).display_name(names) == "Unknown"
+    assert Call("Fill Text", [], comment=True).display_name(names) == "Fill Text"
+    names.clear()
+    assert "Remplir Le Texte" in kw.block()
+    assert call.render().startswith("Fill Text    ")
