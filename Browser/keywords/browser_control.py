@@ -760,8 +760,9 @@ class Control(LibraryComponent):
                 settings. When set to ``False``, disables presenter mode. Can also be a
                 dictionary containing the highlighting configuration options as defined
                 in `HighLightElement`. Fields which are not given use their default
-                values: ``duration`` 2 seconds, ``width`` 2px, ``style`` dotted and
-                ``color`` blue.
+                values: ``duration`` 2 seconds, ``width`` 2px, ``style`` dotted,
+                ``color`` blue and ``delay`` the same as ``duration``. Set ``delay`` to
+                ``0`` to highlight elements without pausing after each keyword.
 
         The keyword returns the previous presenter mode value, allowing you to restore it later.
 

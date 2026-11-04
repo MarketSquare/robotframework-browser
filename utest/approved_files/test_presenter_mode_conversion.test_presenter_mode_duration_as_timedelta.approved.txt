@@ -1,1 +1,1 @@
-{'duration': datetime.timedelta(seconds=5), 'width': '2px', 'style': 'dotted', 'color': 'black'}
+{'duration': datetime.timedelta(seconds=5), 'width': '2px', 'style': 'dotted', 'color': 'black', 'delay': datetime.timedelta(seconds=5)}

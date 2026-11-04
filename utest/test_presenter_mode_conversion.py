@@ -1,5 +1,5 @@
 from datetime import timedelta
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from approvaltests.approvals import verify  # type: ignore
@@ -76,3 +76,24 @@ def test_presenter_mode_highlight_failure_does_not_record_selector():
     ctx = LibraryComponent(library)
     assert ctx.presenter_mode("id=missing", True) == "id=missing"
     library.record_selector.assert_not_called()
+
+
+def test_presenter_mode_delay_defaults_to_duration(browser: Browser):
+    browser.presenter_mode = {"duration": "3s"}
+    assert browser.presenter_mode["delay"] == timedelta(seconds=3)
+
+
+def test_presenter_mode_delay_is_independent_of_highlight_duration():
+    library = MagicMock()
+    library.presenter_mode = {
+        "duration": timedelta(seconds=3),
+        "delay": timedelta(seconds=0),
+    }
+    library.selector_prefix = None
+    ctx = LibraryComponent(library)
+    with patch("Browser.base.librarycomponent.sleep") as sleep:
+        ctx.presenter_mode("id=foo", True)
+    sleep.assert_called_once_with(0)
+    assert library.highlight_elements.call_args.kwargs["duration"] == timedelta(
+        seconds=3
+    )
