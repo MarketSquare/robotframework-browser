@@ -62,7 +62,7 @@ jobs:
             python-version: "3.11"
             node-version: 22.x
             shard: 1
-            rf-version: "7.5"
+            rf-version: "7.5.1"
           - os: windows-latest
             python-version: "3.12"
             node-version: 24.x
@@ -72,7 +72,7 @@ jobs:
             python-version: "3.15"
             node-version: 22.x
             shard: 3
-            rf-version: "7.5"
+            rf-version: "7.5.1"
           - os: ubuntu-latest
             python-version: "3.11"
             node-version: 26.x
@@ -82,7 +82,7 @@ jobs:
             python-version: "3.15"
             node-version: 24.x
             shard: 1
-            rf-version: "7.5"
+            rf-version: "7.5.1"
           - os: ubuntu-latest
             python-version: "3.11"
             node-version: 22.x
@@ -102,22 +102,22 @@ jobs:
             python-version: "3.14"
             node-version: 22.x
             shard: 1
-            rf-version: "7.5"
-          - os: macos-latest
+            rf-version: "7.5.1"
+          - os: ubuntu-latest  # Use to be macos-latest but moved to ubuntu-latest for now due to https://github.com/orgs/community/discussions/211885
             python-version: "3.11"
             node-version: 24.x
             shard: 1
-            rf-version: "7.5"
+            rf-version: "7.5.1"
           - os: macos-latest
-            python-version: "3.14"
+            python-version: "3.11"
             node-version: 24.x
             shard: 2
             rf-version: "7.1.1"
           - os: macos-latest
             python-version: "3.15"
-            node-version: 22.x
+            node-version: 26.x
             shard: 3
-            rf-version: "7.5"
+            rf-version: "7.5.1"
     steps:
     - uses: actions/checkout@v7
     - name: Use Node.js
