@@ -234,6 +234,13 @@ Delete All Cookies With Filter Matching Nothing Keeps Cookies
     Delete All Cookies    name=missing
     Cookie Names Should Be    session
 
+Delete All Cookies With Empty Name Deletes Only Nameless Cookies
+    Add Cookie    ${EMPTY}    1    domain=a.example    path=/
+    Add Cookie    keep    2    domain=a.example    path=/
+    Cookie Names Should Be    ${EMPTY}    keep
+    Delete All Cookies    name=${EMPTY}
+    Cookie Names Should Be    keep
+
 Get Cookies With Url Returns Only Cookies Of That Url
     Add Cookie    match    1    domain=a.example    path=/app
     Add Cookie    other_path    2    domain=a.example    path=/other

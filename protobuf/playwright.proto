@@ -205,6 +205,12 @@ message Request {
     repeated string urls = 1;
   }
 
+  message CookieFilter {
+    optional string name = 1;
+    optional string domain = 2;
+    optional string path = 3;
+  }
+
   message Permissions {
     repeated string permissions = 1;
     string origin = 2;
@@ -523,8 +529,7 @@ service  Playwright {
   /* Cookie messages */
   rpc AddCookie(Request.Json) returns (Response.Empty);
   rpc GetCookies(Request.CookieQuery) returns (Response.Json);
-  rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
-  rpc DeleteCookies(Request.Json) returns (Response.Empty);
+  rpc DeleteAllCookies(Request.CookieFilter) returns (Response.Empty);
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
