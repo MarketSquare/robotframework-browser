@@ -216,7 +216,13 @@ pythonpath = [
 # maintainers-only and excluded from the wheel, but it is 5,200 lines with 195
 # tests and nothing was reporting on any of it.
 source = ["Browser", "tools/ci_failures"]
+omit = ["Browser/generated/*"]
+relative_files = true
+parallel = true
+patch = ["subprocess"]
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+skip_empty = true

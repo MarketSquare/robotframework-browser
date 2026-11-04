@@ -22,7 +22,7 @@ const wrapper = esbuild.build({
     platform: 'node',
     target: 'node22',
     outfile: './Browser/wrapper/index.js',
-    sourcemap: withCoverage ? 'external' : false,
+    sourcemap: withCoverage ? 'linked' : false,
     plugins: [
         nodeExternalsPlugin({
             // uuid is ESM only, it has no CommonJS entry point at all, and
