@@ -24,7 +24,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.cells import cell
 from ..recorder.driver import run_session
-from ..recorder.names import collect_known_keywords
+from ..recorder.names import collect_known_keywords, suite_languages
 from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
@@ -504,4 +504,4 @@ class Recorder(LibraryComponent):
         reason = unwritable_reason(path)
         if reason:
             raise ValueError(f"Cannot record into {path}: {reason}.")
-        return FileTarget(path)
+        return FileTarget(path, suite_languages())

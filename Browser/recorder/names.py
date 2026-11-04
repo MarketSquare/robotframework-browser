@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from robot.api import get_model, logger
+from robot.conf import Languages
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.parsing.model.blocks import Keyword, KeywordSection
 from robot.running.arguments.embedded import EmbeddedArgumentParser, EmbeddedArguments
@@ -177,13 +178,15 @@ def normalize_keyword_name(name: str) -> str:
     return normalize(name, ignore="_", caseless=True, spaceless=True)
 
 
-def existing_keyword_names(target: Path) -> set[str]:
+def existing_keyword_names(
+    target: Path, languages: Languages | None = None
+) -> set[str]:
     """Names of the User Keywords already defined in ``target``."""
     target = Path(target)
     if not target.exists():
         return set()
     names: set[str] = set()
-    for section in get_model(str(target)).sections:
+    for section in get_model(str(target), lang=languages).sections:
         if isinstance(section, KeywordSection):
             names.update(
                 item.name
@@ -191,6 +194,17 @@ def existing_keyword_names(target: Path) -> set[str]:
                 if isinstance(item, Keyword) and item.name
             )
     return names
+
+
+def suite_languages() -> Languages | None:
+    """The languages the running suite is configured with, e.g. ``--language``.
+
+    A target file in such a language need not declare it with ``Language:``.
+    """
+    try:
+        return BuiltIn()._get_context().namespace.languages
+    except (RobotNotRunningError, AttributeError):
+        return None
 
 
 @dataclass(frozen=True)
