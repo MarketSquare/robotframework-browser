@@ -33,12 +33,6 @@ interface CookieData {
     partitionKey?: string;
 }
 
-interface CookieFilter {
-    name?: string;
-    domain?: string;
-    path?: string;
-}
-
 function activeContext(state: PlaywrightState): BrowserContext {
     const context = state.getActiveContext();
     exists(context, 'no open context.');
@@ -59,13 +53,11 @@ export async function addCookie(request: pb.Request_Json, state: PlaywrightState
     return emptyWithLog('Cookie "' + cookie.name + '" added.');
 }
 
-export async function deleteAllCookies(_request: pb.Request_Empty, state: PlaywrightState): Promise<pb.Response_Empty> {
-    await activeContext(state).clearCookies();
-    return emptyWithLog('All cookies deleted.');
-}
-
-export async function deleteCookies(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Empty> {
-    const filter: CookieFilter = JSON.parse(request.body);
-    await activeContext(state).clearCookies(filter);
-    return emptyWithLog('Cookies matching ' + request.body + ' deleted.');
+export async function deleteAllCookies(
+    request: pb.Request_CookieFilter,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    await activeContext(state).clearCookies(request);
+    const filter = JSON.stringify(request);
+    return emptyWithLog(filter === '{}' ? 'All cookies deleted.' : 'Cookies matching ' + filter + ' deleted.');
 }

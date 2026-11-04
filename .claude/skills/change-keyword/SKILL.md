@@ -40,6 +40,8 @@ keyword, new argument, or no keyword.
 
 Add or change the rpc in `service Playwright` and its messages under `Request` or `Response`.
 Reuse an existing message when one fits (`Request.Empty`, `Response.String`, `Response.Json`).
+Arguments go in a typed `Request` message, not `Request.Json`, one rpc per Playwright call
+(ADR 0013).
 Run `inv node-build`; it regenerates the Python and TypeScript stubs.
 
 Done when `inv node-build` succeeds.

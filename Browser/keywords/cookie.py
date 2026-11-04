@@ -207,14 +207,9 @@ class Cookie(LibraryComponent):
 
         [https://forum.robotframework.org/t//4244|Comment >>]
         """
-        cookie_filter = locals_to_params(locals())
+        cookie_filter = Request.CookieFilter(name=name, domain=domain, path=path)
         with self.playwright.grpc_channel() as stub:
-            if cookie_filter:
-                response = stub.DeleteCookies(
-                    Request.Json(body=json.dumps(cookie_filter))
-                )
-            else:
-                response = stub.DeleteAllCookies(Request.Empty())
+            response = stub.DeleteAllCookies(cookie_filter)
         logger.info(response.log)
 
     @keyword

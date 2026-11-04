@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import { addCookie, deleteAllCookies, deleteCookies, getCookies } from '../cookie';
+import { addCookie, deleteAllCookies, getCookies } from '../cookie';
+import { Request_CookieFilter } from '../generated/playwright';
 import { PlaywrightState } from '../playwright-state';
 
 const contextMock = {
@@ -34,17 +35,21 @@ describe('cookie', () => {
         expect(contextMock.cookies).toHaveBeenCalledWith(urls);
     });
 
-    it('clears every cookie of the active context', async () => {
-        const response = await deleteAllCookies({}, stateWith(contextMock));
+    it.each([
+        ['every cookie when no field is set', {}, 'All cookies deleted.'],
+        [
+            'cookies matching the given fields',
+            { name: 'session', path: '/app' },
+            'Cookies matching {"name":"session","path":"/app"} deleted.',
+        ],
+        ['only nameless cookies for an empty name', { name: '' }, 'Cookies matching {"name":""} deleted.'],
+    ])('clears %s', async (_case, filter, log) => {
+        const request = Request_CookieFilter.fromPartial(filter);
 
-        expect(contextMock.clearCookies).toHaveBeenCalledWith();
-        expect(response.log).toBe('All cookies deleted.');
-    });
+        const response = await deleteAllCookies(request, stateWith(contextMock));
 
-    it('clears only the cookies matching the filter', async () => {
-        await deleteCookies(jsonRequest({ name: 'session', path: '/app' }), stateWith(contextMock));
-
-        expect(contextMock.clearCookies).toHaveBeenCalledWith({ name: 'session', path: '/app' });
+        expect(contextMock.clearCookies).toHaveBeenCalledWith(request);
+        expect(response.log).toBe(log);
     });
 
     it('passes the partition key to Playwright', async () => {
@@ -59,7 +64,6 @@ describe('cookie', () => {
         ['getCookies', () => getCookies({ urls: [] }, stateWith(undefined))],
         ['addCookie', () => addCookie(jsonRequest({ name: 'n', value: 'v' }), stateWith(undefined))],
         ['deleteAllCookies', () => deleteAllCookies({}, stateWith(undefined))],
-        ['deleteCookies', () => deleteCookies(jsonRequest({ name: 'n' }), stateWith(undefined))],
     ])('%s fails without an open context', async (_name, call) => {
         expect.assertions(1);
         await expect(call()).rejects.toThrow('no open context.');

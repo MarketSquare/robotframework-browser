@@ -190,7 +190,6 @@ export class PlaywrightServer {
     addCookie = this.wrapping(cookie.addCookie);
     getCookies = this.wrapping(cookie.getCookies);
     deleteAllCookies = this.wrapping(cookie.deleteAllCookies);
-    deleteCookies = this.wrapping(cookie.deleteCookies);
 
     async switchPage(
         call: ServerUnaryCall<pb.Request_IdWithTimeout, pb.Response_String>,
