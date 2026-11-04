@@ -206,9 +206,6 @@ class RecorderSession:
 
     @staticmethod
     def _toolbar_calls(keyword: RecordedKeyword | None) -> list[dict]:
-        # Guard before the loop because its body now accesses keyword.keyword_names.
-        # A conditional iterable protects keyword.calls(), but mypy does not carry
-        # that non-None guarantee into the loop body.
         if keyword is None:
             return []
         budget = MAX_RAW_TOTAL
