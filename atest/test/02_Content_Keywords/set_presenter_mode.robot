@@ -8,8 +8,9 @@ Test Setup        Set Presenter Mode    False
 *** Variables ***
 &{CUSTOM_CONFIG} =        duration=1 sec    width=3px    style=solid    color=red
 &{EXP_CUSTOM_CONFIG} =    duration=${{datetime.timedelta(seconds=1)}}    width=3px    style=solid    color=red
+...                       delay=${{datetime.timedelta(seconds=1)}}
 
-${DEFAULT_CONFIG} =       ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue'}}}
+${DEFAULT_CONFIG} =       ${{{'duration': datetime.timedelta(seconds=2), 'width': '2px', 'style': 'dotted', 'color': 'blue', 'delay': datetime.timedelta(seconds=2)}}}
 
 *** Test Cases ***
 Enable Presenter Mode With True For Default
@@ -43,6 +44,7 @@ Enable Presenter Mode with Dict Literal
     Set Presenter Mode    {"duration": "500ms", "width": "1px", "style": "solid", "color": "yellow"}
     Get Text    h1
     Test Presenter Mode    duration=${{datetime.timedelta(seconds=0.5)}}    width=1px    style=solid    color=yellow
+    ...    delay=${{datetime.timedelta(seconds=0.5)}}
 
 Enable Presenter Mode With Dict Literal And Missing Keys
     [Documentation]
@@ -54,6 +56,7 @@ Enable Presenter Mode With Dict Literal And Missing Keys
     ...    width=2px
     ...    style=dotted
     ...    color=blue
+    ...    delay=${{datetime.timedelta(milliseconds=1500)}}
 
 Invalid Config Dictionary Should Fail
     VAR    &{bad_config} =    duration=peter    width=3px
