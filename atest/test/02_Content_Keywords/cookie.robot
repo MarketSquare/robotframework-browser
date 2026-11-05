@@ -78,6 +78,22 @@ Add Cookie With All Settings
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
     Should Be Equal    ${cookies}[0][secure]    ${False}
 
+Add Cookie With Strict SameSite
+    Add Cookie    strict    1    domain=a.example    path=/    sameSite=Strict
+    ${cookie} =    Get Cookie    strict
+    Should Be Equal    ${cookie}[sameSite]    Strict
+
+Add Cookie With None SameSite
+    Add Cookie    none    1    domain=a.example    path=/    secure=True    sameSite=None
+    ${cookie} =    Get Cookie    none
+    Should Be Equal    ${cookie}[sameSite]    None
+    Should Be Equal    ${cookie}[secure]    ${True}
+
+Add Cookie Without Expires Adds Session Cookie
+    Add Cookie    session    1    domain=a.example    path=/
+    ${cookie} =    Get Cookie    session
+    Should Be True    $cookie.expires is None or $cookie.expires.year == 1969
+
 Add Cookie With All Settings As String
     ${url} =    Get Url
     ${date_string} =    Get Current Date    increment=1 day

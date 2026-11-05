@@ -157,10 +157,9 @@ class Cookie(LibraryComponent):
         params = locals_to_params(locals())
         if expires:
             params["expires"] = self._expiry(expires)
-        cookie_json = json.dumps(params)
-        logger.debug(f"Adding cookie: {cookie_json}")
+        logger.debug(f"Adding cookie: {params}")
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddCookie(Request.Json(body=cookie_json))
+            response = stub.AddCookie(Request.Cookie(**params))
             logger.info(response.log)
 
     def _expiry(self, expiry: str | datetime) -> int:
