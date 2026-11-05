@@ -34,7 +34,7 @@ from .action_mapper import (
     uploaded_files,
 )
 from .cells import tokens
-from .model import Call, RecordedKeyword
+from .model import ENGLISH_DISPLAY_NAMES, Call, KeywordDisplayNames, RecordedKeyword
 from .names import (
     KnownKeywords,
     NameGuard,
@@ -87,10 +87,10 @@ class RecorderSession:
         fixed_name: str | None = None,
         known: KnownKeywords | None = None,
         clock: Callable[[], float] = time.monotonic,
-        keyword_names: dict[str, str] | None = None,
+        display_names: KeywordDisplayNames = ENGLISH_DISPLAY_NAMES,
     ) -> None:
         self.target = target
-        self._keyword_names = dict(keyword_names or {})
+        self._display_names = display_names
         self.stopped = False
         self.log: list[str] = []
         self._guard = NameGuard(known or KnownKeywords())
@@ -126,7 +126,10 @@ class RecorderSession:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
                 raise ValueError(error)
-            self._keyword = RecordedKeyword(fixed_name, self._keyword_names)
+            self._keyword = self._new_keyword(fixed_name)
+
+    def _new_keyword(self, name: str) -> RecordedKeyword:
+        return RecordedKeyword(name, self._display_names)
 
     # -- introspection ----------------------------------------------------- #
 
@@ -231,7 +234,7 @@ class RecorderSession:
             calls.append(
                 {
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
-                    "keyword": call.display_name(keyword.keyword_names),
+                    "keyword": call.display_name(keyword.display_names),
                     "values": values,
                     "comment": call.comment,
                 }
@@ -548,7 +551,7 @@ class RecorderSession:
         self._starting = None
         if name is None:
             return
-        self._keyword = RecordedKeyword(name, self._keyword_names)
+        self._keyword = self._new_keyword(name)
         self._picker = None
         self._undone = self._skipped = self._paused = False
         self._reset_pages()
@@ -626,7 +629,7 @@ class RecorderSession:
         keyword = self._keyword
         assert keyword is not None
         self._keyword = (
-            RecordedKeyword(self._fixed_name, self._keyword_names)
+            self._new_keyword(self._fixed_name)
             if restart and self._fixed_name is not None
             else None
         )

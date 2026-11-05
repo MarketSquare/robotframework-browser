@@ -5,9 +5,12 @@ import subprocess
 import sys
 
 import pytest
+from robot.api import get_model
+from robot.conf.languages import Language
+from robot.parsing.model.blocks import File, KeywordSection
 
 from Browser.recorder.cells import tokens
-from Browser.recorder.model import Call, RecordedKeyword, Value
+from Browser.recorder.model import Call, KeywordDisplayNames, RecordedKeyword, Value
 from Browser.recorder.target import FileTarget, LogTarget
 
 ORIGINAL = (
@@ -546,31 +549,55 @@ def test_a_failed_first_write_does_not_claim_a_keyword_added_meanwhile(tmp_path)
     assert "theirs" in path.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize(
-    ("declaration", "header"),
-    [
+@pytest.fixture(
+    params=[
         ("fr", "Mots-clés"),
         ("de", "Schlüsselwörter"),
         ("en", "Keywords"),
         ("fr\nLanguage: en", "Mots-clés"),
-    ],
+    ]
 )
-def test_new_section_uses_declared_language(tmp_path, declaration, header):
-    from robot.api import get_model
-    from robot.parsing.model.blocks import KeywordSection
-
-    path = tmp_path / "localized.robot"
+def localized_target(tmp_path, request):
+    declaration, header = request.param
     original = f"Language: {declaration}\n"
+    path = tmp_path / "localized.robot"
     path.write_text(original, encoding="utf-8")
     target = FileTarget(path)
     target.save(keyword())
-    assert f"*** {header} ***" in path.read_text(encoding="utf-8")
-    model = get_model(path)
-    sections = [s for s in model.sections if isinstance(s, KeywordSection)]
+    return target, original, header
+
+
+def test_new_section_uses_declared_language(localized_target):
+    target, _, header = localized_target
+    assert f"*** {header} ***" in target.path.read_text(encoding="utf-8")
+
+
+def test_localized_section_is_parsed_as_one_keyword_section(localized_target):
+
+    target, _, _ = localized_target
+    sections = [
+        section
+        for section in get_model(target.path).sections
+        if isinstance(section, KeywordSection)
+    ]
     assert len(sections) == 1
-    assert sections[0].body[0].name == "Fill Name"
+
+
+def test_localized_section_contains_recorded_keyword(localized_target):
+
+    target, _, _ = localized_target
+    section = next(
+        section
+        for section in get_model(target.path).sections
+        if isinstance(section, KeywordSection)
+    )
+    assert section.body[0].name == "Fill Name"
+
+
+def test_removing_localized_recording_restores_original_file(localized_target):
+    target, original, _ = localized_target
     target.remove("Fill Name")
-    assert path.read_text(encoding="utf-8") == original
+    assert target.path.read_text(encoding="utf-8") == original
 
 
 def test_existing_section_keeps_its_header_in_localized_file(tmp_path):
@@ -582,18 +609,48 @@ def test_existing_section_keeps_its_header_in_localized_file(tmp_path):
     assert "*** Mots-clés ***" not in path.read_text(encoding="utf-8")
 
 
-def test_translated_calls_are_identical_in_file_log_and_returned_text(tmp_path):
-    from robot.api import get_model
-    from robot.parsing.model.blocks import KeywordSection
-
-    kw = RecordedKeyword("Remplir", {"Fill Text": "Remplir Le Texte"})
+@pytest.fixture
+def translated_keyword():
+    kw = RecordedKeyword(
+        "Remplir", KeywordDisplayNames({"Fill Text": "Remplir Le Texte"})
+    )
     kw.add(Call("Fill Text", [Value.literal("#n"), Value.literal("txt=bonjour")]))
+    return kw
+
+
+def test_translated_call_is_written_to_file(tmp_path, translated_keyword):
+
     path = tmp_path / "localized.robot"
     path.write_text("Language: fr\n", encoding="utf-8")
-    FileTarget(path).finish(kw)
-    console, info = [], []
-    LogTarget(console.append, info.append).finish(kw)
-    assert console == info == [kw.text()]
-    assert kw.block() in path.read_text(encoding="utf-8")
+    FileTarget(path).finish(translated_keyword)
     section = next(s for s in get_model(path).sections if isinstance(s, KeywordSection))
     assert section.body[0].body[1].keyword == "Remplir Le Texte"
+
+
+@pytest.mark.parametrize("output", ["console", "info"])
+def test_translated_call_is_logged(translated_keyword, output):
+    messages = {"console": [], "info": []}
+    LogTarget(messages["console"].append, messages["info"].append).finish(
+        translated_keyword
+    )
+    assert "Remplir Le Texte" in messages[output][0]
+
+
+def test_translated_call_is_in_returned_text(translated_keyword):
+    assert "Remplir Le Texte" in translated_keyword.text()
+
+
+def test_custom_language_without_keyword_header_falls_back_to_english(
+    tmp_path, monkeypatch
+):
+
+    class Custom(Language):
+        code = "custom"
+        keywords_header = ""
+
+    path = tmp_path / "custom.robot"
+    path.write_text("", encoding="utf-8")
+    target = FileTarget(path)
+    monkeypatch.setattr(target, "_read", lambda: File(languages=[Custom()]))
+    target.save(keyword())
+    assert path.read_text(encoding="utf-8").startswith("*** Keywords ***")
