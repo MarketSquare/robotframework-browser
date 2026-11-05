@@ -227,10 +227,11 @@ jobs:
         python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
         cat fail.md
 
-  # Python and Node.js coverage from every suite, in one report. Linux runs the
-  # largest test set and is the only platform where Node.js coverage flushes.
-  # Advisory, so it stays out of the needs of publish_nightly. Each suite runs
-  # even when an earlier one failed, so a failing test still leaves a report.
+  # Python and Node.js coverage from every suite, in one report, scanned by
+  # SonarQube with the linter findings. Linux runs the largest test set and is
+  # the only platform where Node.js coverage flushes. Advisory, so it stays out
+  # of the needs of publish_nightly. Each suite runs even when an earlier one
+  # failed, so a failing test still leaves a report.
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
@@ -240,8 +241,13 @@ jobs:
     env:
       # Read at build time by node/build.wrapper.js and at run time by the library.
       ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE: 1
+      # Job level, so that the scan step's if can see it. Empty in forks and
+      # Dependabot runs, which skips only the scan.
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # SonarQube needs the history to tell new code from old
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
@@ -287,6 +293,23 @@ jobs:
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           inv coverage-report
+      # The reports are advisory, so findings do not fail these commands. mypy has
+      # no exit-zero flag: 1 means findings, anything higher means it broke.
+      - name: Generate linter reports
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          robocop check atest --config pyproject.toml --reports sonarqube --exit-zero
+          ruff check Browser browser_batteries atest --config pyproject.toml --exit-zero --output-format json --output-file ruff.json
+          mypy Browser browser_batteries atest/library --exclude .venv --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
+      # The Free plan analyses only main and pull requests targeting it. A failed
+      # build would scan with no coverage at all, so it skips the scan.
+      - name: Scan
+        if: >-
+          ${{ !cancelled() && steps.build.outcome == 'success' && env.SONAR_TOKEN != '' && (
+            (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+            (github.event_name == 'pull_request' && github.base_ref == 'main')
+          ) }}
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
@@ -725,54 +748,6 @@ jobs:
         run: |
           python -m GHAReports --robotlog output_docker/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
-
-  # Advisory, so it stays out of the needs of publish_nightly. Without the token,
-  # as in forks, the reports are still generated and only the scan is skipped.
-  sonarqube:
-    name: SonarQube scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Use Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.x
-          cache: 'npm'
-      - name: Install nodejs dependencies
-        run: |
-          npm ci # installs from package-lock.json; grpc-tools needs its install script
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-          cache: 'pip'
-      - name: Install python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install -r Browser/dev-requirements.txt --python 3.13 --system
-          uv pip install -r pyproject.toml --python 3.13 --system
-      - name: Generate protobuf
-        run: |
-          inv protobuf
-      # The reports are advisory, so findings do not fail these commands. mypy has
-      # no exit-zero flag: 1 means findings, anything higher means it broke.
-      - name: Generate linter reports
-        run: |
-          robocop check atest --config pyproject.toml --reports sonarqube --exit-zero
-          ruff check Browser browser_batteries atest --config pyproject.toml --exit-zero --output-format json --output-file ruff.json
-          mypy Browser browser_batteries atest/library --exclude .venv --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
-      - name: Scan
-        if: env.SONAR_TOKEN != ''
-        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # v8.4.0
 
   # Everything green on main becomes the wheels at
   # https://github.com/MarketSquare/robotframework-browser/releases/tag/nightly

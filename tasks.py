@@ -1359,8 +1359,9 @@ def coverage_report(c):
         inv atest-coverage         .coverage.* and
                                    atest/output/node-coverage-report/lcov.info
 
-    Writes coverage/python.info, coverage/node.info, the merged coverage/all.info
-    and the HTML report coverage/html/index.html. Jest records with no line hit
+    Writes coverage/python.info, coverage/python.xml (Cobertura, for SonarQube),
+    coverage/node.info, the merged coverage/all.info and the HTML report
+    coverage/html/index.html. Jest records with no line hit
     are dropped first: they are files Jest never loads, and only list as zero
     because of collectCoverageFrom. The totals and the inputs that contributed
     are printed, and on GitHub Actions also shown on the run's summary page.
@@ -1373,6 +1374,7 @@ def coverage_report(c):
     jest_info = COVERAGE_DIR / "jest.info"
     node_info = COVERAGE_DIR / "node.info"
     all_info = COVERAGE_DIR / "all.info"
+    python_xml = COVERAGE_DIR / "python.xml"
 
     inputs = {
         "Python unit tests (`.coverage`)": (ROOT_DIR / ".coverage").exists(),
@@ -1381,7 +1383,7 @@ def coverage_report(c):
         f"Node.js acceptance tests (`{ATEST_NODE_LCOV.relative_to(ROOT_DIR)}`)": ATEST_NODE_LCOV.exists(),
     }
     try:
-        _merge_coverage(c, python_info, jest_info, node_info, all_info)
+        _merge_coverage(c, python_info, python_xml, jest_info, node_info, all_info)
         _report(
             _coverage_totals(all_info, {"Python": python_info, "Node.js": node_info}),
             "Coverage",
@@ -1399,10 +1401,16 @@ def coverage_report(c):
 
 
 def _merge_coverage(
-    c, python_info: Path, jest_info: Path, node_info: Path, all_info: Path
+    c,
+    python_info: Path,
+    python_xml: Path,
+    jest_info: Path,
+    node_info: Path,
+    all_info: Path,
 ):
     if (ROOT_DIR / ".coverage").exists() or any(ROOT_DIR.glob(".coverage.*")):
         c.run(f'coverage lcov --keep-combined -o "{python_info}"')
+        c.run(f'coverage xml --keep-combined -o "{python_xml}"')
     if JEST_LCOV.exists():
         jest_info.write_text(_drop_never_loaded_records(JEST_LCOV.read_text()))
     node_inputs = [path for path in (jest_info, ATEST_NODE_LCOV) if path.exists()]
