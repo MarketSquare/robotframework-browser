@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from Browser.recorder.model import KeywordDisplayNames
+
 import pytest
 
 from Browser.recorder.cells import tokens
@@ -1576,7 +1578,8 @@ def test_undo_keeps_the_id_an_earlier_switch_returned():
 @pytest.mark.parametrize("fixed_name", [None, "Remplir"])
 def test_translated_calls_reach_toolbar_target_and_returned_text(fixed_name):
     s, target, clock = session(
-        fixed_name=fixed_name, keyword_names={"Fill Text": "Remplir Le Texte"}
+        fixed_name=fixed_name,
+        display_names=KeywordDisplayNames({"Fill Text": "Remplir Le Texte"}),
     )
     if fixed_name is None:
         start(s, "Remplir")
