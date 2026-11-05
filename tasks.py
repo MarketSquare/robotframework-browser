@@ -42,6 +42,9 @@ ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
+COVERAGE_DIR = ROOT_DIR / "coverage"
+JEST_LCOV = ROOT_DIR / "node" / "coverage" / "lcov.info"
+ATEST_NODE_LCOV = ATEST_OUTPUT / "node-coverage-report" / "lcov.info"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
@@ -234,6 +237,7 @@ def clean(c):
         python_protobuf_dir,
         node_protobuf_dir,
         Path("./htmlcov"),
+        COVERAGE_DIR,
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
         BROWSER_BATTERIES_DIR / "build",
@@ -243,6 +247,7 @@ def clean(c):
     for file in [
         npm_deps_timestamp_file,
         Path("./.coverage"),
+        *ROOT_DIR.glob(".coverage.*"),
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
     ]:
@@ -1317,9 +1322,8 @@ def _lcov_totals(lcov: str) -> LcovTotals:
     return LcovTotals(sums["LH"], sums["LF"], sums["BRH"], sums["BRF"])
 
 
-COVERAGE_DIR = ROOT_DIR / "coverage"
-JEST_LCOV = ROOT_DIR / "node" / "coverage" / "lcov.info"
-ATEST_NODE_LCOV = ATEST_OUTPUT / "node-coverage-report" / "lcov.info"
+# Istanbul records branches on lines with no statement, which lcov 2 calls
+# inconsistent. Naming the category twice also silences its warnings.
 LCOV_OPTIONS = "--branch-coverage --ignore-errors inconsistent,inconsistent"
 
 
@@ -1337,8 +1341,9 @@ def coverage_report(c):
     and the HTML report coverage/html/index.html. Jest records with no line hit
     are dropped first: they are files Jest never loads, and only list as zero
     because of collectCoverageFrom. The totals and the inputs that contributed
-    go to the GitHub job summary when GITHUB_STEP_SUMMARY is set, otherwise to
-    the console. Needs `lcov` and `genhtml` on PATH.
+    are printed, and on GitHub Actions also shown on the run's summary page.
+    The inputs are reported even when merging fails. Needs `lcov` and
+    `genhtml` on PATH.
     """
     shutil.rmtree(COVERAGE_DIR, ignore_errors=True)
     COVERAGE_DIR.mkdir()
@@ -1347,9 +1352,34 @@ def coverage_report(c):
     node_info = COVERAGE_DIR / "node.info"
     all_info = COVERAGE_DIR / "all.info"
 
-    utest_data = (ROOT_DIR / ".coverage").exists()
-    atest_data = any(ROOT_DIR.glob(".coverage.*"))
-    if utest_data or atest_data:
+    inputs = {
+        "Python unit tests (`.coverage`)": (ROOT_DIR / ".coverage").exists(),
+        "Python acceptance tests (`.coverage.*`)": any(ROOT_DIR.glob(".coverage.*")),
+        f"Node.js unit tests (`{JEST_LCOV.relative_to(ROOT_DIR)}`)": JEST_LCOV.exists(),
+        f"Node.js acceptance tests (`{ATEST_NODE_LCOV.relative_to(ROOT_DIR)}`)": ATEST_NODE_LCOV.exists(),
+    }
+    try:
+        _merge_coverage(c, python_info, jest_info, node_info, all_info)
+        _report(
+            _coverage_totals(all_info, {"Python": python_info, "Node.js": node_info}),
+            "Coverage",
+        )
+        print(f"HTML report: {COVERAGE_DIR / 'html' / 'index.html'}")
+    finally:
+        _report(
+            ["| Input | Contributed |", "| --- | --- |"]
+            + [
+                f"| {name} | {'yes' if found else '**no**'} |"
+                for name, found in inputs.items()
+            ],
+            "Coverage inputs",
+        )
+
+
+def _merge_coverage(
+    c, python_info: Path, jest_info: Path, node_info: Path, all_info: Path
+):
+    if (ROOT_DIR / ".coverage").exists() or any(ROOT_DIR.glob(".coverage.*")):
         c.run(f'coverage lcov --keep-combined -o "{python_info}"')
     if JEST_LCOV.exists():
         jest_info.write_text(_drop_never_loaded_records(JEST_LCOV.read_text()))
@@ -1364,23 +1394,6 @@ def coverage_report(c):
         f'genhtml {LCOV_OPTIONS} --quiet --output-directory "{COVERAGE_DIR / "html"}" "{all_info}"'
     )
 
-    summary = _coverage_summary(
-        all_info,
-        {"Python": python_info, "Node.js": node_info},
-        {
-            "Python unit tests (`.coverage`)": utest_data,
-            "Python acceptance tests (`.coverage.*`)": atest_data,
-            f"Node.js unit tests (`{JEST_LCOV.relative_to(ROOT_DIR)}`)": JEST_LCOV.exists(),
-            f"Node.js acceptance tests (`{ATEST_NODE_LCOV.relative_to(ROOT_DIR)}`)": ATEST_NODE_LCOV.exists(),
-        },
-    )
-    summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
-    if summary_file:
-        with open(summary_file, "a", encoding="utf-8") as file:
-            file.write(summary)
-    print(summary)
-    print(f"HTML report: {COVERAGE_DIR / 'html' / 'index.html'}")
-
 
 def _lcov_merge(c, tracefiles: list[Path], output: Path):
     adds = " ".join(f'--add-tracefile "{path}"' for path in tracefiles)
@@ -1393,13 +1406,9 @@ def _percent(hit: int, found: int) -> str:
     return f"{100 * hit / found:.1f}% ({hit:,} of {found:,})"
 
 
-def _coverage_summary(
-    all_info: Path, language_infos: dict[str, Path], inputs: dict[str, bool]
-) -> str:
+def _coverage_totals(all_info: Path, language_infos: dict[str, Path]) -> list[str]:
     total = _lcov_totals(all_info.read_text())
     lines = [
-        "## Coverage",
-        "",
         f"**Lines: {_percent(total.lines_hit, total.lines_found)}**",
         "",
         "| Language | Lines | Branches |",
@@ -1407,18 +1416,14 @@ def _coverage_summary(
     ]
     for language, info in language_infos.items():
         if info.exists():
-            t = _lcov_totals(info.read_text())
+            totals = _lcov_totals(info.read_text())
             lines.append(
-                f"| {language} | {_percent(t.lines_hit, t.lines_found)} "
-                f"| {_percent(t.branches_hit, t.branches_found)} |"
+                f"| {language} | {_percent(totals.lines_hit, totals.lines_found)} "
+                f"| {_percent(totals.branches_hit, totals.branches_found)} |"
             )
         else:
             lines.append(f"| {language} | no data | no data |")
-    lines += ["", "| Input | Contributed |", "| --- | --- |"]
-    lines += [
-        f"| {name} | {'yes' if found else '**no**'} |" for name, found in inputs.items()
-    ]
-    return "\n".join(lines) + "\n"
+    return lines
 
 
 @task()
