@@ -327,6 +327,66 @@ describe('close helpers', () => {
         expect(response.log).toBe('Browser browser=1 was already closed');
     });
 
+    describe('when a step of closing a browser fails', () => {
+        const targetClosed = () => Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
+
+        function tracedContext(id: string, stopTrace = jest.fn().mockResolvedValue(undefined)) {
+            return {
+                c: { tracing: { stop: stopTrace }, close: jest.fn().mockResolvedValue(undefined) },
+                id,
+                traceFile: `/traces/${id}.zip`,
+                pageStack: [],
+                options: {},
+            };
+        }
+
+        function openBrowser(browserClose: jest.Mock, ...contexts: ReturnType<typeof tracedContext>[]) {
+            const browser = new BrowserState({
+                browser: { close: browserClose } as any,
+                name: 'chromium',
+                headless: true,
+            });
+            browser.id = 'browser=1';
+            contexts.forEach((context) => browser.pushContext(context as any));
+            const state = new PlaywrightState();
+            state.browserStack.push(browser);
+            return state;
+        }
+
+        it('still closes every context and the browser', async () => {
+            const browserClose = jest.fn().mockResolvedValue(undefined);
+            const first = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+            const second = tracedContext('context=2');
+
+            const response = await closeBrowser(openBrowser(browserClose, first, second));
+
+            expect(first.c.close).toHaveBeenCalledTimes(1);
+            expect(second.c.close).toHaveBeenCalledTimes(1);
+            expect(browserClose).toHaveBeenCalledTimes(1);
+            expect(response.log).toBe('Closing browser browser=1 failed: Error: ENOSPC');
+            expect(response.body).toBe('browser=1');
+        });
+
+        it('reports every step that failed', async () => {
+            const browserClose = jest.fn().mockRejectedValue(new Error('browser hung'));
+            const context = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+
+            const response = await closeBrowser(openBrowser(browserClose, context));
+
+            expect(response.log).toBe('Closing browser browser=1 failed: Error: ENOSPC; browser hung');
+        });
+
+        it('counts a context that was already closed as closed', async () => {
+            const browserClose = jest.fn().mockResolvedValue(undefined);
+            const context = tracedContext('context=1', jest.fn().mockRejectedValue(targetClosed()));
+
+            const response = await closeBrowser(openBrowser(browserClose, context));
+
+            expect(browserClose).toHaveBeenCalledTimes(1);
+            expect(response.log).toBe('Closed browser');
+        });
+    });
+
     it('closeAllBrowsers closes every browser and reports the failures', async () => {
         const state = new PlaywrightState();
         const close = jest.fn().mockResolvedValue(undefined);

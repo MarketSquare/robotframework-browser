@@ -748,22 +748,40 @@ export class BrowserState {
     onClose?: () => Promise<void>;
 
     public async close(): Promise<void> {
-        try {
-            for (const context of this.contextStack) {
-                const traceFile = context.traceFile;
-                if (traceFile) {
-                    await context.c.tracing.stop({ path: traceFile });
+        const failures: unknown[] = [];
+        const attempt = async (step: () => Promise<unknown>) => {
+            try {
+                await step();
+            } catch (error) {
+                if (!isTargetClosed(error)) {
+                    failures.push(error);
                 }
-                await context.c.close();
             }
-            this._contextStack = [];
-            if (this.browser !== null) {
-                await this.browser.close();
+        };
+        for (const context of this.contextStack) {
+            const traceFile = context.traceFile;
+            if (traceFile) {
+                await attempt(() => context.c.tracing.stop({ path: traceFile }));
             }
-        } finally {
-            const onClose = this.onClose;
-            this.onClose = undefined;
-            await onClose?.();
+            await attempt(() => context.c.close());
+        }
+        this._contextStack = [];
+        const browser = this.browser;
+        if (browser !== null) {
+            await attempt(() => browser.close());
+        }
+        const onClose = this.onClose;
+        this.onClose = undefined;
+        if (onClose) {
+            await attempt(onClose);
+        }
+        if (failures.length === 1) {
+            throw failures[0];
+        }
+        if (failures.length > 1) {
+            throw new Error(
+                failures.map((error) => (error instanceof Error ? error.message : String(error))).join('; '),
+            );
         }
     }
 
@@ -864,12 +882,16 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
         await currentBrowser.close();
         return stringResponse(currentBrowser.id, 'Closed browser');
     } catch (error) {
-        return stringResponse('', closeFailure(currentBrowser, error));
+        return stringResponse(currentBrowser.id, closeFailure(currentBrowser, error));
     }
 }
 
+function isTargetClosed(error: unknown): boolean {
+    return error instanceof Error && error.name === 'TargetClosedError';
+}
+
 function closeFailure(browser: BrowserState, error: unknown): string {
-    if (error instanceof Error && error.name === 'TargetClosedError') {
+    if (isTargetClosed(error)) {
         return `Browser ${browser.id} was already closed`;
     }
     const message = `Closing browser ${browser.id} failed: ${String(error)}`;
