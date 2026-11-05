@@ -278,7 +278,7 @@ jobs:
       - name: Run Node.js unit tests
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
-          npm run test:coverage
+          inv utest-node --coverage
       - name: Run Robot Framework tests
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
