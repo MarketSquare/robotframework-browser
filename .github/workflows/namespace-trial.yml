@@ -1,0 +1,90 @@
+# Trial of Namespace runners: acceptance tests on 16 vCPU machines, with the
+# npm, uv and Playwright browser downloads kept on a Namespace cache volume.
+# Runs only for pushes to the trial branch, so pull requests from forks never
+# reach the paid runners.
+
+name: Namespace trial
+
+on:
+  push:
+    branches: [ namespace-trial ]
+  workflow_dispatch:
+
+concurrency:
+  group: namespace-trial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  atest:
+    name: atest shard ${{ matrix.shard }}/${{ matrix.shards }}
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-16x32-with-cache
+      - nscloud-cache-size-20gb
+      - nscloud-cache-tag-rfbrowser-atest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [ 1, 2 ]
+        shards: [ 2 ]
+    steps:
+      - name: Show the runner
+        run: |
+          nproc
+          free -h
+          df -h /cache || true
+          cat /etc/os-release
+          which python3 node xvfb-run Xvfb || true
+      - uses: actions/checkout@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      # The library sets PLAYWRIGHT_BROWSERS_PATH to 0 when it is unset, which
+      # puts the browsers into node_modules where npm ci deletes them. A fixed
+      # path outside node_modules lets the cache volume keep them.
+      - name: Keep the Playwright browsers outside node_modules
+        run: echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/ms-playwright" >> "$GITHUB_ENV"
+      - name: Install uv
+        run: python -m pip install uv
+      - name: Cache npm, uv and the Playwright browsers
+        uses: namespacelabs/nscloud-cache-action@v1
+        with:
+          cache: |
+            npm
+            uv
+          path: |
+            ~/.cache/ms-playwright
+      - name: Install nodejs dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps
+      - name: Install python dependencies
+        run: |
+          uv pip install -r Browser/dev-requirements.txt --python 3.13 --system
+          uv pip install -r pyproject.toml --python 3.13 --system
+          python atest/library/os_wrapper.py
+      - name: Build
+        run: |
+          inv node-build
+          inv create-test-app
+      - name: Run Robot Framework tests
+        run: |
+          xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/${{ matrix.shards }}
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: Namespace test results-${{ matrix.shard }}
+          path: atest/output
+      - name: Github Job Summary
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
+        run: |
+          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
