@@ -90,15 +90,14 @@ with one record per wrapper `.ts` file at the same paths Jest uses. Set `NODE_V8
 the raw V8 data goes. The task fails if Node.js does not write its coverage. Node.js coverage is not
 collected on Windows.
 
-To merge the coverage of every suite into one HTML report, `coverage/html/index.html`:
+To run every suite with coverage and merge it into one HTML report, `coverage/html/index.html`:
 ```
-inv utest
-npm run test:coverage
-inv atest-coverage
-inv coverage-report
+inv coverage
 ```
-`inv coverage-report` uses whatever the earlier runs left and lists which suites contributed. It needs
-`lcov` (`brew install lcov`, `apt-get install lcov`). The `Coverage` job in CI runs the same steps on Linux.
+It runs `inv utest`, `inv utest-node --coverage` and `inv atest-coverage`, keeps going when one fails, and
+then runs `inv coverage-report`, which merges whatever the suites left and lists which ones contributed.
+It needs `lcov` (`brew install lcov`, `apt-get install lcov`). The `Coverage` job in CI runs the same
+tasks on Linux.
 
 If there are changes on the TypeScript side, run `inv node-build` before executing unit or acceptance tests.
 They test the last build of the wrapper and do not rebuild it.

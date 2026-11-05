@@ -999,6 +999,14 @@ def _batteries(batteries: bool):
     return batteries_dir
 
 
+ATEST_ORDER_AND_PYTHONPATH = [
+    "--ordering",
+    "atest/atest_order.data",
+    "--pythonpath",
+    ".",
+]
+
+
 def _get_listener_args():
     return [
         "--listener",
@@ -1041,14 +1049,7 @@ def atest(
 
     args = [] if processes is None else ["--processes", processes]
 
-    args.extend(
-        [
-            "--ordering",
-            "atest/atest_order.data",
-            "--pythonpath",
-            ".",
-        ]
-    )
+    args.extend(ATEST_ORDER_AND_PYTHONPATH)
     args.extend(_get_listener_args())
     if suite:
         args.extend(["--suite", suite])
@@ -1196,12 +1197,8 @@ def atest_coverage(
         loglevel: Set log level for robot framework.
 
     Python: every pabot worker writes its own `.coverage.*` file. Run
-    `inv utest` first, because pytest-cov erases `.coverage.*` files, then merge
-    everything with `inv coverage-report`:
-        inv utest
-        npm run test:coverage
-        inv atest-coverage
-        inv coverage-report
+    `inv utest` first, because pytest-cov erases `.coverage.*` files.
+    `inv coverage` runs every suite in that order and merges the results.
 
     Node.js: atest/output/node-coverage-report/ has an HTML report and
     lcov.info, with one record per wrapper `.ts` file, at the same paths Jest
@@ -1233,7 +1230,7 @@ def atest_coverage(
     else:
         print("Node.js V8 coverage is not supported on Windows.")
 
-    args = _get_listener_args()
+    args = ATEST_ORDER_AND_PYTHONPATH + _get_listener_args()
     if suite:
         args.extend(["--suite", suite])
     if test:
@@ -1323,17 +1320,42 @@ def _lcov_totals(lcov: str) -> LcovTotals:
 
 
 # Istanbul records branches on lines with no statement, which lcov 2 calls
-# inconsistent. Naming the category twice also silences its warnings.
+# inconsistent, and genhtml 2.0 cannot put such a line into a category. Naming
+# a category twice also silences its warnings.
 LCOV_OPTIONS = "--branch-coverage --ignore-errors inconsistent,inconsistent"
+GENHTML_OPTIONS = f"{LCOV_OPTIONS},category,category"
+
+
+COVERAGE_SUITES = ["utest", "utest-node --coverage", "atest-coverage"]
+
+
+@task()
+def coverage(c):
+    """Run every test suite with coverage and merge it into one HTML report.
+
+    Runs `inv utest`, `inv utest-node --coverage` and `inv atest-coverage` in
+    that order, then `inv coverage-report`. A failing suite does not stop the
+    ones after it, so the report covers everything that ran. Fails at the end
+    when any suite failed. Takes as long as the whole acceptance test run.
+    """
+    failed = [
+        suite
+        for suite in COVERAGE_SUITES
+        if c.run(f'"{sys.executable}" -m invoke {suite}', warn=True).failed
+    ]
+    coverage_report(c)
+    if failed:
+        raise Exit(f"Failed: {', '.join(f'inv {suite}' for suite in failed)}", code=1)
 
 
 @task()
 def coverage_report(c):
     """Merge the coverage of every test suite into one HTML report.
 
-    Reads whatever the earlier runs left, so a partial run still gives a report:
+    `inv coverage` runs every suite and then this task. Reads whatever the
+    earlier runs left, so a partial run still gives a report:
         inv utest                  .coverage
-        npm run test:coverage      node/coverage/lcov.info
+        inv utest-node --coverage  node/coverage/lcov.info
         inv atest-coverage         .coverage.* and
                                    atest/output/node-coverage-report/lcov.info
 
@@ -1391,7 +1413,7 @@ def _merge_coverage(
         raise Exit("No coverage data found. Run the test suites first.", code=1)
     _lcov_merge(c, language_infos, all_info)
     c.run(
-        f'genhtml {LCOV_OPTIONS} --quiet --output-directory "{COVERAGE_DIR / "html"}" "{all_info}"'
+        f'genhtml {GENHTML_OPTIONS} --quiet --output-directory "{COVERAGE_DIR / "html"}" "{all_info}"'
     )
 
 
