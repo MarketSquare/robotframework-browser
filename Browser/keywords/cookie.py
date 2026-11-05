@@ -247,8 +247,13 @@ class Cookie(LibraryComponent):
         then the keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
         the ``name`` and ``value`` keys of the cookie.
 
-        If no cookie is found with the given name, the keyword fails. The cookie dictionary contains
-        details about the cookie. Keys available in the dictionary are documented in the table below.
+        If no cookie is found with the given name, the keyword fails. When several cookies have the
+        same name, for example on different domains, paths or partitions, the keyword returns one
+        of them, and which one is not specified. Use `Get Cookies` to get all of them, with
+        ``urls`` to keep only the cookies that apply to given URLs.
+
+        The cookie dictionary contains details about the cookie. Keys available in the dictionary
+        are documented in the table below.
 
         | *Value*  | *Explanation*                                                                              |
         | name     | The name of the cookie.                                                                    |
