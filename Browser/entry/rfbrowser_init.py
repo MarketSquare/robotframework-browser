@@ -207,7 +207,11 @@ def _process_poller(process: subprocess.Popen, silent_mode: bool):
 
 
 def rfbrowser_init(
-    skip_browser_install: bool, silent_mode: bool, with_deps: bool, browser: list
+    skip_browser_install: bool,
+    silent_mode: bool,
+    with_deps: bool,
+    browser: list,
+    verbose: bool = False,
 ):
     log("Installing node dependencies...", silent_mode)
     _check_files_and_access()
@@ -228,7 +232,7 @@ def rfbrowser_init(
     _process_poller(process, silent_mode)
 
     if not skip_browser_install:
-        cmd = "npx --quiet playwright install"
+        cmd = "npx playwright install" if verbose else "npx --quiet playwright install"
         browser_as_str = " ".join(browser)
         if browser_as_str:
             browser_as_str = f"{browser_as_str} "
