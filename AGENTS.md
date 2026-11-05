@@ -60,7 +60,7 @@ Test App.
 - `inv lint`: `lint-python` (ruff format and check, mypy; `--fix` fixes), `lint-node` (prettier,
   eslint, `tsc --noEmit`) and `lint-robot` (robocop format). Locally `lint-node` and `lint-robot`
   rewrite files; in CI they only check.
-- Coverage: `inv --help atest-coverage`.
+- Coverage: `inv --help atest-coverage` and `inv --help coverage-report`.
 
 CI (`.github/workflows/on-push.yml`) is the only gate; there are no git hooks.
 

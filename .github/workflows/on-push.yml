@@ -227,6 +227,84 @@ jobs:
         python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
         cat fail.md
 
+  # Python and Node.js coverage from every suite, in one report. Linux runs the
+  # largest test set and is the only platform where Node.js coverage flushes.
+  # Advisory, so it stays out of the needs of publish_nightly. Each suite runs
+  # even when an earlier one failed, so a failing test still leaves a report.
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      # Read at build time by node/build.wrapper.js and at run time by the library.
+      ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE: 1
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+      - name: Install nodejs dependencies
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
+        run: |
+          npm ci # installs from package-lock.json; grpc-tools needs its install script
+          npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+      - name: Install python dependencies and lcov
+        run: |
+          python -m pip install --upgrade pip
+          pip install uv
+          uv pip install -r Browser/dev-requirements.txt --python 3.13 --system
+          uv pip install -r pyproject.toml --python 3.13 --system
+          python atest/library/os_wrapper.py
+          sudo apt-get install --yes --no-install-recommends lcov
+      - name: Build
+        id: build
+        run: |
+          inv node-build
+          inv create-test-app
+      - name: Run pytests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          inv utest
+      - name: Run Node.js unit tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          npm run test:coverage
+      - name: Run Robot Framework tests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          xvfb-run --auto-servernum inv atest-coverage
+      - name: Merge the coverage
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          inv coverage-report
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: coverage
+          path: |
+            coverage/
+            node/coverage/lcov.info
+            atest/output/node-coverage-report/lcov.info
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: Coverage test results
+          path: |
+            utest/output/pytest_xunit.xml
+            atest/output
+          if-no-files-found: ignore
+
   build:
     runs-on: ${{ matrix.os }}
     needs: nightly_version
