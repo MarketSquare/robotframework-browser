@@ -91,8 +91,7 @@ Add Cookie With None SameSite
 
 Add Cookie Without Expires Adds Session Cookie
     Add Cookie    session    1    domain=a.example    path=/
-    ${cookie} =    Get Cookie    session
-    Should Be True    $cookie.expires is None or $cookie.expires.year == 1969
+    Cookie Should Be Session Cookie    session
 
 Add Cookie With All Settings As String
     ${url} =    Get Url

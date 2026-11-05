@@ -1,5 +1,6 @@
 import base64
 import os
+from datetime import UTC, datetime
 from typing import NamedTuple
 from urllib.parse import urlparse
 
@@ -106,3 +107,17 @@ def numbers_are_close(number1: int, number2: int, difference: int) -> bool:
 def base64url_encode(data: str) -> str:
     """Encodes string to base64url string"""
     return base64.urlsafe_b64encode(data.encode("utf-8")).rstrip(b"=").decode("utf-8")
+
+
+def cookie_should_be_session_cookie(name: str) -> None:
+    """Verify the cookie ``name`` has no expiry, so it lives until the context closes.
+
+    Playwright reports a session cookie with ``expires`` of -1. ``Get Cookie`` converts that
+    to the datetime one second before the epoch, or to None where the platform cannot convert
+    negative timestamps.
+    """
+    cookie = BuiltIn().run_keyword("Get Cookie", name)
+    session_expiry = datetime.fromtimestamp(-1, tz=UTC)
+    assert cookie.expires in (None, session_expiry), (
+        f"Cookie {name} expires at {cookie.expires}, expected a session cookie"
+    )
