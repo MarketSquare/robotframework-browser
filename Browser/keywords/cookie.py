@@ -26,9 +26,21 @@ from ..utils import CookieSameSite, CookieType, keyword, locals_to_params, logge
 class Cookie(LibraryComponent):
     @keyword(tags=("Getter", "PageContent"))
     def get_cookies(
-        self, return_type: CookieType = CookieType.dictionary
+        self,
+        return_type: CookieType = CookieType.dictionary,
+        *,
+        urls: str | list[str] | None = None,
     ) -> list[DotDict] | str:
         """Returns cookies from the currently active browser context.
+
+        *Arguments:*
+          - ``return_type``: Type of the return value. Can be either ``dictionary`` or
+                ``string``. Defaults to ``dictionary``.
+          - ``urls``: A URL or a list of URLs. When given, only the cookies that apply to
+                at least one of the URLs are returned: the domain and the path of the cookie
+                must match the URL, and a secure cookie is returned only for an HTTPS or a
+                local URL. Defaults to None, which returns all cookies of the context. An empty
+                string or an empty list applies no filter and also returns all cookies.
 
         If ``return_type`` is ``dictionary`` or ``dict``, then the keyword returns a list of Robot Framework
         [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#accessing-list-and-dictionary-items|dot dictionaries].
@@ -39,9 +51,13 @@ class Cookie(LibraryComponent):
         ``name1=value1; name2=value2; name3=value3``. The return value contains only ``name`` and ``value`` keys of the
         cookies. If no cookies are found, an empty list is returned.
 
+        Example:
+        | ${cookies} =    `Get Cookies`    urls=https://api.example.com/v1
+        | ${cookies} =    `Get Cookies`    string    urls=${list_of_urls}
+
         [https://forum.robotframework.org/t//4266|Comment >>]
         """
-        response, cookies = self._get_cookies()
+        response, cookies = self._get_cookies(urls)
         if not response.log:
             logger.info("No cookies found.")
             return []
@@ -50,9 +66,11 @@ class Cookie(LibraryComponent):
             return self._format_cookies_as_dot_dict(cookies)
         return self._format_cookies_as_string(cookies)
 
-    def _get_cookies(self):
+    def _get_cookies(self, urls: str | list[str] | None = None):
+        if isinstance(urls, str):
+            urls = [urls] if urls else []
         with self.playwright.grpc_channel() as stub:
-            response = stub.GetCookies(Request().Empty())
+            response = stub.GetCookies(Request.CookieQuery(urls=urls))
             return response, json.loads(response.json)
 
     def _format_cookies_as_string(self, cookies: list[dict]):
@@ -98,6 +116,8 @@ class Cookie(LibraryComponent):
         httpOnly: bool | None = None,
         secure: bool | None = None,
         sameSite: CookieSameSite | None = None,
+        *,
+        partitionKey: str | None = None,
     ):
         """Adds a cookie to the currently active browser context.
 
@@ -118,22 +138,28 @@ class Cookie(LibraryComponent):
           - ``secure``: Sets the secure token.
           - ``sameSite``: Sets the sameSite mode. Can be ``Strict``, ``Lax`` or
                 ``None``.
+          - ``partitionKey``: Top level site of a partitioned
+                [https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Privacy_sandbox/Partitioned_cookies|CHIPS]
+                cookie, for example ``https://site.example``. Defaults to None, which adds
+                an unpartitioned cookie. Support depends on the browser: Firefox ignores the key
+                without an error. Chromium requires a secure cookie, so use an HTTPS ``url``
+                or set ``secure`` with ``domain`` and ``path``, and a key with a scheme.
 
         Example:
         | `Add Cookie`   foo   bar   http://address.com/path/to/site                                     # Using url argument.
         | `Add Cookie`   foo   bar   domain=example.com                path=/foo/bar                     # Using domain and path arguments.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=2027-09-28 16:21:35       # Expires as timestamp.
         | `Add Cookie`   foo   bar   http://address.com/path/to/site   expires=1822137695                # Expires as epoch seconds.
+        | `Add Cookie`   foo   bar   https://third-party.example       partitionKey=https://site.example # Partitioned cookie.
 
         [https://forum.robotframework.org/t//4233|Comment >>]
         """
         params = locals_to_params(locals())
         if expires:
             params["expires"] = self._expiry(expires)
-        cookie_json = json.dumps(params)
-        logger.debug(f"Adding cookie: {cookie_json}")
+        logger.debug(f"Adding cookie: {params}")
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddCookie(Request.Json(body=cookie_json))
+            response = stub.AddCookie(Request.Cookie(**params))
             logger.info(response.log)
 
     def _expiry(self, expiry: str | datetime) -> int:
@@ -154,13 +180,35 @@ class Cookie(LibraryComponent):
             return int(convert_date(expiry, result_format="epoch"))  # type: ignore[arg-type]
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def delete_all_cookies(self):
-        """Deletes all cookies from the currently active browser context.
+    def delete_all_cookies(
+        self,
+        *,
+        name: str | None = None,
+        domain: str | None = None,
+        path: str | None = None,
+    ):
+        """Deletes cookies from the currently active browser context.
+
+        Without arguments deletes all cookies. When any of the arguments is given, only the
+        cookies matching every given argument are deleted. Values must match exactly and
+        deleting nothing is not an error.
+
+        *Arguments:*
+          - ``name``: Deletes only the cookies with this name. A partitioned cookie is deleted
+                from every partition.
+          - ``domain``: Deletes only the cookies with this domain.
+          - ``path``: Deletes only the cookies with this path.
+
+        Example:
+        | `Delete All Cookies`                                     # Deletes every cookie.
+        | `Delete All Cookies`    name=session_id                  # Other cookies are kept.
+        | `Delete All Cookies`    domain=example.com    path=/app
 
         [https://forum.robotframework.org/t//4244|Comment >>]
         """
+        cookie_filter = Request.CookieFilter(name=name, domain=domain, path=path)
         with self.playwright.grpc_channel() as stub:
-            response = stub.DeleteAllCookies(Request.Empty())
+            response = stub.DeleteAllCookies(cookie_filter)
         logger.info(response.log)
 
     @keyword
@@ -199,8 +247,13 @@ class Cookie(LibraryComponent):
         then the keyword returns the cookie as a string in format: ``name1=value1``. The return value contains only
         the ``name`` and ``value`` keys of the cookie.
 
-        If no cookie is found with the given name, the keyword fails. The cookie dictionary contains
-        details about the cookie. Keys available in the dictionary are documented in the table below.
+        If no cookie is found with the given name, the keyword fails. When several cookies have the
+        same name, for example on different domains, paths or partitions, the keyword returns one
+        of them, and which one is not specified. Use `Get Cookies` to get all of them, with
+        ``urls`` to keep only the cookies that apply to given URLs.
+
+        The cookie dictionary contains details about the cookie. Keys available in the dictionary
+        are documented in the table below.
 
         | *Value*  | *Explanation*                                                                              |
         | name     | The name of the cookie.                                                                    |
@@ -211,6 +264,7 @@ class Cookie(LibraryComponent):
         | httpOnly | When true, the cookie is not accessible via JavaScript.                                    |
         | secure   | When true, the cookie is only used with HTTPS connections.                                 |
         | sameSite | Attribute that lets servers require that a cookie shouldn't be sent with cross-origin requests. |
+        | partitionKey | Top level site of a partitioned cookie. The key exists only for partitioned cookies. |
 
         See
         [https://playwright.dev/docs/api/class-browsercontext#browsercontextaddcookiescookies|playwright documentation]

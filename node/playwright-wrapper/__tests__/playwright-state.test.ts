@@ -25,6 +25,7 @@ import {
     newPage,
     PlaywrightState,
     removeFailedPage,
+    switchPage,
 } from '../playwright-state';
 
 function makeBrowserState(id: string): BrowserState {
@@ -51,15 +52,14 @@ function makeIndexedPage(id: string) {
     } as any;
 }
 
-function attachSingleContextWithPage(browserState: BrowserState, pageId = 'page=1') {
-    const context = {
-        c: {} as any,
-        id: 'context=1',
-        traceFile: '',
-        pageStack: [makeIndexedPage(pageId)],
-        options: {},
-    } as any;
+function attachSingleContext(browserState: BrowserState, pageStack: any[]) {
+    const context = { c: {} as any, id: 'context=1', traceFile: '', pageStack, options: {} } as any;
     browserState.pushContext(context);
+    return context;
+}
+
+function attachSingleContextWithPage(browserState: BrowserState, pageId = 'page=1') {
+    attachSingleContext(browserState, [makeIndexedPage(pageId)]);
 }
 
 describe('PlaywrightState', () => {
@@ -306,9 +306,105 @@ describe('close helpers', () => {
         expect(response.body).toBe('browser=to-close');
     });
 
+    it('closeBrowser reports why closing the browser failed', async () => {
+        const state = new PlaywrightState();
+        const close = jest.fn().mockRejectedValue(new Error('trace not writable'));
+        state.browserStack.push({ id: 'browser=1', close } as any);
+
+        const response = await closeBrowser(state);
+
+        expect(response.log).toBe('Closing browser browser=1 failed: Error: trace not writable');
+        expect(state.browserStack).toHaveLength(0);
+    });
+
+    it('closeBrowser reports an already closed browser', async () => {
+        const state = new PlaywrightState();
+        const closed = Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
+        state.browserStack.push({ id: 'browser=1', close: jest.fn().mockRejectedValue(closed) } as any);
+
+        const response = await closeBrowser(state);
+
+        expect(response.log).toBe('Browser browser=1 was already closed');
+    });
+
+    describe('when a step of closing a browser fails', () => {
+        const targetClosed = () => Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
+
+        function tracedContext(id: string, stopTrace = jest.fn().mockResolvedValue(undefined)) {
+            return {
+                c: { tracing: { stop: stopTrace }, close: jest.fn().mockResolvedValue(undefined) },
+                id,
+                traceFile: `/traces/${id}.zip`,
+                pageStack: [],
+                options: {},
+            };
+        }
+
+        function openBrowser(browserClose: jest.Mock, ...contexts: ReturnType<typeof tracedContext>[]) {
+            const browser = new BrowserState({
+                browser: { close: browserClose } as any,
+                name: 'chromium',
+                headless: true,
+            });
+            browser.id = 'browser=1';
+            contexts.forEach((context) => browser.pushContext(context as any));
+            const state = new PlaywrightState();
+            state.browserStack.push(browser);
+            return state;
+        }
+
+        it('still closes every context and the browser', async () => {
+            const browserClose = jest.fn().mockResolvedValue(undefined);
+            const first = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+            const second = tracedContext('context=2');
+
+            const response = await closeBrowser(openBrowser(browserClose, first, second));
+
+            expect(first.c.close).toHaveBeenCalledTimes(1);
+            expect(second.c.close).toHaveBeenCalledTimes(1);
+            expect(browserClose).toHaveBeenCalledTimes(1);
+            expect(response.log).toBe('Closing browser browser=1 failed: Error: ENOSPC');
+            expect(response.body).toBe('browser=1');
+        });
+
+        it('reports every step that failed', async () => {
+            const browserClose = jest.fn().mockRejectedValue(new Error('browser hung'));
+            const context = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+
+            const response = await closeBrowser(openBrowser(browserClose, context));
+
+            expect(response.log).toBe('Closing browser browser=1 failed: Error: ENOSPC; browser hung');
+        });
+
+        it('counts a context that was already closed as closed', async () => {
+            const browserClose = jest.fn().mockResolvedValue(undefined);
+            const context = tracedContext('context=1', jest.fn().mockRejectedValue(targetClosed()));
+
+            const response = await closeBrowser(openBrowser(browserClose, context));
+
+            expect(browserClose).toHaveBeenCalledTimes(1);
+            expect(response.log).toBe('Closed browser');
+        });
+    });
+
+    it('closeAllBrowsers closes every browser and reports the failures', async () => {
+        const state = new PlaywrightState();
+        const close = jest.fn().mockResolvedValue(undefined);
+        state.browserStack.push(
+            { id: 'browser=1', close: jest.fn().mockRejectedValue(new Error('onClose failed')) } as any,
+            { id: 'browser=2', close } as any,
+        );
+
+        const response = await closeAllBrowsers(state);
+
+        expect(close).toHaveBeenCalledTimes(1);
+        expect(state.browserStack).toHaveLength(0);
+        expect(response.log).toBe('Closed all browsers\nClosing browser browser=1 failed: Error: onClose failed');
+    });
+
     it('closeAllBrowsers delegates to PlaywrightState.closeAll', async () => {
         const state = new PlaywrightState();
-        const spy = jest.spyOn(state, 'closeAll').mockResolvedValue(undefined);
+        const spy = jest.spyOn(state, 'closeAll').mockResolvedValue([]);
 
         const response = await closeAllBrowsers(state);
 
@@ -400,6 +496,44 @@ describe('newPage', () => {
 
         expect(browser.page?.p).toBe(failedPage);
         expect(failedPage.close).not.toHaveBeenCalled();
+    });
+});
+
+function stateWithEmptyContext() {
+    const browserState = makeBrowserState('browser=1');
+    const context = attachSingleContext(browserState, []);
+    return { browserState, context };
+}
+
+function switchToNewPageRequest(timeout: number) {
+    return { id: 'NEW', timeout } as any;
+}
+
+describe('switchPage NEW', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('times out on an empty page stack when no page appears', async () => {
+        expect.assertions(1);
+        const { browserState } = stateWithEmptyContext();
+
+        await expect(switchPage(switchToNewPageRequest(30), browserState)).rejects.toThrow(
+            'Tried to activate a new page but no new pages were detected in context.',
+        );
+    });
+
+    it('activates a page that appears while waiting on an empty page stack', async () => {
+        const { browserState, context } = stateWithEmptyContext();
+        const popup = makeIndexedPage('page=popup');
+        popup.p = { bringToFront: jest.fn() };
+
+        const switching = switchPage(switchToNewPageRequest(1000), browserState);
+        context.pageStack.unshift(popup);
+
+        await switching;
+        expect(browserState.page).toBe(popup);
+        expect(popup.p.bringToFront).toHaveBeenCalled();
     });
 });
 

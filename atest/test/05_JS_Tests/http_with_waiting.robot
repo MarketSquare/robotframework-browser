@@ -37,12 +37,20 @@ GET With Text Response
     Should Be Matching    ${content}    ${response}
     Should Be Equal    ${content}[request][method]    GET
 
-GET With Binary Response
+GET With Binary Response Returns Body Decoded As UTF-8 Text
     ${promise} =    Promise To    Wait For Response    matcher=${ROOT_URL}api/get/bad_binary    timeout=3s
     &{response} =    HTTP    /api/get/bad_binary
     ${content} =    Wait For    ${promise}
     Should Be Matching    ${content}    ${response}
+    Should Be Equal    ${content}[body]    ${{ bytes.fromhex('89504e470d0a1a0a').decode('utf-8', 'replace') }}
     Should Be Equal    ${content}[request][method]    GET
+
+GET With JSON Response Without JSON Content Type Returns Parsed Body
+    ${promise} =    Promise To    Wait For Response    matcher=**/api/get/json-as-text    timeout=3s
+    HTTP    /api/get/json-as-text
+    ${content} =    Wait For    ${promise}
+    Should Contain    ${content}[headers][content-type]    text/plain
+    Should Be Equal    ${content}[body]    ${{ {'greeting': 'HELLO'} }}
 
 *** Keywords ***
 Should Be Matching

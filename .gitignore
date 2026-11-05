@@ -6,6 +6,7 @@ Browser/**/*.pyc
 Browser/rfbrowser.log
 **/.DS_Store
 node/playwright-wrapper/generated
+node/playwright-wrapper/static/css-selector.js
 
 docs/Browser.html
 docs/index.html
@@ -59,9 +60,17 @@ tmp
 htmlcov
 results
 node/coverage/
+.coverage.*
+/coverage/
 
 # linting
 .ruff_cache
+
+# SonarQube linter reports
+/robocop_sonar_qube.json
+/ruff.json
+/mypy.txt
+.scannerwork
 
 # CI failure analysis: the database, rebuilt from CI. Anchored to the root, or it
 # would also swallow tools/ci_failures, which is source.

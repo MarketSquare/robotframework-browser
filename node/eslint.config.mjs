@@ -4,7 +4,16 @@ import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-    { ignores: ['**/generated/**', '**/dist/**', '**/static/**'] },
+    // The recorder toolbar in playwright-wrapper/static is ours and linted;
+    // css-selector.js there is built from page/css-selector.ts.
+    {
+        ignores: [
+            '**/generated/**',
+            '**/dist/**',
+            '**/dynamic-test-app/static/**',
+            '**/playwright-wrapper/static/css-selector.js',
+        ],
+    },
     eslint.configs.recommended,
     tseslint.configs.recommendedTypeChecked,
     {
@@ -50,6 +59,14 @@ export default tseslint.config(
         rules: {
             // CJS build scripts use require() — this is intentional.
             '@typescript-eslint/no-require-imports': 'off',
+        },
+    },
+    {
+        // Runs in the page under test, not in Node.
+        files: ['**/playwright-wrapper/static/recorder-toolbar.js'],
+        languageOptions: {
+            sourceType: 'script',
+            globals: globals.browser,
         },
     },
 );

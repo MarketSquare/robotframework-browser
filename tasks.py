@@ -20,6 +20,7 @@ import signal
 
 from collections.abc import Iterable
 from pathlib import Path, PurePath
+from typing import NamedTuple
 
 from invoke import Exit, task
 from invoke.context import Context
@@ -41,6 +42,9 @@ ROOT_DIR = Path(os.path.dirname(__file__))
 ATEST_LIB_DIR = ROOT_DIR / "atest" / "library"
 ATEST_OUTPUT = ROOT_DIR / "atest" / "output"
 UTEST_OUTPUT = ROOT_DIR / "utest" / "output"
+COVERAGE_DIR = ROOT_DIR / "coverage"
+JEST_LCOV = ROOT_DIR / "node" / "coverage" / "lcov.info"
+ATEST_NODE_LCOV = ATEST_OUTPUT / "node-coverage-report" / "lcov.info"
 DIST_DIR = ROOT_DIR / "dist"
 BUILD_DIR = ROOT_DIR / "build"
 BROWSER_BATTERIES_DIR = ROOT_DIR / "browser_batteries"
@@ -233,6 +237,7 @@ def clean(c):
         python_protobuf_dir,
         node_protobuf_dir,
         Path("./htmlcov"),
+        COVERAGE_DIR,
         Path("./.mypy_cache"),
         PYTHON_SRC_DIR / "wrapper",
         BROWSER_BATTERIES_DIR / "build",
@@ -242,6 +247,7 @@ def clean(c):
     for file in [
         npm_deps_timestamp_file,
         Path("./.coverage"),
+        *ROOT_DIR.glob(".coverage.*"),
         Path("./.ruff_cache"),
         Path("./.pytest_cache"),
     ]:
@@ -993,6 +999,14 @@ def _batteries(batteries: bool):
     return batteries_dir
 
 
+ATEST_ORDER_AND_PYTHONPATH = [
+    "--ordering",
+    "atest/atest_order.data",
+    "--pythonpath",
+    ".",
+]
+
+
 def _get_listener_args():
     return [
         "--listener",
@@ -1035,14 +1049,7 @@ def atest(
 
     args = [] if processes is None else ["--processes", processes]
 
-    args.extend(
-        [
-            "--ordering",
-            "atest/atest_order.data",
-            "--pythonpath",
-            ".",
-        ]
-    )
+    args.extend(ATEST_ORDER_AND_PYTHONPATH)
     args.extend(_get_listener_args())
     if suite:
         args.extend(["--suite", suite])
@@ -1174,11 +1181,12 @@ def atest_coverage(
     exclude=None,
     loglevel=None,
 ):
-    """Run acceptance tests with both Python and Node.js coverage.
+    """Run acceptance tests with pabot, measuring Python and Node.js coverage.
 
-    Builds the Node.js wrapper, runs acceptance tests with coverage
-    collection enabled for both Python and Node.js, then generates
-    coverage reports.
+    Builds the Node.js wrapper with source maps, runs the acceptance tests under
+    `coverage run -m pabot.pabot` and stops the shared Node.js process with
+    SIGTERM, so it writes its V8 coverage. The task fails when Node.js does not
+    write it.
 
     Args:
         suite:    Select which suite to run.
@@ -1188,17 +1196,16 @@ def atest_coverage(
         exclude:  Exclude tests by tag.
         loglevel: Set log level for robot framework.
 
-    To use with coverage.py tracking:
-        coverage run -m invoke utest
-        coverage run --append -m invoke atest-coverage
-        coverage combine (if needed)
-        coverage report
-        coverage html
+    Python: every pabot worker writes its own `.coverage.*` file. Run
+    `inv utest` first, because pytest-cov erases `.coverage.*` files.
+    `inv coverage` runs every suite in that order and merges the results.
 
-    Node.js coverage output: atest/output/node-coverage-report/
-    Python coverage output: htmlcov/
+    Node.js: atest/output/node-coverage-report/ has an HTML report and
+    lcov.info, with one record per wrapper `.ts` file, at the same paths Jest
+    uses. V8 data goes to NODE_V8_COVERAGE when it is set, otherwise to
+    atest/output/browser/node-v8-coverage/.
 
-    NodeJS coverage is not supported in Windows.
+    Node.js coverage is not collected on Windows.
     """
     from Browser.utils import spawn_node_process
 
@@ -1208,15 +1215,22 @@ def atest_coverage(
     clean_atest(c)
     create_test_app(c)
     ATEST_OUTPUT.mkdir(parents=True, exist_ok=True)
+    for stale in ROOT_DIR.glob(".coverage.*"):
+        stale.unlink()
 
-    if sys.platform == "win32":
-        print("Node.js V8 coverage is not supported on Windows.")
-    else:
-        v8_coverage_dir = ATEST_OUTPUT / "browser" / "node-v8-coverage"
+    node_coverage = sys.platform != "win32"
+    if node_coverage:
+        v8_coverage_dir = Path(
+            os.environ.setdefault(
+                "NODE_V8_COVERAGE",
+                str(ATEST_OUTPUT / "browser" / "node-v8-coverage"),
+            )
+        )
         v8_coverage_dir.mkdir(parents=True, exist_ok=True)
-        os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+    else:
+        print("Node.js V8 coverage is not supported on Windows.")
 
-    args = _get_listener_args()
+    args = ATEST_ORDER_AND_PYTHONPATH + _get_listener_args()
     if suite:
         args.extend(["--suite", suite])
     if test:
@@ -1227,66 +1241,211 @@ def atest_coverage(
         args.extend(["--listener", "Debugger"])
     if exclude:
         args.extend(["--exclude", exclude])
+    args.extend(["--exclude", "no-coverage-support"])
 
+    node_started = time.time()
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:
         os.environ["ROBOT_FRAMEWORK_BROWSER_NODE_PORT"] = port
-        rc = _run_robot_with_coverage(args, loglevel or "DEBUG")
-
+        rc = _run_pabot(args, loglevel=loglevel or "DEBUG", coverage=True)
     finally:
-        # SIGTERM allows Node.js to flush V8 coverage before exiting
-        try:
-            background_process.send_signal(signal.SIGTERM)
-            background_process.wait(timeout=10)
-            print("Node process exited gracefully, V8 coverage flushed")
-        except Exception:
+        if node_coverage:
+            _stop_node_flushing_coverage(background_process)
+        else:
             background_process.kill()
 
-    c.run("node node/process-coverage.mjs", warn=True)
-    print(
-        f"\nNode.js coverage report: {ATEST_OUTPUT / 'node-coverage-report' / 'index.html'}"
-    )
-    print(f"\nPython coverage: Run 'coverage html' to generate htmlcov/index.html")
+    if node_coverage:
+        _require_v8_coverage_written_since(v8_coverage_dir, node_started)
+        c.run(f'node node/process-coverage.mjs "{v8_coverage_dir}"')
+    print("\nMerge all coverage into one report: inv coverage-report")
     sys.exit(rc)
 
 
-def _run_robot_with_coverage(extra_args=None, loglevel="DEBUG"):
-    """Run robot with Python coverage collection."""
-    os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    robot_args = [
-        "-m",
-        "robot",
-        "--xunit",
-        "robot_xunit.xml",
-        "--exclude",
-        "not-implemented",
-        "--loglevel",
-        loglevel,
-        "--report",
-        "NONE",
-        "--log",
-        "NONE",
-        "--outputdir",
-        str(ATEST_OUTPUT),
+NODE_COVERAGE_FLUSH_TIMEOUT = 10
+
+
+def _stop_node_flushing_coverage(process: subprocess.Popen):
+    process.send_signal(signal.SIGTERM)
+    try:
+        process.wait(timeout=NODE_COVERAGE_FLUSH_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+        raise Exit(
+            f"Node.js did not exit within {NODE_COVERAGE_FLUSH_TIMEOUT} s of "
+            "SIGTERM and was killed, so its V8 coverage was not written.",
+            code=1,
+        ) from None
+    if process.returncode != 0:
+        raise Exit(
+            f"Node.js exited with {process.returncode} after SIGTERM, so its "
+            "V8 coverage may not have been written.",
+            code=1,
+        )
+    print("Node.js exited after SIGTERM")
+
+
+def _require_v8_coverage_written_since(v8_coverage_dir: Path, since: float):
+    if not any(
+        data.stat().st_mtime >= since for data in v8_coverage_dir.glob("*.json")
+    ):
+        raise Exit(
+            f"Node.js wrote no V8 coverage to {v8_coverage_dir} during this run.",
+            code=1,
+        )
+
+
+def _lcov_records(lcov: str) -> list[str]:
+    return [record + "end_of_record\n" for record in lcov.split("end_of_record\n")[:-1]]
+
+
+def _drop_never_loaded_records(lcov: str) -> str:
+    return "".join(record for record in _lcov_records(lcov) if "\nLH:0\n" not in record)
+
+
+class LcovTotals(NamedTuple):
+    lines_hit: int
+    lines_found: int
+    branches_hit: int
+    branches_found: int
+
+
+def _lcov_totals(lcov: str) -> LcovTotals:
+    sums = {"LH": 0, "LF": 0, "BRH": 0, "BRF": 0}
+    for line in lcov.splitlines():
+        key, _, value = line.partition(":")
+        if key in sums:
+            sums[key] += int(value)
+    return LcovTotals(sums["LH"], sums["LF"], sums["BRH"], sums["BRF"])
+
+
+# Istanbul records branches on lines with no statement, which lcov 2 calls
+# inconsistent, and genhtml 2.0 cannot put such a line into a category. Naming
+# a category twice also silences its warnings.
+LCOV_OPTIONS = "--branch-coverage --ignore-errors inconsistent,inconsistent"
+GENHTML_OPTIONS = f"{LCOV_OPTIONS},category,category"
+
+
+COVERAGE_SUITES = ["utest", "utest-node --coverage", "atest-coverage"]
+
+
+@task()
+def coverage(c):
+    """Run every test suite with coverage and merge it into one HTML report.
+
+    Runs `inv utest`, `inv utest-node --coverage` and `inv atest-coverage` in
+    that order, then `inv coverage-report`. A failing suite does not stop the
+    ones after it, so the report covers everything that ran. Fails at the end
+    when any suite failed. Takes as long as the whole acceptance test run.
+    """
+    failed = [
+        suite
+        for suite in COVERAGE_SUITES
+        if c.run(f'"{sys.executable}" -m invoke {suite}', warn=True).failed
     ]
-    robot_args = _add_skips_list(robot_args, False)
-    robot_args.extend(["--exclude", "no-coverage-support"])
+    coverage_report(c)
+    if failed:
+        raise Exit(f"Failed: {', '.join(f'inv {suite}' for suite in failed)}", code=1)
 
-    cmd = (
-        [sys.executable, "-m", "coverage", "run"]
-        + robot_args
-        + (extra_args or [])
-        + ["atest/test"]
+
+@task()
+def coverage_report(c):
+    """Merge the coverage of every test suite into one HTML report.
+
+    `inv coverage` runs every suite and then this task. Reads whatever the
+    earlier runs left, so a partial run still gives a report:
+        inv utest                  .coverage
+        inv utest-node --coverage  node/coverage/lcov.info
+        inv atest-coverage         .coverage.* and
+                                   atest/output/node-coverage-report/lcov.info
+
+    Writes coverage/python.info, coverage/node.info, the merged coverage/all.info
+    and the HTML report coverage/html/index.html. Jest records with no line hit
+    are dropped first: they are files Jest never loads, and only list as zero
+    because of collectCoverageFrom. The totals and the inputs that contributed
+    are printed, and on GitHub Actions also shown on the run's summary page.
+    The inputs are reported even when merging fails. Needs `lcov` and
+    `genhtml` on PATH.
+    """
+    shutil.rmtree(COVERAGE_DIR, ignore_errors=True)
+    COVERAGE_DIR.mkdir()
+    python_info = COVERAGE_DIR / "python.info"
+    jest_info = COVERAGE_DIR / "jest.info"
+    node_info = COVERAGE_DIR / "node.info"
+    all_info = COVERAGE_DIR / "all.info"
+
+    inputs = {
+        "Python unit tests (`.coverage`)": (ROOT_DIR / ".coverage").exists(),
+        "Python acceptance tests (`.coverage.*`)": any(ROOT_DIR.glob(".coverage.*")),
+        f"Node.js unit tests (`{JEST_LCOV.relative_to(ROOT_DIR)}`)": JEST_LCOV.exists(),
+        f"Node.js acceptance tests (`{ATEST_NODE_LCOV.relative_to(ROOT_DIR)}`)": ATEST_NODE_LCOV.exists(),
+    }
+    try:
+        _merge_coverage(c, python_info, jest_info, node_info, all_info)
+        _report(
+            _coverage_totals(all_info, {"Python": python_info, "Node.js": node_info}),
+            "Coverage",
+        )
+        print(f"HTML report: {COVERAGE_DIR / 'html' / 'index.html'}")
+    finally:
+        _report(
+            ["| Input | Contributed |", "| --- | --- |"]
+            + [
+                f"| {name} | {'yes' if found else '**no**'} |"
+                for name, found in inputs.items()
+            ],
+            "Coverage inputs",
+        )
+
+
+def _merge_coverage(
+    c, python_info: Path, jest_info: Path, node_info: Path, all_info: Path
+):
+    if (ROOT_DIR / ".coverage").exists() or any(ROOT_DIR.glob(".coverage.*")):
+        c.run(f'coverage lcov --keep-combined -o "{python_info}"')
+    if JEST_LCOV.exists():
+        jest_info.write_text(_drop_never_loaded_records(JEST_LCOV.read_text()))
+    node_inputs = [path for path in (jest_info, ATEST_NODE_LCOV) if path.exists()]
+    if node_inputs:
+        _lcov_merge(c, node_inputs, node_info)
+    language_infos = [path for path in (python_info, node_info) if path.exists()]
+    if not language_infos:
+        raise Exit("No coverage data found. Run the test suites first.", code=1)
+    _lcov_merge(c, language_infos, all_info)
+    c.run(
+        f'genhtml {GENHTML_OPTIONS} --quiet --output-directory "{COVERAGE_DIR / "html"}" "{all_info}"'
     )
-    process = subprocess.Popen(cmd, env=os.environ)
-    process.wait(ATEST_TIMEOUT)
 
-    output_xml = str(ATEST_OUTPUT / "output.xml")
-    print(f"Process {output_xml}")
-    robotstatuschecker.process_output(output_xml)
-    rc = rebot_cli(["--outputdir", str(ATEST_OUTPUT), output_xml], exit=False)
-    print(f"DONE rc=({rc})")
-    return rc
+
+def _lcov_merge(c, tracefiles: list[Path], output: Path):
+    adds = " ".join(f'--add-tracefile "{path}"' for path in tracefiles)
+    c.run(f'lcov {LCOV_OPTIONS} --quiet {adds} --output-file "{output}"')
+
+
+def _percent(hit: int, found: int) -> str:
+    if found == 0:
+        return "not measured"
+    return f"{100 * hit / found:.1f}% ({hit:,} of {found:,})"
+
+
+def _coverage_totals(all_info: Path, language_infos: dict[str, Path]) -> list[str]:
+    total = _lcov_totals(all_info.read_text())
+    lines = [
+        f"**Lines: {_percent(total.lines_hit, total.lines_found)}**",
+        "",
+        "| Language | Lines | Branches |",
+        "| --- | --- | --- |",
+    ]
+    for language, info in language_infos.items():
+        if info.exists():
+            totals = _lcov_totals(info.read_text())
+            lines.append(
+                f"| {language} | {_percent(totals.lines_hit, totals.lines_found)} "
+                f"| {_percent(totals.branches_hit, totals.branches_found)} |"
+            )
+        else:
+            lines.append(f"| {language} | no data | no data |")
+    return lines
 
 
 @task()
@@ -1319,22 +1478,37 @@ def run_tests(c, tests, batteries=False):
     return process.wait(ATEST_TIMEOUT)
 
 
-def _run_pabot(extra_args=None, shard=None, include_mac=False, loglevel="DEBUG"):
+def _make_pabot_workers_use_this_python():
+    this_python_bin = str(Path(sys.executable).parent)
+    os.environ["PATH"] = this_python_bin + os.pathsep + os.environ.get("PATH", "")
+
+
+def _run_pabot(
+    extra_args=None, shard=None, include_mac=False, loglevel="DEBUG", coverage=False
+):
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
-    pabot_args = [
-        sys.executable,
-        "-m",
-        "pabot.pabot",
-        "--pabotlib",
-        "--pabotlibport",
-        "0",
-        "--processes",
-        EXECUTOR_COUNT,
-        "--chunk",
-        "--artifacts",
-        "png,webm,zip",
-        "--artifactsinsubfolders",
-    ] + (["--shard", shard] if shard else [])
+    launcher = (
+        [sys.executable, "-m", "coverage", "run"] if coverage else [sys.executable]
+    )
+    if coverage:
+        _make_pabot_workers_use_this_python()
+    pabot_args = (
+        launcher
+        + [
+            "-m",
+            "pabot.pabot",
+            "--pabotlib",
+            "--pabotlibport",
+            "0",
+            "--processes",
+            EXECUTOR_COUNT,
+            "--chunk",
+            "--artifacts",
+            "png,webm,zip",
+            "--artifactsinsubfolders",
+        ]
+        + (["--shard", shard] if shard else [])
+    )
     default_args = [
         "--xunit",
         "robot_xunit.xml",
@@ -1385,27 +1559,6 @@ def _add_skips(default_args, include_mac=False):
         default_args.extend(["--exclude", "no-mac-support"])
     default_args.extend(["--exclude", "tidy-transformer"])
 
-    rf_version = _get_rf_version()
-    if rf_version < (7, 4):
-        print(
-            "Running with Robot Framework version < 7.4, exclude require-rf-7.4+ tags"
-        )
-        default_args.extend(["--exclude", "require-rf-7.4+"])
-    return default_args
-
-
-def _add_skips_list(default_args, include_mac=False):
-    """Add skip/exclude arguments to a list for robot command."""
-    if platform.platform().lower().startswith("windows"):
-        print("Running in Windows exclude no-windows-support tags")
-        default_args.extend(["--exclude", "no-windows-support"])
-    if not include_mac and (
-        platform.platform().lower().startswith("mac")
-        or platform.platform().lower().startswith("darwin")
-    ):
-        print("Running in Mac exclude no-mac-support tags")
-        default_args.extend(["--exclude", "no-mac-support"])
-    default_args.extend(["--exclude", "tidy-transformer"])
     rf_version = _get_rf_version()
     if rf_version < (7, 4):
         print(

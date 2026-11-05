@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder selectors</title>
+</head>
+<body>
+  <!-- Every element below makes Playwright's selector generator pick a different engine
+       or shape. recorder.robot clicks each one while recording and checks that the
+       translated selector finds exactly that element. -->
+  <h2>Heading Level Two</h2>
+  <button>Save</button>
+  <button>Save draft</button>
+  <button>save</button>
+  <button aria-pressed="true">Pressed</button>
+  <button aria-expanded="false">Expandable</button>
+  <button>Say "hi" \ now</button>
+  <button>  Padded  </button>
+  <button>/not a regex/</button>
+  <button>A very long button text that keeps going well past the length at which Playwright starts to shorten the generated name of an element</button>
+  <ul>
+    <li><button>Edit</button></li>
+    <li><button>Edit</button></li>
+  </ul>
+  <div data-testid="main-content">Test id</div>
+  <div data-testid="Main">Test id with capital</div>
+  <input placeholder="Email address">
+  <input placeholder="email">
+  <label for="named">Full name</label><input id="named">
+  <input title="Phone number">
+  <img alt="Company logo" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="20" height="20">
+  <span>Plain text</span>
+  <span>Plain text twice</span>
+  <span>Plain text twice</span>
+  <div class="no-text"></div>
+  <div class="no-text"></div>
+  <input type="checkbox" id="agree"><label for="agree">I agree</label>
+  <div role="tab" aria-selected="true">Selected tab</div>
+  <div role="checkbox" aria-checked="true">Custom checkbox</div>
+  <span title="Info tooltip" class="box"></span>
+  <span title="Info tooltip twice" class="box"></span>
+  <span title="Info tooltip twice" class="box"></span>
+  <p class="card">Card one <i class="dot"></i></p>
+  <p class="card">Card two <i class="dot"></i></p>
+  <label>Wrapped label <input class="wrapped"></label>
+  <label>Wrapped label <input class="wrapped"></label>
+  <input placeholder="Only placeholder" aria-label="">
+  <label>Birthday <input type="date"></label>
+  <label for="colour">Colour</label><input id="colour" type="color">
+  <div class="twin">Twin</div>
+  <span>Twin</span>
+  <div class="twin">Twins</div>
+  <button class="split">Split <b>text</b></button>
+  <button>Price (1.5) "net"</button>
+  <div class="labelled" aria-label="Map widget"></div>
+  <section id="host"></section>
+  <iframe id="frame" src="selectors-frame.html" width="320" height="140"></iframe>
+  <script>
+    const shadow = document.getElementById('host').attachShadow({ mode: 'open' });
+    shadow.innerHTML = '<button>In shadow</button>';
+    document.querySelectorAll('.no-text, .box, .dot, .labelled').forEach((e) => { e.style.cssText = 'display:inline-block;width:40px;height:10px;background:#ccc'; });
+  </script>
+  <script src="/test-app-logger.js"></script>
+</body>
+</html>

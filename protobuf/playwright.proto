@@ -71,10 +71,6 @@ message Request {
     string suite_name = 4;
   }
 
-  message Label {
-    string label = 1;
-  }
-
   message GetByOptions {
     string strategy = 1;
     string text = 2;
@@ -203,6 +199,29 @@ message Request {
     string rawOptions = 2;
     int32 defaultTimeout = 3;
     string traceFile = 4;
+  }
+
+  message CookieQuery {
+    repeated string urls = 1;
+  }
+
+  message Cookie {
+    string name = 1;
+    string value = 2;
+    optional string url = 3;
+    optional string domain = 4;
+    optional string path = 5;
+    optional double expires = 6;
+    optional bool httpOnly = 7;
+    optional bool secure = 8;
+    optional string sameSite = 9;
+    optional string partitionKey = 10;
+  }
+
+  message CookieFilter {
+    optional string name = 1;
+    optional string domain = 2;
+    optional string path = 3;
   }
 
   message Permissions {
@@ -521,9 +540,9 @@ service  Playwright {
   /* Aria Snapshot */
   rpc AriaSnapShot(Request.AriaSnapShot) returns (Response.String);
   /* Cookie messages */
-  rpc AddCookie(Request.Json) returns (Response.Empty);
-  rpc GetCookies(Request.Empty) returns (Response.Json);
-  rpc DeleteAllCookies(Request.Empty) returns (Response.Empty);
+  rpc AddCookie(Request.Cookie) returns (Response.Empty);
+  rpc GetCookies(Request.CookieQuery) returns (Response.Json);
+  rpc DeleteAllCookies(Request.CookieFilter) returns (Response.Empty);
   /* Screen shot method */
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
@@ -593,6 +612,8 @@ service  Playwright {
   rpc Hover(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Focuses element specified by selector */
   rpc Focus(Request.ElementSelector) returns (Response.Empty);
+  /* Removes focus from element specified by selector */
+  rpc Blur(Request.ElementSelector) returns (Response.Empty);
   /* Waits for element be in a specific state*/
   rpc WaitForElementsState(Request.ElementSelectorWithOptions) returns (Response.Empty);
   /* Executes javascript on the active page and retries until the expression is true */
@@ -600,7 +621,6 @@ service  Playwright {
   /* Evaluates javascript on the active page */
   rpc EvaluateJavascript(Request.EvaluateAll) returns (Response.JavascriptExecutionResult);
 
-  rpc RecordSelector(Request.Label) returns (Response.JavascriptExecutionResult);
   /* Get Page State JSON */
   rpc SetViewportSize(Request.Viewport) returns (Response.Empty);
   /* Gets an elements computed style */
@@ -701,4 +721,10 @@ service  Playwright {
   rpc InstallCredential(Request.Empty) returns (Response.Empty);
   rpc GetCredential(Request.CredentialIdAndRpId) returns (Response.GetCredential);
   rpc DeleteCredential(Request.CredentialIdAndRpId) returns (Response.Empty);
+
+  /* Recorder */
+  rpc RecorderPoll(Request.Json) returns (Response.Json);
+  rpc RecorderStop(Request.Empty) returns (Response.Empty);
+  rpc SelectorPickerPoll(Request.Json) returns (Response.Json);
+  rpc SelectorPickerStop(Request.Empty) returns (Response.Empty);
 }

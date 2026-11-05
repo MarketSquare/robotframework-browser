@@ -28,6 +28,7 @@ from .network import Network
 from .pdf import Pdf
 from .playwright_state import PlaywrightState
 from .promises import Promises
+from .recorder import Recorder
 from .runonfailure import RunOnFailureKeywords
 from .strict_mode import StrictMode
 from .waiter import Waiter
@@ -50,6 +51,7 @@ __all__ = [
     "Pdf",
     "PlaywrightState",
     "Promises",
+    "Recorder",
     "RunOnFailureKeywords",
     "StrictMode",
     "Waiter",

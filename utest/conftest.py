@@ -1,4 +1,5 @@
 import warnings
+from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,6 +27,19 @@ def ctx(response):
     pw.grpc_channel.return_value = grpc
     ctx.playwright = pw
     return ctx
+
+
+@contextmanager
+def _channel_to(stub):
+    yield stub
+
+
+@pytest.fixture
+def stub_grpc_channel():
+    def connect(browser, stub):
+        browser.playwright.grpc_channel = lambda *args, **kwargs: _channel_to(stub)
+
+    return connect
 
 
 @pytest.fixture(scope="session")

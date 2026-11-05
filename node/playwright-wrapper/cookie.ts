@@ -16,38 +16,49 @@ import { BrowserContext } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
+import { exists } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
-interface CookieData {
-    name: string;
-    value: string;
-    url?: string;
-    domain?: string;
-    path?: string;
-    expires?: number;
-    httpOnly?: boolean;
-    secure?: boolean;
-    sameSite?: 'Strict' | 'Lax' | 'None';
+type SameSite = 'Strict' | 'Lax' | 'None';
+const SAME_SITE_VALUES = ['Strict', 'Lax', 'None'] as const satisfies readonly SameSite[];
+
+function isSameSite(value: string): value is SameSite {
+    return (SAME_SITE_VALUES as readonly string[]).includes(value);
 }
 
-export async function getCookies(context: BrowserContext): Promise<pb.Response_Json> {
-    const allCookies = await context.cookies();
-    logger.info({ 'Cookies: ': allCookies });
-    const cookieName = [];
-    for (const cookie of allCookies) {
-        cookieName.push(cookie.name);
+function toSameSite(value: string | undefined): SameSite | undefined {
+    if (value === undefined || isSameSite(value)) {
+        return value;
     }
-    return jsonResponse(JSON.stringify(allCookies), cookieName.toString());
+    throw new Error(`Invalid sameSite value "${value}", expected one of ${SAME_SITE_VALUES.join(', ')}.`);
 }
 
-export async function addCookie(request: pb.Request_Json, context: BrowserContext): Promise<pb.Response_Empty> {
-    const cookie: CookieData = JSON.parse(request.body);
-    logger.info({ 'Cookie data: ': request.body });
+function activeContext(state: PlaywrightState): BrowserContext {
+    const context = state.getActiveContext();
+    exists(context, 'no open context.');
+    return context;
+}
+
+export async function getCookies(request: pb.Request_CookieQuery, state: PlaywrightState): Promise<pb.Response_Json> {
+    const cookies = await activeContext(state).cookies(request.urls);
+    logger.info({ 'Cookies: ': cookies });
+    return jsonResponse(JSON.stringify(cookies), cookies.map((cookie) => cookie.name).toString());
+}
+
+export async function addCookie(request: pb.Request_Cookie, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const context = activeContext(state);
+    const cookie = { ...request, sameSite: toSameSite(request.sameSite) };
+    logger.info({ 'Cookie data: ': cookie });
     await context.addCookies([cookie]);
     return emptyWithLog('Cookie "' + cookie.name + '" added.');
 }
 
-export async function deleteAllCookies(context: BrowserContext): Promise<pb.Response_Empty> {
-    await context.clearCookies();
-    return emptyWithLog('All cookies deleted.');
+export async function deleteAllCookies(
+    request: pb.Request_CookieFilter,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    await activeContext(state).clearCookies(request);
+    const filter = JSON.stringify(request);
+    return emptyWithLog(filter === '{}' ? 'All cookies deleted.' : 'Cookies matching ' + filter + ' deleted.');
 }

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder upload</title>
+</head>
+<body style="margin-top: 320px">
+  <!-- Below the recorder toolbar: a button that opens the file chooser of a hidden input,
+       as most apps do it, and a plain file input. -->
+  <button id="open" onclick="document.getElementById('hidden-file').click()">Open Report</button>
+  <input type="file" id="hidden-file" hidden>
+  <input type="file" id="plain-file">
+  <div id="upload_result"></div>
+  <script>
+    for (const input of document.querySelectorAll('input[type=file]')) {
+      input.addEventListener('change', () => {
+        document.getElementById('upload_result').textContent = [...input.files].map((f) => f.name).join(',');
+      });
+    }
+  </script>
+  <script src="/test-app-logger.js"></script>
+</body>
+</html>

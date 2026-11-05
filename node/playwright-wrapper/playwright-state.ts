@@ -457,14 +457,17 @@ export class PlaywrightState {
         }
     }
 
-    public async closeAll(): Promise<void> {
-        const browsers = this.browserStack;
-        for (const browser of browsers) {
+    public async closeAll(): Promise<string[]> {
+        const failures = [];
+        for (const browser of this.browserStack) {
             try {
                 await browser.close();
-            } catch (e) {} // eslint-disable-line
+            } catch (error) {
+                failures.push(closeFailure(browser, error));
+            }
         }
         this.browserStack = [];
+        return failures;
     }
 
     public async closeAllServers(): Promise<void> {
@@ -745,22 +748,40 @@ export class BrowserState {
     onClose?: () => Promise<void>;
 
     public async close(): Promise<void> {
-        try {
-            for (const context of this.contextStack) {
-                const traceFile = context.traceFile;
-                if (traceFile) {
-                    await context.c.tracing.stop({ path: traceFile });
+        const failures: unknown[] = [];
+        const attempt = async (step: () => Promise<unknown>) => {
+            try {
+                await step();
+            } catch (error) {
+                if (!isTargetClosed(error)) {
+                    failures.push(error);
                 }
-                await context.c.close();
             }
-            this._contextStack = [];
-            if (this.browser !== null) {
-                await this.browser.close();
+        };
+        for (const context of this.contextStack) {
+            const traceFile = context.traceFile;
+            if (traceFile) {
+                await attempt(() => context.c.tracing.stop({ path: traceFile }));
             }
-        } finally {
-            const onClose = this.onClose;
-            this.onClose = undefined;
-            await onClose?.();
+            await attempt(() => context.c.close());
+        }
+        this._contextStack = [];
+        const browser = this.browser;
+        if (browser !== null) {
+            await attempt(() => browser.close());
+        }
+        const onClose = this.onClose;
+        this.onClose = undefined;
+        if (onClose) {
+            await attempt(onClose);
+        }
+        if (failures.length === 1) {
+            throw failures[0];
+        }
+        if (failures.length > 1) {
+            throw new Error(
+                failures.map((error) => (error instanceof Error ? error.message : String(error))).join('; '),
+            );
         }
     }
 
@@ -860,14 +881,27 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     try {
         await currentBrowser.close();
         return stringResponse(currentBrowser.id, 'Closed browser');
-    } catch {
-        return stringResponse('', `Browser ${currentBrowser.id} was already closed`);
+    } catch (error) {
+        return stringResponse(currentBrowser.id, closeFailure(currentBrowser, error));
     }
 }
 
+function isTargetClosed(error: unknown): boolean {
+    return error instanceof Error && error.name === 'TargetClosedError';
+}
+
+function closeFailure(browser: BrowserState, error: unknown): string {
+    if (isTargetClosed(error)) {
+        return `Browser ${browser.id} was already closed`;
+    }
+    const message = `Closing browser ${browser.id} failed: ${String(error)}`;
+    logger.error(message);
+    return message;
+}
+
 export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<Response_Empty> {
-    await openBrowsers.closeAll();
-    return emptyWithLog('Closed all browsers');
+    const failures = await openBrowsers.closeAll();
+    return emptyWithLog(['Closed all browsers', ...failures].join('\n'));
 }
 
 export async function closeContext(request: Request_Bool, openBrowsers: PlaywrightState): Promise<Response_Empty> {
@@ -1072,7 +1106,7 @@ export async function newPersistentContext(
     const browserAndConfs = {
         browserType: browserName as 'chromium' | 'firefox' | 'webkit',
         browser: null,
-        headless: options?.headless || true,
+        headless: options?.headless ?? true,
     } as BrowserAndConfs;
     await openBrowsers.addBrowser(browserAndConfs);
     const browserState = await openBrowsers.getOrCreateActiveBrowser(null, timeout);
@@ -1213,12 +1247,12 @@ async function findLatestPageAfter(
     if (timeout < 0) {
         return null;
     }
-    const latest = context.pageStack.reduce((acc, val) => {
+    const latest = context.pageStack.reduce<IndexedPage | undefined>((acc, val) => {
         if (acc === undefined || acc.timestamp < val.timestamp) {
             return val;
         }
         return acc;
-    });
+    }, undefined);
     if (!latest || (timestamp && latest.timestamp <= timestamp)) {
         await new Promise((resolve) => setTimeout(resolve, Math.min(15, timeout)));
         return findLatestPageAfter(timestamp, timeout - 15, context);

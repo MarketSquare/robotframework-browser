@@ -33,7 +33,9 @@ import * as network from './network';
 import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
+import * as recorder from './recorder';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
+import * as selectorPicker from './selector-picker';
 
 @class_async_logger
 export class PlaywrightServer {
@@ -185,50 +187,9 @@ export class PlaywrightServer {
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);
     getErrorMessages = this.wrapping(playwrightState.getErrorMessages);
-
-    async getCookies(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Json>,
-        callback: sendUnaryData<pb.Response_Json>,
-    ): Promise<void> {
-        try {
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.getCookies(context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async addCookie(
-        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.addCookie(request, context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async deleteAllCookies(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const context = this.getActiveContext(call);
-            if (!context) throw Error('no open context.');
-            const result = await cookie.deleteAllCookies(context);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    addCookie = this.wrapping(cookie.addCookie);
+    getCookies = this.wrapping(cookie.getCookies);
+    deleteAllCookies = this.wrapping(cookie.deleteAllCookies);
 
     async switchPage(
         call: ServerUnaryCall<pb.Request_IdWithTimeout, pb.Response_String>,
@@ -419,6 +380,7 @@ export class PlaywrightServer {
     tap = this.wrapping(interaction.tap);
     hover = this.wrapping(interaction.hover);
     focus = this.wrapping(interaction.focus);
+    blur = this.wrapping(interaction.blur);
     checkCheckbox = this.wrapping(interaction.checkCheckbox);
     uncheckCheckbox = this.wrapping(interaction.uncheckCheckbox);
     getElement = this.wrapping(evaluation.getElement);
@@ -468,8 +430,6 @@ export class PlaywrightServer {
     waitForDownload = this.wrappingStatePage(network.waitForDownload);
 
     evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
-
-    recordSelector = this.wrapping(evaluation.recordSelector);
 
     async health(
         call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
@@ -674,4 +634,14 @@ export class PlaywrightServer {
             callback(errorResponse(e), null);
         }
     }
+
+    // Polled every 200 ms for a whole session: info logging would flood playwright-log.txt.
+    recorderPoll = this.wrappingDebug(recorder.recorderPoll);
+
+    recorderStop = this.wrapping(recorder.recorderStop);
+
+    // Polled every 200 ms while a selector is picked, like recorderPoll.
+    selectorPickerPoll = this.wrappingDebug(selectorPicker.selectorPickerPoll);
+
+    selectorPickerStop = this.wrapping(selectorPicker.selectorPickerStop);
 }

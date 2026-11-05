@@ -547,35 +547,6 @@ class Interaction(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=("PageContent",))
-    def record_selector(
-        self,
-        label: str | None = None,
-    ):
-        """Record the selector that is under mouse.
-
-        *Arguments:*
-          - ``label``: Text to show in the box on the page while recording.
-
-        Focus on the page and move the mouse over the element you want to select.
-
-        Example:
-        | ${selector} =    `Record Selector`   Button
-        | `Click`  ${selector}
-        | ${selector2} =    `Record Selector`  Page header
-        | `Get Text`  ${selector2}  ==  Expected text
-
-        [https://forum.robotframework.org/t//4315|Comment >>]
-        """
-        with self.playwright.grpc_channel() as stub:
-            response = stub.RecordSelector(Request.Label(label=label or ""))
-            selector_repr = response.result.replace("#", "\\#")
-            logger.console(
-                f"\nSelector{' for ' + label if label else ''}: {selector_repr}"
-            )
-            logger.info(f"Selector{' for ' + label if label else ''}: {selector_repr}")
-            return json.loads(response.result)
-
     @keyword(tags=("Setter", "PageContent"))
     def hover(
         self,
@@ -660,6 +631,51 @@ class Interaction(LibraryComponent):
         selector = self.presenter_mode(selector, self.strict_mode)
         with self.playwright.grpc_channel() as stub:
             response = stub.Focus(
+                Request().ElementSelector(selector=selector, strict=self.strict_mode)
+            )
+            logger.debug(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def blur(self, selector: str):
+        """Removes focus from the element found by ``selector``.
+
+        Use this when a page runs validation, formatting or other logic only
+        after a field loses focus. `Fill Text` and `Type Text` leave the field
+        focused, so that logic does not run until focus moves away.
+
+        *Arguments:*
+          - ``selector``: Selector of the element. See the `Finding elements` section
+                for details about the selectors.
+
+        Keyword uses strict mode, see `Finding elements` for more details about strict mode.
+
+        If there is no element matching the selector, the keyword waits until a
+        matching element appears in the DOM. It fails if the element does not
+        appear within the library timeout, which is 10 seconds by default and
+        can be changed with `Set Browser Timeout`.
+
+        If the element does not have focus, the keyword does nothing and passes,
+        and no blur event is fired. To verify the state of the element, use
+        `Get Element States`.
+
+        ``css=:focus`` selects the focused element only when it is in the main
+        frame and outside shadow DOM. If the focused element is inside an iframe
+        or a shadow DOM, the selector does not find it reliably, so use a selector
+        of the element itself. If nothing has focus, the selector matches nothing
+        and the keyword fails after the timeout.
+
+        Example:
+        | `Fill Text`            id=email    not-an-email
+        | `Blur`                 id=email
+        | `Get Element States`   id=email    contains    defocused
+        | `Get Text`             css=.validation-error    ==    Please enter a valid email address
+        |
+        | # Removes focus from the focused element in the main frame
+        | `Blur`                 css=:focus
+        """
+        selector = self.presenter_mode(selector, self.strict_mode)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.Blur(
                 Request().ElementSelector(selector=selector, strict=self.strict_mode)
             )
             logger.debug(response.log)

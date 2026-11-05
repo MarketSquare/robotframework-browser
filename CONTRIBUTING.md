@@ -83,8 +83,21 @@ To collect Python and Node.js coverage during acceptance tests:
 ```
 inv atest-coverage [--suite <suite>]
 ```
-This builds the wrapper with source maps, runs the tests under `coverage`, and generates an HTML + LCOV Node.js
-coverage report at `atest/output/node-coverage-report/`. Node.js coverage is not collected on Windows.
+This builds the wrapper with linked source maps and runs the tests with pabot under `coverage`. Every pabot
+worker writes its own `.coverage.*` file. Run `inv utest` first: pytest-cov erases every `.coverage.*` file
+when it starts. The Node.js report, HTML plus `lcov.info`, lands in `atest/output/node-coverage-report/`,
+with one record per wrapper `.ts` file at the same paths Jest uses. Set `NODE_V8_COVERAGE` to choose where
+the raw V8 data goes. The task fails if Node.js does not write its coverage. Node.js coverage is not
+collected on Windows.
+
+To run every suite with coverage and merge it into one HTML report, `coverage/html/index.html`:
+```
+inv coverage
+```
+It runs `inv utest`, `inv utest-node --coverage` and `inv atest-coverage`, keeps going when one fails, and
+then runs `inv coverage-report`, which merges whatever the suites left and lists which ones contributed.
+It needs `lcov` (`brew install lcov`, `apt-get install lcov`). The `Coverage` job in CI runs the same
+tasks on Linux.
 
 If there are changes on the TypeScript side, run `inv node-build` before executing unit or acceptance tests.
 They test the last build of the wrapper and do not rebuild it.

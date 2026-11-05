@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Post-processes V8 coverage data collected by NODE_V8_COVERAGE into
-// HTML + LCOV reports. Run after `inv atest-coverage` or after
-// an acceptance test run with ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE=1.
+// LCOV `SF:` paths are relative to the repository root, the same as Jest's, so
+// both tracefiles can be merged.
 
 import { createRequire } from 'module';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -25,16 +25,20 @@ const { CoverageReport } = require('monocart-coverage-reports');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const v8CoverageDir = process.env.NODE_V8_COVERAGE;
-if (!v8CoverageDir) {
-    console.error('ERROR: NODE_V8_COVERAGE environment variable is not set.');
-    console.error('Run with: inv atest-coverage');
+const inputDirs = process.argv.slice(2);
+if (inputDirs.length === 0) {
+    console.error('Usage: node node/process-coverage.mjs <v8-coverage-dir> [<v8-coverage-dir> ...]');
+    process.exit(1);
+}
+const withData = inputDirs.filter((dir) => fs.existsSync(dir) && fs.readdirSync(dir).some((f) => f.endsWith('.json')));
+if (withData.length === 0) {
+    console.error(`ERROR: no V8 coverage data in ${inputDirs.join(', ')}`);
     process.exit(1);
 }
 
 const outputDir = path.resolve(__dirname, '../atest/output/node-coverage-report');
 
-console.log(`Reading V8 coverage data from: ${v8CoverageDir}`);
+console.log(`Reading V8 coverage data from: ${withData.join(', ')}`);
 console.log(`Writing coverage report to: ${outputDir}`);
 
 const mcr = new CoverageReport({
@@ -42,22 +46,20 @@ const mcr = new CoverageReport({
     outputDir,
     entryFilter: (entry) => {
         const url = entry.url || '';
-        // Exclude node_modules and node internals — keep only the bundled wrapper
         if (url.includes('/node_modules/')) return false;
         if (url.startsWith('node:')) return false;
         return url.includes('Browser/wrapper/index.js') || url.includes('Browser\\wrapper\\index.js');
     },
-    reports: [
-        ['v8', { outputFile: 'coverage.html' }],
-        ['lcov', { outputFile: 'lcov.info' }],
-        ['console-summary'],
-    ],
+    sourceFilter: (sourcePath) =>
+        sourcePath.includes('node/playwright-wrapper/') && !sourcePath.includes('/generated/'),
+    sourcePath: (sourcePath) => sourcePath.replace(/^.*?\/node\/playwright-wrapper\//, 'node/playwright-wrapper/'),
+    reports: [['v8', { outputFile: 'coverage.html' }], ['lcov', { outputFile: 'lcov.info' }], ['console-summary']],
 });
 
-await mcr.addFromDir(v8CoverageDir);
-const coverageResults = await mcr.generate();
+for (const dir of withData) {
+    await mcr.addFromDir(dir);
+}
+await mcr.generate();
 
 console.log(`\nCoverage report generated: ${outputDir}/coverage.html`);
-if (coverageResults?.summary) {
-    console.log(coverageResults.summary);
-}
+console.log(`LCOV: ${outputDir}/lcov.info`);

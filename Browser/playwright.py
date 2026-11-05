@@ -122,21 +122,24 @@ def spawn_wrapper_process(  # noqa: PLR0917
     if not os.environ.get(PLAYWRIGHT_BROWSERS_PATH):
         logger.trace(f"Setting {PLAYWRIGHT_BROWSERS_PATH} to '0'")
         os.environ[PLAYWRIGHT_BROWSERS_PATH] = "0"
+    node_env = dict(os.environ)
     if (
         coverage_output is not None
         and os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
         and sys.platform != "win32"
     ):
-        v8_coverage_dir = coverage_output / "node-v8-coverage"
+        v8_coverage_dir = Path(
+            os.environ.get("NODE_V8_COVERAGE") or coverage_output / "node-v8-coverage"
+        )
         v8_coverage_dir.mkdir(parents=True, exist_ok=True)
-        os.environ["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
+        node_env["NODE_V8_COVERAGE"] = str(v8_coverage_dir)
         logger.info(f"V8 coverage enabled, writing to {v8_coverage_dir}")
     logger.trace(f"Node startup parameters: {node_args}")
     return Popen(
         node_args,
         shell=False,
         cwd=cwd,
-        env=os.environ,
+        env=node_env,
         stdout=logfile,
         stderr=STDOUT,
     )

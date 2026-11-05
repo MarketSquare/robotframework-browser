@@ -122,6 +122,10 @@ class LibraryComponent:
         return self.library._assertion_formatter.method_to_kw_str(keyword)
 
     @property
+    def recorder_allows_headless(self) -> bool:
+        return self.library.recorder_allows_headless
+
+    @property
     def timeout(self) -> float:
         return self.library.timeout
 

@@ -4,17 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser"
-version = "20.6.0"
+version = "21.0.0"
 dependencies = [
-    "grpcio == 1.85.0",
-    "grpcio-tools == 1.85.0",
+    "grpcio == 1.85.1",
+    "grpcio-tools == 1.85.1",
     "protobuf == 7.35.1",
     "robotframework >= 7.1.1, < 9.0.0",
     "robotframework-pythonlibcore == 4.6.0",
     "robotframework-assertion-engine == 5.0.1",
-    "wrapt >= 2.2.2",
+    "wrapt >= 2.5.2",
     "overrides >= 7.7.0",
-    "click >= 8.4.2",
+    "click >= 8.5.0",
     "seedir >= 0.5.1",
     "psutil >= 7.2.2",
     "PyYAML >= 6.0.3",
@@ -94,7 +94,8 @@ exclude = [
     "index.js",
     "package.json",
     "package-lock.json",
-    "selector-finder.js",
+    "css-selector.js",
+    "recorder-toolbar.js",
 ]
 
 [tool.ruff]
@@ -182,6 +183,21 @@ ignore = [
     "too-many-calls-in-test-case",
     "too-long-test-case",
     "line-too-long",
+    "too-long-keyword",
+    "too-many-calls-in-keyword",
+    "too-many-test-cases",
+    "file-too-long",
+    "section-variable-not-uppercase",
+    "non-local-variables-should-be-uppercase",
+    "not-allowed-char-in-name", # Test names quote selectors and option names
+    "not-allowed-char-in-filename", # Scope tests name suites Suite_1.1
+    "wrong-case-in-keyword-call", # Matches names like recordVideo.dir
+    "undefined-argument-value", # Mostly matches = inside plain strings
+    "wrong-import-order",
+    "builtin-imports-not-sorted",
+    "no-global-variable",
+    "no-test-variable",
+    "tag-with-space",
 ]
 configure = [
     "empty-lines-between-sections.empty_lines=1"
@@ -200,7 +216,16 @@ pythonpath = [
 # maintainers-only and excluded from the wheel, but it is 5,200 lines with 195
 # tests and nothing was reporting on any of it.
 source = ["Browser", "tools/ci_failures"]
+omit = ["Browser/generated/*"]
+# Measured like Node.js, so both languages report branches and SonarQube's
+# coverage of new code counts conditions in both.
+branch = true
+relative_files = true
+parallel = true
+patch = ["subprocess"]
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
+skip_empty = true

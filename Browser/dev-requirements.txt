@@ -1,8 +1,8 @@
 invoke>=3.0.3
-pytest >= 9.1.1
+pytest >= 9.2.0
 pytest-watch >= 4.2.0
 pytest-cov>=7.1.0
-mypy >= 2.4.0
+mypy >= 2.4.1
 mypy-protobuf >= 5.1.0
 ruff>=0.17.3
 wheel>=0.48.0
@@ -15,12 +15,12 @@ Pillow==13.0.0
 # Required for injecting google analytics tags on release
 beautifulsoup4 >= 4.15.0
 coverage >= 7.17.0
-python-dateutil >= 3.0.0
-robotframework-robocop >= 8.8.0
+python-dateutil >= 4.0.0
+robotframework-robocop >= 9.1.2
 robotframework-crypto >= 0.4.2
 robotframework-archivelibrary >= 0.4.3
 uv >= 0.13.6
 build >= 1.6.1
 robotframework-ghareports >= 1.0.0
-types-PyYAML >= 6.0.12.20260906
+types-PyYAML >= 6.0.12.20261030
 requests >= 2.34.2

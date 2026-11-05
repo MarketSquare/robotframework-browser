@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <!-- As on many production sites: no inline styles, and Trusted Types (YouTube,
+       Google sign-in) reject a string for innerHTML; a policy name may be used once. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self'; require-trusted-types-for 'script'; trusted-types *">
+  <link rel="stylesheet" href="csp.css">
+  <title>Recorder on a strict page</title>
+</head>
+<body>
+  <input id="name" aria-label="Name">
+</body>
+</html>
