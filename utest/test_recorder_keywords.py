@@ -1,16 +1,21 @@
 from __future__ import annotations
 
+import json
 import sys
+from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
+from Browser import Browser
 from Browser.keywords import recorder as module
+from Browser.keywords.interaction import Interaction
 from Browser.keywords.recorder import SUITE_SOURCE, Recorder
 from Browser.recorder import session as session_module
 from Browser.recorder.names import KnownKeywords, normalize_keyword_name
+from Browser.recorder.parameters import KEYWORD_PARAMETERS
 from Browser.recorder.target import FileTarget, LogTarget
 
 
@@ -37,6 +42,7 @@ def test_default_without_running_suite_fails_clearly(monkeypatch):
 
 
 def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
     seen = {}
 
     def fake_run(session, client, idle_timeout=None):
@@ -48,11 +54,6 @@ def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
         return "stop"
 
     monkeypatch.setattr(module, "run_session", fake_run)
-    monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
-    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
     text = recorder.record_keywords(str(tmp_path / "k.resource"), timedelta(seconds=3))
     assert seen["idle"] == 3.0
     assert text.startswith("*** Keywords ***\nK\n")
@@ -65,6 +66,7 @@ def test_record_keywords_runs_a_session_and_returns_text(monkeypatch, tmp_path):
     ids=["default 5 minutes", "None waits without limit"],
 )
 def test_idle_timeout_default_and_none(monkeypatch, tmp_path, given, expected):
+    recorder = _recorder(monkeypatch)
     seen = {}
 
     def fake_run(session, client, idle_timeout=None):
@@ -72,23 +74,17 @@ def test_idle_timeout_default_and_none(monkeypatch, tmp_path, given, expected):
         return "stop"
 
     monkeypatch.setattr(module, "run_session", fake_run)
-    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
     recorder.record_keywords(str(tmp_path / "k.resource"), *given)
     assert seen["idle"] == expected
 
 
 def test_record_keyword_rejects_a_shadowing_name(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
     monkeypatch.setattr(
         module,
         "collect_known_keywords",
         lambda: KnownKeywords(names=frozenset({"Click"})),
     )
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
     with pytest.raises(ValueError, match="shadowed"):
         recorder.record_keyword("Click", str(tmp_path / "k.resource"))
 
@@ -108,7 +104,6 @@ class _FakeStub:
 
 
 def _client(stub, allows_headless=False):
-    from contextlib import contextmanager
 
     @contextmanager
     def channel():
@@ -159,10 +154,8 @@ def test_stop_leaves_a_session_alone_whose_start_was_refused():
 
 
 @pytest.mark.parametrize("idle", [timedelta(0), timedelta(seconds=-1)])
-def test_non_positive_idle_timeout_is_rejected(idle, tmp_path):
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
+def test_non_positive_idle_timeout_is_rejected(idle, tmp_path, monkeypatch):
+    recorder = _recorder(monkeypatch)
     with pytest.raises(ValueError, match="idle_timeout"):
         recorder.record_keywords(str(tmp_path / "k.resource"), idle)
 
@@ -186,16 +179,14 @@ def _recorder(monkeypatch):
 
 
 def test_record_keyword_happy_path(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
+
     def run(session, client, idle_timeout=None):
         session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
         session.close()
         return "stop"
 
     monkeypatch.setattr(module, "run_session", run)
-    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
     path = tmp_path / "k.resource"
     text = recorder.record_keyword("Fill Name", str(path))
     assert text.startswith("*** Keywords ***\nFill Name\n")
@@ -263,6 +254,7 @@ def test_a_read_only_file_is_refused_before_recording(tmp_path):
 def test_a_keyword_that_could_not_be_written_fails_the_call_and_is_logged(
     monkeypatch, tmp_path
 ):
+    recorder = _recorder(monkeypatch)
     path = tmp_path / "k.resource"
     warnings = []
     monkeypatch.setattr(module.logger, "warn", warnings.append)
@@ -274,10 +266,6 @@ def test_a_keyword_that_could_not_be_written_fails_the_call_and_is_logged(
         return "stop"
 
     monkeypatch.setattr(module, "run_session", run)
-    monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
-    recorder._client = lambda: object()
     try:
         with pytest.raises(RuntimeError, match="'Fill Name' not saved"):
             recorder.record_keyword("Fill Name", str(path))
@@ -292,24 +280,21 @@ def test_a_keyword_that_could_not_be_written_fails_the_call_and_is_logged(
 def test_registered_names_are_used_throughout_recording(
     monkeypatch, tmp_path, translated
 ):
-    def fill_text():
-        pass
 
     recorder = _recorder(monkeypatch)
-    recorder.library = SimpleNamespace(keywords={translated: fill_text})
-    assert recorder._recorder_keyword_names() == {"Fill Text": translated}
+    recorder.library = SimpleNamespace(
+        keywords={translated: Interaction(None).fill_text}
+    )
+    assert recorder._recorder_display_names() == {"Fill Text": translated}
     path = tmp_path / "translated.resource"
     text = recorder.record_keywords(str(path))
     assert translated in text
     assert translated in path.read_text(encoding="utf-8")
 
 
-@pytest.mark.parametrize("language", [None, "fr"])
-def test_names_match_real_dynamic_core_registration(monkeypatch, tmp_path, language):
-    import json
-
-    from Browser import Browser
-    from Browser.recorder.parameters import KEYWORD_PARAMETERS
+@pytest.fixture(params=[None, "fr"], ids=["english", "french"])
+def registered_library(monkeypatch, tmp_path, request):
+    language = request.param
 
     translation = tmp_path / "translation.json"
     translation.write_text(
@@ -322,9 +307,57 @@ def test_names_match_real_dynamic_core_registration(monkeypatch, tmp_path, langu
         staticmethod(lambda lang: translation if lang else None),
     )
     library = Browser(language=language)
-    names = Recorder(library)._recorder_keyword_names()
-    assert set(names) == set(KEYWORD_PARAMETERS)
+    return library, language
+
+
+def test_display_names_cover_all_recorded_keywords(registered_library):
+
+    library, _ = registered_library
+    assert set(Recorder(library)._recorder_display_names()) == set(KEYWORD_PARAMETERS)
+
+
+def test_display_names_follow_registered_translation(registered_library):
+    library, language = registered_library
+    names = Recorder(library)._recorder_display_names()
     assert names["Fill Text"] == ("Remplir Le Texte" if language else "Fill Text")
-    assert names["Click"] == "Click"
+
+
+def test_untranslated_keyword_keeps_english_display_name(registered_library):
+    library, _ = registered_library
+    assert Recorder(library)._recorder_display_names()["Click"] == "Click"
+
+
+def test_display_names_exist_in_dynamic_core_registry(registered_library):
+    library, _ = registered_library
+    names = Recorder(library)._recorder_display_names()
     registered = {normalize_keyword_name(name) for name in library.keywords}
     assert all(normalize_keyword_name(name) in registered for name in names.values())
+
+
+def test_plugin_method_with_same_name_does_not_replace_browser_mapping(tmp_path):
+
+    plugin = tmp_path / "AliasPlugin.py"
+    plugin.write_text(
+        """from Browser.base import LibraryComponent
+from Browser.utils import keyword
+
+
+class AliasPlugin(LibraryComponent):
+    @keyword(name="Plugin Click")
+    def click(self, selector: str): ...
+""",
+        encoding="utf-8",
+    )
+    library = Browser(plugins=str(plugin))
+    assert library.keywords["Plugin Click"].__func__.__name__ == "click"
+    assert Recorder(library)._recorder_display_names()["Click"] == "Click"
+
+
+def test_inherited_plugin_method_does_not_replace_browser_mapping():
+
+    class AliasPlugin(Interaction):
+        pass
+
+    library = Browser()
+    library.keywords["Plugin Click"] = AliasPlugin(library).click
+    assert Recorder(library)._recorder_display_names()["Click"] == "Click"

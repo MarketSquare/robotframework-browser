@@ -268,10 +268,18 @@ class FileTarget:
         separated = False
         if model.sections:
             separated = _ensure_blank_line(model.sections[-1].body)
-        language = next(iter(Languages(model.languages)))
+        languages = Languages(model.languages, add_english=False)
+        header_name = next(
+            (
+                language.keywords_header
+                for language in languages
+                if language.keywords_header
+            ),
+            "Keywords",
+        )
         header = SectionHeader(
             [
-                Token(Token.KEYWORD_HEADER, f"*** {language.keywords_header} ***"),
+                Token(Token.KEYWORD_HEADER, f"*** {header_name} ***"),
                 Token(Token.EOL, _EOL),
             ]
         )

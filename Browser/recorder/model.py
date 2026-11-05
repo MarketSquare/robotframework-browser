@@ -21,8 +21,9 @@ around it) and Undo must remove all of them together.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
 
 from .cells import cell
 from .names import argument_name_error, normalize_keyword_name
@@ -30,6 +31,22 @@ from .parameters import KEYWORD_PARAMETERS
 
 TAG = "recorded"
 _INDENT = "    "
+
+
+@dataclass(frozen=True)
+class KeywordDisplayNames:
+    names: Mapping[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "names", MappingProxyType(dict(self.names)))
+
+    def resolve(self, call: Call) -> str:
+        return (
+            call.keyword if call.comment else self.names.get(call.keyword, call.keyword)
+        )
+
+
+ENGLISH_DISPLAY_NAMES = KeywordDisplayNames()
 
 
 @dataclass(frozen=True)
@@ -116,15 +133,12 @@ class Call:
         )
         return [value.render(parameters) for value in self.args]
 
-    def display_name(self, keyword_names: dict[str, str] | None = None) -> str:
-        """Translate only the displayed name, keeping internal names canonical."""
-        if self.comment or not keyword_names:
-            return self.keyword
-        return keyword_names.get(self.keyword, self.keyword)
+    def display_name(self, display_names: KeywordDisplayNames) -> str:
+        return display_names.resolve(self)
 
-    def render(self, keyword_names: dict[str, str] | None = None) -> str:
+    def render(self, display_names: KeywordDisplayNames) -> str:
         cells = [f"${{{self.assign}}}="] if self.assign else []
-        cells.append(self.display_name(keyword_names))
+        cells.append(self.display_name(display_names))
         cells.extend(self.rendered_args())
         return _INDENT.join(cells)
 
@@ -154,9 +168,11 @@ class _Group:
 
 
 class RecordedKeyword:
-    def __init__(self, name: str, keyword_names: dict[str, str] | None = None) -> None:
+    def __init__(
+        self, name: str, display_names: KeywordDisplayNames = ENGLISH_DISPLAY_NAMES
+    ) -> None:
         self.name = name
-        self.keyword_names = dict(keyword_names or {})
+        self.display_names = display_names
         self.arguments: list[Argument] = []
         self._groups: list[_Group] = []
 
@@ -335,7 +351,7 @@ class RecordedKeyword:
                 a for a in self.arguments if a.use_default
             ]
             rows.append(_INDENT.join(["[Arguments]", *(a.render() for a in ordered)]))
-        rows.extend(call.render(self.keyword_names) for call in self.calls())
+        rows.extend(call.render(self.display_names) for call in self.calls())
         return rows
 
     def block(self) -> str:

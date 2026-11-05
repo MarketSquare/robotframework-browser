@@ -25,12 +25,18 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.cells import cell
 from ..recorder.driver import run_session
-from ..recorder.names import collect_known_keywords, normalize_keyword_name
+from ..recorder.model import KeywordDisplayNames
+from ..recorder.names import collect_known_keywords
 from ..recorder.parameters import KEYWORD_PARAMETERS
 from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
 from ..utils import SelectorGenerator, keyword, logger
+from .browser_control import Control
+from .getters import Getters
+from .interaction import Interaction
+from .playwright_state import PlaywrightState
+from .promises import Promises
 
 __all__ = ["Recorder"]
 
@@ -465,7 +471,7 @@ class Recorder(LibraryComponent):
             target,
             fixed_name=fixed_name,
             known=collect_known_keywords(),
-            keyword_names=self._recorder_keyword_names(),
+            display_names=KeywordDisplayNames(self._recorder_display_names()),
         )
         logger.info(f"Recording into {target.label}")
         try:
@@ -491,17 +497,16 @@ class Recorder(LibraryComponent):
             )
         return session
 
-    def _recorder_keyword_names(self) -> dict[str, str]:
-        """Use the effective names registered by DynamicCore (including translations).
-
-        Match the original method name rather than loading a translation file
-        again, so the recorder uses exactly the same names as this library instance.
-        """
-        canonical = {normalize_keyword_name(name): name for name in KEYWORD_PARAMETERS}
+    def _recorder_display_names(self) -> dict[str, str]:
+        components = (Control, Getters, Interaction, PlaywrightState, Promises)
+        canonical = {
+            name.lower().replace(" ", "_"): name for name in KEYWORD_PARAMETERS
+        }
         names = {}
         for registered, method in self.library.keywords.items():
-            original = getattr(method, "__name__", "")
-            name = canonical.get(normalize_keyword_name(original))
+            if type(getattr(method, "__self__", None)) not in components:
+                continue
+            name = canonical.get(getattr(method, "__name__", ""))
             if name is not None:
                 names[name] = printable_name(registered, code_style=True)
         return names
