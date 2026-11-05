@@ -778,10 +778,22 @@ class Browser(DynamicCore):
         keyword_name = parts[0]
         normalized_keyword_name = get_normalized_keyword(keyword_name)
         args = parts[1:]
-        if normalized_keyword_name not in self.keywords:
+        registered_name = (
+            normalized_keyword_name
+            if normalized_keyword_name in self.keywords
+            else next(
+                (
+                    name
+                    for name, method in self.keywords.items()
+                    if method.__name__ == normalized_keyword_name
+                ),
+                None,
+            )
+        )
+        if registered_name is None:
             return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
         spec = PythonArgumentParser().parse(
-            self.keywords[normalized_keyword_name], keyword_name
+            self.keywords[registered_name], keyword_name
         )
         varargs = []
         kwargs = {}
@@ -791,9 +803,7 @@ class Browser(DynamicCore):
                     kwargs[item[0]] = item[1]
                 else:
                     varargs.append(item)
-        return DelayedKeyword(
-            normalized_keyword_name, keyword_name, tuple(varargs), kwargs
-        )
+        return DelayedKeyword(registered_name, keyword_name, tuple(varargs), kwargs)
 
     def _create_lib_component_from_jsextension(
         self, jsextension: str
@@ -1333,7 +1343,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     )
             if self.run_on_failure_keyword.name in self.keywords:
                 if (
-                    self.run_on_failure_keyword.name == "take_screenshot"
+                    self.keywords[self.run_on_failure_keyword.name].__name__
+                    == "take_screenshot"
                     and not varargs
                     and "filename" not in kwargs
                 ):
