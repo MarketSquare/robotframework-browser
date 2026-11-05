@@ -217,6 +217,9 @@ pythonpath = [
 # tests and nothing was reporting on any of it.
 source = ["Browser", "tools/ci_failures"]
 omit = ["Browser/generated/*"]
+# Measured like Node.js, so both languages report branches and SonarQube's
+# coverage of new code counts conditions in both.
+branch = true
 relative_files = true
 parallel = true
 patch = ["subprocess"]

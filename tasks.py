@@ -20,6 +20,7 @@ import signal
 
 from collections.abc import Iterable
 from pathlib import Path, PurePath
+from typing import NamedTuple
 
 from invoke import Exit, task
 from invoke.context import Context
@@ -1189,14 +1190,13 @@ def atest_coverage(
         exclude:  Exclude tests by tag.
         loglevel: Set log level for robot framework.
 
-    Python: every pabot worker writes its own `.coverage.*` file. Combine them,
-    optionally together with the `.coverage` file `inv utest` writes. Run
-    `inv utest` first, because pytest-cov erases `.coverage.*` files:
+    Python: every pabot worker writes its own `.coverage.*` file. Run
+    `inv utest` first, because pytest-cov erases `.coverage.*` files, then merge
+    everything with `inv coverage-report`:
         inv utest
+        npm run test:coverage
         inv atest-coverage
-        coverage combine --append
-        coverage report
-        coverage html
+        inv coverage-report
 
     Node.js: atest/output/node-coverage-report/ has an HTML report and
     lcov.info, with one record per wrapper `.ts` file, at the same paths Jest
@@ -1255,7 +1255,7 @@ def atest_coverage(
     if node_coverage:
         _require_v8_coverage_written_since(v8_coverage_dir, node_started)
         c.run(f'node node/process-coverage.mjs "{v8_coverage_dir}"')
-    print("\nPython coverage: run 'coverage combine --append' and 'coverage report'")
+    print("\nMerge all coverage into one report: inv coverage-report")
     sys.exit(rc)
 
 
@@ -1291,6 +1291,134 @@ def _require_v8_coverage_written_since(v8_coverage_dir: Path, since: float):
             f"Node.js wrote no V8 coverage to {v8_coverage_dir} during this run.",
             code=1,
         )
+
+
+def _lcov_records(lcov: str) -> list[str]:
+    return [record + "end_of_record\n" for record in lcov.split("end_of_record\n")[:-1]]
+
+
+def _drop_never_loaded_records(lcov: str) -> str:
+    return "".join(record for record in _lcov_records(lcov) if "\nLH:0\n" not in record)
+
+
+class LcovTotals(NamedTuple):
+    lines_hit: int
+    lines_found: int
+    branches_hit: int
+    branches_found: int
+
+
+def _lcov_totals(lcov: str) -> LcovTotals:
+    sums = {"LH": 0, "LF": 0, "BRH": 0, "BRF": 0}
+    for line in lcov.splitlines():
+        key, _, value = line.partition(":")
+        if key in sums:
+            sums[key] += int(value)
+    return LcovTotals(sums["LH"], sums["LF"], sums["BRH"], sums["BRF"])
+
+
+COVERAGE_DIR = ROOT_DIR / "coverage"
+JEST_LCOV = ROOT_DIR / "node" / "coverage" / "lcov.info"
+ATEST_NODE_LCOV = ATEST_OUTPUT / "node-coverage-report" / "lcov.info"
+LCOV_OPTIONS = "--branch-coverage --ignore-errors inconsistent,inconsistent"
+
+
+@task()
+def coverage_report(c):
+    """Merge the coverage of every test suite into one HTML report.
+
+    Reads whatever the earlier runs left, so a partial run still gives a report:
+        inv utest                  .coverage
+        npm run test:coverage      node/coverage/lcov.info
+        inv atest-coverage         .coverage.* and
+                                   atest/output/node-coverage-report/lcov.info
+
+    Writes coverage/python.info, coverage/node.info, the merged coverage/all.info
+    and the HTML report coverage/html/index.html. Jest records with no line hit
+    are dropped first: they are files Jest never loads, and only list as zero
+    because of collectCoverageFrom. The totals and the inputs that contributed
+    go to the GitHub job summary when GITHUB_STEP_SUMMARY is set, otherwise to
+    the console. Needs `lcov` and `genhtml` on PATH.
+    """
+    shutil.rmtree(COVERAGE_DIR, ignore_errors=True)
+    COVERAGE_DIR.mkdir()
+    python_info = COVERAGE_DIR / "python.info"
+    jest_info = COVERAGE_DIR / "jest.info"
+    node_info = COVERAGE_DIR / "node.info"
+    all_info = COVERAGE_DIR / "all.info"
+
+    utest_data = (ROOT_DIR / ".coverage").exists()
+    atest_data = any(ROOT_DIR.glob(".coverage.*"))
+    if utest_data or atest_data:
+        c.run(f'coverage lcov --keep-combined -o "{python_info}"')
+    if JEST_LCOV.exists():
+        jest_info.write_text(_drop_never_loaded_records(JEST_LCOV.read_text()))
+    node_inputs = [path for path in (jest_info, ATEST_NODE_LCOV) if path.exists()]
+    if node_inputs:
+        _lcov_merge(c, node_inputs, node_info)
+    language_infos = [path for path in (python_info, node_info) if path.exists()]
+    if not language_infos:
+        raise Exit("No coverage data found. Run the test suites first.", code=1)
+    _lcov_merge(c, language_infos, all_info)
+    c.run(
+        f'genhtml {LCOV_OPTIONS} --quiet --output-directory "{COVERAGE_DIR / "html"}" "{all_info}"'
+    )
+
+    summary = _coverage_summary(
+        all_info,
+        {"Python": python_info, "Node.js": node_info},
+        {
+            "Python unit tests (`.coverage`)": utest_data,
+            "Python acceptance tests (`.coverage.*`)": atest_data,
+            f"Node.js unit tests (`{JEST_LCOV.relative_to(ROOT_DIR)}`)": JEST_LCOV.exists(),
+            f"Node.js acceptance tests (`{ATEST_NODE_LCOV.relative_to(ROOT_DIR)}`)": ATEST_NODE_LCOV.exists(),
+        },
+    )
+    summary_file = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_file:
+        with open(summary_file, "a", encoding="utf-8") as file:
+            file.write(summary)
+    print(summary)
+    print(f"HTML report: {COVERAGE_DIR / 'html' / 'index.html'}")
+
+
+def _lcov_merge(c, tracefiles: list[Path], output: Path):
+    adds = " ".join(f'--add-tracefile "{path}"' for path in tracefiles)
+    c.run(f'lcov {LCOV_OPTIONS} --quiet {adds} --output-file "{output}"')
+
+
+def _percent(hit: int, found: int) -> str:
+    if found == 0:
+        return "not measured"
+    return f"{100 * hit / found:.1f}% ({hit:,} of {found:,})"
+
+
+def _coverage_summary(
+    all_info: Path, language_infos: dict[str, Path], inputs: dict[str, bool]
+) -> str:
+    total = _lcov_totals(all_info.read_text())
+    lines = [
+        "## Coverage",
+        "",
+        f"**Lines: {_percent(total.lines_hit, total.lines_found)}**",
+        "",
+        "| Language | Lines | Branches |",
+        "| --- | --- | --- |",
+    ]
+    for language, info in language_infos.items():
+        if info.exists():
+            t = _lcov_totals(info.read_text())
+            lines.append(
+                f"| {language} | {_percent(t.lines_hit, t.lines_found)} "
+                f"| {_percent(t.branches_hit, t.branches_found)} |"
+            )
+        else:
+            lines.append(f"| {language} | no data | no data |")
+    lines += ["", "| Input | Contributed |", "| --- | --- |"]
+    lines += [
+        f"| {name} | {'yes' if found else '**no**'} |" for name, found in inputs.items()
+    ]
+    return "\n".join(lines) + "\n"
 
 
 @task()

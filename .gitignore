@@ -60,6 +60,8 @@ tmp
 htmlcov
 results
 node/coverage/
+.coverage.*
+/coverage/
 
 # linting
 .ruff_cache
