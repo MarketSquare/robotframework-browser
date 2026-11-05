@@ -1210,12 +1210,12 @@ async function findLatestPageAfter(
     if (timeout < 0) {
         return null;
     }
-    const latest = context.pageStack.reduce((acc, val) => {
+    const latest = context.pageStack.reduce<IndexedPage | undefined>((acc, val) => {
         if (acc === undefined || acc.timestamp < val.timestamp) {
             return val;
         }
         return acc;
-    });
+    }, undefined);
     if (!latest || (timestamp && latest.timestamp <= timestamp)) {
         await new Promise((resolve) => setTimeout(resolve, Math.min(15, timeout)));
         return findLatestPageAfter(timestamp, timeout - 15, context);

@@ -25,6 +25,7 @@ import {
     newPage,
     PlaywrightState,
     removeFailedPage,
+    switchPage,
 } from '../playwright-state';
 
 function makeBrowserState(id: string): BrowserState {
@@ -51,15 +52,14 @@ function makeIndexedPage(id: string) {
     } as any;
 }
 
-function attachSingleContextWithPage(browserState: BrowserState, pageId = 'page=1') {
-    const context = {
-        c: {} as any,
-        id: 'context=1',
-        traceFile: '',
-        pageStack: [makeIndexedPage(pageId)],
-        options: {},
-    } as any;
+function attachSingleContext(browserState: BrowserState, pageStack: any[]) {
+    const context = { c: {} as any, id: 'context=1', traceFile: '', pageStack, options: {} } as any;
     browserState.pushContext(context);
+    return context;
+}
+
+function attachSingleContextWithPage(browserState: BrowserState, pageId = 'page=1') {
+    attachSingleContext(browserState, [makeIndexedPage(pageId)]);
 }
 
 describe('PlaywrightState', () => {
@@ -400,6 +400,44 @@ describe('newPage', () => {
 
         expect(browser.page?.p).toBe(failedPage);
         expect(failedPage.close).not.toHaveBeenCalled();
+    });
+});
+
+function stateWithEmptyContext() {
+    const browserState = makeBrowserState('browser=1');
+    const context = attachSingleContext(browserState, []);
+    return { browserState, context };
+}
+
+function switchToNewPageRequest(timeout: number) {
+    return { id: 'NEW', timeout } as any;
+}
+
+describe('switchPage NEW', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('times out on an empty page stack when no page appears', async () => {
+        expect.assertions(1);
+        const { browserState } = stateWithEmptyContext();
+
+        await expect(switchPage(switchToNewPageRequest(30), browserState)).rejects.toThrow(
+            'Tried to activate a new page but no new pages were detected in context.',
+        );
+    });
+
+    it('activates a page that appears while waiting on an empty page stack', async () => {
+        const { browserState, context } = stateWithEmptyContext();
+        const popup = makeIndexedPage('page=popup');
+        popup.p = { bringToFront: jest.fn() };
+
+        const switching = switchPage(switchToNewPageRequest(1000), browserState);
+        context.pageStack.unshift(popup);
+
+        await switching;
+        expect(browserState.page).toBe(popup);
+        expect(popup.p.bringToFront).toHaveBeenCalled();
     });
 });
 
