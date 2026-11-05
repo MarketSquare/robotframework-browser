@@ -837,6 +837,22 @@ describe('adoptContext', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(state.browserStack).toHaveLength(0);
     });
+
+    it('closes the context and the browser and runs onClose even if saving coverage fails', async () => {
+        expect.assertions(4);
+        const state = new PlaywrightState();
+        const page = makeMockPage();
+        page.coverage = { stopJSCoverage: jest.fn().mockRejectedValue(new Error('coverage failed')) };
+        const context = makeMockContext([page]);
+        const onClose = jest.fn().mockResolvedValue(undefined);
+        await state.adoptContext(context, { onClose });
+        state.getActiveBrowser().page!.coverage = { type: 'js' } as any;
+
+        await expect(closeContext({ value: false }, state)).rejects.toThrow('coverage failed');
+        expect(context.close).toHaveBeenCalled();
+        expect(onClose).toHaveBeenCalledTimes(1);
+        expect(state.browserStack).toHaveLength(0);
+    });
 });
 
 describe('newContext', () => {
