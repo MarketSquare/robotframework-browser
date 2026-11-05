@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from '@jest/globals';
 
 import { addCookie, deleteAllCookies, getCookies } from '../cookie';
-import { Request_CookieFilter } from '../generated/playwright';
+import { Request_Cookie, Request_CookieFilter } from '../generated/playwright';
 import { PlaywrightState } from '../playwright-state';
 
 const contextMock = {
@@ -11,7 +11,6 @@ const contextMock = {
 };
 
 const stateWith = (context: unknown) => ({ getActiveContext: () => context }) as unknown as PlaywrightState;
-const jsonRequest = (body: unknown) => ({ body: JSON.stringify(body) });
 
 describe('cookie', () => {
     beforeEach(() => {
@@ -52,17 +51,60 @@ describe('cookie', () => {
         expect(response.log).toBe(log);
     });
 
-    it('passes the partition key to Playwright', async () => {
-        const cookie = { name: 'n', value: 'v', url: 'https://a.example', partitionKey: 'https://site.example' };
+    it('passes every given field to Playwright', async () => {
+        const request = Request_Cookie.fromPartial({
+            name: 'n',
+            value: 'v',
+            url: 'https://a.example',
+            expires: 1822137695.5,
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+            partitionKey: 'https://site.example',
+        });
 
-        await addCookie(jsonRequest(cookie), stateWith(contextMock));
+        const response = await addCookie(request, stateWith(contextMock));
 
-        expect(contextMock.addCookies).toHaveBeenCalledWith([cookie]);
+        expect(contextMock.addCookies).toHaveBeenCalledWith([
+            {
+                name: 'n',
+                value: 'v',
+                url: 'https://a.example',
+                expires: 1822137695.5,
+                httpOnly: true,
+                secure: true,
+                sameSite: 'Strict',
+                partitionKey: 'https://site.example',
+            },
+        ]);
+        expect(response.log).toBe('Cookie "n" added.');
+    });
+
+    it('passes an empty name and value through', async () => {
+        await addCookie(
+            Request_Cookie.fromPartial({ name: '', value: '', domain: 'a.example', path: '/' }),
+            stateWith(contextMock),
+        );
+
+        expect(contextMock.addCookies).toHaveBeenCalledWith([{ name: '', value: '', domain: 'a.example', path: '/' }]);
+    });
+
+    it('rejects an unknown sameSite value', async () => {
+        expect.assertions(2);
+        const request = Request_Cookie.fromPartial({
+            name: 'n',
+            value: 'v',
+            url: 'https://a.example',
+            sameSite: 'Loose',
+        });
+
+        await expect(addCookie(request, stateWith(contextMock))).rejects.toThrow('Loose');
+        expect(contextMock.addCookies).not.toHaveBeenCalled();
     });
 
     it.each([
         ['getCookies', () => getCookies({ urls: [] }, stateWith(undefined))],
-        ['addCookie', () => addCookie(jsonRequest({ name: 'n', value: 'v' }), stateWith(undefined))],
+        ['addCookie', () => addCookie(Request_Cookie.fromPartial({ name: 'n', value: 'v' }), stateWith(undefined))],
         ['deleteAllCookies', () => deleteAllCookies({}, stateWith(undefined))],
     ])('%s fails without an open context', async (_name, call) => {
         expect.assertions(1);

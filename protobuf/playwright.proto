@@ -205,6 +205,19 @@ message Request {
     repeated string urls = 1;
   }
 
+  message Cookie {
+    string name = 1;
+    string value = 2;
+    optional string url = 3;
+    optional string domain = 4;
+    optional string path = 5;
+    optional double expires = 6;
+    optional bool httpOnly = 7;
+    optional bool secure = 8;
+    optional string sameSite = 9;
+    optional string partitionKey = 10;
+  }
+
   message CookieFilter {
     optional string name = 1;
     optional string domain = 2;
@@ -527,7 +540,7 @@ service  Playwright {
   /* Aria Snapshot */
   rpc AriaSnapShot(Request.AriaSnapShot) returns (Response.String);
   /* Cookie messages */
-  rpc AddCookie(Request.Json) returns (Response.Empty);
+  rpc AddCookie(Request.Cookie) returns (Response.Empty);
   rpc GetCookies(Request.CookieQuery) returns (Response.Json);
   rpc DeleteAllCookies(Request.CookieFilter) returns (Response.Empty);
   /* Screen shot method */

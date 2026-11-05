@@ -23,11 +23,14 @@ This was decided on the cookie keywords (#5449) after both shapes were prototype
 
 ## Consequences
 
-- **Use proto3 `optional` where Playwright treats a missing value differently from an empty
-  one.** `clearCookies({ name: '' })` deletes only cookies with an empty name, while a missing
-  `name` matches every cookie. A plain `string` field cannot tell the two apart, so
+- **Every optional argument of the Playwright call is a proto3 `optional` field.**
+  `clearCookies({ name: '' })` deletes only cookies with an empty name, while a missing `name`
+  matches every cookie. A plain `string` field cannot tell the two apart, so
   `Delete All Cookies    name=${EMPTY}` would delete every cookie. With `optional`, ts-proto
-  generates `name?: string` and Python passes `None` as unset.
+  generates `name?: string` and Python passes `None` as unset. The rule covers fields where empty
+  and missing behave the same today too, such as `secure` in `Request.Cookie` (#5458): the
+  message then mirrors Playwright's argument one for one, and nobody re-derives the difference
+  field by field when Playwright's defaults change.
 - **Keeping the rpc name is a free side effect, not a promise.** When an rpc moves from
   `Request.Empty` to a typed message whose fields are all unset by default, the old name costs
   nothing to keep: the empty message encodes to the same bytes as `Request.Empty`, so a stray
