@@ -580,7 +580,7 @@ def runs_either_side(db: Reading) -> dict[int, Around]:
 
     Named for the Runs and not for anything inside a test. The keywords a few
     lines above the one that broke are a different question and this does not
-    answer it - see **Adjacent Run** in `CONTEXT.md`, and `0012` section 10 for
+    answer it - see **Adjacent Run** in `GLOSSARY.md`, and `0012` section 10 for
     the question that would.
 
     A rate says how often a test fails. It cannot say whether a failure is a blip

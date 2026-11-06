@@ -8,7 +8,7 @@ argument-hint: 'The Test Name, as `inv ci-report` spells it'
 
 Takes one test the maintainer chose and ends on a **verdict**: the cause, the evidence that proves it, and the **route** it takes. Triage only — the fix itself belongs to this skill only when the route says "fix on the spot".
 
-The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjacent Run, Control, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/CONTEXT.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
+The words below — Test Name, Group, Occurrence, Leg, Executor, Attempt, Adjacent Run, Control, Fixture Failure, Failure Scope, Configuration, Inconclusive Zero, Known Cause — mean what `tools/ci_failures/GLOSSARY.md` says. `tools/ci_failures/README.md` has every task and flag. `inv ci-report` and `inv ci-artifact` are the whole data path: every question about CI goes through them, never straight to the database.
 
 ## Steps
 
@@ -82,7 +82,7 @@ The Known Cause plus the commit message or issue is the whole record — the tri
 - **Shared node process state** — pabot workers share one node process (`tasks.py`), so module-level state in `node/playwright-wrapper` leaks between workers. Everything meant to be per-worker is keyed by gRPC peer in `grpc-service.ts`. Seen twice: `highlightDisposableCache` in `playwright-state.ts` (fixed per peer in #5211) and the logger's RF context (#5260).
 - **Timing limits in tests** — a wall-clock ceiling measures runner speed, not the library. Examples: `atest/library/event_delay.py` (key timings), `08_Scope_Tests` (#5223).
 - **Test app** — `node/dynamic-test-app` is slow or wrong, not the library. Look first at the `test-app:` log from step 2: `responseTimeMs` per request and the gaps between events. Seen once: the first `/login-challenge` stalled 1–8 s on `batteries · windows-latest` (Credentials).
-- **Fixture failures** — one broken suite setup or teardown looks like many flaky tests. The report lists the Fixture Failures of the enclosing suites, counted per Leg (Failure Scope in `CONTEXT.md`).
+- **Fixture failures** — one broken suite setup or teardown looks like many flaky tests. The report lists the Fixture Failures of the enclosing suites, counted per Leg (Failure Scope in `tools/ci_failures/GLOSSARY.md`).
 - **Platform-only failures** — read the per-Configuration rates and the Inconclusive Zeros before calling any platform healthy.
 - **Chromium protocol flakes** — e.g. `Page.captureScreenshot` refusing the first capture on `darwin` (#5237, closed as wontfix, worked around in the test).
 

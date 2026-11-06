@@ -6,5 +6,5 @@ after it is written. Anything else worth looking at - screenshots, the Playwrigh
 log - is fetched from that link when a specific failure is worth a closer look.
 
 A maintainers' tool, excluded from the wheel and not part of the Browser library.
-See `README.md` for how to run it and `CONTEXT.md` for what the words mean.
+See `README.md` for how to run it and `GLOSSARY.md` for what the words mean.
 """

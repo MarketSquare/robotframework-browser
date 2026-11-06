@@ -1,4 +1,4 @@
-"""Tests for tools/ci_failures. See that package's README.md and CONTEXT.md."""
+"""Tests for tools/ci_failures. See that package's README.md and GLOSSARY.md."""
 
 import json
 from datetime import datetime, timedelta, timezone
@@ -2972,7 +2972,7 @@ class TestNeitherRenderingDropsAFieldByAccident:
     The Report is typed so that a Rendering ignoring a field is a fact you can
     see. Nothing looked, so it was not one: nineteen fields reached exactly one
     Rendering, including the commit of an Occurrence - which is the question
-    CONTEXT.md says Occurrences exist to answer - and which Window the document
+    GLOSSARY.md says Occurrences exist to answer - and which Window the document
     covers, which the page carries a comment explaining it must say.
 
     Reachability is read from the Rendering sources by name. That cannot tell
@@ -5045,7 +5045,7 @@ class TestATestWithNoFailures:
 class TestTheControlsOfARun:
     """`inv ci-artifact --run --test` without `--leg`: which Legs of the Run ran
     the test, and which of them passed it - read from the database, so the
-    choice of a Control costs no download. See **Control** in CONTEXT.md and
+    choice of a Control costs no download. See **Control** in GLOSSARY.md and
     ADR 0006."""
 
     TEST = "Test.Credentials.Add Valid Credential With Secret"

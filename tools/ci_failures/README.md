@@ -233,7 +233,7 @@ By the time a query runs, there is no way for it to ask about the wrong rows.
 ```
 tools/ci_failures/
 ├── README.md            # this file
-├── CONTEXT.md           # the vocabulary — read this before changing anything
+├── GLOSSARY.md          # the vocabulary — read this before changing anything
 ├── docs/adr/            # decisions that should not be re-litigated
 ├── known_causes.json    # conclusions someone reached, by hand — gitignored
 ├── schema.sql
@@ -281,7 +281,7 @@ reaches both renderings or joins that list.
 
 ## Where the rest of it is
 
-- **`CONTEXT.md`** — the vocabulary. Worth reading first; the code uses its
+- **`GLOSSARY.md`** — the vocabulary. Worth reading first; the code uses its
   words precisely and means something by each.
 - **`docs/adr/`** — why the Report is typed rather than a dict, why only runs
   where nobody was changing anything are ingested, why every test artifact of a
