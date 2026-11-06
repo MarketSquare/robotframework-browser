@@ -133,6 +133,19 @@ Get Element Count And Assert
     ${count} =    Wait For    ${promise}
     Should Be Equal    ${count}    ${14}
 
+Is Element
+    [Setup]    Ensure Location    ${LOGIN_URL}
+    ${found} =    Is Element    h1
+    Should Be Equal    ${found}    ${True}
+    ${found} =    Is Element    label
+    Should Be Equal    ${found}    ${True}
+    ${found} =    Is Element    not-existing
+    Should Be Equal    ${found}    ${False}
+
+Is Element With Invalid Selector
+    [Setup]    Ensure Location    ${LOGIN_URL}
+    Run Keyword And Expect Error    *Unexpected token*    Is Element    css=[[
+
 Get Style And Assert
     Get Style    h1    ALL    *=    align-content
     Get Style    h1    align-content    ==    normal
