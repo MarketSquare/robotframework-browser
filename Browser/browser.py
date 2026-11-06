@@ -800,16 +800,13 @@ class Browser(DynamicCore):
         )
 
     def _resolve_keyword_table_name(self, normalized_name: str) -> str:
-        if normalized_name in self.keywords:
-            return normalized_name
-        return next(
-            (
-                name
-                for name, method in self.keywords.items()
-                if getattr(method, "__name__", None) == normalized_name
-            ),
-            normalized_name,
-        )
+        for name in self.keywords:
+            if get_normalized_keyword(name) == normalized_name:
+                return name
+        for name, method in self.keywords.items():
+            if getattr(method, "__name__", None) == normalized_name:
+                return name
+        return normalized_name
 
     def _create_lib_component_from_jsextension(
         self, jsextension: str
@@ -1348,14 +1345,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                         children=False,
                     )
             if self.run_on_failure_keyword.name in self.keywords:
+                keyword_method = self.keywords[self.run_on_failure_keyword.name]
                 if (
-                    self.keywords[self.run_on_failure_keyword.name]
-                    == self._browser_control.take_screenshot
+                    keyword_method == self._browser_control.take_screenshot
                     and not varargs
                     and "filename" not in kwargs
                 ):
                     varargs = (self._failure_screenshot_path(),)
-                self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
+                keyword_method(*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(
                     self.run_on_failure_keyword.name, *varargs, **kwargs
