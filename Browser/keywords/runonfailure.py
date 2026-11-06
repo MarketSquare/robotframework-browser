@@ -34,7 +34,8 @@ class RunOnFailureKeywords(LibraryComponent):
         *Arguments:*
           - ``keyword``: The name of a keyword that will be executed if a Browser
                 keyword fails. It is possible to use any available keyword, including
-                user keywords or keywords from other libraries.
+                user keywords or keywords from other libraries. A Browser keyword can
+                be given by its English name even when a translation renames it.
           - ``*args``: The arguments to the keyword if any.
           - ``scope``: Scope defines the lifetime of this setting. Available values are
                 ``Global``, ``Suite`` or ``Test`` / ``Task``. See `Scope Setting` for
