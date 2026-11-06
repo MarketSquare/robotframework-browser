@@ -359,7 +359,11 @@ class LibraryComponent:
             except Exception as error:
                 logger.debug(f"On presenter mode suppress {error}")
             else:
-                sleep(mode.get("duration", timedelta(seconds=2)).total_seconds())
+                sleep(
+                    mode.get(
+                        "delay", mode.get("duration", timedelta(seconds=2))
+                    ).total_seconds()
+                )
         return selector
 
     def exec_scroll_function(self, function: str, selector: str | None = None):

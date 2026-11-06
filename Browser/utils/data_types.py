@@ -987,12 +987,16 @@ class HighLightElement(TypedDict, total=False):
 
     ``color`` Sets the color of the border, default is blue. Valid colors i.e. are:
     ``red``, ``blue``, ``yellow``, ``pink``, ``black``
+
+    ``delay`` Sets how long to pause after each highlight. Defaults to ``duration``.
+    Set to ``0`` to highlight the elements without slowing down the test.
     """
 
     duration: timedelta
     width: str
     style: str
     color: str
+    delay: timedelta
 
 
 class HighlightMode(Enum):
