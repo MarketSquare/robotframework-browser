@@ -326,7 +326,7 @@ class PlaywrightState(LibraryComponent):
         | `Start Tracing`
         | `Click`    id=login_button
         | ${trace} =    `Stop Tracing`    path=login.zip
-        | `Should Be Equal`    ${trace}    ${OUTPUT_DIR}${/}login.zip
+        | `Log`    Trace of the login is in ${trace}
 
         [https://forum.robotframework.org/t//4240|Comment >>]
         """
@@ -343,14 +343,19 @@ class PlaywrightState(LibraryComponent):
         ]
         if not owned:
             return
-        open_contexts = self.get_context_ids()
-        save = not (self.library.auto_delete_passed_tracing and status == "PASS")
         for context_id in owned:
             self.library.ad_hoc_traces.pop(context_id, None)
+        save = self.library.saves_trace_at_scope_end(status)
+        try:
+            open_contexts = self.get_context_ids()
+        except Exception as error:
+            logger.warn(f"Stopping the traces of {', '.join(owned)} failed: {error}")
+            return
+        for context_id in owned:
             if context_id not in open_contexts:
                 continue
             try:
-                response = self._stop_tracing("", save=save, context_id=context_id)
+                response = self._stop_tracing("", save, context_id)
                 logger.info(response.log)
             except Exception as error:
                 logger.warn(f"Stopping the trace of {context_id} failed: {error}")
@@ -1184,7 +1189,7 @@ class PlaywrightState(LibraryComponent):
             return ""
         if tracing is True or tracing_by_var or tracing_by_env:
             return str(
-                self.traces_output
+                self.traces_output.resolve()
             )  # will be extended by '`trace_${context_id}.zip`' on js side.
         return self._trace_path(Path(str(tracing)))
 

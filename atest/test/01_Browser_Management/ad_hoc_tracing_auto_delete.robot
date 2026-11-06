@@ -34,7 +34,3 @@ Open Suite Context
     New Browser    ${BROWSER}    headless=${HEADLESS}
     New Context
     New Page    ${LOGIN_URL}
-
-Mark
-    [Arguments]    ${mark}
-    Evaluate JavaScript    ${None}    () => '${mark}'

@@ -501,9 +501,10 @@ class Browser(DynamicCore):
           - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
                 ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
                 passed tests or suites, depending on the context scope, will not be saved.
-                The same applies to a trace of `Start Tracing` that ends with its scope.
-                A trace saved by `Stop Tracing` or `Close Context` is always kept.
                 Also temp files will all be deleted after the whole execution ends.
+                Independent of ``auto_closing_level``, a trace of `Start Tracing` that ends
+                with its passed test or suite is not saved either. A trace saved by
+                `Stop Tracing` or `Close Context` is always kept.
           - ``enable_playwright_debug``: Enable low level debug information from the
                 playwright to playwright-log.txt file. For more details, see
                 [#type-PlaywrightLogTypes|PlaywrightLogTypes].
@@ -1238,6 +1239,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if self.auto_delete_passed_tracing and self.traces_temp.is_dir():
             shutil.rmtree(str(self.traces_temp), ignore_errors=True)
 
+    def saves_trace_at_scope_end(self, status: str) -> bool:
+        return not (self.auto_delete_passed_tracing and status == "PASS")
+
     def execute_auto_closing(
         self, name: str, attrs: dict, typ: Literal["Test", "Suite"], status: str
     ):
@@ -1283,9 +1287,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._playwright_state.close_context(
                 ctx_id,
                 SelectionType.ALL,
-                save_trace=not bool(
-                    self.auto_delete_passed_tracing and status == "PASS"
-                ),
+                save_trace=self.saves_trace_at_scope_end(status),
             )
             self._playwright_state.close_trace_group()
         pages_before = [

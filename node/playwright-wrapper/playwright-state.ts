@@ -304,6 +304,12 @@ async function _connectBrowser(
     };
 }
 
+// A trace file is a zip path, or a directory that gets fileName; '{contextid}' becomes the context id.
+function traceFilePath(traceFile: string, contextId: string, fileName: string): string {
+    const file = traceFile.toLowerCase().endsWith('.zip') ? traceFile : path.join(traceFile, fileName);
+    return file.replace('{contextid}', contextId);
+}
+
 async function _createIndexedContext(
     context: BrowserContext,
     defaultTimeout: number | undefined,
@@ -316,10 +322,7 @@ async function _createIndexedContext(
         context.setDefaultTimeout(defaultTimeout);
     }
     if (traceFile) {
-        if (!traceFile.toLowerCase().endsWith('.zip')) {
-            traceFile = path.join(traceFile, `trace_${contextId}.zip`);
-        }
-        traceFile = traceFile.replace('{contextid}', contextId);
+        traceFile = traceFilePath(traceFile, contextId, `trace_${contextId}.zip`);
     }
     const indexedContext = {
         id: contextId,
@@ -614,6 +617,10 @@ export class PlaywrightState {
 
     public getActiveContext = (): BrowserContext | undefined => {
         return this.activeBrowser?.context?.c;
+    };
+
+    public findContext = (contextId: string): IndexedContext | undefined => {
+        return this.browserStack.flatMap((browser) => browser.contextStack).find((c) => c.id === contextId);
     };
 
     public getTraceFile = (): string | undefined => {
@@ -1179,8 +1186,7 @@ export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Re
 }
 
 function adHocTraceFile(traceFile: string, contextId: string): string {
-    if (traceFile.toLowerCase().endsWith('.zip')) return traceFile;
-    return path.join(traceFile, `trace_${contextId}-${uuidv4()}.zip`);
+    return traceFilePath(traceFile, contextId, `trace_${contextId}-${uuidv4()}.zip`);
 }
 
 export async function startTracing(
@@ -1207,7 +1213,7 @@ export async function stopTracing(
     openBrowsers: PlaywrightState,
 ): Promise<Response_StoppedTrace> {
     const indexedContext = request.contextId
-        ? openBrowsers.browserStack.flatMap((b) => b.contextStack).find((c) => c.id === request.contextId)
+        ? openBrowsers.findContext(request.contextId)
         : openBrowsers.getActiveBrowser().context;
     if (!indexedContext) throw new Error(`No context ${request.contextId || 'open'}, can not stop tracing`);
     if (!indexedContext.traceFile) throw new Error(`No trace is running on context ${indexedContext.id}`);

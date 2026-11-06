@@ -1,2 +1,3 @@
 --suite Test.00 Clean Output Dir
 --suite Test.08 Scope Tests
+--suite Test.01 Browser Management.Ad Hoc Tracing Suite End

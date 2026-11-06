@@ -15,7 +15,7 @@ Trace Holds Only What Happened Between Start And Stop
     Mark    MARK_while_tracing
     ${trace} =    Stop Tracing    path=ad_hoc_between.zip
     Mark    MARK_after_stop
-    Should Be Equal    ${trace}    ${{str(pathlib.Path(r'${OUTPUT_DIR}', 'ad_hoc_between.zip').resolve())}}
+    Trace Should Be    ${trace}    ${OUTPUT_DIR}    ad_hoc_between.zip
     ${marks} =    Get Trace Marks    ${trace}
     Should Be Equal    ${marks}    ${{['MARK_while_tracing']}}
 
@@ -27,7 +27,7 @@ One Context Records Several Traces One After Another
     Mark    MARK_second_trace
     ${second} =    Stop Tracing
     Should Not Be Equal    ${first}    ${second}
-    Should Be Equal    ${{pathlib.Path($first).parent}}    ${{pathlib.Path(r'${TRACES}').resolve()}}
+    Trace Should Be In Directory    ${first}    ${TRACES}
     ${first_marks} =    Get Trace Marks    ${first}
     ${second_marks} =    Get Trace Marks    ${second}
     Should Be Equal    ${first_marks}    ${{['MARK_first_trace']}}
@@ -37,7 +37,7 @@ Stop Tracing Saves Into A Directory Under The Traces Folder
     Start Tracing
     Mark    MARK_into_directory
     ${trace} =    Stop Tracing    path=ad_hoc_dir
-    Should Be Equal    ${{pathlib.Path($trace).parent}}    ${{pathlib.Path(r'${TRACES}', 'ad_hoc_dir').resolve()}}
+    Trace Should Be In Directory    ${trace}    ${TRACES}    ad_hoc_dir
     File Should Not Be Empty    ${trace}
 
 Starting A Second Trace Fails
@@ -82,7 +82,7 @@ Stop Tracing Stops A Context Trace
     New Page    ${LOGIN_URL}
     Mark    MARK_context_trace
     ${trace} =    Stop Tracing
-    Should Be Equal    ${trace}    ${{str(pathlib.Path(r'${OUTPUT_DIR}', 'ad_hoc_context_trace.zip').resolve())}}
+    Trace Should Be    ${trace}    ${OUTPUT_DIR}    ad_hoc_context_trace.zip
     Start Tracing
     Stop Tracing    path=ad_hoc_after_context_trace.zip
     Close Context
@@ -98,7 +98,3 @@ Starting On A Context Trace Fails
 Open Suite Context
     New Context
     New Page    ${LOGIN_URL}
-
-Mark
-    [Arguments]    ${mark}
-    Evaluate JavaScript    ${None}    () => '${mark}'

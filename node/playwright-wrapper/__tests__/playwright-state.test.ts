@@ -1156,4 +1156,16 @@ describe('ad-hoc tracing', () => {
         expect(context.tracing.stop).toHaveBeenCalledWith({ path: '/out/a.zip' });
         expect(other.tracing.stop).not.toHaveBeenCalled();
     });
+
+    it('puts the context id into a path that asks for it', async () => {
+        const { state } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        const response = await stopTracing(
+            { traceFile: '/out/trace_{contextid}.zip', save: true, contextId: '' },
+            state,
+        );
+
+        expect(response.traceFile).toBe('/out/trace_context=test-uuid.zip');
+    });
 });
