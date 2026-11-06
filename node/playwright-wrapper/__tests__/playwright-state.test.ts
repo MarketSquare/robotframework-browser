@@ -25,6 +25,8 @@ import {
     newPage,
     PlaywrightState,
     removeFailedPage,
+    startTracing,
+    stopTracing,
     switchPage,
 } from '../playwright-state';
 
@@ -1034,5 +1036,124 @@ describe('extensionKeywordCall', () => {
         );
 
         expect(received).toBeNull();
+    });
+});
+
+describe('ad-hoc tracing', () => {
+    const startRequest = {
+        screenshots: true,
+        snapshots: false,
+        sources: true,
+        title: 'Login',
+        traceFile: '/out/traces',
+    };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    async function stateWithContext() {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makePlaywrightPage(jest.fn())]);
+        await state.adoptContext(context);
+        return { state, context };
+    }
+
+    it('starts tracing the active context with the given options', async () => {
+        const { state, context } = await stateWithContext();
+
+        const response = await startTracing(startRequest, state);
+
+        expect(context.tracing.start).toHaveBeenCalledWith({
+            screenshots: true,
+            snapshots: false,
+            sources: true,
+            title: 'Login',
+        });
+        expect(response.body).toBe('context=test-uuid');
+    });
+
+    it('fails to start while a context trace is running', async () => {
+        const state = new PlaywrightState();
+        const context = makeMockContext([makePlaywrightPage(jest.fn())]);
+        await state.adoptContext(context, { tracing: '/traces/app.zip' });
+        context.tracing.start.mockClear();
+
+        await expect(startTracing(startRequest, state)).rejects.toThrow('Tracing is already running');
+        expect(context.tracing.start).not.toHaveBeenCalled();
+    });
+
+    it('fails to start while an ad-hoc trace is running', async () => {
+        const { state, context } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        await expect(startTracing(startRequest, state)).rejects.toThrow('Tracing is already running');
+        expect(context.tracing.start).toHaveBeenCalledTimes(1);
+    });
+
+    it('saves the trace to the given zip and does not stop it again when the context closes', async () => {
+        const { state, context } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        const response = await stopTracing({ traceFile: '/out/login.zip', save: true, contextId: '' }, state);
+        await state.getActiveBrowser().close();
+
+        expect(response.traceFile).toBe('/out/login.zip');
+        expect(response.contextId).toBe('context=test-uuid');
+        expect(context.tracing.stop).toHaveBeenCalledTimes(1);
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: '/out/login.zip' });
+    });
+
+    it('fails to stop when no trace is running', async () => {
+        const { state, context } = await stateWithContext();
+
+        await expect(stopTracing({ traceFile: '/out/x.zip', save: true, contextId: '' }, state)).rejects.toThrow(
+            'No trace is running',
+        );
+        expect(context.tracing.stop).not.toHaveBeenCalled();
+    });
+
+    it('saves to a file of its own in the traces directory when no path is given', async () => {
+        const { state, context } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        const response = await stopTracing({ traceFile: '', save: true, contextId: '' }, state);
+
+        expect(response.traceFile).toBe('/out/traces/trace_context=test-uuid-test-uuid.zip');
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: response.traceFile });
+    });
+
+    it('saves to a file of its own in the given directory', async () => {
+        const { state, context } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        const response = await stopTracing({ traceFile: '/out/traces/login', save: true, contextId: '' }, state);
+
+        expect(response.traceFile).toBe('/out/traces/login/trace_context=test-uuid-test-uuid.zip');
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: response.traceFile });
+    });
+
+    it('discards the trace when it is not saved', async () => {
+        const { state, context } = await stateWithContext();
+        await startTracing(startRequest, state);
+
+        const response = await stopTracing({ traceFile: '', save: false, contextId: '' }, state);
+
+        expect(response.traceFile).toBe('');
+        expect(context.tracing.stop).toHaveBeenCalledWith();
+        await expect(startTracing(startRequest, state)).resolves.toBeDefined();
+    });
+
+    it('stops the trace of the context with the given id, even when it is not active', async () => {
+        const { state, context } = await stateWithContext();
+        state.getActiveBrowser().context!.id = 'context=traced';
+        await startTracing(startRequest, state);
+        const other = makeMockContext([makePlaywrightPage(jest.fn())]);
+        await state.adoptContext(other);
+
+        await stopTracing({ traceFile: '/out/a.zip', save: true, contextId: 'context=traced' }, state);
+
+        expect(context.tracing.stop).toHaveBeenCalledWith({ path: '/out/a.zip' });
+        expect(other.tracing.stop).not.toHaveBeenCalled();
     });
 });

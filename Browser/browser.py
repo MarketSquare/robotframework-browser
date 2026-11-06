@@ -501,6 +501,8 @@ class Browser(DynamicCore):
           - ``auto_delete_passed_tracing``: If ``auto_closing_level`` is set to
                 ``SUITE`` or ``TEST`` and ``tracing`` of `New Context` active, traces of
                 passed tests or suites, depending on the context scope, will not be saved.
+                The same applies to a trace of `Start Tracing` that ends with its scope.
+                A trace saved by `Stop Tracing` or `Close Context` is always kept.
                 Also temp files will all be deleted after the whole execution ends.
           - ``enable_playwright_debug``: Enable low level debug information from the
                 playwright to playwright-log.txt file. For more details, see
@@ -668,6 +670,7 @@ class Browser(DynamicCore):
         self.recorder_allows_headless: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
         self.tracing_contexts: list[str] = []
+        self.ad_hoc_traces: dict[str, str] = {}
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -1215,6 +1218,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if len(self._unresolved_promises) > 0:
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
+        self._playwright_state.stop_traces_of_scope(attrs["id"], attrs["status"])
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
                 logger.trace("Presenter mode: Wait for 5 seconds before pruning pages")
@@ -1226,6 +1230,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self.suite_ids.pop(attrs["id"], None)
         self._rf_context.end_suite()
         self._playwright_state.set_rf_context(**self._rf_context.context())
+        self._playwright_state.stop_traces_of_scope(attrs["id"], attrs["status"])
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
 

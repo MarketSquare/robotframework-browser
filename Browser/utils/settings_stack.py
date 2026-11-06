@@ -87,3 +87,13 @@ class SettingsStack:
 
     def get(self):
         return self._last_setting.setting
+
+
+def scope_owner(scope: Scope, ctx: "Browser") -> str | None:
+    if scope == Scope.Global or not ctx.suite_ids:
+        return None
+    if scope == Scope.Suite:
+        return list(ctx.suite_ids)[-1]
+    if not ctx.is_test_case_running:
+        raise ValueError("Scope Test/Task can not be set on suite level")
+    return str(ctx.current_test_id)

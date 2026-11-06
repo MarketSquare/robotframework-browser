@@ -30,6 +30,7 @@ from Browser.utils.data_types import (
     AdoptedContextReport,
     BrowserInfo,
     ContextVideo,
+    Scope,
     TracingGroupMode,
 )
 from Browser.utils.misc import get_download_id
@@ -64,6 +65,7 @@ from ..utils import (
     logger,
 )
 from ..utils.logger import LOGLEVEL
+from ..utils.settings_stack import scope_owner
 
 
 class PlaywrightState(LibraryComponent):
@@ -229,6 +231,141 @@ class PlaywrightState(LibraryComponent):
                 contexts = self._get_context(context, browser_instance["contexts"])
                 self._close_pw_context(contexts, save_trace)
         self._update_tracing_contexts()
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def start_tracing(
+        self,
+        *,
+        screenshots: bool = True,
+        snapshots: bool = True,
+        sources: bool = False,
+        title: str | None = None,
+        scope: Scope = Scope.Suite,
+    ) -> None:
+        """Starts recording a Playwright trace of the active context.
+
+        Use it to record a small trace of one part of a test, without tracing everything the
+        context does. The trace holds what happens between this keyword and `Stop Tracing`.
+        One context can record several traces one after another, for example one per test.
+        To trace a context for its whole life, use the ``tracing`` argument of `New Context`
+        instead. Open traces with ``rfbrowser show-trace`` or at https://trace.playwright.dev.
+
+        A context runs only one trace at a time. Starting a trace on a context that already
+        records one fails, also when the trace was started by the ``tracing`` argument of
+        `New Context` or by the ``ROBOT_FRAMEWORK_BROWSER_TRACING`` variable. Stop it first
+        with `Stop Tracing`.
+
+        If the trace is not stopped with `Stop Tracing`, it is saved under
+        ``${OUTPUT_DIR}/browser/traces`` when its ``scope`` ends, or when its context closes,
+        whichever comes first. When the library is imported with
+        ``auto_delete_passed_tracing=True``, a trace that ends with a passed test or suite in
+        this way is not saved, the same as a context trace closed by automatic closing.
+
+        *Arguments:*
+          - ``screenshots``: Records a screenshot after each action, for the film strip of
+                the trace viewer.
+          - ``snapshots``: Records a DOM snapshot of the page around each action.
+          - ``sources``: Embeds the source files of the actions in the trace.
+          - ``title``: Name of the trace shown in the trace viewer.
+          - ``scope``: When the trace is saved if it is not stopped before. ``Test`` saves it
+                when the running test ends, and fails outside a test. ``Suite`` saves it when
+                the running suite ends. ``Global`` saves it only when its context closes.
+                See [#type-Scope|Scope]. Without a running suite, as when the library is used
+                from Python, every scope behaves like ``Global``.
+
+        Keyword groups that are open when tracing starts are added to the trace, so the
+        trace shows which keyword started it.
+
+        Example:
+        | `New Context`
+        | `New Page`         ${LOGIN_URL}
+        | `Start Tracing`    title=Login    scope=Test
+        | `Fill Text`        id=username_field    demo
+        | `Click`            id=login_button
+        | ${trace} =    `Stop Tracing`    path=login.zip
+
+        [https://forum.robotframework.org/t//4240|Comment >>]
+        """
+        owner = scope_owner(scope, self.library)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.StartTracing(
+                Request().StartTracing(
+                    screenshots=screenshots,
+                    snapshots=snapshots,
+                    sources=sources,
+                    title=title,
+                    traceFile=str(self.traces_output.resolve()),
+                )
+            )
+        context_id = response.body
+        if owner is not None:
+            self.library.ad_hoc_traces[context_id] = owner
+        self.add_context_and_keyword_call_stack_to_trace(True, context_id)
+        logger.info(response.log)
+
+    @keyword(tags=("Setter", "BrowserControl"))
+    def stop_tracing(self, path: Path | None = None) -> str:
+        """Stops the trace of the active context, saves it and returns the path of the file.
+
+        Stops any trace of the active context: one started with `Start Tracing`, or one
+        started by the ``tracing`` argument of `New Context`. Fails when the active context
+        records no trace. A context can start a new trace after this.
+
+        *Arguments:*
+          - ``path``: Where the trace is saved. A path ending with ``.zip`` is the file,
+                relative to ``${OUTPUT_DIR}``. Any other path is a directory under
+                ``${OUTPUT_DIR}/browser/traces``, where the trace gets a file of its own.
+                Without ``path``, a trace of `Start Tracing` gets a file of its own in
+                ``${OUTPUT_DIR}/browser/traces``, and a trace of `New Context` is saved where
+                its ``tracing`` argument said.
+
+        A trace saved by this keyword is always kept, also with
+        ``auto_delete_passed_tracing=True``.
+
+        Example:
+        | `Start Tracing`
+        | `Click`    id=login_button
+        | ${trace} =    `Stop Tracing`    path=login.zip
+        | `Should Be Equal`    ${trace}    ${OUTPUT_DIR}${/}login.zip
+
+        [https://forum.robotframework.org/t//4240|Comment >>]
+        """
+        trace_file = "" if path is None else self._trace_path(Path(path))
+        response = self._stop_tracing(trace_file, save=True)
+        logger.info(response.log)
+        return response.traceFile
+
+    def stop_traces_of_scope(self, scope_id: str, status: str) -> None:
+        owned = [
+            context_id
+            for context_id, owner in self.library.ad_hoc_traces.items()
+            if owner == scope_id
+        ]
+        if not owned:
+            return
+        open_contexts = self.get_context_ids()
+        save = not (self.library.auto_delete_passed_tracing and status == "PASS")
+        for context_id in owned:
+            self.library.ad_hoc_traces.pop(context_id, None)
+            if context_id not in open_contexts:
+                continue
+            try:
+                response = self._stop_tracing("", save=save, context_id=context_id)
+                logger.info(response.log)
+            except Exception as error:
+                logger.warn(f"Stopping the trace of {context_id} failed: {error}")
+
+    def _stop_tracing(self, trace_file: str, save: bool, context_id: str = ""):
+        with self.playwright.grpc_channel() as stub:
+            response = stub.StopTracing(
+                Request().StopTracing(
+                    traceFile=trace_file, save=save, contextId=context_id
+                )
+            )
+        self.library.ad_hoc_traces.pop(response.contextId, None)
+        if response.contextId in self.library.tracing_contexts:
+            self.library.tracing_contexts.remove(response.contextId)
+        return response
 
     def _update_tracing_contexts(self):
         if self.library.tracing_contexts:
@@ -1049,9 +1186,12 @@ class PlaywrightState(LibraryComponent):
             return str(
                 self.traces_output
             )  # will be extended by '`trace_${context_id}.zip`' on js side.
-        if isinstance(tracing, Path) and tracing.suffix == ".zip":
+        return self._trace_path(Path(str(tracing)))
+
+    def _trace_path(self, tracing: Path) -> str:
+        if tracing.suffix == ".zip":
             return str(Path(self.outputdir, tracing).resolve())
-        return str(Path(self.traces_output, str(tracing)).resolve())
+        return str(Path(self.traces_output, tracing).resolve())
 
     def _set_context_options(self, params, httpCredentials, storageState):
         params = convert_typed_dict(self.new_context.__annotations__, params)

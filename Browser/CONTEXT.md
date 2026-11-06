@@ -69,8 +69,29 @@ name instead of taking it from the caller: `page`, `context`, `browser`, `logger
 `playwright`, `adoptContext` and `defaultTimeout`.
 _Avoid_: reserved argument, API argument
 
+**Context trace**:
+A trace that runs from the moment a context is created, because the test asked for tracing when
+it created the context or turned tracing on for the whole run. It is saved when the context
+closes, unless it is stopped earlier.
+_Avoid_: full trace, context tracing
+
+**Ad-hoc trace**:
+A trace that a test starts on purpose on an already open context, to record only part of what
+that context does. A test may record several ad-hoc traces one after another on the same
+context.
+_Avoid_: trace chunk (Playwright's chunks are a different thing), partial trace
+
 ## Relationships
 
+- A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
+  Starting a trace while one is running is a mistake in the test and fails. Stopping works the
+  same for both kinds; stopping when nothing is running fails.
+- An **ad-hoc trace** has a scope, like the library settings: it is saved when that test or
+  suite ends, or when its context closes, whichever comes first. A `Global` one lasts until it
+  is stopped or its context closes. On the **Python path** every scope is `Global`.
+- A trace that the library ends on its own, when a test or suite ends, is not saved if that test
+  or suite passed and the library is set to drop traces of passed tests. A trace the test stops
+  or closes itself is always saved. Both kinds of trace follow this rule.
 - Both tables hold the *same* keyword methods, stored twice by PythonLibCore. They are
   independent: changing one does not change the other.
 - **Argument conversion** happens before the **Robot Framework path** reaches the keyword
