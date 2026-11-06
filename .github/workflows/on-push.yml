@@ -126,11 +126,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - name: Install nodejs dependencies
+      shell: bash
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
         npm ci # installs from package-lock.json; grpc-tools needs its install script
-        npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
+        .github/scripts/install-playwright.sh
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v7
       with:
@@ -254,11 +255,12 @@ jobs:
           node-version: 24.x
           cache: 'npm'
       - name: Install nodejs dependencies
+        shell: bash
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0
         run: |
           npm ci # installs from package-lock.json; grpc-tools needs its install script
-          npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
+          .github/scripts/install-playwright.sh
       - name: Set up Python 3.13
         uses: actions/setup-python@v7
         with:
@@ -342,11 +344,12 @@ jobs:
         node-version: 24.x
         cache: 'npm'
     - name: Install nodejs dependencies
+      shell: bash
       env:
         PLAYWRIGHT_BROWSERS_PATH: 0
       run: |
         npm ci # installs from package-lock.json; grpc-tools needs its install script
-        npx playwright install --with-deps # runs the playwright that npm ci installed from the lock file
+        .github/scripts/install-playwright.sh
     - name: Set up Python 3.12
       uses: actions/setup-python@v7
       with:
@@ -607,7 +610,7 @@ jobs:
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
-          rfbrowser install --with-deps
+          .github/scripts/install-playwright.sh rfbrowser install
       - name: Install Browser and BrowserBatteries On Windows
         if: matrix.os == 'windows-latest'
         run: |

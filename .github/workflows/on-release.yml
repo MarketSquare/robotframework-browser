@@ -170,7 +170,7 @@ jobs:
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
-          rfbrowser install  --with-deps
+          .github/scripts/install-playwright.sh rfbrowser install
       - name: Install Browser and BrowserBatteries On Windows
         if: matrix.os == 'windows-latest'
         run: |
