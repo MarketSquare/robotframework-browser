@@ -563,7 +563,9 @@ class Browser(DynamicCore):
                 those must be separated with two spaces for example ``My keyword \\ arg1
                 \\ arg2``. If no extra action should be done after a failure, set it to
                 ``None`` or any other robot falsy value. Run on failure is not applied
-                when library methods are executed directly from Python.
+                when library methods are executed directly from Python. A Browser
+                keyword can be given by its English name even when a translation
+                renames it.
           - ``selector_prefix``: Prefix for all selectors. This is useful when you need
                 to add an iframe selector before each selector.
           - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
@@ -776,7 +778,9 @@ class Browser(DynamicCore):
             return DelayedKeyword(None, None, (), {})
         parts = keyword.split("  ")
         keyword_name = parts[0]
-        normalized_keyword_name = get_normalized_keyword(keyword_name)
+        normalized_keyword_name = self._resolve_keyword_table_name(
+            get_normalized_keyword(keyword_name)
+        )
         args = parts[1:]
         if normalized_keyword_name not in self.keywords:
             return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
@@ -793,6 +797,18 @@ class Browser(DynamicCore):
                     varargs.append(item)
         return DelayedKeyword(
             normalized_keyword_name, keyword_name, tuple(varargs), kwargs
+        )
+
+    def _resolve_keyword_table_name(self, normalized_name: str) -> str:
+        if normalized_name in self.keywords:
+            return normalized_name
+        return next(
+            (
+                name
+                for name, method in self.keywords.items()
+                if getattr(method, "__name__", None) == normalized_name
+            ),
+            normalized_name,
         )
 
     def _create_lib_component_from_jsextension(
@@ -1333,7 +1349,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                     )
             if self.run_on_failure_keyword.name in self.keywords:
                 if (
-                    self.run_on_failure_keyword.name == "take_screenshot"
+                    self.keywords[self.run_on_failure_keyword.name]
+                    == self._browser_control.take_screenshot
                     and not varargs
                     and "filename" not in kwargs
                 ):
