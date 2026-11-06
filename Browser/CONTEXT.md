@@ -29,6 +29,16 @@ Turning a plain value into the keyword's declared type using Robot Framework's o
 converters — `"middle"` into `MouseButton.middle`, `"1.5s"` into a `timedelta`.
 _Avoid_: coercion, casting, parsing
 
+**Translation**:
+A language package that replaces keywords' Robot names and documentation. A keyword keeps
+its method name under a translation; only the name a test calls it by changes.
+_Avoid_: localisation, language file
+
+**Run-on-failure keyword**:
+The keyword the library runs when a Browser keyword fails on the **Robot Framework path**,
+by default `Take Screenshot`. It may be a Browser keyword or any other keyword.
+_Avoid_: failure handler, on-failure hook
+
 **Failed page**:
 A page that a keyword opened and that the library will remove because that keyword failed.
 It still exists while the keyword's failure is being handled, so the failure screenshot shows

@@ -563,7 +563,9 @@ class Browser(DynamicCore):
                 those must be separated with two spaces for example ``My keyword \\ arg1
                 \\ arg2``. If no extra action should be done after a failure, set it to
                 ``None`` or any other robot falsy value. Run on failure is not applied
-                when library methods are executed directly from Python.
+                when library methods are executed directly from Python. A Browser
+                keyword can be given by its English name even when a translation
+                renames it.
           - ``selector_prefix``: Prefix for all selectors. This is useful when you need
                 to add an iframe selector before each selector.
           - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
@@ -776,24 +778,14 @@ class Browser(DynamicCore):
             return DelayedKeyword(None, None, (), {})
         parts = keyword.split("  ")
         keyword_name = parts[0]
-        normalized_keyword_name = get_normalized_keyword(keyword_name)
-        args = parts[1:]
-        registered_name = (
-            normalized_keyword_name
-            if normalized_keyword_name in self.keywords
-            else next(
-                (
-                    name
-                    for name, method in self.keywords.items()
-                    if method.__name__ == normalized_keyword_name
-                ),
-                None,
-            )
+        normalized_keyword_name = self._resolve_keyword_table_name(
+            get_normalized_keyword(keyword_name)
         )
-        if registered_name is None:
+        args = parts[1:]
+        if normalized_keyword_name not in self.keywords:
             return DelayedKeyword(keyword_name, keyword_name, tuple(args), {})
         spec = PythonArgumentParser().parse(
-            self.keywords[registered_name], keyword_name
+            self.keywords[normalized_keyword_name], keyword_name
         )
         varargs = []
         kwargs = {}
@@ -803,7 +795,18 @@ class Browser(DynamicCore):
                     kwargs[item[0]] = item[1]
                 else:
                     varargs.append(item)
-        return DelayedKeyword(registered_name, keyword_name, tuple(varargs), kwargs)
+        return DelayedKeyword(
+            normalized_keyword_name, keyword_name, tuple(varargs), kwargs
+        )
+
+    def _resolve_keyword_table_name(self, normalized_name: str) -> str:
+        for name in self.keywords:
+            if get_normalized_keyword(name) == normalized_name:
+                return name
+        for name, method in self.keywords.items():
+            if getattr(method, "__name__", None) == normalized_name:
+                return name
+        return normalized_name
 
     def _create_lib_component_from_jsextension(
         self, jsextension: str
@@ -1342,14 +1345,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                         children=False,
                     )
             if self.run_on_failure_keyword.name in self.keywords:
+                keyword_method = self.keywords[self.run_on_failure_keyword.name]
                 if (
-                    self.keywords[self.run_on_failure_keyword.name].__name__
-                    == "take_screenshot"
+                    keyword_method == self._browser_control.take_screenshot
                     and not varargs
                     and "filename" not in kwargs
                 ):
                     varargs = (self._failure_screenshot_path(),)
-                self.keywords[self.run_on_failure_keyword.name](*varargs, **kwargs)
+                keyword_method(*varargs, **kwargs)
             else:
                 BuiltIn().run_keyword(
                     self.run_on_failure_keyword.name, *varargs, **kwargs
