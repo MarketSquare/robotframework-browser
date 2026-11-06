@@ -37,3 +37,16 @@ Relative Har Path Is Relative To The Output Directory
     New Page    ${LOGIN_URL}
     Close Context
     File Should Not Be Empty    ${OUTPUT_DIR}/relative-path.har
+
+Har With Content Mode And UrlFilter Defined
+    VAR    &{har} =    path=${OUTPUT_DIR}/filtered.har    content=omit    mode=minimal    urlFilter=**/*.js
+    New Context    recordHar=${har}
+    New Page    ${LOGIN_URL}
+    Close Context
+    ${log} =    Evaluate    json.load(open(r"${OUTPUT_DIR}/filtered.har"))["log"]    modules=json
+    Should Not Be Empty    ${log}[entries]
+    FOR    ${entry}    IN    @{log}[entries]
+        Should End With    ${entry}[request][url]    .js
+        Dictionary Should Not Contain Key    ${entry}[response][content]    text
+    END
+    Dictionary Should Not Contain Key    ${log}    pages

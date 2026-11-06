@@ -759,7 +759,8 @@ class PlaywrightState(LibraryComponent):
                 path to a file, for example ``recordHar={'path':
                 '${OUTPUT_DIR}/har.file'}``. A relative path is relative to the output
                 directory. If not specified, the HAR is not recorded.
-                Make sure to close the context for the HAR to be saved.
+                Make sure to close the context for the HAR to be saved. See `RecordHar`
+                for the keys that limit what is recorded.
           - ``recordVideo``: Enables video recording for all pages into a folder. If not
                 specified videos are not recorded. Make sure to close the context for
                 videos to be saved. Video is not supported in remote browsers. See

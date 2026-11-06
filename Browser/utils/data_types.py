@@ -765,25 +765,42 @@ class RecordVideo(TypedDict, total=False):
     showActions: ShowActions
 
 
+class RecordHarContent(StrEnum):
+    embed = "embed"
+    attach = "attach"
+    omit = "omit"
+
+
+class RecordHarMode(StrEnum):
+    full = "full"
+    minimal = "minimal"
+
+
 class RecordHar(TypedDict, total=False):
     """Enables HAR recording for all pages into to a file.
 
     If not specified, the HAR is not recorded. Make sure to await context to close for the
     [http://www.softwareishard.com/blog/har-12-spec/|HAR] to be saved.
 
-    ``omitContent``: Optional setting to control whether to omit request content
-    from the HAR. Default is False
+    | =Key= | =Description= |
+    | ``path`` | Path on the filesystem to write the HAR file to. A relative path is relative to the output directory. If the file name ends with ``.zip``, ``content`` defaults to ``attach``. |
+    | ``omitContent`` | Whether to omit request content from the HAR. Default is False. Use ``content`` instead. |
+    | ``content`` | How resource content is stored: ``embed`` (default) stores it inline in the HAR, ``attach`` stores it as separate files next to the HAR (or as entries in the ``.zip`` archive), ``omit`` leaves it out. |
+    | ``mode`` | ``full`` (default) records all information. ``minimal`` records only the information needed to replay the HAR, leaving out sizes, timings, pages, cookies, security and other information. |
+    | ``urlFilter`` | Glob pattern, for example ``**/api/**``. Only requests whose URL matches it are recorded. By default all requests are recorded. |
 
-    ``path``: Path on the filesystem to write the HAR file to. A relative path is
-    relative to the output directory.
-
-    Example:
+    Examples:
     | ${har} =    Create Dictionary     path=/path/to/har.file    omitContent=True
+    | New Context    recordHar=${har}
+    | ${har} =    Create Dictionary     path=/path/to/api.har    mode=minimal    urlFilter=**/api/**
     | New Context    recordHar=${har}
     """
 
     omitContent: bool
     path: str
+    content: RecordHarContent
+    mode: RecordHarMode
+    urlFilter: str
 
 
 class AdoptedContextOptions(TypedDict):
