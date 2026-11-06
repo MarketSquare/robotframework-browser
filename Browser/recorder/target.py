@@ -32,6 +32,7 @@ from typing import Protocol
 
 from robot.api import get_model, logger
 from robot.api.parsing import EmptyLine, SectionHeader, Token
+from robot.conf import Languages
 from robot.parsing.model.blocks import Block, File, Keyword, KeywordSection
 from robot.parsing.model.statements import Statement
 
@@ -111,14 +112,15 @@ def unwritable_reason(path: Path) -> str | None:
 
 
 class FileTarget:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, languages: Languages | None = None) -> None:
         self.path = Path(path)
+        self.languages = languages
         self.label = self.path.name
         self._owned: dict[str, _Owned] = {}
         self._format: _Format | None = None
 
     def existing_names(self) -> set[str]:
-        return existing_keyword_names(self.path)
+        return existing_keyword_names(self.path, self.languages)
 
     def save(self, keyword: RecordedKeyword) -> str | None:
         key = normalize_keyword_name(keyword.name)
@@ -225,7 +227,7 @@ class FileTarget:
                 eol="\r\n" if crlf else "\n",
                 final_newline=not text or text.endswith("\n"),
             )
-        return get_model(io.StringIO(text.replace("\r\n", "\n")))
+        return get_model(io.StringIO(text.replace("\r\n", "\n")), lang=self.languages)
 
     def _write(self, model: File, restore_final_newline: bool = False) -> None:
         """Write atomically, in the file's own BOM and line ending."""

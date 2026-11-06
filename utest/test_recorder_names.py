@@ -37,6 +37,7 @@ from Browser.recorder.names import (
     keyword_name_error,
     normalize_keyword_name,
     plain_argument_name,
+    suite_languages,
 )
 
 # --------------------------------------------------------------------------- #
@@ -663,6 +664,12 @@ def test_collect_known_keywords_handles_namespace_without_languages(monkeypatch)
     context = SimpleNamespace(namespace=namespace)
     monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
     assert collect_known_keywords().bdd_prefixes == ()
+
+
+def test_suite_languages_reads_the_running_suite(monkeypatch):
+    assert suite_languages() is None
+    _fake_context(monkeypatch, libraries=[])
+    assert suite_languages() is BuiltIn()._get_context().namespace.languages
 
 
 def test_bdd_variants_strip_a_prefix_only_when_something_remains():

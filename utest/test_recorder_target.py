@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 import pytest
+from robot.conf import Languages
 
 from Browser.recorder.cells import tokens
 from Browser.recorder.model import Call, RecordedKeyword, Value
@@ -544,3 +545,17 @@ def test_a_failed_first_write_does_not_claim_a_keyword_added_meanwhile(tmp_path)
     with pytest.raises(ValueError, match="already exists"):
         target.save(kw)
     assert "theirs" in path.read_text(encoding="utf-8")
+
+
+def test_configured_languages_find_a_localized_keyword_section(tmp_path):
+    path = tmp_path / "k.resource"
+    path.write_text(
+        "*** Mots-clés ***\nRemplir\n    Log    Existing keyword\n", encoding="utf-8"
+    )
+    target = FileTarget(path, Languages(["fr"]))
+    assert target.existing_names() == {"Remplir"}
+    target.save(keyword())
+    text = path.read_text(encoding="utf-8")
+    assert "*** Keywords ***" not in text
+    assert text.startswith("*** Mots-clés ***\nRemplir\n    Log    Existing keyword\n")
+    assert "Fill Name" in text
