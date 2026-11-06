@@ -183,6 +183,12 @@ def cli(ctx, silent):
     help="If set system dependencies are installed automatically. This is useful for CI environments.",
     default=False,
 )
+@click.option(
+    "--verbose",
+    is_flag=True,
+    help="If set runs Playwright browser installation without --quiet, to help debug installation problems.",
+    default=False,
+)
 @click.argument(
     "browser",
     type=click.Choice(
@@ -204,7 +210,7 @@ def cli(ctx, silent):
     ),
     nargs=-1,
 )
-def init(ctx, skip_browsers, with_deps, browser):
+def init(ctx, skip_browsers, with_deps, verbose, browser):
     """Install node dependencies.
 
     init command is needed when library is installed or updated. When installing first time, run
@@ -230,6 +236,8 @@ def init(ctx, skip_browsers, with_deps, browser):
     `rfbrowser init chromium firefox` will install both chromium and firefox binaries. Not all browsers are available
     on all platforms. Refer to `npx playwright install --help` command for more details about browser binary
     availability.
+
+    If browser installation fails, run with --verbose to see the full Playwright installation output.
     """
     silent_mode = ctx.obj["SILENT"]
     if browser and skip_browsers:
@@ -238,7 +246,7 @@ def init(ctx, skip_browsers, with_deps, browser):
         )
     write_marker(silent_mode)
     try:
-        rfbrowser_init(skip_browsers, silent_mode, with_deps, browser)
+        rfbrowser_init(skip_browsers, silent_mode, with_deps, browser, verbose)
         write_marker(silent_mode)
     except Exception as err:
         write_marker(silent_mode)
