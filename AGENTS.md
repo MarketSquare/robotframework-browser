@@ -20,7 +20,7 @@ of the CI matrix; change both together.
 - `node/dynamic-test-app/`: the Test App that the acceptance tests drive.
 - `tools/ci_failures/`: maintainers' analysis of CI failures.
 
-`CONTEXT-MAP.md` lists the domain contexts and their `CONTEXT.md` vocabularies, and
+`GLOSSARY-MAP.md` lists the domain contexts and where each `GLOSSARY.md` lives, and
 `docs/adr/` holds the decisions. Read the relevant ones before changing how a keyword call
 reaches its body (the Robot Framework path and the Python path differ on purpose), the Test App
 logging, or `tools/ci_failures`.

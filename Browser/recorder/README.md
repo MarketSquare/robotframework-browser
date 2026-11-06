@@ -1,6 +1,6 @@
 # Recorder internals
 
-How `Record Keyword` / `Record Keywords` work. Vocabulary: `CONTEXT.md`. Why: ADR 0010
+How `Record Keyword` / `Record Keywords` work. Vocabulary: `GLOSSARY.md`. Why: ADR 0010
 (page under test is untrusted) and ADR 0011 (action stream instead of codegen). Usage: the
 keyword documentation.
 

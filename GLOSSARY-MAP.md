@@ -1,14 +1,14 @@
-# Context Map
+# Glossary Map
 
 ## Contexts
 
-- [Browser Library](./Browser/CONTEXT.md) — the keyword library itself: how a keyword call
+- [Browser Library](./Browser/GLOSSARY.md) — the keyword library itself: how a keyword call
   reaches a keyword body, from Robot Framework and from plain Python
-- [Recorder](./Browser/recorder/CONTEXT.md) — recording interactions in the live browser as
+- [Recorder](./Browser/recorder/GLOSSARY.md) — recording interactions in the live browser as
   Robot Framework User Keywords made of Browser keywords
-- [Test App Rich Logging](./atest/CONTEXT.md) — correlating Robot Framework test execution
+- [Test App Rich Logging](./atest/GLOSSARY.md) — correlating Robot Framework test execution
   with HTTP server activity in the acceptance test setup
-- [CI Failure Analysis](./tools/ci_failures/CONTEXT.md) — which acceptance tests fail in CI and
+- [CI Failure Analysis](./tools/ci_failures/GLOSSARY.md) — which acceptance tests fail in CI and
   on which error, read out of the artifacts each run leaves behind. Maintainers only
 
 ## Relationships
