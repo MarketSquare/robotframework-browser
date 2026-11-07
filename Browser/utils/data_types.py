@@ -1842,6 +1842,10 @@ class TracingGroupMode(Enum):
     - ``Browser`` Just Browser library keywords are written to the logs as groups.
     - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
 
+    A keyword goes only to the traces of the contexts it acts on, and a keyword that acts on no
+    context, like ``Log``, goes to the trace of the context active when it ends. See
+    [https://robotframework-browser.org/docs/concepts/logging#traces|Traces].
+
     A group is named after the keyword call with the values of its arguments, so
     ``Get Text    id=a    ==    ${tag}`` shows the value of ``${tag}``. A value longer
     than 200 characters is cut, as in the Robot Framework log. Inline Python, like

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from collections.abc import Iterable
+from typing import Any
 
 from .data_types import TracingGroupMode
 
@@ -20,6 +21,7 @@ class RunningTraces:
     def __init__(self, group_mode: TracingGroupMode):
         self._group_mode = group_mode
         self._scopes: dict[str, str | None] = {}
+        self._open_groups: list[dict[str, Any]] = []
 
     def __contains__(self, context_id: object) -> bool:
         return context_id in self._scopes
@@ -35,6 +37,20 @@ class RunningTraces:
     @property
     def sends_groups(self) -> bool:
         return self.any_running and self._group_mode != TracingGroupMode.Playwright
+
+    @property
+    def open_groups(self) -> list[dict[str, Any]]:
+        return list(self._open_groups)
+
+    def group_opened(self, group: dict[str, Any]) -> int:
+        depth = len(self._open_groups)
+        self._open_groups.append(group)
+        return depth
+
+    def group_closed(self) -> int:
+        if self._open_groups:
+            self._open_groups.pop()
+        return len(self._open_groups)
 
     def started(self, context_id: str, scope_id: str | None = None) -> None:
         self._scopes[context_id] = scope_id

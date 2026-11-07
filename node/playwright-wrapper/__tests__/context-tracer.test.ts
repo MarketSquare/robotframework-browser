@@ -187,16 +187,16 @@ describe('ContextTracer', () => {
         it('opens and closes groups in the running trace', async () => {
             await tracer.start({}, '/out/trace.zip');
 
-            await tracer.group('Click', location);
-            await tracer.groupEnd();
+            await tracer.catchUp([{ name: 'Click', location }]);
+            await tracer.closeGroupsTo(0);
 
             expect(tracing.group).toHaveBeenCalledWith('Click', { location });
             expect(tracing.groupEnd).toHaveBeenCalledTimes(1);
         });
 
         it('sends no groups when no trace is running', async () => {
-            await tracer.group('Click', location);
-            await tracer.groupEnd();
+            await tracer.catchUp([{ name: 'Click', location }]);
+            await tracer.closeGroupsTo(0);
 
             expect(tracing.group).not.toHaveBeenCalled();
             expect(tracing.groupEnd).not.toHaveBeenCalled();

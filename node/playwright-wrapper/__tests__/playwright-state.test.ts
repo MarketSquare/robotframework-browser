@@ -308,7 +308,7 @@ describe('close helpers', () => {
     it('closeBrowser closes the active browser and returns its id', async () => {
         const state = new PlaywrightState();
         const close = jest.fn().mockResolvedValue(undefined);
-        state.browserStack.push({ id: 'browser=to-close', close } as any);
+        state.browserStack.push({ id: 'browser=to-close', contextStack: [], close } as any);
 
         const response = await closeBrowser(state);
 
@@ -319,7 +319,7 @@ describe('close helpers', () => {
     it('closeBrowser reports why closing the browser failed', async () => {
         const state = new PlaywrightState();
         const close = jest.fn().mockRejectedValue(new Error('trace not writable'));
-        state.browserStack.push({ id: 'browser=1', close } as any);
+        state.browserStack.push({ id: 'browser=1', contextStack: [], close } as any);
 
         const response = await closeBrowser(state);
 
@@ -330,7 +330,11 @@ describe('close helpers', () => {
     it('closeBrowser reports an already closed browser', async () => {
         const state = new PlaywrightState();
         const closed = Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
-        state.browserStack.push({ id: 'browser=1', close: jest.fn().mockRejectedValue(closed) } as any);
+        state.browserStack.push({
+            id: 'browser=1',
+            contextStack: [],
+            close: jest.fn().mockRejectedValue(closed),
+        } as any);
 
         const response = await closeBrowser(state);
 
@@ -401,8 +405,12 @@ describe('close helpers', () => {
         const state = new PlaywrightState();
         const close = jest.fn().mockResolvedValue(undefined);
         state.browserStack.push(
-            { id: 'browser=1', close: jest.fn().mockRejectedValue(new Error('onClose failed')) } as any,
-            { id: 'browser=2', close } as any,
+            {
+                id: 'browser=1',
+                contextStack: [],
+                close: jest.fn().mockRejectedValue(new Error('onClose failed')),
+            } as any,
+            { id: 'browser=2', contextStack: [], close } as any,
         );
 
         const response = await closeAllBrowsers(state);

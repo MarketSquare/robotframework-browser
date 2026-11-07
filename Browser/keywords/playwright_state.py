@@ -31,7 +31,6 @@ from Browser.utils.data_types import (
     BrowserInfo,
     ContextVideo,
     Scope,
-    TracingGroupMode,
 )
 from Browser.utils.misc import get_download_id
 
@@ -297,9 +296,7 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(self.traces_output.resolve()),
                 )
             )
-        self.add_context_and_keyword_call_stack_to_trace(
-            True, response.body, scope_id=scope_id
-        )
+        self.trace_started(True, response.body, scope_id=scope_id)
         logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -1096,7 +1093,7 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(trace_file),
                 )
             )
-            self.add_context_and_keyword_call_stack_to_trace(trace_file, response.id)
+            self.trace_started(trace_file, response.id)
             context_options = self._mask_credentials(
                 json.loads(response.contextOptions)
             )
@@ -1232,29 +1229,15 @@ class PlaywrightState(LibraryComponent):
                 )
             )
 
-    def add_context_and_keyword_call_stack_to_trace(
-        self, trace_file, ctx_id, scope_id: str | None = None
-    ):
+    def trace_started(self, trace_file, ctx_id, scope_id: str | None = None):
         if not trace_file:
-            return None
+            return
+        sent_groups = self.running_traces.sends_groups
         self.running_traces.started(ctx_id, scope_id)
-        if not self.running_traces.sends_groups:
-            return None
-        if self.library.tracing_group_mode == TracingGroupMode.Browser:
-            if not self.library.keyword_call_stack:
-                return None
-            return self.open_trace_group(
-                **self.library._trace_group_arguments(
-                    self.library.keyword_call_stack[-1]
-                ),
-                context_id=ctx_id,
-            )
-        for keyword_call in self.library.keyword_call_stack:
-            self.open_trace_group(
-                **self.library._trace_group_arguments(keyword_call),
-                context_id=ctx_id,
-            )
-        return None
+        if sent_groups or not self.running_traces.sends_groups:
+            return
+        for depth, group in enumerate(self.running_traces.open_groups):
+            self._send_open_trace_group(group, depth)
 
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
@@ -1268,7 +1251,7 @@ class PlaywrightState(LibraryComponent):
         record_video: RecordVideo | None,
         video: ContextVideo | None = None,
     ) -> str:
-        self.add_context_and_keyword_call_stack_to_trace(trace_file, context_id)
+        self.trace_started(trace_file, context_id)
         return self._cache_context(context_id, record_video, video)
 
     def _cache_context(
@@ -2296,29 +2279,25 @@ class PlaywrightState(LibraryComponent):
         file: Path | str | None = None,
         line: int = 0,
         column: int = 0,
-        context_id: str = "",
     ):
         """Opens the trace group in the trace viewer"""
-        if not self.running_traces.sends_groups:
-            return
+        group = {"name": name, "file": str(file or ""), "line": line, "column": column}
+        depth = self.running_traces.group_opened(group)
+        if self.running_traces.sends_groups:
+            self._send_open_trace_group(group, depth)
+
+    def _send_open_trace_group(self, group: dict, depth: int):
         with suppress(Exception), self.playwright.grpc_channel() as stub:
-            stub.OpenTraceGroup(
-                Request().TraceGroup(
-                    name=name,
-                    file=str(file or ""),
-                    line=line,
-                    column=column,
-                    contextId=context_id,
-                )
-            )
+            stub.OpenTraceGroup(Request().TraceGroup(**group, depth=depth))
 
     # Mute this from automatic group logging before this is exposed as keyword
     def close_trace_group(self):
         """Closes the trace group in the trace viewer"""
+        depth = self.running_traces.group_closed()
         if not self.running_traces.sends_groups:
             return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
-            stub.CloseTraceGroup(Request().Empty())
+            stub.CloseTraceGroup(Request().TraceGroupDepth(depth=depth))
 
     def set_rf_context(
         self,

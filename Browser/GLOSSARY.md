@@ -81,6 +81,16 @@ that context does. A test may record several ad-hoc traces one after another on 
 context.
 _Avoid_: trace chunk (Playwright's chunks are a different thing), partial trace
 
+**Trace group**:
+A keyword's entry in a trace, under which the trace viewer nests what the keyword did on that
+trace's context.
+_Avoid_: keyword group, trace step
+
+**Target context**:
+The context a keyword is about: the one an argument names, or the active one when no argument
+does. A keyword can have several, like `Close Context    ALL`.
+_Avoid_: touched context, current context
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -92,6 +102,10 @@ _Avoid_: trace chunk (Playwright's chunks are a different thing), partial trace
 - A trace that the library ends on its own, when a test or suite ends, is not saved if that test
   or suite passed and the library is set to drop traces of passed tests. A trace the test stops
   or closes itself is always saved. Both kinds of trace follow this rule.
+- A **trace group** appears only in the traces of the keyword's **target contexts**, nested
+  in the groups of the keywords that called it. A keyword with no **target context**, like
+  `Log`, goes to the trace of the context active when it ends. Reading other contexts on the
+  way, as `Get Browser Catalog` does, does not make them **target contexts**.
 - Both tables hold the *same* keyword methods, stored twice by PythonLibCore. They are
   independent: changing one does not change the other.
 - **Argument conversion** happens before the **Robot Framework path** reaches the keyword
