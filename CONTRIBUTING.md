@@ -60,6 +60,20 @@ such as `grilling`, `domain-modeling` (the format of the `GLOSSARY.md` files and
 Install them in Claude Code with `claude plugin install mattpocock-skills@claude-plugins-official`, or for other
 agents with `npx skills@latest add mattpocock/skills`.
 
+## Issues
+
+Every issue gets a GitHub issue type and a `priority: low|medium|high|critical` label. The release notes are
+generated with [Rellu](https://github.com/robotframework/rellu) from the issues in the version milestone, and the
+issue type decides what is listed:
+
+* **Bug** and **Feature** issues are listed. A change that users must hear about is one of these, also when it
+  removes or changes a keyword, an argument or a public `Browser` attribute.
+* **Task** issues are left out. Use Task for work users do not need to know about, such as CI or tooling, and for
+  work parked for later.
+
+`gh issue create` cannot set the issue type. Set it in the web UI, or with the GraphQL `updateIssue` mutation and
+an id from `repository(owner: "MarketSquare", name: "robotframework-browser") { issueTypes(first: 10) { nodes { id name } } }`.
+
 ## Testing
 
 ### Python unit tests
@@ -183,7 +197,7 @@ invoke release-notes -w -v $VERSION -u $GITHUB_USERNAME -p $GITHUB_PASSWORD
 Fill the missing details in the generated release notes template.
 
 Make sure that issues have correct information:
-* All issues should have type (bug, enhancement or task) and priority set. Notice that issues with the task type are
+* All issues should have the issue type and priority set, see [Issues](#issues). Issues with the Task type are
 automatically excluded from the release notes.
 * Issue priorities should be consistent.
 * Issue titles should be informative. Consistency is good here too, but no need to overdo it.
