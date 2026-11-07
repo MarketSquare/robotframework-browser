@@ -1,6 +1,6 @@
 """Creates a virtual environment for developing the library.
 
-Also installs the needed dependencies.
+Also installs the dependencies locked in uv.lock.
 """
 
 import platform
@@ -14,35 +14,22 @@ if not platform.platform().startswith("Windows"):
     VENV_PYTHON = VENV_DIR / "bin" / "python"
 else:
     VENV_PYTHON = VENV_DIR / "Scripts" / "python.exe"
-SRC_DIR = ROOT_DIR / "Browser"
 
 if not VENV_DIR.exists():
     print(f"Creating virtualenv in {VENV_DIR}")
     EnvBuilder(with_pip=True).create(VENV_DIR)
 
-subprocess.run([VENV_PYTHON, "-m", "pip", "install", "-U", "uv"], check=True)
-subprocess.run(
-    [
-        VENV_PYTHON,
-        "-m",
-        "uv",
-        "pip",
-        "install",
-        "-r",
-        str(SRC_DIR / "dev-requirements.txt"),
-    ],
-    check=True,
+uv_installed = (
+    subprocess.run(
+        [VENV_PYTHON, "-m", "uv", "--version"], check=False, capture_output=True
+    ).returncode
+    == 0
 )
+if not uv_installed:
+    subprocess.run([VENV_PYTHON, "-m", "pip", "install", "uv"], check=True)
 subprocess.run(
-    [
-        VENV_PYTHON,
-        "-m",
-        "uv",
-        "pip",
-        "install",
-        "-r",
-        str(ROOT_DIR / "pyproject.toml"),
-    ],
+    [VENV_PYTHON, "-m", "uv", "sync", "--locked", "--all-groups"],
+    cwd=ROOT_DIR,
     check=True,
 )
 

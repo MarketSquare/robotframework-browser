@@ -46,6 +46,10 @@ source .venv/bin/activate  # On linux and OSX
 [Invoke](http://www.pyinvoke.org/index.html) is used as a task runner / build tool.
 
 Other dependencies can be installed/updated with `inv deps`. This command installs and updates both Python and nodejs dependencies.
+Python dependencies are managed with [uv](https://docs.astral.sh/uv/): the library's own dependencies are in
+`[project]` and the development dependencies in `[dependency-groups]` of `pyproject.toml`, and every version is
+locked with hashes in `uv.lock`. After changing a dependency in `pyproject.toml`, run `uv lock` and commit both
+files. Dependabot keeps `uv.lock` up to date.
 After dependencies are installed, run `inv build` to compile node code and gRPC protocol. Also this invoke command will create
 Python stub file.
 

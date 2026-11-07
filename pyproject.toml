@@ -75,6 +75,48 @@ Repository = "https://github.com/MarketSquare/robotframework-browser"
 Issues = "https://github.com/MarketSquare/robotframework-browser/issues"
 Changelog = "https://github.com/MarketSquare/robotframework-browser/tree/main/docs/releasenotes"
 
+[dependency-groups]
+dev = [
+    "invoke>=3.0.3",
+    "pytest >= 9.2.0",
+    "pytest-cov>=7.1.0",
+    "mypy >= 2.4.1",
+    "mypy-protobuf >= 5.1.0",
+    "ruff>=0.17.3",
+    "wheel>=0.48.0",
+    "robotframework-pabot >= 5.2.2",
+    "robotstatuschecker >= 4.1.1",
+    "rellu >= 2.0.2",
+    "approvaltests == 20.0.1",
+    "pytest-mock==3.17.0",
+    "Pillow==13.0.0",
+    # Required for injecting google analytics tags on release
+    "beautifulsoup4 >= 4.15.0",
+    "coverage >= 7.17.0",
+    "python-dateutil >= 4.0.0",
+    "robotframework-robocop >= 9.1.2",
+    "robotframework-crypto >= 0.4.2",
+    "robotframework-archivelibrary >= 0.4.3",
+    "uv >= 0.13.6",
+    "build >= 1.6.1",
+    "robotframework-ghareports >= 1.0.0",
+    "types-PyYAML >= 6.0.12.20261030",
+    "requests >= 2.34.2",
+]
+# pytest-watch needs docopt, which ships no wheel. CI installs with --no-build,
+# so it leaves this group out.
+watch = [
+    "pytest-watch >= 4.2.0",
+]
+
+[tool.uv]
+# Install the dependencies only. The tests import Browser from the source tree,
+# and `inv create-package` builds the wheel.
+package = false
+# BrowserBatteries pins this exact Browser version, so the bb extra cannot
+# resolve while the version is a nightly or an unreleased one.
+exclude-dependencies = ["robotframework-browser-batteries"]
+
 [tool.setuptools]
 include-package-data = true
 

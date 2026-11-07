@@ -1,11 +1,8 @@
 tasks:
-  - init: |
-      pip install robotframework
-    command: |
-      python -m pip install --upgrade pip
-      pip install -r Browser/dev-requirements.txt
-      pip install -r pyproject.toml
-      inv deps --system
+  - command: |
+      python bootstrap.py
+      source .venv/bin/activate
+      inv deps
       npx --yes playwright install-deps
       inv build
 image: gitpod/workspace-full-vnc
