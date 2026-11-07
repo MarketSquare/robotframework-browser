@@ -84,13 +84,6 @@ class KeywordCallObserver(LibraryComponent):
         return bool(self._secret_argument_names(name))
 
     def trace_group_arguments(self, kwname: str, args: list[str]) -> list[str]:
-        """Arguments as a trace group name shows them: the secret arguments of a
-        Browser keyword masked, the other arguments of that keyword left as written,
-        and the arguments of any other keyword resolved and cut like Robot Framework
-        cuts a long variable value in the log. Arguments resolve only while a trace
-        receives the groups, and inline Python or extended variable syntax stays as
-        written, because resolving it runs it a second time.
-        """
         name = self._registered_keyword_name(kwname)
         if name is not None and self.is_secret_keyword(name):
             return self._mask_secret_arguments(name, args)
@@ -173,6 +166,7 @@ class KeywordCallObserver(LibraryComponent):
 
     @classmethod
     def _has_only_plain_variables(cls, text: str) -> bool:
+        """Resolving inline Python or extended variable syntax would run it again."""
         match = search_variable(text)
         while match:
             if not PLAIN_VARIABLE_NAME.fullmatch(match.base or ""):
