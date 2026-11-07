@@ -699,7 +699,7 @@ export const locatorCache = new LocatorCache();
 /*
  * Pagestack's last item should be the current active page and the first item should be the lastly added page
  * */
-export type IndexedContext = {
+type IndexedContext = {
     c: BrowserContext;
     id: Uuid;
     tracer: ContextTracer;

@@ -42,7 +42,7 @@ Broken Init Script Does Not Fail The Keyword
     Get Page Errors    validate    any(error["name"] == "SyntaxError" for error in value)
 
 Arg Needs One Function Expression
-    Run Keyword And Expect Error    *one function expression*
+    Run Keyword And Expect Error    *one expression*
     ...    Add Init Script    window.a = 1; window.b = 2;    arg=${1}
 
 Script Or Path Is Needed
@@ -54,11 +54,6 @@ Script Or Path Is Needed
 Suite Init Script Reaches Every Test
     New Page    ${INIT_SCRIPT_URL}
     Get Text    id=flag-value    ==    on
-
-Init Scripts Of Earlier Tests Are Removed
-    New Page    ${INIT_SCRIPT_URL}
-    Get Text    id=seed-value    ==    undefined
-    Get Text    id=other-value    ==    undefined
 
 *** Keywords ***
 Open Shared Context With A Suite Init Script

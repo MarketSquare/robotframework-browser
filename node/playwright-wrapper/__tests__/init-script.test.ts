@@ -20,7 +20,7 @@ describe('initScriptSource', () => {
 
     it('rejects statements with an argument', () => {
         expect(() => initScriptSource('window.a = 1; window.b = 2;', '5')).toThrow(
-            'With arg, the init script must be one function expression',
+            'With arg, the init script must be one expression',
         );
     });
 

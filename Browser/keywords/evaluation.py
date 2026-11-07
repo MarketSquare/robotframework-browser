@@ -206,8 +206,8 @@ class Evaluation(LibraryComponent):
     ) -> None:
         """Adds JavaScript that runs before the page's own scripts in every page of the active context.
 
-        Use it to prepare what the application reads while it starts: seed ``Math.random``,
-        set feature flags or ``window`` globals, or stub browser APIs. The script runs again on
+        Use it to prepare what the application reads while it starts: set feature flags or
+        ``window`` globals, or stub browser APIs. The script runs again on
         every navigation, in every frame, and in pages and popups opened later. To freeze time,
         use `Set Time`; for geolocation, use `Set Geolocation` and `Grant Permissions`.
 
@@ -228,9 +228,11 @@ class Evaluation(LibraryComponent):
                 given here is defined but never called.
           - ``path``: Path to a JavaScript file to use instead of ``script``. Give either
                 ``script`` or ``path``, not both.
-          - ``arg``: Value given to the script, which then must be one function expression,
-                such as ``(value) => { window.seed = value }``. The value must be JSON
-                serializable.
+          - ``arg``: Value given to the script, which then must be one expression that
+                evaluates to a function, such as ``(value) => { window.seed = value }``. The
+                function is called with the value, which must be JSON serializable. Source that
+                is not one expression fails this keyword; an expression that is not a function
+                fails in the page, like other errors in the script.
           - ``scope``: When the script is removed. ``Test`` removes it when the running test
                 ends, test setup and teardown included, and fails outside a test. ``Suite``
                 removes it when the running suite ends. ``Global`` keeps it until its context

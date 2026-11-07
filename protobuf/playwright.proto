@@ -641,7 +641,9 @@ service  Playwright {
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
+  /* Registers an init script on the active context; returns the ids that remove it. */
   rpc AddInitScript(Request.InitScript) returns (Response.InitScriptAdded);
+  /* Disposes of one init script; does nothing when its context is already closed. */
   rpc RemoveInitScript(Request.InitScriptId) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);

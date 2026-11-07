@@ -24,7 +24,7 @@ export function initScriptSource(content: string, arg?: string): string {
     try {
         new Script(`(${content}\n);`);
     } catch (error) {
-        throw new Error(`With arg, the init script must be one function expression: ${String(error)}`, {
+        throw new Error(`With arg, the init script must be one expression: ${String(error)}`, {
             cause: error,
         });
     }
