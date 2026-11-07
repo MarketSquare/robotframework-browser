@@ -84,7 +84,8 @@ CI (`.github/workflows/on-push.yml`) is the only gate; there are no git hooks.
 ## Versions and releases
 
 `Browser/version.py` is the source; `inv version <VERSION>` writes it to every other file. The
-release steps are in `CONTRIBUTING.md`.
+release steps are in `CONTRIBUTING.md`. Its Issues section says which issue type a change needs:
+only Bug and Feature issues reach the release notes, never Task.
 
 ## Skills
 
