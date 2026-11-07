@@ -671,6 +671,7 @@ class Browser(DynamicCore):
         # scripted toolbar commands.
         self.recorder_allows_headless: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
+        self._full_trace_group_opened: list[bool] = []
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -1076,7 +1077,12 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             kwname=attrs["kwname"],
         )
         self.keyword_call_stack.append(kw_call_stack_entry)
-        if self.tracing_group_mode == TracingGroupMode.Full:
+        opens_group = (
+            self.tracing_group_mode == TracingGroupMode.Full
+            and attrs["status"] != "NOT RUN"
+        )
+        self._full_trace_group_opened.append(opens_group)
+        if opens_group:
             self._playwright_state.open_trace_group(
                 **self._trace_group_arguments(kw_call_stack_entry)
             )
@@ -1216,7 +1222,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     def _end_keyword(self, _name, attrs):
         if self.keyword_call_stack:
             self.keyword_call_stack.pop()
-        if self.tracing_group_mode == TracingGroupMode.Full:
+        if self._full_trace_group_opened and self._full_trace_group_opened.pop():
             self._playwright_state.close_trace_group()
 
     def _end_test(self, name, attrs):
