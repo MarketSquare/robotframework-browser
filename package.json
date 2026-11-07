@@ -33,16 +33,16 @@
     "ts-jest": "^29.4.15",
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
-    "ts-proto": "^2.18.3",
+    "ts-proto": "^2.18.4",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "^2.16.0",
+    "@bufbuild/protobuf": "^2.17.0",
     "@grpc/grpc-js": "^1.14.7",
     "monocart-coverage-reports": "^3.2.0",
     "pino": "^10.4.0",
-    "playwright": "^1.64.1",
+    "playwright": "^1.65.0",
     "strip-comments": "^2.0.1",
     "uuid": "^14.0.3"
   },
@@ -65,11 +65,9 @@
     "grpc_tools_node_protoc": "grpc_tools_node_protoc"
   },
   "allowScripts": {
-    "esbuild@0.28.2": true,
-    "fsevents@2.3.3": true,
-    "fsevents@2.3.2": true,
-    "grpc-tools@1.13.1": true,
-    "protobufjs@7.6.5": true,
-    "unrs-resolver@1.12.2": true
+    "@parcel/watcher": false,
+    "esbuild": false,
+    "grpc-tools": true,
+    "protobufjs": false
   }
 }
