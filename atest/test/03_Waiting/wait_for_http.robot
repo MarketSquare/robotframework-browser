@@ -130,7 +130,7 @@ Wait For Response With OPTIONS Request
     ${res2} =    Wait For    ${prom}
     Should Be Equal As Numbers    ${res}    204
     Should Be Equal As Numbers    ${res2.status}    204
-    Should Be Equal    ${res2.body}    ${None}
+    Dictionary Should Not Contain Key    ${res2}    body
 
 Wait For Navigation Works
     [Tags]    slow
