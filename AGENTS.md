@@ -52,8 +52,9 @@ Test App.
   real browser. Tests that need the built Test App take the session-scoped `test_app_url` fixture
   (`utest/conftest.py`); it starts the app through `atest/library/test_app_server.py`, the same
   start-and-retry code the acceptance tests use.
-  `test_close_deadline.py` and `test_python_arguments.py` start Node without a browser, and
-  `test_on_failure_after_test_timeout.py` does so from a Robot Framework run. One file:
+  `test_close_deadline.py`, `test_python_arguments.py` and `test_rfbrowser_browser_choices.py` start
+  Node without a browser, and `test_on_failure_after_test_timeout.py` does so from a Robot
+  Framework run. One file:
   `inv utest --suite utest/test_x.py`.
 - `inv utest-node`: Jest, in `node/playwright-wrapper/__tests__/`.
 - `inv atest --suite <name>` (or `--test`, `--include`): pabot, with one Node process shared by
