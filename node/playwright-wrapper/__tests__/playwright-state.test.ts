@@ -13,6 +13,7 @@ jest.mock('uuid', () => ({
 
 jest.mock('monocart-coverage-reports', () => ({ CoverageReport: jest.fn() }));
 
+import { ContextTracer } from '../context-tracer';
 import {
     BrowserState,
     closeAllBrowsers,
@@ -29,6 +30,16 @@ import {
     stopTracing,
     switchPage,
 } from '../playwright-state';
+
+function idleTracer(contextId = 'context=1') {
+    return new ContextTracer(contextId, {} as any);
+}
+
+async function tracerSavingTo(file: string, stop: jest.Mock, contextId = 'context=1') {
+    const tracer = new ContextTracer(contextId, { start: jest.fn(), stop } as any);
+    await tracer.start({}, file);
+    return tracer;
+}
 
 function makeBrowserState(id: string): BrowserState {
     const state = new BrowserState({
@@ -55,7 +66,7 @@ function makeIndexedPage(id: string) {
 }
 
 function attachSingleContext(browserState: BrowserState, pageStack: any[]) {
-    const context = { c: {} as any, id: 'context=1', traceFile: '', pageStack, options: {} } as any;
+    const context = { c: {} as any, id: 'context=1', tracer: idleTracer(), pageStack, options: {} } as any;
     browserState.pushContext(context);
     return context;
 }
@@ -185,14 +196,14 @@ describe('BrowserState', () => {
         const first = {
             c: sharedContextObject,
             id: 'context=first',
-            traceFile: '',
+            tracer: idleTracer(),
             pageStack: [],
             options: { locale: 'fi-FI' },
         } as any;
         const second = {
             c: sharedContextObject,
             id: 'context=second',
-            traceFile: '',
+            tracer: idleTracer(),
             pageStack: [],
             options: undefined,
         } as any;
@@ -222,7 +233,7 @@ describe('BrowserState', () => {
         const context = {
             c: {} as any,
             id: 'context=1',
-            traceFile: '',
+            tracer: idleTracer(),
             pageStack: [],
             options: {},
         } as any;
@@ -239,7 +250,7 @@ describe('BrowserState', () => {
         const context = {
             c: {} as any,
             id: 'context=1',
-            traceFile: '',
+            tracer: idleTracer(),
             pageStack: [makeIndexedPage('page=1'), makeIndexedPage('page=2')],
             options: {},
         } as any;
@@ -265,12 +276,9 @@ describe('BrowserState', () => {
             headless: true,
         });
         browser.pushContext({
-            c: {
-                tracing: { stop: tracingStop },
-                close: contextClose,
-            } as any,
+            c: { close: contextClose } as any,
             id: 'context=1',
-            traceFile: '/tmp/trace.zip',
+            tracer: await tracerSavingTo('/tmp/trace.zip', tracingStop),
             pageStack: [],
             options: {},
         });
@@ -332,17 +340,17 @@ describe('close helpers', () => {
     describe('when a step of closing a browser fails', () => {
         const targetClosed = () => Object.assign(new Error('Target closed'), { name: 'TargetClosedError' });
 
-        function tracedContext(id: string, stopTrace = jest.fn().mockResolvedValue(undefined)) {
+        async function tracedContext(id: string, stopTrace = jest.fn().mockResolvedValue(undefined)) {
             return {
-                c: { tracing: { stop: stopTrace }, close: jest.fn().mockResolvedValue(undefined) },
+                c: { close: jest.fn().mockResolvedValue(undefined) },
                 id,
-                traceFile: `/traces/${id}.zip`,
+                tracer: await tracerSavingTo(`/traces/${id}.zip`, stopTrace, id),
                 pageStack: [],
                 options: {},
             };
         }
 
-        function openBrowser(browserClose: jest.Mock, ...contexts: ReturnType<typeof tracedContext>[]) {
+        function openBrowser(browserClose: jest.Mock, ...contexts: Awaited<ReturnType<typeof tracedContext>>[]) {
             const browser = new BrowserState({
                 browser: { close: browserClose } as any,
                 name: 'chromium',
@@ -357,8 +365,8 @@ describe('close helpers', () => {
 
         it('still closes every context and the browser', async () => {
             const browserClose = jest.fn().mockResolvedValue(undefined);
-            const first = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
-            const second = tracedContext('context=2');
+            const first = await tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+            const second = await tracedContext('context=2');
 
             const response = await closeBrowser(openBrowser(browserClose, first, second));
 
@@ -371,7 +379,7 @@ describe('close helpers', () => {
 
         it('reports every step that failed', async () => {
             const browserClose = jest.fn().mockRejectedValue(new Error('browser hung'));
-            const context = tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
+            const context = await tracedContext('context=1', jest.fn().mockRejectedValue(new Error('ENOSPC')));
 
             const response = await closeBrowser(openBrowser(browserClose, context));
 
@@ -380,7 +388,7 @@ describe('close helpers', () => {
 
         it('counts a context that was already closed as closed', async () => {
             const browserClose = jest.fn().mockResolvedValue(undefined);
-            const context = tracedContext('context=1', jest.fn().mockRejectedValue(targetClosed()));
+            const context = await tracedContext('context=1', jest.fn().mockRejectedValue(targetClosed()));
 
             const response = await closeBrowser(openBrowser(browserClose, context));
 
@@ -451,7 +459,7 @@ function stateWithOpenPage(openPageId = 'page=open') {
     const context = {
         c: { newPage: jest.fn() },
         id: 'context=1',
-        traceFile: '',
+        tracer: idleTracer(),
         pageStack: [openPage],
         options: {},
     } as any;
@@ -832,7 +840,7 @@ describe('adoptContext', () => {
         context.tracing.stop.mockRejectedValue(new Error('trace failed'));
         const onClose = jest.fn().mockResolvedValue(undefined);
         await state.adoptContext(context, { onClose });
-        state.getActiveBrowser().context!.traceFile = 'trace.zip';
+        await state.getActiveBrowser().context!.tracer.start({}, 'trace.zip');
 
         await expect(closeContext({ value: true }, state)).rejects.toThrow('trace failed');
         expect(context.close).toHaveBeenCalled();
