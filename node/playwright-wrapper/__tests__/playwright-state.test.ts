@@ -280,6 +280,7 @@ describe('BrowserState', () => {
             id: 'context=1',
             tracer: await tracerSavingTo('/tmp/trace.zip', tracingStop),
             pageStack: [],
+            initScripts: new Map(),
             options: {},
         });
 

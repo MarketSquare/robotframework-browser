@@ -32,6 +32,7 @@ from ..utils.data_types import (
     DelayedKeyword,
     HighLightElement,
 )
+from ..utils.init_scripts import InitScripts
 from ..utils.running_traces import RunningTraces
 from ..utils.types import Secret
 from .cache import ContextCache
@@ -216,6 +217,10 @@ class LibraryComponent:
     @property
     def running_traces(self) -> RunningTraces:
         return self.library.running_traces
+
+    @property
+    def init_scripts(self) -> InitScripts:
+        return self.library.init_scripts
 
     @property
     def state_file(self):

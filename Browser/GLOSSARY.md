@@ -91,6 +91,11 @@ The context a keyword is about: the one an argument names, or the active one whe
 does. A keyword can have several, like `Close Context    ALL`.
 _Avoid_: touched context, current context
 
+**Init script**:
+JavaScript that runs in every page and frame of a context before the page's own scripts, again
+on every navigation. It always belongs to a whole context, never to a single page.
+_Avoid_: preload script, page init script
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -106,6 +111,9 @@ _Avoid_: touched context, current context
   in the groups of the keywords that called it. A keyword with no **target context**, like
   `Log`, goes to the trace of the context active when it ends. Reading other contexts on the
   way, as `Get Browser Catalog` does, does not make them **target contexts**.
+- An **init script** has a scope, like an **ad-hoc trace**: it is removed when that test or
+  suite ends, or when its context closes, whichever comes first. Removing it only stops it on
+  later navigations; a page that already ran it keeps what it changed until it reloads.
 - Both tables hold the *same* keyword methods, stored twice by PythonLibCore. They are
   independent: changing one does not change the other.
 - **Argument conversion** happens before the **Robot Framework path** reaches the keyword

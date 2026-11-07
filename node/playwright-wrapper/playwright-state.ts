@@ -24,6 +24,7 @@ import {
     BrowserServer,
     BrowserType,
     chromium,
+    Disposable,
     Download,
     firefox,
     Locator,
@@ -330,6 +331,7 @@ async function _createIndexedContext(
         pageStack: [] as IndexedPage[],
         options: options,
         tracer: new ContextTracer(contextId, context.tracing),
+        initScripts: new Map<Uuid, Disposable>(),
     };
     if (traceFile) {
         logger.info(`Tracing enabled with: ${JSON.stringify(CONTEXT_TRACE_OPTIONS)}`);
@@ -697,10 +699,11 @@ export const locatorCache = new LocatorCache();
 /*
  * Pagestack's last item should be the current active page and the first item should be the lastly added page
  * */
-type IndexedContext = {
+export type IndexedContext = {
     c: BrowserContext;
     id: Uuid;
     tracer: ContextTracer;
+    initScripts: Map<Uuid, Disposable>;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
     // A restore which timed out keeps running, see setStorageState.

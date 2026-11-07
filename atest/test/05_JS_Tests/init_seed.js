@@ -1,0 +1,3 @@
+(seed) => {
+    window.seed = seed;
+}

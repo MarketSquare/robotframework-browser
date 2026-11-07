@@ -359,6 +359,16 @@ message Request {
     string content = 1;
   }
 
+  message InitScript {
+    string content = 1;
+    optional string arg = 2;
+  }
+
+  message InitScriptId {
+    string contextId = 1;
+    string scriptId = 2;
+  }
+
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
@@ -479,6 +489,12 @@ message Response {
     string log = 1;
     string contextId = 2;
     string traceFile = 3;
+  }
+
+  message InitScriptAdded {
+    string log = 1;
+    string contextId = 2;
+    string scriptId = 3;
   }
 
   message ListString {
@@ -625,6 +641,8 @@ service  Playwright {
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
+  rpc AddInitScript(Request.InitScript) returns (Response.InitScriptAdded);
+  rpc RemoveInitScript(Request.InitScriptId) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */

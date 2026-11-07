@@ -14,6 +14,7 @@
 
 import json
 from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 from robot.utils import DotDict
@@ -24,9 +25,11 @@ from ..utils import (
     ROBOT_FRAMEWORK_BROWSER_NO_SET,
     DownloadInfo,
     HighlightMode,
+    Scope,
     keyword,
     logger,
 )
+from ..utils.settings_stack import scope_owner
 
 
 class Evaluation(LibraryComponent):
@@ -191,6 +194,85 @@ class Evaluation(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
             logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def add_init_script(
+        self,
+        script: str | None = None,
+        *,
+        path: Path | None = None,
+        arg: Any = None,
+        scope: Scope = Scope.Test,
+    ) -> None:
+        """Adds JavaScript that runs before the page's own scripts in every page of the active context.
+
+        Use it to prepare what the application reads while it starts: seed ``Math.random``,
+        set feature flags or ``window`` globals, or stub browser APIs. The script runs again on
+        every navigation, in every frame, and in pages and popups opened later. To freeze time,
+        use `Set Time`; for geolocation, use `Set Geolocation` and `Grant Permissions`.
+
+        The script is always added to the whole active context, never to a single page, and
+        there is no way to change that. To keep a script away from other tests, give the test
+        its own context with `New Context`, or use the default ``scope=Test``.
+
+        The script is removed when its ``scope`` ends or when its context closes, whichever
+        comes first. Removing it stops it on later navigations only: a page that already ran
+        it keeps what the script changed until the page reloads. Several scripts can be added,
+        but the order in which they run is not guaranteed.
+
+        Errors in the script do not fail this keyword. They happen in the page, on navigation,
+        and show up with `Get Page Errors`.
+
+        *Arguments:*
+          - ``script``: JavaScript source. Without ``arg`` it runs as it is, so a function
+                given here is defined but never called.
+          - ``path``: Path to a JavaScript file to use instead of ``script``. Give either
+                ``script`` or ``path``, not both.
+          - ``arg``: Value given to the script, which then must be one function expression,
+                such as ``(value) => { window.seed = value }``. The value must be JSON
+                serializable.
+          - ``scope``: When the script is removed. ``Test`` removes it when the running test
+                ends, test setup and teardown included, and fails outside a test. ``Suite``
+                removes it when the running suite ends. ``Global`` keeps it until its context
+                closes. See [#type-Scope|Scope]. Without a running suite, as when the library
+                is used from Python, every scope behaves like ``Global``.
+
+        Fails when no context is open.
+
+        Example:
+        | `New Context`
+        | `Add Init Script`    (value) => { Math.random = () => value }    arg=${0.5}
+        | `Add Init Script`    path=${CURDIR}/feature_flags.js
+        | `New Page`    ${URL}
+        """
+        if (script is None) == (path is None):
+            raise ValueError("Give either script or path, exactly one of them.")
+        try:
+            scope_id = scope_owner(scope, self.library)
+        except ValueError as error:
+            raise ValueError(
+                f"{error}. Use scope=Suite to add an init script outside a test."
+            ) from error
+        content = path.read_text(encoding="utf-8") if path else str(script)
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AddInitScript(
+                Request().InitScript(
+                    content=content, arg=None if arg is None else json.dumps(arg)
+                )
+            )
+        self.init_scripts.added(response.contextId, response.scriptId, scope_id)
+        logger.info(response.log)
+
+    def remove_init_scripts_of_scope(self, scope_id: str) -> None:
+        for context_id, script_id in self.init_scripts.end_scope(scope_id):
+            try:
+                with self.playwright.grpc_channel() as stub:
+                    response = stub.RemoveInitScript(
+                        Request().InitScriptId(contextId=context_id, scriptId=script_id)
+                    )
+                logger.info(response.log)
+            except Exception as error:
+                logger.warn(f"Removing init script {script_id} failed: {error}")
 
     @keyword(tags=("Page Content",))
     def download(

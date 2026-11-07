@@ -94,6 +94,7 @@ from .utils.data_types import (
     TracingGroupMode,
     ViewportDimensions,
 )
+from .utils.init_scripts import InitScripts
 from .utils.running_traces import RunningTraces
 from .version import __version__ as VERSION
 
@@ -604,6 +605,7 @@ class Browser(DynamicCore):
         self._browser_control = Control(self)
         self._assertion_formatter = Formatter(self)
         self._keyword_call = KeywordCallObserver(self)
+        self._evaluation = Evaluation(self)
         libraries = [
             self._playwright_state,
             self._browser_control,
@@ -613,7 +615,7 @@ class Browser(DynamicCore):
             Coverage(self),
             Crawling(self),
             Devices(self),
-            Evaluation(self),
+            self._evaluation,
             self._assertion_formatter,
             Interaction(self),
             Getters(self),
@@ -661,6 +663,7 @@ class Browser(DynamicCore):
             self._plugin_keywords = []
         self.presenter_mode = enable_presenter_mode
         self.running_traces: RunningTraces = RunningTraces(tracing_group_mode)
+        self.init_scripts: InitScripts = InitScripts()
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
         self._failed_page_tokens_local = threading.local()
@@ -1242,6 +1245,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             logger.warn(f"Waiting unresolved promises at the end of test '{name}'")
             self.wait_for_all_promises()
         self._playwright_state.stop_traces_of_scope(attrs["id"], attrs["status"])
+        self._evaluation.remove_init_scripts_of_scope(attrs["id"])
         if self._auto_closing_level == AutoClosingLevel.TEST:
             if self.presenter_mode:
                 logger.trace("Presenter mode: Wait for 5 seconds before pruning pages")
@@ -1254,6 +1258,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         self._rf_context.end_suite()
         self._playwright_state.set_rf_context(**self._rf_context.context())
         self._playwright_state.stop_traces_of_scope(attrs["id"], attrs["status"])
+        self._evaluation.remove_init_scripts_of_scope(attrs["id"])
         if self._auto_closing_level in [AutoClosingLevel.TEST, AutoClosingLevel.SUITE]:
             self.execute_auto_closing(name, attrs, "Suite", attrs["status"])
 

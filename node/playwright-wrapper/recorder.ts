@@ -305,11 +305,11 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
         },
     );
     (await commandListeners(context)).add(buffers);
-    // Deliberately no `context.addInitScript(toolbarScript())`: an init script
-    // cannot be un-registered, so the toolbar would keep re-appearing on every
-    // navigation long after the session ended. `renderToolbars` re-injects it
-    // on every poll instead, which covers navigation and popups and stops by
-    // itself once polling stops.
+    // Deliberately no `context.addInitScript(toolbarScript())`: the init script
+    // would have to be disposed of on every way a session can end, or the
+    // toolbar keeps re-appearing on every navigation. `renderToolbars`
+    // re-injects it on every poll instead, which covers navigation and popups
+    // and stops by itself once polling stops.
     return buffers;
 }
 

@@ -107,6 +107,19 @@ def test_click_with_a_plain_string_button(test_app_url, browser):
     assert browser.get_text("#mouse_button") == "middle"
 
 
+def test_init_script_stays_until_its_context_closes(test_app_url, browser):
+    browser.new_context()
+    browser.add_init_script("window.seed = 'python'")
+    browser.new_page(f"{test_app_url}/init_script.html")
+    browser.new_page(f"{test_app_url}/init_script.html")
+    assert browser.get_text("#seed-value") == "python"
+
+
+def test_init_script_needs_an_open_context(browser):
+    with pytest.raises(Exception, match="No context open"):
+        browser.add_init_script("window.seed = 'python'")
+
+
 def test_get_text_with_a_plain_string_assertion_operator(test_app_url, browser):
     browser.new_page(f"{test_app_url}/dist/")
     assert browser.get_text("h1", "==", "Login Page") == "Login Page"

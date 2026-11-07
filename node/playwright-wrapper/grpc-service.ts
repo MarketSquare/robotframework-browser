@@ -25,6 +25,7 @@ import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as pb from './generated/playwright';
 import * as getters from './getters';
+import * as initScript from './init-script';
 import * as interaction from './interaction';
 import { class_async_logger } from './keyword-decorators';
 import { withLoadReport } from './load-report';
@@ -58,6 +59,7 @@ const RPCS_WITHOUT_ACTIVE_TARGET = new Set<keyof typeof pb.PlaywrightService>([
     'openTraceGroup',
     'recorderPoll',
     'removeFailedPage',
+    'removeInitScript',
     'selectorPickerPoll',
     'setPeerId',
     'setRfContext',
@@ -432,6 +434,8 @@ export class PlaywrightServer {
     getElements = this.wrapping(evaluation.getElements);
     getByX = this.wrapping(evaluation.getByX);
     addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    addInitScript = this.wrapping(initScript.addInitScript);
+    removeInitScript = this.wrapping(initScript.removeInitScript);
     setTime = this.wrapping(clock.setTime);
     clockResume = this.wrapping(clock.clockResume);
     clockPauseAt = this.wrapping(clock.clockPauseAt);

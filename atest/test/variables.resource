@@ -38,6 +38,7 @@ ${WAIT_URL} =                           ${ROOT_URL}waitfor.html
 ${GEOLOCATION_URL} =                    ${ROOT_URL}geolocation.html
 ${OWERLAY_URL} =                        ${ROOT_URL}overlay.html
 ${CLOCK_URL} =                          ${ROOT_URL}clock.html
+${INIT_SCRIPT_URL} =                    ${ROOT_URL}init_script.html
 ${CREDENTIAL_URL} =                     ${ROOT_URL}credentials.html
 ${DEFAULT_TEST_TIMEOUT} =               30 seconds
 ${PLAYWRIGHT_TIMEOUT} =                 10 second
