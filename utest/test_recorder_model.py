@@ -370,8 +370,9 @@ def test_setting_names_of_a_language():
     )
 
 
-def test_setting_names_fall_back_to_english_for_missing_settings():
-    class Custom(Language):
-        code = "custom"
+class _NoSettings(Language):
+    code = "test-no-settings"
 
-    assert SettingNames.of(Custom()) == SettingNames()
+
+def test_setting_names_fall_back_to_english_for_missing_settings():
+    assert SettingNames.of(_NoSettings()) == SettingNames()

@@ -30,6 +30,7 @@ from robot.conf.languages import Language, Languages
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.parsing.model.blocks import Keyword, KeywordSection
 from robot.running.arguments.embedded import EmbeddedArgumentParser, EmbeddedArguments
+from robot.running.namespace import Namespace
 from robot.utils import normalize
 from robot.variables import VariableMatches
 
@@ -219,11 +220,16 @@ class KnownKeywords:
     bdd_prefixes: tuple[str, ...] = ()
 
 
-def configured_languages() -> tuple[Language, ...]:
+def _running_namespace() -> Namespace | None:
     try:
-        namespace = BuiltIn()._get_context().namespace
-    except (RobotNotRunningError, AttributeError):
-        return ()
+        return BuiltIn()._get_context().namespace
+    except (RobotNotRunningError, AttributeError) as error:
+        logger.debug(f"recorder: no running suite: {error}")
+        return None
+
+
+def configured_languages() -> tuple[Language, ...]:
+    namespace = _running_namespace()
     languages = getattr(namespace, "languages", None)
     return tuple(languages) if isinstance(languages, Languages) else ()
 
@@ -257,10 +263,8 @@ def collect_known_keywords() -> KnownKeywords:
     Returns an empty result when no suite is running, so the recorder still
     works from plain Python.
     """
-    try:
-        namespace = BuiltIn()._get_context().namespace
-    except (RobotNotRunningError, AttributeError) as error:
-        logger.debug(f"recorder: no running suite to read keyword names from: {error}")
+    namespace = _running_namespace()
+    if namespace is None:
         return KnownKeywords()
     owners = list(namespace.libraries)
     store = getattr(namespace, "_kw_store", None)

@@ -210,11 +210,13 @@ class Recorder(LibraryComponent):
         first language the run was started with (``--language`` or ``robot.toml``),
         otherwise English. With ``file=${None}`` there is no file, so the language the
         run was started with is used. The language is determined when the recording
-        starts. An existing keyword section is used, whatever its language. The returned
-        text starts with the English ``*** Keywords ***`` header, which Robot Framework
-        accepts in every language, but its settings are in the language of ``file``, so
-        the text parses only where that language is enabled.
-        What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
+        starts; if ``file`` stops enabling it during the recording, saving fails until it
+        is enabled again. An existing keyword section is used, whatever its language.
+        The returned text starts with the English ``*** Keywords ***`` header, which
+        Robot Framework accepts in every language, but its settings are in the language
+        of ``file``, so the text parses only where that language is enabled.
+
+        What is generated: every keyword gets the tag ``recorded``. A popup or new tab
         becomes ``Switch Page    NEW``. An Action on another open page gets a
         ``Switch Page`` to it first, using the id the Switch Page that left that page
         returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
@@ -340,7 +342,8 @@ class Recorder(LibraryComponent):
         nothing is lost.
 
         Keyword names and languages are chosen as described in `Record Keyword`.
-        What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
+
+        What is generated: every keyword gets the tag ``recorded``. A popup or new tab
         becomes ``Switch Page    NEW``. An Action on another open page gets a
         ``Switch Page`` to it first, using the id the Switch Page that left that page
         returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
@@ -525,5 +528,6 @@ class Recorder(LibraryComponent):
             raise ValueError(f"Cannot record into {path}: {reason}.")
         try:
             return FileTarget(path, languages)
-        except ValueError as error:
-            raise ValueError(f"Cannot record into {path}: {error}.") from None
+        except (OSError, ValueError) as error:
+            reason = str(error).rstrip(".")
+            raise ValueError(f"Cannot record into {path}: {reason}.") from None

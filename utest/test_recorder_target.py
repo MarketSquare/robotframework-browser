@@ -20,6 +20,7 @@ from Browser.recorder.model import (
     Value,
 )
 from Browser.recorder.names import configured_languages
+from Browser.recorder import target as target_module
 from Browser.recorder.target import FileTarget, LogTarget
 
 ORIGINAL = (
@@ -647,15 +648,15 @@ def test_translated_call_is_in_returned_text(translated_keyword):
     assert "Remplir Le Texte" in translated_keyword.text()
 
 
+class _NoKeywordsHeader(Language):
+    code = "test-no-keywords-header"
+    keywords_header = ""
+
+
 def test_custom_language_without_keyword_header_falls_back_to_english(tmp_path):
-
-    class Custom(Language):
-        code = "custom"
-        keywords_header = ""
-
     path = tmp_path / "custom.robot"
     path.write_text("", encoding="utf-8")
-    FileTarget(path, [Custom()]).save(keyword())
+    FileTarget(path, [_NoKeywordsHeader()]).save(keyword())
     assert path.read_text(encoding="utf-8").startswith("*** Keywords ***")
 
 
@@ -762,9 +763,54 @@ def test_section_language_is_determined_when_the_target_is_created(tmp_path):
     path = tmp_path / "configured.robot"
     path.write_text("Language: de\n", encoding="utf-8")
     target = FileTarget(path)
-    path.write_text("Language: fr\n", encoding="utf-8")
+    path.write_text("Language: fr\nLanguage: de\n", encoding="utf-8")
     target.save(keyword())
     assert "*** Schlüsselwörter ***" in path.read_text(encoding="utf-8")
+
+
+def test_saving_fails_when_the_file_no_longer_enables_its_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no longer enables German"):
+        target.save(keyword())
+
+
+def test_a_refused_save_leaves_the_file_alone(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        target.save(keyword())
+    assert path.read_text(encoding="utf-8") == "Language: fr\n"
+
+
+def test_a_configured_language_stays_enabled_without_a_declaration(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: fr\n", encoding="utf-8")
+    target = FileTarget(path, FRENCH)
+    path.write_text("", encoding="utf-8")
+    target.save(keyword())
+    assert "*** Mots-clés ***" in path.read_text(encoding="utf-8")
+
+
+def test_recorded_settings_are_parsed_in_the_declared_language(tmp_path, monkeypatch):
+    parsed = []
+    original = target_module._parse_block
+    monkeypatch.setattr(
+        target_module,
+        "_parse_block",
+        lambda text, languages: parsed.append(original(text, languages)) or parsed[-1],
+    )
+    path = tmp_path / "declared.robot"
+    path.write_text("Language: fi\n", encoding="utf-8")
+    target = FileTarget(path)
+    kw = RecordedKeyword("Fill Name", settings=target.settings)
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    target.save(kw)
+    assert parsed[0].body[0].type == "TAGS"
 
 
 def test_settings_are_determined_when_the_target_is_created(tmp_path):

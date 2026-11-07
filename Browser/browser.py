@@ -1492,12 +1492,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
 
     @cached_property
     def registered_keyword_names(self) -> Mapping[str, str]:
-        names = {}
+        core: dict[str, str] = {}
+        other: dict[str, str] = {}
         for registered, method in self.keywords.items():
             owner = getattr(method, "__self__", None)
-            if any(owner is component for component in self._core_components):
-                names[method.__name__] = printable_name(registered, code_style=True)
-        return types.MappingProxyType(names)
+            is_core = any(owner is component for component in self._core_components)
+            names = core if is_core else other
+            names[method.__name__] = printable_name(registered, code_style=True)
+        return types.MappingProxyType({**other, **core})
 
     @staticmethod
     def _get_translation(language: str | None) -> Path | None:

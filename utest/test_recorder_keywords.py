@@ -441,20 +441,28 @@ def test_browser_registered_names_follow_translation(registered_library):
     assert library.registered_keyword_names["fill_text"] == expected
 
 
-def test_browser_registered_names_leave_out_plugin_keywords(tmp_path):
-    plugin = tmp_path / "ExtraPlugin.py"
+def test_browser_registered_names_follow_a_plugin_override(monkeypatch, tmp_path):
+    translation = tmp_path / "translation.json"
+    translation.write_text(
+        json.dumps({"click": {"name": "Klikkaa", "doc": ""}}), encoding="utf-8"
+    )
+    monkeypatch.setattr(
+        Browser, "_get_translation", staticmethod(lambda lang: translation)
+    )
+    plugin = tmp_path / "OverridePlugin.py"
     plugin.write_text(
         """from Browser.base import LibraryComponent
 from Browser.utils import keyword
 
 
-class ExtraPlugin(LibraryComponent):
+class OverridePlugin(LibraryComponent):
     @keyword
-    def extra_click(self): ...
+    def click(self, selector: str): ...
 """,
         encoding="utf-8",
     )
-    assert "extra_click" not in Browser(plugins=str(plugin)).registered_keyword_names
+    library = Browser(language="fi", plugins=str(plugin))
+    assert library.registered_keyword_names["click"] == "Klikkaa"
 
 
 def test_browser_registered_names_are_computed_once():
@@ -465,3 +473,26 @@ def test_browser_registered_names_are_computed_once():
 def test_browser_registered_names_are_read_only():
     with pytest.raises(TypeError):
         Browser().registered_keyword_names["fill_text"] = "Changed"
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="chmod does not make files unreadable"
+)
+def test_an_unreadable_file_is_refused_before_recording(tmp_path):
+    path = tmp_path / "k.resource"
+    path.write_text("", encoding="utf-8")
+    path.chmod(0o222)
+    try:
+        with pytest.raises(ValueError, match="Cannot record into .*Permission denied"):
+            Recorder._target(str(path))
+    finally:
+        path.chmod(0o644)
+
+
+def test_a_refused_file_reason_ends_with_one_period(monkeypatch, tmp_path):
+    def refuse(path, languages):
+        raise ValueError("No language with name 'MyLang.py' found.")
+
+    monkeypatch.setattr(module, "FileTarget", refuse)
+    with pytest.raises(ValueError, match=r"'MyLang\.py' found\.$"):
+        Recorder._target(str(tmp_path / "k.resource"))

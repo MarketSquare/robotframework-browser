@@ -120,19 +120,18 @@ class FileTarget:
         self.path = Path(path)
         self.label = self.path.name
         self._configured = tuple(languages)
+        self._languages = Languages(self._configured)
         self._owned: dict[str, _Owned] = {}
         self._format: _Format | None = None
-        declared = self._read().languages if self.path.exists() else ()
+        declared = self._read().languages
         self._language = _first_with_keywords_header(
-            [
-                *Languages(declared, add_english=False),
-                *self._configured,
-            ]
+            [*Languages(declared, add_english=False), *self._configured]
         )
+        self._languages.add_language(self._language)
         self.settings = SettingNames.of(self._language)
 
     def existing_names(self) -> set[str]:
-        return existing_keyword_names(self.path, self._languages())
+        return existing_keyword_names(self.path, self._languages)
 
     def save(self, keyword: RecordedKeyword) -> str | None:
         key = normalize_keyword_name(keyword.name)
@@ -141,7 +140,8 @@ class FileTarget:
             return None
         owned = self._owned.get(key)
         model = self._read()
-        block = _parse_block(keyword.block(), self._languages())
+        self._check_language(model)
+        block = _parse_block(keyword.block(), self._languages)
         notice = None
         found = _find(model, keyword.name)
         if found is not None:
@@ -214,8 +214,14 @@ class FileTarget:
 
     # -- helpers ----------------------------------------------------------- #
 
-    def _languages(self) -> Languages:
-        return Languages(self._configured)
+    def _check_language(self, model: File) -> None:
+        enabled = Languages([*self._configured, *model.languages])
+        if self._language not in enabled:
+            raise ValueError(
+                f"{self.path.name} no longer enables {self._language.name}, the "
+                "language the recording started with; enable it with a "
+                "'Language:' line or record again."
+            )
 
     def _read(self) -> File:
         """Parse the file as it is on disk right now.
@@ -242,9 +248,7 @@ class FileTarget:
                 eol="\r\n" if crlf else "\n",
                 final_newline=not text or text.endswith("\n"),
             )
-        return get_model(
-            io.StringIO(text.replace("\r\n", "\n")), lang=self._languages()
-        )
+        return get_model(io.StringIO(text.replace("\r\n", "\n")), lang=self._languages)
 
     def _write(self, model: File, restore_final_newline: bool = False) -> None:
         """Write atomically, in the file's own BOM and line ending."""
