@@ -25,17 +25,16 @@ jobs:
   # speed of a job against the jobs queued behind it. Measured on the whole
   # acceptance suite: 8 vCPU take 140 s, 16 take 85 s and 32 take 75 s, while
   # installing and the unit tests take the same 2.5 minutes on any size. Linux
-  # jobs get 8 vCPU, Windows 16 and macOS 12, the largest Namespace macOS shape.
-  # Jobs that only take seconds run on GitHub runners, so they never wait for a
-  # free Namespace machine, and so does macos-15-intel: Namespace has no Intel
-  # macOS machines.
+  # jobs get 8 vCPU, Windows 16 and macOS 12, the largest Namespace macOS shape,
+  # which leaves room at the start for the 2 vCPU job every build waits for.
+  # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
   # The version the wheels of this run carry. Empty unless this is a push to
   # main, which keeps pull request and scheduled runs building exactly the
   # versions they build today.
   nightly_version:
     name: Work out the nightly version
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4
     timeout-minutes: 10
     outputs:
       version: ${{ steps.dev.outputs.version }}
@@ -715,7 +714,7 @@ jobs:
   # wheels: whoever installs them cannot tell our breakage from theirs.
   publish_nightly:
     name: Publish the nightly wheels
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4
     timeout-minutes: 15
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
