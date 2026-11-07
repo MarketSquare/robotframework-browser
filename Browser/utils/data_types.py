@@ -1877,7 +1877,6 @@ InstallableBrowser = Enum(
         "firefox": "firefox",
         "webkit": "webkit",
         "chromium-headless-shell": "chromium-headless-shell",
-        "chromium-tip-of-tree-headless-shell": "chromium-tip-of-tree-headless-shell",
         "chrome": "chrome",
         "chrome-beta": "chrome-beta",
         "msedge": "msedge",
@@ -1886,7 +1885,7 @@ InstallableBrowser = Enum(
     },
 )
 InstallableBrowser.__doc__ = (
-    """Enum of browsers that can be installed with `Install Browser` keyword."""
+    """Enum of browsers that can be installed with the `rfbrowser install` command."""
 )
 
 
