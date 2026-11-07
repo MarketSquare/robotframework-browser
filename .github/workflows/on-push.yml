@@ -330,72 +330,8 @@ jobs:
             atest/output
           if-no-files-found: ignore
 
-  build:
-    runs-on: ${{ matrix.os }}
-    needs: nightly_version
-    strategy:
-      matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-    steps:
-    - uses: actions/checkout@v7
-    - name: Use Node.js
-      uses: actions/setup-node@v7
-      with:
-        node-version: 24.x
-        cache: 'npm'
-    - name: Install nodejs dependencies
-      shell: bash
-      env:
-        PLAYWRIGHT_BROWSERS_PATH: 0
-      run: |
-        npm ci # installs from package-lock.json; grpc-tools needs its install script
-        .github/scripts/install-playwright.sh
-    - name: Set up Python 3.12
-      uses: actions/setup-python@v7
-      with:
-        python-version: 3.12
-        cache: 'pip'
-    - name: Install python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install uv
-        uv pip install wheel --python 3.12  --system --verbose
-        uv pip install -r Browser/dev-requirements.txt  --python 3.12 --system
-        uv pip install -r pyproject.toml  --python 3.12  --system
-    # A nightly wheel has to say which build it is, and the version has to be
-    # stamped before packaging rather than renamed afterwards, because it also
-    # goes into the metadata and into the BrowserBatteries dependency pin.
-    - name: Stamp the nightly version
-      if: needs.nightly_version.outputs.version != ''
-      run: |
-        inv version ${{ needs.nightly_version.outputs.version }}
-    - name: Build stubs
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        inv node-build
-    - name: Build test app
-      run: |
-        inv create-test-app
-    - name: Create Distributable Package
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        inv docs
-        inv create-package
-    - uses: actions/upload-artifact@v7
-      if: matrix.os == 'ubuntu-latest'
-      with:
-        name: rfbrowser-wheel
-        path: dist/robotframework_browser-*-py3-none-any.whl
-    - name: Package demoapp
-      run: |
-        inv demo-app
-    - uses: actions/upload-artifact@v7
-      with:
-        name: demoapp-${{ matrix.os }}
-        path: zip_results/demoapp
-
   test-install:
-    needs: build
+    needs: build_wheels
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -488,8 +424,10 @@ jobs:
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
 
-  build_browser_batteries_wheels:
-    name: Build wheels on ${{ matrix.os }} for BrowserBatteries tests
+  # The Browser wheel, the BrowserBatteries wheels and the demo apps that every
+  # install test and the nightly use.
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     needs: nightly_version
     timeout-minutes: 45
@@ -538,12 +476,13 @@ jobs:
       - name: Create Distributable Browser Package
         if: matrix.os == 'ubuntu-latest'
         run: |
+          inv docs
           inv create-package
       - uses: actions/upload-artifact@v7
-        name: Upload rfbrowser-wheel for BrowserBatteries tests
+        name: Upload rfbrowser-wheel
         if: matrix.os == 'ubuntu-latest'
         with:
-          name: rfbrowser-wheel-bb-test
+          name: rfbrowser-wheel
           path: dist/robotframework_browser-*-py3-none-any.whl
           if-no-files-found: error
       - name: Build test app
@@ -554,7 +493,7 @@ jobs:
           inv demo-app
       - uses: actions/upload-artifact@v7
         with:
-          name: demoapp-bb-test-${{ matrix.os }}
+          name: demoapp-${{ matrix.os }}
           path: zip_results/demoapp
           if-no-files-found: error
       - name: Create Distributable BrowserBatteries Package
@@ -562,13 +501,13 @@ jobs:
           inv package-nodejs
       - uses: actions/upload-artifact@v7
         with:
-          name: browser-batteries-wheels-bb-test-${{ matrix.os }}
+          name: browser-batteries-wheels-${{ matrix.os }}
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
 
   test_browser_batteries_wheels:
     needs:
-      - build_browser_batteries_wheels
+      - build_wheels
     name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -591,17 +530,17 @@ jobs:
       - name: Download browser-wheel
         uses: actions/download-artifact@v8
         with:
-          name: rfbrowser-wheel-bb-test
+          name: rfbrowser-wheel
           path: rfbrowser-wheel
       - name: Download BrowserBatteries wheel
         uses: actions/download-artifact@v8
         with:
-          name: browser-batteries-wheels-bb-test-${{ matrix.os }}
+          name: browser-batteries-wheels-${{ matrix.os }}
           path: browser-batteries-wheels
       - name: Download demoapp
         uses: actions/download-artifact@v8
         with:
-          name: demoapp-bb-test-${{ matrix.os }}
+          name: demoapp-${{ matrix.os }}
           path: demoapp
       - name: Install Browser and BrowserBatteries
         if: matrix.os != 'windows-latest'
@@ -664,7 +603,7 @@ jobs:
 
   docker_image:
     runs-on: ubuntu-latest
-    needs: build_browser_batteries_wheels
+    needs: build_wheels
     permissions:
       contents: read
     steps:
@@ -683,7 +622,7 @@ jobs:
       - name: Download browser wheel
         uses: actions/download-artifact@v8
         with:
-          name: rfbrowser-wheel-bb-test
+          name: rfbrowser-wheel
           path: docker/dist
       - name: Build with GitHub Packages
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -696,7 +635,7 @@ jobs:
       - name: Download demo app
         uses: actions/download-artifact@v8
         with:
-          name: demoapp-bb-test-ubuntu-latest
+          name: demoapp-ubuntu-latest
           path: demoapp
       - name: unzip demo app
         run: |
@@ -765,9 +704,8 @@ jobs:
     needs:
       - nightly_version
       - testing
-      - build
       - test-install
-      - build_browser_batteries_wheels
+      - build_wheels
       - test_browser_batteries_wheels
     permissions:
       contents: write
@@ -781,7 +719,7 @@ jobs:
       - name: Download the BrowserBatteries wheels
         uses: actions/download-artifact@v8
         with:
-          pattern: browser-batteries-wheels-bb-test-*
+          pattern: browser-batteries-wheels-*
           merge-multiple: true
           path: nightly-wheels
       - name: Replace the assets on the nightly release
