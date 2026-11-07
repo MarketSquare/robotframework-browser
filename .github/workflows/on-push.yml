@@ -17,19 +17,25 @@ env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
 jobs:
-  # Every job runs on Namespace runners. matrix.os stays the GitHub image name,
+  # The jobs run on Namespace runners. matrix.os stays the GitHub image name,
   # which the step conditions and artifact names use, and runs-on maps it to the
-  # Namespace machine. The acceptance tests get 16 vCPU (12 on macOS, the largest
-  # Namespace macOS shape), so pabot runs 15 workers (11 on macOS).
-  # macos-15-intel stays on GitHub, because Namespace has no Intel macOS
-  # machines.
+  # Namespace machine. pabot runs one process per vCPU but one.
+  #
+  # The workspace runs at most 64 Linux vCPU at a time, so the sizes trade the
+  # speed of a job against the jobs queued behind it. Measured on the whole
+  # acceptance suite: 8 vCPU take 140 s, 16 take 85 s and 32 take 75 s, while
+  # installing and the unit tests take the same 2.5 minutes on any size. Linux
+  # jobs get 8 vCPU, Windows 16 and macOS 12, the largest Namespace macOS shape.
+  # Jobs that only take seconds run on GitHub runners, so they never wait for a
+  # free Namespace machine, and so does macos-15-intel: Namespace has no Intel
+  # macOS machines.
 
   # The version the wheels of this run carry. Empty unless this is a push to
   # main, which keeps pull request and scheduled runs building exactly the
   # versions they build today.
   nightly_version:
     name: Work out the nightly version
-    runs-on: nscloud-ubuntu-24.04-amd64-2x4
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
       version: ${{ steps.dev.outputs.version }}
@@ -56,7 +62,7 @@ jobs:
           inv dev-version
 
   testing:
-    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-16x32", "windows-latest":"nscloud-windows-2022-amd64-16x32", "macos-latest":"nscloud-macos-sequoia-arm64-12x28"}')[matrix.os] }}
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "windows-latest":"nscloud-windows-2022-amd64-16x32", "macos-latest":"nscloud-macos-sequoia-arm64-12x28"}')[matrix.os] }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -208,7 +214,7 @@ jobs:
   # failed, so a failing test still leaves a report.
   coverage:
     name: Coverage
-    runs-on: nscloud-ubuntu-24.04-amd64-16x32
+    runs-on: nscloud-ubuntu-24.04-amd64-8x16
     timeout-minutes: 30
     permissions:
       contents: read
@@ -414,10 +420,9 @@ jobs:
           - ubuntu-latest
           - ubuntu-24.04-arm
           - windows-latest
-          - macos-15-intel
           - macos-latest
 
-    steps:
+    steps: &build_wheels_steps
       - uses: actions/checkout@v7
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -483,6 +488,21 @@ jobs:
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
 
+  # Namespace has no Intel macOS machines. Only the nightly and the scheduled
+  # run use this wheel, so in its own job the tests do not wait for GitHub's
+  # slower runner.
+  build_wheels_intel:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: macos-15-intel
+    needs: nightly_version
+    timeout-minutes: 45
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    strategy:
+      matrix:
+        os: [ macos-15-intel ]
+    steps: *build_wheels_steps
+
   test_browser_batteries_wheels:
     needs:
       - build_wheels
@@ -492,9 +512,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'schedule' && '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-15-intel", "macos-latest"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest"]') }}
+        os: [ "ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest" ]
 
-    steps:
+    steps: &test_browser_batteries_wheels_steps
       - uses: actions/checkout@v7
       - name: Set up Python 3.14
         uses: actions/setup-python@v7
@@ -579,6 +599,19 @@ jobs:
           rfbrowser clean-node
           pip uninstall -y robotframework-browser-batteries
           pip uninstall -y robotframework-browser
+
+  test_browser_batteries_wheels_intel:
+    if: github.event_name == 'schedule'
+    needs:
+      - build_wheels
+      - build_wheels_intel
+    name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        os: [ macos-15-intel ]
+    steps: *test_browser_batteries_wheels_steps
 
   docker_image:
     runs-on: nscloud-ubuntu-24.04-amd64-8x16
@@ -682,7 +715,7 @@ jobs:
   # wheels: whoever installs them cannot tell our breakage from theirs.
   publish_nightly:
     name: Publish the nightly wheels
-    runs-on: nscloud-ubuntu-24.04-amd64-2x4
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
@@ -690,6 +723,7 @@ jobs:
       - testing
       - test-install
       - build_wheels
+      - build_wheels_intel
       - test_browser_batteries_wheels
     permissions:
       contents: write
