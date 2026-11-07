@@ -19,7 +19,16 @@ Failure Without Timeout
     [Teardown]    No Operation
     Fail    plain failure
 
+Test Timeout With Nested Teardown
+    [Timeout]    0.5 seconds
+    [Teardown]    Clean Up
+    Sleep    3 seconds
+
 *** Keywords ***
+Clean Up
+    No Operation
+    [Teardown]    No Operation
+
 Failure Handled
     Log    on-failure keyword ran
 """
@@ -51,3 +60,19 @@ def test_teardown_after_a_test_timeout_runs_the_on_failure_keyword(result):
 
 def test_teardown_after_another_failure_does_not_run_it_again(result):
     assert keywords_in_teardown(result, "Failure Without Timeout") == []
+
+
+def test_keyword_teardown_inside_the_test_teardown_does_not_run_it_again(result):
+    test = next(
+        t
+        for t in result.suite.all_tests
+        if t.name == "Test Timeout With Nested Teardown"
+    )
+    clean_up = test.teardown
+    assert [item.name for item in clean_up.body if item.type == "KEYWORD"] == [
+        "Failure Handled",
+        "No Operation",
+    ]
+    assert [
+        item.name for item in clean_up.teardown.body if item.type == "KEYWORD"
+    ] == []
