@@ -169,7 +169,7 @@ class PlaywrightState(LibraryComponent):
             response = stub.CloseBrowser(Request.Empty(), timeout=self.close_deadline)
             closed_browser_id = response.body
             self.delete_browser_id_from_arg_mapping(closed_browser_id)
-            self._update_tracing_contexts()
+            self._forget_traces_of_closed_contexts()
             self.library.pause_on_failure.discard(closed_browser_id)
             logger.info(response.log)
 
@@ -230,7 +230,7 @@ class PlaywrightState(LibraryComponent):
             with suppress(Exception):
                 contexts = self._get_context(context, browser_instance["contexts"])
                 self._close_pw_context(contexts, save_trace)
-        self._update_tracing_contexts()
+        self._forget_traces_of_closed_contexts()
 
     @keyword(tags=("Setter", "BrowserControl"))
     def start_tracing(
@@ -286,7 +286,7 @@ class PlaywrightState(LibraryComponent):
 
         [https://forum.robotframework.org/t//4240|Comment >>]
         """
-        owner = scope_owner(scope, self.library)
+        scope_id = scope_owner(scope, self.library)
         with self.playwright.grpc_channel() as stub:
             response = stub.StartTracing(
                 Request().StartTracing(
@@ -297,10 +297,9 @@ class PlaywrightState(LibraryComponent):
                     traceFile=str(self.traces_output.resolve()),
                 )
             )
-        context_id = response.body
-        if owner is not None:
-            self.library.ad_hoc_traces[context_id] = owner
-        self.add_context_and_keyword_call_stack_to_trace(True, context_id)
+        self.add_context_and_keyword_call_stack_to_trace(
+            True, response.body, scope_id=scope_id
+        )
         logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
@@ -336,15 +335,9 @@ class PlaywrightState(LibraryComponent):
         return response.traceFile
 
     def stop_traces_of_scope(self, scope_id: str, status: str) -> None:
-        owned = [
-            context_id
-            for context_id, owner in self.library.ad_hoc_traces.items()
-            if owner == scope_id
-        ]
+        owned = self.running_traces.end_scope(scope_id)
         if not owned:
             return
-        for context_id in owned:
-            self.library.ad_hoc_traces.pop(context_id, None)
         save = self.library.saves_trace_at_scope_end(status)
         try:
             open_contexts = self.get_context_ids()
@@ -367,19 +360,12 @@ class PlaywrightState(LibraryComponent):
                     traceFile=trace_file, save=save, contextId=context_id
                 )
             )
-        self.library.ad_hoc_traces.pop(response.contextId, None)
-        if response.contextId in self.library.tracing_contexts:
-            self.library.tracing_contexts.remove(response.contextId)
+        self.running_traces.stopped(response.contextId)
         return response
 
-    def _update_tracing_contexts(self):
-        if self.library.tracing_contexts:
-            all_context_ids = self.get_context_ids()
-            self.library.tracing_contexts = [
-                ctx_id
-                for ctx_id in self.library.tracing_contexts
-                if ctx_id in all_context_ids
-            ]
+    def _forget_traces_of_closed_contexts(self):
+        if self.running_traces.any_running:
+            self.running_traces.keep_only(self.get_context_ids())
 
     def _close_pw_context(self, contexts, save_trace=True):
         with self.playwright.grpc_channel() as stub:
@@ -775,7 +761,7 @@ class PlaywrightState(LibraryComponent):
         with self.playwright.grpc_channel() as stub:
             response = stub.CloseBrowserServer(Request().ConnectBrowser(url=wsEndpoint))
             logger.info(response.log)
-            self._update_tracing_contexts()
+            self._forget_traces_of_closed_contexts()
 
     def _switch_to_existing_browser(
         self, reuse_existing: bool, parameter_hash: int
@@ -1246,13 +1232,14 @@ class PlaywrightState(LibraryComponent):
                 )
             )
 
-    def add_context_and_keyword_call_stack_to_trace(self, trace_file, ctx_id):
-        if (
-            not trace_file
-            or self.library.tracing_group_mode == TracingGroupMode.Playwright
-        ):
+    def add_context_and_keyword_call_stack_to_trace(
+        self, trace_file, ctx_id, scope_id: str | None = None
+    ):
+        if not trace_file:
             return None
-        self.library.tracing_contexts.append(ctx_id)
+        self.running_traces.started(ctx_id, scope_id)
+        if not self.running_traces.sends_groups:
+            return None
         if self.library.tracing_group_mode == TracingGroupMode.Browser:
             if not self.library.keyword_call_stack:
                 return None
@@ -2312,7 +2299,7 @@ class PlaywrightState(LibraryComponent):
         context_id: str = "",
     ):
         """Opens the trace group in the trace viewer"""
-        if not self.library.tracing_contexts:
+        if not self.running_traces.sends_groups:
             return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.OpenTraceGroup(
@@ -2328,7 +2315,7 @@ class PlaywrightState(LibraryComponent):
     # Mute this from automatic group logging before this is exposed as keyword
     def close_trace_group(self):
         """Closes the trace group in the trace viewer"""
-        if not self.library.tracing_contexts:
+        if not self.running_traces.sends_groups:
             return
         with suppress(Exception), self.playwright.grpc_channel() as stub:
             stub.CloseTraceGroup(Request().Empty())

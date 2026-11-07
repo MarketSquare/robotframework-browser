@@ -25,14 +25,18 @@ class FakePlaywright:
         yield self.stub
 
 
-@pytest.fixture
-def browser(tmpdir, monkeypatch) -> Browser:
+def new_browser(tmpdir, monkeypatch, **library_args) -> Browser:
     monkeypatch.setattr(Browser, "_output_dir", tmpdir)
     monkeypatch.setattr(Browser, "_context_cache", ContextCache())
     monkeypatch.delenv("ROBOT_FRAMEWORK_BROWSER_TRACING", raising=False)
-    browser = Browser()
+    browser = Browser(**library_args)
     browser._playwright = FakePlaywright()
     return browser
+
+
+@pytest.fixture
+def browser(tmpdir, monkeypatch) -> Browser:
+    return new_browser(tmpdir, monkeypatch)
 
 
 VIEWPORT = {"width": 800, "height": 600}
@@ -194,7 +198,7 @@ def test_adopted_context_gets_the_keyword_calls_as_trace_groups(browser: Browser
 
     group = browser._playwright.stub.OpenTraceGroup.call_args.args[0]
     assert (group.name, group.contextId) == ("Open Application", "context=1")
-    assert browser.tracing_contexts == ["context=1"]
+    assert "context=1" in browser.running_traces
 
 
 def test_adopted_context_without_tracing_gets_no_trace_groups(browser: Browser):
@@ -203,28 +207,33 @@ def test_adopted_context_without_tracing_gets_no_trace_groups(browser: Browser):
     adopt(browser, report())
 
     assert not browser._playwright.stub.OpenTraceGroup.called
-    assert browser.tracing_contexts == []
+    assert not browser.running_traces.any_running
 
 
-def test_playwright_tracing_group_mode_adds_no_trace_groups(browser: Browser):
-    browser.tracing_group_mode = TracingGroupMode.Playwright
+def test_playwright_tracing_group_mode_adds_no_trace_groups(tmpdir, monkeypatch):
+    browser = new_browser(
+        tmpdir, monkeypatch, tracing_group_mode=TracingGroupMode.Playwright
+    )
     browser.keyword_call_stack.append(keyword_call("Open Application"))
 
     adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     assert not browser._playwright.stub.OpenTraceGroup.called
-    assert browser.tracing_contexts == []
+    assert "context=1" in browser.running_traces
+    assert not browser.running_traces.sends_groups
 
 
 def test_adopted_context_outside_a_keyword_is_traced_without_trace_groups(
-    browser: Browser,
+    tmpdir, monkeypatch
 ):
-    browser.tracing_group_mode = TracingGroupMode.Browser
+    browser = new_browser(
+        tmpdir, monkeypatch, tracing_group_mode=TracingGroupMode.Browser
+    )
 
     adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     assert not browser._playwright.stub.OpenTraceGroup.called
-    assert browser.tracing_contexts == ["context=1"]
+    assert "context=1" in browser.running_traces
 
 
 def test_every_context_adopted_in_one_call_is_registered(browser: Browser):
@@ -234,7 +243,8 @@ def test_every_context_adopted_in_one_call_is_registered(browser: Browser):
         report("context=2", trace_file="/traces/two.zip"),
     )
 
-    assert browser.tracing_contexts == ["context=1", "context=2"]
+    assert "context=1" in browser.running_traces
+    assert "context=2" in browser.running_traces
 
 
 def test_context_adopted_before_the_extension_function_fails_is_registered(
@@ -252,7 +262,7 @@ def test_context_adopted_before_the_extension_function_fails_is_registered(
 
     with pytest.raises(RuntimeError, match="window did not open"):
         browser.call_js_keyword("openApplication")
-    assert browser.tracing_contexts == ["context=1"]
+    assert "context=1" in browser.running_traces
 
 
 def test_adopted_context_embeds_its_video(browser: Browser, caplog):
