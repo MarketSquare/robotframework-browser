@@ -1116,13 +1116,18 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             args = [name] if name else []
             name = typ
             kwname = typ
+            shown_args = args
+        else:
+            shown_args = self._keyword_call.trace_group_arguments(kwname, args)
         try:
             lineno = int(lineno)
         except (ValueError, TypeError):
             lineno = 0
         return {
             "name": (
-                f"{name}    {'    '.join(args)}" if args else name  # noqa: RUF001
+                f"{name}    {'    '.join(shown_args)}"  # noqa: RUF001
+                if shown_args
+                else name
             ),
             "file": str(source),
             "line": lineno,

@@ -8,6 +8,7 @@ Library     Collections
 
 *** Variables ***
 ${context_id} =                     ${EMPTY}
+${SECRET_VALUE} =                   xyzzy-do-not-disclose
 &{Initialize Context And Page} =    title=Initialize Context And Page    class=Tracing    method=tracingGroup
 &{Browser.New Context} =            title=Browser.New Context    class=Tracing    method=tracingGroup
 &{Keyword Without Browser} =        title=Keyword Without Browser    class=Tracing    method=tracingGroup
@@ -103,6 +104,65 @@ Groups After A Loop Or Branch That Did Not Run Keep Their Parent
     Should Be Equal    ${parent}    Catch An Invalid Condition And Log
     [Teardown]    Close Context
 
+Trace Group Names Show Argument Values
+    New Context
+    New Page    about:blank
+    Start Tracing    scope=Test
+    Write And Read Paragraph    first
+    Write And Read Paragraph    second
+    ${trace} =    Stop Tracing    path=argument-values.zip
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/argument-values/
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/argument-values/trace.trace
+    Should Contain Match    ${groups}    Browser.Get Text*id=a*==*first
+    Should Contain Match    ${groups}    Browser.Get Text*id=a*==*second
+    Should Contain Match    ${groups}    Browser.Evaluate JavaScript*None*>second</p>'
+    Should Not Contain Match    ${groups}    *\${tag}*
+    [Teardown]    Close Context
+
+Trace Group Names Mask Secret Arguments
+    New Context
+    New Page    ${FORM_URL}
+    Start Tracing    scope=Test
+    TRY
+        Fill Secret    css=input#username    ${SECRET_VALUE}
+    EXCEPT    ValueError: Direct assignment of values or variables as 'secret' is not allowed.*    type=glob
+        Log    secret was rejected
+    END
+    ${trace} =    Stop Tracing    path=masked-secret.zip
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/masked-secret/
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/masked-secret/trace.trace
+    Should Contain Match    ${groups}    Browser.Fill Secret*css=input#username*[*][*][*]
+    Should Not Contain Match    ${groups}    *xyzzy*
+    [Teardown]    Close Context
+
+Trace Group Names Cut Long Argument Values
+    New Context
+    New Page    about:blank
+    Start Tracing    scope=Test
+    VAR    ${long}    ${{'x' * 300}}
+    Log    ${long}
+    ${trace} =    Stop Tracing    path=long-value.zip
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/long-value/
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/long-value/trace.trace
+    Should Contain Match    ${groups}    BuiltIn.Log*${{'x' * 200}}...
+    Should Not Contain Match    ${groups}    *${{'x' * 201}}*
+    [Teardown]    Close Context
+
+Trace Group Names Do Not Evaluate Arguments Again
+    New Context
+    New Page    about:blank
+    Start Tracing    scope=Test
+    VAR    @{calls} =    first    second
+    Log    ${{ $calls.append('inline') }}
+    Log    ${calls.pop(0)}
+    ${trace} =    Stop Tracing    path=evaluated-once.zip
+    Should Be Equal    ${calls}    ${{ ['second', 'inline'] }}
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/evaluated-once/
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/evaluated-once/trace.trace
+    Should Contain Match    ${groups}    BuiltIn.Log*\${{ $calls.append('inline') }}
+    Should Contain Match    ${groups}    BuiltIn.Log*\${calls.pop(0)}
+    [Teardown]    Close Context
+
 *** Keywords ***
 Keyword Without Browser
     [Arguments]    ${text}
@@ -120,3 +180,8 @@ Catch An Invalid Condition And Log
 
 Use An Invalid Condition
     IF    $undefined > 1    Log    invalid condition did not run
+
+Write And Read Paragraph
+    [Arguments]    ${tag}
+    Evaluate JavaScript    ${None}    document.body.innerHTML='<p id="a">${tag}</p>'
+    Get Text    id=a    ==    ${tag}

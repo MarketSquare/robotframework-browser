@@ -1842,6 +1842,16 @@ class TracingGroupMode(Enum):
     - ``Browser`` Just Browser library keywords are written to the logs as groups.
     - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
 
+    A group is named after the keyword call with the values of its arguments, so
+    ``Get Text    id=a    ==    ${tag}`` shows the value of ``${tag}``. A value longer
+    than 200 characters is cut, as in the Robot Framework log. Inline Python, like
+    ``${{ $x + 1 }}``, and extended variable syntax, like ``${x.upper()}``, stay as
+    written, because showing their value would run them a second time. The secret arguments of
+    keywords like `Fill Secret` show as ``***``, and the other arguments of those
+    keywords stay as written. A
+    [https://robotframework.org/robotframework/latest/RobotFrameworkUserGuide.html#secret-variables|Secret]
+    variable shows as ``<secret>``.
+
     """
 
     Full = auto()

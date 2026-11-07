@@ -13,11 +13,14 @@
 # limitations under the License.
 
 import json
+import re
 from collections.abc import Callable
 from typing import get_args
 
 from robot.errors import DataError
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
+from robot.utils import cut_assign_value, normalize
+from robot.variables import search_variable
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -27,6 +30,7 @@ from ..utils.types import Secret
 SECRET_ARGUMENT = "secret"
 SECRET_MASK = "***"
 BANNER_MUTED_KEYWORDS = ("take_screenshot", "get_page_source")
+PLAIN_VARIABLE_NAME = re.compile(r"[\w\s]+")
 
 KW_CALL_CONTENT_TEMPLATE = """body::before {{
     content: '{keyword_call}';
@@ -61,7 +65,8 @@ KW_CALL_BANNER_FUNCTION = """(content) => {
 
 
 class KeywordCallObserver(LibraryComponent):
-    """Paints the keyword call banner and hides secrets while a keyword runs.
+    """Paints the keyword call banner, names the keyword's trace group and hides
+    secrets in both while a keyword runs.
 
     Both decisions are made on the resolved Python function rather than the
     displayed keyword name, so an aliased or translated import behaves like a
@@ -71,11 +76,32 @@ class KeywordCallObserver(LibraryComponent):
     def __init__(self, library):
         super().__init__(library)
         self._secret_arguments: dict[str, set[str]] = {}
+        self._registered_names: dict[str, str] | None = None
         self._current_loglevel: str | None = None
         self._logging_suppressions = 0
 
     def is_secret_keyword(self, name: str) -> bool:
         return bool(self._secret_argument_names(name))
+
+    def trace_group_arguments(self, kwname: str, args: list[str]) -> list[str]:
+        """Arguments as a trace group name shows them: the secret arguments of a
+        Browser keyword masked, the other arguments of that keyword left as written,
+        and the arguments of any other keyword resolved and cut like Robot Framework
+        cuts a long variable value in the log. Arguments resolve only while a trace
+        receives the groups, and inline Python or extended variable syntax stays as
+        written, because resolving it runs it a second time.
+        """
+        name = self._registered_keyword_name(kwname)
+        if name is not None and self.is_secret_keyword(name):
+            return self._mask_secret_arguments(name, args)
+        if not self.running_traces.sends_groups:
+            return list(args)
+        return [
+            cut_assign_value(self._resolve_argument(arg))
+            if self._has_only_plain_variables(arg)
+            else arg
+            for arg in args
+        ]
 
     def suppress_logging(self):
         self._set_logging(False)
@@ -135,6 +161,36 @@ class KeywordCallObserver(LibraryComponent):
             if self._logging_suppressions == 0:
                 self._current_loglevel = context.set_log_level("NONE")
             self._logging_suppressions += 1
+
+    def _registered_keyword_name(self, kwname: str) -> str | None:
+        """The listener sees the printable name, ``Fill Secret``, but the library
+        registers ``fill_secret``."""
+        if self._registered_names is None:
+            self._registered_names = {
+                normalize(name, ignore="_"): name for name in self.library.keywords
+            }
+        return self._registered_names.get(normalize(kwname, ignore="_"))
+
+    @classmethod
+    def _has_only_plain_variables(cls, text: str) -> bool:
+        match = search_variable(text)
+        while match:
+            if not PLAIN_VARIABLE_NAME.fullmatch(match.base or ""):
+                return False
+            if not all(cls._has_only_plain_variables(item) for item in match.items):
+                return False
+            match = search_variable(match.after)
+        return True
+
+    @staticmethod
+    def _resolve_argument(arg: str) -> str:
+        context = EXECUTION_CONTEXTS.current
+        if context is None:
+            return arg
+        try:
+            return context.variables.replace_string(arg)
+        except DataError:
+            return arg
 
     def _resolve_keyword_function(self, name: str) -> Callable | None:
         """A translation replaces the registered name, the function stays the same."""
