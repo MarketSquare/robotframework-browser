@@ -9,23 +9,6 @@ Test Teardown     Run Keywords    End Any Recording Session    AND    Close Page
 Test Tags         recorder
 
 *** Test Cases ***
-Playwright's Pick Locator Opens The Toolbar's Picker And Records Nothing Meanwhile
-    ${promise} =    Promise To    Record Keyword    Fill After Picking    ${RESOURCE}
-    Toolbar State Should Be    recording
-    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
-    Picker Should Be Picking
-    Fill Text    id=input_name    while picking
-    Send Command    {cmd: 'pick-cancel'}
-    Wait For Function    () => window.__rfbToolbarState.picker === null
-    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
-    Fill Text    id=input_name    after picking
-    Wait Until Calls    1
-    Send Command    {cmd: 'stop'}
-    Wait For    ${promise}
-    ${file} =    Get File    ${RESOURCE}
-    Should Contain    ${file}    after picking
-    Should Not Contain    ${file}    while picking
-
 A Picked Selector Becomes A Comment And Recording Goes On
     ${promise} =    Promise To    Record Keyword    Pick And Fill    ${RESOURCE}
     Toolbar State Should Be    recording
@@ -52,6 +35,23 @@ A Picked Selector Becomes A Comment And Recording Goes On
     Should Contain    ${file}    after the pick
     Should Not Contain    ${file}    while picked
     Recorded Keyword Replays    ${RESOURCE}    Pick And Fill
+
+Playwright's Pick Locator Opens The Toolbar's Picker And Records Nothing Meanwhile
+    ${promise} =    Promise To    Record Keyword    Fill After Picking    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Evaluate JavaScript    ${None}    () => window.__pw_recorderSetMode('recording-inspecting')
+    Picker Should Be Picking
+    Fill Text    id=input_name    while picking
+    Send Command    {cmd: 'pick-cancel'}
+    Wait For Function    () => window.__rfbToolbarState.picker === null
+    Wait For Function    () => !document.body.hasAttribute('data-pw-cursor')    timeout=2s
+    Fill Text    id=input_name    after picking
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    after picking
+    Should Not Contain    ${file}    while picking
 
 A Minimized Toolbar Offers Only The Pick's Buttons While Picking
     Keep The Closed Toolbar Root Reachable
