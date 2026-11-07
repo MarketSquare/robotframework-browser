@@ -32,12 +32,14 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-          cache: 'pip'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.13"
+          activate-environment: true
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install invoke --python 3.13 --system
+          uv sync --locked --no-build --only-group dev
       - name: Work out the version
         id: dev
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -136,15 +138,18 @@ jobs:
       uses: actions/setup-python@v7
       with:
         python-version: ${{ matrix.python-version }}
-        cache: 'pip'
+    - name: Set up uv
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      with:
+        python-version: ${{ matrix.python-version }}
+        activate-environment: true
     - name: Install python dependencies
+      env:
+        # Python 3.15 is a prerelease, and some dependencies ship no wheels for it yet.
+        UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
       run: |
-        python -m pip install --upgrade pip
-        pip install uv
-        uv pip install wheel --python ${{ matrix.python-version }} --system
-        uv pip install -r Browser/dev-requirements.txt --python ${{ matrix.python-version }} --system
-        uv pip install -r pyproject.toml  --python ${{ matrix.python-version }} --system
-        uv pip install robotframework==${{ matrix.rf-version }} --python ${{ matrix.python-version }} --system
+        uv sync --locked
+        uv pip install robotframework==${{ matrix.rf-version }}
         python atest/library/os_wrapper.py
     - name: Build stubs
       run: |
@@ -265,13 +270,14 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-          cache: 'pip'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.13"
+          activate-environment: true
       - name: Install python dependencies and lcov
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install -r Browser/dev-requirements.txt --python 3.13 --system
-          uv pip install -r pyproject.toml --python 3.13 --system
+          uv sync --locked --no-build
           python atest/library/os_wrapper.py
           sudo apt-get install --yes --no-install-recommends lcov
       - name: Build
@@ -376,22 +382,21 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'pip'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Install Robot Framework Browser on *nix like
         run: |
-          pip install uv
           uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
         if: matrix.os != 'windows-latest'
       - name: Install Robot Framework Browser on windows
         run: |
-          pip install uv
           uv pip install (gci *.whl)--python ${{ matrix.python-version }} --system
         if: matrix.os == 'windows-latest'
       - name: Install node deps and python deps for test running
         run: |
           rfbrowser init
-          uv pip install wheel --python ${{ matrix.python-version }} --system
-          uv pip install -r Browser/dev-requirements.txt  --python ${{ matrix.python-version }} --system
+          uv export --locked --only-group dev --no-emit-project --output-file dev-requirements.txt
+          uv pip install --require-hashes --no-build -r dev-requirements.txt --python ${{ matrix.python-version }} --system
       - name: Test on Ubuntu - serial mode
         if: matrix.os == 'ubuntu-latest'
         env:
@@ -455,12 +460,17 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-          cache: 'pip'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.13"
+          activate-environment: true
       - name: Install dependencies
+        env:
+          # cryptography ships no Intel macOS wheels, so that runner builds it.
+          UV_NO_BUILD: ${{ matrix.os != 'macos-15-intel' }}
         run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install wheel invoke --python 3.13  --system --verbose
+          uv sync --locked
           python -c "import sys;print(sys.platform)"
           python -c "import sysconfig;print(sysconfig.get_platform())"
           python -c "import platform;print(platform.machine().lower())"
@@ -545,7 +555,6 @@ jobs:
       - name: Install Browser and BrowserBatteries
         if: matrix.os != 'windows-latest'
         run: |
-          python -m pip install --upgrade pip
           pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
           pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
           rfbrowser --version
@@ -553,14 +562,16 @@ jobs:
       - name: Install Browser and BrowserBatteries On Windows
         if: matrix.os == 'windows-latest'
         run: |
-          python -m pip install --upgrade pip
           pip install (Resolve-Path rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl)
           pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
           rfbrowser --version
           rfbrowser install
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Install test dependencies
         run: |
-          pip install -r Browser/dev-requirements.txt
+          uv export --locked --only-group dev --no-emit-project --output-file dev-requirements.txt
+          uv pip install --require-hashes ${{ matrix.os != 'macos-15-intel' && '--no-build' || '' }} -r dev-requirements.txt --python 3.14 --system
       - name: Unzip demoapp *nix
         if: matrix.os != 'windows-latest'
         run: |
@@ -611,7 +622,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
-          cache: 'pip'
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.14"
+          activate-environment: true
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
@@ -645,8 +660,7 @@ jobs:
           ls -l node
       - name: Start demo app and run tests with docker image
         run: |
-          pip install uv
-          uv pip install invoke robotframework-ghareports --python 3.14 --system
+          uv sync --locked --no-build --only-group dev
           set +e
           docker run \
             -v ./atest/:/home/pwuser/atest \

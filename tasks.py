@@ -165,39 +165,18 @@ def _node_deps(context: Context):
 
 
 @task
-def deps(c, system=False, force=False, uv=False):
+def deps(c, force=False):
     """Install dependencies for development.
 
-    Args:
-        system: When set, installs packages to system Python instead of user.
-        force: When set, installs dependencies even there is no changes.
-        uv: When set, skips pip install step assuming uv is already installed.
-    """
-    try:
-        c.run("pip --version", hide=True)
-    except Exception as error:
-        if "Encountered a bad command exit code" in str(error):
-            uv = True
-    if uv:
-        print("No pip install.")
-    else:
-        c.run("pip install -U pip")
-        c.run("pip install -U uv")
-    print("Installing dev dependencies.")
+    Python dependencies are synced from uv.lock into the project's .venv. After
+    changing the dependencies in pyproject.toml, run `uv lock` first. CI leaves
+    out the `watch` group, because it installs wheels only.
 
-    package_manager_dev_cmd = f"uv pip install -r Browser/dev-requirements.txt{' --system' * (system or IS_GITPOD)}"
-    package_manager_deps_cmd = (
-        f"uv pip install -r pyproject.toml{' --system' * (system or IS_GITPOD)}"
-    )
-    if IN_CI:
-        print(f"Install packages to Python found from {sys.executable}.")
-        package_manager_dev_cmd = f"{package_manager_dev_cmd} --python {sys.executable}"
-        package_manager_deps_cmd = (
-            f"{package_manager_deps_cmd} --python {sys.executable}"
-        )
-    c.run(package_manager_dev_cmd)
-    print("Install package dependencies.")
-    c.run(package_manager_deps_cmd)
+    Args:
+        force: When set, installs Node dependencies even there is no changes.
+    """
+    print("Installing Python dependencies.")
+    c.run("uv sync --locked" if IN_CI else "uv sync --locked --all-groups")
     if IN_CI:
         shutil.rmtree(str(NODE_MODULES), ignore_errors=True)
 
@@ -1936,6 +1915,7 @@ def version(c, version):
     _replace_version(
         dockerfile, docker_version_matcher, f"robotframework-browser=={version}"
     )
+    c.run("uv lock")
 
 
 def _released_version() -> str:

@@ -37,10 +37,13 @@ These are gitignored and regenerated; edit their sources instead.
 
 ## Build and test
 
-Set up once with `python bootstrap.py`, activate `.venv`, then `inv build`. `inv build` installs
-the Python dependencies on every run, but the Node dependencies and Playwright browsers only when
-`package-lock.json` changed since the last install. `inv deps --force` reinstalls them, for
-example after a broken browser install. `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` skips the browsers.
+Set up once with `python bootstrap.py`, activate `.venv`, then `inv build`. `inv build` syncs
+the Python dependencies from `uv.lock` on every run, but the Node dependencies and Playwright
+browsers only when `package-lock.json` changed since the last install. `inv deps --force`
+reinstalls them, for example after a broken browser install. `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD`
+skips the browsers.
+Python dependencies live in `pyproject.toml`, the development ones in `[dependency-groups]`; after
+changing one, run `uv lock`. `inv version` relocks too.
 
 After a change to the proto, the TypeScript wrapper, or a keyword signature or docstring, run
 `inv node-build`. It regenerates protobuf, the wrapper and `browser.pyi`. `inv atest` and
