@@ -212,6 +212,7 @@ Wait For Download With Remote Browser
     File Should Exist    ${file_object}[saveAs]
     Should Be Equal    ${file_object}[suggestedFilename]    test_download_file.js
     Remove File    ${file_object}[saveAs]
+    [Teardown]    Close Remote Browser
 
 Wait For Download With Remote Browser Without SaveAs
     [Setup]    Launch And Connect To Remote Browser
@@ -224,12 +225,18 @@ Wait For Download With Remote Browser Without SaveAs
     EXCEPT    *Path is not available when connecting remotely. Use saveAs() to save a local copy.    type=GLOB
         Log    Correct Error
     END
+    [Teardown]    Close Remote Browser
 
 *** Keywords ***
 Launch And Connect To Remote Browser
     ${ws} =    Launch Browser Server    headless=${HEADLESS}
     Connect To Browser    wsEndpoint=${ws}
     Set Browser Timeout    90 seconds
+
+Close Remote Browser
+    Wait For All Promises
+    Restore Library Timeout
+    Close Browser
 
 Set Library Timeout
     ${open_browsers} =    Get Browser Ids
