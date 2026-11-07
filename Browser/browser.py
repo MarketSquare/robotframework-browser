@@ -1080,7 +1080,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._playwright_state.open_trace_group(
                 **self._trace_group_arguments(kw_call_stack_entry)
             )
-        if attrs["type"] == "TEARDOWN":
+        if attrs["type"] == "TEARDOWN" and len(self.keyword_call_stack) == 1:
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
             if (
