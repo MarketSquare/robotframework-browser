@@ -21,10 +21,11 @@ import sys
 import threading
 import time
 import types
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, get_type_hints
 
@@ -34,7 +35,7 @@ from robot.api.deco import library
 from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
-from robot.utils import secs_to_timestr, timestr_to_secs
+from robot.utils import printable_name, secs_to_timestr, timestr_to_secs
 from robot.utils.robottypes import is_falsy
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
@@ -626,6 +627,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
+        self._core_components: tuple[object, ...] = (self, *libraries)
         self.enable_playwright_debug = enable_playwright_debug
         self.playwright_process_host = playwright_process_host
         self.playwright_process_port = playwright_process_port
@@ -1487,6 +1489,15 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 continue
             for name, _ in modules:
                 yield name
+
+    @cached_property
+    def registered_keyword_names(self) -> Mapping[str, str]:
+        names = {}
+        for registered, method in self.keywords.items():
+            owner = getattr(method, "__self__", None)
+            if any(owner is component for component in self._core_components):
+                names[method.__name__] = printable_name(registered, code_style=True)
+        return types.MappingProxyType(names)
 
     @staticmethod
     def _get_translation(language: str | None) -> Path | None:

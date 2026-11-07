@@ -34,7 +34,7 @@ from .action_mapper import (
     uploaded_files,
 )
 from .cells import tokens
-from .model import ENGLISH_DISPLAY_NAMES, Call, KeywordDisplayNames, RecordedKeyword
+from .model import CANONICAL, Call, DisplayNames, RecordedKeyword
 from .names import (
     KnownKeywords,
     NameGuard,
@@ -84,10 +84,11 @@ class RecorderSession:
     def __init__(
         self,
         target: Target,
+        *,
         fixed_name: str | None = None,
         known: KnownKeywords | None = None,
         clock: Callable[[], float] = time.monotonic,
-        display_names: KeywordDisplayNames = ENGLISH_DISPLAY_NAMES,
+        display_names: DisplayNames = CANONICAL,
     ) -> None:
         self.target = target
         self._display_names = display_names
@@ -129,7 +130,7 @@ class RecorderSession:
             self._keyword = self._new_keyword(fixed_name)
 
     def _new_keyword(self, name: str) -> RecordedKeyword:
-        return RecordedKeyword(name, self._display_names)
+        return RecordedKeyword(name, self._display_names, self.target.settings)
 
     # -- introspection ----------------------------------------------------- #
 
@@ -186,7 +187,7 @@ class RecorderSession:
             "fixedName": self._fixed_name is not None,
             "target": self.target.label,
             "keywords": self.keywords,
-            "calls": self._toolbar_calls(keyword),
+            "calls": self._toolbar_calls(keyword, self._display_names),
             "arguments": [
                 {
                     "name": a.name,
@@ -208,12 +209,12 @@ class RecorderSession:
         }
 
     @staticmethod
-    def _toolbar_calls(keyword: RecordedKeyword | None) -> list[dict]:
-        if keyword is None:
-            return []
+    def _toolbar_calls(
+        keyword: RecordedKeyword | None, display_names: DisplayNames
+    ) -> list[dict]:
         budget = MAX_RAW_TOTAL
         calls = []
-        for call in keyword.calls():
+        for call in keyword.calls() if keyword is not None else []:
             values = []
             for value, written in zip(call.args, call.rendered_args(), strict=True):
                 raw = value.text
@@ -234,7 +235,7 @@ class RecorderSession:
             calls.append(
                 {
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
-                    "keyword": call.display_name(keyword.display_names),
+                    "keyword": display_names.of(call),
                     "values": values,
                     "comment": call.comment,
                 }

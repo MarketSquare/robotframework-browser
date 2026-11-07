@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from Browser.recorder.model import KeywordDisplayNames
-
 import pytest
 
 from Browser.recorder.cells import tokens
-from Browser.recorder.model import RecordedKeyword
+from Browser.recorder.model import DisplayNames, RecordedKeyword, SettingNames
 from Browser.recorder.names import KnownKeywords
 from Browser.recorder.picker import SelectorPicker
 from Browser.recorder.session import (
@@ -22,7 +20,8 @@ from Browser.recorder.session import (
 class FakeTarget:
     label = "fake.resource"
 
-    def __init__(self, existing=(), fail=False):
+    def __init__(self, existing=(), fail=False, settings=SettingNames()):
+        self.settings = settings
         self.saved: list[str] = []
         self.finished: list[str] = []
         self.removed: list[str] = []
@@ -1575,22 +1574,45 @@ def test_undo_keeps_the_id_an_earlier_switch_returned():
     assert s.toolbar_state()["notice"] is None
 
 
-@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
-def test_translated_calls_reach_toolbar_target_and_returned_text(fixed_name):
-    s, target, clock = session(
-        fixed_name=fixed_name,
-        display_names=KeywordDisplayNames({"Fill Text": "Remplir Le Texte"}),
-    )
+FRENCH = DisplayNames({"Fill Text": "Remplir Le Texte"})
+
+
+def record_two_keywords(fixed_name, **kwargs):
+    s, target, clock = session(fixed_name=fixed_name, **kwargs)
     if fixed_name is None:
         start(s, "Remplir")
     s.handle_event("added", FILL)
-    assert s.toolbar_state()["calls"][0]["keyword"] == "Remplir Le Texte"
     s.handle_command({"cmd": "discard"})
     settle(s, clock)
     if fixed_name is None:
         start(s, "Remplir Encore")
     s.handle_event("added", FILL)
+    return s, target
+
+
+@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
+def test_toolbar_shows_display_names_in_the_next_keyword(fixed_name):
+    s, _ = record_two_keywords(fixed_name, display_names=FRENCH)
     assert s.toolbar_state()["calls"][0]["keyword"] == "Remplir Le Texte"
+
+
+@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
+def test_target_gets_display_names_in_the_next_keyword(fixed_name):
+    s, target = record_two_keywords(fixed_name, display_names=FRENCH)
     s.close()
     assert "Remplir Le Texte" in target.finished[-1]
+
+
+@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
+def test_returned_text_has_display_names_of_the_next_keyword(fixed_name):
+    s, _ = record_two_keywords(fixed_name, display_names=FRENCH)
+    s.close()
     assert "Remplir Le Texte" in s.text()
+
+
+@pytest.mark.parametrize("fixed_name", [None, "Remplir"])
+def test_target_settings_reach_the_next_keyword(fixed_name):
+    target = FakeTarget(settings=SettingNames("Étiquette", "Arguments"))
+    s, _ = record_two_keywords(fixed_name, target=target)
+    s.close()
+    assert "[Étiquette]    recorded" in target.finished[-1]

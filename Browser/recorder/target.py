@@ -25,18 +25,18 @@ import io
 import os
 import shutil
 import tempfile
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 from robot.api import get_model, logger
 from robot.api.parsing import EmptyLine, SectionHeader, Token
-from robot.conf.languages import Languages
+from robot.conf.languages import En, Language, Languages
 from robot.parsing.model.blocks import Block, File, Keyword, KeywordSection
 from robot.parsing.model.statements import Statement
 
-from .model import RecordedKeyword
+from .model import RecordedKeyword, SettingNames
 from .names import existing_keyword_names, normalize_keyword_name
 
 _EOL = "\n"
@@ -44,6 +44,8 @@ _EOL = "\n"
 
 class Target(Protocol):
     label: str
+
+    settings: SettingNames
 
     def existing_names(self) -> set[str]: ...
 
@@ -63,9 +65,11 @@ class LogTarget:
         self,
         console: Callable[[str], None] = logger.console,
         info: Callable[[str], None] = logger.info,
+        languages: Iterable[Language] = (),
     ) -> None:
         self._console = console
         self._info = info
+        self.settings = SettingNames.of(_first_with_keywords_header(languages))
 
     def existing_names(self) -> set[str]:
         return set()
@@ -112,14 +116,23 @@ def unwritable_reason(path: Path) -> str | None:
 
 
 class FileTarget:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, languages: Iterable[Language] = ()) -> None:
         self.path = Path(path)
         self.label = self.path.name
+        self._configured = tuple(languages)
         self._owned: dict[str, _Owned] = {}
         self._format: _Format | None = None
+        declared = self._read().languages if self.path.exists() else ()
+        self._language = _first_with_keywords_header(
+            [
+                *Languages(declared, add_english=False),
+                *self._configured,
+            ]
+        )
+        self.settings = SettingNames.of(self._language)
 
     def existing_names(self) -> set[str]:
-        return existing_keyword_names(self.path)
+        return existing_keyword_names(self.path, self._languages())
 
     def save(self, keyword: RecordedKeyword) -> str | None:
         key = normalize_keyword_name(keyword.name)
@@ -128,7 +141,7 @@ class FileTarget:
             return None
         owned = self._owned.get(key)
         model = self._read()
-        block = _parse_block(keyword.block())
+        block = _parse_block(keyword.block(), self._languages())
         notice = None
         found = _find(model, keyword.name)
         if found is not None:
@@ -201,6 +214,9 @@ class FileTarget:
 
     # -- helpers ----------------------------------------------------------- #
 
+    def _languages(self) -> Languages:
+        return Languages(self._configured)
+
     def _read(self) -> File:
         """Parse the file as it is on disk right now.
 
@@ -226,7 +242,9 @@ class FileTarget:
                 eol="\r\n" if crlf else "\n",
                 final_newline=not text or text.endswith("\n"),
             )
-        return get_model(io.StringIO(text.replace("\r\n", "\n")))
+        return get_model(
+            io.StringIO(text.replace("\r\n", "\n")), lang=self._languages()
+        )
 
     def _write(self, model: File, restore_final_newline: bool = False) -> None:
         """Write atomically, in the file's own BOM and line ending."""
@@ -260,26 +278,18 @@ class FileTarget:
             temp.unlink(missing_ok=True)
             raise
 
-    @staticmethod
-    def _keyword_section(model: File) -> tuple[KeywordSection, bool, bool]:
+    def _keyword_section(self, model: File) -> tuple[KeywordSection, bool, bool]:
         for section in model.sections:
             if isinstance(section, KeywordSection):
                 return section, False, False
         separated = False
         if model.sections:
             separated = _ensure_blank_line(model.sections[-1].body)
-        languages = Languages(model.languages, add_english=False)
-        header_name = next(
-            (
-                language.keywords_header
-                for language in languages
-                if language.keywords_header
-            ),
-            "Keywords",
-        )
         header = SectionHeader(
             [
-                Token(Token.KEYWORD_HEADER, f"*** {header_name} ***"),
+                Token(
+                    Token.KEYWORD_HEADER, f"*** {self._language.keywords_header} ***"
+                ),
                 Token(Token.EOL, _EOL),
             ]
         )
@@ -294,8 +304,12 @@ def _umask() -> int:
     return mask
 
 
-def _parse_block(text: str) -> Keyword:
-    model = get_model(io.StringIO("*** Keywords ***\n" + text))
+def _first_with_keywords_header(languages: Iterable[Language]) -> Language:
+    return next((lang for lang in languages if lang.keywords_header), En())
+
+
+def _parse_block(text: str, languages: Languages) -> Keyword:
+    model = get_model(io.StringIO("*** Keywords ***\n" + text), lang=languages)
     return model.sections[0].body[0]
 
 

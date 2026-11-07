@@ -22,6 +22,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from robot.conf.languages import Languages
 from robot.libraries.BuiltIn import BuiltIn
 
 from Browser.recorder import names
@@ -33,6 +34,7 @@ from Browser.recorder.names import (
     _embedded_matcher,
     argument_name_error,
     collect_known_keywords,
+    configured_languages,
     existing_keyword_names,
     keyword_name_error,
     normalize_keyword_name,
@@ -769,3 +771,20 @@ def test_names_up_to_the_limit_are_accepted_and_longer_ones_reported():
     assert argument_name_error("a" * NAME_LIMIT) is None
     assert "200 characters" in argument_name_error("a" * (NAME_LIMIT + 1))
     assert "200 characters" in argument_name_error("${" + "a" * (NAME_LIMIT + 1) + "}")
+
+
+def test_configured_languages_are_empty_without_a_running_suite():
+    assert configured_languages() == ()
+
+
+def test_configured_languages_come_from_the_running_suite(monkeypatch):
+    languages = Languages("fr")
+    context = SimpleNamespace(namespace=SimpleNamespace(languages=languages))
+    monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
+    assert configured_languages() == tuple(languages)
+
+
+def test_existing_keyword_names_reads_section_in_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("*** Mots-clés ***\nRemplir\n    No Operation\n", encoding="utf-8")
+    assert existing_keyword_names(path, Languages("fr")) == {"Remplir"}

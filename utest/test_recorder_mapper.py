@@ -1,4 +1,3 @@
-from Browser.recorder.model import ENGLISH_DISPLAY_NAMES
 import json
 import subprocess
 import sys
@@ -11,12 +10,12 @@ from Browser.recorder.action_mapper import (
     internal_selector_notice,
     to_browser_selector,
 )
-from Browser.recorder.model import RecordedKeyword
+from Browser.recorder.model import CANONICAL, RecordedKeyword
 
 
 def rendered(action: dict) -> str | None:
     call = ActionMapper().map(action)
-    return None if call is None else call.render(ENGLISH_DISPLAY_NAMES)
+    return None if call is None else call.render(CANONICAL)
 
 
 @pytest.mark.parametrize(
@@ -231,10 +230,7 @@ def test_map_assert_checked():
 def test_map_assert_visible_is_get_element_states_contains_visible():
     call = ActionMapper().map({"name": "assertVisible", "selector": "css=#a"})
     assert call is not None
-    assert (
-        call.render(ENGLISH_DISPLAY_NAMES)
-        == "Get Element States    css=#a    *=    visible"
-    )
+    assert call.render(CANONICAL) == "Get Element States    css=#a    *=    visible"
     assert [v.selectable for v in call.args] == [True, False, False]
 
 
@@ -262,7 +258,7 @@ def test_assert_snapshot_renders_as_one_cell_and_roundtrips_through_robot(tmp_pa
     call = ActionMapper().map(
         {"name": "assertSnapshot", "selector": "css=#a", "ariaSnapshot": SNAPSHOT}
     )
-    line = call.render(ENGLISH_DISPLAY_NAMES)
+    line = call.render(CANONICAL)
     assert "\n" not in line
     (tmp_path / "Spy.py").write_text(
         "import json, pathlib\n"
@@ -323,15 +319,13 @@ def test_fill_text_is_selectable():
 
 def test_popup_signal_switches_to_the_new_page():
     effect = ActionMapper().map_signal({"name": "popup"}, lambda b: b)
-    assert [c.render(ENGLISH_DISPLAY_NAMES) for c in effect.after] == [
-        "Switch Page    NEW"
-    ]
+    assert [c.render(CANONICAL) for c in effect.after] == ["Switch Page    NEW"]
     assert effect.before == []
 
 
 def test_dialog_signal_accepts_before_the_action():
     effect = ActionMapper().map_signal({"name": "dialog"}, lambda b: b)
-    assert [c.render(ENGLISH_DISPLAY_NAMES) for c in effect.before] == [
+    assert [c.render(CANONICAL) for c in effect.before] == [
         "Handle Future Dialogs    action=accept"
     ]
 
@@ -339,12 +333,10 @@ def test_dialog_signal_accepts_before_the_action():
 def test_download_signal_wraps_the_action():
     kw = RecordedKeyword("K")
     effect = ActionMapper().map_signal({"name": "download"}, kw.unique_variable)
-    assert [c.render(ENGLISH_DISPLAY_NAMES) for c in effect.before] == [
+    assert [c.render(CANONICAL) for c in effect.before] == [
         "${download}=    Promise To Wait For Download"
     ]
-    assert [c.render(ENGLISH_DISPLAY_NAMES) for c in effect.after] == [
-        "Wait For    ${download}"
-    ]
+    assert [c.render(CANONICAL) for c in effect.after] == ["Wait For    ${download}"]
 
 
 @pytest.mark.parametrize("name", ["expect", "navigation", "unknown"])

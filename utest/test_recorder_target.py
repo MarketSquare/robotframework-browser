@@ -3,14 +3,23 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 from robot.api import get_model
-from robot.conf.languages import Language
-from robot.parsing.model.blocks import File, KeywordSection
+from robot.conf.languages import Language, Languages
+from robot.libraries.BuiltIn import BuiltIn
+from robot.parsing.model.blocks import KeywordSection
 
 from Browser.recorder.cells import tokens
-from Browser.recorder.model import Call, KeywordDisplayNames, RecordedKeyword, Value
+from Browser.recorder.model import (
+    Call,
+    DisplayNames,
+    RecordedKeyword,
+    SettingNames,
+    Value,
+)
+from Browser.recorder.names import configured_languages
 from Browser.recorder.target import FileTarget, LogTarget
 
 ORIGINAL = (
@@ -611,9 +620,7 @@ def test_existing_section_keeps_its_header_in_localized_file(tmp_path):
 
 @pytest.fixture
 def translated_keyword():
-    kw = RecordedKeyword(
-        "Remplir", KeywordDisplayNames({"Fill Text": "Remplir Le Texte"})
-    )
+    kw = RecordedKeyword("Remplir", DisplayNames({"Fill Text": "Remplir Le Texte"}))
     kw.add(Call("Fill Text", [Value.literal("#n"), Value.literal("txt=bonjour")]))
     return kw
 
@@ -640,9 +647,7 @@ def test_translated_call_is_in_returned_text(translated_keyword):
     assert "Remplir Le Texte" in translated_keyword.text()
 
 
-def test_custom_language_without_keyword_header_falls_back_to_english(
-    tmp_path, monkeypatch
-):
+def test_custom_language_without_keyword_header_falls_back_to_english(tmp_path):
 
     class Custom(Language):
         code = "custom"
@@ -650,7 +655,133 @@ def test_custom_language_without_keyword_header_falls_back_to_english(
 
     path = tmp_path / "custom.robot"
     path.write_text("", encoding="utf-8")
-    target = FileTarget(path)
-    monkeypatch.setattr(target, "_read", lambda: File(languages=[Custom()]))
-    target.save(keyword())
+    FileTarget(path, [Custom()]).save(keyword())
     assert path.read_text(encoding="utf-8").startswith("*** Keywords ***")
+
+
+FRENCH = tuple(Languages("fr"))
+FRENCH_SECTION = "*** Mots-clés ***\nExisting\n    No Operation\n"
+
+
+def test_configured_language_finds_existing_localized_section(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    assert path.read_text(encoding="utf-8").count("***") == 2
+
+
+def test_configured_language_writes_into_existing_localized_section(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    section = get_model(path, lang=FRENCH).sections[0]
+    assert [item.name for item in section.body if item.name] == [
+        "Existing",
+        "Fill Name",
+    ]
+
+
+def test_configured_language_reports_existing_names(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    assert FileTarget(path, FRENCH).existing_names() == {"Existing"}
+
+
+def test_new_section_uses_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    FileTarget(path, FRENCH).save(keyword())
+    assert path.read_text(encoding="utf-8").startswith("*** Mots-clés ***\n")
+
+
+def test_declared_language_wins_over_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    assert "*** Schlüsselwörter ***" in path.read_text(encoding="utf-8")
+
+
+def test_existing_english_section_is_used_with_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    original = "*** Keywords ***\nExisting\n    No Operation\n"
+    path.write_text(original, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    text = path.read_text(encoding="utf-8")
+    assert text.startswith(original)
+    assert "Mots-clés" not in text
+
+
+@pytest.mark.parametrize(
+    ("content", "languages", "tags"),
+    [
+        ("", (), "Tags"),
+        ("", FRENCH, "Étiquette"),
+        ("Language: de\n", (), "Marker"),
+        ("Language: de\n", FRENCH, "Marker"),
+    ],
+    ids=["english", "configured", "declared", "declared-over-configured"],
+)
+def test_file_setting_names_follow_file_language(tmp_path, content, languages, tags):
+    path = tmp_path / "settings.robot"
+    path.write_text(content, encoding="utf-8")
+    assert FileTarget(path, languages or ()).settings.tags == tags
+
+
+def test_missing_file_setting_names_follow_configured_language(tmp_path):
+    target = FileTarget(tmp_path / "missing.robot", FRENCH)
+    assert target.settings == SettingNames("Étiquette", "Arguments")
+
+
+def test_log_setting_names_follow_configured_language():
+    assert LogTarget(languages=FRENCH).settings.tags == "Étiquette"
+
+
+def test_log_setting_names_default_to_english():
+    assert LogTarget().settings == SettingNames()
+
+
+def test_localized_settings_are_written_and_parsed(tmp_path):
+    path = tmp_path / "configured.robot"
+    kw = RecordedKeyword("Fill Name", settings=SettingNames("Étiquette", "Arguments"))
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    FileTarget(path, FRENCH).save(kw)
+    body = get_model(path, lang=FRENCH).sections[0].body[0]
+    assert body.body[0].type == "TAGS"
+
+
+def test_resaving_localized_settings_is_not_reported_as_outside_change(tmp_path):
+    path = tmp_path / "configured.robot"
+    target = FileTarget(path, FRENCH)
+    kw = RecordedKeyword("Fill Name", settings=SettingNames("Étiquette", "Arguments"))
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    target.save(kw)
+    kw.add(Call("Click", [Value.literal("#b", False)]))
+    assert target.save(kw) is None
+
+
+def test_section_language_is_determined_when_the_target_is_created(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    target.save(keyword())
+    assert "*** Schlüsselwörter ***" in path.read_text(encoding="utf-8")
+
+
+def test_settings_are_determined_when_the_target_is_created(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    assert target.settings.tags == "Marker"
+
+
+def test_reading_a_localized_file_leaves_the_suite_languages_unchanged(
+    tmp_path, monkeypatch
+):
+    suite_languages = Languages("fr")
+    context = SimpleNamespace(namespace=SimpleNamespace(languages=suite_languages))
+    monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    FileTarget(path, configured_languages()).save(keyword())
+    assert [language.code for language in suite_languages] == ["fr", "en"]

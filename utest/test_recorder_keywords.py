@@ -8,15 +8,18 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from robot.conf.languages import Languages
 
 from Browser import Browser
 from Browser.keywords import recorder as module
 from Browser.keywords.interaction import Interaction
 from Browser.keywords.recorder import SUITE_SOURCE, Recorder
 from Browser.recorder import session as session_module
+from Browser.recorder.model import Call, DisplayNames
 from Browser.recorder.names import KnownKeywords, normalize_keyword_name
 from Browser.recorder.parameters import KEYWORD_PARAMETERS
 from Browser.recorder.target import FileTarget, LogTarget
+from Browser.utils import keyword
 
 
 def test_none_means_log_only():
@@ -173,7 +176,7 @@ def _recorder(monkeypatch):
     monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
     monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
     recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={})
+    recorder.library = SimpleNamespace(keywords={}, registered_keyword_names={})
     recorder._client = lambda: object()
     return recorder
 
@@ -274,21 +277,29 @@ def test_a_keyword_that_could_not_be_written_fails_the_call_and_is_logged(
     assert "Fill Name\n    [Tags]    recorded\n    Fill Text" in warnings[0]
 
 
-@pytest.mark.parametrize(
-    "translated", ["Remplir Le Texte", "Tekst Eingeben", "Fill Text"]
-)
-def test_registered_names_are_used_throughout_recording(
-    monkeypatch, tmp_path, translated
-):
+TRANSLATED = ["Remplir Le Texte", "Tekst Eingeben", "Fill Text"]
 
+
+def _translated_recorder(monkeypatch, translated):
     recorder = _recorder(monkeypatch)
     recorder.library = SimpleNamespace(
-        keywords={translated: Interaction(None).fill_text}
+        keywords={}, registered_keyword_names={"fill_text": translated}
     )
-    assert recorder._recorder_display_names() == {"Fill Text": translated}
-    path = tmp_path / "translated.resource"
-    text = recorder.record_keywords(str(path))
+    return recorder
+
+
+@pytest.mark.parametrize("translated", TRANSLATED)
+def test_returned_text_uses_registered_names(monkeypatch, tmp_path, translated):
+    recorder = _translated_recorder(monkeypatch, translated)
+    text = recorder.record_keywords(str(tmp_path / "translated.resource"))
     assert translated in text
+
+
+@pytest.mark.parametrize("translated", TRANSLATED)
+def test_file_gets_registered_names(monkeypatch, tmp_path, translated):
+    recorder = _translated_recorder(monkeypatch, translated)
+    path = tmp_path / "translated.resource"
+    recorder.record_keywords(str(path))
     assert translated in path.read_text(encoding="utf-8")
 
 
@@ -310,28 +321,33 @@ def registered_library(monkeypatch, tmp_path, request):
     return library, language
 
 
-def test_display_names_cover_all_recorded_keywords(registered_library):
+def _display_name(library, canonical):
+    display_names = DisplayNames.from_registered(library.registered_keyword_names)
+    return display_names.of(Call(canonical, []))
 
+
+def test_registered_names_cover_all_recorded_keywords(registered_library):
     library, _ = registered_library
-    assert set(Recorder(library)._recorder_display_names()) == set(KEYWORD_PARAMETERS)
+    registered = {normalize_keyword_name(m) for m in library.registered_keyword_names}
+    assert {normalize_keyword_name(c) for c in KEYWORD_PARAMETERS} <= registered
 
 
 def test_display_names_follow_registered_translation(registered_library):
     library, language = registered_library
-    names = Recorder(library)._recorder_display_names()
-    assert names["Fill Text"] == ("Remplir Le Texte" if language else "Fill Text")
+    expected = "Remplir Le Texte" if language else "Fill Text"
+    assert _display_name(library, "Fill Text") == expected
 
 
 def test_untranslated_keyword_keeps_english_display_name(registered_library):
     library, _ = registered_library
-    assert Recorder(library)._recorder_display_names()["Click"] == "Click"
+    assert _display_name(library, "Click") == "Click"
 
 
-def test_display_names_exist_in_dynamic_core_registry(registered_library):
+@pytest.mark.parametrize("canonical", sorted(KEYWORD_PARAMETERS))
+def test_display_names_exist_in_dynamic_core_registry(registered_library, canonical):
     library, _ = registered_library
-    names = Recorder(library)._recorder_display_names()
     registered = {normalize_keyword_name(name) for name in library.keywords}
-    assert all(normalize_keyword_name(name) in registered for name in names.values())
+    assert normalize_keyword_name(_display_name(library, canonical)) in registered
 
 
 def test_plugin_method_with_same_name_does_not_replace_browser_mapping(tmp_path):
@@ -349,8 +365,7 @@ class AliasPlugin(LibraryComponent):
         encoding="utf-8",
     )
     library = Browser(plugins=str(plugin))
-    assert library.keywords["Plugin Click"].__func__.__name__ == "click"
-    assert Recorder(library)._recorder_display_names()["Click"] == "Click"
+    assert _display_name(library, "Click") == "Click"
 
 
 def test_inherited_plugin_method_does_not_replace_browser_mapping():
@@ -360,4 +375,93 @@ def test_inherited_plugin_method_does_not_replace_browser_mapping():
 
     library = Browser()
     library.keywords["Plugin Click"] = AliasPlugin(library).click
-    assert Recorder(library)._recorder_display_names()["Click"] == "Click"
+    assert _display_name(library, "Click") == "Click"
+
+
+class _OverridingBrowser(Browser):
+    @keyword
+    def fill_text(self, selector: str, txt: str) -> None: ...
+
+
+def test_library_subclass_override_keeps_translated_name(monkeypatch, tmp_path):
+    translation = tmp_path / "translation.json"
+    translation.write_text(
+        json.dumps({"fill_text": {"name": "Remplir Le Texte", "doc": ""}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        Browser, "_get_translation", staticmethod(lambda lang: translation)
+    )
+    library = _OverridingBrowser(language="fr")
+    assert _display_name(library, "Fill Text") == "Remplir Le Texte"
+
+
+def test_file_target_gets_configured_languages(monkeypatch, tmp_path):
+    monkeypatch.setattr(module, "configured_languages", lambda: tuple(Languages("fr")))
+    target = Recorder._target(str(tmp_path / "k.resource"))
+    assert target.settings.tags == "Étiquette"
+
+
+def test_log_target_gets_configured_languages(monkeypatch):
+    monkeypatch.setattr(module, "configured_languages", lambda: tuple(Languages("fr")))
+    assert Recorder._target(None).settings.tags == "Étiquette"
+
+
+def test_a_file_that_is_not_utf8_is_refused_before_recording(tmp_path):
+    path = tmp_path / "k.resource"
+    path.write_bytes(b"*** Keywords ***\nExisting\n    Log    caf\xe9\n")
+    with pytest.raises(ValueError, match="Cannot record into .*not valid UTF-8"):
+        Recorder._target(str(path))
+
+
+def test_recording_writes_settings_in_file_language(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
+
+    def run(session, client, idle_timeout=None):
+        session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
+        session.close()
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", run)
+    path = tmp_path / "k.resource"
+    path.write_text("Language: fr\n", encoding="utf-8")
+    recorder.record_keyword("Fill Name", str(path))
+    assert "Fill Name\n    [Étiquette]    recorded\n" in path.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_browser_registers_builtin_keyword_names_by_method():
+    assert Browser().registered_keyword_names["fill_text"] == "Fill Text"
+
+
+def test_browser_registered_names_follow_translation(registered_library):
+    library, language = registered_library
+    expected = "Remplir Le Texte" if language else "Fill Text"
+    assert library.registered_keyword_names["fill_text"] == expected
+
+
+def test_browser_registered_names_leave_out_plugin_keywords(tmp_path):
+    plugin = tmp_path / "ExtraPlugin.py"
+    plugin.write_text(
+        """from Browser.base import LibraryComponent
+from Browser.utils import keyword
+
+
+class ExtraPlugin(LibraryComponent):
+    @keyword
+    def extra_click(self): ...
+""",
+        encoding="utf-8",
+    )
+    assert "extra_click" not in Browser(plugins=str(plugin)).registered_keyword_names
+
+
+def test_browser_registered_names_are_computed_once():
+    library = Browser()
+    assert library.registered_keyword_names is library.registered_keyword_names
+
+
+def test_browser_registered_names_are_read_only():
+    with pytest.raises(TypeError):
+        Browser().registered_keyword_names["fill_text"] = "Changed"

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from robot.api import get_model, logger
+from robot.conf.languages import Language, Languages
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.parsing.model.blocks import Keyword, KeywordSection
 from robot.running.arguments.embedded import EmbeddedArgumentParser, EmbeddedArguments
@@ -177,13 +178,15 @@ def normalize_keyword_name(name: str) -> str:
     return normalize(name, ignore="_", caseless=True, spaceless=True)
 
 
-def existing_keyword_names(target: Path) -> set[str]:
+def existing_keyword_names(
+    target: Path, languages: Languages | None = None
+) -> set[str]:
     """Names of the User Keywords already defined in ``target``."""
     target = Path(target)
     if not target.exists():
         return set()
     names: set[str] = set()
-    for section in get_model(str(target)).sections:
+    for section in get_model(str(target), lang=languages).sections:
         if isinstance(section, KeywordSection):
             names.update(
                 item.name
@@ -214,6 +217,15 @@ class KnownKeywords:
     names: frozenset[str] = frozenset()
     embedded: tuple[tuple[str, Callable[[str], bool]], ...] = ()
     bdd_prefixes: tuple[str, ...] = ()
+
+
+def configured_languages() -> tuple[Language, ...]:
+    try:
+        namespace = BuiltIn()._get_context().namespace
+    except (RobotNotRunningError, AttributeError):
+        return ()
+    languages = getattr(namespace, "languages", None)
+    return tuple(languages) if isinstance(languages, Languages) else ()
 
 
 def collect_known_keywords() -> KnownKeywords:
