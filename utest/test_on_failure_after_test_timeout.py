@@ -47,32 +47,29 @@ def result(tmp_path_factory):
     return ExecutionResult(str(folder / "output.xml"))
 
 
-def keywords_in_teardown(result, test_name: str) -> list[str]:
-    test = next(t for t in result.suite.all_tests if t.name == test_name)
-    return [item.name for item in test.teardown.body if item.type == "KEYWORD"]
+def teardown_of(result, test_name: str):
+    return next(t for t in result.suite.all_tests if t.name == test_name).teardown
+
+
+def keyword_names(step) -> list[str]:
+    return [item.name for item in step.body if item.type == "KEYWORD"]
 
 
 def test_teardown_after_a_test_timeout_runs_the_on_failure_keyword(result):
-    assert keywords_in_teardown(result, "Test Timeout With Teardown") == [
-        "Failure Handled"
-    ]
+    teardown = teardown_of(result, "Test Timeout With Teardown")
+    assert keyword_names(teardown) == ["Failure Handled"]
 
 
 def test_teardown_after_another_failure_does_not_run_it_again(result):
-    assert keywords_in_teardown(result, "Failure Without Timeout") == []
+    teardown = teardown_of(result, "Failure Without Timeout")
+    assert keyword_names(teardown) == []
+
+
+def test_user_keyword_test_teardown_runs_the_on_failure_keyword_first(result):
+    teardown = teardown_of(result, "Test Timeout With Nested Teardown")
+    assert keyword_names(teardown) == ["Failure Handled", "No Operation"]
 
 
 def test_keyword_teardown_inside_the_test_teardown_does_not_run_it_again(result):
-    test = next(
-        t
-        for t in result.suite.all_tests
-        if t.name == "Test Timeout With Nested Teardown"
-    )
-    clean_up = test.teardown
-    assert [item.name for item in clean_up.body if item.type == "KEYWORD"] == [
-        "Failure Handled",
-        "No Operation",
-    ]
-    assert [
-        item.name for item in clean_up.teardown.body if item.type == "KEYWORD"
-    ] == []
+    teardown = teardown_of(result, "Test Timeout With Nested Teardown")
+    assert keyword_names(teardown.teardown) == []
