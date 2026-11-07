@@ -27,8 +27,11 @@ export function isTargetClosed(error: unknown): boolean {
 
 type RunningTrace = { file: string; options: TraceStartOptions };
 
+export type TraceGroup = { name: string; location: TraceGroupLocation };
+
 export class ContextTracer {
     private trace: RunningTrace | undefined;
+    private openGroups = 0;
 
     constructor(
         private readonly contextId: string,
@@ -80,18 +83,27 @@ export class ContextTracer {
         }
     }
 
-    async group(name: string, location: TraceGroupLocation): Promise<void> {
-        if (this.running) await this.tracing.group(name, { location });
+    // The groups open in the running trace are always the bottom of the stack it was given.
+    async catchUp(stack: readonly TraceGroup[]): Promise<void> {
+        while (this.running && this.openGroups < stack.length) {
+            const { name, location } = stack[this.openGroups];
+            await this.tracing.group(name, { location });
+            this.openGroups++;
+        }
     }
 
-    async groupEnd(): Promise<void> {
-        if (this.running) await this.tracing.groupEnd();
+    async closeGroupsTo(depth: number): Promise<void> {
+        while (this.running && this.openGroups > depth) {
+            this.openGroups--;
+            await this.tracing.groupEnd();
+        }
     }
 
     private takeRunningTrace(): RunningTrace {
         if (!this.trace) throw new Error(`No trace is running on context ${this.contextId}`);
         const trace = this.trace;
         this.trace = undefined;
+        this.openGroups = 0;
         return trace;
     }
 }

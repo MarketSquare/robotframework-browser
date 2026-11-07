@@ -8,7 +8,7 @@ import pytest
 
 from Browser import Browser
 from Browser.base.cache import ContextCache
-from Browser.utils.data_types import KeywordCallStackEntry, TracingGroupMode
+from Browser.utils.data_types import TracingGroupMode
 
 
 class FakePlaywright:
@@ -44,10 +44,6 @@ VIDEO_SIZES = [
     ({}, {"width": 800, "height": 600}),
     ({"size": {"width": 640, "height": 480}}, {"width": 640, "height": 480}),
 ]
-
-
-def keyword_call(name: str) -> KeywordCallStackEntry:
-    return {"name": name, "file": "", "line": 0, "kwname": name, "args": []}
 
 
 def sent_request(stub_method):
@@ -192,17 +188,17 @@ def report(
 
 
 def test_adopted_context_gets_the_keyword_calls_as_trace_groups(browser: Browser):
-    browser.keyword_call_stack.append(keyword_call("Open Application"))
+    browser._playwright_state.open_trace_group("Open Application")
 
     adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
     group = browser._playwright.stub.OpenTraceGroup.call_args.args[0]
-    assert (group.name, group.contextId) == ("Open Application", "context=1")
+    assert (group.name, group.depth) == ("Open Application", 0)
     assert "context=1" in browser.running_traces
 
 
 def test_adopted_context_without_tracing_gets_no_trace_groups(browser: Browser):
-    browser.keyword_call_stack.append(keyword_call("Open Application"))
+    browser._playwright_state.open_trace_group("Open Application")
 
     adopt(browser, report())
 
@@ -214,7 +210,7 @@ def test_playwright_tracing_group_mode_adds_no_trace_groups(tmpdir, monkeypatch)
     browser = new_browser(
         tmpdir, monkeypatch, tracing_group_mode=TracingGroupMode.Playwright
     )
-    browser.keyword_call_stack.append(keyword_call("Open Application"))
+    browser._playwright_state.open_trace_group("Open Application")
 
     adopt(browser, report(trace_file="/traces/trace_context=1.zip"))
 
@@ -380,14 +376,14 @@ def test_new_persistent_context_caches_and_embeds_its_video_once_its_url_opened(
 
 
 def test_new_persistent_context_is_traced_before_its_url_opens(browser: Browser):
-    browser.keyword_call_stack.append(keyword_call("New Persistent Context"))
+    browser._playwright_state.open_trace_group("New Persistent Context")
     stub = persistent_context_with_video(browser)
     stub.GoTo.side_effect = RuntimeError("net::ERR_CONNECTION_REFUSED")
 
     with pytest.raises(RuntimeError):
         browser.new_persistent_context(url="http://localhost:1", tracing=True)
 
-    assert stub.OpenTraceGroup.call_args.args[0].contextId == "context=1"
+    assert stub.OpenTraceGroup.call_args.args[0].name == "New Persistent Context"
 
 
 def test_new_persistent_context_is_not_cached_when_its_url_fails_to_open(

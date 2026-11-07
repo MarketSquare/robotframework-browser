@@ -70,6 +70,7 @@ import {
     Request_StopTracing,
     Request_StorageState,
     Request_TraceGroup,
+    Request_TraceGroupDepth,
     Response_Empty,
     Response_Json,
     Response_Keywords,
@@ -93,6 +94,7 @@ import {
     pageReportResponse,
     stringResponse,
 } from './response-util';
+import { TraceGroups } from './trace-groups';
 
 function lastItem<T>(array: T[]): T | undefined {
     return array[array.length - 1];
@@ -424,6 +426,10 @@ export class PlaywrightState {
      * worker sharing this node process disposed every other worker's
      * highlights along with its own; see issue #5211. */
     public readonly highlightDisposableCache: HighlightDisposableCache;
+    public readonly traceGroups = new TraceGroups(
+        () => this.browserStack.flatMap((browser) => browser.contextStack.map((context) => context.tracer)),
+        () => this.activeBrowser?.context?.tracer,
+    );
     private failedPages = new Map<string, FailedPage>();
     get activeBrowser() {
         return lastItem(this.browserStack);
@@ -464,6 +470,7 @@ export class PlaywrightState {
     public async closeAll(): Promise<string[]> {
         const failures = [];
         for (const browser of this.browserStack) {
+            await this.targetEveryContextOf(browser);
             try {
                 await browser.close();
             } catch (error) {
@@ -472,6 +479,12 @@ export class PlaywrightState {
         }
         this.browserStack = [];
         return failures;
+    }
+
+    public async targetEveryContextOf(browser: BrowserState): Promise<void> {
+        for (const context of browser.contextStack) {
+            await this.traceGroups.target(context.tracer);
+        }
     }
 
     public async closeAllServers(): Promise<void> {
@@ -588,6 +601,7 @@ export class PlaywrightState {
             options.contextOptions,
         );
         browserState.pushContext(indexedContext);
+        await this.traceGroups.started(indexedContext.tracer);
         const activePage = indexedContext.pageStack.find((indexed) => indexed.p === options.activePage);
         if (activePage) browserState.pushPage(activePage);
         this.browserStack.push(browserState);
@@ -878,6 +892,7 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     if (currentBrowser === undefined) {
         return stringResponse('no-browser', 'No browser open, doing nothing');
     }
+    await openBrowsers.targetEveryContextOf(currentBrowser);
     openBrowsers.popBrowser();
     try {
         await currentBrowser.close();
@@ -1028,8 +1043,9 @@ export async function newContext(
         traceFile,
         options,
     );
-
-    return await _finishContextResponse(indexedContext, browserState, options);
+    const response = await _finishContextResponse(indexedContext, browserState, options);
+    await openBrowsers.traceGroups.started(indexedContext.tracer);
+    return response;
 }
 
 async function _finishContextResponse(
@@ -1111,6 +1127,7 @@ export async function newPersistentContext(
 
     const indexedContext = await _indexContextWithPages(context, timeout, traceFile, options);
     const baseResponse = await _finishContextResponse(indexedContext, browserState, options);
+    await openBrowsers.traceGroups.started(indexedContext.tracer);
     const currentBrowser = openBrowsers.activeBrowser;
     const currentPage = indexedContext.pageStack[indexedContext.pageStack.length - 1];
     const videoPath = await currentPage.p.video()?.path();
@@ -1140,32 +1157,17 @@ export async function openTraceGroup(
     request: Request_TraceGroup,
     openBrowsers: PlaywrightState,
 ): Promise<Response_Empty> {
-    const name = request.name;
-    const file = request.file;
-    const line = request.line;
-    const column = request.column;
-    const contextId = request.contextId;
-    if (openBrowsers?.browserStack) {
-        for (const browserState of openBrowsers.browserStack) {
-            for (const indexedContext of browserState.contextStack) {
-                if (!contextId || indexedContext.id === contextId) {
-                    await indexedContext.tracer.group(name, { file, line, column });
-                }
-            }
-        }
-    }
+    const { name, file, line, column, depth } = request;
+    await openBrowsers.traceGroups.open({ name, location: { file, line, column } }, depth);
     setRFKeywordContext({ kw_name: name, kw_file: file || undefined, kw_line: line || undefined });
     return emptyWithLog('Opened trace group');
 }
 
-export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Response_Empty> {
-    if (openBrowsers?.browserStack) {
-        for (const browserState of openBrowsers.browserStack) {
-            for (const indexedContext of browserState.contextStack) {
-                await indexedContext.tracer.groupEnd();
-            }
-        }
-    }
+export async function closeTraceGroup(
+    request: Request_TraceGroupDepth,
+    openBrowsers: PlaywrightState,
+): Promise<Response_Empty> {
+    await openBrowsers.traceGroups.closeTo(request.depth);
     clearRFKeywordContext();
     return emptyWithLog('Closed trace group');
 }
@@ -1185,6 +1187,7 @@ export async function startTracing(
         },
         adHocTraceFile(request.traceFile, indexedContext.id),
     );
+    await openBrowsers.traceGroups.started(indexedContext.tracer);
     return stringResponse(indexedContext.id, `Started tracing context ${indexedContext.id}`);
 }
 
@@ -1196,6 +1199,7 @@ export async function stopTracing(
         ? openBrowsers.findContext(request.contextId)
         : openBrowsers.getActiveBrowser().context;
     if (!indexedContext) throw new Error(`No context ${request.contextId || 'open'}, can not stop tracing`);
+    await openBrowsers.traceGroups.target(indexedContext.tracer);
     if (!request.save) {
         await indexedContext.tracer.discard();
         return Response_StoppedTrace.create({
@@ -1299,7 +1303,8 @@ async function findLatestPageAfter(
     return latest;
 }
 
-export async function switchContext(request: Request_Index, browserState: BrowserState): Promise<Response_String> {
+export async function switchContext(request: Request_Index, openBrowsers: PlaywrightState): Promise<Response_String> {
+    const browserState = openBrowsers.getActiveBrowser();
     const id = request.index;
     const previous = browserState.context?.id || '';
 
@@ -1310,6 +1315,8 @@ export async function switchContext(request: Request_Index, browserState: Browse
     } else {
         await _switchContext(id, browserState);
     }
+    const context = browserState.context;
+    if (context) await openBrowsers.traceGroups.target(context.tracer);
     const page = browserState.page;
     if (page !== undefined) {
         await _switchPage(page.id, browserState);
@@ -1326,6 +1333,8 @@ export async function switchBrowser(request: Request_Index, openBrowsers: Playwr
     if (id !== 'CURRENT') {
         openBrowsers.switchTo(id);
     }
+    const context = openBrowsers.activeBrowser?.context;
+    if (context) await openBrowsers.traceGroups.target(context.tracer);
     await openBrowsers.getActivePage()?.bringToFront();
     return stringResponse(
         previous?.id || 'NO BROWSER OPEN',

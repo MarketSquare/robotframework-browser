@@ -37,8 +37,51 @@ import * as recorder from './recorder';
 import { emptyWithLog, errorResponse, stringResponse } from './response-util';
 import * as selectorPicker from './selector-picker';
 
+// The rpcs that do not act on the context active when they are called: they send the open trace
+// groups themselves to the contexts they act on, or only read the library's bookkeeping. Every
+// other rpc sends them to the active context.
+const RPCS_WITHOUT_ACTIVE_TARGET = new Set<keyof typeof pb.PlaywrightService>([
+    'closeAllBrowsers',
+    'closeBrowser',
+    'closeBrowserServer',
+    'closeTraceGroup',
+    'connectToBrowser',
+    'getBrowserCatalog',
+    'getDevice',
+    'getDevices',
+    'health',
+    'initializeExtension',
+    'launchBrowserServer',
+    'newBrowser',
+    'newContext',
+    'newPersistentContext',
+    'openTraceGroup',
+    'recorderPoll',
+    'removeFailedPage',
+    'selectorPickerPoll',
+    'setPeerId',
+    'setRfContext',
+    'stopTracing',
+    'switchBrowser',
+    'switchContext',
+]);
+
 @class_async_logger
 export class PlaywrightServer {
+    constructor() {
+        for (const rpc of Object.keys(pb.PlaywrightService) as (keyof typeof pb.PlaywrightService)[]) {
+            const handler = (this as any)[rpc] as
+                ((call: ServerSurfaceCall, ...rest: unknown[]) => unknown) | undefined;
+            if (!handler || RPCS_WITHOUT_ACTIVE_TARGET.has(rpc)) continue;
+            (this as any)[rpc] = async (call: ServerSurfaceCall, ...rest: unknown[]) => {
+                const state = this.getState(call);
+                const active = state.activeBrowser?.context;
+                if (active) await state.traceGroups.target(active.tracer);
+                return handler.call(this, call, ...rest);
+            };
+        }
+    }
+
     private states: { [peer: string]: PlaywrightState } = {};
     peerMap: { [peer: string]: string } = {};
 
@@ -182,7 +225,7 @@ export class PlaywrightServer {
     closePage = this.wrapping(playwrightState.closePage);
     removeFailedPage = this.wrapping(playwrightState.removeFailedPage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
-    closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
+    closeTraceGroup = this.wrapping(playwrightState.closeTraceGroup);
     startTracing = this.wrapping(playwrightState.startTracing);
     stopTracing = this.wrapping(playwrightState.stopTracing);
     setRfContext = this.wrappingDebug(playwrightState.setRFContext);
@@ -214,7 +257,7 @@ export class PlaywrightServer {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
-            const response = await playwrightState.switchContext(request, this.getActiveBrowser(call));
+            const response = await playwrightState.switchContext(request, this.getState(call));
             callback(null, response);
         } catch (e) {
             callback(errorResponse(e), null);

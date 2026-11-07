@@ -5,6 +5,7 @@ Library     OperatingSystem
 Library     ArchiveLibrary
 Library     ../../library/tracing_groups.py
 Library     Collections
+Resource    trace_groups_of_two_contexts.resource
 
 *** Variables ***
 ${context_id} =                     ${EMPTY}
@@ -162,6 +163,12 @@ Trace Group Names Do Not Evaluate Arguments Again
     Should Contain Match    ${groups}    BuiltIn.Log*\${{ $calls.append('inline') }}
     Should Contain Match    ${groups}    BuiltIn.Log*\${calls.pop(0)}
     [Teardown]    Close Context
+
+Each Of Two Traced Contexts Shows Only Its Own Keywords
+    Trace Two Contexts At The Same Time    ${OUTPUT_DIR}/two-contexts-full
+    Trace A Should Show Only The Keywords That Ran On A    ${OUTPUT_DIR}/two-contexts-full
+    Trace B Should Show Only The Keywords That Ran On B    ${OUTPUT_DIR}/two-contexts-full
+    [Teardown]    Close Context    ALL
 
 *** Keywords ***
 Keyword Without Browser
