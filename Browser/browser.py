@@ -1080,7 +1080,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             self._playwright_state.open_trace_group(
                 **self._trace_group_arguments(kw_call_stack_entry)
             )
-        if attrs["type"] == "Teardown":
+        if attrs["type"] == "TEARDOWN":
             timeout_pattern = "Test timeout .* exceeded."
             test = EXECUTION_CONTEXTS.current.test
             if (
@@ -1088,7 +1088,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 and test.status == "FAIL"
                 and re.match(timeout_pattern, test.message)
             ):
-                self.screenshot_on_failure(test.name)
+                self.keyword_error(None)
 
     def _create_keyword_call_stack_entry(
         self,
