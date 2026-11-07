@@ -63,6 +63,21 @@ def is_local_host(host: str | None) -> bool:
     return address.is_loopback or address.is_unspecified
 
 
+PORT_TAKEN_ATTEMPTS = 3
+
+
+class PortTakenError(RuntimeError):
+    """Another Playwright process answers on the port this one was started on."""
+
+
+def _health_pid(response) -> int | None:
+    """The process id a Health response names, ``None`` from an older wrapper."""
+    parts = str(getattr(response, "body", "")).split()
+    if len(parts) == 2 and parts[0] == "OK" and parts[1].isdigit():  # noqa: PLR2004
+        return int(parts[1])
+    return None
+
+
 def grpc_channel_options(host: str | None) -> tuple[tuple[str, int], ...]:
     """Return the gRPC channel options for reaching the Playwright process.
 
@@ -168,12 +183,13 @@ class Playwright(LibraryComponent):
 
     @cached_property
     def _playwright_process(self) -> Popen | None:
-        max_attempts = 2 if platform.system() == "Darwin" else 1
-        last_error: RuntimeError | None = None
-        for attempt in range(1, max_attempts + 1):
+        startup_attempts = 2 if platform.system() == "Darwin" else 1
+        attempt = 0
+        while True:
+            attempt += 1
             process = self.start_playwright()
             try:
-                self.wait_until_server_up()
+                self.wait_until_server_up(process)
                 atexit.register(self.close)
                 if platform.system() == "Darwin":
                     time.sleep(
@@ -181,18 +197,20 @@ class Playwright(LibraryComponent):
                     )  # To overcome problem with macOS Sonoma and hanging process
                 return process
             except RuntimeError as err:
-                last_error = err
                 if process:
                     close_process_tree(process)
                 # Reset host/port so next attempt starts a fresh process on a fresh port.
                 self.host = None
                 self.port = None
-                if attempt < max_attempts:
-                    logger.info(
-                        "Retrying Playwright startup on macOS after initial startup failure"
-                    )
-                    time.sleep(0.25)
-        raise last_error if last_error else RuntimeError("Failed to start Playwright")
+                allowed = (
+                    PORT_TAKEN_ATTEMPTS
+                    if isinstance(err, PortTakenError)
+                    else startup_attempts
+                )
+                if attempt >= allowed:
+                    raise
+                logger.info(f"Retrying Playwright startup after: {err}")
+                time.sleep(0.25)
 
     @cached_property
     def _rfbrowser_dir(self) -> Path:
@@ -323,8 +341,20 @@ class Playwright(LibraryComponent):
             coverage_output=self.browser_output,
         )
 
-    def wait_until_server_up(self):
+    def wait_until_server_up(self, process: Popen | None = None):
+        """Wait until the Playwright process answers on ``host:port``.
+
+        ``process`` is the one this library started, if it started one. Another
+        process can take the port between choosing it and the start, and then
+        answers in its place while this one exits. That is reported as a
+        `PortTakenError`, so the start is retried on a fresh port.
+        """
         for _ in range(150):  # About 15 seconds
+            if process is not None and process.poll() is not None:
+                raise RuntimeError(
+                    f"Playwright process exited with code {process.returncode} "
+                    f"before it answered at {self.host}:{self.port}."
+                )
             logger.debug(
                 f"Waiting for Playwright server at {self.host}:{self.port} to start..."
             )
@@ -337,6 +367,16 @@ class Playwright(LibraryComponent):
                     logger.trace(
                         f"Connected to the playwright process at {self.host}:{self.port}: {response}"
                     )
+                    served_by = _health_pid(response)
+                    if (
+                        process is not None
+                        and served_by is not None
+                        and served_by != process.pid
+                    ):
+                        raise PortTakenError(
+                            f"Port {self.port} is served by Playwright process "
+                            f"{served_by}, not by process {process.pid} started here."
+                        )
                     return
                 except grpc.RpcError as err:
                     logger.debug(err)
