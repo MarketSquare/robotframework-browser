@@ -831,3 +831,54 @@ def test_reading_a_localized_file_leaves_the_suite_languages_unchanged(
     path.write_text("Language: de\n", encoding="utf-8")
     FileTarget(path, configured_languages()).save(keyword())
     assert [language.code for language in suite_languages] == ["fr", "en"]
+
+
+_ENDINGS = {
+    "no final newline": "",
+    "final newline": "\n",
+    "one empty line": "\n\n",
+    "two empty lines": "\n\n\n",
+    "last line only spaces": "\n    ",
+    "comment last": "\n# comment",
+}
+_TEST_CASE = "*** Test Cases ***\nT\n    Log    x"
+
+
+@pytest.mark.parametrize("ending", _ENDINGS.values(), ids=_ENDINGS.keys())
+def test_new_section_follows_two_empty_lines(tmp_path, ending):
+    path = tmp_path / "suite.robot"
+    path.write_text(_TEST_CASE + ending, encoding="utf-8")
+    FileTarget(path).save(keyword())
+    written = "\n    \n\n" if ending == "\n    " else ending.rstrip() + "\n\n\n"
+    assert path.read_text(encoding="utf-8").startswith(
+        _TEST_CASE + written + "*** Keywords ***\n"
+    )
+
+
+@pytest.mark.parametrize("ending", _ENDINGS.values(), ids=_ENDINGS.keys())
+def test_removing_the_new_section_restores_the_file(tmp_path, ending):
+    path = tmp_path / "suite.robot"
+    path.write_text(_TEST_CASE + ending, encoding="utf-8")
+    target = FileTarget(path)
+    target.save(keyword())
+    target.remove("Fill Name")
+    assert path.read_text(encoding="utf-8") == _TEST_CASE + ending
+
+
+def test_new_section_after_crlf_without_final_newline_follows_two_empty_lines(
+    tmp_path,
+):
+    path = tmp_path / "suite.robot"
+    path.write_bytes(b"*** Test Cases ***\r\nT\r\n    Log    x")
+    FileTarget(path).save(keyword())
+    assert b"Log    x\r\n\r\n\r\n*** Keywords ***" in path.read_bytes()
+
+
+@pytest.mark.parametrize("ending", ["", "\n"], ids=["no final newline", "newline"])
+def test_new_keyword_follows_one_empty_line_in_existing_section(tmp_path, ending):
+    path = tmp_path / "k.resource"
+    path.write_text(
+        "*** Keywords ***\nExisting\n    No Operation" + ending, encoding="utf-8"
+    )
+    FileTarget(path).save(keyword())
+    assert "No Operation\n\nFill Name\n" in path.read_text(encoding="utf-8")

@@ -40,6 +40,8 @@ from .model import RecordedKeyword, SettingNames
 from .names import existing_keyword_names, normalize_keyword_name
 
 _EOL = "\n"
+_SECTION_SEPARATOR = 2
+_KEYWORD_SEPARATOR = 1
 
 
 class Target(Protocol):
@@ -90,8 +92,8 @@ class LogTarget:
 class _Owned:
     signature: tuple
     created_section: bool
-    separated: bool
-    section_separated: bool = False
+    separator_lines: int
+    section_separator_lines: int = 0
 
 
 @dataclass
@@ -165,14 +167,17 @@ class FileTarget:
                     f"'{keyword.name}' was removed outside the recorder and has "
                     "been written again."
                 )
-            section, created, section_separated = self._keyword_section(model)
-            separated = bool(section.body) and _ensure_blank_line(section.body)
+            section, created, section_separator_lines = self._keyword_section(model)
+            separator_lines = (
+                _ensure_empty_lines(section, _KEYWORD_SEPARATOR) if section.body else 0
+            )
             section.body.append(block)
             owned = _Owned(
                 (),
                 created or (owned.created_section if owned else False),
-                separated,
-                section_separated or (owned.section_separated if owned else False),
+                separator_lines,
+                section_separator_lines
+                or (owned.section_separator_lines if owned else 0),
             )
         # Owned only once written: a failed first write must not let a later
         # retry overwrite a keyword of that name that someone else added meanwhile.
@@ -198,16 +203,19 @@ class FileTarget:
             return
         body, index = found
         del body[index]
-        if owned.separated and index > 0:
-            _pop_trailing_empty_line(body[index - 1])
+        if index > 0:
+            _pop_trailing_empty_lines(body[index - 1], owned.separator_lines)
         if owned.created_section:
             for position, section in enumerate(model.sections):
                 if section.body is body and not any(
                     isinstance(item, Keyword) for item in body
                 ):
                     del model.sections[position]
-                    if owned.section_separated and position > 0:
-                        _pop_trailing_empty_line(model.sections[position - 1])
+                    if position > 0:
+                        _pop_trailing_empty_lines(
+                            model.sections[position - 1],
+                            owned.section_separator_lines,
+                        )
                     break
         self._write(model, restore_final_newline=len(self._owned) == 1)
         self._owned.pop(key, None)
@@ -282,13 +290,15 @@ class FileTarget:
             temp.unlink(missing_ok=True)
             raise
 
-    def _keyword_section(self, model: File) -> tuple[KeywordSection, bool, bool]:
+    def _keyword_section(self, model: File) -> tuple[KeywordSection, bool, int]:
         for section in model.sections:
             if isinstance(section, KeywordSection):
-                return section, False, False
-        separated = False
+                return section, False, 0
+        separator_lines = 0
         if model.sections:
-            separated = _ensure_blank_line(model.sections[-1].body)
+            separator_lines = _ensure_empty_lines(
+                model.sections[-1], _SECTION_SEPARATOR
+            )
         header = SectionHeader(
             [
                 Token(
@@ -299,7 +309,7 @@ class FileTarget:
         )
         section = KeywordSection(header=header)
         model.sections.append(section)
-        return section, True, separated
+        return section, True, separator_lines
 
 
 def _umask() -> int:
@@ -366,21 +376,24 @@ def _trailing_empty_lines(block: Keyword) -> list[EmptyLine]:
     return trailing
 
 
-def _ends_with_empty_line(body: list) -> bool:
-    if not body:
-        return False
-    last = body[-1]
-    if isinstance(last, EmptyLine):
-        return True
-    return isinstance(last, Block) and _ends_with_empty_line(getattr(last, "body", []))
+def _ensure_empty_lines(node: Block, wanted: int) -> int:
+    """Append line ends until ``node`` ends with ``wanted`` empty lines.
+
+    Counted in the text, so a last line without a line end, or with only
+    spaces, is handled too. Returns how many line ends were appended.
+    """
+    text = "".join(
+        token.value for statement in _statements(node) for token in statement.tokens
+    )
+    trailing = text[len(text.rstrip()) :]
+    missing = max(0, wanted + 1 - trailing.count(_EOL))
+    node.body.extend(EmptyLine([Token(Token.EOL, _EOL)]) for _ in range(missing))
+    return missing
 
 
-def _ensure_blank_line(body: list) -> bool:
-    """Append a blank line unless ``body`` already ends with one. True if added."""
-    if _ends_with_empty_line(body):
-        return False
-    body.append(EmptyLine([Token(Token.EOL, _EOL)]))
-    return True
+def _pop_trailing_empty_lines(node: Block, count: int) -> None:
+    for _ in range(count):
+        _pop_trailing_empty_line(node)
 
 
 def _pop_trailing_empty_line(node: Block) -> None:
@@ -389,6 +402,7 @@ def _pop_trailing_empty_line(node: Block) -> None:
         return
     last = body[-1]
     if isinstance(last, EmptyLine):
-        body.pop()
+        if "".join(token.value for token in last.tokens) == _EOL:
+            body.pop()
     elif isinstance(last, Block):
         _pop_trailing_empty_line(last)
