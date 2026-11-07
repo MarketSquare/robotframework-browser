@@ -60,6 +60,49 @@ Trace File Will Be Deleted
 Automatic Context Close Shall Remove Trace File
     File Should Not Exist    ${OUTPUT_DIR}/browser/traces/trace_${context_id}.zip
 
+Keywords In Branches That Did Not Run Get No Trace Group
+    New Context
+    New Page    ${FORM_URL}
+    Start Tracing    scope=Test
+    IF    False
+        Log    if branch did not run
+    ELSE
+        Log    else branch ran
+    END
+    TRY
+        Log    try branch ran
+    EXCEPT    *
+        Log    except branch did not run
+    END
+    ${trace} =    Stop Tracing    path=not-run-branches.zip
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/not-run-branches/
+    ${groups} =    Get Trace Group Titles    ${OUTPUT_DIR}/not-run-branches/trace.trace
+    Should Contain Match    ${groups}    BuiltIn.Log*else branch ran
+    Should Contain Match    ${groups}    BuiltIn.Log*try branch ran
+    Should Not Contain Match    ${groups}    *did not run*
+    Should Not Contain Match    ${groups}    IF*False
+    Should Not Contain Match    ${groups}    EXCEPT*
+    [Teardown]    Close Context
+
+Groups After A Loop Or Branch That Did Not Run Keep Their Parent
+    New Context
+    New Page    ${FORM_URL}
+    Start Tracing    scope=Test
+    FOR    ${item}    IN    @{EMPTY}
+        Log    ${item}
+    END
+    Log    after empty loop
+    Catch An Invalid Condition And Log
+    ${trace} =    Stop Tracing    path=loop-and-branch-not-run.zip
+    Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/loop-and-branch-not-run/
+    ${parent} =    Get Trace Group Parent Title
+    ...    ${OUTPUT_DIR}/loop-and-branch-not-run/trace.trace    BuiltIn.Log*after empty loop
+    Should Be Equal    ${parent}    ${None}
+    ${parent} =    Get Trace Group Parent Title
+    ...    ${OUTPUT_DIR}/loop-and-branch-not-run/trace.trace    BuiltIn.Log*after invalid condition
+    Should Be Equal    ${parent}    Catch An Invalid Condition And Log
+    [Teardown]    Close Context
+
 *** Keywords ***
 Keyword Without Browser
     [Arguments]    ${text}
@@ -70,3 +113,10 @@ Initialize Context And Page
     Keyword Without Browser    this keyword has no browser in it
     Browser.New Page    ${FORM_URL}
     VAR    ${context_id} =    ${context_id}    scope=SUITE
+
+Catch An Invalid Condition And Log
+    Run Keyword And Expect Error    Invalid IF condition*    Use An Invalid Condition
+    Log    after invalid condition
+
+Use An Invalid Condition
+    IF    $undefined > 1    Log    invalid condition did not run

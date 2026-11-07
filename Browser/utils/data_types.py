@@ -1838,7 +1838,7 @@ class TracingGroupMode(Enum):
     This includes all API calls, events, logs, network requests, and responses as well as the DOM at every moment during execution.
     This trace can be activated with the ``tracing`` parameter of `New Context` keyword.
 
-    - ``Full`` All keyword calls are written to trace as groups even if they do not call Browser keywords.
+    - ``Full`` All keyword calls that run are written to trace as groups even if they do not call Browser keywords. Keywords in IF, TRY or other branches that do not run get no group.
     - ``Browser`` Just Browser library keywords are written to the logs as groups.
     - ``Playwright`` No additional keywords are logged, just the Playwright API calls.
 
