@@ -44,3 +44,11 @@ export function splitUtf8ByMaxBytes(text: string, maxBytes: number): string[] {
 function isContinuationByte(byte: number): boolean {
     return (byte & 0xc0) === 0x80;
 }
+
+export function splitBytes(bytes: Buffer, maxBytes: number): Buffer[] {
+    const chunks: Buffer[] = [];
+    for (let start = 0; start < bytes.length; start += maxBytes) {
+        chunks.push(bytes.subarray(start, start + maxBytes));
+    }
+    return chunks;
+}
