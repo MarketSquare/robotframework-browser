@@ -93,6 +93,7 @@ from .utils.data_types import (
     TracingGroupMode,
     ViewportDimensions,
 )
+from .utils.running_traces import RunningTraces
 from .version import __version__ as VERSION
 
 
@@ -657,7 +658,7 @@ class Browser(DynamicCore):
         else:
             self._plugin_keywords = []
         self.presenter_mode = enable_presenter_mode
-        self.tracing_group_mode = tracing_group_mode
+        self.running_traces: RunningTraces = RunningTraces(tracing_group_mode)
         self._execution_stack: list[dict] = []
         self._running_on_failure_keyword = False
         self._failed_page_tokens_local = threading.local()
@@ -670,8 +671,6 @@ class Browser(DynamicCore):
         # scripted toolbar commands.
         self.recorder_allows_headless: bool = False
         self.keyword_call_stack: list[KeywordCallStackEntry] = []
-        self.tracing_contexts: list[str] = []
-        self.ad_hoc_traces: dict[str, str] = {}
 
         translation_file = self._get_translation(language)
         DynamicCore.__init__(self, libraries, translation_file)
@@ -998,6 +997,10 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
     @property
     def traces_temp(self) -> Path:
         return self.traces_output / "temp"
+
+    @property
+    def tracing_group_mode(self) -> TracingGroupMode:
+        return self.running_traces.group_mode
 
     @property
     def state_file(self):
