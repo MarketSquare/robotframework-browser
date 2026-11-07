@@ -41,6 +41,7 @@ import {
     setRFTestContext,
 } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
+import { adHocTraceFile, CONTEXT_TRACE_OPTIONS, contextTraceFile, ContextTracer } from './context-tracer';
 import {
     Request_Bool,
     Request_Browser,
@@ -304,12 +305,6 @@ async function _connectBrowser(
     };
 }
 
-// A trace file is a zip path, or a directory that gets fileName; '{contextid}' becomes the context id.
-function traceFilePath(traceFile: string, contextId: string, fileName: string): string {
-    const file = traceFile.toLowerCase().endsWith('.zip') ? traceFile : path.join(traceFile, fileName);
-    return file.replace('{contextid}', contextId);
-}
-
 async function _createIndexedContext(
     context: BrowserContext,
     defaultTimeout: number | undefined,
@@ -321,19 +316,16 @@ async function _createIndexedContext(
         logger.info(`Setting default timeout for context ${contextId} to ${defaultTimeout}`);
         context.setDefaultTimeout(defaultTimeout);
     }
-    if (traceFile) {
-        traceFile = traceFilePath(traceFile, contextId, `trace_${contextId}.zip`);
-    }
     const indexedContext = {
         id: contextId,
         c: context,
         pageStack: [] as IndexedPage[],
         options: options,
-        traceFile: traceFile,
+        tracer: new ContextTracer(contextId, context.tracing),
     };
     if (traceFile) {
-        logger.info('Tracing enabled with: { screenshots: true, snapshots: true }');
-        await context.tracing.start({ screenshots: true, snapshots: true });
+        logger.info(`Tracing enabled with: ${JSON.stringify(CONTEXT_TRACE_OPTIONS)}`);
+        await indexedContext.tracer.start(CONTEXT_TRACE_OPTIONS, contextTraceFile(traceFile, contextId));
     }
     indexedContext.c.on('page', async (page) => {
         indexedContext.pageStack.unshift(await _newPage(indexedContext, page));
@@ -597,7 +589,7 @@ export class PlaywrightState {
         const videoPath = (await page?.p.video()?.path()) ?? null;
         const report = JSON.stringify({
             id: indexedContext.id,
-            traceFile: indexedContext.traceFile,
+            traceFile: indexedContext.tracer.file,
             contextOptions: indexedContext.options ?? {},
             video: { video_path: videoPath, contextUuid: indexedContext.id },
         });
@@ -621,10 +613,6 @@ export class PlaywrightState {
 
     public findContext = (contextId: string): IndexedContext | undefined => {
         return this.browserStack.flatMap((browser) => browser.contextStack).find((c) => c.id === contextId);
-    };
-
-    public getTraceFile = (): string | undefined => {
-        return this.activeBrowser?.context?.traceFile;
     };
 
     public getActivePage = (): Page | undefined => {
@@ -692,7 +680,7 @@ export const locatorCache = new LocatorCache();
 type IndexedContext = {
     c: BrowserContext;
     id: Uuid;
-    traceFile: string;
+    tracer: ContextTracer;
     pageStack: IndexedPage[];
     options?: Record<string, unknown>;
     // A restore which timed out keeps running, see setStorageState.
@@ -769,10 +757,7 @@ export class BrowserState {
             }
         };
         for (const context of this.contextStack) {
-            const traceFile = context.traceFile;
-            if (traceFile) {
-                await attempt(() => context.c.tracing.stop({ path: traceFile }));
-            }
+            await attempt(() => context.tracer.endWithContext(true));
             await attempt(() => context.c.close());
         }
         this._contextStack = [];
@@ -917,13 +902,10 @@ export async function closeAllBrowsers(openBrowsers: PlaywrightState): Promise<R
 export async function closeContext(request: Request_Bool, openBrowsers: PlaywrightState): Promise<Response_Empty> {
     const saveTrace = request.value;
     const activeBrowser = openBrowsers.getActiveBrowser();
-    const traceFile = openBrowsers.getTraceFile();
     // A persistent or adopted context is the only context of a browser without a browser object.
     const closesBrowser = activeBrowser.browser === null && activeBrowser.contextStack.length === 1;
     try {
-        if (traceFile && saveTrace) {
-            await openBrowsers.getActiveContext()?.tracing.stop({ path: traceFile });
-        }
+        await activeBrowser.context?.tracer.endWithContext(saveTrace);
         for (const page of activeBrowser.context?.pageStack || []) {
             await _saveCoverageReport(page);
         }
@@ -1054,11 +1036,12 @@ async function _finishContextResponse(
     options: Record<string, unknown>,
 ): Promise<Response_NewContextResponse> {
     browserState.browser.pushContext(indexedContext);
-    const log = indexedContext.traceFile
-        ? `Successfully created context and trace file will be saved to: ${indexedContext.traceFile}`
+    const tracer = indexedContext.tracer;
+    const log = tracer.running
+        ? `Successfully created context and trace file will be saved to: ${tracer.file}`
         : 'Successfully created context. ';
-    if (indexedContext.traceFile) {
-        options.trace = { screenshots: true, snapshots: true };
+    if (tracer.running) {
+        options.trace = tracer.options;
     }
     return {
         id: indexedContext.id,
@@ -1164,7 +1147,7 @@ export async function openTraceGroup(
         for (const browserState of openBrowsers.browserStack) {
             for (const indexedContext of browserState.contextStack) {
                 if (!contextId || indexedContext.id === contextId) {
-                    await indexedContext.c?.tracing?.group(name, { location: { file, line, column } });
+                    await indexedContext.tracer.group(name, { file, line, column });
                 }
             }
         }
@@ -1177,16 +1160,12 @@ export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Re
     if (openBrowsers?.browserStack) {
         for (const browserState of openBrowsers.browserStack) {
             for (const indexedContext of browserState.contextStack) {
-                await indexedContext.c?.tracing?.groupEnd();
+                await indexedContext.tracer.groupEnd();
             }
         }
     }
     clearRFKeywordContext();
     return emptyWithLog('Closed trace group');
-}
-
-function adHocTraceFile(traceFile: string, contextId: string): string {
-    return traceFilePath(traceFile, contextId, `trace_${contextId}-${uuidv4()}.zip`);
 }
 
 export async function startTracing(
@@ -1195,16 +1174,15 @@ export async function startTracing(
 ): Promise<Response_String> {
     const indexedContext = openBrowsers.getActiveBrowser().context;
     if (!indexedContext) throw new Error('No context open, can not start tracing');
-    if (indexedContext.traceFile) {
-        throw new Error(`Tracing is already running on context ${indexedContext.id}, stop it before starting again`);
-    }
-    await indexedContext.c.tracing.start({
-        screenshots: request.screenshots,
-        snapshots: request.snapshots,
-        sources: request.sources,
-        title: request.title,
-    });
-    indexedContext.traceFile = adHocTraceFile(request.traceFile, indexedContext.id);
+    await indexedContext.tracer.start(
+        {
+            screenshots: request.screenshots,
+            snapshots: request.snapshots,
+            sources: request.sources,
+            title: request.title,
+        },
+        adHocTraceFile(request.traceFile, indexedContext.id),
+    );
     return stringResponse(indexedContext.id, `Started tracing context ${indexedContext.id}`);
 }
 
@@ -1216,20 +1194,17 @@ export async function stopTracing(
         ? openBrowsers.findContext(request.contextId)
         : openBrowsers.getActiveBrowser().context;
     if (!indexedContext) throw new Error(`No context ${request.contextId || 'open'}, can not stop tracing`);
-    if (!indexedContext.traceFile) throw new Error(`No trace is running on context ${indexedContext.id}`);
-    const traceFile = request.traceFile
-        ? adHocTraceFile(request.traceFile, indexedContext.id)
-        : indexedContext.traceFile;
-    indexedContext.traceFile = '';
     if (!request.save) {
-        await indexedContext.c.tracing.stop();
+        await indexedContext.tracer.discard();
         return Response_StoppedTrace.create({
             log: `Discarded trace of context ${indexedContext.id}`,
             contextId: indexedContext.id,
             traceFile: '',
         });
     }
-    await indexedContext.c.tracing.stop({ path: traceFile });
+    const traceFile = await indexedContext.tracer.stop(
+        request.traceFile ? adHocTraceFile(request.traceFile, indexedContext.id) : undefined,
+    );
     return Response_StoppedTrace.create({
         log: `Saved trace of context ${indexedContext.id} to ${traceFile}`,
         contextId: indexedContext.id,
