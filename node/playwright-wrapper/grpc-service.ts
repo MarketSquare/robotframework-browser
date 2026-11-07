@@ -183,6 +183,8 @@ export class PlaywrightServer {
     removeFailedPage = this.wrapping(playwrightState.removeFailedPage);
     openTraceGroup = this.wrapping(playwrightState.openTraceGroup);
     closeTraceGroup = this.wrappingState(playwrightState.closeTraceGroup);
+    startTracing = this.wrapping(playwrightState.startTracing);
+    stopTracing = this.wrapping(playwrightState.stopTracing);
     setRfContext = this.wrappingDebug(playwrightState.setRFContext);
     getBrowserCatalog = this.wrapping(playwrightState.getBrowserCatalog);
     getConsoleLog = this.wrapping(playwrightState.getConsoleLog);

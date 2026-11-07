@@ -59,6 +59,8 @@ import {
     Request_PersistentContext,
     Request_RFContext,
     Request_SetStorageState,
+    Request_StartTracing,
+    Request_StopTracing,
     Request_StorageState,
     Request_TraceGroup,
     Response_Empty,
@@ -68,6 +70,7 @@ import {
     Response_NewPageResponse,
     Response_NewPersistentContextResponse,
     Response_PageReportResponse,
+    Response_StoppedTrace,
     Response_String,
 } from './generated/playwright';
 import { HighlightDisposableCache } from './highlight-cache';
@@ -301,6 +304,12 @@ async function _connectBrowser(
     };
 }
 
+// A trace file is a zip path, or a directory that gets fileName; '{contextid}' becomes the context id.
+function traceFilePath(traceFile: string, contextId: string, fileName: string): string {
+    const file = traceFile.toLowerCase().endsWith('.zip') ? traceFile : path.join(traceFile, fileName);
+    return file.replace('{contextid}', contextId);
+}
+
 async function _createIndexedContext(
     context: BrowserContext,
     defaultTimeout: number | undefined,
@@ -313,10 +322,7 @@ async function _createIndexedContext(
         context.setDefaultTimeout(defaultTimeout);
     }
     if (traceFile) {
-        if (!traceFile.toLowerCase().endsWith('.zip')) {
-            traceFile = path.join(traceFile, `trace_${contextId}.zip`);
-        }
-        traceFile = traceFile.replace('{contextid}', contextId);
+        traceFile = traceFilePath(traceFile, contextId, `trace_${contextId}.zip`);
     }
     const indexedContext = {
         id: contextId,
@@ -611,6 +617,10 @@ export class PlaywrightState {
 
     public getActiveContext = (): BrowserContext | undefined => {
         return this.activeBrowser?.context?.c;
+    };
+
+    public findContext = (contextId: string): IndexedContext | undefined => {
+        return this.browserStack.flatMap((browser) => browser.contextStack).find((c) => c.id === contextId);
     };
 
     public getTraceFile = (): string | undefined => {
@@ -1173,6 +1183,58 @@ export async function closeTraceGroup(openBrowsers: PlaywrightState): Promise<Re
     }
     clearRFKeywordContext();
     return emptyWithLog('Closed trace group');
+}
+
+function adHocTraceFile(traceFile: string, contextId: string): string {
+    return traceFilePath(traceFile, contextId, `trace_${contextId}-${uuidv4()}.zip`);
+}
+
+export async function startTracing(
+    request: Request_StartTracing,
+    openBrowsers: PlaywrightState,
+): Promise<Response_String> {
+    const indexedContext = openBrowsers.getActiveBrowser().context;
+    if (!indexedContext) throw new Error('No context open, can not start tracing');
+    if (indexedContext.traceFile) {
+        throw new Error(`Tracing is already running on context ${indexedContext.id}, stop it before starting again`);
+    }
+    await indexedContext.c.tracing.start({
+        screenshots: request.screenshots,
+        snapshots: request.snapshots,
+        sources: request.sources,
+        title: request.title,
+    });
+    indexedContext.traceFile = adHocTraceFile(request.traceFile, indexedContext.id);
+    return stringResponse(indexedContext.id, `Started tracing context ${indexedContext.id}`);
+}
+
+export async function stopTracing(
+    request: Request_StopTracing,
+    openBrowsers: PlaywrightState,
+): Promise<Response_StoppedTrace> {
+    const indexedContext = request.contextId
+        ? openBrowsers.findContext(request.contextId)
+        : openBrowsers.getActiveBrowser().context;
+    if (!indexedContext) throw new Error(`No context ${request.contextId || 'open'}, can not stop tracing`);
+    if (!indexedContext.traceFile) throw new Error(`No trace is running on context ${indexedContext.id}`);
+    const traceFile = request.traceFile
+        ? adHocTraceFile(request.traceFile, indexedContext.id)
+        : indexedContext.traceFile;
+    indexedContext.traceFile = '';
+    if (!request.save) {
+        await indexedContext.c.tracing.stop();
+        return Response_StoppedTrace.create({
+            log: `Discarded trace of context ${indexedContext.id}`,
+            contextId: indexedContext.id,
+            traceFile: '',
+        });
+    }
+    await indexedContext.c.tracing.stop({ path: traceFile });
+    return Response_StoppedTrace.create({
+        log: `Saved trace of context ${indexedContext.id} to ${traceFile}`,
+        contextId: indexedContext.id,
+        traceFile,
+    });
 }
 
 export async function setRFContext(request: Request_RFContext): Promise<Response_Empty> {

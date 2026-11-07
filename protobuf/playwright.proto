@@ -64,6 +64,20 @@ message Request {
     string contextId = 5;
   }
 
+  message StartTracing {
+    bool screenshots = 1;
+    bool snapshots = 2;
+    bool sources = 3;
+    optional string title = 4;
+    string traceFile = 5;
+  }
+
+  message StopTracing {
+    string traceFile = 1;
+    bool save = 2;
+    string contextId = 3;
+  }
+
   message RFContext {
     string test_id = 1;
     string test_name = 2;
@@ -456,6 +470,12 @@ message Response {
     string body = 2;
   }
 
+  message StoppedTrace {
+    string log = 1;
+    string contextId = 2;
+    string traceFile = 3;
+  }
+
   message ListString {
     repeated string items = 1;
     string log = 2;
@@ -682,6 +702,8 @@ service  Playwright {
   rpc RemoveFailedPage(Request.FailedPage) returns (Response.Empty);
   rpc OpenTraceGroup(Request.TraceGroup) returns (Response.Empty);
   rpc CloseTraceGroup(Request.Empty) returns (Response.Empty);
+  rpc StartTracing(Request.StartTracing) returns (Response.String);
+  rpc StopTracing(Request.StopTracing) returns (Response.StoppedTrace);
   rpc SetRFContext(Request.RFContext) returns (Response.Empty);
   rpc GetConsoleLog(Request.Bool) returns (Response.Json);
   rpc GetErrorMessages(Request.Bool) returns (Response.Json);
