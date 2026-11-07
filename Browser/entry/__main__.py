@@ -90,6 +90,11 @@ def get_rf_version():
     return process.stdout.decode("utf-8").split(" ")[2]
 
 
+BROWSER_CHOICE = click.Choice(
+    [b.value for b in InstallableBrowser], case_sensitive=False
+)
+
+
 @click.group(
     invoke_without_command=True, context_settings=CONTEXT_SETTINGS, no_args_is_help=True
 )
@@ -185,22 +190,7 @@ def cli(ctx, silent):
 )
 @click.argument(
     "browser",
-    type=click.Choice(
-        [
-            "chromium",
-            "chromium-headless-shell",
-            "chrome",
-            "chrome-beta",
-            "msedge",
-            "msedge-beta",
-            "msedge-dev",
-            "bidi-chromium",
-            "firefox",
-            "webkit",
-            "webkit-wsl",
-        ],
-        case_sensitive=False,
-    ),
+    type=BROWSER_CHOICE,
     nargs=-1,
 )
 def init(ctx, skip_browsers, with_deps, browser):
@@ -223,10 +213,9 @@ def init(ctx, skip_browsers, with_deps, browser):
     to install browser binaries and use PLAYWRIGHT_BROWSERS_PATH environment variable to define where browser
     binaries are located.
 
-    It is possible to install only selected browser binaries: chromium, chromium-headless-shell, chrome,
-    chrome-beta, msedge, msedge-beta, msedge-dev, bidi-chromium, firefox, webkit, or webkit-wsl. Example:
-    `rfbrowser init webkit` will install only webkit binaries and `rfbrowser init chromium firefox` will install
-    both chromium and firefox binaries. Not all browsers are available on all platforms. Refer to
+    It is possible to install only selected browser binaries, listed as choices in the usage line above.
+    Example: `rfbrowser init webkit` will install only webkit binaries and `rfbrowser init chromium firefox`
+    will install both chromium and firefox binaries. Not all browsers are available on all platforms. Refer to
     `npx playwright install --help` command for more details about browser binary availability.
     """
     silent_mode = ctx.obj["SILENT"]
@@ -490,7 +479,7 @@ def convert_options_types(options: list[str], browser_lib: "Browser"):
 @cli.command()
 @click.argument(
     "browser",
-    type=click.Choice([b.value for b in InstallableBrowser]),
+    type=BROWSER_CHOICE,
     required=False,
     default=None,
 )

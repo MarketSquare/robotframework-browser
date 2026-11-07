@@ -1882,11 +1882,15 @@ InstallableBrowser = Enum(
         "msedge": "msedge",
         "msedge-beta": "msedge-beta",
         "msedge-dev": "msedge-dev",
+        "webkit-wsl": "webkit-wsl",
     },
 )
-InstallableBrowser.__doc__ = (
-    """Enum of browsers that can be installed with the `rfbrowser install` command."""
-)
+InstallableBrowser.__doc__ = """Playwright install targets the library can drive.
+
+`rfbrowser init` and `rfbrowser install` both offer this list. Playwright's
+`android`, `chrome-for-testing` and `ffmpeg` targets are left out: the library
+cannot drive Android, `chrome-for-testing` installs the same build as
+`chromium`, and `ffmpeg` is installed together with the browsers."""
 
 
 InstallationOptions = Enum(
