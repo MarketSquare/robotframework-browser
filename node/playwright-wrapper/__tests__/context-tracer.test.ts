@@ -155,6 +155,25 @@ describe('ContextTracer', () => {
             expect(tracing.stop).toHaveBeenCalledWith();
         });
 
+        it('closes without failing when the discarded trace was already gone with its context', async () => {
+            tracing.stop.mockRejectedValueOnce(
+                Object.assign(new Error('Target closed'), { name: 'TargetClosedError' }),
+            );
+            await tracer.start({}, '/out/trace.zip');
+
+            await tracer.endWithContext(false);
+
+            expect(tracer.running).toBe(false);
+        });
+
+        it('fails when discarding the trace fails for another reason', async () => {
+            expect.assertions(1);
+            tracing.stop.mockRejectedValueOnce(new Error('ENOSPC'));
+            await tracer.start({}, '/out/trace.zip');
+
+            await expect(tracer.endWithContext(false)).rejects.toThrow('ENOSPC');
+        });
+
         it('does nothing when no trace is running', async () => {
             await tracer.endWithContext(true);
 
