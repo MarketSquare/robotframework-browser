@@ -373,14 +373,14 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot --smoke
+          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
       - name: Run Robot Framework tests on windows or macOS
         if: matrix.os != 'ubuntu-latest'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
-          invoke atest-robot --smoke
+          invoke atest-robot --smoke --parallel
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
@@ -559,11 +559,11 @@ jobs:
       - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
-          xvfb-run --auto-servernum invoke atest-robot --smoke
+          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
       - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
-          inv atest-robot
+          inv atest-robot --parallel
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
@@ -648,7 +648,9 @@ jobs:
                 cat /tmp/test-app.log
                 exit 1
               fi
-              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
+              pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 --chunk \\
+                --artifacts png,webm,zip --artifactsinsubfolders \\
+                -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
               robot_status=\$?
               kill \$app_pid || true
               wait \$app_pid 2>/dev/null || true
