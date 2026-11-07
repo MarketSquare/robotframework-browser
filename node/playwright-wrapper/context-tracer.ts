@@ -21,6 +21,10 @@ export function adHocTraceFile(traceFile: string, contextId: string): string {
     return traceFilePath(traceFile, contextId, `trace_${contextId}-${uuidv4()}.zip`);
 }
 
+export function isTargetClosed(error: unknown): boolean {
+    return error instanceof Error && error.name === 'TargetClosedError';
+}
+
 type RunningTrace = { file: string; options: TraceStartOptions };
 
 export class ContextTracer {
@@ -67,8 +71,12 @@ export class ContextTracer {
         if (!this.running) return;
         if (save) {
             await this.stop();
-        } else {
+            return;
+        }
+        try {
             await this.discard();
+        } catch (error) {
+            if (!isTargetClosed(error)) throw error;
         }
     }
 

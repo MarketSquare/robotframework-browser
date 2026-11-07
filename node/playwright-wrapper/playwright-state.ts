@@ -41,7 +41,13 @@ import {
     setRFTestContext,
 } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
-import { adHocTraceFile, CONTEXT_TRACE_OPTIONS, contextTraceFile, ContextTracer } from './context-tracer';
+import {
+    adHocTraceFile,
+    CONTEXT_TRACE_OPTIONS,
+    contextTraceFile,
+    ContextTracer,
+    isTargetClosed,
+} from './context-tracer';
 import {
     Request_Bool,
     Request_Browser,
@@ -879,10 +885,6 @@ export async function closeBrowser(openBrowsers: PlaywrightState): Promise<Respo
     } catch (error) {
         return stringResponse(currentBrowser.id, closeFailure(currentBrowser, error));
     }
-}
-
-function isTargetClosed(error: unknown): boolean {
-    return error instanceof Error && error.name === 'TargetClosedError';
 }
 
 function closeFailure(browser: BrowserState, error: unknown): string {
