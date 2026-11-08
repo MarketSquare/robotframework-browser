@@ -16,8 +16,18 @@
 from __future__ import annotations
 
 import pytest
+from robot.conf.languages import Language, Languages
 
-from Browser.recorder.model import ArgRef, Call, RecordedKeyword, Value
+from Browser.recorder.model import (
+    CANONICAL,
+    ArgRef,
+    Argument,
+    Call,
+    DisplayNames,
+    RecordedKeyword,
+    SettingNames,
+    Value,
+)
 
 
 def fill(text: str) -> Call:
@@ -39,7 +49,7 @@ def test_update_last_replaces_the_primary_call():
     kw = RecordedKeyword("K")
     kw.add(fill("A"))
     assert kw.update_last(fill("Al"))
-    assert [c.render() for c in kw.calls()] == ["Fill Text    \\#name    Al"]
+    assert [c.render(CANONICAL) for c in kw.calls()] == ["Fill Text    \\#name    Al"]
 
 
 def test_undo_removes_the_whole_group():
@@ -69,7 +79,7 @@ def test_make_argument_partial_value():
     kw = RecordedKeyword("K")
     kw.add(Call("Go To", [Value.literal("https://shop/item/42")]))
     kw.make_argument(0, 0, 18, 20, "item_id")
-    assert kw.calls()[0].render() == "Go To    https://shop/item/${item_id}"
+    assert kw.calls()[0].render(CANONICAL) == "Go To    https://shop/item/${item_id}"
     assert kw.arguments[0].default == "42"
 
 
@@ -77,7 +87,10 @@ def test_partial_argument_keeps_literal_parts_escaped():
     kw = RecordedKeyword("K")
     kw.add(fill("price ${x} is 42"))
     kw.make_argument(0, 1, 14, 16, "amount")
-    assert kw.calls()[0].render() == "Fill Text    \\#name    price \\${x} is ${amount}"
+    assert (
+        kw.calls()[0].render(CANONICAL)
+        == "Fill Text    \\#name    price \\${x} is ${amount}"
+    )
 
 
 def test_fixed_values_cannot_become_arguments():
@@ -108,7 +121,7 @@ def test_make_argument_reports_other_occurrences():
     )
     assert kw.make_argument(0, 1, 0, 17, "email") == [(1, 1)]
     kw.replace("email", [(1, 1)])
-    assert kw.calls()[1].render() == "Fill Text    \\#search    ${email}"
+    assert kw.calls()[1].render(CANONICAL) == "Fill Text    \\#search    ${email}"
 
 
 def test_unused_argument_is_removed_on_undo():
@@ -125,7 +138,7 @@ def test_default_follows_continued_typing():
     kw.add(fill("adm"))
     kw.make_argument(0, 1, 0, 3, "email")
     kw.update_last(fill("admin@example.com"))
-    assert kw.calls()[0].render() == "Fill Text    \\#name    ${email}"
+    assert kw.calls()[0].render(CANONICAL) == "Fill Text    \\#name    ${email}"
     assert kw.arguments[0].default == "admin@example.com"
 
 
@@ -142,7 +155,7 @@ def test_partial_argument_is_dropped_when_typing_breaks_the_prefix():
     kw.add(fill("id-4"))
     kw.make_argument(0, 1, 3, 4, "n")
     kw.update_last(fill("xd-42"))
-    assert kw.calls()[0].render() == "Fill Text    \\#name    xd-42"
+    assert kw.calls()[0].render(CANONICAL) == "Fill Text    \\#name    xd-42"
     assert kw.arguments == []
 
 
@@ -201,7 +214,7 @@ def test_update_last_with_a_different_keyword_replaces_the_call_without_carrying
     kw = RecordedKeyword("K")
     kw.add(fill("A"))
     assert kw.update_last(Call("Click", [Value.literal("#b", False)]))
-    assert [c.render() for c in kw.calls()] == ["Click    \\#b"]
+    assert [c.render(CANONICAL) for c in kw.calls()] == ["Click    \\#b"]
 
 
 def test_update_last_with_a_different_argument_count_replaces_the_call():
@@ -210,7 +223,7 @@ def test_update_last_with_a_different_argument_count_replaces_the_call():
     assert kw.update_last(
         Call("Click", [Value.literal("#b", False), Value.literal("left")])
     )
-    assert [c.render() for c in kw.calls()] == ["Click    \\#b    left"]
+    assert [c.render(CANONICAL) for c in kw.calls()] == ["Click    \\#b    left"]
 
 
 def test_update_last_and_attach_on_an_empty_keyword_do_nothing():
@@ -257,7 +270,7 @@ def test_replace_skips_occurrences_that_no_longer_contain_the_text_or_are_select
     )
     kw.make_argument(0, 1, 0, 5, "user")
     kw.replace("user", [(1, 0), (1, 1)])
-    assert kw.calls()[1].render() == "Fill Text    \\#admin    something else"
+    assert kw.calls()[1].render(CANONICAL) == "Fill Text    \\#admin    something else"
 
 
 def test_a_refinement_keeps_a_value_whose_argument_is_unknown_to_the_keyword():
@@ -265,3 +278,101 @@ def test_a_refinement_keeps_a_value_whose_argument_is_unknown_to_the_keyword():
     kw.add(Call("Fill Text", [Value.literal("#n", False), Value([ArgRef("ghost")])]))
     assert kw.update_last(fill("typed"))
     assert kw.calls()[0].args[1].text == "typed"
+
+
+@pytest.fixture
+def french_display_names():
+    return DisplayNames(
+        {"Fill Text": "Remplir Le Texte", "Switch Page": "Changer De Page"}
+    )
+
+
+def test_translated_render_preserves_canonical_call_name(french_display_names):
+    call = fill("bonjour")
+    call.render(french_display_names)
+    assert call.keyword == "Fill Text"
+
+
+def test_recorded_keyword_renders_translated_call(french_display_names):
+    kw = RecordedKeyword("Remplir", french_display_names)
+    kw.add(fill("bonjour"))
+    assert "Remplir Le Texte" in kw.block()
+
+
+def test_translated_render_escapes_canonical_named_argument(french_display_names):
+    assert r"txt\=bonjour" in fill("txt=bonjour").render(french_display_names)
+
+
+def test_translated_render_preserves_assignment(french_display_names):
+    call = Call("Switch Page", [Value.literal("CURRENT")], assign="page")
+    assert call.render(french_display_names) == "${page}=    Changer De Page    CURRENT"
+
+
+def test_unknown_keyword_keeps_canonical_name(french_display_names):
+    assert french_display_names.of(Call("Unknown", [])) == "Unknown"
+
+
+def test_comment_row_is_not_translated(french_display_names):
+    assert french_display_names.of(Call("Fill Text", [], comment=True)) == "Fill Text"
+
+
+def test_english_render_uses_canonical_name():
+    assert fill("bonjour").render(CANONICAL).startswith("Fill Text    ")
+
+
+def test_display_names_keep_their_own_copy():
+    registered_by_canonical = {"Fill Text": "Remplir Le Texte"}
+    display_names = DisplayNames(registered_by_canonical)
+    registered_by_canonical.clear()
+    assert display_names.of(fill("bonjour")) == "Remplir Le Texte"
+
+
+def test_recorded_keywords_share_display_names():
+    display_names = DisplayNames({"Click": "Cliquer"})
+    first = RecordedKeyword("First", display_names)
+    second = RecordedKeyword("Second", display_names)
+    assert first.display_names is second.display_names is display_names
+
+
+def test_tags_setting_uses_given_name():
+    kw = RecordedKeyword("K", settings=SettingNames(tags="Étiquette"))
+    kw.add(fill("bonjour"))
+    assert kw.lines()[0] == "[Étiquette]    recorded"
+
+
+def test_arguments_setting_uses_given_name():
+    kw = RecordedKeyword("K", settings=SettingNames(arguments="Argumente"))
+    kw.add(Call("Fill Text", [Value([ArgRef("text")])]))
+    kw.arguments.append(Argument("text", "bonjour"))
+    assert kw.lines()[1] == "[Argumente]    ${text}=bonjour"
+
+
+def test_settings_are_english_by_default():
+    kw = RecordedKeyword("K")
+    kw.add(Call("Fill Text", [Value([ArgRef("text")])]))
+    kw.arguments.append(Argument("text", "bonjour"))
+    assert kw.lines()[:2] == ["[Tags]    recorded", "[Arguments]    ${text}=bonjour"]
+
+
+def test_display_names_from_registered_match_method_names():
+    display_names = DisplayNames.from_registered({"fill_text": "Remplir Le Texte"})
+    assert display_names.of(fill("bonjour")) == "Remplir Le Texte"
+
+
+def test_display_names_from_registered_skip_unrecorded_keywords():
+    display_names = DisplayNames.from_registered({"extra_click": "Extra"})
+    assert display_names.of(Call("Extra Click", [])) == "Extra Click"
+
+
+def test_setting_names_of_a_language():
+    assert SettingNames.of(Languages("de").languages[0]) == SettingNames(
+        "Marker", "Argumente"
+    )
+
+
+class _NoSettings(Language):
+    code = "test-no-settings"
+
+
+def test_setting_names_fall_back_to_english_for_missing_settings():
+    assert SettingNames.of(_NoSettings()) == SettingNames()

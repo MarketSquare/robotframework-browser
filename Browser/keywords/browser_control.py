@@ -573,8 +573,8 @@ class Control(LibraryComponent):
     ) -> dict[str, bool | str | None]:
         """Controls if the keyword banner is shown on page or not.
 
-        The keyword call banner is a CSS overlay that shows the currently executed keyword directly on the page.
-        This is useful for debugging and for showing the test execution on video recordings.
+        The keyword call banner is a CSS overlay that shows the currently executed keyword directly on the page,
+        centered at its bottom. This is useful for debugging and for showing the test execution on video recordings.
         By default, the banner is not shown on the page except when running in presenter mode.
 
         The banner can also be controlled by an import setting of the Browser library. (see `Importing` section)
@@ -592,7 +592,7 @@ class Control(LibraryComponent):
         Returns the previous settings as a dictionary with the keys ``show`` and ``style``.
 
         Example:
-        | Show Keyword Banner     True    top: 5px; bottom: auto; left: 5px; background-color: #00909077; font-size: 9px; color: black;   # Show banner on top left corner with custom styles
+        | Show Keyword Banner     True    top: 5px; bottom: auto; left: 5px; right: auto; background-color: #00909077; font-size: 9px; color: black;   # Show banner on top left corner with custom styles
         | Show Keyword Banner     False   # Hide banner
 
         [https://forum.robotframework.org/t//4716|Comment >>]

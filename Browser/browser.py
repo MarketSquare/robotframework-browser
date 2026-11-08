@@ -21,10 +21,11 @@ import sys
 import threading
 import time
 import types
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from concurrent.futures._base import Future
 from copy import copy
 from datetime import timedelta
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Literal, get_type_hints
 
@@ -34,7 +35,7 @@ from robot.api.deco import library
 from robot.errors import DataError
 from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn
 from robot.running.arguments import PythonArgumentParser
-from robot.utils import secs_to_timestr, timestr_to_secs
+from robot.utils import printable_name, secs_to_timestr, timestr_to_secs
 from robot.utils.robottypes import is_falsy
 from robotlibcore import DynamicCore, PluginParser  # type: ignore
 
@@ -573,8 +574,8 @@ class Browser(DynamicCore):
           - ``selector_prefix``: Prefix for all selectors. This is useful when you need
                 to add an iframe selector before each selector.
           - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
-                the keyword name and arguments before the keyword is executed at the
-                bottom of the page. If set to ``False``, will not show the banner. If
+                the keyword name and arguments before the keyword is executed,
+                centered at the bottom of the page. If set to ``False``, will not show the banner. If
                 set to None, which is the default, will show the banner only if the
                 presenter mode is enabled. `Get Page Source` and `Take Screenshot` will
                 not show the banner, because that could negatively affect your test
@@ -626,6 +627,7 @@ class Browser(DynamicCore):
             Waiter(self),
             WebAppState(self),
         ]
+        self._core_components: tuple[object, ...] = (self, *libraries)
         self.enable_playwright_debug = enable_playwright_debug
         self.playwright_process_host = playwright_process_host
         self.playwright_process_port = playwright_process_port
@@ -1487,6 +1489,17 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
                 continue
             for name, _ in modules:
                 yield name
+
+    @cached_property
+    def registered_keyword_names(self) -> Mapping[str, str]:
+        core: dict[str, str] = {}
+        other: dict[str, str] = {}
+        for registered, method in self.keywords.items():
+            owner = getattr(method, "__self__", None)
+            is_core = any(owner is component for component in self._core_components)
+            names = core if is_core else other
+            names[method.__name__] = printable_name(registered, code_style=True)
+        return types.MappingProxyType({**other, **core})
 
     @staticmethod
     def _get_translation(language: str | None) -> Path | None:

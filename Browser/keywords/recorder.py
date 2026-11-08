@@ -24,7 +24,8 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..recorder.cells import cell
 from ..recorder.driver import run_session
-from ..recorder.names import collect_known_keywords
+from ..recorder.model import DisplayNames
+from ..recorder.names import collect_known_keywords, configured_languages
 from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
 from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
@@ -148,7 +149,7 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Record browser interactions as one User Keyword named ``name``.
 
-        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
+        Shows the Robot Framework Browser recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
@@ -202,7 +203,20 @@ class Recorder(LibraryComponent):
         full - the keyword fails, and the recorded text is logged as a warning so
         nothing is lost.
 
-        What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
+        Keyword Calls use the keyword names of this Browser library, so when Browser is
+        imported with ``language``, they are written in that language. A new keyword
+        section header and the ``[Tags]`` and ``[Arguments]`` settings use the language
+        of ``file``: the first language declared in it with ``Language:``, otherwise the
+        first language the run was started with (``--language`` or ``robot.toml``),
+        otherwise English. With ``file=${None}`` there is no file, so the language the
+        run was started with is used. The language is determined when the recording
+        starts; if ``file`` stops enabling it during the recording, saving fails until it
+        is enabled again. An existing keyword section is used, whatever its language.
+        The returned text starts with the English ``*** Keywords ***`` header, which
+        Robot Framework accepts in every language, but its settings are in the language
+        of ``file``, so the text parses only where that language is enabled.
+
+        What is generated: every keyword gets the tag ``recorded``. A popup or new tab
         becomes ``Switch Page    NEW``. An Action on another open page gets a
         ``Switch Page`` to it first, using the id the Switch Page that left that page
         returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
@@ -268,7 +282,7 @@ class Recorder(LibraryComponent):
         not shadow any keyword the running suite can call - such names are rejected in
         the toolbar.
 
-        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
+        Shows the Robot Framework Browser recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
@@ -327,7 +341,9 @@ class Recorder(LibraryComponent):
         full - the keyword fails, and the recorded text is logged as a warning so
         nothing is lost.
 
-        What is generated: every keyword gets ``[Tags]    recorded``. A popup or new tab
+        Keyword names and languages are chosen as described in `Record Keyword`.
+
+        What is generated: every keyword gets the tag ``recorded``. A popup or new tab
         becomes ``Switch Page    NEW``. An Action on another open page gets a
         ``Switch Page`` to it first, using the id the Switch Page that left that page
         returned (``${page}=    Switch Page    NEW``); a page closed by hand becomes
@@ -386,10 +402,10 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Pick an element on the active page and return a selector for it.
 
-        Shows the Robot Framework toolbar on the active page and blocks until a selector
-        is chosen. Move the pointer over the page: Playwright highlights the element under
-        it and names it in a tooltip. Click to pick it; the click does not reach the page.
-        Elements inside frames and open shadow roots can be picked too.
+        Shows the Robot Framework Browser selector toolbar on the active page and blocks until
+        a selector is chosen. Move the pointer over the page: Playwright highlights the
+        element under it and names it in a tooltip. Click to pick it; the click does not
+        reach the page. Elements inside frames and open shadow roots can be picked too.
 
         The toolbar then shows the selector for the picked element:
 
@@ -460,7 +476,12 @@ class Recorder(LibraryComponent):
             )
         target = self._target(file)
         session = RecorderSession(
-            target, fixed_name=fixed_name, known=collect_known_keywords()
+            target,
+            fixed_name=fixed_name,
+            known=collect_known_keywords(),
+            display_names=DisplayNames.from_registered(
+                self.library.registered_keyword_names
+            ),
         )
         logger.info(f"Recording into {target.label}")
         try:
@@ -491,8 +512,9 @@ class Recorder(LibraryComponent):
 
     @staticmethod
     def _target(file: str | None) -> Target:
+        languages = configured_languages()
         if file is None:
-            return LogTarget()
+            return LogTarget(languages=languages)
         if file == SUITE_SOURCE:
             path = _suite_file()
         else:
@@ -504,4 +526,8 @@ class Recorder(LibraryComponent):
         reason = unwritable_reason(path)
         if reason:
             raise ValueError(f"Cannot record into {path}: {reason}.")
-        return FileTarget(path)
+        try:
+            return FileTarget(path, languages)
+        except (OSError, ValueError) as error:
+            reason = str(error).rstrip(".")
+            raise ValueError(f"Cannot record into {path}: {reason}.") from None

@@ -25,24 +25,29 @@ import io
 import os
 import shutil
 import tempfile
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
 from robot.api import get_model, logger
 from robot.api.parsing import EmptyLine, SectionHeader, Token
+from robot.conf.languages import En, Language, Languages
 from robot.parsing.model.blocks import Block, File, Keyword, KeywordSection
 from robot.parsing.model.statements import Statement
 
-from .model import RecordedKeyword
+from .model import RecordedKeyword, SettingNames
 from .names import existing_keyword_names, normalize_keyword_name
 
 _EOL = "\n"
+_SECTION_SEPARATOR = 2
+_KEYWORD_SEPARATOR = 1
 
 
 class Target(Protocol):
     label: str
+
+    settings: SettingNames
 
     def existing_names(self) -> set[str]: ...
 
@@ -62,9 +67,11 @@ class LogTarget:
         self,
         console: Callable[[str], None] = logger.console,
         info: Callable[[str], None] = logger.info,
+        languages: Iterable[Language] = (),
     ) -> None:
         self._console = console
         self._info = info
+        self.settings = SettingNames.of(_first_with_keywords_header(languages))
 
     def existing_names(self) -> set[str]:
         return set()
@@ -85,8 +92,8 @@ class LogTarget:
 class _Owned:
     signature: tuple
     created_section: bool
-    separated: bool
-    section_separated: bool = False
+    separator_lines: int
+    section_separator_lines: int = 0
 
 
 @dataclass
@@ -111,14 +118,22 @@ def unwritable_reason(path: Path) -> str | None:
 
 
 class FileTarget:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, languages: Iterable[Language] = ()) -> None:
         self.path = Path(path)
         self.label = self.path.name
+        self._configured = tuple(languages)
+        self._languages = Languages(self._configured)
         self._owned: dict[str, _Owned] = {}
         self._format: _Format | None = None
+        declared = self._read().languages
+        self._language = _first_with_keywords_header(
+            [*Languages(declared, add_english=False), *self._configured]
+        )
+        self._languages.add_language(self._language)
+        self.settings = SettingNames.of(self._language)
 
     def existing_names(self) -> set[str]:
-        return existing_keyword_names(self.path)
+        return existing_keyword_names(self.path, self._languages)
 
     def save(self, keyword: RecordedKeyword) -> str | None:
         key = normalize_keyword_name(keyword.name)
@@ -127,7 +142,8 @@ class FileTarget:
             return None
         owned = self._owned.get(key)
         model = self._read()
-        block = _parse_block(keyword.block())
+        self._check_language(model)
+        block = _parse_block(keyword.block(), self._languages)
         notice = None
         found = _find(model, keyword.name)
         if found is not None:
@@ -151,14 +167,17 @@ class FileTarget:
                     f"'{keyword.name}' was removed outside the recorder and has "
                     "been written again."
                 )
-            section, created, section_separated = self._keyword_section(model)
-            separated = bool(section.body) and _ensure_blank_line(section.body)
+            section, created, section_separator_lines = self._keyword_section(model)
+            separator_lines = (
+                _ensure_empty_lines(section, _KEYWORD_SEPARATOR) if section.body else 0
+            )
             section.body.append(block)
             owned = _Owned(
                 (),
                 created or (owned.created_section if owned else False),
-                separated,
-                section_separated or (owned.section_separated if owned else False),
+                separator_lines,
+                section_separator_lines
+                or (owned.section_separator_lines if owned else 0),
             )
         # Owned only once written: a failed first write must not let a later
         # retry overwrite a keyword of that name that someone else added meanwhile.
@@ -184,21 +203,33 @@ class FileTarget:
             return
         body, index = found
         del body[index]
-        if owned.separated and index > 0:
-            _pop_trailing_empty_line(body[index - 1])
+        if index > 0:
+            _pop_trailing_empty_lines(body[index - 1], owned.separator_lines)
         if owned.created_section:
             for position, section in enumerate(model.sections):
                 if section.body is body and not any(
                     isinstance(item, Keyword) for item in body
                 ):
                     del model.sections[position]
-                    if owned.section_separated and position > 0:
-                        _pop_trailing_empty_line(model.sections[position - 1])
+                    if position > 0:
+                        _pop_trailing_empty_lines(
+                            model.sections[position - 1],
+                            owned.section_separator_lines,
+                        )
                     break
         self._write(model, restore_final_newline=len(self._owned) == 1)
         self._owned.pop(key, None)
 
     # -- helpers ----------------------------------------------------------- #
+
+    def _check_language(self, model: File) -> None:
+        enabled = Languages([*self._configured, *model.languages])
+        if self._language not in enabled:
+            raise ValueError(
+                f"{self.path.name} no longer enables {self._language.name}, the "
+                "language the recording started with; enable it with a "
+                "'Language:' line or record again."
+            )
 
     def _read(self) -> File:
         """Parse the file as it is on disk right now.
@@ -225,7 +256,7 @@ class FileTarget:
                 eol="\r\n" if crlf else "\n",
                 final_newline=not text or text.endswith("\n"),
             )
-        return get_model(io.StringIO(text.replace("\r\n", "\n")))
+        return get_model(io.StringIO(text.replace("\r\n", "\n")), lang=self._languages)
 
     def _write(self, model: File, restore_final_newline: bool = False) -> None:
         """Write atomically, in the file's own BOM and line ending."""
@@ -259,20 +290,26 @@ class FileTarget:
             temp.unlink(missing_ok=True)
             raise
 
-    @staticmethod
-    def _keyword_section(model: File) -> tuple[KeywordSection, bool, bool]:
+    def _keyword_section(self, model: File) -> tuple[KeywordSection, bool, int]:
         for section in model.sections:
             if isinstance(section, KeywordSection):
-                return section, False, False
-        separated = False
+                return section, False, 0
+        separator_lines = 0
         if model.sections:
-            separated = _ensure_blank_line(model.sections[-1].body)
+            separator_lines = _ensure_empty_lines(
+                model.sections[-1], _SECTION_SEPARATOR
+            )
         header = SectionHeader(
-            [Token(Token.KEYWORD_HEADER, "*** Keywords ***"), Token(Token.EOL, _EOL)]
+            [
+                Token(
+                    Token.KEYWORD_HEADER, f"*** {self._language.keywords_header} ***"
+                ),
+                Token(Token.EOL, _EOL),
+            ]
         )
         section = KeywordSection(header=header)
         model.sections.append(section)
-        return section, True, separated
+        return section, True, separator_lines
 
 
 def _umask() -> int:
@@ -281,8 +318,12 @@ def _umask() -> int:
     return mask
 
 
-def _parse_block(text: str) -> Keyword:
-    model = get_model(io.StringIO("*** Keywords ***\n" + text))
+def _first_with_keywords_header(languages: Iterable[Language]) -> Language:
+    return next((lang for lang in languages if lang.keywords_header), En())
+
+
+def _parse_block(text: str, languages: Languages) -> Keyword:
+    model = get_model(io.StringIO("*** Keywords ***\n" + text), lang=languages)
     return model.sections[0].body[0]
 
 
@@ -335,21 +376,24 @@ def _trailing_empty_lines(block: Keyword) -> list[EmptyLine]:
     return trailing
 
 
-def _ends_with_empty_line(body: list) -> bool:
-    if not body:
-        return False
-    last = body[-1]
-    if isinstance(last, EmptyLine):
-        return True
-    return isinstance(last, Block) and _ends_with_empty_line(getattr(last, "body", []))
+def _ensure_empty_lines(node: Block, wanted: int) -> int:
+    """Append line ends until ``node`` ends with ``wanted`` empty lines.
+
+    Counted in the text, so a last line without a line end, or with only
+    spaces, is handled too. Returns how many line ends were appended.
+    """
+    text = "".join(
+        token.value for statement in _statements(node) for token in statement.tokens
+    )
+    trailing = text[len(text.rstrip()) :]
+    missing = max(0, wanted + 1 - trailing.count(_EOL))
+    node.body.extend(EmptyLine([Token(Token.EOL, _EOL)]) for _ in range(missing))
+    return missing
 
 
-def _ensure_blank_line(body: list) -> bool:
-    """Append a blank line unless ``body`` already ends with one. True if added."""
-    if _ends_with_empty_line(body):
-        return False
-    body.append(EmptyLine([Token(Token.EOL, _EOL)]))
-    return True
+def _pop_trailing_empty_lines(node: Block, count: int) -> None:
+    for _ in range(count):
+        _pop_trailing_empty_line(node)
 
 
 def _pop_trailing_empty_line(node: Block) -> None:
@@ -358,6 +402,7 @@ def _pop_trailing_empty_line(node: Block) -> None:
         return
     last = body[-1]
     if isinstance(last, EmptyLine):
-        body.pop()
+        if "".join(token.value for token in last.tokens) == _EOL:
+            body.pop()
     elif isinstance(last, Block):
         _pop_trailing_empty_line(last)

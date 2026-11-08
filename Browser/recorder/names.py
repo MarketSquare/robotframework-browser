@@ -26,9 +26,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from robot.api import get_model, logger
+from robot.conf.languages import Language, Languages
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.parsing.model.blocks import Keyword, KeywordSection
 from robot.running.arguments.embedded import EmbeddedArgumentParser, EmbeddedArguments
+from robot.running.namespace import Namespace
 from robot.utils import normalize
 from robot.variables import VariableMatches
 
@@ -177,13 +179,15 @@ def normalize_keyword_name(name: str) -> str:
     return normalize(name, ignore="_", caseless=True, spaceless=True)
 
 
-def existing_keyword_names(target: Path) -> set[str]:
+def existing_keyword_names(
+    target: Path, languages: Languages | None = None
+) -> set[str]:
     """Names of the User Keywords already defined in ``target``."""
     target = Path(target)
     if not target.exists():
         return set()
     names: set[str] = set()
-    for section in get_model(str(target)).sections:
+    for section in get_model(str(target), lang=languages).sections:
         if isinstance(section, KeywordSection):
             names.update(
                 item.name
@@ -216,6 +220,20 @@ class KnownKeywords:
     bdd_prefixes: tuple[str, ...] = ()
 
 
+def _running_namespace() -> Namespace | None:
+    try:
+        return BuiltIn()._get_context().namespace
+    except (RobotNotRunningError, AttributeError) as error:
+        logger.debug(f"recorder: no running suite: {error}")
+        return None
+
+
+def configured_languages() -> tuple[Language, ...]:
+    namespace = _running_namespace()
+    languages = getattr(namespace, "languages", None)
+    return tuple(languages) if isinstance(languages, Languages) else ()
+
+
 def collect_known_keywords() -> KnownKeywords:
     """Every keyword the *running* Robot suite can currently resolve.
 
@@ -245,10 +263,8 @@ def collect_known_keywords() -> KnownKeywords:
     Returns an empty result when no suite is running, so the recorder still
     works from plain Python.
     """
-    try:
-        namespace = BuiltIn()._get_context().namespace
-    except (RobotNotRunningError, AttributeError) as error:
-        logger.debug(f"recorder: no running suite to read keyword names from: {error}")
+    namespace = _running_namespace()
+    if namespace is None:
         return KnownKeywords()
     owners = list(namespace.libraries)
     store = getattr(namespace, "_kw_store", None)

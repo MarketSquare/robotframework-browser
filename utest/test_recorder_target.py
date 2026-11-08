@@ -3,11 +3,24 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
+from robot.api import get_model
+from robot.conf.languages import Language, Languages
+from robot.libraries.BuiltIn import BuiltIn
+from robot.parsing.model.blocks import KeywordSection
 
 from Browser.recorder.cells import tokens
-from Browser.recorder.model import Call, RecordedKeyword, Value
+from Browser.recorder.model import (
+    Call,
+    DisplayNames,
+    RecordedKeyword,
+    SettingNames,
+    Value,
+)
+from Browser.recorder.names import configured_languages
+from Browser.recorder import target as target_module
 from Browser.recorder.target import FileTarget, LogTarget
 
 ORIGINAL = (
@@ -544,3 +557,328 @@ def test_a_failed_first_write_does_not_claim_a_keyword_added_meanwhile(tmp_path)
     with pytest.raises(ValueError, match="already exists"):
         target.save(kw)
     assert "theirs" in path.read_text(encoding="utf-8")
+
+
+@pytest.fixture(
+    params=[
+        ("fr", "Mots-clés"),
+        ("de", "Schlüsselwörter"),
+        ("en", "Keywords"),
+        ("fr\nLanguage: en", "Mots-clés"),
+    ]
+)
+def localized_target(tmp_path, request):
+    declaration, header = request.param
+    original = f"Language: {declaration}\n"
+    path = tmp_path / "localized.robot"
+    path.write_text(original, encoding="utf-8")
+    target = FileTarget(path)
+    target.save(keyword())
+    return target, original, header
+
+
+def test_new_section_uses_declared_language(localized_target):
+    target, _, header = localized_target
+    assert f"*** {header} ***" in target.path.read_text(encoding="utf-8")
+
+
+def test_localized_section_is_parsed_as_one_keyword_section(localized_target):
+
+    target, _, _ = localized_target
+    sections = [
+        section
+        for section in get_model(target.path).sections
+        if isinstance(section, KeywordSection)
+    ]
+    assert len(sections) == 1
+
+
+def test_localized_section_contains_recorded_keyword(localized_target):
+
+    target, _, _ = localized_target
+    section = next(
+        section
+        for section in get_model(target.path).sections
+        if isinstance(section, KeywordSection)
+    )
+    assert section.body[0].name == "Fill Name"
+
+
+def test_removing_localized_recording_restores_original_file(localized_target):
+    target, original, _ = localized_target
+    target.remove("Fill Name")
+    assert target.path.read_text(encoding="utf-8") == original
+
+
+def test_existing_section_keeps_its_header_in_localized_file(tmp_path):
+    path = tmp_path / "localized.robot"
+    original = "Language: fr\n*** Keywords ***\nExisting\n    No Operation\n"
+    path.write_text(original, encoding="utf-8")
+    FileTarget(path).save(keyword())
+    assert path.read_text(encoding="utf-8").startswith(original)
+    assert "*** Mots-clés ***" not in path.read_text(encoding="utf-8")
+
+
+@pytest.fixture
+def translated_keyword():
+    kw = RecordedKeyword("Remplir", DisplayNames({"Fill Text": "Remplir Le Texte"}))
+    kw.add(Call("Fill Text", [Value.literal("#n"), Value.literal("txt=bonjour")]))
+    return kw
+
+
+def test_translated_call_is_written_to_file(tmp_path, translated_keyword):
+
+    path = tmp_path / "localized.robot"
+    path.write_text("Language: fr\n", encoding="utf-8")
+    FileTarget(path).finish(translated_keyword)
+    section = next(s for s in get_model(path).sections if isinstance(s, KeywordSection))
+    assert section.body[0].body[1].keyword == "Remplir Le Texte"
+
+
+@pytest.mark.parametrize("output", ["console", "info"])
+def test_translated_call_is_logged(translated_keyword, output):
+    messages = {"console": [], "info": []}
+    LogTarget(messages["console"].append, messages["info"].append).finish(
+        translated_keyword
+    )
+    assert "Remplir Le Texte" in messages[output][0]
+
+
+def test_translated_call_is_in_returned_text(translated_keyword):
+    assert "Remplir Le Texte" in translated_keyword.text()
+
+
+class _NoKeywordsHeader(Language):
+    code = "test-no-keywords-header"
+    keywords_header = ""
+
+
+def test_custom_language_without_keyword_header_falls_back_to_english(tmp_path):
+    path = tmp_path / "custom.robot"
+    path.write_text("", encoding="utf-8")
+    FileTarget(path, [_NoKeywordsHeader()]).save(keyword())
+    assert path.read_text(encoding="utf-8").startswith("*** Keywords ***")
+
+
+FRENCH = tuple(Languages("fr"))
+FRENCH_SECTION = "*** Mots-clés ***\nExisting\n    No Operation\n"
+
+
+def test_configured_language_finds_existing_localized_section(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    assert path.read_text(encoding="utf-8").count("***") == 2
+
+
+def test_configured_language_writes_into_existing_localized_section(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    section = get_model(path, lang=FRENCH).sections[0]
+    assert [item.name for item in section.body if item.name] == [
+        "Existing",
+        "Fill Name",
+    ]
+
+
+def test_configured_language_reports_existing_names(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text(FRENCH_SECTION, encoding="utf-8")
+    assert FileTarget(path, FRENCH).existing_names() == {"Existing"}
+
+
+def test_new_section_uses_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    FileTarget(path, FRENCH).save(keyword())
+    assert path.read_text(encoding="utf-8").startswith("*** Mots-clés ***\n")
+
+
+def test_declared_language_wins_over_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    assert "*** Schlüsselwörter ***" in path.read_text(encoding="utf-8")
+
+
+def test_existing_english_section_is_used_with_configured_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    original = "*** Keywords ***\nExisting\n    No Operation\n"
+    path.write_text(original, encoding="utf-8")
+    FileTarget(path, FRENCH).save(keyword())
+    text = path.read_text(encoding="utf-8")
+    assert text.startswith(original)
+    assert "Mots-clés" not in text
+
+
+@pytest.mark.parametrize(
+    ("content", "languages", "tags"),
+    [
+        ("", (), "Tags"),
+        ("", FRENCH, "Étiquette"),
+        ("Language: de\n", (), "Marker"),
+        ("Language: de\n", FRENCH, "Marker"),
+    ],
+    ids=["english", "configured", "declared", "declared-over-configured"],
+)
+def test_file_setting_names_follow_file_language(tmp_path, content, languages, tags):
+    path = tmp_path / "settings.robot"
+    path.write_text(content, encoding="utf-8")
+    assert FileTarget(path, languages or ()).settings.tags == tags
+
+
+def test_missing_file_setting_names_follow_configured_language(tmp_path):
+    target = FileTarget(tmp_path / "missing.robot", FRENCH)
+    assert target.settings == SettingNames("Étiquette", "Arguments")
+
+
+def test_log_setting_names_follow_configured_language():
+    assert LogTarget(languages=FRENCH).settings.tags == "Étiquette"
+
+
+def test_log_setting_names_default_to_english():
+    assert LogTarget().settings == SettingNames()
+
+
+def test_localized_settings_are_written_and_parsed(tmp_path):
+    path = tmp_path / "configured.robot"
+    kw = RecordedKeyword("Fill Name", settings=SettingNames("Étiquette", "Arguments"))
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    FileTarget(path, FRENCH).save(kw)
+    body = get_model(path, lang=FRENCH).sections[0].body[0]
+    assert body.body[0].type == "TAGS"
+
+
+def test_resaving_localized_settings_is_not_reported_as_outside_change(tmp_path):
+    path = tmp_path / "configured.robot"
+    target = FileTarget(path, FRENCH)
+    kw = RecordedKeyword("Fill Name", settings=SettingNames("Étiquette", "Arguments"))
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    target.save(kw)
+    kw.add(Call("Click", [Value.literal("#b", False)]))
+    assert target.save(kw) is None
+
+
+def test_section_language_is_determined_when_the_target_is_created(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\nLanguage: de\n", encoding="utf-8")
+    target.save(keyword())
+    assert "*** Schlüsselwörter ***" in path.read_text(encoding="utf-8")
+
+
+def test_saving_fails_when_the_file_no_longer_enables_its_language(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="no longer enables German"):
+        target.save(keyword())
+
+
+def test_a_refused_save_leaves_the_file_alone(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        target.save(keyword())
+    assert path.read_text(encoding="utf-8") == "Language: fr\n"
+
+
+def test_a_configured_language_stays_enabled_without_a_declaration(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: fr\n", encoding="utf-8")
+    target = FileTarget(path, FRENCH)
+    path.write_text("", encoding="utf-8")
+    target.save(keyword())
+    assert "*** Mots-clés ***" in path.read_text(encoding="utf-8")
+
+
+def test_recorded_settings_are_parsed_in_the_declared_language(tmp_path, monkeypatch):
+    parsed = []
+    original = target_module._parse_block
+    monkeypatch.setattr(
+        target_module,
+        "_parse_block",
+        lambda text, languages: parsed.append(original(text, languages)) or parsed[-1],
+    )
+    path = tmp_path / "declared.robot"
+    path.write_text("Language: fi\n", encoding="utf-8")
+    target = FileTarget(path)
+    kw = RecordedKeyword("Fill Name", settings=target.settings)
+    kw.add(Call("Fill Text", [Value.literal("#n", False), Value.literal("Alice")]))
+    target.save(kw)
+    assert parsed[0].body[0].type == "TAGS"
+
+
+def test_settings_are_determined_when_the_target_is_created(tmp_path):
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    target = FileTarget(path)
+    path.write_text("Language: fr\n", encoding="utf-8")
+    assert target.settings.tags == "Marker"
+
+
+def test_reading_a_localized_file_leaves_the_suite_languages_unchanged(
+    tmp_path, monkeypatch
+):
+    suite_languages = Languages("fr")
+    context = SimpleNamespace(namespace=SimpleNamespace(languages=suite_languages))
+    monkeypatch.setattr(BuiltIn, "_get_context", lambda self: context)
+    path = tmp_path / "configured.robot"
+    path.write_text("Language: de\n", encoding="utf-8")
+    FileTarget(path, configured_languages()).save(keyword())
+    assert [language.code for language in suite_languages] == ["fr", "en"]
+
+
+_ENDINGS = {
+    "no final newline": "",
+    "final newline": "\n",
+    "one empty line": "\n\n",
+    "two empty lines": "\n\n\n",
+    "last line only spaces": "\n    ",
+    "comment last": "\n# comment",
+}
+_TEST_CASE = "*** Test Cases ***\nT\n    Log    x"
+
+
+@pytest.mark.parametrize("ending", _ENDINGS.values(), ids=_ENDINGS.keys())
+def test_new_section_follows_two_empty_lines(tmp_path, ending):
+    path = tmp_path / "suite.robot"
+    path.write_text(_TEST_CASE + ending, encoding="utf-8")
+    FileTarget(path).save(keyword())
+    written = "\n    \n\n" if ending == "\n    " else ending.rstrip() + "\n\n\n"
+    assert path.read_text(encoding="utf-8").startswith(
+        _TEST_CASE + written + "*** Keywords ***\n"
+    )
+
+
+@pytest.mark.parametrize("ending", _ENDINGS.values(), ids=_ENDINGS.keys())
+def test_removing_the_new_section_restores_the_file(tmp_path, ending):
+    path = tmp_path / "suite.robot"
+    path.write_text(_TEST_CASE + ending, encoding="utf-8")
+    target = FileTarget(path)
+    target.save(keyword())
+    target.remove("Fill Name")
+    assert path.read_text(encoding="utf-8") == _TEST_CASE + ending
+
+
+def test_new_section_after_crlf_without_final_newline_follows_two_empty_lines(
+    tmp_path,
+):
+    path = tmp_path / "suite.robot"
+    path.write_bytes(b"*** Test Cases ***\r\nT\r\n    Log    x")
+    FileTarget(path).save(keyword())
+    assert b"Log    x\r\n\r\n\r\n*** Keywords ***" in path.read_bytes()
+
+
+@pytest.mark.parametrize("ending", ["", "\n"], ids=["no final newline", "newline"])
+def test_new_keyword_follows_one_empty_line_in_existing_section(tmp_path, ending):
+    path = tmp_path / "k.resource"
+    path.write_text(
+        "*** Keywords ***\nExisting\n    No Operation" + ending, encoding="utf-8"
+    )
+    FileTarget(path).save(keyword())
+    assert "No Operation\n\nFill Name\n" in path.read_text(encoding="utf-8")

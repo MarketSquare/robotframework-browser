@@ -21,8 +21,11 @@ around it) and Undo must remove all of them together.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from dataclasses import dataclass, field
+from types import MappingProxyType
+
+from robot.conf.languages import Language
 
 from .cells import cell
 from .names import argument_name_error, normalize_keyword_name
@@ -30,6 +33,54 @@ from .parameters import KEYWORD_PARAMETERS
 
 TAG = "recorded"
 _INDENT = "    "
+
+
+_NO_TRANSLATIONS: Mapping[str, str] = MappingProxyType({})
+
+
+class DisplayNames:
+    def __init__(
+        self, registered_by_canonical: Mapping[str, str] = _NO_TRANSLATIONS
+    ) -> None:
+        self._registered_by_canonical = MappingProxyType(dict(registered_by_canonical))
+
+    @classmethod
+    def from_registered(cls, registered_by_method: Mapping[str, str]) -> DisplayNames:
+        registered = {
+            normalize_keyword_name(method): name
+            for method, name in registered_by_method.items()
+        }
+        return cls(
+            {
+                canonical: registered[normalize_keyword_name(canonical)]
+                for canonical in KEYWORD_PARAMETERS
+                if normalize_keyword_name(canonical) in registered
+            }
+        )
+
+    def of(self, call: Call) -> str:
+        if call.comment:
+            return call.keyword
+        return self._registered_by_canonical.get(call.keyword, call.keyword)
+
+
+CANONICAL = DisplayNames()
+
+
+@dataclass(frozen=True)
+class SettingNames:
+    tags: str = "Tags"
+    arguments: str = "Arguments"
+
+    @classmethod
+    def of(cls, language: Language) -> SettingNames:
+        return cls(
+            tags=language.tags_setting or cls.tags,
+            arguments=language.arguments_setting or cls.arguments,
+        )
+
+
+ENGLISH_SETTINGS = SettingNames()
 
 
 @dataclass(frozen=True)
@@ -116,9 +167,9 @@ class Call:
         )
         return [value.render(parameters) for value in self.args]
 
-    def render(self) -> str:
+    def render(self, display_names: DisplayNames) -> str:
         cells = [f"${{{self.assign}}}="] if self.assign else []
-        cells.append(self.keyword)
+        cells.append(display_names.of(self))
         cells.extend(self.rendered_args())
         return _INDENT.join(cells)
 
@@ -148,8 +199,15 @@ class _Group:
 
 
 class RecordedKeyword:
-    def __init__(self, name: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        display_names: DisplayNames = CANONICAL,
+        settings: SettingNames = ENGLISH_SETTINGS,
+    ) -> None:
         self.name = name
+        self.display_names = display_names
+        self.settings = settings
         self.arguments: list[Argument] = []
         self._groups: list[_Group] = []
 
@@ -322,13 +380,17 @@ class RecordedKeyword:
 
     def lines(self) -> list[str]:
         """The keyword's body rows, unindented."""
-        rows = [f"[Tags]{_INDENT}{TAG}"]
+        rows = [f"[{self.settings.tags}]{_INDENT}{TAG}"]
         if self.arguments:
             ordered = [a for a in self.arguments if not a.use_default] + [
                 a for a in self.arguments if a.use_default
             ]
-            rows.append(_INDENT.join(["[Arguments]", *(a.render() for a in ordered)]))
-        rows.extend(call.render() for call in self.calls())
+            rows.append(
+                _INDENT.join(
+                    [f"[{self.settings.arguments}]", *(a.render() for a in ordered)]
+                )
+            )
+        rows.extend(call.render(self.display_names) for call in self.calls())
         return rows
 
     def block(self) -> str:

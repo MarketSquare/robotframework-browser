@@ -36,18 +36,30 @@ KW_CALL_CONTENT_TEMPLATE = """body::before {{
     content: '{keyword_call}';
     position: fixed;
     z-index: 9999;
-    border: 1px solid lightblue;
-    border-radius: 1rem;
-    background: #00008b90;
-    color: white;
-    padding: 2px 10px;
-    pointer-events: none;
-    font-family: monospace;
-    font-size: medium;
-    font-weight: normal;
-    white-space: pre;
     bottom: 5px;
-    left: 5px;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    box-sizing: border-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid #38424a;
+    border-left: 3px solid #ff6b5e;
+    border-radius: 7px;
+    background: #1c2227cc;
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 28px -18px rgb(0 0 0 / 85%);
+    padding: 4px 10px;
+    pointer-events: none;
+    font: 13px/1.4 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+        'DejaVu Sans Mono', monospace;
+    letter-spacing: normal;
+    text-align: left;
+    text-transform: none;
+    text-shadow: none;
+    white-space: pre;
     {additional_styles}
 }}"""
 

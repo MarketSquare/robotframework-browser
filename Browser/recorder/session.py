@@ -34,7 +34,7 @@ from .action_mapper import (
     uploaded_files,
 )
 from .cells import tokens
-from .model import Call, RecordedKeyword
+from .model import CANONICAL, Call, DisplayNames, RecordedKeyword
 from .names import (
     KnownKeywords,
     NameGuard,
@@ -84,11 +84,14 @@ class RecorderSession:
     def __init__(
         self,
         target: Target,
+        *,
         fixed_name: str | None = None,
         known: KnownKeywords | None = None,
         clock: Callable[[], float] = time.monotonic,
+        display_names: DisplayNames = CANONICAL,
     ) -> None:
         self.target = target
+        self._display_names = display_names
         self.stopped = False
         self.log: list[str] = []
         self._guard = NameGuard(known or KnownKeywords())
@@ -124,7 +127,10 @@ class RecorderSession:
             error = self._guard.error(fixed_name, taken=target.existing_names())
             if error:
                 raise ValueError(error)
-            self._keyword = RecordedKeyword(fixed_name)
+            self._keyword = self._new_keyword(fixed_name)
+
+    def _new_keyword(self, name: str) -> RecordedKeyword:
+        return RecordedKeyword(name, self._display_names, self.target.settings)
 
     # -- introspection ----------------------------------------------------- #
 
@@ -181,7 +187,7 @@ class RecorderSession:
             "fixedName": self._fixed_name is not None,
             "target": self.target.label,
             "keywords": self.keywords,
-            "calls": self._toolbar_calls(keyword),
+            "calls": self._toolbar_calls(keyword, self._display_names),
             "arguments": [
                 {
                     "name": a.name,
@@ -203,7 +209,9 @@ class RecorderSession:
         }
 
     @staticmethod
-    def _toolbar_calls(keyword: RecordedKeyword | None) -> list[dict]:
+    def _toolbar_calls(
+        keyword: RecordedKeyword | None, display_names: DisplayNames
+    ) -> list[dict]:
         budget = MAX_RAW_TOTAL
         calls = []
         for call in keyword.calls() if keyword is not None else []:
@@ -227,7 +235,7 @@ class RecorderSession:
             calls.append(
                 {
                     "assign": f"${{{call.assign}}}=" if call.assign else None,
-                    "keyword": call.keyword,
+                    "keyword": display_names.of(call),
                     "values": values,
                     "comment": call.comment,
                 }
@@ -544,7 +552,7 @@ class RecorderSession:
         self._starting = None
         if name is None:
             return
-        self._keyword = RecordedKeyword(name)
+        self._keyword = self._new_keyword(name)
         self._picker = None
         self._undone = self._skipped = self._paused = False
         self._reset_pages()
@@ -622,7 +630,7 @@ class RecorderSession:
         keyword = self._keyword
         assert keyword is not None
         self._keyword = (
-            RecordedKeyword(self._fixed_name)
+            self._new_keyword(self._fixed_name)
             if restart and self._fixed_name is not None
             else None
         )
