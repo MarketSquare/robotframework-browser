@@ -112,7 +112,7 @@ Pseudo Elements And Keyword Banner Activated Scope Suite
     Show Keyword Banner    show=True    scope=Suite
     Get Title
     Get Style    body    bottom    ==    5px    pseudo_element=::before
-    Get Style    body    background-color    ==    rgba(0, 0, 139, 0.565)    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(28, 34, 39, 0.8)    pseudo_element=::before
     Get Style    body    font-size    ==    13px    pseudo_element=::before
     Get Style    body    color    ==    rgb(255, 255, 255)    pseudo_element=::before
 
@@ -141,7 +141,7 @@ Pseudo Elements And Keyword Banner Off Scope Test
 Pseudo Elements And Keyword Banner Scope Test
     Get Title
     Get Style    body    bottom    ==    5px    pseudo_element=::before
-    Get Style    body    background-color    ==    rgba(0, 0, 139, 0.565)    pseudo_element=::before
+    Get Style    body    background-color    ==    rgba(28, 34, 39, 0.8)    pseudo_element=::before
     Get Style    body    font-size    ==    13px    pseudo_element=::before
     Get Style    body    color    ==    rgb(255, 255, 255)    pseudo_element=::before
     Show Keyword Banner    show=False    scope=Suite

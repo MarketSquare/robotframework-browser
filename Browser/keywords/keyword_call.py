@@ -48,8 +48,8 @@ KW_CALL_CONTENT_TEMPLATE = """body::before {{
     border: 1px solid #38424a;
     border-left: 3px solid #ff6b5e;
     border-radius: 7px;
-    background: #1c2227;
-    color: #e2e1d7;
+    background: #1c2227cc;
+    color: #ffffff;
     box-shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 28px -18px rgb(0 0 0 / 85%);
     padding: 4px 10px;
     pointer-events: none;

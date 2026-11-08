@@ -64,7 +64,7 @@ Change Banner CSS
     Should Be Equal    ${style}[bottom]    5px
     Should Be Equal    ${style}[margin-left]    ${style}[margin-right]
     Should Not Be Equal    ${style}[margin-left]    0px
-    Should Be Equal    ${style}[background-color]    rgb(28, 34, 39)
+    Should Be Equal    ${style}[background-color]    rgba(28, 34, 39, 0.8)
     Show Keyword Banner
     ...    show=True
     ...    style=top: 5px; bottom: auto; left: 5px; right: auto; background-color: red; color: white; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid black; border-radius: 5px;

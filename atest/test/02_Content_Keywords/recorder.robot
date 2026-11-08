@@ -353,7 +353,7 @@ The Toolbar Works On A Strict Page
     ...    return [style('panel').backgroundColor, style('panel').direction, style('title').letterSpacing,
     ...    style('title').wordSpacing, style('title').textTransform, style('calls').cursor];
     ...    }
-    Should Be Equal    ${style}    ${{['rgb(28, 34, 39)', 'ltr', 'normal', '0px', 'none', 'auto']}}
+    Should Be Equal    ${style}    ${{['rgba(28, 34, 39, 0.8)', 'ltr', 'normal', '0px', 'none', 'auto']}}
     ${host} =    Evaluate JavaScript    rfb-recorder-toolbar
     ...    (host) => { const style = getComputedStyle(host); return [style.position, style.opacity, style.filter]; }
     Should Be Equal    ${host}    ${{['fixed', '1', 'none']}}
