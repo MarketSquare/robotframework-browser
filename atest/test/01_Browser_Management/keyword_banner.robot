@@ -61,11 +61,13 @@ Change Banner CSS
     ${original_settings} =    Show Keyword Banner    True
     Get Title
     ${style} =    Get Style    body    pseudo_element=::before
-    Should Be Equal    ${style}[left]    5px
     Should Be Equal    ${style}[bottom]    5px
+    Should Be Equal    ${style}[margin-left]    ${style}[margin-right]
+    Should Not Be Equal    ${style}[margin-left]    0px
+    Should Be Equal    ${style}[background-color]    rgb(28, 34, 39)
     Show Keyword Banner
     ...    show=True
-    ...    style=top: 5px; bottom: auto; background-color: red; color: white; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid black; border-radius: 5px;
+    ...    style=top: 5px; bottom: auto; left: 5px; right: auto; background-color: red; color: white; font-size: 20px; font-family: monospace; padding: 10px; border: 1px solid black; border-radius: 5px;
     Get Title
     ${style} =    Get Style    body    pseudo_element=::before
     Should Be Equal    ${style}[top]    5px

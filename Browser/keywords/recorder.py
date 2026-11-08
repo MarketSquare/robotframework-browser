@@ -149,7 +149,7 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Record browser interactions as one User Keyword named ``name``.
 
-        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
+        Shows the Robot Framework Browser recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
@@ -282,7 +282,7 @@ class Recorder(LibraryComponent):
         not shadow any keyword the running suite can call - such names are rejected in
         the toolbar.
 
-        Shows the Robot Framework recorder toolbar on the pages of the *current* browser
+        Shows the Robot Framework Browser recorder toolbar on the pages of the *current* browser
         context and blocks until the recording ends. Every Action becomes a Keyword Call
         to a Browser keyword, is listed in the toolbar and is written to ``file``
         immediately.
@@ -402,10 +402,10 @@ class Recorder(LibraryComponent):
     ) -> str:
         """Pick an element on the active page and return a selector for it.
 
-        Shows the Robot Framework toolbar on the active page and blocks until a selector
-        is chosen. Move the pointer over the page: Playwright highlights the element under
-        it and names it in a tooltip. Click to pick it; the click does not reach the page.
-        Elements inside frames and open shadow roots can be picked too.
+        Shows the Robot Framework Browser selector toolbar on the active page and blocks until
+        a selector is chosen. Move the pointer over the page: Playwright highlights the
+        element under it and names it in a tooltip. Click to pick it; the click does not
+        reach the page. Elements inside frames and open shadow roots can be picked too.
 
         The toolbar then shows the selector for the picked element:
 

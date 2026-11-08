@@ -574,8 +574,8 @@ class Browser(DynamicCore):
           - ``selector_prefix``: Prefix for all selectors. This is useful when you need
                 to add an iframe selector before each selector.
           - ``show_keyword_call_banner``: If set to ``True``, will show a banner with
-                the keyword name and arguments before the keyword is executed at the
-                bottom of the page. If set to ``False``, will not show the banner. If
+                the keyword name and arguments before the keyword is executed,
+                centered at the bottom of the page. If set to ``False``, will not show the banner. If
                 set to None, which is the default, will show the banner only if the
                 presenter mode is enabled. `Get Page Source` and `Take Screenshot` will
                 not show the banner, because that could negatively affect your test
