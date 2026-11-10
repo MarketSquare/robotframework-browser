@@ -407,6 +407,7 @@ message Request {
   message HttpCapture {
     string urlOrPredicate = 1;
     float timeout = 2;
+    bool excludeBody = 3;
   }
 
   message Device {
@@ -512,6 +513,8 @@ message Response {
     string json = 2;
     string bodyPart = 3;
     string adoptedContext = 4;
+    bytes bodyBytes = 5;
+    bytes postDataBytes = 6;
   }
 
   message JavascriptExecutionResult {
@@ -654,7 +657,9 @@ service  Playwright {
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the browser */
   rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
-  rpc WaitForRequest(Request.HttpCapture) returns (Response.Json);
+  /* Streams the captured request: metadata in the first message, raw post data chunked in postDataBytes */
+  rpc WaitForRequest(Request.HttpCapture) returns (stream Response.Json);
+  /* Streams the captured response: metadata in the first message, raw body chunked in bodyBytes and the request's raw post data in postDataBytes */
   rpc WaitForResponse(Request.HttpCapture) returns (stream Response.Json);
   rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
