@@ -1750,7 +1750,7 @@ def docs(c, version=None):
     """
     output = ROOT_DIR / "docs" / "Browser.html"
     libdoc("Browser", str(output))
-    with output.open("r") as file:
+    with output.open("r", encoding="utf-8") as file:
         data = file.read()
     soup = bs4.BeautifulSoup(data, "html.parser")
     script_async = soup.new_tag(
