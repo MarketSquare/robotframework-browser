@@ -142,6 +142,11 @@ class RecorderSession:
     def keywords(self) -> list[str]:
         return [keyword.name for keyword in self._finished]
 
+    @property
+    def saved(self) -> list[RecordedKeyword]:
+        """The finished keywords that were written, in the order they finished."""
+        return [k for k in self._finished if all(k is not u for u in self.unsaved)]
+
     def text(self) -> str:
         if not self._finished:
             return ""
