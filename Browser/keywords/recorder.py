@@ -17,8 +17,10 @@ from __future__ import annotations
 import json
 from datetime import timedelta
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
+from robot.libraries.BuiltIn import EXECUTION_CONTEXTS, BuiltIn, RobotNotRunningError
+from robot.parsing.model.blocks import File
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
@@ -28,13 +30,26 @@ from ..recorder.model import DisplayNames
 from ..recorder.names import collect_known_keywords, configured_languages
 from ..recorder.picker import SelectorPicker, run_picker
 from ..recorder.session import RecorderSession
-from ..recorder.target import FileTarget, LogTarget, Target, unwritable_reason
+from ..recorder.target import CallSite, FileTarget, LogTarget, Target, unwritable_reason
 from ..utils import SelectorGenerator, keyword, logger
+
+if TYPE_CHECKING:
+    from ..browser import Browser
 
 __all__ = ["Recorder"]
 
 SUITE_SOURCE = "${SUITE_SOURCE}"
 DEFAULT_IDLE_TIMEOUT = timedelta(minutes=5)
+_NO_TEST_STEP = (
+    "'insert_call' inserts the call before the running step of the test, but no "
+    "step of a test body in {file} is running: Record Keyword runs in a setup or "
+    "teardown, or the test changed since the run started."
+)
+
+
+def _running_test():
+    context = EXECUTION_CONTEXTS.current
+    return None if context is None else context.test
 
 
 def _suite_source() -> str | None:
@@ -140,12 +155,19 @@ class _GrpcPickerClient:
 
 
 class Recorder(LibraryComponent):
+    def __init__(self, library: Browser) -> None:
+        super().__init__(library)
+        #: Each test file as it was at its first ``insert_call``: every keyword
+        #: and call written since moves the lines Robot reports.
+        self._originals: dict[Path, File] = {}
+
     @keyword(tags=("Recorder",))
     def record_keyword(
         self,
         name: str,
         file: str | None = SUITE_SOURCE,
         idle_timeout: timedelta | None = DEFAULT_IDLE_TIMEOUT,
+        insert_call: bool = False,
     ) -> str:
         """Record browser interactions as one User Keyword named ``name``.
 
@@ -199,6 +221,16 @@ class Recorder(LibraryComponent):
                 toolbar command. Must be greater than zero. Default: 5 minutes, so a
                 forgotten recording does not block the run for good. ``${None}`` waits
                 without limit.
+          - ``insert_call``: With ``True``, a call of the recorded keyword is inserted
+                into the running test, right before the step of the test that is running.
+                Made for typing `Record Keyword` into a REPL such as ``Debug`` of the
+                RobotDebug library: the calls land before ``Debug``, so the next run
+                replays them and then opens the REPL. Called directly in a test, the step
+                is `Record Keyword` itself. The call passes the recorded value of every
+                Keyword Argument without a default. Needs a running test, and ``file``
+                must be the file of that test, which the default is; it does not work in
+                a setup or teardown. A call that cannot be written is logged as a
+                warning, to be added by hand. Default ``False``.
 
         Returns the text of the recorded keyword, including the ``*** Keywords ***`` header.
         If a recorded keyword cannot be written - the file became read-only, the disk is
@@ -264,16 +296,18 @@ class Recorder(LibraryComponent):
         | ${text} =    Record Keyword    Login As Admin
         | Record Keyword    Search Product    ${CURDIR}/shop.resource    idle_timeout=15 min
         | Record Keyword    Try Something    file=${None}
+        | Record Keyword    Login As Admin    insert_call=True
 
         See `Record Keywords` to record several keywords in one session.
         """
-        return self._record(file, idle_timeout, fixed_name=name).text()
+        return self._record(file, idle_timeout, name, insert_call).text()
 
     @keyword(tags=("Recorder",))
     def record_keywords(
         self,
         file: str | None = SUITE_SOURCE,
         idle_timeout: timedelta | None = DEFAULT_IDLE_TIMEOUT,
+        insert_call: bool = False,
     ) -> str:
         """Record several User Keywords in one session.
 
@@ -338,6 +372,9 @@ class Recorder(LibraryComponent):
                 toolbar command. Must be greater than zero. Default: 5 minutes, so a
                 forgotten recording does not block the run for good. ``${None}`` waits
                 without limit.
+          - ``insert_call``: With ``True``, a call of each saved keyword is inserted into
+                the running test, in the order they were saved, as described in
+                `Record Keyword`. Default ``False``.
 
         Returns the text of all keywords recorded in the session, under one
         ``*** Keywords ***`` header.
@@ -392,10 +429,11 @@ class Recorder(LibraryComponent):
         Example:
         | ${text} =    Record Keywords
         | Record Keywords    ${CURDIR}/resources/shop.resource    idle_timeout=${None}
+        | Record Keywords    insert_call=True
 
         See `Record Keyword` to record exactly one keyword.
         """
-        return self._record(file, idle_timeout, fixed_name=None).text()
+        return self._record(file, idle_timeout, None, insert_call).text()
 
     @keyword(tags=("Recorder", "PageContent"))
     def record_selector(
@@ -472,13 +510,18 @@ class Recorder(LibraryComponent):
         return selector
 
     def _record(
-        self, file: str | None, idle_timeout: timedelta | None, fixed_name: str | None
+        self,
+        file: str | None,
+        idle_timeout: timedelta | None,
+        fixed_name: str | None,
+        insert_call: bool = False,
     ) -> RecorderSession:
         if idle_timeout is not None and idle_timeout <= timedelta(0):
             raise ValueError(
                 f"'idle_timeout' must be greater than zero, got {idle_timeout}."
             )
         target = self._target(file)
+        site = self._call_site(target) if insert_call else None
         session = RecorderSession(
             target,
             fixed_name=fixed_name,
@@ -504,12 +547,55 @@ class Recorder(LibraryComponent):
                     "Recorded keyword(s) that could not be written:\n*** Keywords ***\n"
                     + "\n".join(keyword.block() for keyword in session.unsaved)
                 )
+            if site is not None and isinstance(target, FileTarget):
+                self._insert_calls(target, site, session)
         if session.unsaved:
             names = ", ".join(f"'{keyword.name}'" for keyword in session.unsaved)
             raise RuntimeError(
                 f"{session.write_error}. {names} not saved; the recorded text is in the log."
             )
         return session
+
+    def _call_site(self, target: Target) -> CallSite:
+        if not isinstance(target, FileTarget):
+            raise ValueError(
+                "'insert_call' needs a file to write into; with file=${None} nothing "
+                "is written."
+            )
+        test = _running_test()
+        if test is None or not test.source:
+            raise ValueError(
+                "'insert_call' inserts the call into the running test, but no test "
+                "is running."
+            )
+        source = Path(test.source).resolve()
+        if source != target.path:
+            raise ValueError(
+                "'insert_call' inserts the call into the running test, so 'file' must "
+                f"be the file of that test, {source}, not {target.path}."
+            )
+        stack = self.library.keyword_call_stack
+        if not stack or Path(stack[0]["file"]).resolve() != source:
+            raise ValueError(_NO_TEST_STEP.format(file=source.name))
+        original = self._originals.setdefault(source, target.parsed())
+        try:
+            return CallSite.at_line(original, stack[0]["line"])
+        except ValueError:
+            raise ValueError(_NO_TEST_STEP.format(file=source.name)) from None
+
+    @staticmethod
+    def _insert_calls(
+        target: FileTarget, site: CallSite, session: RecorderSession
+    ) -> None:
+        for recorded in session.saved:
+            try:
+                target.insert_call(site, recorded)
+            except (OSError, ValueError) as error:
+                logger.warn(
+                    f"The call of '{recorded.name}' could not be inserted into test "
+                    f"'{site.test}': {str(error).rstrip('.')}. Add it by hand:\n"
+                    f"    {recorded.call()}"
+                )
 
     def _client(self) -> _GrpcRecorderClient:
         return _GrpcRecorderClient(self)
