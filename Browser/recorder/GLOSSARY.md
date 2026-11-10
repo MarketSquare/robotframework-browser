@@ -62,6 +62,9 @@ _Avoid_: parameter, variable
 - Undo removes every **Keyword Call** the last **Action** produced, never just part of them
 - A recorded User Keyword never creates a page: it runs in the page its caller set up. A page
   opened by an **Action** becomes a switch to that page, not a new one
+- With `insert_call`, a saved User Keyword also gets one call in the running test, before
+  the step that is running (in a REPL such as RobotDebug's: `Debug`). That call is a line of
+  the test, not a **Keyword Call**: it belongs to no recorded keyword and Undo never touches it
 
 ## Flagged ambiguities
 

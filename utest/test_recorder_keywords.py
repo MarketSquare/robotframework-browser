@@ -175,8 +175,9 @@ def _recorder(monkeypatch):
     monkeypatch.setattr(module, "run_session", _fake_run)
     monkeypatch.setattr(session_module, "SETTLE_SECONDS", 0)
     monkeypatch.setattr(module, "collect_known_keywords", lambda: KnownKeywords())
-    recorder = Recorder.__new__(Recorder)
-    recorder.library = SimpleNamespace(keywords={}, registered_keyword_names={})
+    recorder = Recorder(
+        SimpleNamespace(keywords={}, registered_keyword_names={}, keyword_call_stack=[])
+    )
     recorder._client = lambda: object()
     return recorder
 
@@ -496,3 +497,127 @@ def test_a_refused_file_reason_ends_with_one_period(monkeypatch, tmp_path):
     monkeypatch.setattr(module, "FileTarget", refuse)
     with pytest.raises(ValueError, match=r"'MyLang\.py' found\.$"):
         Recorder._target(str(tmp_path / "k.resource"))
+
+
+_DEBUG_SUITE = "*** Test Cases ***\nExplore\n    Debug\n"
+
+
+def _in_test(monkeypatch, recorder, suite, line=3):
+    monkeypatch.setattr(
+        module, "_running_test", lambda: SimpleNamespace(source=str(suite))
+    )
+    monkeypatch.setattr(module, "_suite_source", lambda: str(suite))
+    recorder.library.keyword_call_stack[:] = [{"file": str(suite), "line": line}]
+
+
+def _record_one(monkeypatch, keyword_name="K", text="x"):
+    def run(session, client, idle_timeout=None):
+        session.handle_command({"cmd": "new", "name": keyword_name})
+        session.tick()
+        session.handle_event("added", {"name": "fill", "selector": "#n", "text": text})
+        session.close()
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", run)
+
+
+def test_insert_call_puts_the_calls_before_the_running_step(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(_DEBUG_SUITE)
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+    _record_one(monkeypatch, "First")
+    assert recorder.record_keywords(insert_call=True) is None
+    _record_one(monkeypatch, "Second")
+    assert recorder.record_keywords(insert_call=True) is None
+    assert suite.read_text().startswith(
+        "*** Test Cases ***\nExplore\n    First\n    Second\n    Debug\n"
+    )
+    assert "\nFirst\n    [Tags]    recorded\n" in suite.read_text()
+
+
+def test_record_keyword_inserts_its_call(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(_DEBUG_SUITE)
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+
+    def run(session, client, idle_timeout=None):
+        session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
+        session.close()
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", run)
+    assert recorder.record_keyword("Fill Name", insert_call=True) is None
+    assert "Explore\n    Fill Name\n    Debug\n" in suite.read_text()
+
+
+def test_without_insert_call_the_test_is_left_alone(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(_DEBUG_SUITE)
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+    recorder.record_keywords(str(suite))
+    assert suite.read_text().startswith(_DEBUG_SUITE)
+
+
+def test_insert_call_needs_a_file(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, tmp_path / "suite.robot")
+    with pytest.raises(ValueError, match=r"file=\$\{None\}"):
+        recorder.record_keywords(None, insert_call=True)
+
+
+def test_insert_call_needs_a_running_test(monkeypatch, tmp_path):
+    recorder = _recorder(monkeypatch)
+    monkeypatch.setattr(module, "_running_test", lambda: None)
+    with pytest.raises(ValueError, match="no test is running"):
+        recorder.record_keywords(str(tmp_path / "k.resource"), insert_call=True)
+
+
+def test_insert_call_needs_the_file_of_the_test(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(_DEBUG_SUITE)
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+    other = tmp_path / "k.resource"
+    with pytest.raises(ValueError, match="must be the file of that test"):
+        recorder.record_keywords(str(other), insert_call=True)
+    assert not other.exists()
+
+
+def test_insert_call_is_refused_in_a_test_setup(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(
+        "*** Test Cases ***\nExplore\n    [Setup]    Debug\n    Log    x\n"
+    )
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+    with pytest.raises(ValueError, match="setup or teardown"):
+        recorder.record_keywords(insert_call=True)
+
+
+def test_a_call_that_cannot_be_inserted_is_logged(monkeypatch, tmp_path):
+    suite = tmp_path / "suite.robot"
+    suite.write_text(_DEBUG_SUITE)
+    recorder = _recorder(monkeypatch)
+    _in_test(monkeypatch, recorder, suite)
+    warnings = []
+    monkeypatch.setattr(module.logger, "warn", warnings.append)
+
+    def run(session, client, idle_timeout=None):
+        _record_one_into(session)
+        suite.write_text(suite.read_text().replace("Explore", "Renamed"))
+        return "stop"
+
+    monkeypatch.setattr(module, "run_session", run)
+    recorder.record_keywords(insert_call=True)
+    assert "The call of 'K' could not be inserted into test 'Explore'" in warnings[0]
+    assert warnings[0].endswith("Add it by hand:\n    K")
+
+
+def _record_one_into(session):
+    session.handle_command({"cmd": "new", "name": "K"})
+    session.tick()
+    session.handle_event("added", {"name": "fill", "selector": "#n", "text": "x"})
+    session.close()
