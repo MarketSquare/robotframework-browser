@@ -32,6 +32,7 @@ import { drivePick, endPick, Pick, PickRequest, resetPlaywrightCursor } from './
 import * as pb from './generated/playwright';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
+import { widenSelector } from './selector-widening';
 
 const RECORDER = Symbol.for('robotframework-browser.recorder.state');
 const COMMANDS = Symbol.for('robotframework-browser.recorder.commands');
@@ -83,6 +84,8 @@ export interface RecorderBuffers {
     // The page the user works on: where the last toolbar command came from, or
     // the page pressed last when Playwright's Pick locator was pressed. A pick starts there.
     userPage?: Page;
+    // Selectors still being widened (`widenSelector`); a poll waits for them.
+    widening: Set<Promise<void>>;
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -146,7 +149,34 @@ function clearEntries(buffers: RecorderBuffers): void {
 }
 
 export function newBuffers(): RecorderBuffers {
-    return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap(), ownPick: false };
+    return {
+        entries: [],
+        commandCount: 0,
+        armed: false,
+        active: false,
+        rendered: new WeakMap(),
+        ownPick: false,
+        widening: new Set(),
+    };
+}
+
+// How long a poll waits for selectors being widened; one that takes longer is
+// delivered as Playwright made it.
+export const WIDENING_WAIT_MS = 2000;
+
+// The Action keeps its place in the buffer while its selector is widened.
+export function widenInPlace(buffers: RecorderBuffers, action: Action, page: unknown): void {
+    if (typeof action.selector !== 'string' || !page) return;
+    const widening: Promise<void> = widenSelector(page as Page, action.selector)
+        .then((selector) => {
+            action.selector = selector;
+        })
+        .finally(() => buffers.widening.delete(widening));
+    buffers.widening.add(widening);
+}
+
+async function widened(buffers: RecorderBuffers, wait: (ms: number) => Promise<void> = delay): Promise<void> {
+    if (buffers.widening.size) await Promise.race([Promise.all(buffers.widening), wait(WIDENING_WAIT_MS)]);
 }
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown, page?: Page): void {
@@ -280,7 +310,10 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     const forward = (event: 'added' | 'updated') => (page: unknown, payload: unknown) => {
         logRaw(context, event, page, payload);
         const action = toAction(payload);
-        if (action) buffer({ event, action, page: pageGuid(page) });
+        if (!action) return;
+        const buffered = buffers.entries.length;
+        buffer({ event, action, page: pageGuid(page) });
+        if (buffers.entries.length > buffered) widenInPlace(buffers, action, page);
     };
     // Playwright reports no `closePage`: it drops an Action whose page is gone.
     const watchClose = (page: Page) => {
@@ -495,6 +528,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
         await writeMode(context, 'recording');
     }
     const stopped = !buffers.ownPick && buffers.armed && mode !== undefined && STOP_MODES.has(mode);
+    await widened(buffers);
     return jsonResponse(
         JSON.stringify({
             mode: stopped ? 'stopped' : 'recording',

@@ -22,6 +22,7 @@ import * as path from 'path';
 import { ElementHandle, Locator, Page } from 'playwright';
 
 import { locatorOn } from './playwright-invoke';
+import { widenSelector } from './selector-widening';
 
 export interface Picked {
     // Playwright's selector, in its internal syntax; Python translates it.
@@ -117,7 +118,8 @@ export function startPick(pick: Pick): void {
         .then(async (locator) => {
             // Stopped meanwhile (Reselect, Cancel, Stop): the pick is not wanted any more.
             if (!pick.picking) return;
-            const selector = internalSelector(locator);
+            const selector = await widenSelector(pick.page, internalSelector(locator));
+            if (!pick.picking) return;
             if (selector.length > MAX_PICKED_LENGTH) {
                 pick.picked = { error: 'The picked selector is too long.' };
                 return;
