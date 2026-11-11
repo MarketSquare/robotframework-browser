@@ -26,14 +26,7 @@ import {
 
 const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
 const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
-const freshBuffers = (armed = false): RecorderBuffers => ({
-    entries: [],
-    commandCount: 0,
-    armed,
-    active: false,
-    rendered: new WeakMap(),
-    ownPick: false,
-});
+const freshBuffers = (armed = false): RecorderBuffers => ({ ...newBuffers(), armed });
 
 beforeEach(() => jest.clearAllMocks());
 
