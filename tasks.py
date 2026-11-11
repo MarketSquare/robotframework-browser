@@ -1774,7 +1774,7 @@ def docs(c, version=None):
        }
     """
     soup.head.append(script_data)
-    with output.open("w") as file:
+    with output.open("w", encoding="utf-8") as file:
         file.write(str(soup))
     if version is not None:
         target = (
