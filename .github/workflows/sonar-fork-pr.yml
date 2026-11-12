@@ -1,0 +1,99 @@
+# Scans fork pull requests in SonarQube. A fork's CI run gets no SONAR_TOKEN,
+# so its coverage job uploads the reports and this workflow scans them with the
+# token. It runs from main, never runs fork code, and trusts nothing from the
+# fork that GitHub's API cannot confirm.
+name: SonarQube fork pull requests
+
+on:
+  workflow_run:
+    workflows: [Continuous integration]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  scan:
+    name: Scan
+    if: >-
+      ${{ github.repository == 'MarketSquare/robotframework-browser' &&
+        github.event.workflow_run.event == 'pull_request' &&
+        github.event.workflow_run.head_repository.full_name != github.repository }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read # the reports artifact of the triggering run
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Download the reports and confirm the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+          REPORTS: ${{ runner.temp }}/reports
+        run: |
+          if ! gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx sonar-fork-pr; then
+            echo "::notice::Run $RUN_ID uploaded no reports, so there is nothing to scan."
+            exit 0
+          fi
+          gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name sonar-fork-pr --dir "$REPORTS"
+          number=$(head -c 10 "$REPORTS/sonar-pr-number")
+          [[ $number =~ ^[0-9]+$ ]] || { echo "::error::Not a pull request number: $number"; exit 1; }
+          IFS=$'\t' read -r sha repo branch base < <(gh api "repos/$GITHUB_REPOSITORY/pulls/$number" \
+            --jq '[.head.sha, .head.repo.full_name, .head.ref, .base.ref] | @tsv')
+          if [[ $sha != "$HEAD_SHA" || $repo != "$HEAD_REPO" || $base != main ]]; then
+            echo "::notice::Pull request $number is no longer at $HEAD_SHA from $HEAD_REPO into main, so a newer run scans it."
+            exit 0
+          fi
+          if [[ ! $branch =~ ^[A-Za-z0-9._/-]{1,200}$ ]]; then
+            echo "::notice::Branch names outside letters, digits and ._/- are not scanned."
+            exit 0
+          fi
+          {
+            echo "number=$number"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+      # Pinned by SHA, unlike in on-push.yml, because this job holds SONAR_TOKEN.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: ${{ steps.pr.outputs.number }}
+        with:
+          ref: refs/pull/${{ steps.pr.outputs.number }}/head
+          fetch-depth: 0 # SonarQube needs main and the history to find new code
+          persist-credentials: false
+      # The fork controls every file in the checkout. The scanner reads its
+      # settings from main, so a fork cannot redirect the token, and links are
+      # removed, so a fork cannot index a file from outside the checkout.
+      - name: Put main's settings and the reports in place
+        id: prepare
+        if: ${{ steps.pr.outputs.number }}
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          REPORTS: ${{ runner.temp }}/reports
+        run: |
+          if [[ $(git rev-parse HEAD) != "$HEAD_SHA" ]]; then
+            echo "::notice::The pull request moved past $HEAD_SHA, so a newer run scans it."
+            exit 0
+          fi
+          find . -path ./.git -prune -o -type l -print -delete
+          git show "$GITHUB_SHA:sonar-project.properties" > sonar-project.properties
+          for report in coverage/python.xml coverage/node.info ruff.json mypy.txt robocop_sonar_qube.json; do
+            if [[ -f $REPORTS/$report ]]; then
+              mkdir -p "$(dirname "$report")"
+              cp "$REPORTS/$report" "$report"
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - name: Scan
+        if: ${{ steps.prepare.outputs.ready }}
+        uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >-
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.scm.revision=${{ github.event.workflow_run.head_sha }}
+            -Dsonar.pullrequest.key=${{ steps.pr.outputs.number }}
+            -Dsonar.pullrequest.branch=${{ steps.pr.outputs.branch }}
+            -Dsonar.pullrequest.base=main
