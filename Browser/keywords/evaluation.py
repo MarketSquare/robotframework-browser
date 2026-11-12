@@ -206,6 +206,18 @@ class Evaluation(LibraryComponent):
     ):
         """Adds an init script: JavaScript that runs in every document of the active context or page before the document's own scripts.
 
+        *Arguments:*
+          - ``script``: JavaScript source. Without ``arg`` it runs as it is, so a bare
+                function is defined but never called.
+          - ``path``: Path to a JavaScript file whose content is the script. Exactly one of
+                ``script`` and ``path`` must be given.
+          - ``arg``: A JSON serializable value. With ``arg`` the script must be a single
+                function expression, which is called with ``arg``. Source that is not a single
+                expression fails before the script is added. ``None`` means no argument.
+          - ``on``: Where the script is added, see `InitScriptTarget`. ``Context`` (default)
+                for every page, popup and frame of the active context, ``Page`` for the active
+                page and its frames, not its popups. Fails when no context or page is open.
+
         The script runs again on every navigation and in every frame. Use it for what the
         application reads while it starts, which `Evaluate JavaScript` is too late for: seed
         ``Math.random``, set feature flags or ``window`` globals, or load a file of stubs.
@@ -216,12 +228,6 @@ class Evaluation(LibraryComponent):
         that the whole suite shares also runs in the later tests of the suite; a test that must
         not leak its script opens its own `New Context`. There is no way to remove a script
         earlier. A page that already ran a script keeps what it changed until it reloads.
-
-        | =Arguments= | =Description= |
-        | ``script`` | JavaScript source. Without ``arg`` it runs as it is, so a bare function is defined but never called. |
-        | ``path`` | Path to a JavaScript file whose content is the script. Exactly one of ``script`` and ``path`` must be given. |
-        | ``arg`` | A JSON serializable value. With ``arg`` the script must be a single function expression, which is called with ``arg``. Source that is not a single expression fails before the script is added. ``None`` means no argument. |
-        | ``on`` | Where the script is added, see `InitScriptTarget`: ``Context`` (default) for every page, popup and frame of the active context, ``Page`` for the active page and its frames, not its popups. Fails when no context or page is open. |
 
         Errors inside the script do not fail the keyword; they show up in `Get Page Errors`.
         The order of several init scripts is not guaranteed, also between ``Context`` and ``Page``.
