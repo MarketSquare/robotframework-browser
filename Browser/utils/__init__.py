@@ -38,6 +38,7 @@ from .data_types import (
     GeoLocation,
     HighLightElement,
     HighlightMode,
+    InitScriptTarget,
     HttpCredentials,
     InstallableBrowser,
     InstallationOptions,

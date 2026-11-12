@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Init Script</title>
+</head>
+<body>
+    <p id="seed-value">unset</p>
+    <p id="other-value">unset</p>
+    <a id="popup" href="init_script.html" target="_blank">Open in popup</a>
+    <script type="text/javascript">
+        if (window.seed !== undefined) {
+            document.getElementById('seed-value').textContent = JSON.stringify(window.seed);
+        }
+        if (window.other !== undefined) {
+            document.getElementById('other-value').textContent = JSON.stringify(window.other);
+        }
+    </script>
+<script src="/test-app-logger.js"></script>
+</body>
+</html>

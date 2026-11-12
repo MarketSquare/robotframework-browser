@@ -32,6 +32,7 @@ ${DEEP_FRAMES_URL} =                    ${ROOT_URL}frames/deep/a.html
 ${DEEP_FRAMES_2ND_URL} =                ${ROOT_URL}frames/deep/b.html
 ${FRAMES_BUG_REPORT} =                  ${ROOT_URL}frames/frame_for_elements.html
 ${CREATE_POPUPS_URL} =                  ${ROOT_URL}popups/call_popup.html
+${INIT_SCRIPT_URL} =                    ${ROOT_URL}init_script.html
 ${WELCOME_URL} =                        ${ROOT_URL}welcome.html
 ${ERROR_URL} =                          ${ROOT_URL}error.html
 ${WAIT_URL} =                           ${ROOT_URL}waitfor.html

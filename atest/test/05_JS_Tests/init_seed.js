@@ -1,0 +1,1 @@
+window.seed = 'from file';
