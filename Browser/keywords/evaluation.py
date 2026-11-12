@@ -223,8 +223,8 @@ class Evaluation(LibraryComponent):
         ``Math.random``, set feature flags or ``window`` globals, or load a file of stubs.
         For dates use `Set Time`, for geolocation `Set Geolocation` and `Grant Permissions`.
 
-        The script lives as long as the context or page it was added to, so when it stops is
-        decided by the automatic closing level, see `AutoClosingLevel`. A script added to a context
+        The script lives as long as the context or page it was added to, so
+        `Automatic page and context closing` decides when it stops. A script added to a context
         that the whole suite shares also runs in the later tests of the suite; a test that must
         not leak its script opens its own `New Context`. There is no way to remove a script
         earlier. A page that already ran a script keeps what it changed until it reloads.
