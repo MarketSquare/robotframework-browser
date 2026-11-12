@@ -14,6 +14,8 @@
 
 import json
 from datetime import timedelta
+from os import PathLike
+from pathlib import Path
 from typing import Any
 
 from robot.utils import DotDict
@@ -24,6 +26,7 @@ from ..utils import (
     ROBOT_FRAMEWORK_BROWSER_NO_SET,
     DownloadInfo,
     HighlightMode,
+    InitScriptTarget,
     keyword,
     logger,
 )
@@ -190,6 +193,59 @@ class Evaluation(LibraryComponent):
         """
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(Request().StyleTag(content=content))
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
+    def add_init_script(
+        self,
+        script: str | None = None,
+        *,
+        path: PathLike | None = None,
+        arg: Any = None,
+        on: InitScriptTarget = InitScriptTarget.Context,
+    ):
+        """Adds an init script: JavaScript that runs in every document of the active context or page before the document's own scripts.
+
+        The script runs again on every navigation and in every frame. Use it for what the
+        application reads while it starts, which `Evaluate JavaScript` is too late for: seed
+        ``Math.random``, set feature flags or ``window`` globals, or load a file of stubs.
+        For dates use `Set Time`, for geolocation `Set Geolocation` and `Grant Permissions`.
+
+        The script lives as long as the context or page it was added to, so when it stops is
+        decided by the automatic closing level, see `AutoClosingLevel`. A script added to a context
+        that the whole suite shares also runs in the later tests of the suite; a test that must
+        not leak its script opens its own `New Context`. There is no way to remove a script
+        earlier. A page that already ran a script keeps what it changed until it reloads.
+
+        | =Arguments= | =Description= |
+        | ``script`` | JavaScript source. Without ``arg`` it runs as it is, so a bare function is defined but never called. |
+        | ``path`` | Path to a JavaScript file whose content is the script. Exactly one of ``script`` and ``path`` must be given. |
+        | ``arg`` | A JSON serializable value. With ``arg`` the script must be a single function expression, which is called with ``arg``. Source that is not a single expression fails before the script is added. ``None`` means no argument. |
+        | ``on`` | Where the script is added, see `InitScriptTarget`: ``Context`` (default) for every page, popup and frame of the active context, ``Page`` for the active page and its frames, not its popups. Fails when no context or page is open. |
+
+        Errors inside the script do not fail the keyword; they show up in `Get Page Errors`.
+        The order of several init scripts is not guaranteed, also between ``Context`` and ``Page``.
+
+        Example:
+        | `New Context`
+        | `Add Init Script`    (value) => { Math.random = () => value }    arg=${0.5}
+        | `New Page`    ${URL}
+        | `Add Init Script`    path=${CURDIR}/stubs.js    on=Page
+        | `Reload`
+        """
+        if (script is None) == (path is None):
+            raise ValueError("Give exactly one of script and path.")
+        content = (
+            Path(path).read_text(encoding="utf-8") if path is not None else str(script)
+        )
+        request = Request().InitScript(content=content)
+        if arg is not None:
+            request.arg = json.dumps(arg)
+        with self.playwright.grpc_channel() as stub:
+            if on == InitScriptTarget.Page:
+                response = stub.AddPageInitScript(request)
+            else:
+                response = stub.AddContextInitScript(request)
             logger.info(response.log)
 
     @keyword(tags=("Page Content",))

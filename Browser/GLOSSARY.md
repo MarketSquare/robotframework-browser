@@ -91,6 +91,12 @@ The context a keyword is about: the one an argument names, or the active one whe
 does. A keyword can have several, like `Close Context    ALL`.
 _Avoid_: touched context, current context
 
+**Init script**:
+JavaScript that a context or page runs in every document it loads, before the document's own
+scripts. It lives as long as the context or page it was added to; a context's init script also
+runs in the context's popups, a page's does not.
+_Avoid_: preload script, startup script
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -121,6 +127,9 @@ _Avoid_: touched context, current context
   Only `defaultTimeout` yields to a caller, and only to a library calling the function by name
   with `call_js_keyword`. Called as a keyword, it always gets the library timeout, which a test
   changes with `Set Browser Timeout`.
+- An **init script** has no scope of its own. It ends when its context or page closes, so when
+  that happens is decided by the automatic closing level, not by the library's `Scope`. On the
+  **Python path** it behaves the same.
 - An **adopted context** is registered by `call_js_keyword`, from what Node reports when
   `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 

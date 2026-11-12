@@ -359,6 +359,11 @@ message Request {
     string content = 1;
   }
 
+  message InitScript {
+    string content = 1;
+    optional string arg = 2;
+  }
+
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
@@ -625,6 +630,10 @@ service  Playwright {
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
+  /* Adds an init script to the active context: browserContext.addInitScript */
+  rpc AddContextInitScript(Request.InitScript) returns (Response.Empty);
+  /* Adds an init script to the active page: page.addInitScript */
+  rpc AddPageInitScript(Request.InitScript) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */

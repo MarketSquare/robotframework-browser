@@ -25,6 +25,7 @@ import * as deviceDescriptors from './device-descriptors';
 import * as evaluation from './evaluation';
 import * as pb from './generated/playwright';
 import * as getters from './getters';
+import * as initScript from './init-script';
 import * as interaction from './interaction';
 import { class_async_logger } from './keyword-decorators';
 import { withLoadReport } from './load-report';
@@ -432,6 +433,8 @@ export class PlaywrightServer {
     getElements = this.wrapping(evaluation.getElements);
     getByX = this.wrapping(evaluation.getByX);
     addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    addContextInitScript = this.wrapping(initScript.addContextInitScript);
+    addPageInitScript = this.wrapping(initScript.addPageInitScript);
     setTime = this.wrapping(clock.setTime);
     clockResume = this.wrapping(clock.clockResume);
     clockPauseAt = this.wrapping(clock.clockPauseAt);
