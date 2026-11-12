@@ -34,7 +34,7 @@ jobs:
           HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
           REPORTS: ${{ runner.temp }}/reports
         run: |
-          if ! gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx sonar-fork-pr; then
+          if [[ $(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID/artifacts?name=sonar-fork-pr" --jq '.total_count') == 0 ]]; then
             echo "::notice::Run $RUN_ID uploaded no reports, so there is nothing to scan."
             exit 0
           fi
