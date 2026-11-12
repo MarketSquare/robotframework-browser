@@ -62,8 +62,8 @@ class Clock(LibraryComponent):
         """
         logger.info("Resuming clock")
         with self.playwright.grpc_channel() as stub:
-            respose = stub.ClockResume(Request.Empty())
-            logger.info(respose.log)
+            response = stub.ClockResume(Request.Empty())
+            logger.info(response.log)
 
     @keyword(tags=("Setter", "Clock"))
     def pause_at(self, time: datetime):
