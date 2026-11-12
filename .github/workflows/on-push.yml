@@ -297,6 +297,11 @@ jobs:
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
           xvfb-run --auto-servernum inv atest-coverage
+      - name: Github Job Summary
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
+        run: |
+          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
       - name: Merge the coverage
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: |
@@ -318,6 +323,28 @@ jobs:
             (github.event_name == 'pull_request' && github.base_ref == 'main')
           ) }}
         uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
+      # A fork pull request gets no SONAR_TOKEN, so it hands its reports to
+      # sonar-fork-pr.yml, which scans them in the base repository.
+      - name: Write the pull request number for the fork scan
+        id: fork-reports
+        if: >-
+          ${{ !cancelled() && steps.build.outcome == 'success' && github.event_name == 'pull_request' &&
+            github.base_ref == 'main' && github.event.pull_request.head.repo.full_name != github.repository }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: echo "$PR_NUMBER" > sonar-pr-number
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && steps.fork-reports.outcome == 'success' }}
+        with:
+          name: sonar-fork-pr
+          path: |
+            sonar-pr-number
+            coverage/python.xml
+            coverage/node.info
+            ruff.json
+            mypy.txt
+            robocop_sonar_qube.json
+          retention-days: 7
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
