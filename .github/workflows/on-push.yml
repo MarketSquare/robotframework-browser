@@ -17,12 +17,24 @@ env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
 jobs:
+  # The jobs run on Namespace runners. matrix.os stays the GitHub image name,
+  # which the step conditions and artifact names use, and runs-on maps it to the
+  # Namespace machine. pabot runs one process per vCPU but one.
+  #
+  # The workspace runs at most 64 Linux vCPU at a time, so the sizes trade the
+  # speed of a job against the jobs queued behind it. Measured on the whole
+  # acceptance suite: 8 vCPU take 140 s, 16 take 85 s and 32 take 75 s, while
+  # installing and the unit tests take the same 2.5 minutes on any size. Linux
+  # jobs get 8 vCPU, Windows 16 and macOS 12, the largest Namespace macOS shape,
+  # which leaves room at the start for the 2 vCPU job every build waits for.
+  # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
+
   # The version the wheels of this run carry. Empty unless this is a push to
   # main, which keeps pull request and scheduled runs building exactly the
   # versions they build today.
   nightly_version:
     name: Work out the nightly version
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4
     timeout-minutes: 10
     outputs:
       version: ${{ steps.dev.outputs.version }}
@@ -49,77 +61,43 @@ jobs:
           inv dev-version
 
   testing:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "windows-latest":"nscloud-windows-2022-amd64-16x32", "macos-latest":"nscloud-macos-sequoia-arm64-12x28"}')[matrix.os] }}
     timeout-minutes: 30
     permissions:
       contents: read
       pull-requests: write
     strategy:
       fail-fast: false
-      # The lowest rf-version below is the supported Robot Framework floor and must
-      # match the robotframework lower bound in pyproject.toml. Change both together.
+      # Every Python, Robot Framework and Node.js version and every OS runs once,
+      # each entry the whole acceptance suite. The oldest Python goes with the
+      # oldest Robot Framework. The lowest rf-version below is the supported Robot
+      # Framework floor and must match the robotframework lower bound in
+      # pyproject.toml. Change both together. The entry with lint: true also runs
+      # the linters. It needs the latest Robot Framework, whose type hints decide
+      # which type: ignore comments mypy accepts.
       matrix:
         include:
-          - os: windows-latest
+          - os: ubuntu-latest
             python-version: "3.11"
+            rf-version: "7.1.1"
             node-version: 22.x
-            shard: 1
-            rf-version: "7.5.1"
           - os: windows-latest
             python-version: "3.12"
+            rf-version: "7.2.2"
             node-version: 24.x
-            shard: 2
-            rf-version: "7.1.1"
-          - os: ubuntu-latest
-            python-version: "3.15"
-            node-version: 22.x
-            shard: 3
-            rf-version: "7.5.1"
-          - os: ubuntu-latest
-            python-version: "3.11"
-            node-version: 26.x
-            shard: 4
-            rf-version: "7.1.1"
-          - os: windows-latest
-            python-version: "3.15"
-            node-version: 24.x
-            shard: 1
-            rf-version: "7.5.1"
-          - os: ubuntu-latest
-            python-version: "3.11"
-            node-version: 22.x
-            shard: 2
-            rf-version: "7.1.1"
-          - os: ubuntu-latest
+          - os: macos-latest
             python-version: "3.13"
-            node-version: 22.x
-            shard: 3
-            rf-version: "7.1.1"
-          - os: ubuntu-latest
-            python-version: "3.12"
-            node-version: 24.x
-            shard: 4
-            rf-version: "7.1.1"
+            rf-version: "7.3.2"
+            node-version: 26.x
           - os: ubuntu-latest
             python-version: "3.14"
-            node-version: 22.x
-            shard: 1
-            rf-version: "7.5.1"
-          - os: ubuntu-latest  # Use to be macos-latest but moved to ubuntu-latest for now due to https://github.com/orgs/community/discussions/211885
-            python-version: "3.11"
+            rf-version: "7.4.2"
             node-version: 24.x
-            shard: 1
-            rf-version: "7.5.1"
-          - os: macos-latest
-            python-version: "3.11"
-            node-version: 24.x
-            shard: 2
-            rf-version: "7.1.1"
-          - os: macos-latest
+          - os: ubuntu-latest
             python-version: "3.15"
-            node-version: 26.x
-            shard: 3
             rf-version: "7.5.1"
+            node-version: 26.x
+            lint: true
     steps:
     - uses: actions/checkout@v7
     - name: Use Node.js
@@ -155,15 +133,15 @@ jobs:
       run: |
         inv node-build
     - name: Check types with mypy on Linux
-      if: matrix.os == 'ubuntu-latest' && matrix.shard == 1
+      if: matrix.lint
       run: |
         inv lint-python
     - name: Lint atest
-      if: matrix.shard == 1
+      if: matrix.lint
       run: |
         inv lint-robot
     - name: Lint node
-      if: matrix.shard == 1
+      if: matrix.lint
       run: |
         inv lint-node
     - name: Build test app
@@ -174,10 +152,7 @@ jobs:
       run: |
         export DISPLAY=:99.0
         Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-    # Shard 1 is pinned to the latest Robot Framework, so the extra condition is what runs
-    # the unit tests against the supported floor as well. Keep one entry of each rf-version.
     - name: Run pytests
-      if: matrix.shard == 1 || (matrix.rf-version == '7.1.1' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13')
       run: |
         invoke utest
     - uses: actions/upload-artifact@v7
@@ -188,31 +163,29 @@ jobs:
           utest/output/pytest_xunit.xml
           utest/output/test-app/
     - name: Run Node.js unit tests with coverage
-      if: matrix.shard == 1
       run: |
         npm run test:coverage
         node node/coverage-summary.mjs
     - uses: actions/upload-artifact@v7
-      if: matrix.shard == 1
       with:
         name: node-coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: node/coverage/
     - name: Run Robot Framework tests on linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-        xvfb-run --auto-servernum inv atest --shard ${{ matrix.shard }}/4
+        xvfb-run --auto-servernum inv atest
     - name: Run Robot Framework tests on Windows
       if: matrix.os == 'windows-latest'
       run: |
-        inv atest --shard ${{ matrix.shard }}/4
+        inv atest
     - name: Run Robot Framework tests on macOS
       if: matrix.os == 'macos-latest'
       run: |
-        inv atest --shard ${{ matrix.shard }}/4
+        inv atest
     - uses: actions/upload-artifact@v7
       if: ${{ always() }}
       with:
-        name: Test results-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        name: Test results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: atest/output
     # A process that dies from a signal often prints nothing; the macOS crash report holds the
     # faulting stack. A child that crashed between fork and exec is reported as Python.
@@ -224,7 +197,7 @@ jobs:
     - uses: actions/upload-artifact@v7
       if: ${{ always() && matrix.os == 'macos-latest' }}
       with:
-        name: Crash reports-${{ matrix.os }}-${{ matrix.shard }}-${{ matrix.python-version }}-${{ matrix.node-version }}
+        name: Crash reports-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: crash-reports/
         if-no-files-found: ignore
     - name: Github Job Summary
@@ -240,7 +213,7 @@ jobs:
   # failed, so a failing test still leaves a report.
   coverage:
     name: Coverage
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-8x16
     timeout-minutes: 30
     permissions:
       contents: read
@@ -365,7 +338,7 @@ jobs:
 
   test-install:
     needs: build_wheels
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -432,14 +405,14 @@ jobs:
           rm -rf Browser
           export DISPLAY=:99.0
           Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot --smoke
+          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
       - name: Run Robot Framework tests on windows or macOS
         if: matrix.os != 'ubuntu-latest'
         env:
           SYS_VAR_CI_INSTALL_TEST: 1
         run: |
           Remove-Item -Path .\Browser -Force -Recurse
-          invoke atest-robot --smoke
+          invoke atest-robot --smoke --parallel
       - name: Uninstall on Linux or MacOS
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
@@ -460,7 +433,7 @@ jobs:
   # install test and the nightly use.
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
     needs: nightly_version
     timeout-minutes: 45
     env:
@@ -473,10 +446,9 @@ jobs:
           - ubuntu-latest
           - ubuntu-24.04-arm
           - windows-latest
-          - macos-15-intel
           - macos-latest
 
-    steps:
+    steps: &build_wheels_steps
       - uses: actions/checkout@v7
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -542,18 +514,33 @@ jobs:
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
 
+  # Namespace has no Intel macOS machines. Only the nightly and the scheduled
+  # run use this wheel, so in its own job the tests do not wait for GitHub's
+  # slower runner.
+  build_wheels_intel:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: macos-15-intel
+    needs: nightly_version
+    timeout-minutes: 45
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    strategy:
+      matrix:
+        os: [ macos-15-intel ]
+    steps: *build_wheels_steps
+
   test_browser_batteries_wheels:
     needs:
       - build_wheels
     name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(github.event_name == 'schedule' && '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-15-intel", "macos-latest"]' || '["ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest"]') }}
+        os: [ "ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest" ]
 
-    steps:
+    steps: &test_browser_batteries_wheels_steps
       - uses: actions/checkout@v7
       - name: Set up Python 3.14
         uses: actions/setup-python@v7
@@ -618,11 +605,11 @@ jobs:
       - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
         run: |
-          xvfb-run --auto-servernum invoke atest-robot --smoke
+          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
       - name: Run tests on ${{ matrix.os }} with packed demoapp
         if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
         run: |
-          inv atest-robot
+          inv atest-robot --parallel
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
@@ -639,8 +626,21 @@ jobs:
           pip uninstall -y robotframework-browser-batteries
           pip uninstall -y robotframework-browser
 
+  test_browser_batteries_wheels_intel:
+    if: github.event_name == 'schedule'
+    needs:
+      - build_wheels
+      - build_wheels_intel
+    name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
+    runs-on: macos-15-intel
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        os: [ macos-15-intel ]
+    steps: *test_browser_batteries_wheels_steps
+
   docker_image:
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-8x16
     needs: build_wheels
     permissions:
       contents: read
@@ -707,7 +707,9 @@ jobs:
                 cat /tmp/test-app.log
                 exit 1
               fi
-              robot -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
+              pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 --chunk \\
+                --artifacts png,webm,zip --artifactsinsubfolders \\
+                -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
               robot_status=\$?
               kill \$app_pid || true
               wait \$app_pid 2>/dev/null || true
@@ -739,7 +741,7 @@ jobs:
   # wheels: whoever installs them cannot tell our breakage from theirs.
   publish_nightly:
     name: Publish the nightly wheels
-    runs-on: ubuntu-latest
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4
     timeout-minutes: 15
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
@@ -747,6 +749,7 @@ jobs:
       - testing
       - test-install
       - build_wheels
+      - build_wheels_intel
       - test_browser_batteries_wheels
     permissions:
       contents: write
