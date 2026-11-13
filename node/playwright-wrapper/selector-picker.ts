@@ -28,6 +28,7 @@ import {
     removeToolbar,
     renderToolbar,
 } from './recorder';
+import { startRecordingHooks } from './recorder-hooks';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 // One picker per library instance: pabot workers share this Node process.
@@ -55,7 +56,9 @@ async function startSession(state: PlaywrightState, allowHeadless: boolean): Pro
                 'Record Selector can run only after it ended.',
         );
     }
-    const session: PickerSession = { page, buffers: newBuffers(), picking: false };
+    const extensions = state.extensions ?? [];
+    await startRecordingHooks(context, extensions);
+    const session: PickerSession = { page, buffers: newBuffers(), picking: false, extensions };
     session.buffers.active = true;
     (await commandListeners(context)).add(session.buffers);
     sessions.set(state, session);

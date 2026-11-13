@@ -236,6 +236,29 @@ class Recorder(LibraryComponent):
         because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
+        *Changing the recorded selectors:* Playwright generates the selector of every
+        Action and of every element picked with *Pick* or `Record Selector`. A JavaScript
+        module loaded with the ``jsextension`` import argument can replace it by
+        exporting these optional hooks:
+
+        - ``__recordedSelector({selector, action, page, context})``: called for every
+          Action with a selector, as soon as Playwright reports it, and for every pick.
+          ``selector`` is Playwright's selector, possibly in its internal syntax such as
+          ``internal:role=button[name="Save"i]``; ``action`` is a copy of Playwright's
+          Action (``name`` such as ``click`` or ``fill``, and its fields), or ``null``
+          for a pick; ``page`` and ``context`` are the Playwright objects it happened in.
+          Return the selector to use instead, in Browser's or Playwright's syntax, or
+          ``undefined`` to keep it; the hook may be ``async``, for example to check a
+          selector in the page. The Action keeps its place among the toolbar commands
+          while the hook runs. A selector that takes longer than 2 seconds is used as
+          Playwright made it. Another value or an error keeps the selector and is logged
+          in ``playwright-log.txt``. With several extensions, the hooks run in load
+          order, each on the previous result.
+        - ``__recordingStarted({context})``: called once per browser context, before its
+          first recording or Record Selector session starts, for example to expose a
+          binding or add an init script that collects what ``__recordedSelector`` needs
+          from the page. It may be ``async``; if it fails, the keyword fails.
+
         Needs a visible browser: fails if the active browser was opened headless, since
         nobody could use the toolbar there. A browser attached with `Connect To Browser`
         is assumed to be visible.
@@ -440,6 +463,9 @@ class Recorder(LibraryComponent):
 
         Like the recorder toolbar, the toolbar's commands are reachable by scripts of the
         page under test: use it on applications you trust, and check the selector you get.
+
+        A JavaScript extension can change the picked selector before it is shown; see
+        *Changing the recorded selectors* in `Record Keyword`.
 
         Example:
         | ${selector} =    `Record Selector`    Login button
