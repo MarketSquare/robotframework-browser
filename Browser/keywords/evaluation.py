@@ -208,17 +208,17 @@ class Evaluation(LibraryComponent):
         """
         if sum(source is not None for source in (content, url, path)) != 1:
             raise ValueError("Give exactly one of content, url and path.")
+        request = Request().StyleTag(strict=self.strict_mode)
         if path is not None:
-            content = Path(path).read_text(encoding="utf-8")
+            request.content = Path(path).read_text(encoding="utf-8")
+        elif content is not None:
+            request.content = content
+        if url is not None:
+            request.url = url
+        if frame_selector := self.resolve_selector(frame_selector):
+            request.frameSelector = frame_selector
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddStyleTag(
-                Request().StyleTag(
-                    content=content or "",
-                    url=url or "",
-                    frameSelector=self.resolve_selector(frame_selector),
-                    strict=self.strict_mode,
-                )
-            )
+            response = stub.AddStyleTag(request)
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))

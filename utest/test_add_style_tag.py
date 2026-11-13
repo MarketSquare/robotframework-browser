@@ -38,4 +38,4 @@ def test_path_is_read_and_sent_as_content(tmp_path):
     evaluation.add_style_tag(path=css)
     request = stub.AddStyleTag.call_args.args[0]
     assert request.content == "* { animation: none !important; } /* ä */"
-    assert request.url == ""
+    assert not request.HasField("url")

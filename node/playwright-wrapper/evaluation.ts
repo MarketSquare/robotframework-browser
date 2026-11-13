@@ -308,29 +308,31 @@ export async function waitForFunction(
     return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
 }
 
-export async function addStyleTag(
-    request: pb.Request_StyleTag,
-    state: PlaywrightState,
-    page: Page,
-): Promise<pb.Response_Empty> {
-    const { content, url, frameSelector, strict } = request;
-    const frame = frameSelector
-        ? await (await (await findLocator(state, frameSelector, strict, true)).elementHandle())?.ownerFrame()
-        : page.mainFrame();
-    if (!frame) {
-        throw new Error(`No frame found for ${frameSelector}.`);
+async function styleTagFrame(request: pb.Request_StyleTag, state: PlaywrightState, page: Page): Promise<Frame> {
+    if (request.frameSelector === undefined) return page.mainFrame();
+    const locator = await findLocator(state, request.frameSelector, request.strict, true);
+    const element = await locator.elementHandle();
+    try {
+        const frame = await element.ownerFrame();
+        exists(frame, `No frame found for frame_selector ${request.frameSelector}.`);
+        return frame;
+    } finally {
+        await element.dispose();
     }
-    if (url) {
-        await frame.addStyleTag({ url }).catch((error: Error) => {
-            if (error.message.endsWith(': Event')) {
-                throw new Error(`Stylesheet ${url} failed to load.`);
-            }
-            throw error;
-        });
-        return emptyWithLog('added Style from: ' + url);
-    }
-    await frame.addStyleTag({ content });
-    return emptyWithLog('added Style: ' + content);
+}
+
+export async function addStyleTag(request: pb.Request_StyleTag, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const page = state.getActivePage();
+    exists(page, 'Tried to add a style tag, but no page was open.');
+    const frame = await styleTagFrame(request, state, page);
+    const { content, url } = request;
+    await frame.addStyleTag({ content, url }).catch((error: Error) => {
+        if (url !== undefined && error.message.endsWith(': Event')) {
+            throw new Error(`Stylesheet ${url} failed to load.`);
+        }
+        throw error;
+    });
+    return emptyWithLog(`Added style tag to ${frame === page.mainFrame() ? 'the active page' : frame.url()}.`);
 }
 
 async function scriptTagFrame(request: pb.Request_ScriptTag, state: PlaywrightState, page: Page): Promise<Frame> {

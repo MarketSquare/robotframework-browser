@@ -31,3 +31,7 @@ Add Style Tag Into Frame
     Get Style    id=left >>> body    background-color    ==    rgb(0, 255, 255)
     Get Style    id=right >>> body    background-color    !=    rgb(0, 255, 255)
     Get Style    body    background-color    !=    rgb(0, 255, 255)
+
+Add Style Tag Fails With Empty Url
+    Run Keyword And Expect Error    *Provide an object with a `url`, `path` or `content` property
+    ...    Add Style Tag    url=${EMPTY}
