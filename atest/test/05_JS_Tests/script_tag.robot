@@ -5,9 +5,6 @@ Suite Setup       New Browser    headless=${HEADLESS}
 Suite Teardown    Close Browser
 Test Setup        New Page    ${INIT_SCRIPT_URL}
 
-*** Variables ***
-${STATIC_URL} =    http://${SERVER}/
-
 *** Test Cases ***
 Script Tag Content Runs In The Page
     Add Script Tag    window.flag = 42;
@@ -47,6 +44,17 @@ Script Tag Is Added To The Frame Of The Frame Selector
     ${in_page} =    Evaluate JavaScript    ${None}    () => window.flag ?? null
     Should Be Equal    ${in_page}    ${None}
 
+Script Tag Is Added To A Nested Frame
+    Go To    ${DEEP_FRAMES_URL}
+    Add Script Tag    window.flag = 'nested';    frame_selector=id=b >>> id=c >>> body
+    ${in_nested} =    Evaluate JavaScript    id=b >>> id=c >>> body    () => window.flag
+    Should Be Equal    ${in_nested}    nested
+
+Empty Frame Selector Adds The Script Tag To The Page
+    Add Script Tag    window.flag = 42;    frame_selector=${EMPTY}
+    ${flag} =    Evaluate JavaScript    ${None}    () => window.flag
+    Should Be Equal    ${flag}    ${42}
+
 Script Tag Is Gone After Reload
     Add Script Tag    window.flag = 42;
     Reload
@@ -67,6 +75,10 @@ Script Tag Needs Exactly One Of Content, URL And Path
     ...    Add Script Tag
     Run Keyword And Expect Error    *exactly one of content, url and path*
     ...    Add Script Tag    window.flag = 1;    url=${STATIC_URL}script_tag.js
+
+Script Tag Content Must Not Be Empty
+    Run Keyword And Expect Error    *content is empty*
+    ...    Add Script Tag    ${EMPTY}
 
 Script Tag Fails Without A Page
     Close Page    ALL

@@ -215,8 +215,8 @@ class Evaluation(LibraryComponent):
           - ``type``: Value of the tag's ``type`` attribute, for example ``module`` for an
                 ES module or ``importmap``. ``None`` adds a classic script.
           - ``frame_selector``: Selector of an element inside a frame; the tag is added to that
-                element's frame. Example: ``iframe[name="test"] >>> body``. ``None`` adds the
-                tag to the page itself. See `Finding elements` for frames.
+                element's frame. Example: ``iframe[name="test"] >>> body``. ``None`` or an
+                empty string adds the tag to the page itself. See `Finding elements` for frames.
 
         The script runs once, in the current document only, and is gone when the page or frame
         navigates or reloads. For JavaScript that must run in every document, before the
@@ -235,6 +235,8 @@ class Evaluation(LibraryComponent):
         """
         if sum(source is not None for source in (content, url, path)) != 1:
             raise ValueError("Give exactly one of content, url and path.")
+        if content == "":
+            raise ValueError("Script tag content is empty.")
         request = Request().ScriptTag(strict=self.strict_mode)
         if path is not None:
             source = Path(path).read_text(encoding="utf-8")
@@ -245,10 +247,8 @@ class Evaluation(LibraryComponent):
             request.url = url
         if type is not None:
             request.type = type
-        if frame_selector is not None:
-            request.frameSelector = self.presenter_mode(
-                frame_selector, self.strict_mode
-            )
+        if frame_selector := self.resolve_selector(frame_selector):
+            request.frameSelector = frame_selector
         with self.playwright.grpc_channel() as stub:
             response = stub.AddScriptTag(request)
             logger.info(response.log)
