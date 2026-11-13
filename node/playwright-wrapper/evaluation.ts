@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FrameLocator, Locator, Page } from 'playwright';
+import { Frame, FrameLocator, Locator, Page } from 'playwright';
 
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
@@ -312,6 +312,27 @@ export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Pro
     const content = request.content;
     await page.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
+}
+
+async function scriptTagFrame(request: pb.Request_ScriptTag, state: PlaywrightState, page: Page): Promise<Frame> {
+    if (request.frameSelector === undefined) return page.mainFrame();
+    const locator = await findLocator(state, request.frameSelector, request.strict, true);
+    const element = await locator.elementHandle();
+    try {
+        const frame = await element.ownerFrame();
+        exists(frame, `No frame found for frame_selector ${request.frameSelector}.`);
+        return frame;
+    } finally {
+        await element.dispose();
+    }
+}
+
+export async function addScriptTag(request: pb.Request_ScriptTag, state: PlaywrightState): Promise<pb.Response_Empty> {
+    const page = state.getActivePage();
+    exists(page, 'Tried to add a script tag, but no page was open.');
+    const frame = await scriptTagFrame(request, state, page);
+    await frame.addScriptTag({ content: request.content, url: request.url, type: request.type });
+    return emptyWithLog(`Added script tag to ${frame === page.mainFrame() ? 'the active page' : frame.url()}.`);
 }
 
 export async function highlightElements(
