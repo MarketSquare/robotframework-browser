@@ -56,12 +56,15 @@ jobs:
             echo "branch=$branch"
           } >> "$GITHUB_OUTPUT"
       # Pinned by SHA, unlike in on-push.yml, because this job holds SONAR_TOKEN.
+      # The fork's code is only read, never run, so checking it out is safe here:
+      # no step builds, installs or executes it, and the job uses no cache.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ steps.pr.outputs.number }}
         with:
           ref: refs/pull/${{ steps.pr.outputs.number }}/head
           fetch-depth: 0 # SonarQube needs main and the history to find new code
           persist-credentials: false
+          allow-unsafe-pr-checkout: true
       # The fork controls every file in the checkout. The scanner reads its
       # settings from main, so a fork cannot redirect the token, and links are
       # removed, so a fork cannot index a file from outside the checkout.
