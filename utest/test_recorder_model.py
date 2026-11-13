@@ -45,6 +45,24 @@ def test_block_has_tag_and_calls():
     assert kw.text().startswith("*** Keywords ***\nFill Name\n")
 
 
+def test_call_without_arguments_is_the_name():
+    kw = RecordedKeyword("Fill Name")
+    kw.add(fill("Alice"))
+    assert kw.call() == "Fill Name"
+
+
+def test_call_passes_recorded_values_of_arguments_without_default_in_order():
+    kw = RecordedKeyword("Log In")
+    kw.add(fill("email=#a  b"))
+    kw.add(fill("secret"))
+    kw.add(fill("admin"))
+    kw.make_argument(1, 1, 0, 6, "password", use_default=False)
+    kw.make_argument(2, 1, 0, 5, "user")
+    kw.make_argument(0, 1, 0, 11, "email", use_default=False)
+    assert kw.lines()[1] == "[Arguments]    ${password}    ${email}    ${user}=admin"
+    assert kw.call() == "Log In    secret    email\\=#a \\ b"
+
+
 def test_update_last_replaces_the_primary_call():
     kw = RecordedKeyword("K")
     kw.add(fill("A"))

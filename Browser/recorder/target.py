@@ -33,7 +33,14 @@ from typing import Protocol
 from robot.api import get_model, logger
 from robot.api.parsing import EmptyLine, SectionHeader, Token
 from robot.conf.languages import En, Language, Languages
-from robot.parsing.model.blocks import Block, File, Keyword, KeywordSection
+from robot.parsing.model.blocks import (
+    Block,
+    File,
+    Keyword,
+    KeywordSection,
+    TestCase,
+    TestCaseSection,
+)
 from robot.parsing.model.statements import Statement
 
 from .model import RecordedKeyword, SettingNames
@@ -101,6 +108,35 @@ class _Format:
     bom: bool = False
     eol: str = _EOL
     final_newline: bool = True
+
+
+@dataclass(frozen=True)
+class CallSite:
+    """The step of a test that the calls of recorded keywords are inserted before.
+
+    Found by content, not by line: every inserted call moves the lines below it.
+    ``test_index`` counts the tests of that name before it, ``step_index`` the
+    steps of the test with the same content before it.
+    """
+
+    test: str
+    test_index: int
+    signature: tuple
+    step_index: int
+
+
+def call_site(model: File, line: int) -> CallSite:
+    """The step of a test body at ``line`` of ``model``, the file as Robot read it."""
+    for test, test_index in _tests(model):
+        if not test.lineno < line <= test.end_lineno:
+            continue
+        for step in _steps(test):
+            if step.lineno == line:
+                signature = _signature(step)
+                same = [s for s in _steps(test) if _signature(s) == signature]
+                step_index = next(i for i, s in enumerate(same) if s is step)
+                return CallSite(test.name, test_index, signature, step_index)
+    raise ValueError(f"line {line} is not a step of a test body")
 
 
 def unwritable_reason(path: Path) -> str | None:
@@ -189,6 +225,32 @@ class FileTarget:
     def finish(self, keyword: RecordedKeyword) -> None:
         self.save(keyword)
         self._owned.pop(normalize_keyword_name(keyword.name), None)
+
+    def parsed(self) -> File:
+        """The file as it is on disk now."""
+        return self._read()
+
+    def insert_call(self, site: CallSite, keyword: RecordedKeyword) -> None:
+        """Insert a call of ``keyword`` before the step ``site``, indented like it."""
+        model = self._read()
+        body, index = self._step(model, site)
+        body.insert(
+            index, _parse_call(_indent(body[index]) + keyword.call(), self._languages)
+        )
+        self._write(model)
+
+    def _step(self, model: File, site: CallSite) -> tuple[list, int]:
+        tests = [test for test, _ in _tests(model) if test.name == site.test]
+        if len(tests) <= site.test_index:
+            raise ValueError(f"test '{site.test}' is no longer in {self.path.name}")
+        test = tests[site.test_index]
+        same = [step for step in _steps(test) if _signature(step) == site.signature]
+        if len(same) <= site.step_index:
+            raise ValueError(
+                f"the step to insert before is no longer in test '{site.test}'"
+            )
+        step = same[site.step_index]
+        return test.body, next(i for i, s in enumerate(test.body) if s is step)
 
     def remove(self, name: str) -> None:
         key = normalize_keyword_name(name)
@@ -327,6 +389,39 @@ def _parse_block(text: str, languages: Languages) -> Keyword:
     return model.sections[0].body[0]
 
 
+def _parse_call(row: str, languages: Languages) -> Statement:
+    model = get_model(io.StringIO(f"*** Test Cases ***\nT\n{row}\n"), lang=languages)
+    return model.sections[0].body[0].body[0]
+
+
+def _tests(model: File) -> Iterator[tuple[TestCase, int]]:
+    """Every test with the number of tests of the same name before it."""
+    seen: dict[str, int] = {}
+    for section in model.sections:
+        if not isinstance(section, TestCaseSection):
+            continue
+        for item in section.body:
+            if isinstance(item, TestCase):
+                yield item, seen.get(item.name, 0)
+                seen[item.name] = seen.get(item.name, 0) + 1
+
+
+def _steps(test: TestCase) -> Iterator[Block | Statement]:
+    """The executed top-level steps: no settings, comments or empty lines."""
+    for node in test.body:
+        if isinstance(node, Block) or node.type not in (
+            *Token.SETTING_TOKENS,
+            Token.COMMENT,
+            Token.EOL,
+        ):
+            yield node
+
+
+def _indent(node: Block | Statement) -> str:
+    first = next(_statements(node)).tokens[0]
+    return first.value if first.type == Token.SEPARATOR else "    "
+
+
 def _find(model: File, name: str) -> tuple[list, int] | None:
     wanted = normalize_keyword_name(name)
     for section in model.sections:
@@ -354,7 +449,7 @@ def _statements(node: Block | Statement) -> Iterator[Statement]:
                 yield from _statements(item)
 
 
-def _signature(block: Keyword) -> tuple:
+def _signature(block: Block | Statement) -> tuple:
     """The block's content, ignoring blank lines, separators and line ends."""
     return tuple(
         tuple(

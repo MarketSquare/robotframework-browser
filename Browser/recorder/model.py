@@ -396,6 +396,17 @@ class RecordedKeyword:
     def block(self) -> str:
         return "\n".join([self.name, *(_INDENT + row for row in self.lines())]) + "\n"
 
+    def call(self) -> str:
+        """A Keyword Call of this keyword, unindented. Every argument without a
+        default gets its recorded value."""
+        names = [argument.name for argument in self.arguments]
+        values = [
+            cell(argument.default, parameters=names)
+            for argument in self.arguments
+            if not argument.use_default
+        ]
+        return _INDENT.join([self.name, *values])
+
     def text(self) -> str:
         return "*** Keywords ***\n" + self.block()
 

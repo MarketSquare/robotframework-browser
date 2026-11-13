@@ -882,3 +882,148 @@ def test_new_keyword_follows_one_empty_line_in_existing_section(tmp_path, ending
     )
     FileTarget(path).save(keyword())
     assert "No Operation\n\nFill Name\n" in path.read_text(encoding="utf-8")
+
+
+_SUITE_WITH_DEBUG = (
+    "*** Settings ***\nLibrary    RobotDebug\n\n"
+    "*** Test Cases ***\nFirst\n    [Tags]    a\n    Log    one\n    Debug\n\n"
+    "Second\n    Debug\n"
+)
+
+
+def _site(path, line):
+    return target_module.call_site(FileTarget(path).parsed(), line)
+
+
+def test_call_is_inserted_before_the_step(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text(_SUITE_WITH_DEBUG)
+    target = FileTarget(path)
+    site = _site(path, 8)
+    target.insert_call(site, keyword("Fill Name"))
+    target.insert_call(site, keyword("Fill Other"))
+    assert path.read_text() == _SUITE_WITH_DEBUG.replace(
+        "one\n    Debug\n", "one\n    Fill Name\n    Fill Other\n    Debug\n"
+    )
+
+
+def test_insertions_before_the_test_do_not_move_the_site(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text(_SUITE_WITH_DEBUG)
+    first, second = _site(path, 8), _site(path, 11)
+    target = FileTarget(path)
+    target.insert_call(first, keyword("Fill Name"))
+    target.insert_call(second, keyword("Fill Other"))
+    assert path.read_text().endswith("Second\n    Fill Other\n    Debug\n")
+
+
+def test_keyword_section_written_before_the_tests_does_not_move_the_site(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text(
+        "*** Keywords ***\nExisting\n    No Operation\n\n" + _SUITE_WITH_DEBUG
+    )
+    site = _site(path, 12)
+    target = FileTarget(path)
+    target.finish(keyword("Fill Name"))
+    target.insert_call(site, keyword("Fill Name"))
+    assert "    Log    one\n    Fill Name\n    Debug\n" in path.read_text()
+
+
+def test_the_same_step_twice_is_told_apart(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text("*** Test Cases ***\nT\n    Debug\n    Debug\n")
+    FileTarget(path).insert_call(_site(path, 4), keyword("Fill Name"))
+    assert path.read_text().endswith("    Debug\n    Fill Name\n    Debug\n")
+
+
+def test_tests_of_the_same_name_are_told_apart(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text("*** Test Cases ***\nT\n    Debug\nT\n    Debug\n")
+    FileTarget(path).insert_call(_site(path, 5), keyword("Fill Name"))
+    assert path.read_text().endswith("T\n    Debug\nT\n    Fill Name\n    Debug\n")
+
+
+def test_call_takes_the_indentation_of_the_step(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text("*** Test Cases ***\nT\n  Debug\n")
+    FileTarget(path).insert_call(_site(path, 3), keyword("Fill Name"))
+    assert path.read_text() == "*** Test Cases ***\nT\n  Fill Name\n  Debug\n"
+
+
+def test_call_before_a_block_step(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text(
+        "*** Test Cases ***\nT\n    FOR    ${i}    IN    a\n        Debug\n    END\n"
+    )
+    FileTarget(path).insert_call(_site(path, 3), keyword("Fill Name"))
+    assert "T\n    Fill Name\n    FOR" in path.read_text()
+
+
+@pytest.mark.parametrize(
+    "line",
+    [1, 5, 6, 9, 4],
+    ids=["settings", "test name", "test setting", "empty line", "section header"],
+)
+def test_a_line_that_is_no_step_of_a_test_has_no_site(tmp_path, line):
+    path = tmp_path / "suite.robot"
+    path.write_text(_SUITE_WITH_DEBUG)
+    with pytest.raises(ValueError, match=f"line {line} is not a step"):
+        _site(path, line)
+
+
+def test_a_step_inside_a_block_has_no_site(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text(
+        "*** Test Cases ***\nT\n    FOR    ${i}    IN    a\n        Debug\n    END\n"
+    )
+    with pytest.raises(ValueError, match="line 4"):
+        _site(path, 4)
+
+
+def test_crlf_and_bom_are_kept_when_inserting(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_bytes(b"\xef\xbb\xbf*** Test Cases ***\r\nT\r\n    Debug\r\n")
+    FileTarget(path).insert_call(_site(path, 3), keyword("Fill Name"))
+    assert path.read_bytes() == (
+        b"\xef\xbb\xbf*** Test Cases ***\r\nT\r\n    Fill Name\r\n    Debug\r\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("edit", "message"),
+    [
+        (lambda text: text.replace("Second", "Renamed"), "test 'Second' is no longer"),
+        (
+            lambda text: text.replace("Second\n    Debug", "Second\n    Log    x"),
+            "no longer in test 'Second'",
+        ),
+    ],
+    ids=["test renamed", "step removed"],
+)
+def test_a_site_changed_meanwhile_is_refused(tmp_path, edit, message):
+    path = tmp_path / "suite.robot"
+    path.write_text(_SUITE_WITH_DEBUG)
+    site = _site(path, 11)
+    path.write_text(edit(_SUITE_WITH_DEBUG))
+    with pytest.raises(ValueError, match=message):
+        FileTarget(path).insert_call(site, keyword("Fill Name"))
+
+
+def test_inserted_call_runs_the_recorded_keyword_in_a_real_robot_run(tmp_path):
+    path = tmp_path / "suite.robot"
+    path.write_text("*** Test Cases ***\nT\n    No Operation\n")
+    tricky = "value=#a  b ${y}"
+    kw = RecordedKeyword("Echo")
+    kw.add(Call("Should Be Equal", [Value.literal(tricky), Value.literal(tricky)]))
+    kw.make_argument(0, 0, 0, len(tricky), "value", use_default=False)
+    site = _site(path, 3)
+    target = FileTarget(path)
+    target.finish(kw)
+    target.insert_call(site, kw)
+    result = subprocess.run(
+        [sys.executable, "-m", "robot", "--outputdir", str(tmp_path), str(path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + path.read_text()
