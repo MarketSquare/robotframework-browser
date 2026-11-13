@@ -32,6 +32,33 @@ from ..utils import (
 )
 
 
+def _is_given(name: str, value: Any) -> bool:
+    if value is None:
+        return False
+    if name == "path":
+        return Path(value) != Path()
+    return value != ""
+
+
+def _source_content(
+    sources: dict[str, Any], *, label_path: bool
+) -> tuple[str | None, str | None]:
+    given = [name for name, value in sources.items() if _is_given(name, value)]
+    if len(given) != 1:
+        *rest, last = sources
+        raise ValueError(f"Give exactly one of {', '.join(rest)} and {last}.")
+    name = given[0]
+    value = sources[name]
+    if name == "url":
+        return None, value
+    if name == "path":
+        content = Path(value).read_text(encoding="utf-8")
+        if label_path:
+            content += f"\n//# sourceURL={Path(value).as_posix()}"
+        return content, None
+    return str(value), None
+
+
 class Evaluation(LibraryComponent):
     @keyword(name="Evaluate JavaScript", tags=("Setter", "Getter", "PageContent"))
     def evaluate_javascript(
@@ -176,27 +203,6 @@ class Evaluation(LibraryComponent):
                 logger.info(response.log)
         return count
 
-    def _tag_request(
-        self,
-        request: Any,
-        content: str | None,
-        url: str | None,
-        path: PathLike | None,
-        frame_selector: str | None,
-    ) -> Any:
-        if sum(source is not None for source in (content, url, path)) != 1:
-            raise ValueError("Give exactly one of content, url and path.")
-        request.strict = self.strict_mode
-        if path is not None:
-            request.content = Path(path).read_text(encoding="utf-8")
-        elif content is not None:
-            request.content = content
-        if url is not None:
-            request.url = url
-        if frame_selector := self.resolve_selector(frame_selector):
-            request.frameSelector = frame_selector
-        return request
-
     @keyword(tags=("Setter", "PageContent"))
     def add_style_tag(
         self,
@@ -216,7 +222,8 @@ class Evaluation(LibraryComponent):
           - ``url``: URL of a stylesheet, added as a ``<link rel="stylesheet">`` tag. The
                 keyword returns once the stylesheet has loaded, and fails if it does not load.
           - ``path``: Path to a local CSS file. The file is read and its content added as a
-                ``<style>`` tag. Exactly one of ``content``, ``url`` and ``path`` must be given.
+                ``<style>`` tag. Exactly one of ``content``, ``url`` and ``path`` must be given;
+                an empty value counts as not given.
           - ``frame_selector``: If this selector points to an element inside an iframe, the
                 tag is added to that frame. Example: ``iframe[name="test"] >>> body``
 
@@ -227,8 +234,14 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4234|Comment >>]
         """
-        request = self._tag_request(
-            Request().StyleTag(), content, url, path, frame_selector
+        content, url = _source_content(
+            {"content": content, "url": url, "path": path}, label_path=False
+        )
+        request = Request().StyleTag(
+            content=content,
+            url=url,
+            frameSelector=self.resolve_selector(frame_selector) or None,
+            strict=self.strict_mode,
         )
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(request)
@@ -250,7 +263,7 @@ class Evaluation(LibraryComponent):
           - ``content``: JavaScript source of the script.
           - ``url``: URL of a script to load.
           - ``path``: Path to a local JavaScript file whose content is the script. Exactly one
-                of ``content``, ``url`` and ``path`` must be given.
+                of ``content``, ``url`` and ``path`` must be given; an empty value counts as not given.
           - ``type``: Value of the tag's ``type`` attribute, for example ``module`` for an
                 ES module or ``importmap``. ``None`` adds a classic script.
           - ``frame_selector``: Selector of an element inside a frame; the tag is added to that
@@ -272,15 +285,16 @@ class Evaluation(LibraryComponent):
         | `Add Script Tag`    path=${CURDIR}/fixtures.js    type=module
         | `Add Script Tag`    window.flag = 42;    frame_selector=iframe[name="test"] >>> body
         """
-        request = self._tag_request(
-            Request().ScriptTag(), content, url, path, frame_selector
+        content, url = _source_content(
+            {"content": content, "url": url, "path": path}, label_path=True
         )
-        if content == "":
-            raise ValueError("Script tag content is empty.")
-        if path is not None:
-            request.content += f"\n//# sourceURL={Path(path).as_posix()}"
-        if type is not None:
-            request.type = type
+        request = Request().ScriptTag(
+            content=content,
+            url=url,
+            type=type,
+            frameSelector=self.resolve_selector(frame_selector) or None,
+            strict=self.strict_mode,
+        )
         with self.playwright.grpc_channel() as stub:
             response = stub.AddScriptTag(request)
             logger.info(response.log)
@@ -300,7 +314,7 @@ class Evaluation(LibraryComponent):
           - ``script``: JavaScript source. Without ``arg`` it runs as it is, so a bare
                 function is defined but never called.
           - ``path``: Path to a JavaScript file whose content is the script. Exactly one of
-                ``script`` and ``path`` must be given.
+                ``script`` and ``path`` must be given; an empty value counts as not given.
           - ``arg``: A JSON serializable value. With ``arg`` the script must be a single
                 function expression, which is called with ``arg``. Source that is not a single
                 expression fails before the script is added. ``None`` means no argument.
@@ -330,13 +344,8 @@ class Evaluation(LibraryComponent):
         | `Add Init Script`    path=${CURDIR}/stubs.js    on=Page
         | `Reload`
         """
-        if (script is None) == (path is None):
-            raise ValueError("Give exactly one of script and path.")
-        if path is not None:
-            source = Path(path).read_text(encoding="utf-8")
-            content = f"{source}\n//# sourceURL={Path(path).as_posix()}"
-        else:
-            content = str(script)
+        content, _ = _source_content({"script": script, "path": path}, label_path=True)
+        assert content is not None
         request = Request().InitScript(content=content)
         if arg is not None:
             request.arg = json.dumps(arg)
