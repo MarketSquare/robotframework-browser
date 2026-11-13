@@ -16,7 +16,7 @@ import json
 from datetime import timedelta
 from os import PathLike
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 from robot.utils import DotDict
 
@@ -32,31 +32,42 @@ from ..utils import (
 )
 
 
-def _is_given(name: str, value: Any) -> bool:
-    if value is None:
-        return False
-    if name == "path":
-        return Path(value) != Path()
-    return value != ""
+def _given(value: str | None) -> TypeGuard[str]:
+    return value is not None and value != ""
+
+
+def _path_given(path: PathLike | None) -> TypeGuard[PathLike]:
+    return path is not None and Path(path) != Path()
+
+
+def _require_one_source(**given: bool) -> None:
+    if sum(given.values()) != 1:
+        *rest, last = given
+        raise ValueError(f"Give exactly one of {', '.join(rest)} and {last}.")
+
+
+def _read_source(path: PathLike, *, label_path: bool) -> str:
+    content = Path(path).read_text(encoding="utf-8")
+    if label_path:
+        content += f"\n//# sourceURL={Path(path).as_posix()}"
+    return content
 
 
 def _source_content(
-    sources: dict[str, Any], *, label_path: bool
+    content: str | None,
+    url: str | None,
+    path: PathLike | None,
+    *,
+    label_path: bool,
 ) -> tuple[str | None, str | None]:
-    given = [name for name, value in sources.items() if _is_given(name, value)]
-    if len(given) != 1:
-        *rest, last = sources
-        raise ValueError(f"Give exactly one of {', '.join(rest)} and {last}.")
-    name = given[0]
-    value = sources[name]
-    if name == "url":
-        return None, value
-    if name == "path":
-        content = Path(value).read_text(encoding="utf-8")
-        if label_path:
-            content += f"\n//# sourceURL={Path(value).as_posix()}"
-        return content, None
-    return str(value), None
+    _require_one_source(
+        content=_given(content), url=_given(url), path=_path_given(path)
+    )
+    if _path_given(path):
+        return _read_source(path, label_path=label_path), None
+    if _given(url):
+        return None, url
+    return content, None
 
 
 class Evaluation(LibraryComponent):
@@ -234,9 +245,7 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4234|Comment >>]
         """
-        content, url = _source_content(
-            {"content": content, "url": url, "path": path}, label_path=False
-        )
+        content, url = _source_content(content, url, path, label_path=False)
         request = Request().StyleTag(
             content=content,
             url=url,
@@ -285,9 +294,7 @@ class Evaluation(LibraryComponent):
         | `Add Script Tag`    path=${CURDIR}/fixtures.js    type=module
         | `Add Script Tag`    window.flag = 42;    frame_selector=iframe[name="test"] >>> body
         """
-        content, url = _source_content(
-            {"content": content, "url": url, "path": path}, label_path=True
-        )
+        content, url = _source_content(content, url, path, label_path=True)
         request = Request().ScriptTag(
             content=content,
             url=url,
@@ -344,8 +351,11 @@ class Evaluation(LibraryComponent):
         | `Add Init Script`    path=${CURDIR}/stubs.js    on=Page
         | `Reload`
         """
-        content, _ = _source_content({"script": script, "path": path}, label_path=True)
-        assert content is not None
+        _require_one_source(script=_given(script), path=_path_given(path))
+        if _path_given(path):
+            content = _read_source(path, label_path=True)
+        else:
+            content = str(script)
         request = Request().InitScript(content=content)
         if arg is not None:
             request.arg = json.dumps(arg)
