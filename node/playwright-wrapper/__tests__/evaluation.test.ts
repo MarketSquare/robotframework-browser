@@ -13,7 +13,7 @@ jest.mock('../network', () => ({
     _waitForDownload: jest.fn(),
 }));
 
-import { download, highlightAll } from '../evaluation';
+import { addScriptTag, download, highlightAll } from '../evaluation';
 import { HighlightDisposableCache } from '../highlight-cache';
 import { _waitForDownload } from '../network';
 import { findLocator } from '../playwright-invoke';
@@ -218,5 +218,65 @@ describe('download', () => {
                 makeMockStateWithActivePage(page),
             ),
         ).rejects.toThrow('Timeout 1000ms exceeded');
+    });
+});
+
+describe('addScriptTag', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    function makeFrame() {
+        return { addScriptTag: jest.fn().mockResolvedValue(undefined), url: () => 'http://frame/' };
+    }
+
+    function makeElement(ownerFrame: any) {
+        return { ownerFrame: jest.fn().mockResolvedValue(ownerFrame), dispose: jest.fn().mockResolvedValue(undefined) };
+    }
+
+    it('adds the tag to the main frame without a frame selector', async () => {
+        const mainFrame = makeFrame();
+        const page = { mainFrame: () => mainFrame };
+        await addScriptTag({ content: 'window.a = 1;', strict: true }, makeMockStateWithActivePage(page));
+        expect(mainFrame.addScriptTag).toHaveBeenCalledWith({
+            content: 'window.a = 1;',
+            url: undefined,
+            type: undefined,
+        });
+        expect(mockFindLocator).not.toHaveBeenCalled();
+    });
+
+    it('adds the tag to the frame that owns the frame selector element and disposes the element', async () => {
+        const frame = makeFrame();
+        const element = makeElement(frame);
+        mockFindLocator.mockResolvedValue({ elementHandle: jest.fn().mockResolvedValue(element) } as any);
+        const page = { mainFrame: () => makeFrame() };
+        const state = makeMockStateWithActivePage(page);
+        await addScriptTag(
+            { url: 'http://x/a.js', type: 'module', frameSelector: 'id=f >>> body', strict: true },
+            state,
+        );
+        expect(mockFindLocator).toHaveBeenCalledWith(state, 'id=f >>> body', true, true);
+        expect(frame.addScriptTag).toHaveBeenCalledWith({ content: undefined, url: 'http://x/a.js', type: 'module' });
+        expect(element.dispose).toHaveBeenCalled();
+    });
+
+    it('fails and disposes the element when the element has no frame', async () => {
+        const element = makeElement(null);
+        mockFindLocator.mockResolvedValue({ elementHandle: jest.fn().mockResolvedValue(element) } as any);
+        const page = { mainFrame: () => makeFrame() };
+        await expect(
+            addScriptTag(
+                { content: 'x', frameSelector: 'id=f', strict: false } as any,
+                makeMockStateWithActivePage(page),
+            ),
+        ).rejects.toThrow('No frame found for frame_selector id=f.');
+        expect(element.dispose).toHaveBeenCalled();
+    });
+
+    it('fails without an active page', async () => {
+        await expect(addScriptTag({ content: 'x' } as any, makeMockStateWithActivePage(undefined))).rejects.toThrow(
+            'no page was open',
+        );
     });
 });

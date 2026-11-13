@@ -136,8 +136,8 @@ _Avoid_: injected script (an **injected argument** is something else), page scri
   that happens is decided by the automatic closing level, not by the library's `Scope`. On the
   **Python path** it behaves the same.
 - An **init script** runs in every document its context or page loads, before the document's
-  own scripts. A **script tag** runs once, in the document it was added to, after that
-  document's own scripts.
+  own scripts. A **script tag** runs once, when it is added, in the document it was added
+  to.
 - An **adopted context** is registered by `call_js_keyword`, from what Node reports when
   `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 

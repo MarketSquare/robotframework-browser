@@ -13,6 +13,7 @@ ${SELECTOR_PREFIX} =                    ${None}
 ${SELECTOR_PREFIX_WAITING} =            ${{'${SELECTOR_PREFIX}'[0:-1] + " control=enter-frame >> " if $SELECTOR_PREFIX else ""}}
 ${SELECTOR_PREFIX_SPACED} =             ${{$SELECTOR_PREFIX + ' ' if $SELECTOR_PREFIX else ''}}
 ${ROOT_URL} =                           http://${SERVER}/${SUFFIX}
+${STATIC_URL} =                         http://${SERVER}/
 ${HTTPS_ROOT_URL} =                     https://${HTTPS_SERVER}/${SUFFIX}
 ${HTTPS_SERVER_URL} =                   https://${HTTPS_SERVER}
 ${LOGIN_URL} =                          ${ROOT_URL}dist/#/
