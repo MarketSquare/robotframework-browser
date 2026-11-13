@@ -212,6 +212,28 @@ def test_map_select():
     assert rendered(action) == "Select Options By    css=select    value    1    2"
 
 
+def test_map_select_by_label():
+    action = {
+        "name": "select",
+        "selector": 'internal:label="Hersteller Ihres Fahrzeuges"i',
+        "options": ["14: 6792"],
+        "labels": ["AMELUNG"],
+    }
+    assert (
+        rendered(action)
+        == 'Select Options By    label="Hersteller Ihres Fahrzeuges"i    label    AMELUNG'
+    )
+
+
+@pytest.mark.parametrize(
+    "labels", [None, ["One"], ["One", ""], ["One", 2], "One Two", []]
+)
+def test_map_select_falls_back_to_values(labels):
+    action = {"name": "select", "selector": "css=select", "options": ["1", "2"]}
+    action["labels"] = labels
+    assert rendered(action) == "Select Options By    css=select    value    1    2"
+
+
 def test_map_assert_text_substring():
     action = {
         "name": "assertText",

@@ -83,6 +83,41 @@ export interface RecorderBuffers {
     // The page the user works on: where the last toolbar command came from, or
     // the page pressed last when Playwright's Pick locator was pressed. A pick starts there.
     userPage?: Page;
+    // Option label lookups still running; a poll waits for them before it drains.
+    labelling: Set<Promise<void>>;
+}
+
+// Playwright records a `select` by the option values, which are often generated
+// (`14: 6792`); the label is what the person chose. A value gets its label only
+// when that label names exactly one option, so selecting by label selects the same.
+export const LABEL_LOOKUP_MS = 1000;
+
+export async function addOptionLabels(page: unknown, action: Action): Promise<void> {
+    const values = action.options;
+    if (typeof action.selector !== 'string' || !Array.isArray(values) || values.length === 0) return;
+    if (!values.every((value) => typeof value === 'string')) return;
+    const locate = (page as Partial<Page> | undefined)?.locator;
+    if (typeof locate !== 'function') return;
+    try {
+        const labels: unknown = await locate.call(page, action.selector).evaluate(
+            (element, wanted: string[]) => {
+                const options = Array.from((element as HTMLSelectElement).options ?? []);
+                return wanted.map((value) => {
+                    const matches = options.filter((option) => option.value === value);
+                    if (matches.length !== 1) return null;
+                    const label = matches[0].label;
+                    return label && options.filter((option) => option.label === label).length === 1 ? label : null;
+                });
+            },
+            values,
+            { timeout: LABEL_LOOKUP_MS },
+        );
+        if (Array.isArray(labels) && labels.every((label) => typeof label === 'string')) {
+            action.labels = labels;
+        }
+    } catch {
+        // The select is gone or the page navigated: the values stay.
+    }
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -146,7 +181,15 @@ function clearEntries(buffers: RecorderBuffers): void {
 }
 
 export function newBuffers(): RecorderBuffers {
-    return { entries: [], commandCount: 0, armed: false, active: false, rendered: new WeakMap(), ownPick: false };
+    return {
+        entries: [],
+        commandCount: 0,
+        armed: false,
+        active: false,
+        rendered: new WeakMap(),
+        ownPick: false,
+        labelling: new Set(),
+    };
 }
 
 export function acceptCommand(buffers: RecorderBuffers, command: unknown, page?: Page): void {
@@ -280,7 +323,17 @@ async function createRecorder(context: BrowserContext): Promise<RecorderBuffers>
     const forward = (event: 'added' | 'updated') => (page: unknown, payload: unknown) => {
         logRaw(context, event, page, payload);
         const action = toAction(payload);
-        if (action) buffer({ event, action, page: pageGuid(page) });
+        if (!action) return;
+        const entry: EventEntry = { event, action, page: pageGuid(page) };
+        buffer(entry);
+        if (action.name === 'select' && buffers.entries.includes(entry)) labelOptions(page, entry);
+    };
+    const labelOptions = (page: unknown, entry: EventEntry) => {
+        const lookup = addOptionLabels(page, entry.action as Action).then(() => {
+            if (jsonLength(entry) > MAX_EVENT_BYTES) delete entry.action.labels;
+            buffers.labelling.delete(lookup);
+        });
+        buffers.labelling.add(lookup);
     };
     // Playwright reports no `closePage`: it drops an Action whose page is gone.
     const watchClose = (page: Page) => {
@@ -495,6 +548,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
         await writeMode(context, 'recording');
     }
     const stopped = !buffers.ownPick && buffers.armed && mode !== undefined && STOP_MODES.has(mode);
+    await Promise.all(buffers.labelling);
     return jsonResponse(
         JSON.stringify({
             mode: stopped ? 'stopped' : 'recording',

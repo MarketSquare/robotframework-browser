@@ -4,6 +4,7 @@ jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.f
 jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
 
 import {
+    addOptionLabels,
     commandListeners,
     ensureRecorder,
     Entry,
@@ -33,6 +34,7 @@ const freshBuffers = (armed = false): RecorderBuffers => ({
     active: false,
     rendered: new WeakMap(),
     ownPick: false,
+    labelling: new Set(),
 });
 
 beforeEach(() => jest.clearAllMocks());
@@ -546,6 +548,62 @@ describe('event buffering', () => {
         while (buffers.entries.length) total += (await poll(context)).entries.length;
         expect(total).toBe(2 * count);
         expect(buffers.commandCount).toBe(0);
+    });
+});
+
+describe('option labels of a select', () => {
+    const option = (value: string, label: string) => ({ value, label });
+    // A page whose locator evaluates the lookup against these options.
+    function pageWithOptions(options: { value: string; label: string }[] | Error) {
+        const evaluate = jest.fn(async (fn: (element: unknown, arg: unknown) => unknown, arg: unknown) => {
+            if (options instanceof Error) throw options;
+            return fn({ options }, arg);
+        });
+        return { locator: jest.fn((selector: string) => ({ selector, evaluate })), evaluate };
+    }
+
+    it('adds the label of each selected value', async () => {
+        const page = pageWithOptions([option('14: 6792', 'AMELUNG'), option('15: 1', 'AUDI')]);
+        const action: any = { name: 'select', selector: '#s', options: ['14: 6792', '15: 1'] };
+        await addOptionLabels(page, action);
+        expect(page.locator).toHaveBeenCalledWith('#s');
+        expect(action.labels).toEqual(['AMELUNG', 'AUDI']);
+    });
+
+    it.each([
+        ['a label two options share', [option('1', 'Same'), option('2', 'Same')]],
+        ['an empty label', [option('1', ''), option('2', 'B')]],
+        ['a value two options share', [option('1', 'A'), option('1', 'B')]],
+        ['a value no option has', [option('2', 'B')]],
+    ])('keeps the values for %s', async (_case, options) => {
+        const action: any = { name: 'select', selector: '#s', options: ['1'] };
+        await addOptionLabels(pageWithOptions(options), action);
+        expect(action.labels).toBeUndefined();
+    });
+
+    it('keeps the values when the lookup fails', async () => {
+        const action: any = { name: 'select', selector: '#s', options: ['1'] };
+        await addOptionLabels(pageWithOptions(new Error('Timeout')), action);
+        expect(action.labels).toBeUndefined();
+    });
+
+    it('lets a poll deliver a select only with its labels', async () => {
+        const page = fakePage();
+        const context = fakeRecorderContext([page]);
+        const buffers = await ensureRecorder(context);
+        await resetSession(context, buffers, async () => undefined);
+        let finish: (labels: unknown) => void = () => undefined;
+        const evaluate = jest.fn(() => new Promise((resolve) => (finish = resolve)));
+        context.sinks[0].actionAdded(
+            { locator: () => ({ evaluate }) },
+            { name: 'select', selector: '#s', options: ['1'] },
+        );
+        const reply = poll(context);
+        finish(['One']);
+        expect(eventsIn((await reply).entries).map((e) => e.action)).toEqual([
+            { name: 'select', selector: '#s', options: ['1'], labels: ['One'] },
+        ]);
+        expect(buffers.labelling.size).toBe(0);
     });
 });
 
