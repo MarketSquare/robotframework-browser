@@ -356,9 +356,9 @@ message Request {
   }
 
   message StyleTag {
-    string content = 1;
-    string url = 2;
-    string frameSelector = 3;
+    optional string content = 1;
+    optional string url = 2;
+    optional string frameSelector = 3;
     bool strict = 4;
   }
 
