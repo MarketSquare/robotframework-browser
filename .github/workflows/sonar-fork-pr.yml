@@ -79,7 +79,7 @@ jobs:
             echo "::notice::The pull request moved past $HEAD_SHA, so a newer run scans it."
             exit 0
           fi
-          find . -path ./.git -prune -o -type l -print -delete
+          find . -path ./.git -prune -o -type l -print -exec rm -f -- {} +
           git show "$GITHUB_SHA:sonar-project.properties" > sonar-project.properties
           for report in coverage/python.xml coverage/node.info ruff.json mypy.txt robocop_sonar_qube.json; do
             if [[ -f $REPORTS/$report ]]; then
