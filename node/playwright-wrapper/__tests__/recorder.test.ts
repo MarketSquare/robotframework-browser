@@ -26,14 +26,7 @@ import {
 
 const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
 const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
-const freshBuffers = (armed = false): RecorderBuffers => ({
-    entries: [],
-    commandCount: 0,
-    armed,
-    active: false,
-    rendered: new WeakMap(),
-    ownPick: false,
-});
+const freshBuffers = (armed = false): RecorderBuffers => ({ ...newBuffers(), armed });
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -156,6 +149,51 @@ describe('ensureRecorder', () => {
         ]);
         expect(context.on).toHaveBeenCalledWith('page', expect.any(Function));
         expect(popup.once).toHaveBeenCalledWith('close', expect.any(Function));
+    });
+
+    it('lets the extensions rewrite the selector of every Action', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        const page = { _guid: 'page@first' };
+        const seen: any[] = [];
+        state.extensions = [
+            {
+                __recordedSelector: (args: any) => {
+                    seen.push(args);
+                    return args.action.name === 'click' ? 'role=button[description="Save"s]' : undefined;
+                },
+            },
+        ];
+        context.sinks[0].actionAdded(page, { name: 'click', selector: 'internal:role=button[name="Save file"i]' });
+        context.sinks[0].actionAdded(page, { name: 'fill', selector: '#a', text: 'x' });
+        context.sinks[0].actionAdded(page, { name: 'navigate', url: 'http://x' });
+        await Promise.all(state.rewriting);
+        expect(eventsIn(state.entries).map((e) => e.action.selector)).toEqual([
+            'role=button[description="Save"s]',
+            '#a',
+            undefined,
+        ]);
+        expect(seen).toHaveLength(2);
+        expect(seen[0]).toMatchObject({ selector: 'internal:role=button[name="Save file"i]', page, context });
+    });
+
+    it('keeps the place of an Action whose selector an async hook rewrites', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        let finish: (selector: string) => void = () => undefined;
+        state.extensions = [{ __recordedSelector: () => new Promise<string>((resolve) => (finish = resolve)) }];
+        context.sinks[0].actionAdded({}, { name: 'click', selector: 'internal:text="km/h"i' });
+        context.exposeBinding.mock.calls[0][1]({}, { cmd: 'undo' });
+        expect(state.rewriting.size).toBe(1);
+        finish('internal:text="46 km/h"i');
+        await Promise.all(state.rewriting);
+        expect(state.rewriting.size).toBe(0);
+        expect(state.entries.map((e) => ('command' in e ? 'undo' : e.action.selector))).toEqual([
+            'internal:text="46 km/h"i',
+            'undo',
+        ]);
     });
 
     it('fails clearly without the programmatic recorder', async () => {

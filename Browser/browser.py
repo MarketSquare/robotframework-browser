@@ -541,7 +541,9 @@ class Browser(DynamicCore):
                 function created itself, such as the context of an Electron app, the
                 active browser, so the other keywords work on it. The context gets the
                 library timeout, and is traced and recorded like a context of
-                `New Context`. Can be a single path,
+                `New Context`. Exports whose names start with ``__`` are not keywords;
+                ``__recordingStarted`` and ``__recordedSelector`` are hooks into
+                `Record Keyword` and `Record Keywords`, described there. Can be a single path,
                 a comma-separated list of paths or a real list of strings. The options
                 of ``adoptContext`` and examples are in
                 https://robotframework-browser.org/docs/extending/javascript-extensions

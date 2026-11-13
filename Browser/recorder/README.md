@@ -159,6 +159,26 @@ Why each form, all read from Playwright 1.64:
   toolbar says so, as it may break with a Playwright upgrade. Any other form that cannot
   be rewritten safely stays internal with the same notice.
 
+### Extension hooks
+
+A JS extension (`jsextension`) can rewrite the selector of every Action and pick; the
+user documentation is in `Record Keyword`. `node/playwright-wrapper/recorder-hooks.ts`:
+
+- `__recordedSelector({selector, action, page, context})` gets Playwright's selector before
+  `to_browser_selector`, so the rewritten one is translated like any other (a public
+  selector passes through). It may be async. For an Action, the sink buffers the Action
+  first and `rewriteInPlace` replaces its selector when the hooks are done, so a toolbar
+  command made meanwhile (Undo) never overtakes it; each poll waits for the pending
+  rewrites at most `REWRITE_WAIT_MS` (2 s) before it drains the buffer, and a later result
+  is dropped. For a pick (`action: null`), `startPick` waits for `pickedSelector`, also at
+  most 2 s. A throw, a rejection or a value other than a string or `undefined` keeps the
+  selector and is logged.
+- `__recordingStarted({context})` runs at the reset poll of a Recording Session and at the
+  start of a Record Selector session, once per context and extension; a failure fails the
+  keyword and runs the hook again next time.
+- `buffers.extensions` is refreshed from `state.extensions` at every recorder poll; a pick
+  takes the extensions of its session (`Pick.extensions`).
+
 Two acceptance tests guard this: "Translated Selectors Match Like Playwright" compares each
 rewritten form with its internal original in a browser, and "Every Recorded Selector Finds
 Exactly The Clicked Element" records a click on every element of
