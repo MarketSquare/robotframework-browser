@@ -287,7 +287,8 @@ class Evaluation(LibraryComponent):
         not leak its script opens its own `New Context`. There is no way to remove a script
         earlier. A page that already ran a script keeps what it changed until it reloads.
 
-        Errors inside the script do not fail the keyword; they show up in `Get Page Errors`.
+        Errors inside the script do not fail the keyword; they show up in `Get Page Errors`,
+        where a script read from ``path`` is named by its file.
         The order of several init scripts is not guaranteed, also between ``Context`` and ``Page``.
 
         Example:
@@ -299,9 +300,11 @@ class Evaluation(LibraryComponent):
         """
         if (script is None) == (path is None):
             raise ValueError("Give exactly one of script and path.")
-        content = (
-            Path(path).read_text(encoding="utf-8") if path is not None else str(script)
-        )
+        if path is not None:
+            source = Path(path).read_text(encoding="utf-8")
+            content = f"{source}\n//# sourceURL={Path(path).as_posix()}"
+        else:
+            content = str(script)
         request = Request().InitScript(content=content)
         if arg is not None:
             request.arg = json.dumps(arg)

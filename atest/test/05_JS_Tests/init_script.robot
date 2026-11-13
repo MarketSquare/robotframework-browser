@@ -67,6 +67,20 @@ Broken Init Script Does Not Fail The Keyword
     Get Text    id=seed-value    ==    unset
     Get Page Errors    validate    any(e['message'] == 'broken init script' for e in value)
 
+Errors Of An Init Script File Name The File
+    New Context
+    Add Init Script    path=${CURDIR}/init_broken.js
+    New Page    ${INIT_SCRIPT_URL}
+    Get Page Errors    validate
+    ...    any(e['message'] == 'broken init script file' and 'init_broken.js' in e['stack'] for e in value)
+
+Errors Of An Init Script File Called With Its Argument Name The File
+    New Context
+    Add Init Script    path=${CURDIR}/init_broken_function.js    arg=${1}
+    New Page    ${INIT_SCRIPT_URL}
+    Get Page Errors    validate
+    ...    any(e['message'] == 'broken init function 1' and 'init_broken_function.js' in e['stack'] for e in value)
+
 Page Init Script Fails Without A Page
     New Context
     Run Keyword And Expect Error    *no page was open*
