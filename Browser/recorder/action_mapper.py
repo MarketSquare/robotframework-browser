@@ -33,7 +33,7 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, TypeGuard
 
 from .model import ArgRef, Call, Value
 
@@ -406,6 +406,16 @@ def _data(text: object) -> Value:
     return Value.literal("" if text is None else str(text))
 
 
+def _labels_fit(labels: object, values: object) -> TypeGuard[list[str]]:
+    """Whether the wrapper found one non-empty label for every selected value."""
+    return (
+        isinstance(labels, list)
+        and isinstance(values, list)
+        and len(labels) == len(values) > 0
+        and all(isinstance(label, str) and label for label in labels)
+    )
+
+
 def internal_selector_notice(action: dict) -> str | None:
     """The toolbar notice for an Action whose selector stays Playwright-internal."""
     selector = action.get("selector")
@@ -524,13 +534,14 @@ class ActionMapper:
         return Call("Uncheck Checkbox", [_selector(action)])
 
     def _map_select(self, action: dict) -> Call:
+        values = action.get("options", [])
+        labels = action.get("labels")
+        strategy, options = (
+            ("label", labels) if _labels_fit(labels, values) else ("value", values)
+        )
         return Call(
             "Select Options By",
-            [
-                _selector(action),
-                _fixed("value"),
-                *(_data(o) for o in action.get("options", [])),
-            ],
+            [_selector(action), _fixed(strategy), *(_data(o) for o in options)],
         )
 
     # -- assertions -------------------------------------------------------- #

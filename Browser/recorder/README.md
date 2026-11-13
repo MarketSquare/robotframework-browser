@@ -57,7 +57,7 @@ operators, option strategies) never are.
 | `press` | `Press Keys    <selector>    [Modifier+...]Key` | selector, keys |
 | `check` | `Check Checkbox    <selector>` | selector |
 | `uncheck` | `Uncheck Checkbox    <selector>` | selector |
-| `select` | `Select Options By    <selector>    value    <option>...` | selector, each option |
+| `select` | `Select Options By    <selector>    label    <label>...`, or `value    <value>...` when an option has no label of its own (see below) | selector, each option |
 | `navigate` | `Go To    <url>` (never `New Page`: a recorded keyword does not create its page) | url |
 | `closePage` | nothing: Playwright drops it, because its page is gone; the wrapper reports a closed page as a `closed` event instead (see Pages) | - |
 | `openPage` | nothing, silently (existing pages, hand-opened tabs; a page opened by an Action arrives as a `popup` signal) | - |
@@ -66,6 +66,13 @@ operators, option strategies) never are.
 | `assertChecked` | `Get Checkbox State    <selector>    ==    checked` (or `unchecked`) | selector, state |
 | `assertVisible` | `Get Element States    <selector>    *=    visible` | selector |
 | `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>`; the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
+
+Playwright records a `select` by the option values, which are often generated (`14: 6792`).
+The wrapper looks up the label of each value in the page as the Action arrives
+(`addOptionLabels`, at most `LABEL_LOOKUP_MS`), and a poll waits for running lookups before it
+drains, so the Action reaches Python with its `labels`. A value keeps no label when its option
+is not unique, its label is empty or shared by another option (selecting by it would pick
+another one), or the lookup failed; then the call selects by `value`.
 
 A file chosen in a file chooser arrives in api mode as a `fill` of the browser's fake path
 `C:\fakepath\<name>` (only the first file), from other recorder tools as `setInputFiles`
