@@ -77,7 +77,7 @@ Script Tag Needs Exactly One Of Content, URL And Path
     ...    Add Script Tag    window.flag = 1;    url=${STATIC_URL}script_tag.js
 
 Script Tag Content Must Not Be Empty
-    Run Keyword And Expect Error    *content is empty*
+    Run Keyword And Expect Error    *exactly one of content, url and path*
     ...    Add Script Tag    ${EMPTY}
 
 Script Tag Fails Without A Page

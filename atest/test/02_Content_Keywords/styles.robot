@@ -33,5 +33,5 @@ Add Style Tag Into Frame
     Get Style    body    background-color    !=    rgb(0, 255, 255)
 
 Add Style Tag Fails With Empty Url
-    Run Keyword And Expect Error    *Provide an object with a `url`, `path` or `content` property
+    Run Keyword And Expect Error    *exactly one of content, url and path*
     ...    Add Style Tag    url=${EMPTY}
