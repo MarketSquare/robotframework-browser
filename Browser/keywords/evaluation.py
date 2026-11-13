@@ -177,22 +177,48 @@ class Evaluation(LibraryComponent):
         return count
 
     @keyword(tags=("Setter", "PageContent"))
-    def add_style_tag(self, content: str):
-        """Adds a <style type="text/css"> tag with the content.
+    def add_style_tag(
+        self,
+        content: str | None = None,
+        *,
+        url: str | None = None,
+        path: PathLike | None = None,
+        frame_selector: str | None = None,
+    ):
+        """Adds CSS to the active page, as a ``<style>`` tag or as a ``<link rel="stylesheet">`` tag.
 
-        The tag is added to the currently active page and it is lost when the page is
-        navigated to a new url.
+        The tag is added to the main frame of the active page, or to the frame that
+        ``frame_selector`` points into. It is lost when the frame navigates to a new url.
 
         *Arguments:*
-          - ``content``: Raw CSS content to be injected into the current page.
+          - ``content``: Raw CSS, added as a ``<style>`` tag.
+          - ``url``: URL of a stylesheet, added as a ``<link rel="stylesheet">`` tag. The
+                keyword returns once the stylesheet has loaded, and fails if it does not load.
+          - ``path``: Path to a local CSS file. The file is read and its content added as a
+                ``<style>`` tag. Exactly one of ``content``, ``url`` and ``path`` must be given.
+          - ``frame_selector``: If this selector points to an element inside an iframe, the
+                tag is added to that frame. Example: ``iframe[name="test"] >>> body``
 
         Example:
         | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
+        | `Add Style Tag`    url=${URL}/static/test-overrides.css
+        | `Add Style Tag`    path=${CURDIR}/no-animations.css    frame_selector=iframe[name="test"] >>> body
 
         [https://forum.robotframework.org/t//4234|Comment >>]
         """
+        if sum(source is not None for source in (content, url, path)) != 1:
+            raise ValueError("Give exactly one of content, url and path.")
+        if path is not None:
+            content = Path(path).read_text(encoding="utf-8")
         with self.playwright.grpc_channel() as stub:
-            response = stub.AddStyleTag(Request().StyleTag(content=content))
+            response = stub.AddStyleTag(
+                Request().StyleTag(
+                    content=content or "",
+                    url=url or "",
+                    frameSelector=self.resolve_selector(frame_selector),
+                    strict=self.strict_mode,
+                )
+            )
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
