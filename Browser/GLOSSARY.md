@@ -102,6 +102,11 @@ JavaScript added to the current document of a page or frame as a `<script>` elem
 once, in that document only, and is gone when that page or frame navigates or reloads.
 _Avoid_: injected script (an **injected argument** is something else), page script
 
+**Style tag**:
+CSS added to the current document of a page or frame, as a `<style>` element or a stylesheet
+`<link>`. It lasts until that page or frame navigates or reloads.
+_Avoid_: injected style, custom CSS
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
