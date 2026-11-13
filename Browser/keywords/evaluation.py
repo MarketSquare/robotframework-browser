@@ -176,6 +176,27 @@ class Evaluation(LibraryComponent):
                 logger.info(response.log)
         return count
 
+    def _tag_request(
+        self,
+        request: Any,
+        content: str | None,
+        url: str | None,
+        path: PathLike | None,
+        frame_selector: str | None,
+    ) -> Any:
+        if sum(source is not None for source in (content, url, path)) != 1:
+            raise ValueError("Give exactly one of content, url and path.")
+        request.strict = self.strict_mode
+        if path is not None:
+            request.content = Path(path).read_text(encoding="utf-8")
+        elif content is not None:
+            request.content = content
+        if url is not None:
+            request.url = url
+        if frame_selector := self.resolve_selector(frame_selector):
+            request.frameSelector = frame_selector
+        return request
+
     @keyword(tags=("Setter", "PageContent"))
     def add_style_tag(
         self,
@@ -206,17 +227,9 @@ class Evaluation(LibraryComponent):
 
         [https://forum.robotframework.org/t//4234|Comment >>]
         """
-        if sum(source is not None for source in (content, url, path)) != 1:
-            raise ValueError("Give exactly one of content, url and path.")
-        request = Request().StyleTag(strict=self.strict_mode)
-        if path is not None:
-            request.content = Path(path).read_text(encoding="utf-8")
-        elif content is not None:
-            request.content = content
-        if url is not None:
-            request.url = url
-        if frame_selector := self.resolve_selector(frame_selector):
-            request.frameSelector = frame_selector
+        request = self._tag_request(
+            Request().StyleTag(), content, url, path, frame_selector
+        )
         with self.playwright.grpc_channel() as stub:
             response = stub.AddStyleTag(request)
             logger.info(response.log)
@@ -259,22 +272,15 @@ class Evaluation(LibraryComponent):
         | `Add Script Tag`    path=${CURDIR}/fixtures.js    type=module
         | `Add Script Tag`    window.flag = 42;    frame_selector=iframe[name="test"] >>> body
         """
-        if sum(source is not None for source in (content, url, path)) != 1:
-            raise ValueError("Give exactly one of content, url and path.")
+        request = self._tag_request(
+            Request().ScriptTag(), content, url, path, frame_selector
+        )
         if content == "":
             raise ValueError("Script tag content is empty.")
-        request = Request().ScriptTag(strict=self.strict_mode)
         if path is not None:
-            source = Path(path).read_text(encoding="utf-8")
-            request.content = f"{source}\n//# sourceURL={Path(path).as_posix()}"
-        elif content is not None:
-            request.content = content
-        if url is not None:
-            request.url = url
+            request.content += f"\n//# sourceURL={Path(path).as_posix()}"
         if type is not None:
             request.type = type
-        if frame_selector := self.resolve_selector(frame_selector):
-            request.frameSelector = frame_selector
         with self.playwright.grpc_channel() as stub:
             response = stub.AddScriptTag(request)
             logger.info(response.log)

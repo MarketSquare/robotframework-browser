@@ -22,7 +22,7 @@ Add Style Tag From Path
     Get Style    \#goes_hidden    color    ==    rgb(0, 255, 255)
 
 Add Style Tag Fails When Url Does Not Load
-    Run Keyword And Expect Error    Error: Stylesheet ${ROOT_URL}no_such_style.css failed to load.
+    Run Keyword And Expect Error    *addStyleTag: Event
     ...    Add Style Tag    url=${ROOT_URL}no_such_style.css
 
 Add Style Tag Into Frame
