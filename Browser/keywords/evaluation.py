@@ -196,6 +196,64 @@ class Evaluation(LibraryComponent):
             logger.info(response.log)
 
     @keyword(tags=("Setter", "PageContent"))
+    def add_script_tag(
+        self,
+        content: str | None = None,
+        *,
+        url: str | None = None,
+        path: PathLike | None = None,
+        type: str | None = None,  # noqa: A002
+        frame_selector: str | None = None,
+    ):
+        """Adds a ``<script>`` tag to the active page or to a frame and waits until the script has loaded and run.
+
+        *Arguments:*
+          - ``content``: JavaScript source of the script.
+          - ``url``: URL of a script to load.
+          - ``path``: Path to a local JavaScript file whose content is the script. Exactly one
+                of ``content``, ``url`` and ``path`` must be given.
+          - ``type``: Value of the tag's ``type`` attribute, for example ``module`` for an
+                ES module or ``importmap``. ``None`` adds a classic script.
+          - ``frame_selector``: Selector of an element inside a frame; the tag is added to that
+                element's frame. Example: ``iframe[name="test"] >>> body``. ``None`` adds the
+                tag to the page itself. See `Finding elements` for frames.
+
+        The script runs once, in the current document only, and is gone when the page or frame
+        navigates or reloads. For JavaScript that must run in every document, before the
+        document's own scripts, use `Add Init Script`. Unlike `Evaluate JavaScript`, top-level
+        declarations of a classic script become globals of the page.
+
+        A script that fails to load, for example a ``url`` that answers 404, fails the keyword.
+        Errors thrown by a script that has loaded do not; they show up in `Get Page Errors`.
+        Fails when no page is open.
+
+        Example:
+        | `Add Script Tag`    url=${URL}/static/test-helpers.js
+        | `Evaluate JavaScript`    ${None}    () => window.testHelpers.reset()
+        | `Add Script Tag`    path=${CURDIR}/fixtures.js    type=module
+        | `Add Script Tag`    window.flag = 42;    frame_selector=iframe[name="test"] >>> body
+        """
+        if sum(source is not None for source in (content, url, path)) != 1:
+            raise ValueError("Give exactly one of content, url and path.")
+        request = Request().ScriptTag(strict=self.strict_mode)
+        if path is not None:
+            source = Path(path).read_text(encoding="utf-8")
+            request.content = f"{source}\n//# sourceURL={Path(path).as_posix()}"
+        elif content is not None:
+            request.content = content
+        if url is not None:
+            request.url = url
+        if type is not None:
+            request.type = type
+        if frame_selector is not None:
+            request.frameSelector = self.presenter_mode(
+                frame_selector, self.strict_mode
+            )
+        with self.playwright.grpc_channel() as stub:
+            response = stub.AddScriptTag(request)
+            logger.info(response.log)
+
+    @keyword(tags=("Setter", "PageContent"))
     def add_init_script(
         self,
         script: str | None = None,

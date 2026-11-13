@@ -1,0 +1,1 @@
+window.scriptTagLoaded = 'from url';

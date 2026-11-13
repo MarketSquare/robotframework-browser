@@ -97,6 +97,11 @@ scripts. It lives as long as the context or page it was added to; a context's in
 runs in the context's popups, a page's does not.
 _Avoid_: preload script, startup script
 
+**Script tag**:
+JavaScript added to the current document of a page or frame as a `<script>` element. It runs
+once, in that document only, and is gone when that page or frame navigates or reloads.
+_Avoid_: injected script (an **injected argument** is something else), page script
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -130,6 +135,9 @@ _Avoid_: preload script, startup script
 - An **init script** has no scope of its own. It ends when its context or page closes, so when
   that happens is decided by the automatic closing level, not by the library's `Scope`. On the
   **Python path** it behaves the same.
+- An **init script** runs in every document its context or page loads, before the document's
+  own scripts. A **script tag** runs once, in the document it was added to, after that
+  document's own scripts.
 - An **adopted context** is registered by `call_js_keyword`, from what Node reports when
   `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 

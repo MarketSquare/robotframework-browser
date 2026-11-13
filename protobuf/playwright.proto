@@ -359,6 +359,14 @@ message Request {
     string content = 1;
   }
 
+  message ScriptTag {
+    optional string content = 1;
+    optional string url = 2;
+    optional string type = 3;
+    optional string frameSelector = 4;
+    bool strict = 5;
+  }
+
   message InitScript {
     string content = 1;
     optional string arg = 2;
@@ -630,6 +638,8 @@ service  Playwright {
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
   /* Adds a <style> to head of site. */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
+  /* Adds a script tag to the active page or a frame: frame.addScriptTag */
+  rpc AddScriptTag(Request.ScriptTag) returns (Response.Empty);
   /* Adds an init script to the active context: browserContext.addInitScript */
   rpc AddContextInitScript(Request.InitScript) returns (Response.Empty);
   /* Adds an init script to the active page: page.addInitScript */
