@@ -34,6 +34,7 @@ TAG_KEYWORDS = [
         pytest.param({"url": ""}, id="empty-url"),
         pytest.param({"path": ""}, id="empty-path"),
         pytest.param({"path": Path(".")}, id="dot-path"),
+        pytest.param({"path": "."}, id="dot-string-path"),
     ],
 )
 def test_exactly_one_tag_source_is_required(keyword, rpc, kwargs):
@@ -59,6 +60,12 @@ def test_whitespace_content_is_sent_as_it_is(keyword, rpc):
     assert getattr(stub, rpc).call_args.args[0].content == "  "
 
 
+def test_whitespace_init_script_is_sent_as_it_is():
+    evaluation, stub = make_evaluation()
+    evaluation.add_init_script("  ")
+    assert stub.AddContextInitScript.call_args.args[0].content == "  "
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [
@@ -67,6 +74,7 @@ def test_whitespace_content_is_sent_as_it_is(keyword, rpc):
         pytest.param({"script": ""}, id="empty-script"),
         pytest.param({"path": ""}, id="empty-path"),
         pytest.param({"path": Path(".")}, id="dot-path"),
+        pytest.param({"path": "."}, id="dot-string-path"),
     ],
 )
 def test_exactly_one_init_script_source_is_required(kwargs):
@@ -83,7 +91,7 @@ def test_exactly_one_init_script_source_is_required(kwargs):
         pytest.param("add_init_script", "AddContextInitScript", id="init-script"),
     ],
 )
-def test_javascript_path_is_named_in_page_errors(keyword, rpc, tmp_path):
+def test_javascript_path_is_labelled_with_source_url(keyword, rpc, tmp_path):
     script = tmp_path / "helpers.js"
     script.write_text("window.a = 1;", encoding="utf-8")
     evaluation, stub = make_evaluation()
