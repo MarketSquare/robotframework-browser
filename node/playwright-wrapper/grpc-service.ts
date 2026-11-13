@@ -432,7 +432,7 @@ export class PlaywrightServer {
     getElement = this.wrapping(evaluation.getElement);
     getElements = this.wrapping(evaluation.getElements);
     getByX = this.wrapping(evaluation.getByX);
-    addStyleTag = this.wrappingPage(evaluation.addStyleTag);
+    addStyleTag = this.wrappingStatePage(evaluation.addStyleTag);
     addScriptTag = this.wrapping(evaluation.addScriptTag);
     addContextInitScript = this.wrapping(initScript.addContextInitScript);
     addPageInitScript = this.wrapping(initScript.addPageInitScript);

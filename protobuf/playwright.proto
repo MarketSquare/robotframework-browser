@@ -357,6 +357,9 @@ message Request {
 
   message StyleTag {
     string content = 1;
+    string url = 2;
+    string frameSelector = 3;
+    bool strict = 4;
   }
 
   message ScriptTag {
@@ -636,7 +639,7 @@ service  Playwright {
   rpc GetElementStates(Request.ElementSelector) returns (Response.Json);
   /* Set's  playwright timeout */
   rpc SetTimeout(Request.Timeout) returns (Response.Empty);
-  /* Adds a <style> to head of site. */
+  /* Adds a <style> or stylesheet <link> to a frame: frame.addStyleTag */
   rpc AddStyleTag(Request.StyleTag) returns (Response.Empty);
   /* Adds a script tag to the active page or a frame: frame.addScriptTag */
   rpc AddScriptTag(Request.ScriptTag) returns (Response.Empty);

@@ -308,9 +308,28 @@ export async function waitForFunction(
     return jsonResponse(JSON.stringify(await result.jsonValue()), 'Wait For Function completed successfully.');
 }
 
-export async function addStyleTag(request: pb.Request_StyleTag, page: Page): Promise<pb.Response_Empty> {
-    const content = request.content;
-    await page.addStyleTag({ content });
+export async function addStyleTag(
+    request: pb.Request_StyleTag,
+    state: PlaywrightState,
+    page: Page,
+): Promise<pb.Response_Empty> {
+    const { content, url, frameSelector, strict } = request;
+    const frame = frameSelector
+        ? await (await (await findLocator(state, frameSelector, strict, true)).elementHandle())?.ownerFrame()
+        : page.mainFrame();
+    if (!frame) {
+        throw new Error(`No frame found for ${frameSelector}.`);
+    }
+    if (url) {
+        await frame.addStyleTag({ url }).catch((error: Error) => {
+            if (error.message.endsWith(': Event')) {
+                throw new Error(`Stylesheet ${url} failed to load.`);
+            }
+            throw error;
+        });
+        return emptyWithLog('added Style from: ' + url);
+    }
+    await frame.addStyleTag({ content });
     return emptyWithLog('added Style: ' + content);
 }
 
