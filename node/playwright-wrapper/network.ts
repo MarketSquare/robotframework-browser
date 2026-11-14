@@ -89,14 +89,15 @@ async function orFallback<T>(read: () => Promise<T>, fallback: T, what: string):
 
 async function headersOf(message: Request | PlaywrightResponse, what: string): Promise<Record<string, unknown>> {
     const headers = message.headers();
-    return {
-        allHeaders: await orFallback(() => message.allHeaders(), headers, `${what} headers`),
-        headersArray: await orFallback(
+    const [allHeaders, headersArray] = await Promise.all([
+        orFallback(() => message.allHeaders(), headers, `${what} headers`),
+        orFallback(
             () => message.headersArray(),
             Object.entries(headers).map(([name, value]) => ({ name, value })),
             `${what} headers array`,
         ),
-    };
+    ]);
+    return { allHeaders, headersArray };
 }
 
 function frameOf(request: Request): { url: string; name: string } | null {
@@ -108,10 +109,25 @@ function frameOf(request: Request): { url: string; name: string } | null {
     }
 }
 
-async function requestDetails(request: Request): Promise<Record<string, unknown>> {
-    const details: Record<string, unknown> = {
+const PENDING_REQUEST_HEADERS = { allHeaders: null, headersArray: null };
+
+async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMessage: string): Promise<T> {
+    if (remaining <= 0) return read;
+    let timer: NodeJS.Timeout | undefined;
+    const expired = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(timeoutMessage)), remaining);
+    });
+    try {
+        return await Promise.race([read, expired]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+function requestDetails(request: Request, headers: Record<string, unknown>): Record<string, unknown> {
+    return {
         url: request.url(),
-        ...(await headersOf(request, 'request')),
+        ...headers,
         resourceType: request.resourceType(),
         isNavigationRequest: request.isNavigationRequest(),
         redirectedFrom: request.redirectedFrom()?.url() ?? null,
@@ -119,7 +135,6 @@ async function requestDetails(request: Request): Promise<Record<string, unknown>
         frame: frameOf(request),
         hasPostData: request.postDataBuffer() !== null,
     };
-    return details;
 }
 
 function legacyPostData(request: Request): unknown {
@@ -135,10 +150,11 @@ function capturedMessages(captured: CapturedBytes): pb.Response_Json[] {
     const postDataChunks = captured.postData ? splitBytes(captured.postData, MAX_RESPONSE_CHUNK_BYTES) : [];
     const bodyChunks = captured.body ? splitBytes(captured.body, MAX_RESPONSE_CHUNK_BYTES) : [];
     const count = Math.max(postDataChunks.length, bodyChunks.length, 1);
+    const firstLog = count > 1 ? `${captured.log}, sent in ${count} chunks` : captured.log;
     const messages: pb.Response_Json[] = [];
     for (let i = 0; i < count; i++) {
         messages.push({
-            ...jsonResponse(i === 0 ? JSON.stringify(captured.meta) : '', `${captured.log}, chunk ${i + 1}/${count}`),
+            ...(i === 0 ? jsonResponse(JSON.stringify(captured.meta), firstLog) : jsonResponse('', '')),
             postDataBytes: postDataChunks[i] ?? Buffer.alloc(0),
             bodyBytes: bodyChunks[i] ?? Buffer.alloc(0),
         });
@@ -151,27 +167,32 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
     const timeout = request.timeout;
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
     const capturedRequest = data.request();
-    let body: Buffer | null = null;
-    if (!request.excludeBody) {
-        body = await orFallback<Buffer | null>(() => data.body(), null, 'response body');
-    }
+    const withBody = !request.excludeBody;
+    const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await Promise.all([
+        withBody ? orFallback<Buffer | null>(() => data.body(), null, 'response body') : null,
+        headersOf(data, 'response'),
+        withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
+        withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,
+        orFallback(() => data.securityDetails(), null, 'security details'),
+        headersOf(capturedRequest, 'request'),
+    ]);
     const meta: Record<string, unknown> = {
         status: data.status(),
         headers: JSON.stringify(data.headers()),
         statusText: data.statusText(),
         url: data.url(),
         ok: data.ok(),
-        ...(await headersOf(data, 'response')),
-        httpVersion: await orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version'),
-        serverAddr: await orFallback(() => data.serverAddr(), null, 'server address'),
-        securityDetails: await orFallback(() => data.securityDetails(), null, 'security details'),
+        ...responseHeaders,
+        httpVersion,
+        serverAddr,
+        securityDetails,
         fromServiceWorker: data.fromServiceWorker(),
         hasBody: body !== null,
         request: {
             headers: JSON.stringify(capturedRequest.headers()),
             method: capturedRequest.method(),
             postData: capturedRequest.postData(),
-            ...(await requestDetails(capturedRequest)),
+            ...requestDetails(capturedRequest, requestHeaders),
         },
     };
     logger.info(`waitForResponse received: ${data.url()} status: ${data.status()}`);
@@ -186,12 +207,20 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
 export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json[]> {
     const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
     const timeout = request.timeout;
+    const started = Date.now();
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
+    const headers = request.waitForAllFields
+        ? await withinTimeout(
+              headersOf(result, 'request'),
+              timeout > 0 ? Math.max(timeout - (Date.now() - started), 1) : 0,
+              `Timeout ${timeout}ms exceeded while waiting for all fields of the request.`,
+          )
+        : PENDING_REQUEST_HEADERS;
     const meta = {
         method: result.method(),
         headers: result.headers(),
         postData: legacyPostData(result),
-        ...(await requestDetails(result)),
+        ...requestDetails(result, headers),
     };
     logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);
     const matcherStr = typeof urlOrPredicate === 'string' ? urlOrPredicate : urlOrPredicate.toString();

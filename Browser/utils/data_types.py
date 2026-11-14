@@ -1037,8 +1037,8 @@ class CapturedRequest(TypedDict):
     | ``url`` | The URL of the request. |
     | ``method`` | The HTTP method, e.g. ``GET`` or ``POST``. |
     | ``headers`` | Dictionary of request headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``cookie``. |
-    | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. |
-    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
+    | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. ``None`` in `Wait For Request` unless ``wait_for_all_fields`` is ``True``. |
+    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. ``None`` in `Wait For Request` unless ``wait_for_all_fields`` is ``True``. |
     | ``postData`` | Legacy. The request body, parsed as described in Parsing rules below. Prefer ``postDataBuffer`` or ``postDataJSON``. |
     | ``postDataBuffer`` | The raw request body as ``bytes``, or ``None`` if the request has no body. |
     | ``postDataJSON`` | The request body parsed like Playwright's ``postDataJSON()``: a dictionary for a ``application/x-www-form-urlencoded`` body, the parsed value for a JSON body, otherwise ``None``. |
@@ -1050,7 +1050,7 @@ class CapturedRequest(TypedDict):
 
     = Example =
 
-    A login request sent with ``fetch``, with made-up values, as JSON. ``postDataBuffer`` is shown as base64 text, the way ``json.dumps`` writes it.
+    A login request sent with ``fetch``, as `Wait For Request` returns it with ``wait_for_all_fields=True``, with made-up values, as JSON. ``postDataBuffer`` is shown as base64 text, the way ``json.dumps`` writes it.
 
     | {
     |   "url": "https://example.com/api/login",
@@ -1132,8 +1132,8 @@ class CapturedRequest(TypedDict):
     url: str
     method: str
     headers: dict[str, str]
-    allHeaders: dict[str, str]
-    headersArray: list[HeaderEntry]
+    allHeaders: dict[str, str] | None
+    headersArray: list[HeaderEntry] | None
     postData: Any
     postDataBuffer: bytes | None
     postDataJSON: Any
@@ -1163,8 +1163,8 @@ class CapturedResponse(TypedDict):
     | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
     | ``text`` | The response body decoded as UTF-8, like Playwright's ``text()``. Invalid bytes become the replacement character U+FFFD. |
     | ``json`` | The response body parsed as JSON regardless of the ``content-type``, like Playwright's ``json()``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
-    | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it. |
-    | ``serverAddr`` | Dictionary with the ``ipAddress`` and ``port`` of the server, or ``None``. |
+    | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it, or with ``include_body=False``. |
+    | ``serverAddr`` | Dictionary with the ``ipAddress`` and ``port`` of the server. ``None`` if Playwright cannot read it, or with ``include_body=False``. |
     | ``securityDetails`` | ( `SecurityDetails` ) TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
     | ``fromServiceWorker`` | ``True`` if a Service Worker answered the request. |
     | ``request`` | The `CapturedRequest` that this response answers. |

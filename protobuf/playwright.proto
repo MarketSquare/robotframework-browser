@@ -424,6 +424,7 @@ message Request {
     string urlOrPredicate = 1;
     float timeout = 2;
     bool excludeBody = 3;
+    bool waitForAllFields = 4;
   }
 
   message Device {
