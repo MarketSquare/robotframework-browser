@@ -35,12 +35,43 @@ jobs:
   # and 32 take 75 s. The unit tests run serially and get the small machines.
   # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
+  # Namespace machines cost money, so pull requests from the forks of people
+  # outside the team run on GitHub's free runners, with the same tests but
+  # slower. To run one on Namespace, a maintainer adds the label namespace and
+  # reruns all jobs: the label is read when this job runs, not from the event.
+  runners:
+    name: Choose the runners
+    runs-on: nscloud-ubuntu-24.04-amd64-2x4
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      namespace: ${{ steps.choose.outputs.namespace }}
+    steps:
+      - name: Choose Namespace or GitHub's runners
+        id: choose
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TRUSTED: >-
+            ${{ github.event_name != 'pull_request' ||
+              github.event.pull_request.head.repo.full_name == github.repository ||
+              contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
+        run: |
+          namespace="$TRUSTED"
+          if [ "$namespace" != true ] &&
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name' | grep -qx namespace; then
+            namespace=true
+          fi
+          echo "namespace=$namespace" | tee -a "$GITHUB_OUTPUT"
+
   # The version the wheels of this run carry. Empty unless this is a push to
   # main, which keeps pull request and scheduled runs building exactly the
   # versions they build today.
   nightly_version:
     name: Work out the nightly version
-    runs-on: nscloud-ubuntu-24.04-amd64-2x4
+    needs: runners
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-2x4' || 'ubuntu-latest' }}
     timeout-minutes: 10
     outputs:
       version: ${{ steps.dev.outputs.version }}
@@ -68,7 +99,8 @@ jobs:
 
   lint:
     name: Lint
-    runs-on: nscloud-ubuntu-24.04-amd64-4x8
+    needs: runners
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-4x8' || 'ubuntu-latest' }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -130,7 +162,8 @@ jobs:
 
   utest:
     name: Unit tests (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.node-version }})
-    runs-on: ${{ matrix.runner }}
+    needs: runners
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && matrix.runner || matrix.os }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -241,7 +274,8 @@ jobs:
   # runs them. They need no wheel, so they start with the build.
   atest-source:
     name: Acceptance tests from source (${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    runs-on: nscloud-ubuntu-24.04-amd64-8x16
+    needs: runners
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -342,9 +376,9 @@ jobs:
   # whatever coverage the tests left, also when some of them failed.
   coverage:
     name: Coverage
-    needs: [lint, utest, atest-source]
-    if: ${{ !cancelled() }}
-    runs-on: nscloud-ubuntu-24.04-amd64-4x8
+    needs: [runners, lint, utest, atest-source]
+    if: ${{ !cancelled() && needs.runners.result == 'success' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-4x8' || 'ubuntu-latest' }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -443,8 +477,8 @@ jobs:
   # also builds the Browser wheel.
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-ubuntu-24.04-amd64-8x16
-    needs: nightly_version
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
+    needs: [runners, nightly_version]
     timeout-minutes: 45
     env: &build_wheels_env
       # This job only builds wheels, no need to download Playwright browsers
@@ -520,8 +554,8 @@ jobs:
 
   build_wheels_arm:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-ubuntu-24.04-arm64-8x16
-    needs: nightly_version
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-arm64-8x16' || 'ubuntu-24.04-arm' }}
+    needs: [runners, nightly_version]
     timeout-minutes: 45
     env: *build_wheels_env
     strategy:
@@ -531,8 +565,8 @@ jobs:
 
   build_wheels_windows:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-windows-2022-amd64-8x16
-    needs: nightly_version
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-windows-2022-amd64-8x16' || 'windows-latest' }}
+    needs: [runners, nightly_version]
     timeout-minutes: 45
     env: *build_wheels_env
     strategy:
@@ -542,8 +576,8 @@ jobs:
 
   build_wheels_macos:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-macos-sequoia-arm64-6x14
-    needs: nightly_version
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-macos-sequoia-arm64-6x14' || 'macos-latest' }}
+    needs: [runners, nightly_version]
     timeout-minutes: 45
     env: *build_wheels_env
     strategy:
@@ -574,8 +608,8 @@ jobs:
   # platforms, every Python and Robot Framework version runs once.
   atest-wheel-linux:
     name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: build_wheels
-    runs-on: ${{ matrix.runner }}
+    needs: [runners, build_wheels]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && matrix.runner || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -684,8 +718,8 @@ jobs:
 
   atest-wheel-arm:
     name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_arm]
-    runs-on: ${{ matrix.runner }}
+    needs: [runners, build_wheels, build_wheels_arm]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && matrix.runner || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -704,8 +738,8 @@ jobs:
 
   atest-wheel-windows:
     name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_windows]
-    runs-on: ${{ matrix.runner }}
+    needs: [runners, build_wheels, build_wheels_windows]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && matrix.runner || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -726,8 +760,8 @@ jobs:
 
   atest-wheel-macos:
     name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_macos]
-    runs-on: ${{ matrix.runner }}
+    needs: [runners, build_wheels, build_wheels_macos]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && matrix.runner || matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -770,8 +804,8 @@ jobs:
   # Waits for the source tests too, only to leave the Linux vCPU to the ARM
   # wheel test meanwhile. It runs whatever they found.
   docker_image:
-    runs-on: nscloud-ubuntu-24.04-amd64-8x16
-    needs: [build_wheels, atest-source]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
+    needs: [runners, build_wheels, atest-source]
     if: ${{ !cancelled() && needs.build_wheels.result == 'success' }}
     permissions:
       contents: read
