@@ -64,6 +64,8 @@ def is_local_host(host: str | None) -> bool:
 
 
 PORT_TAKEN_ATTEMPTS = 3
+# The exit code of the wrapper when its port was taken, see bind-exit-code.ts.
+PORT_TAKEN_EXIT_CODE = 3
 
 
 class PortTakenError(RuntimeError):
@@ -346,11 +348,17 @@ class Playwright(LibraryComponent):
 
         ``process`` is the one this library started, if it started one. Another
         process can take the port between choosing it and the start, and then
-        answers in its place while this one exits. That is reported as a
-        `PortTakenError`, so the start is retried on a fresh port.
+        answers in its place while this one exits, with the wrapper's port taken
+        exit code. Either is reported as a `PortTakenError`, so the start is
+        retried on a fresh port.
         """
         for _ in range(150):  # About 15 seconds
             if process is not None and process.poll() is not None:
+                if process.returncode == PORT_TAKEN_EXIT_CODE:
+                    raise PortTakenError(
+                        f"Port {self.port} was taken before Playwright process "
+                        f"{process.pid} could listen on it."
+                    )
                 raise RuntimeError(
                     f"Playwright process exited with code {process.returncode} "
                     f"before it answered at {self.host}:{self.port}."
