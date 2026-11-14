@@ -692,7 +692,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04-arm
-            runner: nscloud-ubuntu-24.04-arm64-16x32
+            # ARM counts against the 64 Linux vCPU. With 16 it waited two
+            # minutes for room while the other Linux tests ran.
+            runner: nscloud-ubuntu-24.04-arm64-8x16
             python-version: "3.15"
             rf-version: "7.2.2"
             batteries: true
