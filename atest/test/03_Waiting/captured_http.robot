@@ -14,7 +14,6 @@ Response All Headers Contain Set-Cookie
     ${response} =    Capture Response    /api/set-cookies
     Should Contain    ${response.allHeaders}[set-cookie]    session=abc
     Should Contain    ${response.allHeaders}[set-cookie]    theme=dark
-    Dictionary Should Not Contain Key    ${response.headers}    set-cookie
     ${set_cookies} =    Header Values    ${response.headersArray}    set-cookie
     Length Should Be    ${set_cookies}    2
 
@@ -43,6 +42,8 @@ Response Body Is Skipped When Excluded
     Should Be Equal    ${response.body}    ${None}
     Should Be Equal    ${response.bytes}    ${None}
     Should Be Equal    ${response.text}    ${None}
+    Should Be Equal    ${response.httpVersion}    ${None}
+    Should Be Equal    ${response.serverAddr}    ${None}
 
 Redirected Response Knows The Original Request
     ${promise} =    Promise To    Wait For Response    **/api/get/json
@@ -62,7 +63,7 @@ Captured Response Can Be Serialized As JSON
     Should Be Equal    ${serialized}[bytes]    iVBORw0KGgo=
 
 Fetch Request Details Are Returned
-    ${promise} =    Promise To    Wait For Request    **/api/get/json
+    ${promise} =    Promise To    Wait For Request    **/api/get/json    wait_for_all_fields=True
     HTTP    /api/get/json
     ${request} =    Wait For    ${promise}
     Should Be Equal    ${request.resourceType}    fetch
@@ -93,6 +94,21 @@ Wait For Request Returns Before The Response Arrives
     Evaluate JavaScript    ${None}    () => { fetch('/api/stalled-image'); }
     ${request} =    Wait For    ${promise}
     Should End With    ${request.url}    /api/stalled-image
+    Should Be Equal    ${request.allHeaders}    ${None}
+    Should Be Equal    ${request.headersArray}    ${None}
+
+Waiting For All Request Fields Is Limited By The Timeout
+    ${promise} =    Promise To    Wait For Request
+    ...    **/api/stalled-image    timeout=1s    wait_for_all_fields=True
+    Evaluate JavaScript    ${None}    () => { fetch('/api/stalled-image'); }
+    IF    '${BROWSER}' == 'firefox'
+        ${request} =    Wait For    ${promise}
+        Should Not Be Empty    ${request.allHeaders}
+    ELSE
+        Run Keyword And Expect Error
+        ...    *Timeout 1000ms exceeded while waiting for all fields of the request.*
+        ...    Wait For    ${promise}
+    END
 
 *** Keywords ***
 Capture Response

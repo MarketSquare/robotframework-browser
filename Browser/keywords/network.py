@@ -19,6 +19,8 @@ from datetime import timedelta
 from typing import Any, cast
 from urllib.parse import parse_qsl
 
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
+
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
@@ -83,7 +85,8 @@ def _collect_stream(messages) -> tuple[dict, bytes, bytes]:
     body = bytearray()
     post_data = bytearray()
     for message in messages:
-        logger.info(message.log)
+        if message.log:
+            logger.info(message.log)
         if metadata is None and message.json:
             metadata = json.loads(message.json)
         body += message.bodyBytes
@@ -141,22 +144,29 @@ def _readable(raw: bytes) -> str:
         return text
 
 
+def _trace_enabled() -> bool:
+    try:
+        return BuiltIn().get_variable_value("${LOG LEVEL}") == "TRACE"
+    except RobotNotRunningError:
+        return True
+
+
+def _trace_content(label: str, raw: bytes | None) -> None:
+    if raw is not None and _trace_enabled():
+        logger.trace(f"{label}:\n{_readable(raw)}")
+
+
 def _log_request(request: dict) -> None:
     logger.info(_without(request, REQUEST_BODY_KEYS))
-    if request["postDataBuffer"] is not None:
-        logger.trace(f"Request post data:\n{_readable(request['postDataBuffer'])}")
+    _trace_content("Request post data", request["postDataBuffer"])
 
 
 def _log_response(response: dict) -> None:
     metadata = _without(response, RESPONSE_BODY_KEYS)
     metadata["request"] = _without(response["request"], REQUEST_BODY_KEYS)
     logger.info(metadata)
-    if response["bytes"] is not None:
-        logger.trace(f"Response body:\n{_readable(response['bytes'])}")
-    if response["request"]["postDataBuffer"] is not None:
-        logger.trace(
-            f"Request post data:\n{_readable(response['request']['postDataBuffer'])}"
-        )
+    _trace_content("Response body", response["bytes"])
+    _trace_content("Request post data", response["request"]["postDataBuffer"])
 
 
 class Network(LibraryComponent):
@@ -223,12 +233,13 @@ class Network(LibraryComponent):
                 logger.debug(f"Returned response is of type {type(response_dict)}")
                 return response_dict
 
-    def _wait_for_http_request(self, matcher, timeout) -> dict:
+    def _wait_for_http_request(self, matcher, timeout, wait_for_all_fields) -> dict:
         with self.playwright.grpc_channel() as stub:
             messages = stub.WaitForRequest(
                 Request().HttpCapture(
                     urlOrPredicate=matcher,
                     timeout=self.get_timeout(timeout),
+                    waitForAllFields=wait_for_all_fields,
                 )
             )
             request, _, post_data = _collect_stream(messages)
@@ -256,13 +267,17 @@ class Network(LibraryComponent):
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
-        self, matcher: str | RegExp = "", timeout: timedelta | None = None
+        self,
+        matcher: str | RegExp = "",
+        timeout: timedelta | None = None,
+        *,
+        wait_for_all_fields: bool = False,
     ) -> CapturedRequest:
         """Waits for a request matching ``matcher`` to be made and returns it as a `CapturedRequest`.
 
-        Only the request is awaited, not its response. The keyword returns as soon as the
-        request is sent, so ``redirectedTo`` is always ``None`` here. See `Wait For Response` if
-        the response is needed.
+        By default only the request is awaited, not its response. The keyword returns as soon
+        as the request is sent, so ``redirectedTo`` is always ``None`` here. See
+        `Wait For Response` if the response is needed.
 
         The returned `CapturedRequest` mirrors Playwright's Request: the URL, method, headers
         (``allHeaders`` includes ``cookie``), the raw body as ``postDataBuffer``, the parsed
@@ -283,12 +298,23 @@ class Network(LibraryComponent):
                 waitForRequest] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
                 timeout if not set.
+          - ``wait_for_all_fields``: Some fields are known only later than the request itself:
+                Chromium and WebKit report ``allHeaders`` and ``headersArray`` only when the
+                response headers arrive. With the default ``False`` the keyword returns at once
+                and those fields are ``None``. With ``True`` it also waits for them, within
+                ``timeout``, and fails if they do not arrive in time.
+
+        Example:
+        | ${promise} =    `Promise To`    `Wait For Request`    **/api/login    wait_for_all_fields=True
+        | `Click`    id=login_button
+        | ${request} =    `Wait For`    ${promise}
+        | Should Contain    ${request.allHeaders}[cookie]    consent=
 
         See `Wait For Response` for more details about the matcher.
 
         [https://forum.robotframework.org/t//4348|Comment >>]
         """
-        request = self._wait_for_http_request(matcher, timeout)
+        request = self._wait_for_http_request(matcher, timeout, wait_for_all_fields)
         return cast(CapturedRequest, JsonDotDict(request))
 
     @keyword(tags=("Wait", "HTTP"))
@@ -323,7 +349,9 @@ class Network(LibraryComponent):
                 timeout if not set.
           - ``include_body``: If ``False``, the response body is not read and not transferred,
                 and ``body``, ``bytes``, ``text`` and ``json`` are ``None``. Use it when only the
-                status or headers matter and the body is large.
+                status or headers matter and the body is large. ``httpVersion`` and
+                ``serverAddr`` are then ``None`` too, because Firefox and WebKit report them
+                only after the whole body has arrived.
 
         == Matcher Examples: ==
 

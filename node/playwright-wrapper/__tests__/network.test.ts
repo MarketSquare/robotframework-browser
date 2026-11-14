@@ -64,8 +64,8 @@ function pageWithRequest(request: any) {
     return makeMockPage({ waitForRequest: jest.fn().mockResolvedValue(request) });
 }
 
-async function capturedRequest(request: any = makeMockRequest()) {
-    const [first] = await waitForRequest(makeRequest(), pageWithRequest(request));
+async function capturedRequest(request: any = makeMockRequest(), waitForAllFields = false) {
+    const [first] = await waitForRequest({ ...makeRequest(), waitForAllFields }, pageWithRequest(request));
     return JSON.parse(first.json);
 }
 
@@ -157,8 +157,6 @@ describe('waitForRequest', () => {
         );
 
         expect(parsed).toMatchObject({
-            allHeaders: { 'content-type': 'application/json', cookie: 'session=1' },
-            headersArray: [{ name: 'content-type', value: 'application/json' }],
             resourceType: 'fetch',
             isNavigationRequest: false,
             redirectedFrom: 'https://example.com/old',
@@ -182,9 +180,36 @@ describe('waitForRequest', () => {
     it('falls back to the plain headers when all headers cannot be read', async () => {
         const parsed = await capturedRequest(
             makeMockRequest({ allHeaders: jest.fn().mockRejectedValue(new Error('Target closed')) }),
+            true,
         );
 
         expect(parsed.allHeaders).toEqual({ 'content-type': 'application/json' });
+    });
+
+    it('returns at once without the headers that are known only later', async () => {
+        const request = makeMockRequest();
+
+        const parsed = await capturedRequest(request);
+
+        expect(request.allHeaders).not.toHaveBeenCalled();
+        expect(parsed.allHeaders).toBeNull();
+        expect(parsed.headersArray).toBeNull();
+    });
+
+    it('returns all headers when asked to wait for all fields', async () => {
+        const parsed = await capturedRequest(makeMockRequest(), true);
+
+        expect(parsed.allHeaders).toEqual({ 'content-type': 'application/json', cookie: 'session=1' });
+        expect(parsed.headersArray).toEqual([{ name: 'content-type', value: 'application/json' }]);
+    });
+
+    it('fails when all fields do not arrive within the timeout', async () => {
+        expect.assertions(1);
+        const request = makeMockRequest({ allHeaders: jest.fn(() => new Promise(() => {})) });
+
+        await expect(
+            waitForRequest({ ...makeRequest('/.*/', 20), waitForAllFields: true }, pageWithRequest(request)),
+        ).rejects.toThrow('Timeout 20ms exceeded while waiting for all fields of the request.');
     });
 
     it('sends the raw post data in postDataBytes', async () => {
@@ -378,6 +403,16 @@ describe('waitForResponse', () => {
         expect(JSON.parse(messages[0].json).hasBody).toBe(false);
     });
 
+    it('does not wait for the fields that some browsers report only after the body when it is excluded', async () => {
+        const response = makeMockResponse();
+
+        const [first] = await capturedResponse(response, true);
+
+        expect(response.httpVersion).not.toHaveBeenCalled();
+        expect(response.serverAddr).not.toHaveBeenCalled();
+        expect(JSON.parse(first.json)).toMatchObject({ httpVersion: null, serverAddr: null });
+    });
+
     it('returns a null HTTP version when Playwright cannot read it', async () => {
         const [first] = await capturedResponse(
             makeMockResponse({ httpVersion: jest.fn().mockRejectedValue(new Error('Target closed')) }),
@@ -395,6 +430,21 @@ describe('waitForResponse', () => {
         expect(Buffer.compare(Buffer.concat(messages.map((message) => message.bodyBytes)), body)).toBe(0);
         expect(JSON.parse(messages[0].json).status).toBe(200);
         expect(messages[1].json).toBe('');
+    });
+
+    it('logs a chunked body once, in the first message', async () => {
+        const body = Buffer.alloc(1_500_000, 'x');
+
+        const messages = await capturedResponse(makeMockResponse({ body: jest.fn().mockResolvedValue(body) }));
+
+        expect(messages[0].log).toBe('Response received, sent in 2 chunks');
+        expect(messages[1].log).toBe('');
+    });
+
+    it('logs a body that fits in one message without a chunk count', async () => {
+        const [only] = await capturedResponse(makeMockResponse());
+
+        expect(only.log).toBe('Response received');
     });
 });
 

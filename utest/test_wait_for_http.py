@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from Browser import Browser
+from Browser.keywords import network
 from Browser.keywords.network import _readable
 from Browser.utils.data_types import CapturedRequest, CapturedResponse
 
@@ -233,6 +234,18 @@ def test_wait_for_request_post_data_json_is_none_for_invalid_json(browser, stub)
     assert browser.wait_for_request().postDataJSON is None
 
 
+def test_wait_for_request_does_not_wait_for_all_fields_by_default(browser, stub):
+    captured_request(stub, None)
+    browser.wait_for_request()
+    assert stub.WaitForRequest.call_args.args[0].waitForAllFields is False
+
+
+def test_wait_for_request_asks_node_to_wait_for_all_fields(browser, stub):
+    captured_request(stub, None)
+    browser.wait_for_request(wait_for_all_fields=True)
+    assert stub.WaitForRequest.call_args.args[0].waitForAllFields is True
+
+
 def test_wait_for_request_keeps_legacy_keys(browser, stub):
     captured_request(stub, None)
     request = browser.wait_for_request()
@@ -258,6 +271,39 @@ def test_documented_example_lists_every_key_in_order(typed_dict):
 def test_documented_response_example_contains_a_full_request():
     request = documented_example(CapturedResponse)["request"]
     assert list(request) == list(CapturedRequest.__annotations__)
+
+
+def log_level(monkeypatch, level: str) -> MagicMock:
+    builtin = MagicMock()
+    builtin.get_variable_value.return_value = level
+    monkeypatch.setattr(network, "BuiltIn", lambda: builtin)
+    readable = MagicMock(return_value="formatted")
+    monkeypatch.setattr(network, "_readable", readable)
+    return readable
+
+
+def test_body_is_not_formatted_for_the_log_below_trace_level(monkeypatch):
+    readable = log_level(monkeypatch, "INFO")
+    network._trace_content("Response body", b"HELLO")
+    readable.assert_not_called()
+
+
+def test_body_is_formatted_for_the_log_at_trace_level(monkeypatch):
+    readable = log_level(monkeypatch, "TRACE")
+    network._trace_content("Response body", b"HELLO")
+    readable.assert_called_once_with(b"HELLO")
+
+
+def test_only_messages_with_a_log_line_are_logged(browser, stub, monkeypatch):
+    info = MagicMock()
+    monkeypatch.setattr(network.logger, "info", info)
+    first, *_ = response_messages(b'{"greeting": ')
+    first.log = "Response received, sent in 2 chunks"
+    stub.WaitForResponse.return_value = [first, message(body=b'"HELLO"}')]
+    browser.wait_for_response()
+    logged = [call.args[0] for call in info.call_args_list]
+    assert "Response received, sent in 2 chunks" in logged
+    assert "" not in logged
 
 
 def test_body_is_logged_as_formatted_json():
