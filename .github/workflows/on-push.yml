@@ -21,8 +21,8 @@ jobs:
   # matrix.os stays the GitHub image name, which the step conditions and
   # artifact names use. pabot runs one process per vCPU but one.
   #
-  # Order: lint first, the unit tests once it passed. The acceptance tests run
-  # in ten entries, each with its own Python, Robot Framework and Node.js:
+  # Lint and the unit tests start at once and are done before the acceptance
+  # tests need the machines. The acceptance tests run in ten entries, each with its own Python, Robot Framework and Node.js:
   # atest-source runs them from the checkout with coverage and starts at once,
   # atest-wheel installs the wheels of build_wheels as a user would. The
   # coverage job merges the coverage of the unit and the source acceptance
@@ -129,7 +129,6 @@ jobs:
 
   utest:
     name: Unit tests (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.node-version }})
-    needs: lint
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 20
     permissions:
@@ -570,12 +569,12 @@ jobs:
             rf-version: "7.5.1"
             batteries: true
           - os: ubuntu-24.04-arm
-            runner: nscloud-ubuntu-24.04-arm64-8x16
+            runner: nscloud-ubuntu-24.04-arm64-16x32
             python-version: "3.15"
             rf-version: "7.2.2"
             batteries: true
           - os: windows-latest
-            runner: nscloud-windows-2022-amd64-8x16
+            runner: nscloud-windows-2022-amd64-16x32
             python-version: "3.14"
             rf-version: "7.1.1"
             batteries: true
