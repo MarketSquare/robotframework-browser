@@ -14,6 +14,7 @@
 
 import { Server, ServerCredentials, UntypedServiceImplementation } from '@grpc/grpc-js';
 
+import { bindErrorExitCode } from './bind-exit-code';
 import { logger } from './browser_logger';
 import { PlaywrightService } from './generated/playwright';
 import { PlaywrightServer } from './grpc-service';
@@ -39,7 +40,7 @@ server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), (error) 
         // Nothing else keeps the process alive, so it would end with code 0 and
         // whoever holds the port would answer the library in its place.
         logger.error(`Could not listen on ${host}:${port}: ${error.message}`);
-        process.exit(1);
+        process.exit(bindErrorExitCode(error));
     }
     logger.info(`Listening on ${host}:${port}`);
 });
