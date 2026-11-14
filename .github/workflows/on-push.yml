@@ -386,6 +386,7 @@ jobs:
       - name: Merge the coverage
         id: report
         run: |
+          coverage combine --data-file=.coverage $(find coverage-data -name '.coverage.utest-*')
           find coverage-data -name '.coverage.*' -exec mv {} . \;
           tracefiles=$(find coverage-data -name lcov.info -printf '--add-tracefile %p ')
           if [ -n "$tracefiles" ]; then

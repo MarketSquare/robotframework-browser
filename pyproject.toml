@@ -270,6 +270,9 @@ patch = ["subprocess"]
 sigterm = true
 
 [tool.coverage.report]
+# The CI coverage job reports the data of other machines without building the
+# protobuf code, so the report has to leave it out as well as the run.
+omit = ["Browser/generated/*"]
 show_missing = true
 skip_covered = false
 skip_empty = true
