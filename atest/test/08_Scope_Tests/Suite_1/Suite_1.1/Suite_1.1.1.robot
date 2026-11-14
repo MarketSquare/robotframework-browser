@@ -1,8 +1,8 @@
 *** Settings ***
 Resource        ../../scope_keywords.resource
 
-Suite Setup     Ensure Open Page    ${WAIT_URL_DIRECT}
-Test Setup      Go To    ${WAIT_URL_DIRECT}
+Suite Setup     Ensure Open Direct Page
+Test Setup      Open Direct Page
 Test Timeout    30 sec
 
 *** Test Cases ***
@@ -13,13 +13,13 @@ Test Scope Settings Override Global Defaults
     Should Be Equal    ${global_timeout}    1 second
     Timeout Should Be    2000
 
-    Go To    ${WAIT_URL_DIRECT}
+    Open Direct Page
     Strict Mode Should Be    False
     ${global_strict} =    Set Strict Mode    ${True}    scope=Test
     Should Be Equal    ${global_strict}    ${False}
     Strict Mode Should Be    True
 
-    Go To    ${WAIT_URL_DIRECT}
+    Open Direct Page
     Assertion Retry Should Be    1000
     ${global_retry} =    Set Retry Assertions For    2s    scope=Test
     Should Be Equal    ${global_retry}    1 second
