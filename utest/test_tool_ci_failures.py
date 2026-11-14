@@ -4392,6 +4392,8 @@ class TestEveryTestArtifactOfARun:
         self._listing(
             monkeypatch,
             [
+                "Source test results-ubuntu-latest-3.14-24.x",
+                "Wheel test results-ubuntu-24.04-arm-3.15-batteries",
                 "Test results-ubuntu-latest-3-3.13-22.x",
                 "ubuntu-latest 3.13 24.x Clean install results",
                 "Clean_install_results_macos-latest",
@@ -4406,6 +4408,8 @@ class TestEveryTestArtifactOfARun:
         listed = [artifact.name for artifact in github.list_test_artifacts(1)]
 
         assert listed == [
+            "Source test results-ubuntu-latest-3.14-24.x",
+            "Wheel test results-ubuntu-24.04-arm-3.15-batteries",
             "Test results-ubuntu-latest-3-3.13-22.x",
             "ubuntu-latest 3.13 24.x Clean install results",
             "Clean_install_results_macos-latest",
@@ -4427,6 +4431,39 @@ class TestEveryTestArtifactOfARun:
             for t in build_json(db)["test_failures"]
             if t["test"].endswith("Failing Test")
         )
+
+    @pytest.mark.parametrize(
+        ("artifact", "install", "leg"),
+        [
+            (
+                "Source test results-ubuntu-latest-3.14-24.x",
+                "source",
+                "source · ubuntu-latest · 3.14 · 24.x",
+            ),
+            (
+                "Source test results-ubuntu-latest-3.12-batteries",
+                "source",
+                "source · ubuntu-latest · 3.12 · batteries",
+            ),
+            (
+                "Wheel test results-windows-latest-3.12-24.x",
+                "wheel",
+                "wheel · windows-latest · 3.12 · 24.x",
+            ),
+            (
+                "Wheel test results-ubuntu-24.04-arm-3.15-batteries",
+                "batteries",
+                "batteries · ubuntu-24.04-arm · 3.15",
+            ),
+        ],
+    )
+    def test_the_current_artifact_names_tell_install_and_leg(
+        self, artifact, install, leg
+    ):
+        from tools.ci_failures.legs import install_of, leg_name
+
+        assert install_of(artifact) == install
+        assert leg_name(artifact) == leg
 
     def test_a_failure_says_which_install_it_happened_on(
         self, fake_ci, tmp_path, monkeypatch
