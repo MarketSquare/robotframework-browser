@@ -116,6 +116,8 @@ package = false
 # BrowserBatteries pins this exact Browser version, so the bb extra cannot
 # resolve while the version is a nightly or an unreleased one.
 exclude-dependencies = ["robotframework-browser-batteries"]
+# soupsieve 4 needs Python >= 3.11.5; Dependabot cannot update a lock split below it.
+environments = ["python_full_version >= '3.11.5'"]
 
 [tool.setuptools]
 include-package-data = true
