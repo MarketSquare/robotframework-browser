@@ -568,6 +568,14 @@ def _assemble_wrapper(c: Context, destination: Path):
     # `rfbrowser init`, so it can hold node_modules, downloaded browsers and log
     # files that must not be shipped.
     shutil.copy(WRAPPER_DIR / "index.js", destination)
+    # Only a coverage build has a source map, which maps the V8 coverage of
+    # this copy back to the TypeScript sources too.
+    source_map = WRAPPER_DIR / "index.js.map"
+    if (
+        os.environ.get("ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE") == "1"
+        and source_map.exists()
+    ):
+        shutil.copy(source_map, destination)
     shutil.copytree(WRAPPER_DIR / "static", destination / "static", dirs_exist_ok=True)
     shutil.copy(ROOT_DIR / "package.json", destination)
     shutil.copy(ROOT_DIR / "package-lock.json", destination)
@@ -1175,6 +1183,7 @@ def atest_coverage(
     debug=False,
     exclude=None,
     loglevel=None,
+    batteries=False,
 ):
     """Run acceptance tests with pabot, measuring Python and Node.js coverage.
 
@@ -1190,6 +1199,9 @@ def atest_coverage(
         debug:    Use robotframework-debugger as test listener.
         exclude:  Exclude tests by tag.
         loglevel: Set log level for robot framework.
+        batteries: Run the shared Node.js process from BrowserBatteries. Assumes
+            the NodeJS side was assembled with
+            ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE=1, see `inv build-nodejs`.
 
     Python: every pabot worker writes its own `.coverage.*` file. Run
     `inv utest` first, because pytest-cov erases `.coverage.*` files.
@@ -1238,6 +1250,7 @@ def atest_coverage(
         args.extend(["--exclude", exclude])
     args.extend(["--exclude", "no-coverage-support"])
 
+    _batteries(batteries)
     node_started = time.time()
     background_process, port = spawn_node_process(ATEST_OUTPUT / "playwright-log.txt")
     try:

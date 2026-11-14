@@ -17,16 +17,21 @@ env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
 jobs:
-  # The jobs run on Namespace runners. matrix.os stays the GitHub image name,
-  # which the step conditions and artifact names use, and runs-on maps it to the
-  # Namespace machine. pabot runs one process per vCPU but one.
+  # The jobs run on Namespace runners, each matrix entry names its machine.
+  # matrix.os stays the GitHub image name, which the step conditions and
+  # artifact names use. pabot runs one process per vCPU but one.
   #
-  # The workspace runs at most 64 Linux vCPU at a time, so the sizes trade the
-  # speed of a job against the jobs queued behind it. Measured on the whole
-  # acceptance suite: 8 vCPU take 140 s, 16 take 85 s and 32 take 75 s, while
-  # installing and the unit tests take the same 2.5 minutes on any size. Linux
-  # jobs get 8 vCPU, Windows 16 and macOS 12, the largest Namespace macOS shape,
-  # which leaves room at the start for the 2 vCPU job every build waits for.
+  # Order: lint first, the unit tests once it passed. The acceptance tests run
+  # in ten entries, each with its own Python, Robot Framework and Node.js:
+  # atest-source runs them from the checkout with coverage and starts at once,
+  # atest-wheel installs the wheels of build_wheels as a user would. The
+  # coverage job merges the coverage of the unit and the source acceptance
+  # tests and scans it with SonarQube.
+  #
+  # The workspace runs at most 64 Linux, 32 Windows and 24 macOS vCPU at a
+  # time, so the sizes trade the speed of a job against the jobs queued behind
+  # it. Measured on the whole acceptance suite: 8 vCPU take 140 s, 16 take 85 s
+  # and 32 take 75 s. The unit tests run serially and get the small machines.
   # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
   # The version the wheels of this run carry. Empty unless this is a push to
@@ -60,44 +65,108 @@ jobs:
         run: |
           inv dev-version
 
-  testing:
-    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "windows-latest":"nscloud-windows-2022-amd64-16x32", "macos-latest":"nscloud-macos-sequoia-arm64-12x28"}')[matrix.os] }}
-    timeout-minutes: 30
+  lint:
+    name: Lint
+    runs-on: nscloud-ubuntu-24.04-amd64-4x8
+    timeout-minutes: 15
     permissions:
       contents: read
-      pull-requests: write
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24.x
+          cache: 'npm'
+      - name: Install nodejs dependencies
+        run: |
+          npm ci # installs from package-lock.json; grpc-tools needs its install script
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: "3.14"
+          activate-environment: true
+      - name: Install python dependencies
+        run: |
+          uv sync --locked --no-build
+      - name: Build stubs
+        run: |
+          inv node-build
+      - name: Lint Python
+        run: |
+          inv lint-python
+      - name: Lint atest
+        if: ${{ !cancelled() }}
+        run: |
+          inv lint-robot
+      - name: Lint node
+        if: ${{ !cancelled() }}
+        run: |
+          inv lint-node
+      # The reports are advisory, so findings do not fail these commands. mypy has
+      # no exit-zero flag: 1 means findings, anything higher means it broke.
+      - name: Generate linter reports for SonarQube
+        if: ${{ !cancelled() }}
+        run: |
+          robocop check atest --config pyproject.toml --reports sonarqube --exit-zero
+          ruff check Browser browser_batteries atest --config pyproject.toml --exit-zero --output-format json --output-file ruff.json
+          mypy Browser browser_batteries atest/library --exclude .venv --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: linter-reports
+          path: |
+            robocop_sonar_qube.json
+            ruff.json
+            mypy.txt
+          if-no-files-found: ignore
+
+  utest:
+    name: Unit tests (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.node-version }})
+    needs: lint
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
-      # Every Python, Robot Framework and Node.js version and every OS runs once,
-      # each entry the whole acceptance suite. The oldest Python goes with the
-      # oldest Robot Framework. The lowest rf-version below is the supported Robot
-      # Framework floor and must match the robotframework lower bound in
-      # pyproject.toml. Change both together. The entry with lint: true also runs
-      # the linters. It needs the latest Robot Framework, whose type hints decide
-      # which type: ignore comments mypy accepts.
+      # Every Python, Robot Framework and Node.js version and every OS runs once.
+      # The lowest rf-version is the supported Robot Framework floor and must
+      # match the robotframework lower bound in pyproject.toml. Change both
+      # together.
       matrix:
         include:
           - os: ubuntu-latest
+            runner: nscloud-ubuntu-24.04-amd64-4x8
             python-version: "3.11"
             rf-version: "7.1.1"
             node-version: 22.x
           - os: windows-latest
+            runner: nscloud-windows-2022-amd64-8x16
             python-version: "3.12"
             rf-version: "7.2.2"
             node-version: 24.x
           - os: macos-latest
+            runner: nscloud-macos-sequoia-arm64-6x14
             python-version: "3.13"
             rf-version: "7.3.2"
             node-version: 26.x
           - os: ubuntu-latest
+            runner: nscloud-ubuntu-24.04-amd64-4x8
             python-version: "3.14"
             rf-version: "7.4.2"
             node-version: 24.x
           - os: ubuntu-latest
+            runner: nscloud-ubuntu-24.04-amd64-4x8
             python-version: "3.15"
             rf-version: "7.5.1"
             node-version: 26.x
-            lint: true
     steps:
     - uses: actions/checkout@v7
     - name: Use Node.js
@@ -129,32 +198,26 @@ jobs:
         uv sync --locked
         uv pip install robotframework==${{ matrix.rf-version }}
         python atest/library/os_wrapper.py
-    - name: Build stubs
+    - name: Build stubs and test app
       run: |
         inv node-build
-    - name: Check types with mypy on Linux
-      if: matrix.lint
-      run: |
-        inv lint-python
-    - name: Lint atest
-      if: matrix.lint
-      run: |
-        inv lint-robot
-    - name: Lint node
-      if: matrix.lint
-      run: |
-        inv lint-node
-    - name: Build test app
-      run: |
         inv create-test-app
-    - name: Start xvfb on Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        export DISPLAY=:99.0
-        Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
     - name: Run pytests
       run: |
         invoke utest
+    # Named per entry, so that the coverage job can combine them all.
+    - name: Name the coverage data
+      if: ${{ !cancelled() && hashFiles('.coverage') != '' }}
+      shell: bash
+      run: |
+        mv .coverage ".coverage.utest-${{ matrix.os }}-${{ matrix.python-version }}"
+    - uses: actions/upload-artifact@v7
+      if: ${{ !cancelled() }}
+      with:
+        name: coverage-utest-${{ matrix.os }}-${{ matrix.python-version }}
+        path: .coverage.utest-*
+        include-hidden-files: true
+        if-no-files-found: ignore
     - uses: actions/upload-artifact@v7
       if: ${{ always() && hashFiles('utest/output/pytest_xunit.xml') != '' }}
       with:
@@ -163,56 +226,21 @@ jobs:
           utest/output/pytest_xunit.xml
           utest/output/test-app/
     - name: Run Node.js unit tests with coverage
+      if: ${{ !cancelled() }}
       run: |
         npm run test:coverage
         node node/coverage-summary.mjs
     - uses: actions/upload-artifact@v7
+      if: ${{ !cancelled() }}
       with:
         name: node-coverage-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
         path: node/coverage/
-    - name: Run Robot Framework tests on linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        xvfb-run --auto-servernum inv atest
-    - name: Run Robot Framework tests on Windows
-      if: matrix.os == 'windows-latest'
-      run: |
-        inv atest
-    - name: Run Robot Framework tests on macOS
-      if: matrix.os == 'macos-latest'
-      run: |
-        inv atest
-    - uses: actions/upload-artifact@v7
-      if: ${{ always() }}
-      with:
-        name: Test results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
-        path: atest/output
-    # A process that dies from a signal often prints nothing; the macOS crash report holds the
-    # faulting stack. A child that crashed between fork and exec is reported as Python.
-    - name: Collect crash reports on macOS
-      if: ${{ always() && matrix.os == 'macos-latest' }}
-      run: |
-        mkdir -p crash-reports
-        find ~/Library/Logs/DiagnosticReports \( -name 'node*' -o -iname 'python*' \) -exec cp {} crash-reports/ \; || true
-    - uses: actions/upload-artifact@v7
-      if: ${{ always() && matrix.os == 'macos-latest' }}
-      with:
-        name: Crash reports-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.node-version }}
-        path: crash-reports/
-        if-no-files-found: ignore
-    - name: Github Job Summary
-      if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
-      run: |
-        python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
-        cat fail.md
 
-  # Python and Node.js coverage from every suite, in one report, scanned by
-  # SonarQube with the linter findings. Linux runs the largest test set and is
-  # the only platform where Node.js coverage flushes. Advisory, so it stays out
-  # of the needs of publish_nightly. Each suite runs even when an earlier one
-  # failed, so a failing test still leaves a report.
-  coverage:
-    name: Coverage
+  # The acceptance tests from the checkout, with Python and Node.js coverage and
+  # one Node.js process that every pabot worker shares, the way `inv atest`
+  # runs them. They need no wheel, so they start with the build.
+  atest-source:
+    name: Acceptance tests from source (${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
     runs-on: nscloud-ubuntu-24.04-amd64-8x16
     timeout-minutes: 30
     permissions:
@@ -220,6 +248,102 @@ jobs:
     env:
       # Read at build time by node/build.wrapper.js and at run time by the library.
       ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE: 1
+    strategy:
+      fail-fast: false
+      # With atest-wheel, every Python and Robot Framework version runs once
+      # with the system Node.js and once with BrowserBatteries, and no two of
+      # the ten entries share their Python and Robot Framework versions.
+      matrix:
+        include:
+          - python-version: "3.14"
+            rf-version: "7.4.2"
+            node-version: 24.x
+          - python-version: "3.15"
+            rf-version: "7.5.1"
+            node-version: 26.x
+          - python-version: "3.12"
+            rf-version: "7.4.2"
+            node-version: 24.x
+            batteries: true
+    steps:
+      - uses: actions/checkout@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Install nodejs dependencies
+        if: ${{ !matrix.batteries }}
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
+        run: |
+          npm ci # installs from package-lock.json; grpc-tools needs its install script
+          .github/scripts/install-playwright.sh
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          python-version: ${{ matrix.python-version }}
+          activate-environment: true
+      - name: Install python dependencies
+        env:
+          # Python 3.15 is a prerelease, and some dependencies ship no wheels for it yet.
+          UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
+        run: |
+          uv sync --locked
+      # Builds everything, the Node.js dependencies and browsers included, and
+      # puts the NodeJS binary next to the coverage build of the wrapper.
+      - name: Assemble BrowserBatteries
+        if: ${{ matrix.batteries }}
+        env:
+          UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
+        run: |
+          inv build-nodejs
+      - name: Install Robot Framework ${{ matrix.rf-version }}
+        env:
+          UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
+        run: |
+          uv pip install robotframework==${{ matrix.rf-version }}
+          python atest/library/os_wrapper.py
+      - name: Run Robot Framework tests with coverage
+        run: |
+          xvfb-run --auto-servernum inv atest-coverage ${{ matrix.batteries && '--batteries' || '' }}
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-atest-${{ matrix.python-version }}-${{ matrix.batteries && 'batteries' || 'node' }}
+          path: |
+            .coverage.*
+            atest/output/node-coverage-report/lcov.info
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: Source test results-${{ matrix.python-version }}-${{ matrix.batteries && 'batteries' || 'node' }}
+          path: atest/output
+      - name: Github Job Summary
+        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
+        run: |
+          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
+          cat fail.md
+
+  # Python and Node.js coverage of the unit tests and the source acceptance
+  # tests, in one report, scanned by SonarQube with the linter findings.
+  # Advisory, so it stays out of the needs of publish_nightly. It merges
+  # whatever coverage the tests left, also when some of them failed.
+  coverage:
+    name: Coverage
+    needs: [lint, utest, atest-source]
+    if: ${{ !cancelled() }}
+    runs-on: nscloud-ubuntu-24.04-amd64-4x8
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
       # Job level, so that the scan step's if can see it. Empty in forks and
       # Dependabot runs, which skips only the scan.
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -227,18 +351,6 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # SonarQube needs the history to tell new code from old
-      - name: Use Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24.x
-          cache: 'npm'
-      - name: Install nodejs dependencies
-        shell: bash
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: 0
-        run: |
-          npm ci # installs from package-lock.json; grpc-tools needs its install script
-          .github/scripts/install-playwright.sh
       - name: Set up Python 3.13
         uses: actions/setup-python@v7
         with:
@@ -251,47 +363,37 @@ jobs:
       - name: Install python dependencies and lcov
         run: |
           uv sync --locked --no-build
-          python atest/library/os_wrapper.py
           sudo apt-get install --yes --no-install-recommends lcov
-      - name: Build
-        id: build
-        run: |
-          inv node-build
-          inv create-test-app
-      - name: Run pytests
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: |
-          inv utest
-      - name: Run Node.js unit tests
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: |
-          inv utest-node --coverage
-      - name: Run Robot Framework tests
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: |
-          xvfb-run --auto-servernum inv atest-coverage
-      - name: Github Job Summary
-        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
-        run: |
-          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
-          cat fail.md
+      - name: Download the coverage data
+        uses: actions/download-artifact@v8
+        with:
+          pattern: coverage-*
+          path: coverage-data
+      - name: Download the Node.js unit test coverage
+        uses: actions/download-artifact@v8
+        with:
+          name: node-coverage-ubuntu-latest-3.14-24.x
+          path: node/coverage
+      - name: Download the linter reports
+        uses: actions/download-artifact@v8
+        with:
+          name: linter-reports
       - name: Merge the coverage
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        id: report
         run: |
+          find coverage-data -name '.coverage.*' -exec mv {} . \;
+          tracefiles=$(find coverage-data -name lcov.info -printf '--add-tracefile %p ')
+          if [ -n "$tracefiles" ]; then
+            mkdir -p atest/output/node-coverage-report
+            lcov --branch-coverage --ignore-errors inconsistent,inconsistent --quiet \
+              $tracefiles --output-file atest/output/node-coverage-report/lcov.info
+          fi
           inv coverage-report
-      # The reports are advisory, so findings do not fail these commands. mypy has
-      # no exit-zero flag: 1 means findings, anything higher means it broke.
-      - name: Generate linter reports
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: |
-          robocop check atest --config pyproject.toml --reports sonarqube --exit-zero
-          ruff check Browser browser_batteries atest --config pyproject.toml --exit-zero --output-format json --output-file ruff.json
-          mypy Browser browser_batteries atest/library --exclude .venv --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
       # The Free plan analyses only main and pull requests targeting it. A failed
-      # build would scan with no coverage at all, so it skips the scan.
+      # merge would scan with no coverage at all, so it skips the scan.
       - name: Scan
         if: >-
-          ${{ !cancelled() && steps.build.outcome == 'success' && env.SONAR_TOKEN != '' && (
+          ${{ !cancelled() && steps.report.outcome == 'success' && env.SONAR_TOKEN != '' && (
             (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
             (github.event_name == 'pull_request' && github.base_ref == 'main')
           ) }}
@@ -301,7 +403,7 @@ jobs:
       - name: Write the pull request number for the fork scan
         id: fork-reports
         if: >-
-          ${{ !cancelled() && steps.build.outcome == 'success' && github.event_name == 'pull_request' &&
+          ${{ !cancelled() && steps.report.outcome == 'success' && github.event_name == 'pull_request' &&
             github.base_ref == 'main' && github.event.pull_request.head.repo.full_name != github.repository }}
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -327,107 +429,6 @@ jobs:
             node/coverage/lcov.info
             atest/output/node-coverage-report/lcov.info
           if-no-files-found: ignore
-      - uses: actions/upload-artifact@v7
-        if: ${{ always() }}
-        with:
-          name: Coverage test results
-          path: |
-            utest/output/pytest_xunit.xml
-            atest/output
-          if-no-files-found: ignore
-
-  test-install:
-    needs: build_wheels
-    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest]
-        python-version: ["3.11", "3.13"]
-        node-version: [22.x, 24.x]
-        exclude:
-          - python-version: "3.11"
-            node-version: 22.x
-          - os: windows-latest
-            python-version: "3.11"
-          - os: windows-latest
-            node-version: 22.x
-    steps:
-      - uses: actions/checkout@v7
-      - name: Download package for install testing
-        uses: actions/download-artifact@v8
-        with:
-          name: rfbrowser-wheel
-      - name: Download package for install testing
-        uses: actions/download-artifact@v8
-        with:
-          name: demoapp-${{ matrix.os }}
-          path: zip_results/demoapp
-      - name: Unzip demoapp in *nix like
-        if: matrix.os != 'windows-latest'
-        run: |
-          ls -l zip_results/demoapp
-          unzip -o zip_results/demoapp/demo-app-linux.zip
-      - name: Unzip demoapp in windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          dir zip_results/demoapp
-          tar -xf zip_results/demoapp/demo-app-win32.zip
-      - name: Use Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v7
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up uv
-        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - name: Install Robot Framework Browser on *nix like
-        run: |
-          uv pip install ./robotframework_browser-*-py3-none-any.whl  --python ${{ matrix.python-version }} --system
-        if: matrix.os != 'windows-latest'
-      - name: Install Robot Framework Browser on windows
-        run: |
-          uv pip install (gci *.whl)--python ${{ matrix.python-version }} --system
-        if: matrix.os == 'windows-latest'
-      - name: Install node deps and python deps for test running
-        run: |
-          rfbrowser init
-          uv export --locked --only-group dev --no-emit-project --output-file dev-requirements.txt
-          uv pip install --require-hashes --no-build -r dev-requirements.txt --python ${{ matrix.python-version }} --system
-      - name: Test on Ubuntu - serial mode
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          SYS_VAR_CI_INSTALL_TEST: 1
-        run: |
-          rm -rf Browser
-          export DISPLAY=:99.0
-          Xvfb -ac :99 -screen 0 1280x1024x16 > /dev/null 2>&1 &
-          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
-      - name: Run Robot Framework tests on windows or macOS
-        if: matrix.os != 'ubuntu-latest'
-        env:
-          SYS_VAR_CI_INSTALL_TEST: 1
-        run: |
-          Remove-Item -Path .\Browser -Force -Recurse
-          invoke atest-robot --smoke --parallel
-      - name: Uninstall on Linux or MacOS
-        if: ${{ matrix.os != 'windows-latest' }}
-        run: |
-          rfbrowser clean-node
-          uv pip uninstall robotframework-browser  --python ${{ matrix.python-version }} --system
-      - uses: actions/upload-artifact@v7
-        if: ${{ always() }}
-        with:
-          name: ${{ matrix.os }} ${{ matrix.python-version }} ${{ matrix.node-version }} Clean install results
-          path: atest/output
-      - name: Github Job Summary
-        if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
-        run: |
-          python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
-          cat fail.md
 
   # The Browser wheel, the BrowserBatteries wheels and the demo apps that every
   # install test and the nightly use.
@@ -529,91 +530,129 @@ jobs:
         os: [ macos-15-intel ]
     steps: *build_wheels_steps
 
-  test_browser_batteries_wheels:
-    needs:
-      - build_wheels
-    name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
-    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
-    timeout-minutes: 45
+  # The acceptance tests against the wheels of build_wheels, installed as a user
+  # would: the Browser wheel with `rfbrowser init` on the system Node.js, or
+  # with the BrowserBatteries wheel of the platform and its own NodeJS. Every
+  # pabot process starts its own Node.js process, unlike in atest-source.
+  atest-wheel:
+    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
+    needs: build_wheels
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "ubuntu-24.04-arm", "windows-latest", "macos-latest" ]
-
-    steps: &test_browser_batteries_wheels_steps
+        include:
+          - os: ubuntu-latest
+            runner: nscloud-ubuntu-24.04-amd64-8x16
+            python-version: "3.11"
+            rf-version: "7.1.1"
+            node-version: 22.x
+          - os: windows-latest
+            runner: nscloud-windows-2022-amd64-16x32
+            python-version: "3.12"
+            rf-version: "7.2.2"
+            node-version: 24.x
+          - os: macos-latest
+            runner: nscloud-macos-sequoia-arm64-12x28
+            python-version: "3.13"
+            rf-version: "7.3.2"
+            node-version: 26.x
+          - os: ubuntu-latest
+            runner: nscloud-ubuntu-24.04-amd64-8x16
+            python-version: "3.13"
+            rf-version: "7.5.1"
+            batteries: true
+          - os: ubuntu-24.04-arm
+            runner: nscloud-ubuntu-24.04-arm64-8x16
+            python-version: "3.15"
+            rf-version: "7.2.2"
+            batteries: true
+          - os: windows-latest
+            runner: nscloud-windows-2022-amd64-8x16
+            python-version: "3.14"
+            rf-version: "7.1.1"
+            batteries: true
+          - os: macos-latest
+            runner: nscloud-macos-sequoia-arm64-6x14
+            python-version: "3.11"
+            rf-version: "7.3.2"
+            batteries: true
+    env:
+      SYS_VAR_CI_INSTALL_TEST: 1
+      # Python 3.15 is a prerelease and cryptography ships no Intel macOS wheels,
+      # so those two may build from source.
+      NO_BUILD: ${{ (matrix.python-version != '3.15' && matrix.os != 'macos-15-intel') && '--no-build' || '' }}
+    steps: &atest_wheel_steps
       - uses: actions/checkout@v7
-      - name: Set up Python 3.14
-        uses: actions/setup-python@v7
-        with:
-          python-version: 3.14
-          cache: 'pip'
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24.x"
-      - name: Download browser-wheel
+      - name: Download the Browser wheel
         uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel
-          path: rfbrowser-wheel
-      - name: Download BrowserBatteries wheel
+          path: wheels
+      - name: Download the BrowserBatteries wheel
+        if: ${{ matrix.batteries }}
         uses: actions/download-artifact@v8
         with:
           name: browser-batteries-wheels-${{ matrix.os }}
-          path: browser-batteries-wheels
-      - name: Download demoapp
+          path: wheels
+      - name: Download the demo app
         uses: actions/download-artifact@v8
         with:
           name: demoapp-${{ matrix.os }}
           path: demoapp
-      - name: Install Browser and BrowserBatteries
-        if: matrix.os != 'windows-latest'
-        run: |
-          pip install rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl
-          pip install browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl
-          rfbrowser --version
-          .github/scripts/install-playwright.sh rfbrowser install
-      - name: Install Browser and BrowserBatteries On Windows
-        if: matrix.os == 'windows-latest'
-        run: |
-          pip install (Resolve-Path rfbrowser-wheel/robotframework_browser-*-py3-none-any.whl)
-          pip install (Resolve-Path browser-batteries-wheels/robotframework_browser_batteries-*-py3-none-*.whl)
-          rfbrowser --version
-          rfbrowser install
+      - name: Use Node.js
+        if: ${{ !matrix.batteries }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - name: Install test dependencies
+      - name: Install the wheels
+        shell: bash
+        run: |
+          uv pip install wheels/*.whl --python ${{ matrix.python-version }} --system
+          rfbrowser --version
+      - name: Install the Node.js dependencies and browsers
+        if: ${{ !matrix.batteries }}
+        shell: bash
+        run: |
+          rfbrowser init
+      - name: Install the browsers
+        if: ${{ matrix.batteries }}
+        shell: bash
+        run: |
+          .github/scripts/install-playwright.sh rfbrowser install
+      - name: Install the test dependencies and Robot Framework ${{ matrix.rf-version }}
+        shell: bash
         run: |
           uv export --locked --only-group dev --no-emit-project --output-file dev-requirements.txt
-          uv pip install --require-hashes ${{ matrix.os != 'macos-15-intel' && '--no-build' || '' }} -r dev-requirements.txt --python 3.14 --system
-      - name: Unzip demoapp *nix
-        if: matrix.os != 'windows-latest'
+          uv pip install --require-hashes $NO_BUILD -r dev-requirements.txt --python ${{ matrix.python-version }} --system
+          uv pip install $NO_BUILD robotframework==${{ matrix.rf-version }} --python ${{ matrix.python-version }} --system
+          python atest/library/os_wrapper.py
+      # The tests must import the installed packages, not the sources.
+      - name: Replace the sources with the demo app
+        shell: bash
         run: |
-          rm -rf Browser
-          rm -rf node
-          rm -rf browser_batteries
-          ls -l demoapp
-          unzip demoapp/demo-app*.zip -d .
-      - name: Unzip demoapp Windows
-        if: matrix.os == 'windows-latest'
+          rm -rf Browser browser_batteries node
+          python -m zipfile -e demoapp/demo-app*.zip .
+          ls node
+      - name: Run Robot Framework tests on Linux
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
-          Remove-Item -Path .\Browser -Force -Recurse
-          Remove-Item -Path .\node -Force -Recurse
-          Remove-Item -Path .\browser_batteries -Force -Recurse
-          dir demoapp
-          Expand-Archive -Path (Resolve-Path demoapp/demo-app*.zip) -DestinationPath .
-      - name: Run tests on ${{ matrix.os }} with packed demoapp
-        if: matrix.os == 'ubuntu-latest' || matrix.os == 'ubuntu-24.04-arm'
-        run: |
-          xvfb-run --auto-servernum invoke atest-robot --smoke --parallel
-      - name: Run tests on ${{ matrix.os }} with packed demoapp
-        if: matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || matrix.os == 'macos-15-intel'
+          xvfb-run --auto-servernum inv atest-robot --parallel
+      - name: Run Robot Framework tests on Windows or macOS
+        if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         run: |
           inv atest-robot --parallel
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
-          name: Clean_install_results_${{ matrix.os }}
+          name: Wheel test results-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.batteries && 'batteries' || matrix.node-version }}
           path: atest/output
       - name: Github Job Summary
         if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
@@ -621,23 +660,31 @@ jobs:
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
       - name: Uninstall
+        if: ${{ matrix.os != 'windows-latest' || matrix.batteries }}
+        shell: bash
         run: |
           rfbrowser clean-node
-          pip uninstall -y robotframework-browser-batteries
-          pip uninstall -y robotframework-browser
+          uv pip uninstall robotframework-browser ${{ matrix.batteries && 'robotframework-browser-batteries' || '' }} --python ${{ matrix.python-version }} --system
 
-  test_browser_batteries_wheels_intel:
+  atest-wheel-intel:
     if: github.event_name == 'schedule'
     needs:
       - build_wheels
       - build_wheels_intel
-    name: Test wheels on ${{ matrix.os }} for BrowserBatteries tests
+    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, BrowserBatteries)
     runs-on: macos-15-intel
     timeout-minutes: 45
     strategy:
       matrix:
-        os: [ macos-15-intel ]
-    steps: *test_browser_batteries_wheels_steps
+        include:
+          - os: macos-15-intel
+            python-version: "3.14"
+            rf-version: "7.5.1"
+            batteries: true
+    env:
+      SYS_VAR_CI_INSTALL_TEST: 1
+      NO_BUILD: ""
+    steps: *atest_wheel_steps
 
   docker_image:
     runs-on: nscloud-ubuntu-24.04-amd64-8x16
@@ -746,11 +793,12 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - nightly_version
-      - testing
-      - test-install
+      - lint
+      - utest
+      - atest-source
+      - atest-wheel
       - build_wheels
       - build_wheels_intel
-      - test_browser_batteries_wheels
     permissions:
       contents: write
     steps:
