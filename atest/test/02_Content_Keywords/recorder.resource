@@ -146,7 +146,7 @@ Record An Upload
 Upload Replays
     [Arguments]    ${recorded}    ${name}
     # Forward slashes: a backslash in the resource would be a Robot escape on Windows.
-    VAR    ${folder}    ${CURDIR}
+    VAR    ${folder} =    ${CURDIR}
     ${replayable} =    Evaluate
     ...    $recorded.replace('<define_path_to_file>', pathlib.Path($folder).as_posix())
     ...    modules=pathlib

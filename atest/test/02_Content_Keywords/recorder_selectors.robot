@@ -23,7 +23,7 @@ Every Recorded Selector Finds Exactly The Clicked Element
     Mark Clicked Elements    id=frame >>> body
     ${promise} =    Promise To    Record Keyword    Click Everything    ${None}
     Toolbar State Should Be    recording
-    VAR    @{targets}
+    VAR    @{targets} =
     ...    css=h2
     ...    css=button >> nth=0
     ...    css=button >> nth=1
