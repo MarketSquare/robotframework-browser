@@ -750,7 +750,8 @@ jobs:
     needs:
       - build_wheels
       - build_wheels_intel
-    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, BrowserBatteries)
+    # Spelled out: GitHub leaves the matrix in the name of a skipped job.
+    name: Acceptance tests from wheel (macos-15-intel, 3.14, 7.5.1, BrowserBatteries)
     runs-on: macos-15-intel
     timeout-minutes: 45
     strategy:
