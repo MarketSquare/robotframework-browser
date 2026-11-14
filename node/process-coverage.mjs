@@ -48,7 +48,7 @@ const mcr = new CoverageReport({
         const url = entry.url || '';
         if (url.includes('/node_modules/')) return false;
         if (url.startsWith('node:')) return false;
-        return url.includes('Browser/wrapper/index.js') || url.includes('Browser\\wrapper\\index.js');
+        return /(Browser|BrowserBatteries[\\/]bin)[\\/]wrapper[\\/]index\.js$/.test(url);
     },
     sourceFilter: (sourcePath) =>
         sourcePath.includes('node/playwright-wrapper/') && !sourcePath.includes('/generated/'),
