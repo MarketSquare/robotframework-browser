@@ -35,11 +35,10 @@ jobs:
   # and 32 take 75 s. The unit tests run serially and get the small machines.
   # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
-  # Namespace machines cost money, so pull requests from forks run on GitHub's
-  # free runners, with the same tests but slower, unless their author can
-  # write to this repository. To run another one on Namespace, a maintainer
-  # adds the label namespace and reruns all jobs: the label is read when this
-  # job runs, not from the event. A failing lookup falls back to GitHub.
+  # Namespace machines cost money, so pull requests from the forks of people
+  # outside the team run on GitHub's free runners, with the same tests but
+  # slower. To run one on Namespace, a maintainer adds the label namespace and
+  # reruns all jobs: the label is read when this job runs, not from the event.
   runners:
     name: Choose the runners
     runs-on: nscloud-ubuntu-24.04-amd64-2x4
@@ -54,19 +53,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          AUTHOR: ${{ github.event.pull_request.user.login }}
-          OWN_BRANCH: >-
+          TRUSTED: >-
             ${{ github.event_name != 'pull_request' ||
-              github.event.pull_request.head.repo.full_name == github.repository }}
+              github.event.pull_request.head.repo.full_name == github.repository ||
+              contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association) }}
         run: |
-          namespace="$OWN_BRANCH"
-          if [ "$namespace" != true ]; then
-            permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$AUTHOR/permission" --jq .permission || echo none)
-            echo "$AUTHOR can $permission this repository."
-            case "$permission" in
-              admin | maintain | write) namespace=true ;;
-            esac
-          fi
+          namespace="$TRUSTED"
           if [ "$namespace" != true ] &&
             gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name' | grep -qx namespace; then
             namespace=true
