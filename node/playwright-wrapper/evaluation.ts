@@ -373,6 +373,31 @@ type EvaluationOptions = {
     clr: string;
 };
 
+// Playwright draws its highlight in the next animation frame, and Firefox can
+// take a screenshot before that. A background page throttles animation frames,
+// so the wait is bounded.
+const MAX_PAINT_WAIT_MS = 100;
+
+async function highlightPainted(locator: Locator): Promise<void> {
+    await locator
+        .first()
+        .evaluate(
+            (_element, maxWait) =>
+                new Promise<void>((resolve) => {
+                    const timer = setTimeout(resolve, maxWait);
+                    requestAnimationFrame(() =>
+                        requestAnimationFrame(() => {
+                            clearTimeout(timer);
+                            resolve();
+                        }),
+                    );
+                }),
+            MAX_PAINT_WAIT_MS,
+            { timeout: 1000 },
+        )
+        .catch((error: unknown) => logger.info(`Highlight paint not awaited: ${String(error)}`));
+}
+
 export async function highlightAll(
     selector: string,
     duration: number,
@@ -399,6 +424,7 @@ export async function highlightAll(
     logger.info(`Locator count is ${count}`);
     if (['playwright', 'both'].includes(mode)) {
         const highlight = await locator.highlight();
+        if (count > 0) await highlightPainted(locator);
         if (duration === 0) {
             logger.info(`Adding highlight to cache without timeout, it will be disposed later.`);
             state.highlightDisposableCache.add(highlight);
