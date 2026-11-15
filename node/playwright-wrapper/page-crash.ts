@@ -13,7 +13,9 @@
 // limitations under the License.
 
 // A crashed page stays in `context.pages()` until it is closed, but nothing can
-// run on it any more. Playwright reports the crash only as an event.
+// run on it any more. Playwright reports the crash only as an event, so every
+// page of the library is watched from `indexedPage`, as `trackRequests` does
+// for the load report (ADR 0008).
 
 import { Page } from 'playwright';
 
@@ -30,4 +32,9 @@ export function watchCrash(page: Page): void {
 
 export function isCrashed(page: Page): boolean {
     return crashedPages.has(page);
+}
+
+// Closed or crashed: no recording or pick can go on on it.
+export function isGone(page: Page): boolean {
+    return page.isClosed() || isCrashed(page);
 }

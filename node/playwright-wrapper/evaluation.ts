@@ -377,6 +377,8 @@ type EvaluationOptions = {
 // take a screenshot before that. A background page throttles animation frames,
 // so the wait is bounded.
 const MAX_PAINT_WAIT_MS = 100;
+// How long to wait for the highlighted element itself, which may just have gone.
+const PAINT_ELEMENT_TIMEOUT_MS = 1000;
 
 async function highlightPainted(locator: Locator): Promise<void> {
     await locator
@@ -393,7 +395,7 @@ async function highlightPainted(locator: Locator): Promise<void> {
                     );
                 }),
             MAX_PAINT_WAIT_MS,
-            { timeout: 1000 },
+            { timeout: PAINT_ELEMENT_TIMEOUT_MS },
         )
         .catch((error: unknown) => logger.info(`Highlight paint not awaited: ${String(error)}`));
 }

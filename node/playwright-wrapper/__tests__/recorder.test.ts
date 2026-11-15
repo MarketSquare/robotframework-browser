@@ -24,6 +24,7 @@ import {
     toolbarScript,
     writeMode,
 } from '../recorder';
+import { crash } from './fake-crash';
 
 const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
 const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
@@ -266,7 +267,14 @@ function fakePage(mode: string | undefined = 'recording', { closed = false, fail
             delete global.window;
         }
     });
-    return { win, evaluate, once: jest.fn(), on: jest.fn(), url: () => 'http://localhost/form.html' };
+    return {
+        win,
+        evaluate,
+        once: jest.fn(),
+        on: jest.fn(),
+        url: () => 'http://localhost/form.html',
+        isClosed: () => closed,
+    };
 }
 
 function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
@@ -290,8 +298,6 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
 const stateFor = (context: unknown, headless = false, activePage: unknown = undefined) =>
     ({ getActiveContext: () => context, getActivePage: () => activePage, activeBrowser: { headless } }) as any;
 const pollBody = (body: Record<string, unknown>) => ({ body: JSON.stringify(body) }) as any;
-const crash = (page: ReturnType<typeof fakePage>) =>
-    (page.on.mock.calls.find(([event]) => event === 'crash') as unknown as [string, () => void])[1]();
 async function poll(context: unknown, body: Record<string, unknown> = {}) {
     const response = await recorderPoll(pollBody(body), stateFor(context));
     return JSON.parse(response.json);

@@ -12,6 +12,7 @@ import { watchCrash } from '../page-crash';
 import { locatorOn } from '../playwright-invoke';
 import { commandListeners, ensureRecorder, newBuffers } from '../recorder';
 import { selectorPickerPoll } from '../selector-picker';
+import { crash } from './fake-crash';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -222,7 +223,7 @@ describe('selectorPickerPoll', () => {
         const poll = async (body: Record<string, unknown>) =>
             JSON.parse((await selectorPickerPoll({ body: JSON.stringify(body) }, state)).json);
         expect((await poll({ reset: true, allowHeadless: true })).pages).toBe(1);
-        (page.on.mock.calls.find(([event]) => event === 'crash') as unknown as [string, () => void])[1]();
+        crash(page);
         expect((await poll({})).pages).toBe(0);
     });
 });
