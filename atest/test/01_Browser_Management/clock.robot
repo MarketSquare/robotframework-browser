@@ -76,7 +76,16 @@ Test Setup For Clock
     New Page    ${CLOCK_URL}
     ${ASSERTION_TIMEOUT} =    Set Retry Assertions For    5s
     VAR    ${ASSERTION_TIMEOUT} =    ${ASSERTION_TIMEOUT}    scope=SUITE
-    Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
+    TRY
+        Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
+    EXCEPT    AS    ${error}
+        # Diagnosis for Firefox on Windows, where innerText stays empty while the time shows.
+        ${page} =    Evaluate JavaScript
+        ...    id=current-time
+        ...    (e) => ({innerText: e.innerText, textContent: e.textContent, visibilityState: document.visibilityState, hasFocus: document.hasFocus(), clientRects: e.getClientRects().length})
+        Log    Clock page diagnosis: ${page}    WARN
+        Fail    ${error}
+    END
 
 Suite Teardown For Clock
     Close Context
