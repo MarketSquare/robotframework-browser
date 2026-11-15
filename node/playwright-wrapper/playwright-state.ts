@@ -83,6 +83,7 @@ import {
 } from './generated/playwright';
 import { HighlightDisposableCache } from './highlight-cache';
 import { trackRequests, withLoadReport } from './load-report';
+import { watchCrash } from './page-crash';
 import { exists } from './playwright-invoke';
 import {
     adoptedContextResponse,
@@ -360,6 +361,7 @@ async function _indexContextWithPages(
 
 function indexedPage(newPage: Page): IndexedPage {
     trackRequests(newPage);
+    watchCrash(newPage);
     const timestamp = new Date().getTime() / 1000;
     const pageErrors: TimedError[] = [];
     const consoleMessages: TimedConsoleMessage[] = [];

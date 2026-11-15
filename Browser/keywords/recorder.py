@@ -178,7 +178,7 @@ class Recorder(LibraryComponent):
 
         The recording ends with *Save* or *✕* in the toolbar, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
-        pages are closed, or on an error. The keyword being recorded is saved unless it
+        pages are closed or have crashed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
 
         *Arguments:*
@@ -317,7 +317,7 @@ class Recorder(LibraryComponent):
 
         The recording ends with *✕* in the toolbar header, with Playwright's Record button,
         when ``idle_timeout`` passes without any Action or toolbar command, when all
-        pages are closed, or on an error. The keyword being recorded is saved unless it
+        pages are closed or have crashed, or on an error. The keyword being recorded is saved unless it
         has no Keyword Calls.
 
         *Arguments:*
@@ -431,7 +431,7 @@ class Recorder(LibraryComponent):
                 waits without limit.
 
         Fails in a headless browser, while a `Record Keyword` or `Record Keywords` session
-        runs in the browser context, when the page is closed, on cancel and when the
+        runs in the browser context, when the page is closed or crashes, on cancel and when the
         ``idle_timeout`` passes.
 
         The toolbar has the limits of the `Record Keyword` toolbar: it does not appear on a

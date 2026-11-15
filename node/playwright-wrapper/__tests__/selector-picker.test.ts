@@ -1,13 +1,17 @@
 import { describe, expect, it } from '@jest/globals';
 
-jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn(), debug: jest.fn() } }));
+jest.mock('../browser_logger', () => ({
+    logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
 jest.mock('../playwright-invoke', () => ({ locatorOn: jest.fn() }));
 // css-selector.js is built by `inv node-build`; these tests must not need a build.
 jest.mock('fs', () => ({ ...jest.requireActual('fs'), readFileSync: () => '/* css-selector.js */' }));
 
 import { countOf, cssSelectorOf, drivePick, Pick, startPick, stopPick } from '../element-picker';
+import { watchCrash } from '../page-crash';
 import { locatorOn } from '../playwright-invoke';
 import { commandListeners, ensureRecorder, newBuffers } from '../recorder';
+import { selectorPickerPoll } from '../selector-picker';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -201,5 +205,24 @@ describe('drivePick', () => {
         await drivePick(pick, { pick: true });
         expect(dispose).toHaveBeenCalledTimes(1);
         expect(pick.picking).toBe(true);
+    });
+});
+
+describe('selectorPickerPoll', () => {
+    it('reports no page once the page it picks on crashed', async () => {
+        const page = {
+            context: () => fakeContext(),
+            bringToFront: jest.fn(async () => undefined),
+            isClosed: () => false,
+            url: () => 'http://localhost/form.html',
+            on: jest.fn(),
+        };
+        watchCrash(page as any);
+        const state = { getActivePage: () => page, activeBrowser: { headless: true } } as any;
+        const poll = async (body: Record<string, unknown>) =>
+            JSON.parse((await selectorPickerPoll({ body: JSON.stringify(body) }, state)).json);
+        expect((await poll({ reset: true, allowHeadless: true })).pages).toBe(1);
+        (page.on.mock.calls.find(([event]) => event === 'crash') as unknown as [string, () => void])[1]();
+        expect((await poll({})).pages).toBe(0);
     });
 });

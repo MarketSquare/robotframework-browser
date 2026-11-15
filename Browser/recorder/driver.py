@@ -72,7 +72,7 @@ def run_session(
                 _drain_after_stop(session, client)
                 return "playwright"
             if not reply.get("pages"):
-                logger.info("recorder: all pages closed, ending the session")
+                logger.info("recorder: all pages closed or crashed, ending the session")
                 return "pages"
             if idle_timeout is not None and clock() - last_activity >= idle_timeout:
                 logger.info("recorder: idle timeout reached, ending the session")

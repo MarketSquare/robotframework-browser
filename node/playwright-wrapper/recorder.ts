@@ -30,6 +30,7 @@ import { BrowserContext, Page } from 'playwright';
 import { logger } from './browser_logger';
 import { drivePick, endPick, Pick, PickRequest, resetPlaywrightCursor } from './element-picker';
 import * as pb from './generated/playwright';
+import { isCrashed } from './page-crash';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
@@ -500,7 +501,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             mode: stopped ? 'stopped' : 'recording',
             picking: !buffers.ownPick && !pickRequested && isPicking(mode),
             pickRequested,
-            pages: context.pages().length,
+            pages: context.pages().filter((page) => !isCrashed(page)).length,
             activePage: pageGuid(state.getActivePage()),
             entries: drainEntries(buffers),
             ...picked,

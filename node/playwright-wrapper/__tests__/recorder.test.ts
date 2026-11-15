@@ -1,8 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 
-jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
+jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } }));
 jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
 
+import { watchCrash } from '../page-crash';
 import {
     commandListeners,
     ensureRecorder,
@@ -265,7 +266,7 @@ function fakePage(mode: string | undefined = 'recording', { closed = false, fail
             delete global.window;
         }
     });
-    return { win, evaluate, once: jest.fn() };
+    return { win, evaluate, once: jest.fn(), on: jest.fn(), url: () => 'http://localhost/form.html' };
 }
 
 function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
@@ -289,6 +290,8 @@ function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
 const stateFor = (context: unknown, headless = false, activePage: unknown = undefined) =>
     ({ getActiveContext: () => context, getActivePage: () => activePage, activeBrowser: { headless } }) as any;
 const pollBody = (body: Record<string, unknown>) => ({ body: JSON.stringify(body) }) as any;
+const crash = (page: ReturnType<typeof fakePage>) =>
+    (page.on.mock.calls.find(([event]) => event === 'crash') as unknown as [string, () => void])[1]();
 async function poll(context: unknown, body: Record<string, unknown> = {}) {
     const response = await recorderPoll(pollBody(body), stateFor(context));
     return JSON.parse(response.json);
@@ -340,6 +343,18 @@ describe('recorderPoll', () => {
         const context = fakeRecorderContext([fakePage(), fakePage()]);
         expect((await poll(context)).pages).toBe(2);
         expect((await poll(fakeRecorderContext([]))).pages).toBe(0);
+    });
+
+    it('does not count a crashed page as open, so a crash of the last page ends the session', async () => {
+        const first = fakePage();
+        const second = fakePage();
+        const context = fakeRecorderContext([first, second]);
+        watchCrash(first as any);
+        watchCrash(second as any);
+        crash(first);
+        expect((await poll(context)).pages).toBe(1);
+        crash(second);
+        expect((await poll(context)).pages).toBe(0);
     });
 
     it('renders the toolbar state on every page', async () => {
