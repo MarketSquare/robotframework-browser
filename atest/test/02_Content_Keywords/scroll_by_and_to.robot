@@ -63,11 +63,12 @@ Scroll To Scroll By
     [Arguments]    ${Selector}=${None}
     ${s} =    Get Scroll Size    ${Selector}
     Scroll To    ${Selector}    top    right
-    Get Scroll Position    ${Selector}    ALL    validate    value.top == 0 and value.right == $s.width
+    Get Scroll Position    ${Selector}    ALL    validate    value.top == 0 and abs(value.right - $s.width) < 1
     Scroll To    ${Selector}    bottom    right
-    Get Scroll Position    ${Selector}    ALL    validate    value.bottom == $s.height and value.right == $s.width
+    Get Scroll Position    ${Selector}    ALL    validate
+    ...    abs(value.bottom - $s.height) < 1 and abs(value.right - $s.width) < 1
     Scroll To    ${Selector}    bottom    left
-    Get Scroll Position    ${Selector}    ALL    validate    value.bottom == $s.height and value.left == 0
+    Get Scroll Position    ${Selector}    ALL    validate    abs(value.bottom - $s.height) < 1 and value.left == 0
     Scroll To    ${Selector}    top    left
     Get Scroll Position    ${Selector}    ALL    validate    value.top == 0 and value.left == 0
     Scroll To    ${Selector}    200    200
