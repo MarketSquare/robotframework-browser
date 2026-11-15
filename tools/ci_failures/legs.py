@@ -11,23 +11,11 @@ See `docs/adr/0003-every-test-artifact-of-a-run.md`.
 import re
 
 # One per job that uploads an acceptance suite's output directory, in the
-# names the upload steps give them now:
-#   atest-source                   "Source test results-ubuntu-latest-3.14-24.x"
-#                                  "Source test results-ubuntu-latest-3.12-batteries"
-#   atest-wheel-*                  "Wheel test results-windows-latest-3.12-24.x"
-#                                  "Wheel test results-ubuntu-24.04-arm-3.15-batteries"
-#   docker_image                   "docker_results"
-# and in the names of the jobs they replaced, which older Runs still hold:
+# names the upload steps give them:
 #   testing                        "Test results-ubuntu-latest-3-3.13-22.x"
 #   test-install                   "ubuntu-latest 3.13 24.x Clean install results"
 #   test_browser_batteries_wheels  "Clean_install_results_macos-latest"
-#
-# A wheel Leg whose Node.js is "batteries" installed the BrowserBatteries wheel.
-# A source Leg with BrowserBatteries still ran the checkout, so it stays source.
-_CURRENT = re.compile(
-    r"^(?P<kind>Source|Wheel) test results-"
-    r"(?P<os>.+)-(?P<python>\d+\.\d+)-(?P<node>[^-]+)$"
-)
+#   docker_image                   "docker_results"
 _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "source",
@@ -47,16 +35,6 @@ _PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 
 def _match(artifact_name: str) -> tuple[str, dict[str, str]] | None:
-    current = _CURRENT.match(artifact_name)
-    if current:
-        parts = current.groupdict()
-        kind = parts.pop("kind")
-        if kind == "Source":
-            return "source", parts
-        if parts["node"] == "batteries":
-            del parts["node"]
-            return "batteries", parts
-        return "wheel", parts
     for install, pattern in _PATTERNS:
         matched = pattern.match(artifact_name)
         if matched:

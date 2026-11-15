@@ -370,7 +370,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
-          name: Source test results-ubuntu-latest-${{ matrix.python-version }}-${{ matrix.batteries && 'batteries' || matrix.node-version }}
+          name: Source test results-${{ matrix.python-version }}-${{ matrix.batteries && 'batteries' || 'node' }}
           path: atest/output
       - name: Github Job Summary
         if: ${{ always() && hashFiles('atest/output/output.xml') != '' }}
