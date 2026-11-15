@@ -368,7 +368,6 @@ jobs:
       - name: Install python dependencies and lcov
         run: |
           uv sync --locked --no-build
-          sudo apt-get update
           sudo apt-get install --yes --no-install-recommends lcov
       - name: Download the coverage data
         uses: actions/download-artifact@v8
