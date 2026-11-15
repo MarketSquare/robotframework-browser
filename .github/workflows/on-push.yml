@@ -21,6 +21,8 @@ concurrency:
 
 env:
   SYS_VAR_CI_INSTALL_TEST: 0
+  # The browser the acceptance tests run in; its known bugs are left out.
+  ATEST_BROWSER: chromium
 
 jobs:
   # The jobs run on Namespace runners, each matrix entry names its machine.
@@ -394,7 +396,7 @@ jobs:
           python atest/library/os_wrapper.py
       - name: Run Robot Framework tests with coverage
         run: |
-          xvfb-run --auto-servernum inv atest-coverage ${{ matrix.batteries && '--batteries' || '' }}
+          xvfb-run --auto-servernum inv atest-coverage --browser ${{ env.ATEST_BROWSER }} ${{ matrix.batteries && '--batteries' || '' }}
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
@@ -739,11 +741,11 @@ jobs:
       - name: Run Robot Framework tests on Linux
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
-          xvfb-run --auto-servernum inv atest-robot --parallel
+          xvfb-run --auto-servernum inv atest-robot --parallel --browser ${{ env.ATEST_BROWSER }}
       - name: Run Robot Framework tests on Windows or macOS
         if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         run: |
-          inv atest-robot --parallel
+          inv atest-robot --parallel --browser ${{ env.ATEST_BROWSER }}
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:

@@ -1122,7 +1122,9 @@ def _clean_pabot_results(rc: int):
 
 
 @task(clean_atest)
-def atest_robot(c, smoke=False, suite=None, batteries=False, parallel=False):
+def atest_robot(
+    c, smoke=False, suite=None, batteries=False, parallel=False, browser=None
+):
     """Run atest with Robot Framework, each run starting its own Node.js process
 
     Unlike `inv atest`, no Node.js process is shared: the library starts one
@@ -1134,7 +1136,9 @@ def atest_robot(c, smoke=False, suite=None, batteries=False, parallel=False):
         batteries: If true, includes BrowserBatteries in the test run.
         parallel: If true, runs the suites with pabot, one process per CPU but
             one, and every pabot process starts its own Node.js process.
+        browser: chromium, firefox or webkit, as for `inv atest`.
     """
+    browser_args = _browser_args(browser)
     os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
     os.environ["ROBOT_SYSLOG_FILE"] = str(ATEST_OUTPUT / "syslog.txt")
     sys_var_ci = int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))
@@ -1144,7 +1148,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False, parallel=False):
         else "SYS_VAR_CI_INSTALL_TEST:False"
     )
     if parallel:
-        args = [*ATEST_ORDER_AND_PYTHONPATH, "--variable", sys_var_cmd]
+        args = [*ATEST_ORDER_AND_PYTHONPATH, "--variable", sys_var_cmd, *browser_args]
         args.extend(["--exclude", "slow"] if smoke else [])
         args.extend(_get_listener_args())
         if suite:
@@ -1173,6 +1177,7 @@ def atest_robot(c, smoke=False, suite=None, batteries=False, parallel=False):
         ]
     )
     command_args.extend(_get_listener_args())
+    command_args.extend(browser_args)
     if suite:
         command_args.extend(["--suite", suite])
     if batteries:
