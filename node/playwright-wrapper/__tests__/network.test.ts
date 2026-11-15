@@ -289,7 +289,7 @@ describe('waitForRequest', () => {
 });
 
 function makeMockResponse(
-    overrides: Partial<{ body: jest.Mock; httpVersion: jest.Mock }> = {},
+    overrides: Partial<{ body: jest.Mock; httpVersion: jest.Mock; status: jest.Mock; headers: jest.Mock }> = {},
     request: any = makeMockRequest({ postData: jest.fn().mockReturnValue('{"name":"George"}') }),
 ) {
     return {
@@ -424,6 +424,27 @@ describe('waitForResponse', () => {
                 makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
             ),
         ).rejects.toThrow('Timeout 20ms exceeded while waiting for all fields of the response.');
+    });
+
+    it.each([
+        ['a 204 response', { status: jest.fn().mockReturnValue(204) }],
+        ['a 304 response', { status: jest.fn().mockReturnValue(304) }],
+        ['a response with content-length 0', { headers: jest.fn().mockReturnValue({ 'content-length': '0' }) }],
+    ])('returns an empty body for %s whose body the browser did not keep', async (_, overrides) => {
+        const missing = jest.fn().mockRejectedValue(new Error('Missing content of resource for given requestId'));
+
+        const [first] = await capturedResponse(makeMockResponse({ body: missing, ...overrides }));
+
+        expect(first.bodyBytes).toHaveLength(0);
+        expect(JSON.parse(first.json).hasBody).toBe(true);
+    });
+
+    it('returns no body when a response with content cannot be read', async () => {
+        const missing = jest.fn().mockRejectedValue(new Error('Target closed'));
+
+        const [first] = await capturedResponse(makeMockResponse({ body: missing }));
+
+        expect(JSON.parse(first.json).hasBody).toBe(false);
     });
 
     it('returns a null HTTP version when Playwright cannot read it', async () => {
