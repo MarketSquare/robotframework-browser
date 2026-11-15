@@ -402,7 +402,7 @@ export default function Site() {
                     multiple
                     onChange={(event) => fileUploaded(uploadResult, event)}
                 />
-                <a id="file_download" href="index.js" download="test_download_file">
+                <a id="file_download" href="index.js" download="test_download_file.js">
                     Download file{' '}
                 </a>
                 <ProgressBar />

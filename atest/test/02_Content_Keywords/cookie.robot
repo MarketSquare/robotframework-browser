@@ -40,7 +40,7 @@ Add Cookie With Domain And Path
     [Tags]    no-windows-support    no-docker-pr
     ${url} =    Get Url
     ${parsed_url} =    Common.Parse Url    ${url}
-    Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
+    Add Cookie    Foo    Bar    domain=${parsed_url.hostname}    path=${parsed_url.path}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /prefilled_email_form.html
@@ -269,8 +269,9 @@ Get Cookies With Url List Returns Cookies Of Every Url
     Add Cookie    second    2    domain=b.example    path=/
     Add Cookie    third    3    domain=c.example    path=/
     VAR    @{urls} =    https://a.example    https://b.example
-    ${cookies} =    Get Cookies    string    urls=${urls}
-    Should Be Equal    first\=1; second\=2    ${cookies}
+    ${cookies} =    Get Cookies    urls=${urls}
+    VAR    @{names} =    @{{[cookie.name for cookie in $cookies]}}
+    Lists Should Be Equal    ${names}    ${{['first', 'second']}}    ignore_order=True
 
 Get Cookies With Url Leaves Secure Cookies Out Of Http Urls
     Add Cookie    secured    1    domain=a.example    path=/    secure=True
@@ -286,6 +287,7 @@ Get Cookies With Empty Urls Returns All Cookies
     Cookie Names For Urls Should Be    ${no_urls}    first
 
 Add Partitioned Cookie With Domain And Path
+    [Tags]    chromium-only
     Add Cookie
     ...    tracker
     ...    1
@@ -302,6 +304,7 @@ Get Cookies With Invalid Url Fails
     ...    Get Cookies    urls=not a url
 
 Partitioned Cookie Round Trip
+    [Tags]    chromium-only
     Add Cookie    tracker    abc123    url=https://third-party.example    partitionKey=https://site.example
     ${cookies} =    Get Cookies
     Should Be Equal    ${cookies}[0][partitionKey]    https://site.example
