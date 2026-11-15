@@ -22,12 +22,11 @@ jobs:
   # artifact names use. pabot runs one process per vCPU but one.
   #
   # Lint and the unit tests start at once and are done before the acceptance
-  # tests need the machines. The acceptance tests run in ten entries, each
-  # with its own Python, Robot Framework and Node.js: atest-source runs them
-  # from the checkout with coverage and starts at once, the atest-wheel jobs
-  # install the built wheels as a user would. The coverage job merges the
-  # coverage of the unit and the source acceptance tests and scans it with
-  # SonarQube.
+  # tests need the machines. The acceptance tests run in ten entries, each with its own Python, Robot Framework and Node.js:
+  # atest-source runs them from the checkout with coverage and starts at once,
+  # atest-wheel installs the wheels of build_wheels as a user would. The
+  # coverage job merges the coverage of the unit and the source acceptance
+  # tests and scans it with SonarQube.
   #
   # The workspace runs at most 64 Linux, 32 Windows and 24 macOS vCPU at a
   # time, so the sizes trade the speed of a job against the jobs queued behind
@@ -438,20 +437,24 @@ jobs:
           if-no-files-found: ignore
 
   # The Browser wheel, the BrowserBatteries wheels and the demo apps that every
-  # install test and the nightly use. One job per platform, so that the wheel
-  # tests of a platform wait only for its own build and for this one, which
-  # also builds the Browser wheel.
+  # install test and the nightly use.
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-ubuntu-24.04-amd64-8x16
+    runs-on: ${{ fromJSON('{"ubuntu-latest":"nscloud-ubuntu-24.04-amd64-8x16", "ubuntu-24.04-arm":"nscloud-ubuntu-24.04-arm64-8x16", "windows-latest":"nscloud-windows-2022-amd64-8x16", "macos-latest":"nscloud-macos-sequoia-arm64-6x14"}')[matrix.os] || matrix.os }}
     needs: nightly_version
     timeout-minutes: 45
-    env: &build_wheels_env
+    env:
       # This job only builds wheels, no need to download Playwright browsers
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - macos-latest
+
     steps: &build_wheels_steps
       - uses: actions/checkout@v7
       - name: Setup Node.js
@@ -518,39 +521,6 @@ jobs:
           path: browser_batteries/dist/robotframework_browser_batteries-*.whl
           if-no-files-found: error
 
-  build_wheels_arm:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-ubuntu-24.04-arm64-8x16
-    needs: nightly_version
-    timeout-minutes: 45
-    env: *build_wheels_env
-    strategy:
-      matrix:
-        os: [ ubuntu-24.04-arm ]
-    steps: *build_wheels_steps
-
-  build_wheels_windows:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-windows-2022-amd64-8x16
-    needs: nightly_version
-    timeout-minutes: 45
-    env: *build_wheels_env
-    strategy:
-      matrix:
-        os: [ windows-latest ]
-    steps: *build_wheels_steps
-
-  build_wheels_macos:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: nscloud-macos-sequoia-arm64-6x14
-    needs: nightly_version
-    timeout-minutes: 45
-    env: *build_wheels_env
-    strategy:
-      matrix:
-        os: [ macos-latest ]
-    steps: *build_wheels_steps
-
   # Namespace has no Intel macOS machines. Only the nightly and the scheduled
   # run use this wheel, so in its own job the tests do not wait for GitHub's
   # slower runner.
@@ -559,7 +529,8 @@ jobs:
     runs-on: macos-15-intel
     needs: nightly_version
     timeout-minutes: 45
-    env: *build_wheels_env
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
     strategy:
       matrix:
         os: [ macos-15-intel ]
@@ -569,10 +540,7 @@ jobs:
   # would: the Browser wheel with `rfbrowser init` on the system Node.js, or
   # with the BrowserBatteries wheel of the platform and its own NodeJS. Every
   # pabot process starts its own Node.js process, unlike in atest-source.
-  # One job per platform, each waiting only for its own build and the Browser
-  # wheel. Within the system Node.js and the BrowserBatteries entries of all
-  # platforms, every Python and Robot Framework version runs once.
-  atest-wheel-linux:
+  atest-wheel:
     name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
     needs: build_wheels
     runs-on: ${{ matrix.runner }}
@@ -586,12 +554,37 @@ jobs:
             python-version: "3.11"
             rf-version: "7.1.1"
             node-version: 22.x
+          - os: windows-latest
+            runner: nscloud-windows-2022-amd64-16x32
+            python-version: "3.12"
+            rf-version: "7.2.2"
+            node-version: 24.x
+          - os: macos-latest
+            runner: nscloud-macos-sequoia-arm64-12x28
+            python-version: "3.13"
+            rf-version: "7.3.2"
+            node-version: 26.x
           - os: ubuntu-latest
             runner: nscloud-ubuntu-24.04-amd64-8x16
             python-version: "3.13"
             rf-version: "7.5.1"
             batteries: true
-    env: &atest_wheel_env
+          - os: ubuntu-24.04-arm
+            runner: nscloud-ubuntu-24.04-arm64-16x32
+            python-version: "3.15"
+            rf-version: "7.2.2"
+            batteries: true
+          - os: windows-latest
+            runner: nscloud-windows-2022-amd64-16x32
+            python-version: "3.14"
+            rf-version: "7.1.1"
+            batteries: true
+          - os: macos-latest
+            runner: nscloud-macos-sequoia-arm64-6x14
+            python-version: "3.11"
+            rf-version: "7.3.2"
+            batteries: true
+    env:
       SYS_VAR_CI_INSTALL_TEST: 1
       # Python 3.15 is a prerelease and cryptography ships no Intel macOS wheels,
       # so those two may build from source.
@@ -681,67 +674,6 @@ jobs:
         run: |
           rfbrowser clean-node
           uv pip uninstall --no-config robotframework-browser ${{ matrix.batteries && 'robotframework-browser-batteries' || '' }} --python ${{ matrix.python-version }} --system
-
-  atest-wheel-arm:
-    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_arm]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04-arm
-            runner: nscloud-ubuntu-24.04-arm64-16x32
-            python-version: "3.15"
-            rf-version: "7.2.2"
-            batteries: true
-    env: *atest_wheel_env
-    steps: *atest_wheel_steps
-
-  atest-wheel-windows:
-    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_windows]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            runner: nscloud-windows-2022-amd64-16x32
-            python-version: "3.12"
-            rf-version: "7.2.2"
-            node-version: 24.x
-          - os: windows-latest
-            runner: nscloud-windows-2022-amd64-16x32
-            python-version: "3.14"
-            rf-version: "7.1.1"
-            batteries: true
-    env: *atest_wheel_env
-    steps: *atest_wheel_steps
-
-  atest-wheel-macos:
-    name: Acceptance tests from wheel (${{ matrix.os }}, ${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
-    needs: [build_wheels, build_wheels_macos]
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            runner: nscloud-macos-sequoia-arm64-12x28
-            python-version: "3.13"
-            rf-version: "7.3.2"
-            node-version: 26.x
-          - os: macos-latest
-            runner: nscloud-macos-sequoia-arm64-6x14
-            python-version: "3.11"
-            rf-version: "7.3.2"
-            batteries: true
-    env: *atest_wheel_env
-    steps: *atest_wheel_steps
 
   atest-wheel-intel:
     if: github.event_name == 'schedule'
@@ -874,14 +806,8 @@ jobs:
       - lint
       - utest
       - atest-source
-      - atest-wheel-linux
-      - atest-wheel-arm
-      - atest-wheel-windows
-      - atest-wheel-macos
+      - atest-wheel
       - build_wheels
-      - build_wheels_arm
-      - build_wheels_windows
-      - build_wheels_macos
       - build_wheels_intel
     permissions:
       contents: write
