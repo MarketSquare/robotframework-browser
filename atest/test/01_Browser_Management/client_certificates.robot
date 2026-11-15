@@ -31,7 +31,7 @@ Open Browser Without Client Certificate
     ...    *    New Page    https://localhost:${https_port}/
     Should Match Regexp
     ...    ${error}
-    ...    ^Error: page\.goto: (?:net::ERR_BAD_SSL_CLIENT_AUTH_CERT|net::ERR_SOCKET_NOT_CONNECTED|SSL_ERROR_UNKNOWN|Peer sent fatal TLS alert: Certificate is required|The network connection was lost\.)
+    ...    ^Error: page\.goto: (?:net::ERR_BAD_SSL_CLIENT_AUTH_CERT|net::ERR_SOCKET_NOT_CONNECTED|SSL_ERROR_UNKNOWN|Peer sent fatal TLS alert: Certificate is required|The network connection was lost\.|The server requires a client certificate\.)
 
 *** Keywords ***
 Setup

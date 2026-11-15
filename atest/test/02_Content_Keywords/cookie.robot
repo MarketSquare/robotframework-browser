@@ -72,7 +72,7 @@ Add Cookie With All Settings
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /
-    Should Be Equal    ${cookies}[0][sameSite]    Lax
+    SameSite Should Be    ${cookies}[0]    Lax
     ${expires} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${expires}    \\d
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
@@ -81,7 +81,7 @@ Add Cookie With All Settings
 Add Cookie With Strict SameSite
     Add Cookie    strict    1    domain=a.example    path=/    sameSite=Strict
     ${cookie} =    Get Cookie    strict
-    Should Be Equal    ${cookie}[sameSite]    Strict
+    SameSite Should Be    ${cookie}    Strict
 
 Add Cookie With None SameSite
     Add Cookie    none    1    domain=a.example    path=/    secure=True    sameSite=None
@@ -408,6 +408,15 @@ Cookie Names For Urls Should Be
     [Arguments]    ${urls}    ${expected}
     ${cookies} =    Get Cookies    string    urls=${urls}
     Should Be Equal    ${cookies}    ${expected}\=1
+
+SameSite Should Be
+    [Arguments]    ${cookie}    ${expected}
+    IF    $BROWSER == 'webkit' and sys.platform == 'win32'
+        # WebKit on Windows reports every cookie with sameSite None.
+        Should Be Equal    ${cookie}[sameSite]    None
+    ELSE
+        Should Be Equal    ${cookie}[sameSite]    ${expected}
+    END
 
 Cookie Names Should Be
     [Arguments]    @{expected}    ${urls}=${None}
