@@ -36,7 +36,7 @@ Scroll To Elements
     Scroll To Element    id=table1 >> "Model"
     Check Visibility    id=table1 >> "Model"
     Scroll To Element    id=table2
-    Check Visibility    id=table2
+    Check Wider Than Viewport Is In View    id=table2
     Scroll To Element    h2
     Check Visibility    h2
 
@@ -52,6 +52,12 @@ Check Visibility
     ${s} =    Get Client Size
     Get BoundingBox    ${selector}    ALL    validate
     ...    value.x >= 0 and value.y >= 0 and value.width+value.x <= $s.width and value.height+value.y <= $s.height
+
+Check Wider Than Viewport Is In View
+    [Arguments]    ${selector}
+    ${s} =    Get Client Size
+    Get BoundingBox    ${selector}    ALL    validate
+    ...    value.x < $s.width and value.width+value.x > 0 and value.y >= 0 and value.height+value.y <= $s.height
 
 Scroll To Scroll By
     [Arguments]    ${Selector}=${None}

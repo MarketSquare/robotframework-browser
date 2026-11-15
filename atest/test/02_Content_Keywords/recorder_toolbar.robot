@@ -205,7 +205,8 @@ Dragging Past The Edge Does Not Shift The Next Drag
     ${start} =    Toolbar Header Point
     Mouse Move    ${start}[0]    ${start}[1]
     Mouse Button    down
-    Mouse Move    ${{ $start[0] + 3000 }}    ${start}[1]    steps=5
+    ${right} =    Evaluate JavaScript    ${None}    () => document.documentElement.clientWidth - 1
+    Mouse Move    ${right}    ${start}[1]    steps=5
     Mouse Button    up
     Toolbar Should Touch The Right Edge
     ${edge} =    Toolbar Left

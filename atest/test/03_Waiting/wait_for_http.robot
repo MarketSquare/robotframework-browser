@@ -21,11 +21,11 @@ Wait For Request Synchronous
     Wait For Request    timeout=1s
 
 Wait For Request Async
-    ${promise} =    Promise To    Wait For Request    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Request    matcher=**/api/get/json    timeout=3s
     Click    \#delayed_request
     ${data} =    Wait For    ${promise}
-    Should Contain    ${data.url}    /api/log/event
-    Should Be Equal    ${data.method}    POST
+    Should Contain    ${data.url}    /api/get/json
+    Should Be Equal    ${data.method}    GET
     Should Not Be Empty    ${data.headers}
     Should Be Equal    ${data.postData}    ${None}
     List Should Contain Sub List    ${{ list($data) }}    ${REQUEST_KEYS}
@@ -75,6 +75,7 @@ Wait For Response Synchronous
     Dictionaries Should Be Equal    ${body}    ${expected_body}
 
 Wait For Request Async Big
+    [Tags]    known-bug-firefox    # Playwright limitation: Firefox evicts a body this large
     Click    id=delayed_request_big
     ${data} =    Wait For Response    matcher=**/api/get/json/big    timeout=15s
     VAR    ${body} =    ${data.body}
@@ -122,6 +123,7 @@ Wait For Response Async
     ${body} =    Wait For    ${promise}
 
 Wait For Response With OPTIONS Request
+    [Tags]    known-bug-firefox    # Playwright limitation: Firefox reports no network events for an OPTIONS fetch
     Go To    ${ROOT_URL}
     ${prom} =    Promise To    Wait For Response    /.*options/    # ΔT: 0.028s
     ${res} =    Evaluate JavaScript

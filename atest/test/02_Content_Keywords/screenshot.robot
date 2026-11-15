@@ -144,6 +144,7 @@ Screenshot With Cropping Jpg
     [Teardown]    Remove File    ${path}
 
 Screenshot With Cropping, Masking, Omitting Background(png)
+    [Tags]    known-bug-firefox    # Playwright limitation: Firefox does not implement omitBackground
     ${box} =    Get BoundingBox
     ...    input >> nth=1
     ...    ALL
@@ -189,6 +190,7 @@ Screenshot With Fixed Cropping
     [Teardown]    Remove File    ${path}
 
 Screenshot With Omit Background
+    [Tags]    known-bug-firefox    # Playwright limitation: Firefox does not implement omitBackground
     ${path} =    Take Screenshot    crop={"x": 200, "y": 100, "height": 123, "width": 654}    omitBackground=True
     File Should Exist    ${path}
     ${width}    ${height} =    Get Image Size    ${path}

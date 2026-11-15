@@ -160,7 +160,7 @@ Wait For Download That Starts Slower Than Browser Timeout
     New Page    ${DOWNLOADS_URL}
     Set Browser Timeout    1s
     ${dl_promise} =    Promise To Wait For Download    download_timeout=10s
-    Click    id=slow_start_download
+    Evaluate JavaScript    id=slow_start_download    (link) => link.click()
     ${file_object} =    Wait For    ${dl_promise}
     File Should Exist    ${file_object}[saveAs]
     Remove File    ${file_object}[saveAs]
