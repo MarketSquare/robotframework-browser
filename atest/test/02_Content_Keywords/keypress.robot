@@ -22,7 +22,8 @@ Press Key Combinations Of Keystrokes In TextField
     Get Text    input[name="email"]    ==    Aa
 
 Press Keys Combination Of Keystrokes In Select List
-    Click    select[name="possible_channels"] > option[value="email"]
+    # WebKit gives an option of a list box no box of its own: click the first row.
+    Click With Options    select[name="possible_channels"]    position_x=5    position_y=5
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown
     Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail
