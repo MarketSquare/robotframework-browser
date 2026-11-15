@@ -316,3 +316,37 @@ def test_body_is_logged_as_text_when_it_is_utf8():
 
 def test_binary_body_is_logged_as_base64():
     assert _readable(PNG_SIGNATURE) == "8 bytes, base64: iVBORw0KGgo="
+
+
+def test_body_is_not_formatted_for_the_log_outside_robot_framework(monkeypatch):
+    readable = MagicMock()
+    monkeypatch.setattr(network, "_readable", readable)
+    network._trace_content("Response body", b"HELLO")
+    readable.assert_not_called()
+
+
+def logged_messages(monkeypatch, level: str) -> list[str]:
+    messages: list[str] = []
+    monkeypatch.setattr(network.logger, level, lambda msg: messages.append(str(msg)))
+    return messages
+
+
+def test_cookie_headers_are_logged_only_at_debug_level(browser, stub, monkeypatch):
+    info = logged_messages(monkeypatch, "info")
+    debug = logged_messages(monkeypatch, "debug")
+    stub.WaitForResponse.return_value = response_messages(b"HELLO")
+    browser.wait_for_response()
+    assert not any("set-cookie" in m or "session=1" in m for m in info)
+    assert any("set-cookie" in m for m in debug)
+    assert any("session=1" in m for m in debug)
+
+
+def test_request_cookie_headers_are_logged_only_at_debug_level(
+    browser, stub, monkeypatch
+):
+    info = logged_messages(monkeypatch, "info")
+    debug = logged_messages(monkeypatch, "debug")
+    captured_request(stub, None)
+    browser.wait_for_request()
+    assert not any("session=1" in m for m in info)
+    assert any("session=1" in m for m in debug)
