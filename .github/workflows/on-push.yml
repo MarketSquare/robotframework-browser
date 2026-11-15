@@ -35,10 +35,9 @@ jobs:
   # and 32 take 75 s. The unit tests run serially and get the small machines.
   # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
-  # Namespace machines cost money, so the scheduled run, where time does not
-  # matter, and pull requests from forks run on GitHub's free runners, with the
-  # same tests but slower, unless the fork's author can write to this
-  # repository. To run another one on Namespace, a maintainer
+  # Namespace machines cost money, so pull requests from forks run on GitHub's
+  # free runners, with the same tests but slower, unless their author can
+  # write to this repository. To run another one on Namespace, a maintainer
   # adds the label namespace and reruns all jobs: the label is read when this
   # job runs, not from the event. A failing lookup falls back to GitHub.
   runners:
@@ -56,15 +55,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
-          SCHEDULED: ${{ github.event_name == 'schedule' }}
           OWN_BRANCH: >-
             ${{ github.event_name != 'pull_request' ||
               github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
-          if [ "$SCHEDULED" = true ]; then
-            echo "namespace=false" | tee -a "$GITHUB_OUTPUT"
-            exit 0
-          fi
           namespace="$OWN_BRANCH"
           if [ "$namespace" != true ]; then
             permission=$(gh api "repos/$GITHUB_REPOSITORY/collaborators/$AUTHOR/permission" --jq .permission || echo none)
