@@ -22,7 +22,7 @@ concurrency:
 env:
   SYS_VAR_CI_INSTALL_TEST: 0
   # The browser the acceptance tests run in; its known bugs are left out.
-  ATEST_BROWSER: chromium
+  ATEST_BROWSER: firefox
 
 jobs:
   # The jobs run on Namespace runners, each matrix entry names its machine.
