@@ -186,7 +186,8 @@ Scroll By Mouse Wheel
 Center Of
     [Arguments]    ${selector}
     ${box} =    Get BoundingBox    ${selector}
-    RETURN    ${{ $box['x'] + $box['width'] / 2 }}    ${{ $box['y'] + $box['height'] / 2 }}
+    ${center} =    Center Of Box    ${box}
+    RETURN    @{center}
 
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}

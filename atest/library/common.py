@@ -37,6 +37,11 @@ def parse_url_netloc(url: str) -> str:
     return urlparse(url).netloc
 
 
+def center_of_box(box: dict) -> tuple[float, float]:
+    """The point in the middle of a bounding box from `Get BoundingBox`."""
+    return box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+
+
 def start_test_server():
     return _start()
 

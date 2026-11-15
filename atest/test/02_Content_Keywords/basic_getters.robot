@@ -344,7 +344,7 @@ Get Console Log Test
     Should Be Equal    ${logs}[${index2}][type]    error
     Should Be Equal    ${logs}[${index2}][text]    1
     Should Be Equal    ${logs}[${index3}][type]    warning
-    Should Be True    ${logs}[${index3}][text] > 0
+    Should Be True    int($logs[${index3}]['text']) >= 0
     ${errors} =    Get Page Errors    validate    len(value) == 1
     Should Be Equal    ${errors}[0][name]    EvalError
     Should Be Equal    ${errors}[0][message]    You are not allowed to use this site

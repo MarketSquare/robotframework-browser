@@ -15,8 +15,7 @@ Keyboard Key Inputs Characters
     Get Text    input[name="name"]    ==    Hello
 
 Select List Options
-    # WebKit gives an option of a list box no box of its own: click the first row.
-    Click With Options    select[name="possible_channels"]    position_x=5    position_y=5
+    Click First Row Of List Box    select[name="possible_channels"]
     Keyboard Key    down    Shift
     Keyboard Key    press    ArrowDown
     Keyboard Key    press    ArrowDown

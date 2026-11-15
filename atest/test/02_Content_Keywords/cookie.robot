@@ -252,7 +252,12 @@ Delete All Cookies With Filter Matching Nothing Keeps Cookies
 Delete All Cookies With Empty Name Deletes Only Nameless Cookies
     Add Cookie    ${EMPTY}    1    domain=a.example    path=/
     Add Cookie    keep    2    domain=a.example    path=/
-    Cookie Names Should Be    ${EMPTY}    keep
+    IF    $BROWSER == 'webkit' and sys.platform == 'darwin'
+        # WebKit on macOS drops a cookie without a name.
+        Cookie Names Should Be    keep
+    ELSE
+        Cookie Names Should Be    ${EMPTY}    keep
+    END
     Delete All Cookies    name=${EMPTY}
     Cookie Names Should Be    keep
 
@@ -269,9 +274,7 @@ Get Cookies With Url List Returns Cookies Of Every Url
     Add Cookie    second    2    domain=b.example    path=/
     Add Cookie    third    3    domain=c.example    path=/
     VAR    @{urls} =    https://a.example    https://b.example
-    ${cookies} =    Get Cookies    urls=${urls}
-    VAR    @{names} =    @{{[cookie.name for cookie in $cookies]}}
-    Lists Should Be Equal    ${names}    ${{['first', 'second']}}    ignore_order=True
+    Cookie Names Should Be    first    second    urls=${urls}
 
 Get Cookies With Url Leaves Secure Cookies Out Of Http Urls
     Add Cookie    secured    1    domain=a.example    path=/    secure=True
@@ -407,8 +410,8 @@ Cookie Names For Urls Should Be
     Should Be Equal    ${cookies}    ${expected}\=1
 
 Cookie Names Should Be
-    [Arguments]    @{expected}
-    ${cookies} =    Get Cookies
+    [Arguments]    @{expected}    ${urls}=${None}
+    ${cookies} =    Get Cookies    urls=${urls}
     VAR    @{names} =    @{{[cookie.name for cookie in $cookies]}}
     Lists Should Be Equal    ${names}    ${expected}    ignore_order=True
 
