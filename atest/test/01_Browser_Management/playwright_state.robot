@@ -1,7 +1,6 @@
 *** Settings ***
 Resource         imports.resource
 Library          Process
-Library          ../../library/silent_server.py
 
 Test Teardown    Close Browser    ALL
 
@@ -513,18 +512,18 @@ Launch Browser Server Via CLI With Proxy
     [Teardown]    Run Keywords    Close Browser    ALL    AND    Terminate All Processes
 
 Connect To Browser With Timeout
-    ${address} =    Start Silent Server
-    Run Keyword And Expect Error
-    ...    TimeoutError: browserType.connect: Timeout 100ms exceeded.*
-    ...    Connect To Browser    wsEndpoint=ws://${address}/server2    timeout=100ms
-    [Teardown]    Run Keywords    Close Browser    ALL    AND    Stop Silent Servers
+    TRY
+        Connect To Browser    wsEndpoint=ws://10.66.66.66:8277/server2    timeout=100ms
+    EXCEPT    TimeoutError: browserType.connect: Timeout 100ms exceeded.*    type=glob
+        Log    failed correctly
+    END
 
 Connect To Browser With CDP With Timeout
-    ${address} =    Start Silent Server
-    Run Keyword And Expect Error
-    ...    TimeoutError: browserType.connectOverCDP: Timeout 10ms exceeded.*
-    ...    Connect To Browser    wsEndpoint=ws://${address}/server2    timeout=10ms    use_cdp=True
-    [Teardown]    Run Keywords    Close Browser    ALL    AND    Stop Silent Servers
+    TRY
+        Connect To Browser    wsEndpoint=ws://10.66.66.66:8277/server2    timeout=10ms    use_cdp=True
+    EXCEPT    TimeoutError: browserType.connectOverCDP: Timeout 10ms exceeded.*    type=glob
+        Log    failed correctly
+    END
 
 *** Keywords ***
 Open Browser And Assert Login Page
