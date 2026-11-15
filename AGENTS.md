@@ -61,7 +61,9 @@ Test App.
   `inv utest --suite utest/test_x.py`.
 - `inv utest-node`: Jest, in `node/playwright-wrapper/__tests__/`.
 - `inv atest --suite <name>` (or `--test`, `--include`): pabot, with one Node process shared by
-  every worker. Results land in `atest/output/`; `inv atest-failed` reruns the failures.
+  every worker. `--browser firefox` (or `webkit`, `chromium`) runs in that browser and leaves out
+  the tests tagged `known-bug-<browser>` or `<other browser>-only`. Results land in `atest/output/`; `inv atest-failed`
+  reruns the failures.
 - `inv lint`: `lint-python` (ruff format and check, mypy; `--fix` fixes), `lint-node` (prettier,
   eslint, `tsc --noEmit`) and `lint-robot` (robocop format). Locally `lint-node` and `lint-robot`
   rewrite files; in CI they only check.

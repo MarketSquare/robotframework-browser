@@ -194,6 +194,8 @@ Go To Login Page
 | `no-windows-support`, `no-mac-support` | running on that OS (`--include-mac` keeps macOS ones) |
 | `no-iframe` | running with `--framed` |
 | `slow` | running with `--smoke` |
+| `known-bug-<browser>` | running with `--browser <browser>`; a comment names the issue, and the tag goes once it is fixed |
+| `chromium-only`, `firefox-only`, `webkit-only` | running with `--browser` set to another browser: the feature exists only in that one |
 | `require-rf-7.4+` | Robot Framework is older than 7.4 |
 | `no-coverage-support` | running `inv atest-coverage` |
 | `not-implemented` | always |

@@ -1011,6 +1011,25 @@ def _get_listener_args():
     ]
 
 
+ATEST_BROWSERS = ("chromium", "firefox", "webkit")
+
+
+def _browser_args(browser: str | None) -> list[str]:
+    """Run the acceptance tests in ``browser``, leaving out its known bugs and
+    the tests that only other browsers can run."""
+    if browser is None:
+        return []
+    if browser not in ATEST_BROWSERS:
+        raise Exit(
+            f"--browser must be one of {', '.join(ATEST_BROWSERS)}, got {browser!r}."
+        )
+    args = ["--variable", f"BROWSER:{browser}", "--exclude", f"known-bug-{browser}"]
+    for other in ATEST_BROWSERS:
+        if other != browser:
+            args.extend(["--exclude", f"{other}-only"])
+    return args
+
+
 @task(clean_atest, create_test_app)
 def atest(
     c,
@@ -1026,6 +1045,7 @@ def atest(
     exclude=None,
     loglevel=None,
     batteries=False,
+    browser=None,
 ):
     """Runs Robot Framework acceptance tests with pabot.
 
@@ -1040,6 +1060,9 @@ def atest(
         loglevel: Set log level for robot framework
         batteries: Run test with BrowserBatteries. Assumes the NodeJS side is
             already assembled, see `inv build-nodejs`.
+        browser: chromium, firefox or webkit. Default: ${BROWSER} of
+            atest/test/variables.resource. Leaves out the tests tagged
+            known-bug-<browser> and those tagged <other browser>-only.
     """
     if IS_GITPOD and (not processes or int(processes) > 6):
         processes = "6"
@@ -1048,6 +1071,7 @@ def atest(
 
     args.extend(ATEST_ORDER_AND_PYTHONPATH)
     args.extend(_get_listener_args())
+    args.extend(_browser_args(browser))
     if suite:
         args.extend(["--suite", suite])
     if test:
@@ -1194,6 +1218,7 @@ def atest_coverage(
     exclude=None,
     loglevel=None,
     batteries=False,
+    browser=None,
 ):
     """Run acceptance tests with pabot, measuring Python and Node.js coverage.
 
@@ -1212,6 +1237,7 @@ def atest_coverage(
         batteries: Run the shared Node.js process from BrowserBatteries. Assumes
             the NodeJS side was assembled with
             ROBOT_FRAMEWORK_BROWSER_NODE_COVERAGE=1, see `inv build-nodejs`.
+        browser:  chromium, firefox or webkit, as for `inv atest`.
 
     Python: every pabot worker writes its own `.coverage.*` file. Run
     `inv utest` first, because pytest-cov erases `.coverage.*` files.
@@ -1224,6 +1250,7 @@ def atest_coverage(
 
     Node.js coverage is not collected on Windows.
     """
+    browser_args = _browser_args(browser)
     from Browser.utils import spawn_node_process
 
     os.environ["ROBOT_FRAMEWORK_BROWSER_PINO_LOG_LEVEL"] = "debug"
@@ -1247,7 +1274,7 @@ def atest_coverage(
     else:
         print("Node.js V8 coverage is not supported on Windows.")
 
-    args = ATEST_ORDER_AND_PYTHONPATH + _get_listener_args()
+    args = ATEST_ORDER_AND_PYTHONPATH + _get_listener_args() + browser_args
     if suite:
         args.extend(["--suite", suite])
     if test:
