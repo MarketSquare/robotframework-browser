@@ -617,13 +617,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      # --no-config: the [tool.uv] settings of pyproject.toml are for the lock
-      # file, and its exclude-dependencies would skip BrowserBatteries.
       - name: Install the wheels
         shell: bash
         run: |
           ls -lR wheels
-          uv pip install --no-config wheels/*/*.whl --python ${{ matrix.python-version }} --system
+          uv pip install wheels/*/*.whl --python ${{ matrix.python-version }} --system
           rfbrowser --version
       - name: Install the Node.js dependencies and browsers
         if: ${{ !matrix.batteries }}
@@ -639,8 +637,8 @@ jobs:
         shell: bash
         run: |
           uv export --locked --only-group dev --no-emit-project --output-file dev-requirements.txt
-          uv pip install --no-config --require-hashes $NO_BUILD -r dev-requirements.txt --python ${{ matrix.python-version }} --system
-          uv pip install --no-config $NO_BUILD robotframework==${{ matrix.rf-version }} --python ${{ matrix.python-version }} --system
+          uv pip install --require-hashes $NO_BUILD -r dev-requirements.txt --python ${{ matrix.python-version }} --system
+          uv pip install $NO_BUILD robotframework==${{ matrix.rf-version }} --python ${{ matrix.python-version }} --system
           python atest/library/os_wrapper.py
       # The tests must import the installed packages, not the sources.
       - name: Replace the sources with the demo app
@@ -672,7 +670,7 @@ jobs:
         shell: bash
         run: |
           rfbrowser clean-node
-          uv pip uninstall --no-config robotframework-browser ${{ matrix.batteries && 'robotframework-browser-batteries' || '' }} --python ${{ matrix.python-version }} --system
+          uv pip uninstall robotframework-browser ${{ matrix.batteries && 'robotframework-browser-batteries' || '' }} --python ${{ matrix.python-version }} --system
 
   atest-wheel-intel:
     if: github.event_name == 'schedule'
