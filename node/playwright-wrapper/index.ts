@@ -34,13 +34,7 @@ if (!port) {
 const server = new Server();
 server.addService(PlaywrightService, new PlaywrightServer() as unknown as UntypedServiceImplementation);
 
-server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), (error) => {
-    if (error) {
-        // Nothing else keeps the process alive, so it would end with code 0 and
-        // whoever holds the port would answer the library in its place.
-        logger.error(`Could not listen on ${host}:${port}: ${error.message}`);
-        process.exit(1);
-    }
+server.bindAsync(`${host}:${port}`, ServerCredentials.createInsecure(), () => {
     logger.info(`Listening on ${host}:${port}`);
 });
 

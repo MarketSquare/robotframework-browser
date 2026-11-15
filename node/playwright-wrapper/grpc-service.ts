@@ -484,9 +484,7 @@ export class PlaywrightServer {
         call: ServerUnaryCall<pb.Request_Empty, pb.Response_String>,
         callback: sendUnaryData<pb.Response_String>,
     ): Promise<void> {
-        // The process id lets the library tell its own process from another one
-        // that took the port it was started on.
-        callback(null, { body: `OK ${process.pid}`, log: '' });
+        callback(null, { body: 'OK', log: '' });
     }
 
     highlightElements = this.wrapping(evaluation.highlightElements);
