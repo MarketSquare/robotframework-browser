@@ -34,9 +34,10 @@ Set Geolocation
 Enable Geolocation
     [Tags]    no-docker-pr
     [Setup]    Start Context Without Geolocation
-    Set Browser Timeout    timeout=500ms    scope=Test
     Set Geolocation    11.11    22.22    33.33
+    ${timeout} =    Set Browser Timeout    timeout=500ms    scope=Test
     Run Keyword And Expect Error    *    Check Geolocation    11.11    22.22
+    Set Browser Timeout    ${timeout}    scope=Test
     Grant Permissions    geolocation    midi    origin=${GEOLOCATION_URL}
     Set Geolocation    72.56    145.89    0.23
     Check Geolocation    72.56    145.89
