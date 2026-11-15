@@ -46,7 +46,15 @@ Add Popup Link
     ...    () => { const a = document.createElement('a'); a.id = 'popup_link'; a.href = location.href; a.target = '_blank'; a.textContent = 'Open popup'; document.body.prepend(a); }
 
 End Any Recording Session
+    Run Keyword If Test Failed    Run Keyword And Ignore Error    Log Toolbar Geometry
     Run Keyword And Ignore Error    Send Command    {cmd: 'stop'}
+
+Log Toolbar Geometry
+    [Documentation]    Diagnosis for WebKit on Linux, where the toolbar is not placed where it should be.
+    ${geometry} =    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { const host = document.querySelector('rfb-recorder-toolbar'); const r = host && host.getBoundingClientRect(); const d = document.documentElement; return {clientWidth: d.clientWidth, clientHeight: d.clientHeight, innerWidth: window.innerWidth, innerHeight: window.innerHeight, dpr: window.devicePixelRatio, stored: sessionStorage.getItem('rfb.toolbar.position'), transform: host && host.style.transform, host: r && {x: r.x, y: r.y, width: r.width, height: r.height}, popoverOpen: host && host.matches(':popover-open'), fonts: document.fonts.status}; }
+    Log    Toolbar geometry: ${geometry}    WARN
 
 Toolbar Is Ready
     Wait For Function    () => typeof window.__rfbCommand === 'function' && !!window.__rfbToolbarState
