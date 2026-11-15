@@ -763,8 +763,7 @@ jobs:
                 cat /tmp/test-app.log
                 exit 1
               fi
-              pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 \\
-                --ordering /home/pwuser/atest/atest_order.data \\
+              pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 --chunk \\
                 --artifacts png,webm,zip --artifactsinsubfolders \\
                 -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
               robot_status=\$?
