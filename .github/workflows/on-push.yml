@@ -692,10 +692,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04-arm
-            # ARM counts against the 64 Linux vCPU and is the slowest wheel
-            # test: 312 s on 8 vCPU, 182 s on 16. docker_image waits for the
-            # source tests, so that there is room for the 16.
-            runner: nscloud-ubuntu-24.04-arm64-16x32
+            # ARM counts against the 64 Linux vCPU. With 16 it waited two
+            # minutes for room while the other Linux tests ran.
+            runner: nscloud-ubuntu-24.04-arm64-8x16
             python-version: "3.15"
             rf-version: "7.2.2"
             batteries: true
@@ -767,12 +766,9 @@ jobs:
       NO_BUILD: ""
     steps: *atest_wheel_steps
 
-  # Waits for the source tests too, only to leave the Linux vCPU to the ARM
-  # wheel test meanwhile. It runs whatever they found.
   docker_image:
     runs-on: nscloud-ubuntu-24.04-amd64-8x16
-    needs: [build_wheels, atest-source]
-    if: ${{ !cancelled() && needs.build_wheels.result == 'success' }}
+    needs: build_wheels
     permissions:
       contents: read
     steps:
