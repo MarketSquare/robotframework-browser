@@ -302,11 +302,6 @@ jobs:
           UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
         run: |
           inv build-nodejs
-      # The library imports its generated protobuf before the task builds anything.
-      - name: Build stubs
-        if: ${{ !matrix.batteries }}
-        run: |
-          inv node-build
       - name: Install Robot Framework ${{ matrix.rf-version }}
         env:
           UV_NO_BUILD: ${{ matrix.python-version != '3.15' }}
@@ -594,13 +589,13 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: rfbrowser-wheel
-          path: wheels/browser
+          path: wheels
       - name: Download the BrowserBatteries wheel
         if: ${{ matrix.batteries }}
         uses: actions/download-artifact@v8
         with:
           name: browser-batteries-wheels-${{ matrix.os }}
-          path: wheels/batteries
+          path: wheels
       - name: Download the demo app
         uses: actions/download-artifact@v8
         with:
@@ -620,8 +615,7 @@ jobs:
       - name: Install the wheels
         shell: bash
         run: |
-          ls -lR wheels
-          uv pip install wheels/*/*.whl --python ${{ matrix.python-version }} --system
+          uv pip install wheels/*.whl --python ${{ matrix.python-version }} --system
           rfbrowser --version
       - name: Install the Node.js dependencies and browsers
         if: ${{ !matrix.batteries }}
