@@ -671,6 +671,18 @@ describe('recorderPoll with the toolbar Pick button', () => {
         await poll(context);
         expect(frameEvaluate).toHaveBeenCalledTimes(1);
     });
+
+    it("leaves the hand pointer to its own pick before Playwright's mode switches to inspecting", async () => {
+        const page = fakePage('recording-inspecting');
+        const frameEvaluate = jest.fn(async () => undefined);
+        (page as any).frames = () => [{ evaluate: frameEvaluate }];
+        const context = fakeRecorderContext([page]);
+        const picker = pickPage();
+        expect((await poll(context)).pickRequested).toBe(true);
+        await pollWith(context, picker.page, { pick: true });
+        expect(picker.page.pickLocator).toHaveBeenCalledTimes(1);
+        expect(frameEvaluate).not.toHaveBeenCalled();
+    });
 });
 
 describe('one recording session per context', () => {
