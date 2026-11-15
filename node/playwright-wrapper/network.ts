@@ -124,6 +124,13 @@ async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMess
     }
 }
 
+const STATUSES_WITHOUT_BODY = new Set([204, 205, 304]);
+
+function emptyBodyOrNull(response: PlaywrightResponse): Buffer | null {
+    const hasNoBody = STATUSES_WITHOUT_BODY.has(response.status()) || response.headers()['content-length'] === '0';
+    return hasNoBody ? Buffer.alloc(0) : null;
+}
+
 function remainingTime(timeout: number, started: number): number {
     return timeout > 0 ? Math.max(timeout - (Date.now() - started), 1) : 0;
 }
@@ -175,7 +182,7 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
     const withBody = !request.excludeBody;
     const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await withinTimeout(
         Promise.all([
-            withBody ? orFallback<Buffer | null>(() => data.body(), null, 'response body') : null,
+            withBody ? orFallback<Buffer | null>(() => data.body(), emptyBodyOrNull(data), 'response body') : null,
             headersOf(data, 'response'),
             withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
             withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,

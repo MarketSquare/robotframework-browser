@@ -1299,8 +1299,9 @@ class CapturedResponse(TypedDict):
     ``body`` is kept as it always was: it is parsed as JSON regardless of the ``content-type``,
     and a body that is not valid JSON is returned as the decoded text. So ``{"a": 1}`` becomes a
     dictionary, ``[1, 2]`` a list, ``42`` a number and ``true`` a boolean, even when the server
-    sends them as ``text/plain``. An empty body is an empty string. ``NaN`` and ``Infinity`` are
-    not valid JSON and stay text.
+    sends them as ``text/plain``. An empty body is an empty string. That holds even when the
+    browser keeps no body at all, as WebKit does for a ``204``, ``205`` or ``304`` response or one
+    with ``content-length: 0``. ``NaN`` and ``Infinity`` are not valid JSON and stay text.
 
     ``json`` follows the same parsing but is ``None`` where ``body`` falls back to text. It
     is a string only when the body is a valid JSON string such as ``"abc"``.
