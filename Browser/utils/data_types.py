@@ -1165,7 +1165,7 @@ class CapturedResponse(TypedDict):
     | ``json`` | The response body parsed as JSON regardless of the ``content-type``, like Playwright's ``json()``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
     | ``httpVersion`` | The HTTP version, e.g. ``HTTP/1.1`` or ``h2``. ``None`` if Playwright cannot read it, or with ``include_body=False``. |
     | ``serverAddr`` | Dictionary with the ``ipAddress`` and ``port`` of the server. ``None`` if Playwright cannot read it, or with ``include_body=False``. |
-    | ``securityDetails`` | ( `SecurityDetails` ) TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. |
+    | ``securityDetails`` | ( `SecurityDetails` ) TLS details of a HTTPS response: a dictionary with the optional keys ``issuer`` and ``subjectName`` (certificate Common Names), ``protocol`` (e.g. ``TLS 1.3``), and ``validFrom`` and ``validTo`` (Unix timestamps in seconds). Without TLS it is ``None`` or an empty dictionary, depending on the browser. ``None`` with ``include_body=False``. |
     | ``fromServiceWorker`` | ``True`` if a Service Worker answered the request. |
     | ``request`` | The `CapturedRequest` that this response answers. |
 
@@ -1302,8 +1302,8 @@ class CapturedResponse(TypedDict):
     sends them as ``text/plain``. An empty body is an empty string. ``NaN`` and ``Infinity`` are
     not valid JSON and stay text.
 
-    ``json`` follows the same parsing but is ``None`` where ``body`` falls back to text, so it
-    never returns a string by accident.
+    ``json`` follows the same parsing but is ``None`` where ``body`` falls back to text. It
+    is a string only when the body is a valid JSON string such as ``"abc"``.
 
     = Binary data and JSON =
 

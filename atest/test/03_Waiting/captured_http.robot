@@ -80,10 +80,10 @@ Navigation Request Is Marked As Navigation
     Should Be Equal    ${request.isNavigationRequest}    ${True}
 
 Form Post Data Is Parsed Like Playwright
-    ${promise} =    Promise To    Wait For Request    **/api/form
+    ${promise} =    Promise To    Wait For Request    **/posted.html
     Evaluate JavaScript
     ...    ${None}
-    ...    () => fetch('/api/form', {method: 'POST', headers: {'content-type': 'application/x-www-form-urlencoded'}, body: 'name=George&city=Helsinki'})
+    ...    () => fetch('/posted.html', {method: 'POST', headers: {'content-type': 'application/x-www-form-urlencoded'}, body: 'name=George&city=Helsinki'})
     ${request} =    Wait For    ${promise}
     Should Be Equal    ${request.postDataJSON}    ${{ {'name': 'George', 'city': 'Helsinki'} }}
     Should Be Equal    ${request.postDataBuffer}    ${{ b'name=George&city=Helsinki' }}

@@ -460,7 +460,7 @@ export class PlaywrightServer {
             const results = await capture(request, this.getActivePage(call));
             logger.info({ event_kind: 'grpc', action: capture.name, status: 'succeeded' });
             for (const result of results) {
-                logger.info(`Sending ${result.log}`);
+                if (result.log) logger.info(`Sending ${result.log}`);
                 call.write(result);
             }
         } catch (e) {

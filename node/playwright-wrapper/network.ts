@@ -124,6 +124,10 @@ async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMess
     }
 }
 
+function remainingTime(timeout: number, started: number): number {
+    return timeout > 0 ? Math.max(timeout - (Date.now() - started), 1) : 0;
+}
+
 function requestDetails(request: Request, headers: Record<string, unknown>): Record<string, unknown> {
     return {
         url: request.url(),
@@ -165,17 +169,22 @@ function capturedMessages(captured: CapturedBytes): pb.Response_Json[] {
 export async function waitForResponse(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json[]> {
     const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
     const timeout = request.timeout;
+    const started = Date.now();
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
     const capturedRequest = data.request();
     const withBody = !request.excludeBody;
-    const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await Promise.all([
-        withBody ? orFallback<Buffer | null>(() => data.body(), null, 'response body') : null,
-        headersOf(data, 'response'),
-        withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
-        withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,
-        orFallback(() => data.securityDetails(), null, 'security details'),
-        headersOf(capturedRequest, 'request'),
-    ]);
+    const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await withinTimeout(
+        Promise.all([
+            withBody ? orFallback<Buffer | null>(() => data.body(), null, 'response body') : null,
+            headersOf(data, 'response'),
+            withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
+            withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,
+            withBody ? orFallback(() => data.securityDetails(), null, 'security details') : null,
+            headersOf(capturedRequest, 'request'),
+        ]),
+        remainingTime(timeout, started),
+        `Timeout ${timeout}ms exceeded while waiting for all fields of the response.`,
+    );
     const meta: Record<string, unknown> = {
         status: data.status(),
         headers: JSON.stringify(data.headers()),
@@ -212,7 +221,7 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
     const headers = request.waitForAllFields
         ? await withinTimeout(
               headersOf(result, 'request'),
-              timeout > 0 ? Math.max(timeout - (Date.now() - started), 1) : 0,
+              remainingTime(timeout, started),
               `Timeout ${timeout}ms exceeded while waiting for all fields of the request.`,
           )
         : PENDING_REQUEST_HEADERS;

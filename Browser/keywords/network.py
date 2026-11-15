@@ -107,6 +107,7 @@ def _post_data_json(post_data: bytes | None, headers: dict) -> Any:
 
 RESPONSE_BODY_KEYS = ("body", "bytes", "text", "json")
 REQUEST_BODY_KEYS = ("postData", "postDataBuffer", "postDataJSON")
+COOKIE_HEADER_KEYS = ("allHeaders", "headersArray")
 
 
 def _add_request_views(request: dict, post_data: bytes) -> None:
@@ -148,7 +149,7 @@ def _trace_enabled() -> bool:
     try:
         return BuiltIn().get_variable_value("${LOG LEVEL}") == "TRACE"
     except RobotNotRunningError:
-        return True
+        return False
 
 
 def _trace_content(label: str, raw: bytes | None) -> None:
@@ -156,15 +157,26 @@ def _trace_content(label: str, raw: bytes | None) -> None:
         logger.trace(f"{label}:\n{_readable(raw)}")
 
 
+def _debug_cookie_headers(label: str, data: dict) -> None:
+    headers = {key: data[key] for key in COOKIE_HEADER_KEYS if data[key] is not None}
+    if headers:
+        logger.debug(f"{label} headers including cookies: {headers}")
+
+
 def _log_request(request: dict) -> None:
-    logger.info(_without(request, REQUEST_BODY_KEYS))
+    logger.info(_without(request, REQUEST_BODY_KEYS + COOKIE_HEADER_KEYS))
+    _debug_cookie_headers("Request", request)
     _trace_content("Request post data", request["postDataBuffer"])
 
 
 def _log_response(response: dict) -> None:
-    metadata = _without(response, RESPONSE_BODY_KEYS)
-    metadata["request"] = _without(response["request"], REQUEST_BODY_KEYS)
+    metadata = _without(response, RESPONSE_BODY_KEYS + COOKIE_HEADER_KEYS)
+    metadata["request"] = _without(
+        response["request"], REQUEST_BODY_KEYS + COOKIE_HEADER_KEYS
+    )
     logger.info(metadata)
+    _debug_cookie_headers("Response", response)
+    _debug_cookie_headers("Request", response["request"])
     _trace_content("Response body", response["bytes"])
     _trace_content("Request post data", response["request"]["postDataBuffer"])
 
@@ -284,8 +296,10 @@ class Network(LibraryComponent):
         body as ``postDataJSON``, the resource type and more. Its documentation lists every key
         and the parsing rules of the legacy ``postData`` key.
 
-        The request is logged without its body. The body is logged at ``TRACE`` level: as
-        formatted JSON when it is JSON, as text when it is UTF-8, otherwise as base64.
+        The request is logged without its body. ``allHeaders`` and ``headersArray`` can
+        contain cookies, so they are logged only at ``DEBUG`` level. The body is logged at
+        ``TRACE`` level: as formatted JSON when it is JSON, as text when it is UTF-8,
+        otherwise as base64.
 
         *Arguments:*
           - ``matcher``: Request URL matcher. Can be a string (Glob-Pattern), a
@@ -334,8 +348,10 @@ class Network(LibraryComponent):
         the HTTP version, server address, TLS details and the `CapturedRequest` it answers.
         Its documentation lists every key and the parsing rules of the legacy ``body`` key.
 
-        The response is logged without its body. The body is logged at ``TRACE`` level: as
-        formatted JSON when it is JSON, as text when it is UTF-8, otherwise as base64.
+        The response is logged without its body. ``allHeaders`` and ``headersArray`` can
+        contain cookies, so they are logged only at ``DEBUG`` level. The body is logged at
+        ``TRACE`` level: as formatted JSON when it is JSON, as text when it is UTF-8,
+        otherwise as base64.
 
         *Arguments:*
           - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
@@ -346,12 +362,14 @@ class Network(LibraryComponent):
                 [https://playwright.dev/docs/api/class-page#page-wait-for-response |
                 page.waitForResponse] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
-                timeout if not set.
+                timeout if not set. It covers both the wait for the response and reading
+                its body and other fields; the keyword fails if they do not arrive in time.
           - ``include_body``: If ``False``, the response body is not read and not transferred,
                 and ``body``, ``bytes``, ``text`` and ``json`` are ``None``. Use it when only the
-                status or headers matter and the body is large. ``httpVersion`` and
-                ``serverAddr`` are then ``None`` too, because Firefox and WebKit report them
-                only after the whole body has arrived.
+                status or headers matter and the body is large or never ends.
+                ``httpVersion``, ``serverAddr`` and ``securityDetails`` are then ``None`` too,
+                because some browsers report them only after the whole body has arrived:
+                ``httpVersion`` in Firefox and WebKit, the other two in WebKit.
 
         == Matcher Examples: ==
 

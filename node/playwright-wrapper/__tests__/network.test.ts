@@ -410,7 +410,20 @@ describe('waitForResponse', () => {
 
         expect(response.httpVersion).not.toHaveBeenCalled();
         expect(response.serverAddr).not.toHaveBeenCalled();
-        expect(JSON.parse(first.json)).toMatchObject({ httpVersion: null, serverAddr: null });
+        expect(response.securityDetails).not.toHaveBeenCalled();
+        expect(JSON.parse(first.json)).toMatchObject({ httpVersion: null, serverAddr: null, securityDetails: null });
+    });
+
+    it('fails when the response fields do not arrive within the timeout', async () => {
+        expect.assertions(1);
+        const response = makeMockResponse({ body: jest.fn(() => new Promise(() => {})) });
+
+        await expect(
+            waitForResponse(
+                makeRequest('/.*/', 20),
+                makeMockPage({ waitForResponse: jest.fn().mockResolvedValue(response) }),
+            ),
+        ).rejects.toThrow('Timeout 20ms exceeded while waiting for all fields of the response.');
     });
 
     it('returns a null HTTP version when Playwright cannot read it', async () => {
