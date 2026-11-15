@@ -4,7 +4,7 @@ Resource      imports.resource
 
 Test Setup    Ensure Location    ${LOGIN_URL}
 
-Test Tags    no-iframe
+Test Tags     no-iframe
 
 *** Variables ***
 ${PNG_SIGNATURE} =     ${{ bytes.fromhex('89504e470d0a1a0a') }}
