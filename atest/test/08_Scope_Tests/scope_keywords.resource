@@ -3,12 +3,12 @@ Resource    ../keywords.resource
 Library     scope_logger.py
 
 *** Variables ***
-${SERVER_URL} =         http://${SERVER}/
-${FRAME_URL} =          framing.html?url=
-${IFRAME_PREFIX} =      id=iframe_id >>>
-${WAIT_URL_FRAMED} =    ${SERVER_URL}${FRAME_URL}waitfor.html
-${WAIT_URL_DIRECT} =    ${SERVER_URL}waitfor.html
-${LOAD_TIMEOUT} =       10 s
+${SERVER_URL} =            http://${SERVER}/
+${FRAME_URL} =             framing.html?url=
+${IFRAME_PREFIX} =         id=iframe_id >>>
+${WAIT_URL_FRAMED} =       ${SERVER_URL}${FRAME_URL}waitfor.html
+${WAIT_URL_DIRECT} =       ${SERVER_URL}waitfor.html
+${FRAME_LOAD_TIMEOUT} =    10 s
 
 *** Keywords ***
 Timeout Should Be
@@ -37,7 +37,6 @@ Assertion Retry Should Be
 
 Strict Mode Should Be
     [Arguments]    ${status}
-    Wait For Elements State    input >> nth=0    attached    ${LOAD_TIMEOUT}
     IF    ${status}
         Run Keyword And Expect Error    *strict mode violation*    Get Text    input
     ELSE
@@ -54,25 +53,14 @@ Wait For Framed Page
     Wait For Elements State
     ...    !prefix ${IFRAME_PREFIX} id=setdelay
     ...    attached
-    ...    ${LOAD_TIMEOUT}
+    ...    ${FRAME_LOAD_TIMEOUT}
 
 Open Framed Page
     [Documentation]    Navigates to the framed page under a timeout of its own, so the
     ...    scope setting under test never governs the navigation.
-    Go To    ${WAIT_URL_FRAMED}    timeout=${LOAD_TIMEOUT}
+    Go To    ${WAIT_URL_FRAMED}    timeout=${FRAME_LOAD_TIMEOUT}
     Wait For Framed Page
 
 Ensure Open Framed Page
-    Ensure Open Page
-    Open Framed Page
-
-Open Framed Page In New Page
-    New Page
-    Open Framed Page
-
-Open Direct Page
-    Go To    ${WAIT_URL_DIRECT}    timeout=${LOAD_TIMEOUT}
-
-Ensure Open Direct Page
-    Ensure Open Page
-    Open Direct Page
+    Ensure Open Page    ${WAIT_URL_FRAMED}
+    Wait For Framed Page

@@ -1,7 +1,7 @@
 *** Settings ***
 Resource          scope_keywords.resource
 
-Suite Setup       Open Page And Set New Global Settings
+Suite Setup       Set New Global Settings
 Suite Teardown    Reset Global Settings
 
 *** Variables ***
@@ -11,10 +11,6 @@ ${org_strict} =     ${None}
 ${org_prefix} =     ${None}
 
 *** Keywords ***
-Open Page And Set New Global Settings
-    Ensure Open Direct Page
-    Set New Global Settings
-
 Close All And Open New Browser
     Close Browser    ALL
     Set New Global Settings

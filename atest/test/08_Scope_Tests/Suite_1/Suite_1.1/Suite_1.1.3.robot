@@ -3,7 +3,7 @@ Resource          ../../scope_keywords.resource
 
 Suite Setup       Run Keywords    New Browser    AND    New Context
 Suite Teardown    Close Browser    CURRENT
-Test Setup        Open Framed Page In New Page
+Test Setup        New Page    ${WAIT_URL_FRAMED}
 
 *** Test Cases ***
 Test Normal Timeout
