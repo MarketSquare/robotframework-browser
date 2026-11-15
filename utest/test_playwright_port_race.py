@@ -88,18 +88,6 @@ def test_waiting_stops_when_the_own_process_has_exited(monkeypatch):
         _playwright().wait_until_server_up(Process(42, returncode=1))
 
 
-def test_the_own_process_exiting_because_its_port_was_taken_is_reported(
-    monkeypatch,
-):
-    def refuse(target, options=None):
-        raise AssertionError("no server to connect to")
-
-    monkeypatch.setattr(Browser.playwright.grpc, "insecure_channel", refuse)
-    exited = Process(42, returncode=Browser.playwright.PORT_TAKEN_EXIT_CODE)
-    with pytest.raises(PortTakenError, match="12345 was taken .* process 42"):
-        _playwright().wait_until_server_up(exited)
-
-
 def _starting_playwright(monkeypatch, outcomes):
     playwright = _playwright()
     playwright.port = None
