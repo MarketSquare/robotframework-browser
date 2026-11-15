@@ -220,6 +220,13 @@ app.get('/api/stalled-image', (req, res) => {
     }, 11000);
 });
 
+app.get('/api/slow-body', (req, res) => {
+    const bodyMs = Number(req.query.bodyMs ?? 10000);
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.write('first part of the body, ');
+    setTimeout(() => res.end('last part of the body'), bodyMs);
+});
+
 app.get('/api/download/slow', (req, res) => {
     const startDelayMs = Number(req.query.startDelayMs ?? 0);
     const transferMs = Number(req.query.transferMs ?? 0);

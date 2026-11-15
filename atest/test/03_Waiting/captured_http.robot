@@ -4,10 +4,14 @@ Resource      imports.resource
 
 Test Setup    Ensure Location    ${LOGIN_URL}
 
-Force Tags    no-iframe
+Test Tags    no-iframe
 
 *** Variables ***
-${PNG_SIGNATURE} =    ${{ bytes.fromhex('89504e470d0a1a0a') }}
+${PNG_SIGNATURE} =     ${{ bytes.fromhex('89504e470d0a1a0a') }}
+# The body ends long after the limit, so a wait for the whole body fails the limit
+# instead of hanging, while a normal return stays far below it.
+${SLOW_BODY_MS} =      20000
+${RETURN_LIMIT_S} =    10
 
 *** Test Cases ***
 Response All Headers Contain Set-Cookie
@@ -110,6 +114,26 @@ Waiting For All Request Fields Is Limited By The Timeout
         ...    Wait For    ${promise}
     END
 
+Response Without Body Returns Before A Slow Body Arrives
+    ${started} =    Evaluate    time.monotonic()    modules=time
+    ${promise} =    Promise To    Wait For Response
+    ...    **/api/slow-body*    timeout=15s    include_body=False
+    Evaluate JavaScript    ${None}    () => { fetch('/api/slow-body?bodyMs=${SLOW_BODY_MS}'); }
+    ${response} =    Wait For    ${promise}
+    Should Be Equal    ${response.status}    ${200}
+    Should Be Equal    ${response.bytes}    ${None}
+    Should Be Equal    ${response.securityDetails}    ${None}
+    Seconds Since Should Be Below    ${started}    ${RETURN_LIMIT_S}
+
+Reading A Slow Body Is Limited By The Timeout
+    ${started} =    Evaluate    time.monotonic()    modules=time
+    ${promise} =    Promise To    Wait For Response    **/api/slow-body*    timeout=3s
+    Evaluate JavaScript    ${None}    () => { fetch('/api/slow-body?bodyMs=${SLOW_BODY_MS}'); }
+    Run Keyword And Expect Error
+    ...    *Timeout 3000ms exceeded while waiting for all fields of the response.*
+    ...    Wait For    ${promise}
+    Seconds Since Should Be Below    ${started}    ${RETURN_LIMIT_S}
+
 *** Keywords ***
 Capture Response
     [Arguments]    ${path}
@@ -117,3 +141,9 @@ Capture Response
     HTTP    ${path}
     ${response} =    Wait For    ${promise}
     RETURN    ${response}
+
+Seconds Since Should Be Below
+    [Arguments]    ${started}    ${limit}
+    ${elapsed} =    Evaluate    time.monotonic() - ${started}    modules=time
+    Should Be True    ${elapsed} < ${limit}
+    ...    Returned after ${elapsed}s, expected below ${limit}s.
