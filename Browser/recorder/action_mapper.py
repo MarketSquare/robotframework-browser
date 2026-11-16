@@ -406,6 +406,20 @@ def _data(text: object) -> Value:
     return Value.literal("" if text is None else str(text))
 
 
+def _select_attribute_and_options(options: list) -> tuple[str, list]:
+    """The attribute `Select Options By` selects the options by, and the options.
+
+    Playwright records the values of the chosen options. A JS extension's
+    `__recordedAction` hook may give Playwright's option descriptors for
+    `selectOption` instead, all with the same key, which Node has checked:
+    `[{"label": "AMELUNG"}]` selects by `label`.
+    """
+    if not options or not isinstance(options[0], dict):
+        return "value", options
+    attribute = next(iter(options[0]))
+    return attribute, [option[attribute] for option in options]
+
+
 def internal_selector_notice(action: dict) -> str | None:
     """The toolbar notice for an Action whose selector stays Playwright-internal."""
     selector = action.get("selector")
@@ -524,13 +538,10 @@ class ActionMapper:
         return Call("Uncheck Checkbox", [_selector(action)])
 
     def _map_select(self, action: dict) -> Call:
+        attribute, options = _select_attribute_and_options(action.get("options", []))
         return Call(
             "Select Options By",
-            [
-                _selector(action),
-                _fixed("value"),
-                *(_data(o) for o in action.get("options", [])),
-            ],
+            [_selector(action), _fixed(attribute), *(_data(o) for o in options)],
         )
 
     # -- assertions -------------------------------------------------------- #

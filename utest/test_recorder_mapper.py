@@ -212,6 +212,19 @@ def test_map_select():
     assert rendered(action) == "Select Options By    css=select    value    1    2"
 
 
+@pytest.mark.parametrize(
+    ("options", "expected"),
+    [
+        ([{"label": "A"}, {"label": "B"}], "label    A    B"),
+        ([{"value": "1"}], "value    1"),
+        ([{"index": 2}], "index    2"),
+    ],
+)
+def test_map_select_by_the_option_descriptors_a_hook_gave(options, expected):
+    action = {"name": "select", "selector": "css=select", "options": options}
+    assert rendered(action) == f"Select Options By    css=select    {expected}"
+
+
 def test_map_assert_text_substring():
     action = {
         "name": "assertText",

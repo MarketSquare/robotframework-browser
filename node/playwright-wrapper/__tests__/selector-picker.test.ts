@@ -45,7 +45,7 @@ describe('commandListeners', () => {
 
 function session(pickLocator: () => Promise<unknown>): Pick {
     return {
-        page: { pickLocator, cancelPickLocator: jest.fn(async () => undefined) } as any,
+        page: { pickLocator, cancelPickLocator: jest.fn(async () => undefined), context: () => ({}) } as any,
         picking: false,
     };
 }
@@ -196,7 +196,10 @@ describe('drivePick', () => {
 
     it('drops the highlight when picking again', async () => {
         const dispose = highlighter(1);
-        const pick: Pick = { page: { pickLocator: () => new Promise(() => undefined) } as any, picking: false };
+        const pick: Pick = {
+            page: { pickLocator: () => new Promise(() => undefined), context: () => ({}) } as any,
+            picking: false,
+        };
         await drivePick(pick, { pick: false, count: 'css=b' });
         await drivePick(pick, { pick: true });
         expect(dispose).toHaveBeenCalledTimes(1);
