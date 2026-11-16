@@ -1,7 +1,8 @@
 /// <reference types="jest" />
 
-import { beforeEach, describe, expect, it } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import type { Browser } from 'playwright';
+import * as playwright from 'playwright';
 
 jest.mock('../browser_logger', () => ({
     logger: { info: jest.fn(), error: jest.fn() },
@@ -25,6 +26,7 @@ import {
     newContext,
     newPage,
     PlaywrightState,
+    registerSelectorEnginesIn,
     removeFailedPage,
     startTracing,
     stopTracing,
@@ -1262,5 +1264,52 @@ describe('ad-hoc tracing', () => {
         );
 
         expect(response.traceFile).toBe('/out/trace_context=test-uuid.zip');
+    });
+});
+
+describe('registerSelectorEnginesIn', () => {
+    const registry = playwright.selectors as unknown as { _selectorEngines?: unknown[] };
+    const engines = [{ name: 'one' }, { name: 'two' }];
+    let saved: unknown[] | undefined;
+
+    beforeEach(() => {
+        saved = registry._selectorEngines;
+        registry._selectorEngines = engines;
+    });
+    afterEach(() => {
+        registry._selectorEngines = saved;
+    });
+
+    const contextWith = (registerSelectorEngine: jest.Mock) => ({ _channel: { registerSelectorEngine } }) as any;
+
+    it('gives every registered engine to every context', async () => {
+        const first = jest.fn(async () => undefined);
+        const second = jest.fn(async () => undefined);
+
+        await registerSelectorEnginesIn([contextWith(first), contextWith(second)]);
+
+        for (const register of [first, second]) {
+            expect(register.mock.calls).toEqual([[{ selectorEngine: engines[0] }], [{ selectorEngine: engines[1] }]]);
+        }
+    });
+
+    it('keeps going when a context already has an engine', async () => {
+        const register = jest
+            .fn(async () => undefined)
+            .mockRejectedValueOnce(new Error('"one" selector engine has been already registered'));
+
+        await registerSelectorEnginesIn([contextWith(register)]);
+
+        expect(register).toHaveBeenCalledTimes(2);
+    });
+
+    it('fails on any other error', async () => {
+        const register = jest.fn(async () => undefined).mockRejectedValueOnce(new Error('Target closed'));
+
+        await expect(registerSelectorEnginesIn([contextWith(register)])).rejects.toThrow('Target closed');
+    });
+
+    it('skips a context without the private channel', async () => {
+        await expect(registerSelectorEnginesIn([{} as any])).resolves.toBeUndefined();
     });
 });

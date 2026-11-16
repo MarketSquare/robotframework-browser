@@ -298,6 +298,36 @@ async function _launchBrowserServer(
     return browser;
 }
 
+interface SelectorEngineRegistry {
+    _selectorEngines?: unknown[];
+}
+interface SelectorEngineChannel {
+    _channel?: { registerSelectorEngine?: (params: { selectorEngine: unknown }) => Promise<void> };
+}
+
+// Playwright gives the engines of `selectors.register` only to the contexts it
+// creates, or tracks when an engine is registered. A context that already exists
+// when it attaches over CDP gets none, and a second `register` is refused, so the
+// engines registered so far are given to such a context here, through Playwright's
+// own private calls.
+export async function registerSelectorEnginesIn(contexts: BrowserContext[]): Promise<void> {
+    const engines = (playwright.selectors as unknown as SelectorEngineRegistry)._selectorEngines ?? [];
+    for (const context of contexts) {
+        const channel = (context as unknown as SelectorEngineChannel)._channel;
+        if (!channel?.registerSelectorEngine) {
+            if (engines.length) logger.info('Cannot register selector engines in an attached context');
+            continue;
+        }
+        for (const selectorEngine of engines) {
+            try {
+                await channel.registerSelectorEngine({ selectorEngine });
+            } catch (error) {
+                if (!String(error).includes('already registered')) throw error;
+            }
+        }
+    }
+}
+
 async function _connectBrowser(
     browserName: string,
     url: string,
@@ -310,6 +340,7 @@ async function _connectBrowser(
     const browser = connectCDP
         ? await browserType.connectOverCDP(url, { timeout })
         : await browserType.connect(url, { timeout });
+    if (connectCDP) await registerSelectorEnginesIn(browser.contexts());
     return {
         browser,
         browserType: browserName as 'chromium' | 'firefox' | 'webkit',
