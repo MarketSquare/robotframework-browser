@@ -747,6 +747,24 @@
             if (event.isTrusted) window.__rfbLastPressAt = Date.now();
         };
         const endPress = () => (releasePending = false);
+        // Playwright's select Action arrives in Node only after the page has
+        // handled the selection, and a page may relabel options when one is
+        // chosen. So the label of each chosen option is noted here, in the
+        // capture phase at window, before the page's own listeners run; a label
+        // is noted only when it names exactly one option.
+        const noteChosenLabels = (event) => {
+            const select = event.composedPath()[0];
+            if (!select || select.tagName !== 'SELECT') return;
+            const options = Array.from(select.options);
+            const named = (label) => options.filter((option) => option.label === label).length === 1;
+            select.__rfbChosenLabels = new Map(
+                Array.from(select.selectedOptions, (option) => [
+                    option.value,
+                    option.label && named(option.label) ? option.label : null,
+                ]),
+            );
+        };
+        window.addEventListener('input', noteChosenLabels, true);
         window.addEventListener('pointerdown', notePress, true);
         window.addEventListener('pointercancel', endPress, true);
         const unfocused = (event) => event.target === document.body || event.target === document.documentElement;
@@ -1211,6 +1229,7 @@
             window.removeEventListener('pointercancel', endResize);
             ISOLATED_EVENTS.forEach((type) => window.removeEventListener(type, isolate, true));
             RELEASE_EVENTS.forEach((type) => window.removeEventListener(type, dropRelease, true));
+            window.removeEventListener('input', noteChosenLabels, true);
             window.removeEventListener('pointerdown', notePress, true);
             window.removeEventListener('pointercancel', endPress, true);
             PAGE_CLICK_EVENTS.forEach((type) => window.removeEventListener(type, notePageClick, true));

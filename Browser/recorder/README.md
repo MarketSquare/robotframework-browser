@@ -68,11 +68,17 @@ operators, option strategies) never are.
 | `assertSnapshot` | `Get Aria Snapshot    <selector>    yaml    ==    <snapshot>`; the multi-line YAML comes from the action's `ariaSnapshot` field | selector, snapshot |
 
 Playwright records a `select` by the option values, which are often generated (`14: 6792`).
-The wrapper looks up the label of each value in the page as the Action arrives
+The Action arrives only after the page has handled the selection, and a page may relabel the
+options then. So the toolbar notes the label of each chosen option on the select
+(`__rfbChosenLabels`) from a capture-phase `input` listener at `window`, before the page's own
+listeners run. The wrapper compares those labels with the page as the Action arrives
 (`addOptionLabels`, at most `LABEL_LOOKUP_MS`), and a poll waits for running lookups before it
 drains, so the Action reaches Python with its `labels`. A value keeps no label when its option
 is not unique, its label is empty or shared by another option (selecting by it would pick
-another one), or the lookup failed; then the call selects by `value`.
+another one) as it was chosen or as the Action arrives, its label changed in between, the
+toolbar saw no selection (in a frame, or before the toolbar was injected), or the lookup
+failed; then the call selects by `value`, as Playwright records it. A page listener on
+`window` in the capture phase, added before the toolbar, can still relabel unnoticed.
 
 A file chosen in a file chooser arrives in api mode as a `fill` of the browser's fake path
 `C:\fakepath\<name>` (only the first file), from other recorder tools as `setInputFiles`

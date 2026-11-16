@@ -96,6 +96,23 @@ A Selected Option Is Recorded By Its Label
     Recorded Keyword Replays    ${RESOURCE}    Choose A Make
     Get Selected Options    id=ManyOptions    value    ==    84: 0710
 
+An Option The Page Relabels On Selection Is Recorded By Its Value
+    Evaluate JavaScript
+    ...    id=ManyOptions
+    ...    (select) => select.addEventListener('change', () => { select.selectedOptions[0].textContent += ' (chosen)'; })
+    ${promise} =    Promise To    Record Keyword    Choose A Relabelled Make    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Select Options By    id=ManyOptions    value    13: 6792
+    Wait Until Calls    1
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    ${SPACE*4}value${SPACE*4}13: 6792\n
+    Should Not Contain    ${file}    AMELUNG
+    Select Options By    id=ManyOptions    value    0: null
+    Recorded Keyword Replays    ${RESOURCE}    Choose A Relabelled Make
+    Get Selected Options    id=ManyOptions    value    ==    13: 6792
+
 A File Chooser Upload Becomes An Upload Promise Around The Click
     Record An Upload    id=open    Upload Through The Button
     ${file} =    Get File    ${RESOURCE}

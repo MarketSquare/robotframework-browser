@@ -89,7 +89,10 @@ export interface RecorderBuffers {
 
 // Playwright records a `select` by the option values, which are often generated
 // (`14: 6792`); the label is what the person chose. A value gets its label only
-// when that label names exactly one option, so selecting by label selects the same.
+// when the toolbar noted that label as the selection happened, before the page
+// could react to it (`__rfbChosenLabels`), and the option still has it and it
+// still names exactly one option. A page that relabels options on selection
+// thus keeps the values, as Playwright records them.
 export const LABEL_LOOKUP_MS = 1000;
 
 export async function addOptionLabels(page: unknown, action: Action): Promise<void> {
@@ -101,12 +104,16 @@ export async function addOptionLabels(page: unknown, action: Action): Promise<vo
     try {
         const labels: unknown = await locate.call(page, action.selector).evaluate(
             (element, wanted: string[]) => {
-                const options = Array.from((element as HTMLSelectElement).options ?? []);
+                const select = element as HTMLSelectElement & { __rfbChosenLabels?: unknown };
+                const chosen = select.__rfbChosenLabels;
+                if (!(chosen instanceof Map)) return wanted.map(() => null);
+                const options = Array.from(select.options ?? []);
                 return wanted.map((value) => {
                     const matches = options.filter((option) => option.value === value);
                     if (matches.length !== 1) return null;
                     const label = matches[0].label;
-                    return label && options.filter((option) => option.label === label).length === 1 ? label : null;
+                    if (!label || chosen.get(value) !== label) return null;
+                    return options.filter((option) => option.label === label).length === 1 ? label : null;
                 });
             },
             values,

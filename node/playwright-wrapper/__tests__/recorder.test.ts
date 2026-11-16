@@ -553,11 +553,17 @@ describe('event buffering', () => {
 
 describe('option labels of a select', () => {
     const option = (value: string, label: string) => ({ value, label });
-    // A page whose locator evaluates the lookup against these options.
-    function pageWithOptions(options: { value: string; label: string }[] | Error) {
+    // A page whose locator evaluates the lookup against these options; `chosen`
+    // is what the toolbar noted as the selection happened, by default the
+    // label each option has now.
+    function pageWithOptions(
+        options: { value: string; label: string }[] | Error,
+        chosen?: Map<string, string | null> | null,
+    ) {
         const evaluate = jest.fn(async (fn: (element: unknown, arg: unknown) => unknown, arg: unknown) => {
             if (options instanceof Error) throw options;
-            return fn({ options }, arg);
+            const noted = chosen === undefined ? new Map(options.map((o) => [o.value, o.label])) : chosen;
+            return fn({ options, __rfbChosenLabels: noted ?? undefined }, arg);
         });
         return { locator: jest.fn((selector: string) => ({ selector, evaluate })), evaluate };
     }
@@ -578,6 +584,16 @@ describe('option labels of a select', () => {
     ])('keeps the values for %s', async (_case, options) => {
         const action: any = { name: 'select', selector: '#s', options: ['1'] };
         await addOptionLabels(pageWithOptions(options), action);
+        expect(action.labels).toBeUndefined();
+    });
+
+    it.each([
+        ['the page relabelled the option on selection', new Map([['1', 'One']])],
+        ['the label was not unique when the option was chosen', new Map([['1', null]])],
+        ['the toolbar did not see the selection', null],
+    ])('keeps the values when %s', async (_case, chosen) => {
+        const action: any = { name: 'select', selector: '#s', options: ['1'] };
+        await addOptionLabels(pageWithOptions([option('1', 'One (chosen)'), option('2', 'Two')], chosen), action);
         expect(action.labels).toBeUndefined();
     });
 
