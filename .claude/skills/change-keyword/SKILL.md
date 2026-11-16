@@ -65,6 +65,10 @@ Put the method on the keyword class for its feature area in `Browser/keywords/`,
 `Browser.__init__`. Call Node with `with self.playwright.grpc_channel() as stub:`.
 
 - **Annotations stay narrow**: an Enum, not `Enum | str` (ADR 0006).
+- **New argument names follow Playwright.** A new argument, on a new keyword or an existing
+  one, that passes a Playwright option keeps Playwright's name and spelling, camelCase included
+  (`content`, `path`, `slowMo`). Arguments the library adds itself are snake_case
+  (`frame_selector`). Released names that differ, like `wait_until`, stay as they are.
 - **A selector keyword** starts with `selector = self.presenter_mode(selector, self.strict_mode)`
   and sends `strict=self.strict_mode` in its request, the way `get_text` does. `presenter_mode`
   also applies the selector prefix (`Set Selector Prefix`), so skipping it breaks more than

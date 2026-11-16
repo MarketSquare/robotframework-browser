@@ -225,8 +225,7 @@ class Evaluation(LibraryComponent):
     ):
         """Adds CSS to the active page, as a ``<style>`` tag or as a ``<link rel="stylesheet">`` tag.
 
-        The tag is added to the main frame of the active page, or to the frame that
-        ``frame_selector`` points into. It is lost when the frame navigates to a new url.
+        The tag is lost when the page or frame navigates or reloads.
 
         *Arguments:*
           - ``content``: Raw CSS, added as a ``<style>`` tag.
@@ -235,8 +234,9 @@ class Evaluation(LibraryComponent):
           - ``path``: Path to a local CSS file. The file is read and its content added as a
                 ``<style>`` tag. Exactly one of ``content``, ``url`` and ``path`` must be given;
                 an empty value counts as not given.
-          - ``frame_selector``: If this selector points to an element inside an iframe, the
-                tag is added to that frame. Example: ``iframe[name="test"] >>> body``
+          - ``frame_selector``: Selector of an element inside a frame; the tag is added to that
+                element's frame. Example: ``iframe[name="test"] >>> body``. ``None`` or an
+                empty string adds the tag to the page itself. See `Finding elements` for frames.
 
         Example:
         | `Add Style Tag`    \\#username_field:focus {background-color: aqua;}
@@ -285,7 +285,8 @@ class Evaluation(LibraryComponent):
         declarations of a classic script become globals of the page.
 
         A script that fails to load, for example a ``url`` that answers 404, fails the keyword.
-        Errors thrown by a script that has loaded do not; they show up in `Get Page Errors`.
+        Errors thrown by a script that has loaded do not; they show up in `Get Page Errors`,
+        where a script read from ``path`` is named by its file.
         Fails when no page is open.
 
         Example:
@@ -309,7 +310,7 @@ class Evaluation(LibraryComponent):
     @keyword(tags=("Setter", "PageContent"))
     def add_init_script(
         self,
-        script: str | None = None,
+        content: str | None = None,
         *,
         path: PathLike | None = None,
         arg: Any = None,
@@ -318,12 +319,13 @@ class Evaluation(LibraryComponent):
         """Adds an init script: JavaScript that runs in every document of the active context or page before the document's own scripts.
 
         *Arguments:*
-          - ``script``: JavaScript source. Without ``arg`` it runs as it is, so a bare
-                function is defined but never called.
+          - ``content``: JavaScript source of the script. Without ``arg`` it runs as it is,
+                so a bare function is defined but never called.
           - ``path``: Path to a JavaScript file whose content is the script. Exactly one of
-                ``script`` and ``path`` must be given; an empty value counts as not given.
+                ``content`` and ``path`` must be given; an empty value counts as not given.
           - ``arg``: A JSON serializable value. With ``arg`` the script must be a single
-                function expression, which is called with ``arg``. Source that is not a single
+                function expression, given as ``content`` or read from ``path``, which is
+                called with ``arg``. Source that is not a single
                 expression fails before the script is added. ``None`` means no argument.
           - ``on``: Where the script is added, see `InitScriptTarget`. ``Context`` (default)
                 for every page, popup and frame of the active context, ``Page`` for the active
@@ -351,12 +353,11 @@ class Evaluation(LibraryComponent):
         | `Add Init Script`    path=${CURDIR}/stubs.js    on=Page
         | `Reload`
         """
-        _require_one_source(script=_given(script), path=_path_given(path))
-        if _path_given(path):
-            content = _read_source(path, label_path=True)
-        else:
-            content = str(script)
-        request = Request().InitScript(content=content)
+        _require_one_source(content=_given(content), path=_path_given(path))
+        source = (
+            _read_source(path, label_path=True) if _path_given(path) else str(content)
+        )
+        request = Request().InitScript(content=source)
         if arg is not None:
             request.arg = json.dumps(arg)
         with self.playwright.grpc_channel() as stub:
