@@ -19,10 +19,11 @@ _Avoid_: build, job, CI run
 
 **Leg**:
 One execution of acceptance tests within a Run — one uploaded artifact, one `output.xml`. A Run
-has many Legs, each with its own Configuration. A Leg is either one shard of the suite run in
-parallel, or a whole suite run serially: the serial ones take longer and miss what only
-parallel execution provokes, and in exchange they show what parallel execution hides. A whole
-suite may be the smoke selection, which leaves out the slow tests; a test's rate is counted
+has many Legs, each with its own Configuration. Since 2026-11-14 every Leg runs the whole suite
+in parallel, and its `executors` and `node_process` metadata say how. Older Runs hold two other
+shapes: one shard of the suite run in parallel, and a whole suite run serially, which missed
+what only parallel execution provokes and showed what it hides. A whole suite may be the smoke
+selection, which leaves out the slow tests; a test's rate is counted
 over the Legs that ran it, so a Leg that did not run a test says nothing about it.
 _Avoid_: matrix job, matrix entry, shard (a shard is what some Legs run, not what a Leg is)
 
@@ -31,15 +32,17 @@ One Robot Framework process within a Leg, in pabot's sense of the word. A serial
 parallel Leg has as many as its `executors` metadata says. Every test runs in exactly one, and
 each Executor starts its own test app, so what a test talked to is that Executor's, not the
 Leg's. A parallel Leg's merged `output.xml` loses which Executor ran which test; the Executor's
-own `output.xml` keeps it.
+own `output.xml` keeps it, and a green Leg's artifact does not keep those.
 _Avoid_: worker, process, shard (a shard is the Leg's slice of the suite, not a process)
 
 **Install**:
 How the library reached the machine a Leg ran on: `source` (the working checkout, built in
 place), `wheel` (the built package, installed), `batteries` (the wheel with the bundled Node.js
-package) or `docker` (the container image). Legs from a `source` Install are the parallel
-shards; the others each run a whole suite serially. `source` exists for historical reasons,
-from before there was a wheel to install, and is kept because it saves wall-clock time.
+package) or `docker` (the container image). Since 2026-11-14 `source` Legs run with coverage
+and one Node.js process their Executors share, and every other Install starts a Node.js process
+per Executor. Before, `source` Legs were the parallel shards and the others each ran a whole
+suite serially. `source` exists for historical reasons, from before there was a wheel to
+install, and is kept because it saves wall-clock time.
 _Avoid_: job (a job is what the workflow calls it, and jobs get renamed), kind, distribution
 
 **Platform**:

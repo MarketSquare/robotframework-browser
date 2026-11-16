@@ -29,6 +29,7 @@ from .db import UnanswerableError
 from .history import resolve
 from .legs import leg_name
 from .locate import artifact_relative
+from .parse import leg_info
 from .refusal import UnreachableError
 
 
@@ -317,7 +318,9 @@ def _executor_of(directory: Path, test_name: str) -> Path:
 
     On a pabot Leg, the Executor whose own output.xml has the test: the merged
     one keeps every Executor's top suite setup under one suite, so what the test
-    talked to cannot be read from it. A serial Leg is its own Executor.
+    talked to cannot be read from it. A serial Leg is its own Executor, and so,
+    for want of anything better, is a parallel Leg whose `pabot_results/` a
+    green run deleted.
     """
     for output in sorted(directory.glob("pabot_results/*/output.xml")):
         if _find(ExecutionResult(output, include_keywords=False).suite, test_name):
@@ -337,9 +340,16 @@ def _leg_entries(directory: Path) -> list[Entry]:
     ]
 
 
-def _executor_entries(directory: Path, executor: Path) -> list[Entry]:
+def _executor_entries(
+    directory: Path, executor: Path, executors: int | None
+) -> list[Entry]:
     if executor == directory:
-        entries = [Entry("executor", ".", "serial")]
+        note = (
+            f"one of {executors}, pabot_results not kept"
+            if executors and executors > 1
+            else "serial"
+        )
+        entries = [Entry("executor", ".", note)]
     else:
         entries = [
             Entry("executor", _relative(executor, directory)),
@@ -363,18 +373,14 @@ def shortlist(directory: Path, test_name: str | None) -> Shortlist:
     if test_name is None:
         entries = _leg_entries(directory)
         return Shortlist(directory, None, tuple(entries), _others(directory, entries))
-    names = [
-        test.full_name
-        for test in ExecutionResult(
-            directory / "output.xml", include_keywords=False
-        ).suite.all_tests
-    ]
+    leg = ExecutionResult(directory / "output.xml", include_keywords=False)
+    names = [test.full_name for test in leg.suite.all_tests]
     test_name = resolve(test_name, names, "this Leg")
     executor = _executor_of(directory, test_name)
     test = _find(ExecutionResult(executor / "output.xml").suite, test_name)
     entries = (
         _leg_entries(directory)
-        + _executor_entries(directory, executor)
+        + _executor_entries(directory, executor, leg_info(leg).executors)
         + _test_apps(directory, test)
         + _linked(directory, executor, test)
     )

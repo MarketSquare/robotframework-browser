@@ -18,6 +18,12 @@ same way as "fails only on darwin". The non-`source` Legs also run serially rath
 parallel shards, and that is a feature. They miss what parallel execution provokes and show
 what it hides.
 
+Superseded in part on 2026-11-14 by the workflow change b1f67017: no Leg runs serially any
+more. Every Leg runs the whole suite under pabot, the `source` ones with one shared Node.js
+process and every other Install with one per Executor. What only a serial run shows is no
+longer in Runs after that date. Counting per Install still holds, for the Node.js process and
+the coverage rather than for the shard.
+
 `on-release.yml` stays out. The reason is no longer that it runs smoke; it is a separate
 workflow run about once a month, which is too few Runs to move a rate.
 
@@ -35,8 +41,9 @@ workflow run about once a month, which is too few Runs to move a rate.
 - A Leg is shown under one name shape whichever job ran it: its Install, then the runner, shard,
   Python and Node the artifact name carries (`wheel · ubuntu-latest · 3.13 · 24.x`). The raw
   names follow four conventions that only say how each upload step was written.
-- Failures per leg are counted per platform *and* Install. A `source` Leg is one parallel shard
+- Failures per leg are counted per platform *and* Install. A `source` Leg was one parallel shard
   and every other Leg a whole suite, so counting both as "one leg" would make the ratio mean
-  something different on every platform. "Never ran on" stays platform-only: the smoke selection
+  something different on every platform. Since 2026-11-14 they differ in the Node.js process and
+  the coverage instead. "Never ran on" stays platform-only: the smoke selection
   leaves the slow tests out of most non-`source` Legs by design, and saying so on every slow test
   would be noise.

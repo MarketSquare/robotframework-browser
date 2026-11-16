@@ -1158,9 +1158,11 @@ def platform_breakdown(db: Reading) -> list[PlatformRow]:
 
     Per leg rather than absolute, because the matrix does not run the platforms
     an equal number of times and the raw counts would say more about the matrix
-    than about the platforms. Per Install as well, because a `source` Leg is one
-    parallel shard and every other Leg a whole suite run serially, and a leg of
-    one is not comparable with a leg of the other.
+    than about the platforms. Per Install as well, because the Installs run the
+    suite differently and a leg of one is not comparable with a leg of another:
+    since 2026-11-14 a `source` Leg shares one Node.js process and runs with
+    coverage where the others start one per Executor, and before, a `source` Leg
+    was one parallel shard and every other Leg a whole suite run serially.
     """
     rows = db.execute(
         """
