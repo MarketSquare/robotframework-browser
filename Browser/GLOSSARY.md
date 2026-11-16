@@ -107,6 +107,12 @@ CSS added to the current document of a page or frame, as a `<style>` element or 
 `<link>`. It lasts until that page or frame navigates or reloads.
 _Avoid_: injected style, custom CSS
 
+**Source**:
+The JavaScript or CSS that a **script tag**, **style tag** or **init script** is made from,
+given inline, as a URL, or as a file. A keyword takes exactly one source; an empty value counts
+as not given.
+_Avoid_: input, body
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.

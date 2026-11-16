@@ -91,11 +91,11 @@ Init Script With Argument Must Be A Single Expression
     Run Keyword And Expect Error    *must be a single function expression*
     ...    Add Init Script    window.seed = 1; window.other = 2;    arg=${1}
 
-Init Script Needs Exactly One Of Script And Path
+Init Script Needs Exactly One Of Content And Path
     New Context
-    Run Keyword And Expect Error    *exactly one of script and path*
+    Run Keyword And Expect Error    *exactly one of content and path*
     ...    Add Init Script
-    Run Keyword And Expect Error    *exactly one of script and path*
+    Run Keyword And Expect Error    *exactly one of content and path*
     ...    Add Init Script    window.seed = 1    path=${CURDIR}/init_seed.js
 
 *** Keywords ***

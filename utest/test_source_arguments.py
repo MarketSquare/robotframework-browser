@@ -70,8 +70,8 @@ def test_whitespace_init_script_is_sent_as_it_is():
     "kwargs",
     [
         pytest.param({}, id="none"),
-        pytest.param({"script": "a", "path": "a"}, id="script-path"),
-        pytest.param({"script": ""}, id="empty-script"),
+        pytest.param({"content": "a", "path": "a"}, id="content-path"),
+        pytest.param({"content": ""}, id="empty-content"),
         pytest.param({"path": ""}, id="empty-path"),
         pytest.param({"path": Path(".")}, id="dot-path"),
         pytest.param({"path": "."}, id="dot-string-path"),
@@ -79,7 +79,7 @@ def test_whitespace_init_script_is_sent_as_it_is():
 )
 def test_exactly_one_init_script_source_is_required(kwargs):
     evaluation, stub = make_evaluation()
-    with pytest.raises(ValueError, match="Give exactly one of script and path."):
+    with pytest.raises(ValueError, match="Give exactly one of content and path."):
         evaluation.add_init_script(**kwargs)
     stub.AddContextInitScript.assert_not_called()
 
