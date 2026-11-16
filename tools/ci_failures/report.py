@@ -188,8 +188,11 @@ ABOUT = {
         "'platforms' counts failures per matrix leg, not in total, for each "
         "platform and Install. The matrix does not run the platforms an equal "
         "number of times, so a raw count describes the matrix rather than the "
-        "platforms; and a 'source' leg is one parallel shard where every other "
-        "Install runs a whole suite serially, so their legs are counted apart."
+        "platforms; and the Installs run differently, so their legs are counted "
+        "apart. Since 2026-11-14 every leg runs the whole suite in parallel, a "
+        "'source' leg with coverage and one shared node process and the others "
+        "with one node process per executor; before, a 'source' leg was one "
+        "parallel shard and every other Install ran a whole suite serially."
     ),
     "latest_run": (
         "'window.latest_run' is the newest run in the window and how many "
@@ -483,7 +486,8 @@ class FixtureEntry:
 class PlatformRow:
     """Failures per matrix Leg, by platform and Install. Per leg, not in total:
     the matrix does not run the platforms an equal number of times. Per Install
-    too: a parallel shard and a whole suite run serially are not the same leg."""
+    too: the Installs run the suite differently, so their legs are not the same
+    leg."""
 
     platform: str | None
     install: str | None

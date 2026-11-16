@@ -160,9 +160,10 @@ flowchart TB
 ```
 
 Every job of `on-push.yml` that runs the acceptance suite uploads a Leg: the
-parallel shards of `testing` and the serial whole-suite runs of the clean install,
-BrowserBatteries and docker checks, each recorded with its **Install**
-(`legs.py`; ADR `0003`). Downloads one artifact at a time, reads `output.xml`
+source, wheel and docker jobs, each recorded with its **Install** (`legs.py`;
+ADR `0003`). Older Runs hold the jobs they replaced: the parallel shards of
+`testing` and the serial whole-suite runs of the clean install and
+BrowserBatteries checks. Downloads one artifact at a time, reads `output.xml`
 out of it, and throws the zip away. Nothing but the parsed rows is kept — the artifact URL is stored so
 screenshots, traces and `playwright-log.txt` can be fetched later for a failure
 that turns out to deserve it. One artifact that will not download, or will not

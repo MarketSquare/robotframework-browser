@@ -1130,8 +1130,9 @@ def page(report: Report) -> str:
     <h2>Failures per matrix leg, by platform and install</h2>
     <p class="section-note">Per leg, not in total: the matrix does not run the platforms an
     equal number of times, so raw counts would describe the matrix rather than the platforms.
-    A source leg is one parallel shard and every other install runs a whole suite serially,
-    so the two are counted apart.</p>
+    The installs run differently, so they are counted apart: since 2026-11-14 a source leg
+    shares one node process and runs with coverage, the others start one per executor; before,
+    a source leg was one parallel shard and the others ran a whole suite serially.</p>
     <div class="platforms">
 {platform_rows}    </div>
   </section>

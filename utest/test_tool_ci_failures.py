@@ -5687,6 +5687,24 @@ class TestShortlistingOneOccurrence:
             Entry("syslog", "syslog.txt"),
         )
 
+    def test_a_parallel_leg_without_its_executors_is_not_called_serial(self, tmp_path):
+        """A green pabot run deletes `pabot_results/`, so a passing Control
+        fetched from a parallel Leg has no Executor directories left."""
+        from tools.ci_failures.artifacts import Entry, shortlist
+
+        _run_executor(
+            tmp_path,
+            {"credentials.robot": CREDENTIALS_SUITE},
+            "7001",
+            metadata=("Executors:3",),
+        )
+
+        listed = shortlist(tmp_path, "Test.Credentials.Add Valid Credential")
+
+        assert Entry("executor", ".", "one of 3, pabot_results not kept") in (
+            listed.entries
+        )
+
     def test_a_suite_setup_below_the_top_adds_its_own_test_app(self, tmp_path):
         from tools.ci_failures.artifacts import shortlist
 
