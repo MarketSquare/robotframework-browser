@@ -27,7 +27,7 @@ def get_abs_scroll_coordinates(
         m = re.search(f"^(?:({min_str})|({max_str}))$", query, re.IGNORECASE)
         if m:
             return 0 if m.group(1) else scroll_size
-        m = re.search(r"^(\d+(?:.\d+)?)%$", query)
+        m = re.fullmatch(r"(\d+(?:\.\d+)?)%", query)
         if m:
             return (scroll_size * float(m.group(1))) // 100
     raise ValueError(
@@ -44,7 +44,7 @@ def get_rel_scroll_coordinates(query: Any, full: int, client: int, dimension_str
         m = re.search(f"^([-+]?)({dimension_str})$", query, re.IGNORECASE)
         if m:
             return int(f"{m.group(1)}{client}")
-        m = re.search(r"^([+-]?\d+(?:.\d+)?)%$", query)
+        m = re.fullmatch(r"([+-]?\d+(?:\.\d+)?)%", query)
         if m:
             return (full * float(m.group(1))) // 100
     raise ValueError(

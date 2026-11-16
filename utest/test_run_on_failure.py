@@ -154,3 +154,66 @@ def test_registered_screenshot_filename_under_translation(
     translated_browser.keyword_error(None)
     assert len(screenshot_filenames) == 1
     assert screenshot_filenames[0].endswith(expected_filename)
+
+
+@pytest.fixture
+def browser_without_playwright_log():
+    browser = Browser.Browser()
+    browser._playwright_log = None
+    return browser
+
+
+def run_on_failure_log_levels(
+    browser: Browser.Browser, monkeypatch, error: str
+) -> list:
+    def fail_screenshot(filename, file_type):
+        raise RuntimeError(error)
+
+    def record(level):
+        return lambda msg, *a, **k: (
+            levels.append(level) if "could not be run" in msg else None
+        )
+
+    levels: list = []
+    monkeypatch.setattr(
+        browser._browser_control, "_get_screenshot_path", fail_screenshot
+    )
+    monkeypatch.setattr(Browser.browser.logger, "info", record("INFO"))
+    monkeypatch.setattr(Browser.browser.logger, "warn", record("WARN"))
+    browser.keyword_error(None)
+    return levels
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        "Error: locator.screenshot: Timeout 200ms exceeded.\nCall log:\n  - waiting for locator('#x')",
+        "page.screenshot: Timeout 30000ms exceeded.",
+        "Error: Tried to take screenshot, but no page was open.",
+    ],
+)
+def test_screenshot_timeout_or_missing_page_logs_on_info(
+    browser_without_playwright_log: Browser.Browser, monkeypatch, error: str
+):
+    levels = run_on_failure_log_levels(
+        browser_without_playwright_log, monkeypatch, error
+    )
+    assert levels == ["INFO"]
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        "Error: locator.click: Timeout 200ms exceeded.",
+        "Error: locator.screenshot: Element is not attached to the DOM",
+        "Error: page closed\nlocator.screenshot: Timeout 200ms exceeded.",
+        "Error: locator.screenshot: Timeout 200ms\nexceeded.",
+    ],
+)
+def test_other_run_on_failure_errors_log_on_warn(
+    browser_without_playwright_log: Browser.Browser, monkeypatch, error: str
+):
+    levels = run_on_failure_log_levels(
+        browser_without_playwright_log, monkeypatch, error
+    )
+    assert levels == ["WARN"]

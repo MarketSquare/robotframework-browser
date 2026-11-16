@@ -98,6 +98,12 @@ from .utils.running_traces import RunningTraces
 from .version import __version__ as VERSION
 
 
+def _is_screenshot_timeout(message: str) -> bool:
+    first_line = message.partition("\n")[0]
+    _, found, rest = first_line.partition(".screenshot: Timeout")
+    return bool(found) and "exceeded" in rest
+
+
 class _RFContextTracker:
     def __init__(self) -> None:
         self._suite_stack: list[tuple[str, str]] = []
@@ -1389,7 +1395,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         except Exception as err:
             if "Tried to take screenshot, but no page was open." in str(
                 err
-            ) or re.match(r".*\.screenshot: Timeout.*exceeded.*", str(err)):
+            ) or _is_screenshot_timeout(str(err)):
                 level = logger.info
             else:
                 level = logger.warn
