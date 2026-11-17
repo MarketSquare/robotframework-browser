@@ -42,7 +42,7 @@ def assertion_operator_is_set(wrapped, args, kwargs):
 
 @wrapt.decorator
 def with_assertion_polling(wrapped, instance, args, kwargs):
-    start = time.time()
+    start = time.monotonic()
     timeout = instance.timeout / 1000
     retry_assertions_until = instance.retry_assertions_for / 1000
     retries_start: float | None = None
@@ -52,8 +52,8 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
         logger.stash_this_thread()
         while True:
             if retries_start is not None:
-                elapsed = time.time() - start
-                elapsed_retries = time.time() - retries_start
+                elapsed = time.monotonic() - start
+                elapsed_retries = time.monotonic() - retries_start
                 if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
                     raise last_error  # type: ignore[misc]
             try:
@@ -61,9 +61,9 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
             except AssertionError as e:
                 last_error = e
                 if retries_start is None:
-                    retries_start = time.time()
-                elapsed = time.time() - start
-                elapsed_retries = time.time() - retries_start
+                    retries_start = time.monotonic()
+                elapsed = time.monotonic() - start
+                elapsed_retries = time.monotonic() - retries_start
                 if elapsed >= timeout or elapsed_retries >= retry_assertions_until:
                     raise e
                 tries += 1
@@ -73,7 +73,7 @@ def with_assertion_polling(wrapped, instance, args, kwargs):
     finally:
         logger.flush_and_delete_thread_stash()
         if retry_assertions_until and assertion_operator_is_set(wrapped, args, kwargs):
-            now = time.time()
+            now = time.monotonic()
             logger.debug(
                 f"Assertion polling statistics:\n"
                 f"First element asserted in: {(retries_start or now) - start} seconds\n"

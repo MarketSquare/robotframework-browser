@@ -49,7 +49,7 @@ export function trackRequests(page: Page): void {
         'request',
         guarded((request) => {
             tracker.requestCount += 1;
-            tracker.outstanding.set(request, { startedAt: Date.now(), order: tracker.requestCount });
+            tracker.outstanding.set(request, { startedAt: performance.now(), order: tracker.requestCount });
             if (isPageDocument(page, request)) {
                 tracker.document = request;
                 tracker.navigation = 'pending';
@@ -142,7 +142,7 @@ async function buildLoadReport(page: Page): Promise<string> {
     if (tracker === undefined) {
         throw Error('The page requests are not tracked');
     }
-    const now = Date.now();
+    const now = performance.now();
     // The page keeps loading while it is probed, so the report is built from the tracker as it was at the timeout.
     const outstanding = [...tracker.outstanding];
     const lines = ['Load report of the page when the wait timed out:', `URL: ${page.url()}`];
@@ -156,7 +156,7 @@ async function buildLoadReport(page: Page): Promise<string> {
     lines.push(`Outstanding requests: ${outstanding.length}`);
     for (const [request, { startedAt }] of outstanding.slice(0, MAX_REQUESTS)) {
         const url = cutUrl(request.url());
-        lines.push(`${request.method()} ${url} [${request.resourceType()}] open for ${now - startedAt} ms`);
+        lines.push(`${request.method()} ${url} [${request.resourceType()}] open for ${Math.round(now - startedAt)} ms`);
     }
     if (outstanding.length > MAX_REQUESTS) {
         lines.push(`... and ${outstanding.length - MAX_REQUESTS} more`);

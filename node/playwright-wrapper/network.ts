@@ -170,7 +170,7 @@ export async function _waitForDownload(
     downloadTimeout: number,
     waitForFinished: boolean,
 ): Promise<pb.Response_Json> {
-    const downloadWaitStartedAt = Date.now();
+    const downloadWaitStartedAt = performance.now();
     const downloadObject = await page.waitForEvent('download', { timeout: downloadTimeout || undefined });
 
     // @ts-ignore
@@ -205,7 +205,7 @@ export async function _waitForDownload(
         }
     }
     if (downloadTimeout > 0) {
-        const remainingTimeout = Math.max(downloadTimeout - (Date.now() - downloadWaitStartedAt), 0);
+        const remainingTimeout = Math.max(downloadTimeout - (performance.now() - downloadWaitStartedAt), 0);
         let timer: NodeJS.Timeout | undefined;
         const readStream = await Promise.race([
             downloadObject.createReadStream(),
