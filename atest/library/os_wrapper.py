@@ -271,7 +271,7 @@ def _delta_time_is_less_than(
     logger.info(
         f"time1: {time1}, time2: {time2}, max difference: {max_difference.seconds}"
     )
-    time_difference = abs(time1.timestamp() - time2.timestamp())
+    time_difference = abs((time1 - time2).total_seconds())
     if time_difference > max_difference.seconds:
         logger.info(
             f"Time difference {time_difference} is greater than {max_difference.seconds}"
@@ -283,7 +283,7 @@ def _delta_time_is_less_than(
 def time1_is_less_than_time2(time1: datetime, time2: datetime) -> bool:
     """Fail if time1 is greater than time2."""
     logger.info(f"Time1 is {time1} and time2 is {time2}")
-    if time1.timestamp() > time2.timestamp():
+    if time1 > time2:
         logger.info(f"Time1 {time1} is greater than time2 {time2}")
         raise ValueError(f"Time1 {time1} is greater than time2 {time2}")
     return True
@@ -292,7 +292,7 @@ def time1_is_less_than_time2(time1: datetime, time2: datetime) -> bool:
 def dates_are_equal(date1: datetime, date2: datetime) -> bool:
     """Fail if time1 is not equal to time2."""
     logger.info(f"Time1 is {date1} and time2 is {date2}")
-    if date1.timestamp() != date2.timestamp():
+    if date1 != date2:
         logger.info(f"Time1 {date1} is not equal to time2 {date2}")
         raise ValueError(f"Time1 {date1} is not equal to time2 {date2}")
     return True
