@@ -285,8 +285,18 @@ def _gen_stub(c: Context):
     c.run("python -m Browser.gen_stub")
 
 
+def _remove_shadowing_node_modules(wrapper_dir: Path):
+    node_modules = wrapper_dir / "node_modules"
+    if node_modules.exists():
+        print(
+            f"Removing {node_modules}, left by rfbrowser init: it shadows the root node_modules."
+        )
+        shutil.rmtree(node_modules)
+
+
 @task(protobuf)
 def node_build(c: Context):
+    _remove_shadowing_node_modules(WRAPPER_DIR)
     c.run("npm run build")
     shutil.rmtree(WRAPPER_DIR / "static", ignore_errors=True)
     shutil.copytree(node_dir / "playwright-wrapper" / "static", WRAPPER_DIR / "static")
