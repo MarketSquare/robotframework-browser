@@ -19,17 +19,17 @@ MIRRORS=/etc/apt/apt-mirrors.txt
 TIMED_OUT=124
 KILLED=137
 
-if [ $# -eq 0 ]; then
+if [[ $# -eq 0 ]]; then
   set -- npx playwright install
 fi
 
 "$@"
 
-[ "$(uname -s)" = Linux ] || exit 0
+[[ "$(uname -s)" = Linux ]] || exit 0
 
 status=0
 timeout --kill-after=30s "$DEPS_DEADLINE" "$@" --with-deps || status=$?
-if [ "$status" -ne "$TIMED_OUT" ] && [ "$status" -ne "$KILLED" ]; then
+if [[ "$status" -ne "$TIMED_OUT" && "$status" -ne "$KILLED" ]]; then
   exit "$status"
 fi
 
