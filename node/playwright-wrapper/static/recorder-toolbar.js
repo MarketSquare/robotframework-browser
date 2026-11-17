@@ -412,9 +412,11 @@
         // and stays there when it grows or shrinks); `shown` is where it is drawn.
         const shown = { x: 0, y: 0 };
         const place = () => {
-            // Flush with every edge of the viewport, scrollbars excluded.
-            const viewWidth = document.documentElement.clientWidth || window.innerWidth;
-            const viewHeight = document.documentElement.clientHeight || window.innerHeight;
+            // Flush with every edge of the viewport, scrollbars excluded. In quirks mode
+            // the viewport is the client size of the body, not of the document element.
+            const view = document.scrollingElement || document.documentElement;
+            const viewWidth = view.clientWidth || window.innerWidth;
+            const viewHeight = view.clientHeight || window.innerHeight;
             const x = Math.min(Math.max(position.x, 0), Math.max(viewWidth - panel.offsetWidth, 0));
             const y = Math.min(Math.max(position.y, 0), Math.max(viewHeight - panel.offsetHeight, 0));
             shown.x = x;
