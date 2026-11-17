@@ -142,6 +142,22 @@ describe('load report', () => {
             expect(report).not.toContain('broken.png');
         });
 
+        it('tells how long a request has been open when the wall clock jumps forward', async () => {
+            jest.useFakeTimers();
+            try {
+                page.emit('request', makePlaywrightRequest(page, 'http://localhost/api/stalled-image'));
+                jest.advanceTimersByTime(250);
+                jest.setSystemTime(Date.now() + 3_600_000);
+                page.evaluate.mockResolvedValue({ readyState: 'interactive', domContentLoaded: 12, load: 0 });
+
+                const report = await reportOfTimeout(page);
+
+                expect(report).toContain('GET http://localhost/api/stalled-image [image] open for 250 ms');
+            } finally {
+                jest.useRealTimers();
+            }
+        });
+
         it('is no longer committed once the page navigates again', async () => {
             page.emit('request', documentRequest(page, 'http://localhost/slowpage.html'));
 

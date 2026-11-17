@@ -407,10 +407,10 @@ describe('_waitForDownload', () => {
         expect.assertions(2);
         jest.useFakeTimers();
         const download = makeMockDownload({
-            createReadStream: jest.fn().mockReturnValue(new Promise((resolve) => setTimeout(() => resolve({}), 300))),
+            createReadStream: jest.fn(() => new Promise((resolve) => setTimeout(() => resolve({}), 300))),
         });
         const startsAfter900ms = jest.fn().mockImplementation(async () => {
-            jest.setSystemTime(Date.now() + 900);
+            jest.advanceTimersByTime(900);
             return download;
         });
         const mockPage = makeMockPage({ waitForEvent: startsAfter900ms });
@@ -421,5 +421,23 @@ describe('_waitForDownload', () => {
 
         await assertion;
         expect(download.cancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the download timeout when the wall clock jumps forward', async () => {
+        jest.useFakeTimers();
+        const download = makeMockDownload({
+            createReadStream: jest.fn(() => new Promise((resolve) => setTimeout(() => resolve({}), 300))),
+        });
+        const wallClockJumpsAnHour = jest.fn().mockImplementation(async () => {
+            jest.setSystemTime(Date.now() + 3_600_000);
+            return download;
+        });
+        const mockPage = makeMockPage({ waitForEvent: wallClockJumpsAnHour });
+
+        const result = _waitForDownload(mockPage, makeMockDownloadState(), '', 1000, true);
+        await jest.advanceTimersByTimeAsync(300);
+
+        expect(JSON.parse((await result).json).state).toBe('finished');
+        expect(download.cancel).not.toHaveBeenCalled();
     });
 });
