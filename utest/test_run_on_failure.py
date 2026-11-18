@@ -217,3 +217,48 @@ def test_other_run_on_failure_errors_log_on_warn(
         browser_without_playwright_log, monkeypatch, error
     )
     assert levels == ["WARN"]
+
+
+def run_failing_boom(
+    browser: Browser.Browser, monkeypatch, argument_spec: list, args: list
+) -> list:
+    def boom(*args):
+        raise AssertionError(f"boom: {json.dumps(args)}")
+
+    selectors: list = []
+    monkeypatch.setattr(browser, "keyword_error", selectors.append)
+    monkeypatch.setattr(browser, "get_keyword_arguments", lambda name: argument_spec)
+    monkeypatch.setitem(browser.keywords, "boom", boom)
+    with pytest.raises(AssertionError, match=r"^boom: "):
+        browser.run_keyword("boom", args, {})
+    return selectors
+
+
+def test_failure_in_keyword_with_varargs_keeps_original_error(
+    browser_without_playwright_log: Browser.Browser, monkeypatch
+):
+    selectors = run_failing_boom(
+        browser_without_playwright_log, monkeypatch, ["*args"], ["a", "b"]
+    )
+    assert selectors == [None]
+
+
+def test_failure_passes_selector_value_starting_with_star(
+    browser_without_playwright_log: Browser.Browser, monkeypatch
+):
+    selectors = run_failing_boom(
+        browser_without_playwright_log, monkeypatch, ["selector", "*args"], ["*sel"]
+    )
+    assert selectors == ["*sel"]
+
+
+def test_failure_passes_positional_selector_to_failure_handling(
+    browser_without_playwright_log: Browser.Browser, monkeypatch
+):
+    selectors = run_failing_boom(
+        browser_without_playwright_log,
+        monkeypatch,
+        ["text", "selector", ("delay", None)],
+        ["hello", "#input", "1"],
+    )
+    assert selectors == ["#input"]
