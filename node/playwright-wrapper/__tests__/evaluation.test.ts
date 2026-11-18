@@ -197,6 +197,22 @@ describe('highlightAll', () => {
 
             expect(result).toBe(3);
         });
+
+        it('still returns when the page never paints, as with a paused clock', async () => {
+            jest.useFakeTimers();
+            try {
+                const locator = makeMockLocator({ evaluate: jest.fn(() => new Promise(() => {})) });
+                mockFindLocator.mockResolvedValue(locator);
+
+                const result = highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
+                await jest.runAllTimersAsync();
+
+                await expect(result).resolves.toBe(3);
+                expect(jest.getTimerCount()).toBe(0);
+            } finally {
+                jest.useRealTimers();
+            }
+        });
     });
 
     describe('both mode', () => {

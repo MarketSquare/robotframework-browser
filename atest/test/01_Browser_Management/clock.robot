@@ -50,6 +50,16 @@ Clock Install, Pause Advance (Fast_forward) Resume
     ${time2} =    Get Text    id=current-time
     Time1 Is Less Than Time2    ${time1}    ${time2}
 
+Playwright Highlight Returns While The Clock Is Paused
+    [Timeout]    30s
+    ${time_set} =    Get Current Date    result_format=%Y-%m-%d %H:%M:%S
+    Set Time    ${time_set}
+    ${pause_time} =    Get Current Date    increment=1 hours    result_format=%Y-%m-%d %H:%M:%S
+    Pause At    ${pause_time}
+    ${count} =    Highlight Elements    id=current-time    duration=0    mode=playwright
+    Should Be Equal    ${count}    ${1}
+    [Teardown]    Resume Clock
+
 Advance Clock Run_for Argument
     ${time_set} =    Get Current Date    increment=1 minute    result_format=%Y-%m-%d %H:%M:%S
     Set Time    ${time_set}

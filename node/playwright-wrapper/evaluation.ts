@@ -379,8 +379,27 @@ type EvaluationOptions = {
 const MAX_PAINT_WAIT_MS = 100;
 // How long to wait for the highlighted element itself, which may just have gone.
 const PAINT_ELEMENT_TIMEOUT_MS = 1000;
+// The page's timers and animation frames never fire while a Playwright clock is
+// paused, and the evaluate timeout only bounds finding the element, so Node
+// bounds the whole wait.
+const PAINT_WAIT_DEADLINE_MS = PAINT_ELEMENT_TIMEOUT_MS + MAX_PAINT_WAIT_MS;
 
 async function highlightPainted(locator: Locator): Promise<void> {
+    let deadline: NodeJS.Timeout | undefined;
+    const pastDeadline = new Promise<void>((resolve) => {
+        deadline = setTimeout(() => {
+            logger.info('Highlight paint not awaited: the page did not answer in time');
+            resolve();
+        }, PAINT_WAIT_DEADLINE_MS);
+    });
+    try {
+        await Promise.race([pageHasPainted(locator), pastDeadline]);
+    } finally {
+        clearTimeout(deadline);
+    }
+}
+
+async function pageHasPainted(locator: Locator): Promise<void> {
     await locator
         .first()
         .evaluate(
