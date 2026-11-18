@@ -616,6 +616,8 @@ class Browser(DynamicCore):
         """
         if _:
             raise ValueError("Browser library does not accept positional arguments.")
+        if self._output_dir == ".":
+            self._output_dir = str(Path.cwd())
         self.ROBOT_LIBRARY_LISTENER = self
         self.scope_stack: dict = {}
         self.suite_ids: dict[str, None] = {}
