@@ -22,6 +22,7 @@ import * as path from 'path';
 import { ElementHandle, Locator, Page } from 'playwright';
 
 import { locatorOn } from './playwright-invoke';
+import { JsExtension, PICK_ACTION_NAME, runRecordedActionHooks } from './recorder-hooks';
 
 export interface Picked {
     // Playwright's selector, in its internal syntax; Python translates it.
@@ -39,6 +40,8 @@ export interface Pick {
     picking: boolean;
     picked?: Picked;
     highlight?: Disposable;
+    // JS extensions whose `__recordedAction` hooks may change the picked selector.
+    extensions?: JsExtension[];
 }
 
 // What Python asks of a pick in one poll.
@@ -117,7 +120,12 @@ export function startPick(pick: Pick): void {
         .then(async (locator) => {
             // Stopped meanwhile (Reselect, Cancel, Stop): the pick is not wanted any more.
             if (!pick.picking) return;
-            const selector = internalSelector(locator);
+            // The hooks may change the picked selector, as they change a recorded one.
+            const picked = { name: PICK_ACTION_NAME, selector: internalSelector(locator) };
+            const extensions = pick.extensions ?? [];
+            const recorded = await runRecordedActionHooks(picked, pick.page, pick.page.context(), extensions);
+            const selector = recorded.selector as string;
+            if (!pick.picking) return;
             if (selector.length > MAX_PICKED_LENGTH) {
                 pick.picked = { error: 'The picked selector is too long.' };
                 return;

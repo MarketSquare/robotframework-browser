@@ -26,14 +26,7 @@ import {
 
 const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
 const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
-const freshBuffers = (armed = false): RecorderBuffers => ({
-    entries: [],
-    commandCount: 0,
-    armed,
-    active: false,
-    rendered: new WeakMap(),
-    ownPick: false,
-});
+const freshBuffers = (armed = false): RecorderBuffers => ({ ...newBuffers(), armed });
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -156,6 +149,90 @@ describe('ensureRecorder', () => {
         ]);
         expect(context.on).toHaveBeenCalledWith('page', expect.any(Function));
         expect(popup.once).toHaveBeenCalledWith('close', expect.any(Function));
+    });
+
+    it('lets the extensions change every Action', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        const page = { _guid: 'page@first' };
+        const seen: any[] = [];
+        state.extensions = [
+            {
+                __recordedAction: (args: any) => {
+                    seen.push(args);
+                    if (args.action.name === 'click')
+                        return { ...args.action, selector: 'role=button[description="Save"s]' };
+                    if (args.action.name === 'select') return { ...args.action, options: [{ label: 'One' }] };
+                    return undefined;
+                },
+            },
+        ];
+        context.sinks[0].actionAdded(page, { name: 'click', selector: 'internal:role=button[name="Save file"i]' });
+        context.sinks[0].actionAdded(page, { name: 'select', selector: '#s', options: ['1'] });
+        context.sinks[0].actionAdded(page, { name: 'navigate', url: 'http://x' });
+        await Promise.all(state.pendingHooks);
+        expect(eventsIn(state.entries).map((e) => e.action)).toEqual([
+            { name: 'click', selector: 'role=button[description="Save"s]' },
+            { name: 'select', selector: '#s', options: [{ label: 'One' }] },
+            { name: 'navigate', url: 'http://x' },
+        ]);
+        expect(seen).toHaveLength(3);
+        expect(seen[0]).toEqual({
+            action: { name: 'click', selector: 'internal:role=button[name="Save file"i]' },
+            page,
+            context,
+        });
+    });
+
+    it('keeps the Action when a hook returns an oversized one', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        state.extensions = [
+            { __recordedAction: ({ action }: any) => ({ ...action, text: 'x'.repeat(MAX_EVENT_BYTES) }) },
+        ];
+        context.sinks[0].actionAdded({}, { name: 'fill', selector: '#a', text: 'x' });
+        await Promise.all(state.pendingHooks);
+        expect(eventsIn(state.entries).map((e) => e.action)).toEqual([{ name: 'fill', selector: '#a', text: 'x' }]);
+    });
+
+    it('keeps the place of an Action an async hook changes', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        await resetSession(context, state, async () => undefined);
+        let finish: (action: unknown) => void = () => undefined;
+        state.extensions = [{ __recordedAction: () => new Promise((resolve) => (finish = resolve)) }];
+        context.sinks[0].actionAdded({}, { name: 'click', selector: 'internal:text="km/h"i' });
+        context.exposeBinding.mock.calls[0][1]({}, { cmd: 'undo' });
+        expect(state.pendingHooks.size).toBe(1);
+        finish({ name: 'click', selector: 'internal:text="46 km/h"i' });
+        await Promise.all(state.pendingHooks);
+        expect(state.pendingHooks.size).toBe(0);
+        expect(state.entries.map((e) => ('command' in e ? 'undo' : e.action.selector))).toEqual([
+            'internal:text="46 km/h"i',
+            'undo',
+        ]);
+    });
+
+    it('runs no hooks on an Action the reset drops, and runs them on the next one', async () => {
+        const context = fakeContext();
+        const state = await ensureRecorder(context);
+        const seen: string[] = [];
+        state.extensions = [
+            {
+                __recordedAction: ({ action }: any) => {
+                    seen.push(action.selector);
+                },
+            },
+        ];
+        await resetSession(context, state, async () => {
+            context.sinks[0].actionAdded({}, { name: 'click', selector: '#stale' });
+        });
+        context.sinks[0].actionAdded({}, { name: 'click', selector: '#kept' });
+        await Promise.all(state.pendingHooks);
+        expect(seen).toEqual(['#kept']);
+        expect(eventsIn(state.entries).map((e) => e.action.selector)).toEqual(['#kept']);
     });
 
     it('fails clearly without the programmatic recorder', async () => {
@@ -581,6 +658,7 @@ describe('recorderPoll with the toolbar Pick button', () => {
             cancelPickLocator: jest.fn(async () => undefined),
             isClosed: () => false,
             frames: () => [],
+            context: () => ({}),
         };
         return { page, pick: (selector: string) => resolve({ _selector: selector, elementHandle: async () => null }) };
     }

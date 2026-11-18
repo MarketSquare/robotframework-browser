@@ -236,6 +236,28 @@ class Recorder(LibraryComponent):
         because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
+        *Changing what is recorded:* a JavaScript module loaded with the
+        ``jsextension`` import argument can export these optional hooks:
+
+        - ``__recordedAction({action, page, context})``: called for every Action as
+          Playwright reports it, for example ``{name: "click", selector: "..."}``, and
+          for every element picked with *Pick* or `Record Selector`, as
+          ``{name: "pick", selector}``. ``action`` is a copy; ``page`` and ``context``
+          are the Playwright objects it happened in. Return the Action to record, or
+          ``undefined`` to keep it. An extension may change ``selector``, in Browser's
+          or Playwright's syntax, and the ``options`` of a ``select`` Action, either as
+          values or as Playwright's option descriptors such as ``{label: "AMELUNG"}``,
+          all with the same key, which `Select Options By` then selects by. Other keys
+          are Playwright's and may change with it. The hooks of several extensions run
+          in load order, each on the Action the one before gave; they may be ``async``.
+          When they take longer than 2 seconds, fail, or return something that cannot
+          be recorded, the Action is recorded as Playwright reported it, and the reason
+          is logged in ``playwright-log.txt``.
+        - ``__recordingStarted({context})``: called once per browser context, before its
+          first recording or Record Selector session starts, for example to add an init
+          script that collects what ``__recordedAction`` needs from the page. It may be
+          ``async``; if it fails, the keyword fails.
+
         Needs a visible browser: fails if the active browser was opened headless, since
         nobody could use the toolbar there. A browser attached with `Connect To Browser`
         is assumed to be visible.
@@ -440,6 +462,9 @@ class Recorder(LibraryComponent):
 
         Like the recorder toolbar, the toolbar's commands are reachable by scripts of the
         page under test: use it on applications you trust, and check the selector you get.
+
+        A JavaScript extension can change the picked selector before it is shown; see
+        *Changing the recorded selectors* in `Record Keyword`.
 
         Example:
         | ${selector} =    `Record Selector`    Login button

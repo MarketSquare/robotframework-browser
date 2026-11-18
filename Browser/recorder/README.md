@@ -57,7 +57,7 @@ operators, option strategies) never are.
 | `press` | `Press Keys    <selector>    [Modifier+...]Key` | selector, keys |
 | `check` | `Check Checkbox    <selector>` | selector |
 | `uncheck` | `Uncheck Checkbox    <selector>` | selector |
-| `select` | `Select Options By    <selector>    value    <option>...` | selector, each option |
+| `select` | `Select Options By    <selector>    value    <option>...`, or the attribute of the option descriptors a JS extension gave (see Extension hooks) | selector, each option |
 | `navigate` | `Go To    <url>` (never `New Page`: a recorded keyword does not create its page) | url |
 | `closePage` | nothing: Playwright drops it, because its page is gone; the wrapper reports a closed page as a `closed` event instead (see Pages) | - |
 | `openPage` | nothing, silently (existing pages, hand-opened tabs; a page opened by an Action arrives as a `popup` signal) | - |
@@ -158,6 +158,39 @@ Why each form, all read from Playwright 1.64:
   can carry a name, such as `<div aria-label="Map">`. The selector stays internal; the
   toolbar says so, as it may break with a Playwright upgrade. Any other form that cannot
   be rewritten safely stays internal with the same notice.
+
+### Extension hooks
+
+A JS extension (`jsextension`) can change every Action and pick; the user documentation is
+in `Record Keyword`. `node/playwright-wrapper/recorder-hooks.ts`:
+
+- The hooks work on data: `__recordedAction({action, page, context})` gets a
+  `structuredClone` of the Action and returns the Action to record, or `undefined`; the
+  hooks chain in load order. The contract is narrow on purpose: an extension may change
+  `selector`, and the `options` of a `select` Action, as values or as Playwright's option
+  descriptors for `selectOption` (`{label}`, `{value}`, `{index}`), all with the same key.
+  Every other key is Playwright's recorder data, passed through and not promised, so a
+  Playwright upgrade that changes it breaks no documented API.
+- The selector is still Playwright's before `to_browser_selector`, so a changed one is
+  translated like any other (a public selector passes through). `_map_select` turns option
+  descriptors into the attribute of `Select Options By`; plain values stay `value`.
+- `whyNotRecordable` checks only what Browser reads (`name`, `selector`, `options`) and that
+  the result is a plain, JSON-serialisable object. A throw, a rejection or an invalid result
+  keeps the Action from before that hook and is logged.
+- `runRecordedActionHooks` is the one way to run the hooks, for Actions and picks alike: it
+  gives the Action to record, or the reported one when the hooks take longer than
+  `HOOKS_TIMEOUT_MS` (2 s). A pick reaches it as `{name: 'pick', selector}`; `startPick`
+  takes the `selector` of the result.
+- For an Action, the sink buffers it first and `runHooksOnBufferedAction` replaces the
+  entry's Action when the hooks are done, so a toolbar command made meanwhile (Undo) never
+  overtakes it; an oversized result (`MAX_EVENT_BYTES`) is dropped. Each poll waits for the
+  pending runs (`waitForPendingHooks`) before it drains the buffer; each ends within the
+  time limit. Signals (`popup`, `download`, `dialog`) and `closePage` do not pass the hooks.
+- `__recordingStarted({context})` runs (`runRecordingStartedHooks`) at the reset poll of a
+  Recording Session and at the start of a Record Selector session, once per context and
+  extension; a failure fails the keyword and runs the hook again next time.
+- `buffers.extensions` is refreshed from `state.extensions` at every recorder poll; a pick
+  takes the extensions of its session (`Pick.extensions`).
 
 Two acceptance tests guard this: "Translated Selectors Match Like Playwright" compares each
 rewritten form with its internal original in a browser, and "Every Recorded Selector Finds
