@@ -234,6 +234,7 @@ def run_failing_boom(
     return selectors
 
 
+# Issue #5306
 def test_failure_in_keyword_with_varargs_keeps_original_error(
     browser_without_playwright_log: Browser.Browser, monkeypatch
 ):
@@ -243,6 +244,7 @@ def test_failure_in_keyword_with_varargs_keeps_original_error(
     assert selectors == [None]
 
 
+# Issue #5306
 def test_failure_passes_selector_value_starting_with_star(
     browser_without_playwright_log: Browser.Browser, monkeypatch
 ):
@@ -252,6 +254,7 @@ def test_failure_passes_selector_value_starting_with_star(
     assert selectors == ["*sel"]
 
 
+# Issue #5306
 def test_failure_passes_positional_selector_to_failure_handling(
     browser_without_playwright_log: Browser.Browser, monkeypatch
 ):
