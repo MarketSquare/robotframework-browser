@@ -110,6 +110,22 @@ REQUEST_BODY_KEYS = ("postData", "postDataBuffer", "postDataJSON")
 COOKIE_HEADER_KEYS = ("allHeaders", "headersArray")
 
 
+def _post_data_text(request: dict, post_data: bytes) -> str | None:
+    """The post data as Playwright's ``request.postData()`` returns it."""
+    return (
+        post_data.decode("utf-8", errors="replace") if request["hasPostData"] else None
+    )
+
+
+def _legacy_request_post_data(text: str | None) -> Any:
+    if not text:
+        return None
+    try:
+        return _strict_json_loads(text)
+    except ValueError:
+        return text
+
+
 def _add_request_views(request: dict, post_data: bytes) -> None:
     buffer = post_data if request.pop("hasPostData") else None
     request["postDataBuffer"] = buffer
@@ -255,6 +271,9 @@ class Network(LibraryComponent):
                 )
             )
             request, _, post_data = _collect_stream(messages)
+        request["postData"] = _legacy_request_post_data(
+            _post_data_text(request, post_data)
+        )
         _add_request_views(request, post_data)
         _log_request(request)
         return request
@@ -272,6 +291,7 @@ class Network(LibraryComponent):
         response["headers"] = json.loads(response["headers"])
         _add_response_views(response, body)
         request = response["request"]
+        request["postData"] = _post_data_text(request, post_data)
         _jsonize_content(request, "postData")
         _add_request_views(request, post_data)
         _log_response(response)

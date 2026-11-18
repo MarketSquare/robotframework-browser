@@ -20,7 +20,6 @@ def request_metadata(
         "url": "http://localhost/api",
         "headers": json.dumps({"content-type": content_type}),
         "method": "POST" if post_data is not None else "GET",
-        "postData": post_data,
         "allHeaders": {"content-type": content_type, "cookie": "session=1"},
         "headersArray": [{"name": "content-type", "value": content_type}],
         "resourceType": "fetch",
@@ -41,8 +40,9 @@ def response_messages(
     body: bytes | None,
     content_type: str = "text/plain",
     request: dict | None = None,
+    post_data: str | None = None,
 ):
-    request = request or request_metadata()
+    request = request or request_metadata(post_data)
     metadata = {
         "status": 200,
         "headers": json.dumps({"content-type": content_type}),
@@ -58,8 +58,8 @@ def response_messages(
         "hasBody": body is not None,
         "request": request,
     }
-    post_data = (request["postData"] or "").encode()
-    return [message(json.dumps(metadata), body or b"", post_data)]
+    raw_post_data = (post_data or "").encode()
+    return [message(json.dumps(metadata), body or b"", raw_post_data)]
 
 
 @pytest.fixture
@@ -181,7 +181,9 @@ def test_response_metadata_is_returned(browser, stub):
 
 def test_nested_post_data_is_parsed_with_json_content_type(browser, stub):
     request = request_metadata('{"name": "George"}', "application/json")
-    stub.WaitForResponse.return_value = response_messages(b"", request=request)
+    stub.WaitForResponse.return_value = response_messages(
+        b"", request=request, post_data='{"name": "George"}'
+    )
     response = browser.wait_for_response()
     assert response.request.postData == {"name": "George"}
     assert response.request.headers == {"content-type": "application/json"}
@@ -189,7 +191,9 @@ def test_nested_post_data_is_parsed_with_json_content_type(browser, stub):
 
 def test_nested_post_data_stays_string_without_json_content_type(browser, stub):
     request = request_metadata('{"name": "George"}', "text/plain")
-    stub.WaitForResponse.return_value = response_messages(b"", request=request)
+    stub.WaitForResponse.return_value = response_messages(
+        b"", request=request, post_data='{"name": "George"}'
+    )
     response = browser.wait_for_response()
     assert response.request.postData == '{"name": "George"}'
     assert response.request.postDataJSON == {"name": "George"}
@@ -215,6 +219,22 @@ def test_wait_for_request_returns_raw_post_data(browser, stub):
     request = browser.wait_for_request()
     assert request.postDataBuffer == b'{"key": "value"}'
     assert request.postDataJSON == {"key": "value"}
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ('{"key": "value"}', {"key": "value"}),
+        ("42", 42),
+        ("invalid json {", "invalid json {"),
+        ("NaN", "NaN"),
+        ("\x00\x01\x02\x03\xff\xfe", "\x00\x01\x02\x03\xff\xfe"),
+        ("", None),
+    ],
+)
+def test_wait_for_request_post_data_is_json_or_else_text(browser, stub, raw, expected):
+    captured_request(stub, raw)
+    assert browser.wait_for_request().postData == expected
 
 
 def test_wait_for_request_parses_form_post_data_like_playwright(browser, stub):

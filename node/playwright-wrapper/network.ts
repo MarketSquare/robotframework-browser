@@ -148,15 +148,6 @@ function requestDetails(request: Request, headers: Record<string, unknown>): Rec
     };
 }
 
-function legacyPostData(request: Request): unknown {
-    try {
-        return JSON.parse(request.postData() || 'null');
-    } catch (e) {
-        logger.info(`Failed to parse postData as JSON: ${String(e)}, using raw postData`);
-        return request.postData();
-    }
-}
-
 function capturedMessages(captured: CapturedBytes): pb.Response_Json[] {
     const postDataChunks = captured.postData ? splitBytes(captured.postData, MAX_RESPONSE_CHUNK_BYTES) : [];
     const bodyChunks = captured.body ? splitBytes(captured.body, MAX_RESPONSE_CHUNK_BYTES) : [];
@@ -207,7 +198,6 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
         request: {
             headers: JSON.stringify(capturedRequest.headers()),
             method: capturedRequest.method(),
-            postData: capturedRequest.postData(),
             ...requestDetails(capturedRequest, requestHeaders),
         },
     };
@@ -235,7 +225,6 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
     const meta = {
         method: result.method(),
         headers: result.headers(),
-        postData: legacyPostData(result),
         ...requestDetails(result, headers),
     };
     logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);

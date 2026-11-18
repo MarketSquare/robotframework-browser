@@ -94,49 +94,6 @@ describe('waitForRequest', () => {
         jest.clearAllMocks();
     });
 
-    it('returns request data with parsed JSON postData', async () => {
-        const parsed = await capturedRequest(
-            makeMockRequest({ postData: jest.fn().mockReturnValue('{"key": "value"}') }),
-        );
-
-        expect(parsed.url).toBe('https://example.com/api');
-        expect(parsed.method).toBe('POST');
-        expect(parsed.postData).toEqual({ key: 'value' });
-    });
-
-    it('returns request data with raw postData when JSON parsing fails', async () => {
-        const parsed = await capturedRequest(
-            makeMockRequest({ postData: jest.fn().mockReturnValue('invalid json {') }),
-        );
-
-        expect(parsed.postData).toBe('invalid json {');
-    });
-
-    it('returns request data with binary data in postData', async () => {
-        const binaryData = '\x00\x01\x02\x03\xFF\xFE';
-
-        const parsed = await capturedRequest(makeMockRequest({ postData: jest.fn().mockReturnValue(binaryData) }));
-
-        expect(parsed.postData).toBe(binaryData);
-    });
-
-    it('returns request data with null postData when postData is empty', async () => {
-        const parsed = await capturedRequest();
-
-        expect(parsed.postData).toBeNull();
-    });
-
-    it('parses JSON postData regardless of the request content type', async () => {
-        const parsed = await capturedRequest(
-            makeMockRequest({
-                headers: jest.fn().mockReturnValue({ 'content-type': 'text/plain' }),
-                postData: jest.fn().mockReturnValue('42'),
-            }),
-        );
-
-        expect(parsed.postData).toBe(42);
-    });
-
     it('handles headers without special characters', async () => {
         const headers = {
             'content-type': 'application/json',
@@ -220,6 +177,14 @@ describe('waitForRequest', () => {
         expect(messages).toHaveLength(1);
         expect(messages[0].postDataBytes.toString('utf8')).toBe('{"key": "value"}');
         expect(JSON.parse(messages[0].json).hasPostData).toBe(true);
+    });
+
+    it('sends the post data only as bytes, so a large body fits one gRPC message', async () => {
+        const request = makeMockRequest({ postData: jest.fn().mockReturnValue('{"key": "value"}') });
+
+        const [first] = await waitForRequest(makeRequest(), pageWithRequest(request));
+
+        expect(JSON.parse(first.json)).not.toHaveProperty('postData');
     });
 
     it('flags a request without post data', async () => {
@@ -334,9 +299,9 @@ describe('waitForResponse', () => {
             request: {
                 headers: '{"content-type":"application/json"}',
                 method: 'POST',
-                postData: '{"name":"George"}',
             },
         });
+        expect(JSON.parse(first.json).request).not.toHaveProperty('postData');
     });
 
     it('returns the Playwright response details', async () => {
