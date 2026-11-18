@@ -397,3 +397,26 @@ its 7.1.1 leg.
   the check a read-only file would be overwritten.
 - A keyword whose final write fails is kept in `RecorderSession.unsaved` and written once
   more on close. If that fails too, `Record Keyword(s)` logs its text as a warning and fails.
+
+## Inserting the call into the test (`insert_call`)
+
+Made for typing `Record Keyword` into a REPL such as RobotDebug's `Debug`: the test file has
+no `Record Keyword` line, so the call goes before the step of the test that is running,
+`Browser.keyword_call_stack[0]` (the listener's outermost entry, `Debug`). The next run
+replays the recorded keywords and then opens the REPL again.
+
+- The step is found once by its line, in the file as it was before this library first
+  recorded into it (`Recorder._originals`): the line Robot reports belongs to that version,
+  and every call or keyword written since may have moved it.
+- From then on it is a `CallSite`, found by content: the test by name (and how many tests of
+  that name come before it), the step by its tokens (and how many equal steps come before
+  it). An inserted call never has the tokens of the step, so the site does not move.
+- `FileTarget.insert_call` re-reads the file like `save`, inserts the call indented like the
+  step and writes it in the file's own format. The call passes the recorded value of every
+  Keyword Argument without a default (`RecordedKeyword.call`).
+- Refused before recording: no file (`file=${None}`), no running test, `file` other than the
+  test's file, or a running step that is no step of the test body (setup, teardown).
+- A call that cannot be inserted (the test was renamed, the step removed) is logged as a
+  warning with its text; the keyword does not fail, its keywords are already saved.
+- With `insert_call`, `Record Keyword(s)` returns `None` instead of the recorded text:
+  RobotDebug's REPL prints every return value that is not `None`.
