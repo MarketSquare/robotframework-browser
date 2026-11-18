@@ -19,7 +19,7 @@ WHEEL_DIR="${WHEEL_DIR:-nightly-wheels}"
 shopt -s nullglob
 wheels=("${WHEEL_DIR}"/*.whl)
 shopt -u nullglob
-if [ ${#wheels[@]} -eq 0 ]; then
+if [[ ${#wheels[@]} -eq 0 ]]; then
   echo "No wheels in ${WHEEL_DIR}, nothing to publish." >&2
   exit 1
 fi
