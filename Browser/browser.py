@@ -1230,15 +1230,14 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         if not selector and args:
             arguments = self.get_keyword_arguments(name)
             for i, arg in enumerate(args):
-                if isinstance(arg, str) and arg.startswith("*"):
+                if i >= len(arguments):
                     break
-                if (
-                    isinstance(arguments[i], str)
-                    and arguments[i].startswith("selector")
-                ) or (
-                    isinstance(arguments[i], tuple)
-                    and arguments[i][0].startswith("selector")
-                ):
+                spec = (
+                    arguments[i][0] if isinstance(arguments[i], tuple) else arguments[i]
+                )
+                if spec.startswith("*"):
+                    break
+                if spec.startswith("selector"):
                     selector = arg
                     break
         return selector
