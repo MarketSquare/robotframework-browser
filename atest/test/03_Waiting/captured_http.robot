@@ -7,11 +7,11 @@ Test Setup    Ensure Location    ${LOGIN_URL}
 Test Tags     no-iframe
 
 *** Variables ***
-${PNG_SIGNATURE} =     ${{ bytes.fromhex('89504e470d0a1a0a') }}
-# The body ends long after the limit, so a wait for the whole body fails the limit
-# instead of hanging, while a normal return stays far below it.
-${SLOW_BODY_MS} =      20000
-${RETURN_LIMIT_S} =    10
+${PNG_SIGNATURE} =        ${{ bytes.fromhex('89504e470d0a1a0a') }}
+# The body ends long after the keywords' timeouts, so a wait for it fails with a timeout.
+${SLOW_BODY_MS} =         20000
+# Twice this exceeded gRPC's 4 MiB message limit when post data also travelled as text.
+${LARGE_BODY_LENGTH} =    ${3500000}
 
 *** Test Cases ***
 Response All Headers Contain Set-Cookie
@@ -93,6 +93,20 @@ Form Post Data Is Parsed Like Playwright
     Should Be Equal    ${request.postDataBuffer}    ${{ b'name=George&city=Helsinki' }}
     Should Be Equal    ${request.postData}    name=George&city=Helsinki
 
+Post Data Larger Than A gRPC Message Is Returned
+    ${promise} =    Promise To    Wait For Request    **/posted.html
+    Post A Large Text Body To    /posted.html
+    ${request} =    Wait For    ${promise}
+    Length Should Be    ${request.postData}    ${LARGE_BODY_LENGTH}
+    Length Should Be    ${request.postDataBuffer}    ${LARGE_BODY_LENGTH}
+
+Post Data Larger Than A gRPC Message Is Returned With Its Response
+    ${promise} =    Promise To    Wait For Response    **/posted.html
+    Post A Large Text Body To    /posted.html
+    ${response} =    Wait For    ${promise}
+    Length Should Be    ${response.request.postData}    ${LARGE_BODY_LENGTH}
+    Length Should Be    ${response.request.postDataBuffer}    ${LARGE_BODY_LENGTH}
+
 Wait For Request Returns Before The Response Arrives
     ${promise} =    Promise To    Wait For Request    **/api/stalled-image    timeout=3s
     Evaluate JavaScript    ${None}    () => { fetch('/api/stalled-image'); }
@@ -115,7 +129,6 @@ Waiting For All Request Fields Is Limited By The Timeout
     END
 
 Response Without Body Returns Before A Slow Body Arrives
-    ${started} =    Evaluate    time.monotonic()    modules=time
     ${promise} =    Promise To    Wait For Response
     ...    **/api/slow-body*    timeout=15s    include_body=False
     Evaluate JavaScript    ${None}    () => { fetch('/api/slow-body?bodyMs=${SLOW_BODY_MS}'); }
@@ -123,27 +136,24 @@ Response Without Body Returns Before A Slow Body Arrives
     Should Be Equal    ${response.status}    ${200}
     Should Be Equal    ${response.bytes}    ${None}
     Should Be Equal    ${response.securityDetails}    ${None}
-    Seconds Since Should Be Below    ${started}    ${RETURN_LIMIT_S}
 
 Reading A Slow Body Is Limited By The Timeout
-    ${started} =    Evaluate    time.monotonic()    modules=time
     ${promise} =    Promise To    Wait For Response    **/api/slow-body*    timeout=3s
     Evaluate JavaScript    ${None}    () => { fetch('/api/slow-body?bodyMs=${SLOW_BODY_MS}'); }
     Run Keyword And Expect Error
     ...    *Timeout 3000ms exceeded while waiting for all fields of the response.*
     ...    Wait For    ${promise}
-    Seconds Since Should Be Below    ${started}    ${RETURN_LIMIT_S}
 
 *** Keywords ***
+Post A Large Text Body To
+    [Arguments]    ${path}
+    Evaluate JavaScript
+    ...    ${None}
+    ...    () => { fetch('${path}', {method: 'POST', headers: {'content-type': 'text/plain'}, body: 'a'.repeat(${LARGE_BODY_LENGTH})}); }
+
 Capture Response
     [Arguments]    ${path}
     ${promise} =    Promise To    Wait For Response    **${path}
     HTTP    ${path}
     ${response} =    Wait For    ${promise}
     RETURN    ${response}
-
-Seconds Since Should Be Below
-    [Arguments]    ${started}    ${limit}
-    ${elapsed} =    Evaluate    time.monotonic() - ${started}    modules=time
-    Should Be True    ${elapsed} < ${limit}
-    ...    Returned after ${elapsed}s, expected below ${limit}s.
