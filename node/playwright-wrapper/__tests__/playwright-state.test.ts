@@ -979,6 +979,26 @@ describe('extensionKeywordCall', () => {
         expect(state.activeBrowser?.name).toBe('own');
     });
 
+    it('hands a recordHar urlFilter regex to an extension function as a RegExp', async () => {
+        const state = new PlaywrightState();
+        let received: unknown;
+        async function launchApp(recordHar: unknown) {
+            received = recordHar;
+        }
+        state.extensions.push({ launchApp });
+
+        await extensionKeywordCall(
+            {
+                name: 'launchApp',
+                arguments: JSON.stringify({ arguments: [['recordHar', { path: 'a.har', urlFilter: '/api/i' }]] }),
+            },
+            { write: jest.fn() } as any,
+            state,
+        );
+
+        expect(received).toEqual({ path: 'a.har', urlFilter: /api/i });
+    });
+
     it('gives an adopted context the default timeout of the call', async () => {
         const state = new PlaywrightState();
         const context = makeMockContext([makeMockPage()]);
