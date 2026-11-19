@@ -177,7 +177,7 @@ export async function extensionKeywordCall(
     const extension = state.extensions.find((extension) => Object.keys(extension).includes(keywordName));
     if (!extension) throw Error(`Could not find keyword ${keywordName}`);
     const keyword = extension[keywordName];
-    const namedArguments = Object.fromEntries(args['arguments']);
+    const namedArguments = parseRecordHarUrlFilter(Object.fromEntries(args['arguments']));
     const apiArguments = new Map();
     const argNames = getArgumentNamesFromJavascriptKeyword(keyword);
     if (argNames.some((name) => name === 'page' || name === 'context' || name === 'browser')) {
