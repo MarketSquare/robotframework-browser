@@ -883,6 +883,30 @@ describe('newContext', () => {
                 'Open a new browser first.',
         );
     });
+
+    async function recordHarSentToPlaywright(recordHar: Record<string, unknown>) {
+        const browser = { version: () => '1', contexts: () => [], newContext: jest.fn() } as any;
+        browser.newContext.mockResolvedValue(makeMockContext([]));
+        const state = new PlaywrightState();
+        await state.addBrowser({ browser, browserType: 'chromium', headless: true });
+
+        const rawOptions = JSON.stringify({ recordHar });
+        const response = await newContext({ rawOptions, defaultTimeout: 0, traceFile: '' }, state);
+
+        return { sent: browser.newContext.mock.calls[0][0].recordHar, response };
+    }
+
+    it('records a HAR only of the requests that match a urlFilter regex', async () => {
+        const { sent } = await recordHarSentToPlaywright({ path: 'a.har', urlFilter: '/api/i' });
+
+        expect(sent).toEqual({ path: 'a.har', urlFilter: /api/i });
+    });
+
+    it('reports the urlFilter regex in the context options as it was given', async () => {
+        const { response } = await recordHarSentToPlaywright({ path: 'a.har', urlFilter: '/api/i' });
+
+        expect(JSON.parse(response.contextOptions).recordHar).toEqual({ path: 'a.har', urlFilter: '/api/i' });
+    });
 });
 
 describe('addBrowser', () => {

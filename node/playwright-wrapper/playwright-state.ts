@@ -92,6 +92,7 @@ import {
     jsonResponse,
     keywordsResponse,
     pageReportResponse,
+    parseRegExpOrKeepString,
     stringResponse,
 } from './response-util';
 import { TraceGroups } from './trace-groups';
@@ -1020,6 +1021,14 @@ export async function removeFailedPage(
     return emptyWithLog(`${removed}${active}`);
 }
 
+function parseRecordHarUrlFilter<T extends Record<string, any>>(options: T): T {
+    const urlFilter = options.recordHar?.urlFilter;
+    if (typeof urlFilter !== 'string') {
+        return options;
+    }
+    return { ...options, recordHar: { ...options.recordHar, urlFilter: parseRegExpOrKeepString(urlFilter) } };
+}
+
 export async function newContext(
     request: Request_Context,
     openBrowsers: PlaywrightState,
@@ -1038,7 +1047,7 @@ export async function newContext(
         );
     }
     const indexedContext = await _createIndexedContext(
-        await browserState.browser.browser.newContext(options),
+        await browserState.browser.browser.newContext(parseRecordHarUrlFilter(options)),
         defaultTimeout,
         traceFile,
         options,
@@ -1113,7 +1122,10 @@ export async function newPersistentContext(
     const options = JSON.parse(request.rawOptions) as Record<string, unknown>;
     const userDataDir = options?.userDataDir as string;
     const browserName = options.defaultBrowserType || options.browser || 'chromium';
-    const context = await _getBrowserType(browserName as string).launchPersistentContext(userDataDir, options);
+    const context = await _getBrowserType(browserName as string).launchPersistentContext(
+        userDataDir,
+        parseRecordHarUrlFilter(options),
+    );
     const browserAndConfs = {
         browserType: browserName as 'chromium' | 'firefox' | 'webkit',
         browser: null,
