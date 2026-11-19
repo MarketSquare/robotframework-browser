@@ -22,7 +22,7 @@
     "globals": "^17.14.0",
     "grpc-tools": "^1.13.1",
     "jest": "^30.5.2",
-    "lint-staged": "^17.6.0",
+    "lint-staged": "^17.6.1",
     "morgan": "^1.12.1",
     "prettier": "^3.10.1",
     "react": "^19.3.1",
