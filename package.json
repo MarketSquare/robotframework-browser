@@ -33,7 +33,7 @@
     "ts-jest": "^29.4.15",
     "ts-loader": "^9.6.2",
     "ts-node": "^10.9.2",
-    "ts-proto": "^2.21.1",
+    "ts-proto": "^2.22.0",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2"
   },
