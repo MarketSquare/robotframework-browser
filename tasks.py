@@ -1207,9 +1207,16 @@ def atest_global_pythonpath(c):
 
 
 @task()
-def atest_failed(c):
+def atest_failed(c, browser=None):
+    """Reruns the acceptance tests that failed in the last run.
+
+    Args:
+        browser: chromium, firefox or webkit. output.xml does not record the
+            browser, so pass the one the last run used.
+    """
     args = ["--rerunfailed", "atest/output/output.xml"]
     args.extend(_get_listener_args())
+    args.extend(_browser_args(browser))
     sys.exit(_run_pabot(args))
 
 

@@ -64,7 +64,7 @@ Test App.
   every worker. `--browser firefox` (or `webkit`, `chromium`) runs in that browser and leaves out
   the tests tagged `known-bug-<browser>` or `<other browser>-only`; `inv atest-coverage` and
   `inv atest-robot` take it too. Results land in `atest/output/`; `inv atest-failed` reruns the
-  failures.
+  failures; pass it the same `--browser`.
 - `inv lint`: `lint-python` (ruff format and check, mypy; `--fix` fixes), `lint-node` (prettier,
   eslint, `tsc --noEmit`) and `lint-robot` (robocop format). Locally `lint-node` and `lint-robot`
   rewrite files; in CI they only check.
