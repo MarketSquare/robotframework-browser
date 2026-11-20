@@ -30,6 +30,7 @@ import { BrowserContext, Page } from 'playwright';
 import { logger } from './browser_logger';
 import { drivePick, endPick, Pick, PickRequest, resetPlaywrightCursor } from './element-picker';
 import * as pb from './generated/playwright';
+import { isGone } from './page-crash';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse } from './response-util';
 
@@ -469,7 +470,8 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
     if (toolbarState) await renderToolbars(context, buffers, toolbarState);
     const picked = await pickInRecording(state, buffers, body);
     const mode = await readMode(context);
-    if (handPointer(buffers.lastMode) && !handPointer(mode)) {
+    // Our own pick shows the hand too, and its mode may not have arrived yet.
+    if (handPointer(buffers.lastMode) && !handPointer(mode) && !buffers.pick?.picking) {
         await onEveryPage(context, resetPlaywrightCursor);
     }
     buffers.lastMode = mode;
@@ -500,7 +502,7 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
             mode: stopped ? 'stopped' : 'recording',
             picking: !buffers.ownPick && !pickRequested && isPicking(mode),
             pickRequested,
-            pages: context.pages().length,
+            pages: context.pages().filter((page) => !isGone(page)).length,
             activePage: pageGuid(state.getActivePage()),
             entries: drainEntries(buffers),
             ...picked,

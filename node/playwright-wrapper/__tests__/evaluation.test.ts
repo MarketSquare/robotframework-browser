@@ -41,12 +41,16 @@ function makeMockLocator(
         count: jest.Mock;
         highlight: jest.Mock;
         evaluateAll: jest.Mock;
+        evaluate: jest.Mock;
     }> = {},
 ) {
+    const evaluate = overrides.evaluate ?? jest.fn().mockResolvedValue(undefined);
     return {
         count: jest.fn().mockResolvedValue(3),
         highlight: jest.fn().mockResolvedValue(makeHighlight()),
         evaluateAll: jest.fn().mockResolvedValue(undefined),
+        first: () => ({ evaluate }),
+        evaluate,
         ...overrides,
     } as any;
 }
@@ -157,6 +161,57 @@ describe('highlightAll', () => {
             const result = await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
 
             expect(result).toBe(4);
+        });
+        it('waits until the page has painted the highlight', async () => {
+            const order: string[] = [];
+            const locator = makeMockLocator({
+                highlight: jest.fn(async () => {
+                    order.push('highlight');
+                    return makeHighlight();
+                }),
+                evaluate: jest.fn(async () => {
+                    order.push('painted');
+                }),
+            });
+            mockFindLocator.mockResolvedValue(locator);
+
+            await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
+
+            expect(order).toEqual(['highlight', 'painted']);
+        });
+
+        it('does not wait for a paint when nothing matched', async () => {
+            const locator = makeMockLocator({ count: jest.fn().mockResolvedValue(0) });
+            mockFindLocator.mockResolvedValue(locator);
+
+            await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
+
+            expect(locator.evaluate).not.toHaveBeenCalled();
+        });
+
+        it('still returns when waiting for the paint fails', async () => {
+            const locator = makeMockLocator({ evaluate: jest.fn().mockRejectedValue(new Error('detached')) });
+            mockFindLocator.mockResolvedValue(locator);
+
+            const result = await highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
+
+            expect(result).toBe(3);
+        });
+
+        it('still returns when the page never paints, as with a paused clock', async () => {
+            jest.useFakeTimers();
+            try {
+                const locator = makeMockLocator({ evaluate: jest.fn(() => new Promise(() => {})) });
+                mockFindLocator.mockResolvedValue(locator);
+
+                const result = highlightAll('#el', 0, '1px', 'dotted', 'blue', false, makeMockState(), 'playwright');
+                await jest.runAllTimersAsync();
+
+                await expect(result).resolves.toBe(3);
+                expect(jest.getTimerCount()).toBe(0);
+            } finally {
+                jest.useRealTimers();
+            }
         });
     });
 

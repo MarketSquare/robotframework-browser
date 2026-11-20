@@ -50,6 +50,16 @@ Clock Install, Pause Advance (Fast_forward) Resume
     ${time2} =    Get Text    id=current-time
     Time1 Is Less Than Time2    ${time1}    ${time2}
 
+Playwright Highlight Returns While The Clock Is Paused
+    [Timeout]    30s
+    ${time_set} =    Get Current Date    result_format=%Y-%m-%d %H:%M:%S
+    Set Time    ${time_set}
+    ${pause_time} =    Get Current Date    increment=1 hours    result_format=%Y-%m-%d %H:%M:%S
+    Pause At    ${pause_time}
+    ${count} =    Highlight Elements    id=current-time    duration=0    mode=playwright
+    Should Be Equal    ${count}    ${1}
+    [Teardown]    Resume Clock
+
 Advance Clock Run_for Argument
     ${time_set} =    Get Current Date    increment=1 minute    result_format=%Y-%m-%d %H:%M:%S
     Set Time    ${time_set}
@@ -76,7 +86,16 @@ Test Setup For Clock
     New Page    ${CLOCK_URL}
     ${ASSERTION_TIMEOUT} =    Set Retry Assertions For    5s
     VAR    ${ASSERTION_TIMEOUT} =    ${ASSERTION_TIMEOUT}    scope=SUITE
-    Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
+    TRY
+        Get Text    id=current-time    !=    ${EMPTY}    # To make sure that clock is loaded
+    EXCEPT    AS    ${error}
+        # Diagnosis for Firefox on Windows, where innerText stays empty while the time shows.
+        ${page} =    Evaluate JavaScript
+        ...    id=current-time
+        ...    (e) => ({innerText: e.innerText, textContent: e.textContent, visibilityState: document.visibilityState, hasFocus: document.hasFocus(), clientRects: e.getClientRects().length})
+        Log    Clock page diagnosis: ${page}    WARN
+        Fail    ${error}
+    END
 
 Suite Teardown For Clock
     Close Context

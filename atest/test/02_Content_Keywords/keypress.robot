@@ -22,7 +22,7 @@ Press Key Combinations Of Keystrokes In TextField
     Get Text    input[name="email"]    ==    Aa
 
 Press Keys Combination Of Keystrokes In Select List
-    Click    select[name="possible_channels"] > option[value="email"]
+    Click First Row Of List Box    select[name="possible_channels"]
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown
     Browser.Press Keys    select[name="possible_channels"]    Shift+ArrowDown
     Get Selected Options    select[name="possible_channels"]    value    ==    email    phone    directmail

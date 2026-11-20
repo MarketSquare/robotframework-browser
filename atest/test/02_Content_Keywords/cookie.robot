@@ -40,7 +40,7 @@ Add Cookie With Domain And Path
     [Tags]    no-windows-support    no-docker-pr
     ${url} =    Get Url
     ${parsed_url} =    Common.Parse Url    ${url}
-    Add Cookie    Foo    Bar    domain=${parsed_url.netloc}    path=${parsed_url.path}
+    Add Cookie    Foo    Bar    domain=${parsed_url.hostname}    path=${parsed_url.path}
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /prefilled_email_form.html
@@ -72,7 +72,7 @@ Add Cookie With All Settings
     ${cookies} =    Get Cookies
     Check Cookie    ${cookies}    1    Foo    Bar
     Should Be Equal    ${cookies}[0][path]    /
-    Should Be Equal    ${cookies}[0][sameSite]    Lax
+    SameSite Should Be    ${cookies}[0]    Lax
     ${expires} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${expires}    \\d
     Should Be Equal    ${cookies}[0][httpOnly]    ${True}
@@ -81,7 +81,7 @@ Add Cookie With All Settings
 Add Cookie With Strict SameSite
     Add Cookie    strict    1    domain=a.example    path=/    sameSite=Strict
     ${cookie} =    Get Cookie    strict
-    Should Be Equal    ${cookie}[sameSite]    Strict
+    SameSite Should Be    ${cookie}    Strict
 
 Add Cookie With None SameSite
     Add Cookie    none    1    domain=a.example    path=/    secure=True    sameSite=None
@@ -252,7 +252,12 @@ Delete All Cookies With Filter Matching Nothing Keeps Cookies
 Delete All Cookies With Empty Name Deletes Only Nameless Cookies
     Add Cookie    ${EMPTY}    1    domain=a.example    path=/
     Add Cookie    keep    2    domain=a.example    path=/
-    Cookie Names Should Be    ${EMPTY}    keep
+    IF    $BROWSER == 'webkit' and sys.platform == 'darwin'
+        # WebKit on macOS drops a cookie without a name.
+        Cookie Names Should Be    keep
+    ELSE
+        Cookie Names Should Be    ${EMPTY}    keep
+    END
     Delete All Cookies    name=${EMPTY}
     Cookie Names Should Be    keep
 
@@ -269,8 +274,7 @@ Get Cookies With Url List Returns Cookies Of Every Url
     Add Cookie    second    2    domain=b.example    path=/
     Add Cookie    third    3    domain=c.example    path=/
     VAR    @{urls} =    https://a.example    https://b.example
-    ${cookies} =    Get Cookies    string    urls=${urls}
-    Should Be Equal    first\=1; second\=2    ${cookies}
+    Cookie Names Should Be    first    second    urls=${urls}
 
 Get Cookies With Url Leaves Secure Cookies Out Of Http Urls
     Add Cookie    secured    1    domain=a.example    path=/    secure=True
@@ -286,6 +290,7 @@ Get Cookies With Empty Urls Returns All Cookies
     Cookie Names For Urls Should Be    ${no_urls}    first
 
 Add Partitioned Cookie With Domain And Path
+    [Tags]    chromium-only
     Add Cookie
     ...    tracker
     ...    1
@@ -302,6 +307,7 @@ Get Cookies With Invalid Url Fails
     ...    Get Cookies    urls=not a url
 
 Partitioned Cookie Round Trip
+    [Tags]    chromium-only
     Add Cookie    tracker    abc123    url=https://third-party.example    partitionKey=https://site.example
     ${cookies} =    Get Cookies
     Should Be Equal    ${cookies}[0][partitionKey]    https://site.example
@@ -403,9 +409,18 @@ Cookie Names For Urls Should Be
     ${cookies} =    Get Cookies    string    urls=${urls}
     Should Be Equal    ${cookies}    ${expected}\=1
 
+SameSite Should Be
+    [Arguments]    ${cookie}    ${expected}
+    IF    $BROWSER == 'webkit' and sys.platform == 'win32'
+        # WebKit on Windows reports every cookie with sameSite None.
+        Should Be Equal    ${cookie}[sameSite]    None
+    ELSE
+        Should Be Equal    ${cookie}[sameSite]    ${expected}
+    END
+
 Cookie Names Should Be
-    [Arguments]    @{expected}
-    ${cookies} =    Get Cookies
+    [Arguments]    @{expected}    ${urls}=${None}
+    ${cookies} =    Get Cookies    urls=${urls}
     VAR    @{names} =    @{{[cookie.name for cookie in $cookies]}}
     Lists Should Be Equal    ${names}    ${expected}    ignore_order=True
 

@@ -21,6 +21,8 @@ concurrency:
 
 env:
   SYS_VAR_CI_INSTALL_TEST: 0
+  # The browser the acceptance tests run in; its known bugs are left out.
+  ATEST_BROWSER: chromium
 
 jobs:
   # The jobs run on Namespace runners, each matrix entry names its machine.
@@ -394,7 +396,7 @@ jobs:
           python atest/library/os_wrapper.py
       - name: Run Robot Framework tests with coverage
         run: |
-          xvfb-run --auto-servernum inv atest-coverage ${{ matrix.batteries && '--batteries' || '' }}
+          xvfb-run --auto-servernum inv atest-coverage --browser ${{ env.ATEST_BROWSER }} ${{ matrix.batteries && '--batteries' || '' }}
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
@@ -717,6 +719,19 @@ jobs:
         shell: bash
         run: |
           rfbrowser init
+      # rfbrowser init installs no system packages; the Linux runner image happens
+      # to have Chromium's but not those of Firefox and WebKit. A separate step, so
+      # that rfbrowser init stays the command users run, and only for the browser
+      # under test, so that a Chromium run stays as fast as before. These steps are
+      # shared with Windows and macOS, which need no system packages.
+      - name: Install the system packages of ${{ env.ATEST_BROWSER }}
+        if: ${{ startsWith(matrix.os, 'ubuntu') && !matrix.batteries && env.ATEST_BROWSER != 'chromium' }}
+        shell: bash
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: 0
+        run: |
+          cd "$(python -I -c 'import pathlib, Browser; print(pathlib.Path(Browser.__file__).parent / "wrapper")')"
+          "$GITHUB_WORKSPACE/.github/scripts/install-playwright.sh" npx playwright install "$ATEST_BROWSER"
       - name: Install the browsers
         if: ${{ matrix.batteries }}
         shell: bash
@@ -739,11 +754,11 @@ jobs:
       - name: Run Robot Framework tests on Linux
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
-          xvfb-run --auto-servernum inv atest-robot --parallel
+          xvfb-run --auto-servernum inv atest-robot --parallel --browser ${{ env.ATEST_BROWSER }}
       - name: Run Robot Framework tests on Windows or macOS
         if: ${{ !startsWith(matrix.os, 'ubuntu') }}
         run: |
-          inv atest-robot --parallel
+          inv atest-robot --parallel --browser ${{ env.ATEST_BROWSER }}
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
         with:
@@ -903,6 +918,7 @@ jobs:
       - name: Start demo app and run tests with docker image
         run: |
           uv sync --locked --no-build --only-group dev
+          browser_args=$(uv run --no-sync python -c "import tasks; print(' '.join(tasks._browser_args('$ATEST_BROWSER')))")
           set +e
           docker run \
             -v ./atest/:/home/pwuser/atest \
@@ -925,7 +941,7 @@ jobs:
               pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 \\
                 --ordering /home/pwuser/atest/atest_order.data \\
                 --artifacts png,webm,zip --artifactsinsubfolders \\
-                -v SERVER:localhost:7272 --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
+                -v SERVER:localhost:7272 $browser_args --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
               robot_status=\$?
               kill \$app_pid || true
               wait \$app_pid 2>/dev/null || true

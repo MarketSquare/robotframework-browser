@@ -1,0 +1,40 @@
+// Copyright 2020-     Robot Framework Foundation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// A crashed page stays in `context.pages()` until it is closed, but nothing can
+// run on it any more. Playwright reports the crash only as an event, so every
+// page of the library is watched from `indexedPage`, as `trackRequests` does
+// for the load report (ADR 0008).
+
+import { Page } from 'playwright';
+
+import { logger } from './browser_logger';
+
+const crashedPages = new WeakSet<Page>();
+
+export function watchCrash(page: Page): void {
+    page.on('crash', () => {
+        crashedPages.add(page);
+        logger.warn(`The page ${page.url()} crashed.`);
+    });
+}
+
+export function isCrashed(page: Page): boolean {
+    return crashedPages.has(page);
+}
+
+// Closed or crashed: no recording or pick can go on on it.
+export function isGone(page: Page): boolean {
+    return page.isClosed() || isCrashed(page);
+}

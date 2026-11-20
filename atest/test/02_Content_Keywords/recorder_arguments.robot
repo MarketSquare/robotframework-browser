@@ -10,6 +10,7 @@ Test Tags         recorder
 
 *** Test Cases ***
 Keyword Arguments With Partial Value And Default
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     ${promise} =    Promise To    Record Keyword    Fill Parametrised    ${RESOURCE}
     Toolbar State Should Be    recording
     Fill Text    id=input_name    id-42
