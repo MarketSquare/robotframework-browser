@@ -19,9 +19,8 @@ Library     ../library/event_delay.py
 
 *** Keywords ***
 Click First Row Of List Box
-    [Documentation]    Selects only the first option of the list box ``${selector}``. WebKit gives an
-    ...    option of a list box no box of its own, so the option itself cannot be clicked.
     [Arguments]    ${selector}
+    # WebKit gives an option of a list box no box of its own, so the option itself cannot be clicked.
     Click With Options    ${selector}    position_x=5    position_y=5
 
 Open Browser To No Page
