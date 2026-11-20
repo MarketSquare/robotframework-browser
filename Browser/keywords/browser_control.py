@@ -49,32 +49,71 @@ class Control(LibraryComponent):
     """Keywords to do things on the current browser page and modify the page"""
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def go_forward(self):
+    def go_forward(
+        self,
+        *,
+        timeout: timedelta | None = None,
+        wait_until: PageLoadStates = PageLoadStates.load,
+    ):
         """Navigates to the next page in history.
+
+        *Arguments:*
+          - ``timeout``: Time to wait for the navigation. If not defined, the library
+                default timeout is used.
+          - ``wait_until``: When to consider the navigation succeeded, defaults to
+                ``load``. See `PageLoadStates` for the events: ``domcontentloaded``,
+                ``load``, ``networkidle`` or ``commit``.
 
         If the wait times out, the page's load report is logged: whether its
         navigation committed, how far the document got and which requests
         were still open.
+
+        Example:
+        | `Go Forward`    wait_until=networkidle
 
         [https://forum.robotframework.org/t//4290|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GoForward(Request.Empty())
+            response = stub.GoForward(self._navigation_options(timeout, wait_until))
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))
-    def go_back(self):
+    def go_back(
+        self,
+        *,
+        timeout: timedelta | None = None,
+        wait_until: PageLoadStates = PageLoadStates.load,
+    ):
         """Navigates to the previous page in history.
+
+        *Arguments:*
+          - ``timeout``: Time to wait for the navigation. If not defined, the library
+                default timeout is used.
+          - ``wait_until``: When to consider the navigation succeeded, defaults to
+                ``load``. See `PageLoadStates` for the events: ``domcontentloaded``,
+                ``load``, ``networkidle`` or ``commit``.
 
         If the wait times out, the page's load report is logged: whether its
         navigation committed, how far the document got and which requests
         were still open.
 
+        Example:
+        | `Go To`    ${DEEP_LINK}
+        | `Go Back`    timeout=30s    wait_until=domcontentloaded
+        | `Get Url`    ==    ${START_URL}
+
         [https://forum.robotframework.org/t//4289|Comment >>]
         """
         with self.playwright.grpc_channel() as stub:
-            response = stub.GoBack(Request.Empty())
+            response = stub.GoBack(self._navigation_options(timeout, wait_until))
             logger.info(response.log)
+
+    def _navigation_options(
+        self, timeout: timedelta | None, wait_until: PageLoadStates
+    ) -> Request.NavigationOptions:
+        return Request.NavigationOptions(
+            timeout=self.get_timeout(timeout), waitUntil=wait_until.name
+        )
 
     @keyword(tags=("Setter", "BrowserControl"))
     def go_to(
@@ -82,6 +121,8 @@ class Control(LibraryComponent):
         url: str,
         timeout: timedelta | None = None,
         wait_until: PageLoadStates = PageLoadStates.load,
+        *,
+        referer: str | None = None,
     ):
         """Navigates to the given ``url``.
 
@@ -97,6 +138,9 @@ class Control(LibraryComponent):
                 there are no network connections for at least 500 ms. ``commit`` -
                 consider the operation to be finished when the network response is
                 received and the document started loading.
+          - ``referer``: Value of the ``Referer`` header sent with this one navigation
+                request. Has no effect when the context already sets ``Referer`` with
+                ``extraHTTPHeaders`` in `New Context`; the context value is sent then.
 
 
         Returns the HTTP status code of the navigation request as an integer, or 0 if no response was received.
@@ -104,6 +148,10 @@ class Control(LibraryComponent):
         If the wait times out, the page's load report is logged: whether its
         navigation committed, how far the document got and which requests
         were still open.
+
+        Example:
+        | `Go To`    ${LANDING_PAGE}    referer=https://partner.example.com/campaign
+        | `Get Text`    id=referer    ==    https://partner.example.com/campaign
 
         [https://forum.robotframework.org/t//4291|Comment >>]
         """
@@ -114,6 +162,7 @@ class Control(LibraryComponent):
                         url=url, defaultTimeout=int(self.get_timeout(timeout))
                     ),
                     waitUntil=wait_until.name,
+                    referer=referer,
                 )
             )
             logger.info(response.log)
@@ -686,7 +735,7 @@ class Control(LibraryComponent):
 
         *Arguments:*
           - ``timeout``: Maximum time for the reload to succeed. If not given, the
-                currently set browser timeout is used.
+                library default timeout is used.
           - ``waitUntil``: When to consider the operation succeeded, defaults to
                 ``load``.
 
@@ -702,11 +751,8 @@ class Control(LibraryComponent):
 
         [https://forum.robotframework.org/t//4317|Comment >>]
         """
-        options = {"waitUntil": str(waitUntil.name)}  # type: dict[str, Any]
-        if timeout is not None:
-            options["timeout"] = int(timeout.total_seconds() * 1000)
         with self.playwright.grpc_channel() as stub:
-            response = stub.Reload(Request().Json(body=json.dumps(options)))
+            response = stub.Reload(self._navigation_options(timeout, waitUntil))
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))

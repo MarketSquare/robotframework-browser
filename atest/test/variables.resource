@@ -45,6 +45,7 @@ ${DEFAULT_TEST_TIMEOUT} =               30 seconds
 ${PLAYWRIGHT_TIMEOUT} =                 10 second
 ${SLOW_PAGE} =                          ${ROOT_URL}slowpage.html
 ${STALLED_PAGE} =                       ${ROOT_URL}stalledpage.html
+${REFERER_URL} =                        ${ROOT_URL}referer.html
 ${DOWNLOADS_URL} =                      ${ROOT_URL}downloads.html
 ${WEBCOMPONENT_PAGE} =                  ${ROOT_URL}webcomponent.html
 ${LINKER_URL} =                         ${ROOT_URL}links/link1.html

@@ -17,6 +17,7 @@ import { BrowserContext, Page } from 'playwright';
 import { logger } from './browser_logger';
 import * as pb from './generated/playwright';
 import { withLoadReport } from './load-report';
+import { navigationOptions } from './navigation-options';
 import { exists, findLocator } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, stringResponse } from './response-util';
@@ -71,17 +72,24 @@ export async function clearPermissions(request: pb.Request_Empty, state: Playwri
 
 export async function goTo(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_String> {
     const url = request.url?.url || 'about:blank';
-    const timeout = request.url?.defaultTimeout;
-    const goToOptions: {
-        timeout?: number;
-        waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit';
-    } = { timeout: timeout };
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.waitUntil;
-    if (waitUntil) {
-        goToOptions.waitUntil = waitUntil;
-    }
+    const goToOptions = {
+        ...navigationOptions(request.url?.defaultTimeout, request.waitUntil),
+        referer: request.referer,
+    };
     const response = await withLoadReport(page, () => page.goto(url, goToOptions));
     return stringResponse(response?.status().toString() || '', `Successfully opened URL ${url}`);
+}
+
+export async function goBack(request: pb.Request_NavigationOptions, page: Page): Promise<pb.Response_Empty> {
+    const options = navigationOptions(request.timeout, request.waitUntil);
+    await withLoadReport(page, () => page.goBack(options));
+    return emptyWithLog(`Did Go Back with options: ${JSON.stringify(options)}`);
+}
+
+export async function goForward(request: pb.Request_NavigationOptions, page: Page): Promise<pb.Response_Empty> {
+    const options = navigationOptions(request.timeout, request.waitUntil);
+    await withLoadReport(page, () => page.goForward(options));
+    return emptyWithLog(`Did Go Forward with options: ${JSON.stringify(options)}`);
 }
 
 export async function takeScreenshot(
@@ -135,11 +143,11 @@ export async function setOffline(request: pb.Request_Bool, context?: BrowserCont
     return emptyWithLog(`Set context to ${offline}`);
 }
 
-export async function reload(page: Page, body: string): Promise<pb.Response_Empty> {
-    const options = JSON.parse(body);
-    logger.info(`Reload page with options: ${body}`);
+export async function reload(request: pb.Request_NavigationOptions, page: Page): Promise<pb.Response_Empty> {
+    const options = navigationOptions(request.timeout, request.waitUntil);
+    logger.info(`Reload page with options: ${JSON.stringify(options)}`);
     await withLoadReport(page, () => page.reload(options));
-    return emptyWithLog(`Reloaded page with options: ${body}`);
+    return emptyWithLog(`Reloaded page with options: ${JSON.stringify(options)}`);
 }
 
 export async function setGeolocation(request: pb.Request_Json, context?: BrowserContext): Promise<pb.Response_Empty> {

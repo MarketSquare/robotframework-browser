@@ -52,3 +52,40 @@ Timeouting Go To With Custom Timeout
         Log    ${error}
     END
     [Teardown]    Close Context
+
+Go Back And Go Forward Stop Waiting At Commit
+    New Page    ${STALLED_PAGE}    wait_until=commit
+    Go To    ${WELCOME_URL}
+    Go Back    wait_until=commit
+    Get Url    ==    ${STALLED_PAGE}
+    Go Forward    wait_until=commit
+    Get Url    ==    ${WELCOME_URL}
+    [Teardown]    Close Context
+
+Go Back Uses Custom Timeout
+    New Page    ${STALLED_PAGE}    wait_until=commit
+    Go To    ${WELCOME_URL}
+    Run Keyword And Expect Error    *Timeout 100ms exceeded*    Go Back    timeout=100ms
+    [Teardown]    Close Context
+
+Go Forward Uses Custom Timeout
+    New Page    ${WELCOME_URL}
+    Go To    ${STALLED_PAGE}    wait_until=commit
+    Go Back
+    Run Keyword And Expect Error    *Timeout 100ms exceeded*    Go Forward    timeout=100ms
+    [Teardown]    Close Context
+
+Go To Sends Referer
+    New Page
+    Go To    ${REFERER_URL}    referer=https://partner.example.com/campaign
+    Get Text    id=referer    ==    https://partner.example.com/campaign
+    Go To    ${REFERER_URL}
+    Get Text    id=referer    ==    ${EMPTY}
+    [Teardown]    Close Context
+
+Context Referer Header Wins Over Go To Referer
+    New Context    extraHTTPHeaders={"Referer": "https://context.example.com/"}
+    New Page
+    Go To    ${REFERER_URL}    referer=https://partner.example.com/campaign
+    Get Text    id=referer    ==    https://context.example.com/
+    [Teardown]    Close Context

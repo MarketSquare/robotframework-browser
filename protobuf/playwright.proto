@@ -267,6 +267,12 @@ message Request {
   message UrlOptions {
     Url url = 1;
     string waitUntil = 2;
+    optional string referer = 3;
+  }
+
+  message NavigationOptions {
+    optional double timeout = 1;
+    optional string waitUntil = 2;
   }
 
   message NewPage {
@@ -592,10 +598,10 @@ service  Playwright {
   rpc TakeScreenshot(Request.ScreenshotOptions) returns (Response.String);
   /* Opens the url in currently open Playwright page */
   rpc GoTo(Request.UrlOptions) returns (Response.String);
-  /* Navigate to the next page in history */
-  rpc GoBack(Request.Empty) returns (Response.Empty);
   /* Navigate to the previous page in history. */
-  rpc GoForward(Request.Empty) returns (Response.Empty);
+  rpc GoBack(Request.NavigationOptions) returns (Response.Empty);
+  /* Navigate to the next page in history */
+  rpc GoForward(Request.NavigationOptions) returns (Response.Empty);
   /* Gets title of currently open Playwright page */
   rpc GetTitle(Request.Empty) returns (Response.String);
   /* Returns the count of elements found with selector */
@@ -715,7 +721,7 @@ service  Playwright {
 
   rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
-  rpc Reload(Request.Json) returns (Response.Empty);
+  rpc Reload(Request.NavigationOptions) returns (Response.Empty);
 
   /* Playwright State handling keywords */
   rpc SwitchPage(Request.IdWithTimeout) returns (Response.String);
