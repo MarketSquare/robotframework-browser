@@ -751,6 +751,15 @@ jobs:
         run: |
           python -m GHAReports --robotlog atest/output/output.xml --markdown fail.md --no-totals --no-passes --no-skipped --fails --no-warnings
           cat fail.md
+      # Uninstalling BrowserBatteries on Windows failed now and then, because a
+      # process still held its wrapper folder. Names the processes left over.
+      - name: List the processes still running from the library
+        if: ${{ !cancelled() && matrix.os == 'windows-latest' && matrix.batteries }}
+        shell: pwsh
+        run: |
+          Get-CimInstance Win32_Process |
+            Where-Object { $_.ExecutablePath -like '*site-packages*' -or $_.CommandLine -like '*site-packages*' } |
+            Format-List ProcessId, ParentProcessId, Name, CreationDate, CommandLine
       - name: Uninstall
         if: ${{ matrix.os != 'windows-latest' || matrix.batteries }}
         shell: bash
