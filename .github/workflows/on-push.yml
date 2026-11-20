@@ -44,7 +44,10 @@ jobs:
   #
   # Lint, the Linux unit tests and atest-source keep their npm and apt
   # downloads on a Namespace cache volume; only runs on main update it. The
-  # wheel tests download everything, as a user's installation does.
+  # wheel tests download everything, as a user's installation does. Every
+  # Linux job keeps the Node.js and Python that setup-node and setup-python
+  # fetch from GitHub in Namespace's tool cache, since those downloads time out
+  # now and then.
 
   # Namespace machines cost money, so the scheduled run, where time does not
   # matter, and pull requests from forks run on GitHub's free runners, with the
@@ -96,7 +99,7 @@ jobs:
   nightly_version:
     name: Work out the nightly version
     needs: runners
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-2x4' || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-2x4-with-cache", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     timeout-minutes: 10
     outputs:
       version: ${{ steps.dev.outputs.version }}
@@ -125,7 +128,7 @@ jobs:
   lint:
     name: Lint
     needs: runners
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-4x8-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main"]') || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-4x8-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -206,7 +209,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            runner: &utest_linux_runner ["nscloud-ubuntu-24.04-amd64-4x8-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main"]
+            runner: &utest_linux_runner ["nscloud-ubuntu-24.04-amd64-4x8-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main", "nscloud-runner-tool-cache-20gb"]
             python-version: "3.11"
             rf-version: "7.1.1"
             node-version: 22.x
@@ -311,7 +314,7 @@ jobs:
   atest-source:
     name: Acceptance tests from source (${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
     needs: runners
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-16x32-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main"]') || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-16x32-with-cache", "nscloud-cache-tag-robotframework-browser", "nscloud-cache-allow-commit-from-main", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -420,7 +423,7 @@ jobs:
     name: Coverage
     needs: [runners, lint, utest, atest-source]
     if: ${{ !cancelled() && needs.runners.result == 'success' }}
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-4x8' || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-4x8-with-cache", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     timeout-minutes: 15
     permissions:
       contents: read
@@ -519,7 +522,7 @@ jobs:
   # also builds the Browser wheel.
   build_wheels:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-8x16-with-cache", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     needs: [runners, nightly_version]
     timeout-minutes: 45
     env: &build_wheels_env
@@ -596,7 +599,7 @@ jobs:
 
   build_wheels_arm:
     name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-arm64-8x16' || 'ubuntu-24.04-arm' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-arm64-8x16-with-cache", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-24.04-arm' }}
     needs: [runners, nightly_version]
     timeout-minutes: 45
     env: *build_wheels_env
@@ -658,12 +661,12 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            runner: nscloud-ubuntu-24.04-amd64-8x16
+            runner: ["nscloud-ubuntu-24.04-amd64-8x16-with-cache", "nscloud-runner-tool-cache-20gb"]
             python-version: "3.11"
             rf-version: "7.1.1"
             node-version: 22.x
           - os: ubuntu-latest
-            runner: nscloud-ubuntu-24.04-amd64-8x16
+            runner: ["nscloud-ubuntu-24.04-amd64-8x16-with-cache", "nscloud-runner-tool-cache-20gb"]
             python-version: "3.13"
             rf-version: "7.5.1"
             batteries: true
@@ -778,7 +781,7 @@ jobs:
         include:
           - os: ubuntu-24.04-arm
             # The slowest wheel test: 312 s on 8 vCPU, 182 s on 16.
-            runner: nscloud-ubuntu-24.04-arm64-16x32
+            runner: ["nscloud-ubuntu-24.04-arm64-16x32-with-cache", "nscloud-runner-tool-cache-20gb"]
             python-version: "3.15"
             rf-version: "7.2.2"
             batteries: true
@@ -851,7 +854,7 @@ jobs:
     steps: *atest_wheel_steps
 
   docker_image:
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-16x32' || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && fromJSON('["nscloud-ubuntu-24.04-amd64-16x32-with-cache", "nscloud-runner-tool-cache-20gb"]') || 'ubuntu-latest' }}
     needs: [runners, build_wheels]
     if: ${{ !cancelled() && needs.build_wheels.result == 'success' }}
     permissions:
