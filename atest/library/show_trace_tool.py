@@ -12,7 +12,7 @@ def run_rfbrowser_help():
     exec_dir = BuiltIn().get_variable_value("${EXECDIR}")
     ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
     out_file = Path(ouput_dir, "rfbrower_2.log")
-    with open(out_file, "w") as file:
+    with out_file.open("w") as file:
         process = subprocess.Popen(
             ["rfbrowser", "show-trace", "--help"],
             cwd=exec_dir,
@@ -36,7 +36,7 @@ def start_show_trace(zip_file: str):
     exec_dir = BuiltIn().get_variable_value("${EXECDIR}")
     ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
     out_file = Path(ouput_dir, "rfbrower_1.log")
-    with open(out_file, "w") as file:
+    with out_file.open("w") as file:
         process = subprocess.Popen(
             ["rfbrowser", "show-trace", "-F", str(zip_file)],
             cwd=exec_dir,

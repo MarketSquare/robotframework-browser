@@ -7,7 +7,6 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
 
 from robot import version  # type: ignore
 from robot.api import logger  # type: ignore
@@ -19,7 +18,7 @@ from robot.utils import timestr_to_secs  # type: ignore
 def wait_file_count_in_directory(
     path: str,
     count: int,
-    pattern: Optional[str] = None,
+    pattern: str | None = None,
     absolute: bool = False,
     timeout: timedelta = timedelta(seconds=3),
 ):
@@ -64,7 +63,7 @@ def glob_files_count(path: str) -> int:
 
 def get_enty_command() -> str:
     """Return correct entry point command."""
-    if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", 0))):
+    if bool(int(os.environ.get("SYS_VAR_CI_INSTALL_TEST", "0"))):
         return "rfbrowser"
     return f"{sys.executable} -m Browser.entry"
 

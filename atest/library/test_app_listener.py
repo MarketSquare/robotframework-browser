@@ -27,7 +27,7 @@ def _post(event: str, data, status: str | None = None) -> None:
             json=entry,
             timeout=2,
         )
-    except Exception as error:  # noqa: BLE001
+    except Exception as error:
         logger.debug(
             f"Listener: Failed to POST event: {event}, id={data.id}, name={data.name}, status={status}, server={server} - {error!r}"
         )
