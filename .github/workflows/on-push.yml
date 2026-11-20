@@ -13,6 +13,12 @@ on:
   schedule:
     - cron: '15 10 * * *'
 
+# A new push to a pull request cancels its run that is still going. Every other
+# run gets a group of its own, so that no push to main waits for or cancels another.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
+  cancel-in-progress: true
+
 env:
   SYS_VAR_CI_INSTALL_TEST: 0
 
@@ -29,10 +35,11 @@ jobs:
   # coverage of the unit and the source acceptance tests and scans it with
   # SonarQube.
   #
-  # The workspace runs at most 64 Linux, 32 Windows and 24 macOS vCPU at a
+  # The workspace runs at most 160 Linux, 80 Windows and 48 macOS vCPU at a
   # time, so the sizes trade the speed of a job against the jobs queued behind
-  # it. Measured on the whole acceptance suite: 8 vCPU take 140 s, 16 take 85 s
-  # and 32 take 75 s. The unit tests run serially and get the small machines.
+  # it. One run takes up to about 110 Linux vCPU. Measured on the whole
+  # acceptance suite: 8 vCPU take 140 s, 16 take 85 s and 32 take 75 s. The
+  # unit tests run serially and get the small machines.
   # macos-15-intel stays on GitHub: Namespace has no Intel macOS machines.
 
   # Namespace machines cost money, so the scheduled run, where time does not
@@ -289,7 +296,7 @@ jobs:
   atest-source:
     name: Acceptance tests from source (${{ matrix.python-version }}, ${{ matrix.rf-version }}, ${{ matrix.batteries && 'BrowserBatteries' || matrix.node-version }})
     needs: runners
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-16x32' || 'ubuntu-latest' }}
     timeout-minutes: 30
     permissions:
       contents: read
@@ -740,9 +747,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04-arm
-            # ARM counts against the 64 Linux vCPU and is the slowest wheel
-            # test: 312 s on 8 vCPU, 182 s on 16. docker_image waits for the
-            # source tests, so that there is room for the 16.
+            # The slowest wheel test: 312 s on 8 vCPU, 182 s on 16.
             runner: nscloud-ubuntu-24.04-arm64-16x32
             python-version: "3.15"
             rf-version: "7.2.2"
@@ -815,11 +820,9 @@ jobs:
       NO_BUILD: ""
     steps: *atest_wheel_steps
 
-  # Waits for the source tests too, only to leave the Linux vCPU to the ARM
-  # wheel test meanwhile. It runs whatever they found.
   docker_image:
-    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-8x16' || 'ubuntu-latest' }}
-    needs: [runners, build_wheels, atest-source]
+    runs-on: ${{ needs.runners.outputs.namespace == 'true' && 'nscloud-ubuntu-24.04-amd64-16x32' || 'ubuntu-latest' }}
+    needs: [runners, build_wheels]
     if: ${{ !cancelled() && needs.build_wheels.result == 'success' }}
     permissions:
       contents: read
