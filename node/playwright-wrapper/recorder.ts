@@ -410,6 +410,13 @@ export async function otherSessionRuns(context: BrowserContext): Promise<boolean
     return [...(await commandListeners(context))].some((buffers) => buffers.active);
 }
 
+function livePage(state: PlaywrightState): Page | undefined {
+    const active = state.getActivePage();
+    if (active && !isGone(active)) return active;
+    const context = recordingContexts.get(state) ?? state.getActiveContext();
+    return context?.pages().find((page) => !isGone(page));
+}
+
 // Python's picker sends `pick` while it is open; without it, a pick ends.
 async function pickInRecording(
     state: PlaywrightState,
@@ -421,13 +428,13 @@ async function pickInRecording(
         buffers.pick = undefined;
         return {};
     }
-    // A page closed during the pick hands it over to the page that is active now.
-    if (buffers.pick?.page.isClosed()) {
+    // A page closed or crashed during the pick hands it over to a live page.
+    if (buffers.pick && isGone(buffers.pick.page)) {
         await endPick(buffers.pick);
         buffers.pick = undefined;
     }
     const starting = request.pick === true && !buffers.pick?.picking && !buffers.pick?.picked;
-    const userPage = buffers.userPage && !buffers.userPage.isClosed() ? buffers.userPage : state.getActivePage();
+    const userPage = buffers.userPage && !isGone(buffers.userPage) ? buffers.userPage : livePage(state);
     // A new pick starts on the page the user works on; a shown selector stays on its page.
     if (buffers.pick && starting && buffers.pick.page !== userPage) {
         await endPick(buffers.pick);

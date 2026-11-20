@@ -666,6 +666,21 @@ describe('recorderPoll with the toolbar Pick button', () => {
         expect(second.page.pickLocator).toHaveBeenCalledTimes(1);
     });
 
+    it('moves a pick from a crashed page to a live page of the context', async () => {
+        const page = Object.assign(fakePage('recording'), pickPage().page);
+        const context = fakeRecorderContext([page]);
+        const crashed = pickPage();
+        const crashable = Object.assign(crashed.page, { on: jest.fn(), url: () => 'http://localhost/crashed.html' });
+        watchCrash(crashable as any);
+        await poll(context);
+        await pollWith(context, crashable, { pick: true });
+        expect(crashable.pickLocator).toHaveBeenCalledTimes(1);
+        crash(crashable);
+        await pollWith(context, crashable, { pick: true });
+        expect(crashable.cancelPickLocator).toHaveBeenCalled();
+        expect(page.pickLocator).toHaveBeenCalledTimes(1);
+    });
+
     it('gives the page its own pointer back when Playwright leaves a hand-pointer mode', async () => {
         const page = fakePage('assertingText');
         const frameEvaluate = jest.fn(async () => undefined);
