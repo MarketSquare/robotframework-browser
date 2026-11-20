@@ -907,6 +907,20 @@ describe('newContext', () => {
 
         expect(JSON.parse(response.contextOptions).recordHar).toEqual({ path: 'a.har', urlFilter: '/api/i' });
     });
+
+    it('fails on a urlFilter regex that is not valid instead of recording it as a glob', async () => {
+        expect.assertions(2);
+        const browser = { version: () => '1', contexts: () => [], newContext: jest.fn() } as any;
+        const state = new PlaywrightState();
+        await state.addBrowser({ browser, browserType: 'chromium', headless: true });
+
+        const rawOptions = JSON.stringify({ recordHar: { path: 'a.har', urlFilter: '/[/i' } });
+
+        await expect(newContext({ rawOptions, defaultTimeout: 0, traceFile: '' }, state)).rejects.toThrow(
+            'recordHar urlFilter /[/i is not a valid RegExp: Invalid regular expression: /[/i: Unterminated character class',
+        );
+        expect(browser.newContext).not.toHaveBeenCalled();
+    });
 });
 
 describe('addBrowser', () => {
@@ -997,6 +1011,25 @@ describe('extensionKeywordCall', () => {
         );
 
         expect(received).toEqual({ path: 'a.har', urlFilter: /api/i });
+    });
+
+    it('fails on a recordHar urlFilter regex that is not valid before the extension function runs', async () => {
+        expect.assertions(2);
+        const state = new PlaywrightState();
+        const launchApp = jest.fn();
+        state.extensions.push({ launchApp });
+
+        const call = extensionKeywordCall(
+            {
+                name: 'launchApp',
+                arguments: JSON.stringify({ arguments: [['recordHar', { path: 'a.har', urlFilter: '/[/i' }]] }),
+            },
+            { write: jest.fn() } as any,
+            state,
+        );
+
+        await expect(call).rejects.toThrow('recordHar urlFilter /[/i is not a valid RegExp');
+        expect(launchApp).not.toHaveBeenCalled();
     });
 
     it('gives an adopted context the default timeout of the call', async () => {

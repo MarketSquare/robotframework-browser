@@ -92,7 +92,7 @@ import {
     jsonResponse,
     keywordsResponse,
     pageReportResponse,
-    parseRegExpOrKeepString,
+    parseRegExpOrKeepStringOrThrow,
     stringResponse,
 } from './response-util';
 import { TraceGroups } from './trace-groups';
@@ -1026,7 +1026,17 @@ function parseRecordHarUrlFilter<T extends Record<string, any>>(options: T): T {
     if (typeof urlFilter !== 'string') {
         return options;
     }
-    return { ...options, recordHar: { ...options.recordHar, urlFilter: parseRegExpOrKeepString(urlFilter) } };
+    return { ...options, recordHar: { ...options.recordHar, urlFilter: parseUrlFilter(urlFilter) } };
+}
+
+function parseUrlFilter(urlFilter: string): RegExp | string {
+    try {
+        return parseRegExpOrKeepStringOrThrow(urlFilter);
+    } catch (error) {
+        throw new Error(`recordHar urlFilter ${urlFilter} is not a valid RegExp: ${(error as Error).message}`, {
+            cause: error,
+        });
+    }
 }
 
 export async function newContext(
@@ -1035,6 +1045,7 @@ export async function newContext(
 ): Promise<Response_NewContextResponse> {
     const options = JSON.parse(request.rawOptions);
     logger.info('Creating new context with options: ' + JSON.stringify(options));
+    const playwrightOptions = parseRecordHarUrlFilter(options);
     const defaultTimeout = request.defaultTimeout;
     const browserState = await openBrowsers.getOrCreateActiveBrowser(options.defaultBrowserType, defaultTimeout);
     const traceFile = request.traceFile;
@@ -1047,7 +1058,7 @@ export async function newContext(
         );
     }
     const indexedContext = await _createIndexedContext(
-        await browserState.browser.browser.newContext(parseRecordHarUrlFilter(options)),
+        await browserState.browser.browser.newContext(playwrightOptions),
         defaultTimeout,
         traceFile,
         options,

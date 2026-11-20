@@ -959,7 +959,9 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         empty dictionary records with the defaults. Without a ``size``, the video
         has the size of ``viewport``, the viewport that the extension creates the
         context with, or 1280x720. A relative ``path`` of ``recordHar`` becomes
-        relative to the output directory. ``None`` means off. ``tracesDir`` is a
+        relative to the output directory. A RegExp ``urlFilter`` of ``recordHar``
+        reaches the extension function as a JavaScript RegExp when the function
+        takes it as ``recordHar``. ``None`` means off. ``tracesDir`` is a
         new folder for Playwright's temporary trace files, as Browser gives one to
         each browser that it launches.
 
