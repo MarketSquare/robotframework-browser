@@ -204,6 +204,9 @@ select = [
 ".claude/skills/parse-rf-results/scripts/parse_results.py" = [
     "T201",
 ]
+"atest/**" = [
+    "INP001", # Robot Framework imports these libraries by path, not as packages
+]
 
 [tool.robocop.format]
 line_ending = "unix"
