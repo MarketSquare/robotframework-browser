@@ -912,7 +912,8 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
         milliseconds unless ``args`` gives one, for example when a library keeps a
         timeout of its own.
         """
-        args.setdefault("defaultTimeout", int(self.timeout))
+        if "defaultTimeout" not in args:
+            args["defaultTimeout"] = int(self.timeout)
         _args_browser_internal = {
             "arguments": [
                 (
