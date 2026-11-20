@@ -786,7 +786,7 @@ class RecordHar(TypedDict, total=False):
     | ``path`` | Path on the filesystem to write the HAR file to. A relative path is relative to the output directory. |
     | ``content`` | How response bodies are stored: ``embed`` stores them in the HAR, ``attach`` writes them as separate files next to the HAR, or into the archive when ``path`` ends with ``.zip``, and ``omit`` leaves them out. Defaults to ``attach`` when ``path`` ends with ``.zip``, otherwise to ``embed``. |
     | ``mode`` | ``full`` (default) records everything. ``minimal`` records only what is needed to replay the HAR and leaves out sizes, timings, pages, cookies and security information. |
-    | ``urlFilter`` | Records only the requests whose URL matches. A glob pattern, for example ``**/api/**``, or a JavaScript RegExp enclosed in ``/`` with optional trailing flags, for example ``/api/v\\d+/i``. A value that starts and ends with ``/`` is always a RegExp. |
+    | ``urlFilter`` | Records only the requests whose URL matches. A glob pattern, for example ``**/api/**``, or a JavaScript RegExp enclosed in ``/`` with optional trailing flags, for example ``/api/v\\d+/i``. Such a value is always a RegExp, and an invalid one fails. |
     | ``omitContent`` | Leaves the response bodies out of the HAR. Default is False. Use ``content=omit`` instead. |
 
     ``mode=minimal`` with a ``urlFilter`` keeps the HAR small, for example to keep it in the

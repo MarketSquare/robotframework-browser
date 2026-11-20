@@ -132,16 +132,21 @@ export function keywordsResponse(
     } satisfies Response_Keywords;
 }
 
+const REGEXP_LITERAL = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
+
 export function parseRegExpOrKeepString(str: string): RegExp | string {
-    const regex = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
     try {
-        const match = str.match(regex);
-        if (match) {
-            const { matcher, flags } = match.groups!;
-            return new RegExp(matcher, flags);
-        }
-        return str;
+        return parseRegExpOrKeepStringOrThrow(str);
     } catch {
         return str;
     }
+}
+
+export function parseRegExpOrKeepStringOrThrow(str: string): RegExp | string {
+    const match = str.match(REGEXP_LITERAL);
+    if (!match) {
+        return str;
+    }
+    const { matcher, flags } = match.groups!;
+    return new RegExp(matcher, flags);
 }

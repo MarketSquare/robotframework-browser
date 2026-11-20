@@ -65,3 +65,8 @@ Unknown Har Mode Fails
     Run Keyword And Expect Error
     ...    *cannot be converted to RecordHar*
     ...    New Context    recordHar={"path": "unknown-mode.har", "mode": "tiny"}
+
+Invalid Har UrlFilter Regex Fails
+    Run Keyword And Expect Error
+    ...    *recordHar urlFilter /[/i is not a valid RegExp*
+    ...    New Context    recordHar={"path": "invalid-regex.har", "urlFilter": "/[/i"}
