@@ -198,6 +198,17 @@ Toolbar Sits Flush With The Bottom Right Corner
     Send Command    {cmd: 'stop'}
     Wait For    ${promise}
 
+Toolbar Sits Flush With The Corner Of The Viewport On A Long Page Without Doctype
+    Go To    ${TABLES_URL}
+    Open The Toolbar Shadow Root For Inspection
+    Evaluate JavaScript    ${None}
+    ...    () => window.sessionStorage.setItem('rfb.toolbar.position', JSON.stringify({x: 99999, y: 99999}))
+    ${promise} =    Promise To    Record Keywords    ${RESOURCE}
+    Toolbar State Should Be    idle
+    Toolbar Should Touch The Bottom Right Corner
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+
 Dragging Past The Edge Does Not Shift The Next Drag
     Keep The Closed Toolbar Root Reachable
     ${promise} =    Promise To    Record Keywords    ${RESOURCE}
@@ -205,7 +216,8 @@ Dragging Past The Edge Does Not Shift The Next Drag
     ${start} =    Toolbar Header Point
     Mouse Move    ${start}[0]    ${start}[1]
     Mouse Button    down
-    Mouse Move    ${{ $start[0] + 3000 }}    ${start}[1]    steps=5
+    ${right} =    Evaluate JavaScript    ${None}    () => document.scrollingElement.clientWidth - 1
+    Mouse Move    ${right}    ${start}[1]    steps=5
     Mouse Button    up
     Toolbar Should Touch The Right Edge
     ${edge} =    Toolbar Left

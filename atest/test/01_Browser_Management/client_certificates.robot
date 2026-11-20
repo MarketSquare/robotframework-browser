@@ -11,15 +11,17 @@ Test Tags         no-docker-pr
 *** Test Cases ***
 Open Browser With Client Certificate
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    # WebKit on macOS sends no client certificate to localhost; Playwright documents local.playwright,
+    # which it resolves only in a context with client certificates.
     VAR    &{cert} =
-    ...    origin=https://localhost:${https_port}
+    ...    origin=https://local.playwright:${https_port}
     ...    certPath=${OUTPUT_DIR}/client.crt
     ...    keyPath=${OUTPUT_DIR}/client.key
     VAR    @{certs} =    ${cert}
     New Context
     ...    ignoreHTTPSErrors=True
     ...    clientCertificates=${certs}
-    New Page    https://localhost:${https_port}/
+    New Page    https://local.playwright:${https_port}/
 
 Open Browser Without Client Certificate
     [Tags]    no-windows-support
@@ -29,7 +31,7 @@ Open Browser Without Client Certificate
     ...    *    New Page    https://localhost:${https_port}/
     Should Match Regexp
     ...    ${error}
-    ...    Error: page\.goto: net::(?:ERR_BAD_SSL_CLIENT_AUTH_CERT|ERR_SOCKET_NOT_CONNECTED).+
+    ...    ^Error: page\.goto: (?:net::ERR_BAD_SSL_CLIENT_AUTH_CERT|net::ERR_SOCKET_NOT_CONNECTED|SSL_ERROR_UNKNOWN|Peer sent fatal TLS alert: Certificate is required|The network connection was lost\.|The server requires a client certificate\.|Server required TLS certificate)
 
 *** Keywords ***
 Setup

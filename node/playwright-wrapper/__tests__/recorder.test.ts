@@ -1,8 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 
-jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), error: jest.fn() } }));
+jest.mock('../browser_logger', () => ({ logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } }));
 jest.mock('../playwright-invoke', () => ({ findLocator: jest.fn() }));
 
+import { watchCrash } from '../page-crash';
 import {
     commandListeners,
     ensureRecorder,
@@ -23,6 +24,7 @@ import {
     toolbarScript,
     writeMode,
 } from '../recorder';
+import { crash } from './fake-crash';
 
 const commandsIn = (entries: Entry[]) => entries.flatMap((e) => ('command' in e ? [e.command] : []));
 const eventsIn = (entries: Entry[]) => entries.filter((e) => !('command' in e)) as any[];
@@ -265,7 +267,14 @@ function fakePage(mode: string | undefined = 'recording', { closed = false, fail
             delete global.window;
         }
     });
-    return { win, evaluate, once: jest.fn() };
+    return {
+        win,
+        evaluate,
+        once: jest.fn(),
+        on: jest.fn(),
+        url: () => 'http://localhost/form.html',
+        isClosed: () => closed,
+    };
 }
 
 function fakeRecorderContext(pages: ReturnType<typeof fakePage>[]) {
@@ -340,6 +349,18 @@ describe('recorderPoll', () => {
         const context = fakeRecorderContext([fakePage(), fakePage()]);
         expect((await poll(context)).pages).toBe(2);
         expect((await poll(fakeRecorderContext([]))).pages).toBe(0);
+    });
+
+    it('does not count a crashed page as open, so a crash of the last page ends the session', async () => {
+        const first = fakePage();
+        const second = fakePage();
+        const context = fakeRecorderContext([first, second]);
+        watchCrash(first as any);
+        watchCrash(second as any);
+        crash(first);
+        expect((await poll(context)).pages).toBe(1);
+        crash(second);
+        expect((await poll(context)).pages).toBe(0);
     });
 
     it('renders the toolbar state on every page', async () => {
@@ -645,6 +666,21 @@ describe('recorderPoll with the toolbar Pick button', () => {
         expect(second.page.pickLocator).toHaveBeenCalledTimes(1);
     });
 
+    it('moves a pick from a crashed page to a live page of the context', async () => {
+        const page = Object.assign(fakePage('recording'), pickPage().page);
+        const context = fakeRecorderContext([page]);
+        const crashed = pickPage();
+        const crashable = Object.assign(crashed.page, { on: jest.fn(), url: () => 'http://localhost/crashed.html' });
+        watchCrash(crashable as any);
+        await poll(context);
+        await pollWith(context, crashable, { pick: true });
+        expect(crashable.pickLocator).toHaveBeenCalledTimes(1);
+        crash(crashable);
+        await pollWith(context, crashable, { pick: true });
+        expect(crashable.cancelPickLocator).toHaveBeenCalled();
+        expect(page.pickLocator).toHaveBeenCalledTimes(1);
+    });
+
     it('gives the page its own pointer back when Playwright leaves a hand-pointer mode', async () => {
         const page = fakePage('assertingText');
         const frameEvaluate = jest.fn(async () => undefined);
@@ -655,6 +691,18 @@ describe('recorderPoll with the toolbar Pick button', () => {
         page.win.mode = 'recording';
         await poll(context);
         expect(frameEvaluate).toHaveBeenCalledTimes(1);
+    });
+
+    it("leaves the hand pointer to its own pick before Playwright's mode switches to inspecting", async () => {
+        const page = fakePage('recording-inspecting');
+        const frameEvaluate = jest.fn(async () => undefined);
+        (page as any).frames = () => [{ evaluate: frameEvaluate }];
+        const context = fakeRecorderContext([page]);
+        const picker = pickPage();
+        expect((await poll(context)).pickRequested).toBe(true);
+        await pollWith(context, picker.page, { pick: true });
+        expect(picker.page.pickLocator).toHaveBeenCalledTimes(1);
+        expect(frameEvaluate).not.toHaveBeenCalled();
     });
 });
 

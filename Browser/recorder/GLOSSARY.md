@@ -50,7 +50,7 @@ _Avoid_: parameter, variable
 - A **Keyword Recording** produces exactly one User Keyword made of **Keyword Calls**, or
   nothing if it is discarded or has no **Keyword Calls** when it ends
 - A **Keyword Recording** that is still running when its **Recording Session** ends (✕ in the toolbar,
-  inactivity, all pages closed, error) is saved, never discarded
+  inactivity, all pages closed or crashed, error) is saved, never discarded
 - A **Keyword Recording** always creates a new User Keyword; it never extends an existing one
 - Every recorded User Keyword carries the tag `recorded`, so it can be found and reviewed
 - A **Keyword Argument** is made from a value or a selector, or a part of one, never from a

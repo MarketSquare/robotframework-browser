@@ -1,4 +1,4 @@
-import React, { ChangeEvent, MouseEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, FormEvent, MouseEvent, useRef, useState } from 'react';
 
 function goesInvisible(event: React.MouseEvent<HTMLButtonElement>) {
     event.persist();
@@ -166,7 +166,8 @@ export default function Site() {
         mouseDelayDiv.current!.innerHTML = mouseDelay.toString();
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setSubmit(true);
     };
 
@@ -402,7 +403,7 @@ export default function Site() {
                     multiple
                     onChange={(event) => fileUploaded(uploadResult, event)}
                 />
-                <a id="file_download" href="index.js" download="test_download_file">
+                <a id="file_download" href="index.js" download="test_download_file.js">
                     Download file{' '}
                 </a>
                 <ProgressBar />

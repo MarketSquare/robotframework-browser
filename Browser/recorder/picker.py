@@ -242,7 +242,9 @@ def run_picker(
             if picker.cancelled:
                 raise RuntimeError("Record Selector was cancelled.")
             if not reply.get("pages"):
-                raise RuntimeError("The page was closed before a selector was chosen.")
+                raise RuntimeError(
+                    "The page was closed or crashed before a selector was chosen."
+                )
             if idle_timeout is not None and clock() - last_activity >= idle_timeout:
                 raise TimeoutError(
                     "Record Selector timed out: no selector was chosen within the idle timeout."

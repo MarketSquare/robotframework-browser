@@ -135,20 +135,17 @@ Drag And Drop Relative To
     DnD Relative To    -22    -20    870    580
 
 Click Count
-    ${x} =    Get Boundingbox    \#clickWithOptions    x
-    ${y} =    Get Boundingbox    \#clickWithOptions    y
+    ${x}    ${y} =    Center Of    \#clickWithOptions
     Mouse Button    click    ${x}    ${y}    clickCount=10
     Get Text    \#click_count    ==    10
 
 Delay Click
-    ${x} =    Get Boundingbox    \#clickWithOptions    x
-    ${y} =    Get Boundingbox    \#clickWithOptions    y
+    ${x}    ${y} =    Center Of    \#clickWithOptions
     Mouse Button    click    ${x}    ${y}    delay=100ms
     Get Text    \#mouse_delay_time    validate    int(value) > 90
 
 Left Right And Middle Click
-    ${x} =    Get Boundingbox    \#clickWithOptions    x
-    ${y} =    Get Boundingbox    \#clickWithOptions    y
+    ${x}    ${y} =    Center Of    \#clickWithOptions
     Mouse Button    click    ${x}    ${y}    button=right
     Get Text    \#mouse_button    ==    right
     Mouse Button    click    ${x}    ${y}    button=middle
@@ -186,6 +183,12 @@ Scroll By Mouse Wheel
     Get Scroll Position    body    top    ==    500
 
 *** Keywords ***
+Center Of
+    [Arguments]    ${selector}
+    ${box} =    Get BoundingBox    ${selector}
+    ${center} =    Center Of Box    ${box}
+    RETURN    @{center}
+
 Relative DnD
     [Arguments]    ${x}    ${y}    ${txt_x}    ${txt_y}
     Hover    id=blue-box

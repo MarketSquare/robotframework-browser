@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from '@jest/globals';
 
-import { splitUtf8ByMaxBytes } from '../chunking';
+import { splitBytes, splitUtf8ByMaxBytes } from '../chunking';
 
 describe('splitUtf8ByMaxBytes', () => {
     it('returns empty array for empty string', () => {
@@ -84,5 +84,19 @@ describe('splitUtf8ByMaxBytes', () => {
         expect(result.length).toBe(13);
         expect(result.slice(0, -1).every((chunk) => Buffer.byteLength(chunk, 'utf8') === 999_999)).toBe(true);
         expect(result.join('')).toBe(text);
+    });
+});
+
+describe('splitBytes', () => {
+    it('returns no chunks for an empty buffer', () => {
+        expect(splitBytes(Buffer.alloc(0), 4)).toEqual([]);
+    });
+
+    it('splits at exactly maxBytes, including inside multi-byte UTF-8 sequences', () => {
+        const bytes = Buffer.from([0xe2, 0x82, 0xac, 0x89, 0x50]);
+
+        const chunks = splitBytes(bytes, 2);
+
+        expect(chunks.map((chunk) => [...chunk])).toEqual([[0xe2, 0x82], [0xac, 0x89], [0x50]]);
     });
 });

@@ -120,7 +120,7 @@ Click Inside Toolbar
 
 Toolbar Should Touch The Bottom Right Corner
     Wait For Function
-    ...    () => { const r = document.querySelector('rfb-recorder-toolbar').shadowRoot.getElementById('panel').getBoundingClientRect(); const d = document.documentElement; return Math.abs(r.right - d.clientWidth) < 1 && Math.abs(r.bottom - d.clientHeight) < 1; }
+    ...    () => { const r = document.querySelector('rfb-recorder-toolbar').shadowRoot.getElementById('panel').getBoundingClientRect(); const d = document.scrollingElement; return Math.abs(r.right - d.clientWidth) < 1 && Math.abs(r.bottom - d.clientHeight) < 1; }
     ...    timeout=2s
 
 Toolbar Header Point
@@ -178,7 +178,7 @@ Toolbar Left
 
 Toolbar Should Touch The Right Edge
     Wait For Function
-    ...    () => Math.abs(window.toolbarRoot.getElementById('panel').getBoundingClientRect().right - document.documentElement.clientWidth) < 1
+    ...    () => Math.abs(window.toolbarRoot.getElementById('panel').getBoundingClientRect().right - document.scrollingElement.clientWidth) < 1
     ...    timeout=2s
 
 Click Toolbar Collapse Button

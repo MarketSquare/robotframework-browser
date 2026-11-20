@@ -36,6 +36,7 @@ Get Text Text Type As InputValue And Input Field
     Get Text    ${INPUTUSERNAME}    ==    MyUserName    text_type=inputValue
 
 Get Text No Text Type And Select Element
+    [Tags]    known-bug-firefox    # Get Text on a select is empty in Firefox, see issue #5555
     Select Options By    id=pet-select    value    dog
     ${text} =    Get Text    id=pet-select
     Should Contain    ${text}    Dog
@@ -110,6 +111,7 @@ Get Text With RegEx Match
     Should Be Equal    ${text[1]}    Page
 
 Get Text With Select Element
+    [Tags]    known-bug-firefox    # Get Text on a select is empty in Firefox, see issue #5555
     Select Options By    id=pet-select    value    dog
     ${text} =    Get Text    id=pet-select
     Should Contain    ${text}    Dog

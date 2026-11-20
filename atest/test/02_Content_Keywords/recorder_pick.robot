@@ -10,6 +10,7 @@ Test Tags         recorder
 
 *** Test Cases ***
 A Picked Selector Becomes A Comment And Recording Goes On
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     ${promise} =    Promise To    Record Keyword    Pick And Fill    ${RESOURCE}
     Toolbar State Should Be    recording
     Send Command    {cmd: 'pick'}
@@ -54,6 +55,7 @@ Playwright's Pick Locator Opens The Toolbar's Picker And Records Nothing Meanwhi
     Should Not Contain    ${file}    while picking
 
 A Minimized Toolbar Offers Only The Pick's Buttons While Picking
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     Keep The Closed Toolbar Root Reachable
     Evaluate JavaScript    ${None}    () => sessionStorage.setItem('rfb.toolbar.collapsed', 'true')
     ${promise} =    Promise To    Record Keywords    ${None}
@@ -78,6 +80,7 @@ A Minimized Toolbar Offers Only The Pick's Buttons While Picking
     Wait For    ${promise}
 
 Pick Starts On The Page Its Button Was Pressed On
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     ${promise} =    Promise To    Record Keyword    Pick In Second Window    ${None}
     Toolbar State Should Be    recording
     ${second} =    Open Second Window
@@ -92,6 +95,7 @@ Pick Starts On The Page Its Button Was Pressed On
     Wait For    ${promise}
 
 Playwright's Pick Locator Picks On The Page Pressed Last
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     ${promise} =    Promise To    Record Keyword    Pick Where Pressed    ${None}
     Toolbar State Should Be    recording
     ${second} =    Open Second Window
@@ -107,6 +111,7 @@ Playwright's Pick Locator Picks On The Page Pressed Last
     Wait For    ${promise}
 
 Undo Removes A Picked Selector
+    [Tags]    known-bug-firefox    # Firefox of Playwright 1.65 crashes, see issue #5554
     ${promise} =    Promise To    Record Keyword    Pick Undone    ${None}
     Toolbar State Should Be    recording
     Send Command    {cmd: 'pick'}

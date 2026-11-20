@@ -115,6 +115,24 @@ app.get('/api/get/json-as-text', (req, res) => {
     res.send(JSON.stringify({ greeting: 'HELLO' }));
 });
 
+app.get('/api/get/empty-object', (req, res) => {
+    res.json({});
+});
+
+app.get('/api/get/empty-list', (req, res) => {
+    res.json([]);
+});
+
+app.get('/api/set-cookies', (req, res) => {
+    res.cookie('session', 'abc');
+    res.cookie('theme', 'dark');
+    res.json({ ok: true });
+});
+
+app.get('/api/redirect', (req, res) => {
+    res.redirect('/api/get/json');
+});
+
 app.get('/api/get/delay', (req, res) => {
     setTimeout(() => {
         res.header('Content-Type', 'application/json');
@@ -200,6 +218,13 @@ app.get('/api/stalled-image', (req, res) => {
     setTimeout(() => {
         res.status(204).send();
     }, 11000);
+});
+
+app.get('/api/slow-body', (req, res) => {
+    const bodyMs = Number(req.query.bodyMs ?? 10000);
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.write('first part of the body, ');
+    setTimeout(() => res.end('last part of the body'), bodyMs);
 });
 
 app.get('/api/download/slow', (req, res) => {

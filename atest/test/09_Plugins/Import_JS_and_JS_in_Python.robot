@@ -101,7 +101,17 @@ Pluging Keyword Example
 Test Js Plugin Called From Python Plugin
     [Setup]    New Page    ${TABLES_URL}
     Mouse Wheel    0    100
-    Get Scroll Position    ${None}    top    ==    100
+    TRY
+        Get Scroll Position    ${None}    top    ==    100
+    EXCEPT    AS    ${error}
+        # Diagnosis for WebKit on macOS in CI, where the first wheel scrolls nothing.
+        Sleep    2s
+        ${page} =    Evaluate JavaScript
+        ...    ${None}
+        ...    () => ({scrollY: window.scrollY, scrollHeight: document.documentElement.scrollHeight, innerHeight: window.innerHeight, readyState: document.readyState, hasFocus: document.hasFocus(), visibilityState: document.visibilityState})
+        Log    Wheel diagnosis: ${page}    WARN
+        Fail    ${error}
+    END
     Mouse Wheel    50    100
     Get Scroll Position    ${None}    top    ==    200
     Get Scroll Position    ${None}    left    ==    50

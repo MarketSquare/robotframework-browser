@@ -18,6 +18,7 @@
 
 import { drivePick, endPick, Pick } from './element-picker';
 import * as pb from './generated/playwright';
+import { isGone } from './page-crash';
 import { PlaywrightState } from './playwright-state';
 import {
     commandListeners,
@@ -74,7 +75,7 @@ async function endSession(state: PlaywrightState, session: PickerSession): Promi
 export async function selectorPickerPoll(request: pb.Request_Json, state: PlaywrightState): Promise<pb.Response_Json> {
     const body = JSON.parse(request.body || '{}');
     const session = body.reset ? await startSession(state, body.allowHeadless === true) : sessions.get(state);
-    if (!session || session.page.isClosed()) {
+    if (!session || isGone(session.page)) {
         return jsonResponse(JSON.stringify({ pages: 0, entries: [] }), '');
     }
     if (body.state) await renderToolbar(session.page, session.buffers, JSON.stringify(body.state));

@@ -9,6 +9,7 @@ module.exports = {
         'playwright-wrapper/**/*.ts',
         '!playwright-wrapper/generated/**',
         '!playwright-wrapper/index.ts',
+        '!playwright-wrapper/__tests__/**',
     ],
     coverageDirectory: 'coverage',
     coverageReporters: ['text', 'text-summary', 'html', 'lcov', 'json-summary'],

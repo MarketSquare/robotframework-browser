@@ -13,11 +13,11 @@
 // limitations under the License.
 
 import * as path from 'path';
-import { Page } from 'playwright';
+import { Page, Request, Response as PlaywrightResponse } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { logger } from './browser_logger';
-import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
+import { MAX_RESPONSE_CHUNK_BYTES, splitBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { withLoadReport } from './load-report';
 import { PlaywrightState } from './playwright-state';
@@ -71,69 +71,172 @@ export function deserializeUrlOrPredicate(
     return parseRegExpOrKeepString(urlOrPredicate);
 }
 
+interface CapturedBytes {
+    meta: Record<string, unknown>;
+    log: string;
+    postData: Buffer | null;
+    body: Buffer | null;
+}
+
+async function orFallback<T>(read: () => Promise<T>, fallback: T, what: string): Promise<T> {
+    try {
+        return await read();
+    } catch (e) {
+        logger.info(`Could not read ${what}: ${String(e)}`);
+        return fallback;
+    }
+}
+
+const UNAVAILABLE_HEADERS = { allHeaders: null, headersArray: null };
+
+async function headersOf(message: Request | PlaywrightResponse): Promise<Record<string, unknown>> {
+    const [allHeaders, headersArray] = await Promise.all([message.allHeaders(), message.headersArray()]);
+    return { allHeaders, headersArray };
+}
+
+async function headersOrNull(message: Request | PlaywrightResponse, what: string): Promise<Record<string, unknown>> {
+    return orFallback(() => headersOf(message), UNAVAILABLE_HEADERS, `${what} headers`);
+}
+
+function frameOf(request: Request): { url: string; name: string } | null {
+    try {
+        const frame = request.frame();
+        return { url: frame.url(), name: frame.name() };
+    } catch {
+        return null;
+    }
+}
+
+async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMessage: string): Promise<T> {
+    if (remaining <= 0) return read;
+    let timer: NodeJS.Timeout | undefined;
+    const expired = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(timeoutMessage)), remaining);
+    });
+    try {
+        return await Promise.race([read, expired]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+const STATUSES_WITHOUT_BODY = new Set([204, 205, 304]);
+
+function isRedirect(status: number): boolean {
+    return status >= 300 && status < 400 && status !== 304;
+}
+
+function emptyBodyOrNull(response: PlaywrightResponse): Buffer | null {
+    const status = response.status();
+    const hasNoBody =
+        STATUSES_WITHOUT_BODY.has(status) || (!isRedirect(status) && response.headers()['content-length'] === '0');
+    return hasNoBody ? Buffer.alloc(0) : null;
+}
+
+function remainingTime(timeout: number, started: number): number {
+    return timeout > 0 ? Math.max(timeout - (Date.now() - started), 1) : 0;
+}
+
+function requestDetails(request: Request, headers: Record<string, unknown>): Record<string, unknown> {
+    return {
+        url: request.url(),
+        ...headers,
+        resourceType: request.resourceType(),
+        isNavigationRequest: request.isNavigationRequest(),
+        redirectedFrom: request.redirectedFrom()?.url() ?? null,
+        redirectedTo: request.redirectedTo()?.url() ?? null,
+        frame: frameOf(request),
+        hasPostData: request.postDataBuffer() !== null,
+    };
+}
+
+function capturedMessages(captured: CapturedBytes): pb.Response_Json[] {
+    const postDataChunks = captured.postData ? splitBytes(captured.postData, MAX_RESPONSE_CHUNK_BYTES) : [];
+    const bodyChunks = captured.body ? splitBytes(captured.body, MAX_RESPONSE_CHUNK_BYTES) : [];
+    const count = Math.max(postDataChunks.length, bodyChunks.length, 1);
+    const firstLog = count > 1 ? `${captured.log}, sent in ${count} chunks` : captured.log;
+    const messages: pb.Response_Json[] = [];
+    for (let i = 0; i < count; i++) {
+        messages.push({
+            ...(i === 0 ? jsonResponse(JSON.stringify(captured.meta), firstLog) : jsonResponse('', '')),
+            postDataBytes: postDataChunks[i] ?? Buffer.alloc(0),
+            bodyBytes: bodyChunks[i] ?? Buffer.alloc(0),
+        });
+    }
+    return messages;
+}
+
 export async function waitForResponse(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json[]> {
     const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
     const timeout = request.timeout;
+    const started = Date.now();
     const data = await page.waitForResponse(urlOrPredicate, { timeout });
-    let body = null;
-    try {
-        body = await data.text();
-    } catch (e) {
-        logger.info(`Error reading response ${String(e)}`);
-    }
-    const jsonData = JSON.stringify({
+    const capturedRequest = data.request();
+    const withBody = !request.excludeBody;
+    const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await withinTimeout(
+        Promise.all([
+            withBody ? orFallback<Buffer | null>(() => data.body(), emptyBodyOrNull(data), 'response body') : null,
+            headersOrNull(data, 'response'),
+            withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
+            withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,
+            withBody ? orFallback(() => data.securityDetails(), null, 'security details') : null,
+            headersOrNull(capturedRequest, 'request'),
+        ]),
+        remainingTime(timeout, started),
+        `Timeout ${timeout}ms exceeded while waiting for all fields of the response.`,
+    );
+    const meta: Record<string, unknown> = {
         status: data.status(),
         headers: JSON.stringify(data.headers()),
         statusText: data.statusText(),
         url: data.url(),
         ok: data.ok(),
+        ...responseHeaders,
+        httpVersion,
+        serverAddr,
+        securityDetails,
+        fromServiceWorker: data.fromServiceWorker(),
+        hasBody: body !== null,
         request: {
-            headers: JSON.stringify(data.request().headers()),
-            method: data.request().method(),
-            postData: data.request().postData(),
+            headers: JSON.stringify(capturedRequest.headers()),
+            method: capturedRequest.method(),
+            ...requestDetails(capturedRequest, requestHeaders),
         },
+    };
+    logger.info(`waitForResponse received: ${data.url()} status: ${data.status()}`);
+    return capturedMessages({
+        meta,
+        log: 'Response received',
+        postData: capturedRequest.postDataBuffer(),
+        body,
     });
-    const responseChunks = [];
-    if (body !== null) {
-        const bodyChunks = splitUtf8ByMaxBytes(body, MAX_RESPONSE_CHUNK_BYTES);
-        if (bodyChunks.length > 1) {
-            logger.info(`body.length: ${body.length}`);
-            for (let i = 0; i < bodyChunks.length; i++) {
-                const response = jsonResponse(jsonData, `Response received, chunk ${i}`, bodyChunks[i]);
-                logger.info(`chunked response: ${i}`);
-                responseChunks.push(response);
-            }
-        } else {
-            responseChunks.push(jsonResponse(jsonData, 'Response received', body));
-        }
-    } else {
-        const jsonDataMap = JSON.parse(jsonData);
-        jsonDataMap.body = null;
-        responseChunks.push(jsonResponse(JSON.stringify(jsonDataMap), 'Response received with empty body', ''));
-    }
-    logger.info(`responseChunks.length: ${responseChunks.length}`);
-    return responseChunks;
 }
-export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json> {
+
+export async function waitForRequest(request: pb.Request_HttpCapture, page: Page): Promise<pb.Response_Json[]> {
     const urlOrPredicate = deserializeUrlOrPredicate(request.urlOrPredicate);
     const timeout = request.timeout;
+    const started = Date.now();
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
-    let postData;
-    try {
-        postData = JSON.parse(result.postData() || 'null');
-    } catch (e) {
-        logger.info(`Failed to parse postData as JSON: ${String(e)}, using raw postData`);
-        postData = result.postData();
-    }
-    const jsonData = JSON.stringify({
-        url: result.url(),
+    const headers = request.waitForAllFields
+        ? await withinTimeout(
+              headersOf(result),
+              remainingTime(timeout, started),
+              `Timeout ${timeout}ms exceeded while waiting for all fields of the request.`,
+          )
+        : UNAVAILABLE_HEADERS;
+    const meta = {
         method: result.method(),
         headers: result.headers(),
-        postData: postData,
-    });
+        ...requestDetails(result, headers),
+    };
     logger.info(`waitForRequest received: ${result.url()} method: ${result.method()}`);
     const matcherStr = typeof urlOrPredicate === 'string' ? urlOrPredicate : urlOrPredicate.toString();
-    return jsonResponse(jsonData, `Request completed within timeout ${timeout}ms by using matcher: ${matcherStr}`);
+    return capturedMessages({
+        meta,
+        log: `Request completed within timeout ${timeout}ms by using matcher: ${matcherStr}`,
+        postData: result.postDataBuffer(),
+        body: null,
+    });
 }
 
 export async function waitForNavigation(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {

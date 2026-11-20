@@ -12,14 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import base64
 import contextlib
 import json
 from datetime import timedelta
-from typing import Any
+from typing import Any, cast
+from urllib.parse import parse_qsl
+
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
-from ..utils import DotDict, keyword, logger
+from ..utils import (
+    CapturedRequest,
+    CapturedResponse,
+    DotDict,
+    JsonDotDict,
+    keyword,
+    logger,
+)
 from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
 
 
@@ -29,6 +40,21 @@ def _get_headers(body: str, headers: dict):
         return {"Content-Type": "application/json", **headers}
     except json.decoder.JSONDecodeError:
         return headers
+
+
+def _reject_constant(constant: str):
+    raise ValueError(f"{constant} is not valid JSON")
+
+
+def _strict_json_loads(text: str) -> Any:
+    return json.loads(text, parse_constant=_reject_constant)
+
+
+def _json_or_none(text: str) -> Any:
+    try:
+        return _strict_json_loads(text)
+    except ValueError:
+        return None
 
 
 def _format_response(response: dict) -> dict:
@@ -50,8 +76,125 @@ def _jsonize_content(data, bodykey):
         and bodykey in data
         and data[bodykey]
     ):
-        with contextlib.suppress(json.decoder.JSONDecodeError, TypeError):
-            data[bodykey] = json.loads(data[bodykey])
+        with contextlib.suppress(ValueError, TypeError):
+            data[bodykey] = _strict_json_loads(data[bodykey])
+
+
+def _collect_stream(messages) -> tuple[dict, bytes, bytes]:
+    metadata: dict | None = None
+    body = bytearray()
+    post_data = bytearray()
+    for message in messages:
+        if message.log:
+            logger.info(message.log)
+        if metadata is None and message.json:
+            metadata = json.loads(message.json)
+        body += message.bodyBytes
+        post_data += message.postDataBytes
+    if metadata is None:
+        raise ValueError("No data received from the Playwright wrapper.")
+    return metadata, bytes(body), bytes(post_data)
+
+
+def _post_data_json(post_data: bytes | None, headers: dict) -> Any:
+    if not post_data:
+        return None
+    text = post_data.decode("utf-8", errors="replace")
+    if "application/x-www-form-urlencoded" in headers.get("content-type", ""):
+        return dict(parse_qsl(text, keep_blank_values=True))
+    return _json_or_none(text)
+
+
+RESPONSE_BODY_KEYS = ("body", "bytes", "text", "json")
+REQUEST_BODY_KEYS = ("postData", "postDataBuffer", "postDataJSON")
+COOKIE_HEADER_KEYS = ("allHeaders", "headersArray")
+
+
+def _post_data_text(request: dict, post_data: bytes) -> str | None:
+    """The post data as Playwright's ``request.postData()`` returns it."""
+    return (
+        post_data.decode("utf-8", errors="replace") if request["hasPostData"] else None
+    )
+
+
+def _legacy_request_post_data(text: str | None) -> Any:
+    if not text:
+        return None
+    try:
+        return _strict_json_loads(text)
+    except ValueError:
+        return text
+
+
+def _add_request_views(request: dict, post_data: bytes) -> None:
+    buffer = post_data if request.pop("hasPostData") else None
+    request["postDataBuffer"] = buffer
+    request["postDataJSON"] = _post_data_json(buffer, request["headers"])
+
+
+def _add_response_views(response: dict, body: bytes) -> None:
+    if not response.pop("hasBody"):
+        response.update(dict.fromkeys(RESPONSE_BODY_KEYS))
+        return
+    text = body.decode("utf-8", errors="replace")
+    try:
+        legacy_body = _strict_json_loads(text)
+        parsed = legacy_body
+    except ValueError:
+        legacy_body = text
+        parsed = None
+    response.update(body=legacy_body, bytes=body, text=text, json=parsed)
+
+
+def _without(data: dict, keys: tuple[str, ...]) -> dict:
+    return {key: value for key, value in data.items() if key not in keys}
+
+
+def _readable(raw: bytes) -> str:
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return f"{len(raw)} bytes, base64: {base64.b64encode(raw).decode('ascii')}"
+    try:
+        return json.dumps(_strict_json_loads(text), indent=2, ensure_ascii=False)
+    except ValueError:
+        return text
+
+
+def _trace_enabled() -> bool:
+    try:
+        return BuiltIn().get_variable_value("${LOG LEVEL}") == "TRACE"
+    except RobotNotRunningError:
+        return False
+
+
+def _trace_content(label: str, raw: bytes | None) -> None:
+    if raw is not None and _trace_enabled():
+        logger.trace(f"{label}:\n{_readable(raw)}")
+
+
+def _debug_cookie_headers(label: str, data: dict) -> None:
+    headers = {key: data[key] for key in COOKIE_HEADER_KEYS if data[key] is not None}
+    if headers:
+        logger.debug(f"{label} headers including cookies: {headers}")
+
+
+def _log_request(request: dict) -> None:
+    logger.info(_without(request, REQUEST_BODY_KEYS + COOKIE_HEADER_KEYS))
+    _debug_cookie_headers("Request", request)
+    _trace_content("Request post data", request["postDataBuffer"])
+
+
+def _log_response(response: dict) -> None:
+    metadata = _without(response, RESPONSE_BODY_KEYS + COOKIE_HEADER_KEYS)
+    metadata["request"] = _without(
+        response["request"], REQUEST_BODY_KEYS + COOKIE_HEADER_KEYS
+    )
+    logger.info(metadata)
+    _debug_cookie_headers("Response", response)
+    _debug_cookie_headers("Request", response["request"])
+    _trace_content("Response body", response["bytes"])
+    _trace_content("Request post data", response["request"]["postDataBuffer"])
 
 
 class Network(LibraryComponent):
@@ -118,54 +261,65 @@ class Network(LibraryComponent):
                 logger.debug(f"Returned response is of type {type(response_dict)}")
                 return response_dict
 
-    def _wait_for_http_request(self, matcher, timeout):
+    def _wait_for_http_request(self, matcher, timeout, wait_for_all_fields) -> dict:
         with self.playwright.grpc_channel() as stub:
-            response = stub.WaitForRequest(
+            messages = stub.WaitForRequest(
                 Request().HttpCapture(
                     urlOrPredicate=matcher,
                     timeout=self.get_timeout(timeout),
+                    waitForAllFields=wait_for_all_fields,
                 )
             )
-            logger.info(response.log)
-            try:
-                data = json.loads(response.json)
-            except json.decoder.JSONDecodeError:
-                logger.info(f"Failed to decode JSON: {response.json}")
-                data = response.json
-            logger.debug(f"Received request: {data}")
-            return data
+            request, _, post_data = _collect_stream(messages)
+        request["postData"] = _legacy_request_post_data(
+            _post_data_text(request, post_data)
+        )
+        _add_request_views(request, post_data)
+        _log_request(request)
+        return request
 
-    def _wait_for_http_response(self, matcher, timeout):
-        body = ""
+    def _wait_for_http_response(self, matcher, timeout, include_body) -> dict:
         with self.playwright.grpc_channel() as stub:
-            for responce in stub.WaitForResponse(
+            messages = stub.WaitForResponse(
                 Request().HttpCapture(
                     urlOrPredicate=matcher,
                     timeout=self.get_timeout(timeout),
+                    excludeBody=not include_body,
                 )
-            ):
-                logger.info(responce.log)
-                body = body + responce.bodyPart
-            response_json = json.loads(responce.json)
-            not_none = object()
-            with contextlib.suppress(json.decoder.JSONDecodeError):
-                body = json.loads(body)
-            if response_json.get("body", not_none) is not None and body:
-                response_json["body"] = body
-            return _format_response(response_json)
+            )
+            response, body, post_data = _collect_stream(messages)
+        response["headers"] = json.loads(response["headers"])
+        _add_response_views(response, body)
+        request = response["request"]
+        request["postData"] = _post_data_text(request, post_data)
+        _jsonize_content(request, "postData")
+        _add_request_views(request, post_data)
+        _log_response(response)
+        return response
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_request(
-        self, matcher: str | RegExp = "", timeout: timedelta | None = None
-    ) -> DotDict | Any:
-        """Waits for a request matching ``matcher`` to be made.
+        self,
+        matcher: str | RegExp = "",
+        timeout: timedelta | None = None,
+        *,
+        wait_for_all_fields: bool = False,
+    ) -> CapturedRequest:
+        """Waits for a request matching ``matcher`` to be made and returns it as a `CapturedRequest`.
 
-        Only the request is awaited, not its response. See `Wait For Response` if the
-        response is needed.
+        By default only the request is awaited, not its response. The keyword returns as soon
+        as the request is sent, so ``redirectedTo`` is always ``None`` here. See
+        `Wait For Response` if the response is needed.
 
-        The returned object is a dictionary with the keys ``url``, ``method``, ``headers`` and ``postData``.
-        ``headers`` is a dictionary of request headers. ``postData`` is ``None`` if the request has no body,
-        a dictionary if the body is valid JSON and otherwise the body as a string.
+        The returned `CapturedRequest` mirrors Playwright's Request: the URL, method, headers
+        (``allHeaders`` includes ``cookie``), the raw body as ``postDataBuffer``, the parsed
+        body as ``postDataJSON``, the resource type and more. Its documentation lists every key
+        and the parsing rules of the legacy ``postData`` key.
+
+        The request is logged without its body. ``allHeaders`` and ``headersArray`` can
+        contain cookies, so they are logged only at ``DEBUG`` level. The body is logged at
+        ``TRACE`` level: as formatted JSON when it is JSON, as text when it is UTF-8,
+        otherwise as base64.
 
         *Arguments:*
           - ``matcher``: Request URL matcher. Can be a string (Glob-Pattern), a
@@ -178,42 +332,58 @@ class Network(LibraryComponent):
                 waitForRequest] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
                 timeout if not set.
+          - ``wait_for_all_fields``: Some fields are known only later than the request itself:
+                Chromium and WebKit report ``allHeaders`` and ``headersArray`` only when the
+                response headers arrive. With the default ``False`` the keyword returns at once
+                and those fields are ``None``. With ``True`` it also waits for them, within
+                ``timeout``, and fails if they do not arrive in time or the browser cannot
+                report them, for example because the page closed.
+
+        Example:
+        | ${promise} =    `Promise To`    `Wait For Request`    **/api/login    wait_for_all_fields=True
+        | `Click`    id=login_button
+        | ${request} =    `Wait For`    ${promise}
+        | Should Contain    ${request.allHeaders}[cookie]    consent=
 
         See `Wait For Response` for more details about the matcher.
 
-        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not need to be in slashes.
-        The most simple way to migrate to the new syntax is to add slashes around the matcher.
-        So ``/api/get/json`` becomes ``//api/get/json/``.
-
         [https://forum.robotframework.org/t//4348|Comment >>]
         """
-        request = self._wait_for_http_request(matcher, timeout)
-        try:
-            return DotDict(request)
-        except Exception:
-            logger.debug(f"Returned request is of type {type(request)}")
-            return request
+        request = self._wait_for_http_request(matcher, timeout, wait_for_all_fields)
+        return cast(CapturedRequest, JsonDotDict(request))
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_response(
-        self, matcher: str | RegExp = "", timeout: timedelta | None = None
-    ) -> DotDict | Any:
-        """Waits for a response matching ``matcher`` and returns the response as a Robot Framework dictionary.
+        self,
+        matcher: str | RegExp = "",
+        timeout: timedelta | None = None,
+        *,
+        include_body: bool = True,
+    ) -> CapturedResponse:
+        """Waits for a response matching ``matcher`` and returns it as a `CapturedResponse`.
 
         The keyword waits until the response headers are received and then reads the response body.
 
-        The response, which is returned by this keyword, is a Robot Framework dictionary with the following attributes:
-          - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g. OK or INTERNAL SERVER ERROR. This may not be available for all browsers.
-          - ``body`` <dict | str> The response body. If the body can be parsed as a JSON object,
-          it will be returned as Python dictionary, otherwise it is returned as a string.
-          It is ``None`` if the body could not be read and the key is missing altogether
-          if the response body is empty.
-          - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is in the range 200-299.
-          - ``request`` <dict> containing ``method`` <str>, ``headers`` <dict> and ``postData`` <dict> | <str>
-          - ``url`` <str> url of the response.
+        The returned `CapturedResponse` mirrors Playwright's Response: the status, headers
+        (``allHeaders`` includes ``set-cookie``), the body as ``bytes``, ``text`` and ``json``,
+        the HTTP version, server address, TLS details and the `CapturedRequest` it answers.
+        Its documentation lists every key and the parsing rules of the legacy ``body`` key.
+
+        The response is logged without its body. ``allHeaders`` and ``headersArray`` can
+        contain cookies, so they are logged only at ``DEBUG`` level. The body is logged at
+        ``TRACE`` level: as formatted JSON when it is JSON, as text when it is UTF-8,
+        otherwise as base64.
+
+        *Binary data:* ``bytes`` and ``request.postDataBuffer`` hold real ``bytes`` when read
+        by key, as ``${response.bytes}`` or ``${response}[bytes]``. Everything that reads the
+        dictionary through ``items()`` gets them as base64 text instead, so that the
+        dictionary can be serialized with ``json.dumps``:
+        - ``&{response} =`` assignment copies the outer dictionary through ``items()``, so
+          after it ``bytes`` is base64 text, while ``request.postDataBuffer`` stays ``bytes``.
+          Assign with ``${response} =`` to keep the real ``bytes`` everywhere.
+        - ``FOR ... IN &{response}``, `Get Dictionary Items` and ``json.dumps`` return
+          base64 text.
+        - The variables view of the RobotCode debugger shows base64 text.
 
         *Arguments:*
           - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
@@ -224,12 +394,14 @@ class Network(LibraryComponent):
                 [https://playwright.dev/docs/api/class-page#page-wait-for-response |
                 page.waitForResponse] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
-                timeout if not set.
-
-        *CAUTION:* Before Browser library 17.0.0, the ``matcher`` argument was always either a regex or JS function.
-        But the regex did not need to be in slashes.
-        The most simple way to migrate to the new syntax is to add slashes around the matcher.
-        So ``/api/get/json`` becomes ``//api/get/json/``.
+                timeout if not set. It covers both the wait for the response and reading
+                its body and other fields; the keyword fails if they do not arrive in time.
+          - ``include_body``: If ``False``, the response body is not read and not transferred,
+                and ``body``, ``bytes``, ``text`` and ``json`` are ``None``. Use it when only the
+                status or headers matter and the body is large or never ends.
+                ``httpVersion``, ``serverAddr`` and ``securityDetails`` are then ``None`` too,
+                because some browsers report them only after the whole body has arrived:
+                ``httpVersion`` in Firefox and WebKit, the other two in WebKit.
 
         == Matcher Examples: ==
 
@@ -282,14 +454,27 @@ class Network(LibraryComponent):
         | `Click`               \\#delayed_request    # Creates response which should be waited before pressing save.
         | `Wait For Response`   [https://playwright.dev/docs/api/class-response/|response] => response.url().endsWith('json') && response.request().method() === 'GET'
 
+        Asserting the JSON body, a cookie and saving a binary body:
+        | ${promise} =       `Promise To`    `Wait For Response`    matcher=**/api/login
+        | `Click`            id=login-button
+        | ${response} =      `Wait For`      ${promise}
+        | Should Be Equal    ${response.json.user}    demo
+        | Should Contain     ${response.allHeaders}[set-cookie]    sessionid=
+        |
+        | ${logo} =          `Promise To`    `Wait For Response`    matcher=**/logo.png
+        | `Go To`            ${URL}
+        | ${response} =      `Wait For`      ${logo}
+        | Create Binary File    ${OUTPUT_DIR}/logo.png    ${response.bytes}
+
+        Waiting only for the status of a large download:
+        | ${response} =      `Wait For Response`    **/export.zip    include_body=False
+        | Should Be Equal As Integers    ${response.status}    200
+
         [https://forum.robotframework.org/t//4349|Comment >>]
         """
-        response = self._wait_for_http_response(matcher, timeout)
-        try:
-            return DotDict(response)
-        except Exception:
-            logger.debug(f"Returned response is of type {type(response)}")
-            return response
+        response = self._wait_for_http_response(matcher, timeout, include_body)
+        response["request"] = JsonDotDict(response["request"])
+        return cast(CapturedResponse, JsonDotDict(response))
 
     @keyword(tags=("Wait", "HTTP"))
     def wait_for_navigation(

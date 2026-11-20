@@ -15,7 +15,7 @@ Keyboard Key Inputs Characters
     Get Text    input[name="name"]    ==    Hello
 
 Select List Options
-    Click    select[name="possible_channels"] > option[value="email"]
+    Click First Row Of List Box    select[name="possible_channels"]
     Keyboard Key    down    Shift
     Keyboard Key    press    ArrowDown
     Keyboard Key    press    ArrowDown
