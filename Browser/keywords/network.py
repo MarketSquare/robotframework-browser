@@ -336,7 +336,8 @@ class Network(LibraryComponent):
                 Chromium and WebKit report ``allHeaders`` and ``headersArray`` only when the
                 response headers arrive. With the default ``False`` the keyword returns at once
                 and those fields are ``None``. With ``True`` it also waits for them, within
-                ``timeout``, and fails if they do not arrive in time.
+                ``timeout``, and fails if they do not arrive in time or the browser cannot
+                report them, for example because the page closed.
 
         Example:
         | ${promise} =    `Promise To`    `Wait For Request`    **/api/login    wait_for_all_fields=True

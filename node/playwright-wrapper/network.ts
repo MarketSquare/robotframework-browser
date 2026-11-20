@@ -87,17 +87,15 @@ async function orFallback<T>(read: () => Promise<T>, fallback: T, what: string):
     }
 }
 
-async function headersOf(message: Request | PlaywrightResponse, what: string): Promise<Record<string, unknown>> {
-    const headers = message.headers();
-    const [allHeaders, headersArray] = await Promise.all([
-        orFallback(() => message.allHeaders(), headers, `${what} headers`),
-        orFallback(
-            () => message.headersArray(),
-            Object.entries(headers).map(([name, value]) => ({ name, value })),
-            `${what} headers array`,
-        ),
-    ]);
+const UNAVAILABLE_HEADERS = { allHeaders: null, headersArray: null };
+
+async function headersOf(message: Request | PlaywrightResponse): Promise<Record<string, unknown>> {
+    const [allHeaders, headersArray] = await Promise.all([message.allHeaders(), message.headersArray()]);
     return { allHeaders, headersArray };
+}
+
+async function headersOrNull(message: Request | PlaywrightResponse, what: string): Promise<Record<string, unknown>> {
+    return orFallback(() => headersOf(message), UNAVAILABLE_HEADERS, `${what} headers`);
 }
 
 function frameOf(request: Request): { url: string; name: string } | null {
@@ -108,8 +106,6 @@ function frameOf(request: Request): { url: string; name: string } | null {
         return null;
     }
 }
-
-const PENDING_REQUEST_HEADERS = { allHeaders: null, headersArray: null };
 
 async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMessage: string): Promise<T> {
     if (remaining <= 0) return read;
@@ -126,8 +122,14 @@ async function withinTimeout<T>(read: Promise<T>, remaining: number, timeoutMess
 
 const STATUSES_WITHOUT_BODY = new Set([204, 205, 304]);
 
+function isRedirect(status: number): boolean {
+    return status >= 300 && status < 400 && status !== 304;
+}
+
 function emptyBodyOrNull(response: PlaywrightResponse): Buffer | null {
-    const hasNoBody = STATUSES_WITHOUT_BODY.has(response.status()) || response.headers()['content-length'] === '0';
+    const status = response.status();
+    const hasNoBody =
+        STATUSES_WITHOUT_BODY.has(status) || (!isRedirect(status) && response.headers()['content-length'] === '0');
     return hasNoBody ? Buffer.alloc(0) : null;
 }
 
@@ -174,11 +176,11 @@ export async function waitForResponse(request: pb.Request_HttpCapture, page: Pag
     const [body, responseHeaders, httpVersion, serverAddr, securityDetails, requestHeaders] = await withinTimeout(
         Promise.all([
             withBody ? orFallback<Buffer | null>(() => data.body(), emptyBodyOrNull(data), 'response body') : null,
-            headersOf(data, 'response'),
+            headersOrNull(data, 'response'),
             withBody ? orFallback<string | null>(() => data.httpVersion(), null, 'HTTP version') : null,
             withBody ? orFallback(() => data.serverAddr(), null, 'server address') : null,
             withBody ? orFallback(() => data.securityDetails(), null, 'security details') : null,
-            headersOf(capturedRequest, 'request'),
+            headersOrNull(capturedRequest, 'request'),
         ]),
         remainingTime(timeout, started),
         `Timeout ${timeout}ms exceeded while waiting for all fields of the response.`,
@@ -217,11 +219,11 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
     const result = await page.waitForRequest(urlOrPredicate, { timeout });
     const headers = request.waitForAllFields
         ? await withinTimeout(
-              headersOf(result, 'request'),
+              headersOf(result),
               remainingTime(timeout, started),
               `Timeout ${timeout}ms exceeded while waiting for all fields of the request.`,
           )
-        : PENDING_REQUEST_HEADERS;
+        : UNAVAILABLE_HEADERS;
     const meta = {
         method: result.method(),
         headers: result.headers(),

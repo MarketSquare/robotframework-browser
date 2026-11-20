@@ -134,13 +134,11 @@ describe('waitForRequest', () => {
         expect(parsed.frame).toBeNull();
     });
 
-    it('falls back to the plain headers when all headers cannot be read', async () => {
-        const parsed = await capturedRequest(
-            makeMockRequest({ allHeaders: jest.fn().mockRejectedValue(new Error('Target closed')) }),
-            true,
-        );
+    it('fails when asked to wait for all fields and the headers cannot be read', async () => {
+        expect.assertions(1);
+        const request = makeMockRequest({ allHeaders: jest.fn().mockRejectedValue(new Error('Target closed')) });
 
-        expect(parsed.allHeaders).toEqual({ 'content-type': 'application/json' });
+        await expect(capturedRequest(request, true)).rejects.toThrow('Target closed');
     });
 
     it('returns at once without the headers that are known only later', async () => {
@@ -254,7 +252,13 @@ describe('waitForRequest', () => {
 });
 
 function makeMockResponse(
-    overrides: Partial<{ body: jest.Mock; httpVersion: jest.Mock; status: jest.Mock; headers: jest.Mock }> = {},
+    overrides: Partial<{
+        body: jest.Mock;
+        httpVersion: jest.Mock;
+        status: jest.Mock;
+        headers: jest.Mock;
+        allHeaders: jest.Mock;
+    }> = {},
     request: any = makeMockRequest({ postData: jest.fn().mockReturnValue('{"name":"George"}') }),
 ) {
     return {
@@ -402,6 +406,33 @@ describe('waitForResponse', () => {
 
         expect(first.bodyBytes).toHaveLength(0);
         expect(JSON.parse(first.json).hasBody).toBe(true);
+    });
+
+    it('returns no body for a redirect with content-length 0 whose body cannot be read', async () => {
+        const unavailable = jest
+            .fn()
+            .mockRejectedValue(new Error('Response body is unavailable for redirect responses'));
+
+        const [first] = await capturedResponse(
+            makeMockResponse({
+                body: unavailable,
+                status: jest.fn().mockReturnValue(302),
+                headers: jest.fn().mockReturnValue({ 'content-length': '0' }),
+            }),
+        );
+
+        expect(first.bodyBytes).toHaveLength(0);
+        expect(JSON.parse(first.json).hasBody).toBe(false);
+    });
+
+    it('returns no headers instead of partial ones when all headers cannot be read', async () => {
+        const [first] = await capturedResponse(
+            makeMockResponse({ allHeaders: jest.fn().mockRejectedValue(new Error('Target closed')) }),
+        );
+
+        const meta = JSON.parse(first.json);
+        expect(meta.allHeaders).toBeNull();
+        expect(meta.headersArray).toBeNull();
     });
 
     it('returns no body when a response with content cannot be read', async () => {

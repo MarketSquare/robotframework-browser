@@ -1037,8 +1037,8 @@ class CapturedRequest(TypedDict):
     | ``url`` | The URL of the request. |
     | ``method`` | The HTTP method, e.g. ``GET`` or ``POST``. |
     | ``headers`` | Dictionary of request headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``cookie``. |
-    | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. ``None`` in `Wait For Request` unless ``wait_for_all_fields`` is ``True``. |
-    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. ``None`` in `Wait For Request` unless ``wait_for_all_fields`` is ``True``. |
+    | ``allHeaders`` | Dictionary of all request headers, including ``cookie`` and the headers the browser adds. ``None`` in `Wait For Request` unless ``wait_for_all_fields`` is ``True``, and in `Wait For Response` if the browser could not report them, for example because the page closed. |
+    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. ``None`` like ``allHeaders``. |
     | ``postData`` | Legacy. The request body, parsed as described in Parsing rules below. Prefer ``postDataBuffer`` or ``postDataJSON``. |
     | ``postDataBuffer`` | The raw request body as ``bytes``, or ``None`` if the request has no body. |
     | ``postDataJSON`` | The request body parsed like Playwright's ``postDataJSON()``: a dictionary for a ``application/x-www-form-urlencoded`` body, the parsed value for a JSON body, otherwise ``None``. |
@@ -1159,8 +1159,8 @@ class CapturedResponse(TypedDict):
     | ``ok`` | ``True`` if ``status`` is in the range 200-299. |
     | ``url`` | The URL of the response. |
     | ``headers`` | Dictionary of response headers with lower-case names. Like Playwright's ``headers()`` it leaves out security-related headers such as ``set-cookie``. |
-    | ``allHeaders`` | Dictionary of all response headers, including ``set-cookie``. Several ``set-cookie`` headers are joined with a line break. |
-    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. |
+    | ``allHeaders`` | Dictionary of all response headers, including ``set-cookie``. Several ``set-cookie`` headers are joined with a line break. ``None`` if the browser could not report them, for example because the page closed. |
+    | ``headersArray`` | List of dictionaries with ``name`` and ``value``. Unlike the dictionaries it keeps headers that occur several times, and names keep their original case. ``None`` like ``allHeaders``. |
     | ``body`` | Legacy. The response body, parsed as described in Parsing rules below. Prefer ``json``, ``text`` or ``bytes``. |
     | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
     | ``text`` | The response body decoded as UTF-8, like Playwright's ``text()``. Invalid bytes become the replacement character U+FFFD. |
@@ -1329,8 +1329,8 @@ class CapturedResponse(TypedDict):
     ok: bool
     url: str
     headers: dict[str, str]
-    allHeaders: dict[str, str]
-    headersArray: list[HeaderEntry]
+    allHeaders: dict[str, str] | None
+    headersArray: list[HeaderEntry] | None
     body: Any
     bytes: bytes | None
     text: str | None
