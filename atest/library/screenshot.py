@@ -1,7 +1,6 @@
 import base64
 from enum import Enum, auto
 from io import BytesIO
-from typing import Tuple, Union
 
 from PIL import Image, ImageChops
 from robot.api import logger
@@ -12,12 +11,12 @@ class ExpectFailure(Enum):
     no = auto()
 
 
-def get_image_size(img_path: str) -> Tuple[int]:
+def get_image_size(img_path: str) -> tuple[int]:
     im: Image.Image = Image.open(img_path)
     return im.size
 
 
-def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
+def get_pixel_color(img_path: str, x: int, y: int) -> tuple[int, int]:
     """Returns the color as (r,g,b,a) Tuple[int]"""
     im: Image.Image = Image.open(img_path)
     pix = im.load()
@@ -26,7 +25,7 @@ def get_pixel_color(img_path: str, x: int, y: int) -> Tuple[int, int]:
 
 def compare_images(
     img1_path: str,
-    img2_bytes_or_path: Union[bytes, str],
+    img2_bytes_or_path: bytes | str,
     expect_failure: ExpectFailure = ExpectFailure.no,
     error_threshold: int = 10,
 ):

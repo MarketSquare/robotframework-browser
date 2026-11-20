@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
@@ -11,7 +10,7 @@ def log_all_scopes(
     exp_timeout: float,
     exp_retry_assertions_for: float,
     exp_strict_mode: bool,
-    exp_selector_prefix: Optional[str] = None,
+    exp_selector_prefix: str | None = None,
 ):
     b: Browser = BuiltIn().get_library_instance("Browser")
     timeout = b.timeout

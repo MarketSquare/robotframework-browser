@@ -4,7 +4,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from subprocess import STDOUT, Popen
-from typing import IO
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -27,13 +26,10 @@ ReadinessCheck = Callable[[str, str, Path], bool]
 class RunningTestApp:
     port: str
     process: Popen
-    log_file: IO
     failed_attempts: list[str] = field(default_factory=list)
 
     def stop(self):
         close_process_tree(self.process)
-        self.log_file.flush()
-        self.log_file.close()
 
 
 def read_log(log_path: Path) -> str:
@@ -82,17 +78,13 @@ def start_test_app(
         port = str(find_free_port())
         token = uuid.uuid4().hex
         log_path = log_dir / f"test-app-{port}.log"
-        log_file = open(log_path, "w", encoding="utf-8")
-        try:
+        with log_path.open("w", encoding="utf-8") as log_file:
             process = Popen(
                 cmd_builder(port, token),
                 stdout=log_file,
                 stderr=STDOUT,
                 cwd=str(ROOT_DIR),
             )
-        except Exception:
-            log_file.close()
-            raise
 
         attempt_deadline = min(time.monotonic() + STARTUP_TIMEOUT_SECONDS, deadline)
         crashed = False
@@ -107,13 +99,11 @@ def start_test_app(
             time.sleep(POLL_INTERVAL_SECONDS)
 
         if ready:
-            return RunningTestApp(port, process, log_file, attempts)
+            return RunningTestApp(port, process, attempts)
 
         if process.poll() is None:
             close_process_tree(process)
         exit_code = process.poll()
-        log_file.flush()
-        log_file.close()
         reason = "crashed" if crashed else "did not become ready in time"
         attempts.append(
             f"attempt {len(attempts) + 1}: port {port} (instance {token}) {reason}, "
