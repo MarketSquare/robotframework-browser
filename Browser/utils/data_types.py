@@ -1126,7 +1126,9 @@ class CapturedRequest(TypedDict):
     ``postDataBuffer`` holds real ``bytes``. The dictionary can still be serialized with
     ``json.dumps``, which writes ``bytes`` as base64 text. Robot Framework's ``&{request} =``
     assignment copies the dictionary the same way, so after it ``postDataBuffer`` is base64
-    text. Assign it with ``${request} =`` to keep the real ``bytes``.
+    text. Assign it with ``${request} =`` to keep the real ``bytes``. The variables view of
+    the RobotCode debugger reads the dictionary the same way, so it shows ``postDataBuffer``
+    as base64 text, while ``${request.postDataBuffer}`` still returns the real ``bytes``.
     """
 
     url: str
@@ -1316,6 +1318,10 @@ class CapturedResponse(TypedDict):
 
     | ${response} =    `Wait For Response`    **/logo.png
     | Create Binary File    ${OUTPUT_DIR}/logo.png    ${response.bytes}
+
+    The variables view of the RobotCode debugger reads the dictionary the same way, so it
+    shows ``bytes`` and ``request.postDataBuffer`` as base64 text. ``${response.bytes}``
+    still returns the real ``bytes``.
     """
 
     status: int

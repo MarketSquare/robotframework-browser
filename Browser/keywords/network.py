@@ -373,6 +373,17 @@ class Network(LibraryComponent):
         ``TRACE`` level: as formatted JSON when it is JSON, as text when it is UTF-8,
         otherwise as base64.
 
+        *Binary data:* ``bytes`` and ``request.postDataBuffer`` hold real ``bytes`` when read
+        by key, as ``${response.bytes}`` or ``${response}[bytes]``. Everything that reads the
+        dictionary through ``items()`` gets them as base64 text instead, so that the
+        dictionary can be serialized with ``json.dumps``:
+        - ``&{response} =`` assignment copies the outer dictionary through ``items()``, so
+          after it ``bytes`` is base64 text, while ``request.postDataBuffer`` stays ``bytes``.
+          Assign with ``${response} =`` to keep the real ``bytes`` everywhere.
+        - ``FOR ... IN &{response}``, `Get Dictionary Items` and ``json.dumps`` return
+          base64 text.
+        - The variables view of the RobotCode debugger shows base64 text.
+
         *Arguments:*
           - ``matcher``: Response URL matcher. Can be a string (Glob-Pattern), a
                 JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
