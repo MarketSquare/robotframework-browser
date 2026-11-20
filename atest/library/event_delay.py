@@ -1,4 +1,4 @@
-from __future__ import annotations  # noqa: INP001
+from __future__ import annotations
 
 import json
 from collections.abc import Iterable
