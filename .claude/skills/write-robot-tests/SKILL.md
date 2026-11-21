@@ -177,6 +177,30 @@ Go To Login Page
     New Page    ${LOGIN_URL}
 ```
 
+### Network tests drive the HTTP test page
+
+A test that sends, waits for, mocks or changes HTTP traffic uses `${HTTP_URL}`
+(`node/dynamic-test-app/static/http.html`) and the generic endpoints `/api/echo/**`,
+`/api/respond/**` and `/api/basic-auth/:user/:password`. When a test needs more, extend them.
+Their parameters and the page's ids are in `node/dynamic-test-app/README.md`, section "HTTP
+test page and endpoints". `atest/test/05_JS_Tests/http_test_page.robot` is the worked example.
+
+- Build a scenario with `HTTP Page Url` (`atest/library/http_test_page.py`) and one `Go To`.
+  `send=1` fires the request on load, so register routes and start `Promise To` waits first.
+- Wait with `Get Text    id=state    ==    done` (or `error`), then assert on the panel.
+- Compare bytes by sha256: `HTTP Fixture Sha256` against `#response-sha256` or the echo's `sha256`.
+- The `HTTP` keyword runs `fetch` in the current page, so routes, Wait For keywords and context
+  headers see it as page traffic.
+- Assert status, size or headers on a `fetch` or `xhr` request; an `<img>` load or a form submit
+  shows only the image size or the form result.
+- `fixture=` loads its file with one extra request to `/http-fixtures/<name>`; keep matchers
+  narrower than `**`.
+- A second origin is `${OTHER_ORIGIN_ROOT_URL}` (`127.0.0.1`).
+- In the backend, endpoints that read the body raw are registered in `registerHttpTestRoutes`
+  (`src/http-test.ts`), before `express.json()`. For a credentialed cross-origin request,
+  `Access-Control-Expose-Headers: *` is a literal, so a new response header is listed by name.
+- Run the tests with `--browser firefox` and `--browser webkit` too.
+
 ## File locations
 
 | Content | Location |
