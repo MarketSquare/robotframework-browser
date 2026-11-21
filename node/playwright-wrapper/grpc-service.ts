@@ -28,14 +28,13 @@ import * as getters from './getters';
 import * as initScript from './init-script';
 import * as interaction from './interaction';
 import { class_async_logger } from './keyword-decorators';
-import { withLoadReport } from './load-report';
 import * as locatorHandler from './locator-handler';
 import * as network from './network';
 import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 import * as recorder from './recorder';
-import { emptyWithLog, errorResponse, stringResponse } from './response-util';
+import { errorResponse, stringResponse } from './response-util';
 import * as selectorPicker from './selector-picker';
 
 // The rpcs that do not act on the context active when they are called: they send the open trace
@@ -307,31 +306,8 @@ export class PlaywrightServer {
     pdf = this.wrapping(pdf.savePageAsPdf);
     emulateMedia = this.wrapping(pdf.emulateMedia);
 
-    async goBack(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const page = this.getActivePage(call);
-            await withLoadReport(page, () => page.goBack());
-            callback(null, emptyWithLog('Did Go Back'));
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
-
-    async goForward(
-        call: ServerUnaryCall<pb.Request_Empty, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const page = this.getActivePage(call);
-            await withLoadReport(page, () => page.goForward());
-            callback(null, emptyWithLog('Did Go Forward'));
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    goBack = this.wrappingPage(browserControl.goBack);
+    goForward = this.wrappingPage(browserControl.goForward);
 
     takeScreenshot = this.wrapping(browserControl.takeScreenshot);
     getBoundingBox = this.wrapping(getters.getBoundingBox);
@@ -613,20 +589,7 @@ export class PlaywrightServer {
         }
     }
 
-    async reload(
-        call: ServerUnaryCall<pb.Request_Json, pb.Response_Empty>,
-        callback: sendUnaryData<pb.Response_Empty>,
-    ): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            const body = request.body;
-            const result = await browserControl.reload(this.getActivePage(call), body);
-            callback(null, result);
-        } catch (e) {
-            callback(errorResponse(e), null);
-        }
-    }
+    reload = this.wrappingPage(browserControl.reload);
 
     async setPeerId(
         call: ServerUnaryCall<pb.Request_Index, pb.Response_String>,

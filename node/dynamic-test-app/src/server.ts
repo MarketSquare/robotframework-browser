@@ -201,6 +201,14 @@ app.post('/login-challenge', (req, res) => {
     res.json(challengeResponse);
 });
 
+app.get('/referer.html', (req, res) => {
+    const referer = (req.get('Referer') ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    res.send(
+        '<html lang="en"><head><title>Referer</title></head>' +
+            `<body><span id="referer">${referer}</span></body></html>`,
+    );
+});
+
 app.get('/slowpage.html', (req, res) => {
     setTimeout(() => {
         res.send('<html lang="en"><head><title>Slow page</title></head><body>HELLO</body></html>');

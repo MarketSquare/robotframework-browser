@@ -64,7 +64,7 @@ KEYWORD_PARAMETERS: dict[str, frozenset[str]] = {
     "Get Text": frozenset(
         {"selector", "assertion_operator", "assertion_expected", "message", "text_type"}
     ),
-    "Go To": frozenset({"url", "timeout", "wait_until"}),
+    "Go To": frozenset({"url", "timeout", "wait_until", "referer"}),
     "Handle Future Dialogs": frozenset({"action", "prompt_input"}),
     "Press Keys": frozenset({"selector", "press_duration", "key_delay"}),
     "Promise To Upload File": frozenset({"path"}),

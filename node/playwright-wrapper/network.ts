@@ -20,6 +20,7 @@ import { logger } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { withLoadReport } from './load-report';
+import { LifecycleState, navigationOptions } from './navigation-options';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
@@ -241,14 +242,13 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
 
 export async function waitForNavigation(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
     const url = parseRegExpOrKeepString(<string>request.url?.url);
-    const timeout = request.url?.defaultTimeout;
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit' | undefined>request.waitUntil;
-    await withLoadReport(page, () => page.waitForNavigation({ timeout: timeout, url: url, waitUntil: waitUntil }));
+    const options = { ...navigationOptions(request.url?.defaultTimeout, request.waitUntil), url };
+    await withLoadReport(page, () => page.waitForNavigation(options));
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);
 }
 
 export async function WaitForPageLoadState(request: pb.Request_PageLoadState, page: Page): Promise<pb.Response_Empty> {
-    const state = <'load' | 'domcontentloaded' | 'networkidle' | undefined>request.state;
+    const state = <LifecycleState | undefined>request.state;
     const timeout = request.timeout;
     logger.info(`timeout: ${timeout} state: ${state}`);
     await withLoadReport(page, () => page.waitForLoadState(state, { timeout }));

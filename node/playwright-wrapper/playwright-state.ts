@@ -83,6 +83,7 @@ import {
 } from './generated/playwright';
 import { HighlightDisposableCache } from './highlight-cache';
 import { trackRequests, withLoadReport } from './load-report';
+import { navigationOptions } from './navigation-options';
 import { watchCrash } from './page-crash';
 import { exists } from './playwright-invoke';
 import {
@@ -963,7 +964,6 @@ export async function newPage(
     openBrowsers: PlaywrightState,
 ): Promise<Response_NewPageResponse> {
     const defaultTimeout = request.url?.defaultTimeout;
-    const waitUntil = <'load' | 'domcontentloaded' | 'networkidle' | 'commit'>request.waitUntil;
     const browserState = await openBrowsers.getOrCreateActiveBrowser(null, defaultTimeout);
     const newBrowser = browserState.newBrowser;
     const context = await browserState.browser.getOrCreateActiveContext(defaultTimeout);
@@ -979,13 +979,7 @@ export async function newPage(
     browserState.browser.pushPage(page);
     const url = request.url?.url || 'about:blank';
     try {
-        const goToOptions: {
-            timeout?: number;
-            waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit';
-        } = { timeout: defaultTimeout };
-        if (waitUntil) {
-            goToOptions.waitUntil = waitUntil;
-        }
+        const goToOptions = navigationOptions(defaultTimeout, request.waitUntil);
         await withLoadReport(page.p, () => page.p.goto(url, goToOptions));
         const video = { video_path: videoPath || null, contextUuid: context.context.id };
         return {
