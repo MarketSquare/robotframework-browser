@@ -53,13 +53,19 @@ Timeouting Go To With Custom Timeout
     END
     [Teardown]    Close Context
 
-Go Back And Go Forward Stop Waiting At Commit
+Go Back Stops Waiting At Commit
     New Page    ${STALLED_PAGE}    wait_until=commit
     Go To    ${WELCOME_URL}
-    Go Back    wait_until=commit
+    Go Back    timeout=5s    wait_until=commit
     Get Url    ==    ${STALLED_PAGE}
-    Go Forward    wait_until=commit
-    Get Url    ==    ${WELCOME_URL}
+    [Teardown]    Close Context
+
+Go Forward Stops Waiting At Commit
+    New Page    ${WELCOME_URL}
+    Go To    ${STALLED_PAGE}    wait_until=commit
+    Go Back
+    Go Forward    timeout=5s    wait_until=commit
+    Get Url    ==    ${STALLED_PAGE}
     [Teardown]    Close Context
 
 Go Back Uses Custom Timeout
