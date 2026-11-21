@@ -142,8 +142,9 @@ class Control(LibraryComponent):
                 consider the operation to be finished when the network response is
                 received and the document started loading.
           - ``referer``: Value of the ``Referer`` header sent with this one navigation
-                request. Has no effect when the context already sets ``Referer`` with
-                ``extraHTTPHeaders`` in `New Context`; the context value is sent then.
+                request. Has no effect when the context or page already sets ``Referer``
+                with ``extraHTTPHeaders`` in `New Context` or with `Set Extra HTTP Headers`;
+                that value is sent then.
 
 
         Returns the HTTP status code of the navigation request as an integer, or 0 if no response was received.
@@ -739,8 +740,9 @@ class Control(LibraryComponent):
 
         *Arguments:*
           - ``headers``: The headers, as free named arguments ``name=value``. A value is a
-                string or a Robot Framework 7.4 ``Secret``. An empty string is sent as an empty
-                header. No headers clears them.
+                string or a Robot Framework ``Secret``. An empty string is sent as an empty
+                header. No headers clears them. A header named ``on`` cannot be set, because
+                ``on=`` is the argument below.
           - ``on``: Where the headers are set, see `ContextOrPage`. ``Context`` (default)
                 for every page of the active context, also pages opened later, ``Page`` for the
                 active page only. Fails when no context or page is open.
@@ -752,17 +754,19 @@ class Control(LibraryComponent):
         The keyword logs only the header names. A string value still shows in the keyword's
         arguments in the Robot Framework log; give a token as ``Secret`` to keep it out. The
         ``$variable`` syntax of `Set HTTP Credentials` is not resolved here: ``$token`` is
-        sent as it is.
+        sent as it is. With ``enable_playwright_debug`` in the library import, the values are
+        visible as plain text in the Playwright debug log.
 
         An ``Authorization`` header goes to every origin the page calls, third-party origins
         included. For HTTP Basic authentication `Set HTTP Credentials` with an ``origin`` is
-        safer. Since Playwright 1.63 the headers also reach WebSocket handshakes in Chromium 151+
+        safer. In Playwright the headers also reach WebSocket handshakes in Chromium 151+
         and WebKit; Firefox does not send them for a WebSocket opened inside a Worker.
 
         Example:
         | `New Context`    extraHTTPHeaders={'X-Tenant': 'a'}
         | `New Page`    ${URL}/login
-        | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=Bearer ${token}    # X-Tenant passed again to keep it
+        | VAR    ${token: Secret} =    %{API_AUTHORIZATION}    # e.g. "Bearer abc123"
+        | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=${token}    # X-Tenant passed again to keep it
         | `Set Extra HTTP Headers`    X-Experiment=variant-b    on=Page
         | `Set Extra HTTP Headers`    # clears the context headers
         """
@@ -792,9 +796,10 @@ class Control(LibraryComponent):
         The given credentials replace all credentials of the active context, also those given
         as ``httpCredentials`` to `New Context`. To keep a credential, pass it again.
 
-        As in `New Context`, ``username`` and ``password`` are given as Robot Framework 7.4
+        As in `New Context`, ``username`` and ``password`` are given as Robot Framework
         ``Secret`` or with the ``$variable`` syntax, so their values stay out of the log. The
-        keyword logs only the origins.
+        keyword logs only the origins. With ``enable_playwright_debug`` in the library import,
+        the values are visible as plain text in the Playwright debug log.
 
         Browsers may cache credentials per origin after a successful authentication, so
         changing the credentials of an origin that has already authenticated may have no
