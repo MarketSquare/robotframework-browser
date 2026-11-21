@@ -38,8 +38,6 @@ from .model import CANONICAL, Call, DisplayNames, RecordedKeyword
 from .names import (
     KnownKeywords,
     NameGuard,
-    argument_name_error,
-    plain_argument_name,
 )
 from .picker import PICK_COMMANDS, SelectorPicker
 from .target import Target
@@ -658,28 +656,32 @@ class RecorderSession:
                 start, end = _int(command, "start"), _int(command, "end")
                 self._check_raw(keyword, call, value, command)
                 name = _text(command, "name")
-                if argument_name_error(name) is None:
-                    name = plain_argument_name(name)
                 use_default = command.get("useDefault", True)
                 if not isinstance(use_default, bool):
                     raise ValueError("'useDefault' must be true or false.")
-                occurrences = keyword.make_argument(
+                made = keyword.make_argument(
                     call, value, start, end, name, use_default=use_default
                 )
                 self._offer = (
                     {
-                        "argument": name,
-                        "text": keyword.argument(name).default,
-                        "occurrences": [list(o) for o in occurrences],
+                        "argument": made.name,
+                        "text": made.marked,
+                        "occurrences": [list(o) for o in made.occurrences],
                     }
-                    if occurrences
+                    if made.occurrences
                     else None
                 )
             else:
-                keyword.replace(
-                    _text(command, "argument"), _pairs(command.get("occurrences"))
-                )
+                argument = _text(command, "argument")
+                occurrences = _pairs(command.get("occurrences"))
+                offer = self._offer
                 self._offer = None
+                if occurrences:
+                    if offer is None or offer["argument"] != argument:
+                        raise ValueError(
+                            "The keyword calls changed - please try again."
+                        )
+                    keyword.replace(argument, occurrences, offer["text"])
         except ValueError as error:
             self._error = str(error)
             if cmd == "argument":

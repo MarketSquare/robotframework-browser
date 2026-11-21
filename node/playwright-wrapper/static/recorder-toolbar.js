@@ -338,6 +338,7 @@
         <div class="marked"><div class="marks" id="argMarks" aria-hidden="true"></div><textarea id="argValue" rows="3" readonly></textarea></div>
         <input id="argName" placeholder="argument name, e.g. email or \${email}" autocomplete="off" maxlength="${NAME_LIMIT + 3}">
         <label title="Without a default, every caller must pass a value"><input type="checkbox" id="argDefault" checked> Use the marked value as default</label>
+        <div class="hint" id="argReuse" hidden></div>
         <div class="err" id="argErr" hidden></div>
         <div class="row"><button id="argCancel" title="Close without making an argument">Cancel</button><button class="primary" id="argOk" title="Make the marked part an argument of the keyword">Make argument</button></div>
       </div>
@@ -590,6 +591,7 @@
             showMarks();
             $('argName').value = '';
             $('argDefault').checked = true;
+            showReusedArgument();
             showArgError('');
             $('argModal').hidden = false;
             $('argValue').focus();
@@ -619,6 +621,26 @@
             return plain.test(name)
                 ? null
                 : "Argument name must start with a letter or '_' and contain only letters, digits and '_'.";
+        };
+        // Like `normalize_keyword_name` in names.py: Robot sees `E_mail` and `email` as one variable.
+        const normalizeName = (name) =>
+            name
+                .replace(/^\$\{(.*)\}$/, '$1')
+                .toLowerCase()
+                .replace(/[\s_]/g, '');
+        // A name that is already an argument reuses it; its default stays.
+        const reusedArgument = () => {
+            const name = normalizeName($('argName').value.trim());
+            const known = (window.__rfbToolbarState || {}).arguments;
+            return (name && Array.isArray(known) && known.find((a) => normalizeName(a.name) === name)) || null;
+        };
+        const showReusedArgument = () => {
+            const reused = reusedArgument();
+            $('argDefault').disabled = !!reused;
+            $('argReuse').textContent = reused
+                ? `Uses the existing argument \${${reused.name}}; its default stays.`
+                : '';
+            $('argReuse').hidden = !reused;
         };
         $('argCancel').addEventListener('click', closeArgModal);
         $('argOk').addEventListener('click', () => {
@@ -711,6 +733,7 @@
             argName: () => {
                 const name = $('argName').value.trim();
                 showArgError(name ? argumentNameError(name) : '');
+                showReusedArgument();
             },
             selInput: () => editSelector(),
         };

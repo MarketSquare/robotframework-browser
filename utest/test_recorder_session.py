@@ -293,6 +293,68 @@ def test_argument_offer_and_replace():
     ]
 
 
+def test_an_existing_argument_name_reuses_the_argument_and_offers_the_marked_text():
+    s, target, _ = session()
+    start(s, "K")
+    for selector in ("#row-1", "#row-2 .x", "#row-2 .y"):
+        s.handle_event("added", {"name": "click", "selector": selector})
+
+    def mark(call: int, start: int, end: int, name: str, raw: str) -> None:
+        s.handle_command(
+            {
+                "cmd": "argument",
+                "call": call,
+                "value": 0,
+                "start": start,
+                "end": end,
+                "name": name,
+                "useDefault": True,
+                "raw": raw,
+            }
+        )
+
+    mark(0, 5, 6, "row", "#row-1")
+    mark(1, 5, 6, "${R_ow}", "#row-2 .x")
+    state = s.toolbar_state()
+    assert state["error"] is None
+    assert state["arguments"] == [{"name": "row", "default": "1", "useDefault": True}]
+    assert state["offer"] == {"argument": "row", "text": "2", "occurrences": [[2, 0]]}
+    s.handle_command({"cmd": "replace", "argument": "row", "occurrences": [[2, 0]]})
+    saved = target.saved[-1]
+    assert "[Arguments]    ${row}=1\n" in saved
+    assert saved.count("Click    \\#row-${row}") == 3
+
+
+def test_a_replace_without_its_offer_is_rejected_and_changes_nothing():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", {"name": "click", "selector": "#row-1"})
+    s.handle_event("added", {"name": "click", "selector": "#row-2 .col-1"})
+    s.handle_command(
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 0,
+            "start": 5,
+            "end": 6,
+            "name": "row",
+            "raw": "#row-1",
+        }
+    )
+    assert s.toolbar_state()["offer"]
+    s.handle_event("added", CLICK)
+    assert s.toolbar_state()["offer"] is None
+    s.handle_command({"cmd": "replace", "argument": "row", "occurrences": [[1, 0]]})
+    assert "changed" in s.toolbar_state()["error"]
+    assert "#row-2 .col-1" in target.saved[-1]
+
+
+def test_skipping_without_an_offer_is_no_error():
+    s, _, _ = recording()
+    s.handle_command({"cmd": "replace", "argument": "who", "occurrences": []})
+    assert s.toolbar_state()["error"] is None
+
+
 def test_argument_written_as_a_variable_gets_its_plain_name():
     s, target, _ = session()
     start(s, "K")

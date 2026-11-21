@@ -181,7 +181,7 @@ State, Python -> toolbar, sent with every poll and rendered by `__rfbToolbarRend
 | `keywords` | names finished in this session |
 | `calls` | `[{assign, keyword, values: [{tokens, selectable, raw}]}]`; `assign` is `${name}=` or `null`; `tokens` is the value as written into the file, split by Robot's own tokenizer into `["argument" or "variable", text]` pairs for the toolbar's syntax colours; `raw` is the literal text of the value, `null` once it holds a reference |
 | `arguments` | `[{name, default, useDefault}]` |
-| `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null` |
+| `offer` | after `argument`: `{argument, text, occurrences: [[call, value], ...]}` or `null`; `argument` is the name as the keyword writes it, also when an existing argument was reused, and `text` is the marked text, which `replace` puts the argument in for |
 | `pending` | `new`/`finish`/`discard`/`stop` while it settles, else `null`; meanwhile every command but `stop` is refused |
 | `notice` / `error` | one-shot message, cleared by the next command |
 | `picking` | Playwright's Pick locator mode is on and could not be handed to the toolbar's picker |
@@ -209,7 +209,9 @@ ago the page saw its last click or finished loading, see Timing):
 
 `raw` on `argument` is the value text the person selected in. The session rejects the
 command ("The keyword calls changed - please try again.") if the call now holds other text,
-so a selection made against a stale view never marks the wrong text. All fields are
+so a selection made against a stale view never marks the wrong text. A `replace` with
+occurrences is rejected with the same message unless it answers the current `offer` for that
+argument: a new Action clears the offer, and with it the text to replace. All fields are
 validated; the page can call the binding too (ADR 0010). Node accepts commands only while a
 session runs (from the reset poll until `recorderStop`), drops and logs a command over
 `MAX_COMMAND_BYTES` (256 KiB) and buffers at most `MAX_BUFFERED_COMMANDS` (100). An Action

@@ -28,7 +28,7 @@ from types import MappingProxyType
 from robot.conf.languages import Language
 
 from .cells import cell
-from .names import argument_name_error, normalize_keyword_name
+from .names import argument_name_error, normalize_keyword_name, plain_argument_name
 from .parameters import KEYWORD_PARAMETERS
 
 TAG = "recorded"
@@ -85,9 +85,14 @@ ENGLISH_SETTINGS = SettingNames()
 
 @dataclass(frozen=True)
 class ArgRef:
-    """A reference to a Keyword Argument (or an assigned variable) in a value."""
+    """A reference to a Keyword Argument (or an assigned variable) in a value.
+
+    Only the reference the argument was made from ``owns_default``: refining
+    its value updates the default. Reused and replaced references never do.
+    """
 
     name: str
+    owns_default: bool = field(default=True, compare=False)
 
 
 @dataclass
@@ -172,6 +177,18 @@ class Call:
         cells.append(display_names.of(self))
         cells.extend(self.rendered_args())
         return _INDENT.join(cells)
+
+
+@dataclass(frozen=True)
+class MadeArgument:
+    """What `RecordedKeyword.make_argument` did, for the toolbar's replace offer."""
+
+    #: The argument's name as the keyword writes it.
+    name: str
+    #: The text that became the argument.
+    marked: str
+    #: The other values that contain ``marked``.
+    occurrences: list[tuple[int, int]]
 
 
 @dataclass
@@ -321,10 +338,18 @@ class RecordedKeyword:
         return candidate
 
     def argument(self, name: str) -> Argument:
-        for argument in self.arguments:
-            if argument.name == name:
-                return argument
-        raise ValueError(f"No argument '{name}'.")
+        argument = self._find_argument(name)
+        if argument is None:
+            raise ValueError(f"No argument '{name}'.")
+        return argument
+
+    def _find_argument(self, name: str) -> Argument | None:
+        """The argument named ``name`` in any spelling Robot treats as equal."""
+        normalized = normalize_keyword_name(plain_argument_name(name))
+        return next(
+            (a for a in self.arguments if normalize_keyword_name(a.name) == normalized),
+            None,
+        )
 
     def make_argument(
         self,
@@ -335,17 +360,19 @@ class RecordedKeyword:
         name: str,
         *,
         use_default: bool = True,
-    ) -> list[tuple[int, int]]:
+    ) -> MadeArgument:
         """Turn ``text[start:end]`` of one value into ``${name}``.
 
-        With ``use_default`` the marked text becomes the argument's default.
-        Returns the other values that contain the same text, for the toolbar
-        to offer.
+        ``name`` may be written as ``email`` or ``${email}``. With
+        ``use_default`` the marked text becomes the argument's default. A
+        ``name`` that is already an argument reuses it, keeping its default.
         """
         error = argument_name_error(name)
         if error:
             raise ValueError(error)
-        if normalize_keyword_name(name) in self._taken_variables():
+        name = plain_argument_name(name)
+        existing = self._find_argument(name)
+        if existing is None and normalize_keyword_name(name) in self._taken_variables():
             raise ValueError(f"A variable named '{name}' already exists.")
         target = self._value(call, value)
         if not target.selectable:
@@ -356,9 +383,14 @@ class RecordedKeyword:
         if not (0 <= start < end <= len(text)):
             raise ValueError("Mark a non-empty part of the value.")
         marked = text[start:end]
-        target.segments = _split(text, start, end, ArgRef(name))
-        self.arguments.append(Argument(name, marked, use_default))
-        return [
+        if existing is None:
+            self.arguments.append(Argument(name, marked, use_default))
+        else:
+            name = existing.name
+        target.segments = _split(
+            text, start, end, ArgRef(name, owns_default=existing is None)
+        )
+        occurrences = [
             (c, v)
             for c, v, other in self._values()
             if (c, v) != (call, value)
@@ -366,15 +398,19 @@ class RecordedKeyword:
             and other.text is not None
             and marked in other.text
         ]
+        return MadeArgument(name, marked, occurrences)
 
-    def replace(self, name: str, occurrences: list[tuple[int, int]]) -> None:
-        marked = self.argument(name).default
+    def replace(
+        self, name: str, occurrences: list[tuple[int, int]], marked: str
+    ) -> None:
+        """Replace ``marked`` in the ``occurrences`` with the argument."""
+        name = self.argument(name).name
         for call, value in occurrences:
             target = self._value(call, value)
             text = target.text
             if not target.selectable or text is None or marked not in text:
                 continue
-            target.segments = _split_all(text, marked, ArgRef(name))
+            target.segments = _split_all(text, marked, ArgRef(name, owns_default=False))
 
     # -- rendering --------------------------------------------------------- #
 
@@ -436,7 +472,8 @@ class RecordedKeyword:
         argument = next((a for a in self.arguments if a.name == refs[0].name), None)
         if argument is None:
             return new
-        argument.default = text[len(prefix) : len(text) - len(suffix)]
+        if refs[0].owns_default:
+            argument.default = text[len(prefix) : len(text) - len(suffix)]
         return Value(
             [*_nonempty(prefix), refs[0], *_nonempty(suffix)], old.selectable, old.named
         )

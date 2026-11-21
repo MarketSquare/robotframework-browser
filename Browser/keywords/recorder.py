@@ -172,7 +172,9 @@ class Recorder(LibraryComponent):
         the toolbar to turn the whole of it, or a marked part, into a Keyword Argument, named
         like ``email`` or ``${email}``. The same dialog asks whether the marked value
         becomes the argument's default. The toolbar also offers to use the new argument
-        for the same value elsewhere in the keyword (replacing repeated values).
+        for the same value elsewhere in the keyword (replacing repeated values). A name
+        that is already an argument of the keyword reuses that argument, so different
+        recorded values can become the same argument; its default stays as it was.
 
         The keyword is always created new: an existing keyword is never extended.
 
@@ -311,7 +313,9 @@ class Recorder(LibraryComponent):
         or a marked part, into a Keyword Argument, named like ``email`` or ``${email}``. The same
         dialog asks whether the marked value becomes the argument's default. The toolbar
         also offers to use the new argument for the same value elsewhere in the keyword
-        (replacing repeated values).
+        (replacing repeated values). A name that is already an argument of the keyword
+        reuses that argument, so different recorded values can become the same argument;
+        its default stays as it was.
 
         Existing keywords are never extended.
 
