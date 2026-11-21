@@ -8,9 +8,12 @@ API for the Robot Framework Browser library acceptance tests.
 ```
 node/dynamic-test-app/
 ├── src/
-│   └── server.ts          # Express server entry point
+│   ├── server.ts          # Express server entry point
+│   └── http-test.ts       # Generic echo/respond/basic-auth endpoints for http.html
 ├── static/                # Served at /  (express.static)
 │   ├── *.html             # Test pages
+│   ├── http.html, http.js # Generic HTTP test page
+│   ├── http-fixtures/     # Binary fixtures for uploads and /api/respond?file=
 │   ├── frames/            # Frameset/iframe pages
 │   └── test-app-logger.js # Client-side event capture (injected into every page)
 └── dist/
@@ -39,6 +42,7 @@ Written directly by `src/server.ts`.
 |----------------|-------------------|
 | `server_start` | `url` |
 | `http`         | `method`, `url`, `status`, `contentLength`, `responseTimeMs` |
+| `http_echo`    | `endpoint` (`echo`, `respond`, `basic-auth`), `method`, `url`, `status`, `bodySize`, `bodySha256`, `parts`, `cors`; `file` for respond, `auth` (`ok`, `wrong`, `missing`) for basic-auth. Never the body itself |
 
 Examples:
 ```json
@@ -93,6 +97,51 @@ Example:
 ```json
 {"timestamp":"2025-07-01T12:00:01.234Z","event":"click","url":"http://localhost:7272/index.html","tag":"button","text":"Click me"}
 ```
+
+## HTTP test page and endpoints
+
+`static/http.html` sends one request from the frontend and shows what the
+frontend received, so a mocked, aborted or modified request is visible in the
+browser. The endpoints below also answer the `HTTP` keyword, which sends its
+request with `fetch` from the current page. All of them read the request body
+raw, before any body parser, and are binary-safe. They answer CORS by default
+(preflight, the request's `Origin`, credentials allowed); `cors=off` in the
+query turns that off.
+
+| Endpoint | Behaviour |
+|----------|-----------|
+| `/api/echo/**` | Any method. Returns JSON with `method`, `url`, `path`, `query`, `headers`, `origin`, `body` (`size`, `sha256`, `contentType`, `text`, `json`, `base64`) and `parts` for `multipart/form-data` (`name`, `filename`, `mimeType`, `size`, `sha256`, `text`). `format=html` wraps the JSON in `<pre id="echo">` |
+| `/api/respond/**` | The query defines the response: `status`, `statusText`, `contentType`, `header=Name:Value` (repeatable), `delay` (ms), `body`, `file` (a name in `static/http-fixtures/`). Without `body` or `file` it answers with the echo |
+| `/api/basic-auth/:user/:password` | `401` with `WWW-Authenticate: Basic realm="test-app"` unless the `Authorization` header matches; otherwise the echo plus `authenticatedUser` |
+
+A second origin is the same server reached through `127.0.0.1` instead of
+`localhost`.
+
+The page's builder:
+
+| Field (id) | Prefill parameter | Values |
+|------------|-------------------|--------|
+| `kind` | `kind` | `fetch`, `xhr`, `img`, `form` |
+| `method` | `method` | `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS` (a form only does `GET`/`POST`) |
+| `url` | `url` | request URL |
+| `headers` | `headers` | JSON object |
+| `body-mode` | `bodyMode` | `none`, `text`, `json`, `form-urlencoded`, `multipart`, `raw-file` |
+| `body` | `body` | text; a JSON object of fields for `form-urlencoded`, `multipart` and forms |
+| `file`, `fixture` | `fixture` | files for `multipart` and `raw-file`; `fixture` loads one from `http-fixtures/` |
+| `file-field` | `fileField` | multipart field name of the files, default `file` |
+| `credentials` | `credentials` | fetch `credentials`: `same-origin`, `include`, `omit` |
+| `target` | `target` | form target: `form-result` (iframe on the page) or `_self` |
+
+`send=1` sends the request as soon as the page has loaded. The response panel
+shows `#state` (`idle`, `pending`, `done`, `error`), `#status`, `#status-text`,
+`#response-url`, `#response-size`, `#response-sha256`, `#response-headers`,
+`#response-body`, `#response-image` and `#error`; `#history` lists every
+exchange. An `<img>` load and a form submit cannot read the status, size or
+headers, so for them only the body (image size, or the form result) is shown.
+
+`static/http-fixtures/SHA256SUMS` lists the checksums of the fixtures. The
+helpers in `atest/library/http_test_page.py` build prefilled page URLs and
+return fixture paths and checksums.
 
 ## Adding a new test page
 
