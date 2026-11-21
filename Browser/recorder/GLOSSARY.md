@@ -57,6 +57,8 @@ _Avoid_: parameter, variable
   structural value (mouse button, operator), and only while its **Keyword Recording** is
   running. A **Keyword Argument** no **Keyword Call** uses any more
   is removed; a recorded keyword never has unused arguments
+- Different values can become the same **Keyword Argument**: naming an existing one reuses it,
+  and its default stays the value it was made from
 - Password fields get no special treatment: the person decides whether a typed value becomes
   a **Keyword Argument**, with or without its recorded value as default
 - Undo removes every **Keyword Call** the last **Action** produced, never just part of them

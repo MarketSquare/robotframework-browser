@@ -321,8 +321,10 @@ class RecordedKeyword:
         return candidate
 
     def argument(self, name: str) -> Argument:
+        """The argument named ``name`` in any spelling Robot treats as equal."""
+        normalized = normalize_keyword_name(name)
         for argument in self.arguments:
-            if argument.name == name:
+            if normalize_keyword_name(argument.name) == normalized:
                 return argument
         raise ValueError(f"No argument '{name}'.")
 
@@ -339,13 +341,22 @@ class RecordedKeyword:
         """Turn ``text[start:end]`` of one value into ``${name}``.
 
         With ``use_default`` the marked text becomes the argument's default.
+        A ``name`` that is already an argument reuses it, keeping its default.
         Returns the other values that contain the same text, for the toolbar
         to offer.
         """
         error = argument_name_error(name)
         if error:
             raise ValueError(error)
-        if normalize_keyword_name(name) in self._taken_variables():
+        existing = next(
+            (
+                a
+                for a in self.arguments
+                if normalize_keyword_name(a.name) == normalize_keyword_name(name)
+            ),
+            None,
+        )
+        if existing is None and normalize_keyword_name(name) in self._taken_variables():
             raise ValueError(f"A variable named '{name}' already exists.")
         target = self._value(call, value)
         if not target.selectable:
@@ -356,8 +367,11 @@ class RecordedKeyword:
         if not (0 <= start < end <= len(text)):
             raise ValueError("Mark a non-empty part of the value.")
         marked = text[start:end]
+        if existing is None:
+            self.arguments.append(Argument(name, marked, use_default))
+        else:
+            name = existing.name
         target.segments = _split(text, start, end, ArgRef(name))
-        self.arguments.append(Argument(name, marked, use_default))
         return [
             (c, v)
             for c, v, other in self._values()
@@ -367,8 +381,18 @@ class RecordedKeyword:
             and marked in other.text
         ]
 
-    def replace(self, name: str, occurrences: list[tuple[int, int]]) -> None:
-        marked = self.argument(name).default
+    def replace(
+        self,
+        name: str,
+        occurrences: list[tuple[int, int]],
+        marked: str | None = None,
+    ) -> None:
+        """Replace ``marked`` (the argument's default if not given) in the
+        ``occurrences`` with the argument."""
+        argument = self.argument(name)
+        name = argument.name
+        if marked is None:
+            marked = argument.default
         for call, value in occurrences:
             target = self._value(call, value)
             text = target.text
@@ -400,6 +424,10 @@ class RecordedKeyword:
         return "*** Keywords ***\n" + self.block()
 
     # -- helpers ----------------------------------------------------------- #
+
+    def value_text(self, call: int, value: int) -> str | None:
+        """The literal text of one value, ``None`` if it refers to an argument."""
+        return self._value(call, value).text
 
     def value_changed(self, call: int, value: int, raw: object) -> bool:
         """Whether the value exists and no longer reads ``raw``."""

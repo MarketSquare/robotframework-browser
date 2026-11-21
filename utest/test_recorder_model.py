@@ -168,13 +168,34 @@ def test_required_arguments_come_before_defaulted_ones():
     assert kw.lines()[1] == "[Arguments]    ${second}    ${first}=a"
 
 
-def test_argument_name_must_be_unique_in_any_spelling():
+def test_an_existing_argument_name_in_any_spelling_reuses_the_argument_and_its_default():
     kw = RecordedKeyword("K")
-    kw.add(fill("a"))
-    kw.add(fill("b"))
-    kw.make_argument(0, 1, 0, 1, "email")
-    with pytest.raises(ValueError, match="already"):
-        kw.make_argument(1, 1, 0, 1, "E_mail")
+    kw.add(fill("id-a"))
+    kw.add(fill("#b-row"))
+    kw.make_argument(0, 1, 3, 4, "row")
+    kw.make_argument(1, 1, 1, 2, "R_ow", use_default=False)
+    assert kw.arguments == [Argument("row", "a", True)]
+    assert kw.lines()[1:] == [
+        "[Arguments]    ${row}=a",
+        "Fill Text    \\#name    id-${row}",
+        "Fill Text    \\#name    \\#${row}-row",
+    ]
+
+
+def test_replace_after_reusing_an_argument_replaces_the_newly_marked_text():
+    kw = RecordedKeyword("K")
+    kw.add(fill("alice"))
+    kw.add(fill("bob"))
+    kw.add(fill("bob"))
+    kw.make_argument(0, 1, 0, 5, "user")
+    assert kw.make_argument(1, 1, 0, 3, "user") == [(2, 1)]
+    kw.replace("user", [(2, 1)], "bob")
+    assert [c.render(CANONICAL) for c in kw.calls()] == [
+        "Fill Text    \\#name    ${user}",
+        "Fill Text    \\#name    ${user}",
+        "Fill Text    \\#name    ${user}",
+    ]
+    assert kw.arguments == [Argument("user", "alice", True)]
 
 
 def test_argument_name_must_not_reuse_an_assigned_variable():

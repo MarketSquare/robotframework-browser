@@ -118,6 +118,33 @@ Argument Dialog Validates In Place And Accepts Variable Syntax
     ${file} =    Get File    ${RESOURCE}
     Should Contain    ${file}    [Arguments]${SPACE*4}\${who}=Alice
 
+An Existing Argument Name Reuses The Argument And Keeps Its Default
+    Keep The Closed Toolbar Root Reachable
+    ${promise} =    Promise To    Record Keyword    Reused Argument    ${RESOURCE}
+    Toolbar State Should Be    recording
+    Fill Text    id=input_name    Alice
+    Fill Text    [name=email]    Bob
+    Wait Until Calls    2
+    Send Command    {cmd: 'argument', call: 0, value: 1, start: 0, end: 5, name: 'who', raw: 'Alice'}
+    Wait For Function    () => window.__rfbToolbarState.arguments.length === 1
+    Click Inside Toolbar    () => [...window.toolbarRoot.querySelectorAll('.cell.pick')].pop()
+    Click Inside Toolbar    () => window.toolbarRoot.getElementById('argName')
+    Keyboard Input    type    \${Who}
+    Toolbar Element Should Be Shown    argReuse
+    Wait For Function    () => window.toolbarRoot.getElementById('argDefault').disabled
+    Keyboard Key    press    Enter
+    Toolbar Element Should Be Hidden    argModal
+    Wait For Function    () => window.__rfbToolbarState.calls[1].values[1].raw === null
+    Send Command    {cmd: 'stop'}
+    Wait For    ${promise}
+    ${file} =    Get File    ${RESOURCE}
+    Should Contain    ${file}    [Arguments]${SPACE*4}\${who}=Alice\n
+    Should Contain X Times    ${file}    ${SPACE*4}\${who}\n    2
+    Import Resource    ${RESOURCE}
+    Reused Argument    who=Carol
+    Get Property    id=input_name    value    ==    Carol
+    Get Property    [name=email]    value    ==    Carol
+
 Argument Dialog Keeps A Rejected Name And Closes On The Glass Pane
     Keep The Closed Toolbar Root Reachable
     ${promise} =    Promise To    Record Keyword    Glass Pane    ${RESOURCE}

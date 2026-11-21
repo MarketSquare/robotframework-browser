@@ -663,22 +663,28 @@ class RecorderSession:
                 use_default = command.get("useDefault", True)
                 if not isinstance(use_default, bool):
                     raise ValueError("'useDefault' must be true or false.")
+                text = keyword.value_text(call, value)
                 occurrences = keyword.make_argument(
                     call, value, start, end, name, use_default=use_default
                 )
                 self._offer = (
                     {
-                        "argument": name,
-                        "text": keyword.argument(name).default,
+                        "argument": keyword.argument(name).name,
+                        "text": (text or "")[start:end],
                         "occurrences": [list(o) for o in occurrences],
                     }
                     if occurrences
                     else None
                 )
             else:
-                keyword.replace(
-                    _text(command, "argument"), _pairs(command.get("occurrences"))
+                offer = self._offer
+                argument = _text(command, "argument")
+                marked = (
+                    offer["text"]
+                    if offer is not None and offer["argument"] == argument
+                    else None
                 )
+                keyword.replace(argument, _pairs(command.get("occurrences")), marked)
                 self._offer = None
         except ValueError as error:
             self._error = str(error)
