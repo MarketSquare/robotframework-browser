@@ -2131,6 +2131,20 @@ class InitScriptTarget(Enum):
     Page = auto()
 
 
+class HeaderTarget(Enum):
+    """Defines where `Set Extra HTTP Headers` sets the headers.
+
+    - ``Context``: The active context. The headers go with every request of every page in the
+      context, also of pages opened later.
+    - ``Page``: The active page. The headers go with every request of that page only. Playwright
+      sends them on top of the context headers; a page header wins over a context header of the
+      same name.
+    """
+
+    Context = auto()
+    Page = auto()
+
+
 class ReloadPages(Enum):
     """Defines which pages `Set Storage State` reloads while it restores the state.
 

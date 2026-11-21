@@ -143,6 +143,47 @@ export async function setOffline(request: pb.Request_Bool, context?: BrowserCont
     return emptyWithLog(`Set context to ${offline}`);
 }
 
+function headerNames(headers: Record<string, string>): string {
+    const names = Object.keys(headers);
+    return names.length ? names.join(', ') : 'none';
+}
+
+export async function setContextExtraHttpHeaders(
+    request: pb.Request_ExtraHttpHeaders,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const context = state.getActiveContext();
+    exists(context, 'Tried to set extra HTTP headers, but no context was open.');
+    await context.setExtraHTTPHeaders(request.headers);
+    return emptyWithLog(`Extra HTTP headers of the active context: ${headerNames(request.headers)}`);
+}
+
+export async function setPageExtraHttpHeaders(
+    request: pb.Request_ExtraHttpHeaders,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const page = state.getActivePage();
+    exists(page, 'Tried to set extra HTTP headers, but no page was open.');
+    await page.setExtraHTTPHeaders(request.headers);
+    return emptyWithLog(`Extra HTTP headers of the active page: ${headerNames(request.headers)}`);
+}
+
+export async function setHttpCredentials(
+    request: pb.Request_HttpCredentials,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const context = state.getActiveContext();
+    exists(context, 'Tried to set HTTP credentials, but no context was open.');
+    const credentials = request.credentials.map(({ username, password, origin }) =>
+        origin === undefined ? { username, password } : { username, password, origin },
+    );
+    await context.setHTTPCredentials(credentials.length ? credentials : null);
+    const origins = credentials.map((credential) => credential.origin ?? 'any origin');
+    return emptyWithLog(
+        credentials.length ? `Set HTTP credentials for: ${origins.join(', ')}` : 'Cleared HTTP credentials.',
+    );
+}
+
 export async function reload(request: pb.Request_NavigationOptions, page: Page): Promise<pb.Response_Empty> {
     const options = navigationOptions(request.timeout, request.waitUntil);
     logger.info(`Reload page with options: ${JSON.stringify(options)}`);

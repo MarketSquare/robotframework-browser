@@ -42,6 +42,7 @@ from .data_types import (
     HighLightElement,
     HighlightMode,
     InitScriptTarget,
+    HeaderTarget,
     HttpCredentials,
     InstallableBrowser,
     InstallationOptions,
