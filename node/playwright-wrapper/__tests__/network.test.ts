@@ -8,7 +8,11 @@ jest.mock('uuid', () => ({
     v4: jest.fn().mockReturnValue('mock-uuid-1234'),
 }));
 
-import { _waitForDownload, waitForRequest, waitForResponse } from '../network';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
+import { _waitForDownload, httpRequest, waitForRequest, waitForResponse } from '../network';
 
 function makeRequest(urlOrPredicate = '/.*/', timeout = 5000, excludeBody = false) {
     return { urlOrPredicate, timeout, excludeBody } as any;
@@ -568,5 +572,119 @@ describe('_waitForDownload', () => {
 
         expect(JSON.parse((await result).json).state).toBe('finished');
         expect(download.cancel).not.toHaveBeenCalled();
+    });
+});
+
+function makeHttpRequest(overrides: Record<string, unknown> = {}) {
+    return {
+        url: '/api/echo',
+        method: 'POST',
+        headers: '{}',
+        form: [],
+        multipart: [],
+        timeout: 0,
+        ...overrides,
+    } as any;
+}
+
+function makeFetchResult(overrides: Record<string, unknown> = {}) {
+    return {
+        timedOut: false,
+        status: 200,
+        statusText: 'OK',
+        url: 'http://localhost/api/echo',
+        ok: true,
+        redirected: false,
+        type: 'basic',
+        headers: { 'content-type': 'text/plain' },
+        body: new Uint8Array([104, 105]),
+        ...overrides,
+    };
+}
+
+function makeFetchPage(result = makeFetchResult()) {
+    return { evaluate: jest.fn().mockResolvedValue(result) } as any;
+}
+
+function fetchArguments(page: any) {
+    return page.evaluate.mock.calls[0][1];
+}
+
+describe('httpRequest', () => {
+    it('passes only the given fetch options to RequestInit, falsy ones included', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ keepalive: false, referrer: '', mode: 'no-cors' }), page);
+        expect(fetchArguments(page).init).toEqual({
+            method: 'POST',
+            headers: {},
+            keepalive: false,
+            referrer: '',
+            mode: 'no-cors',
+        });
+    });
+
+    it('sends form fields as name and value pairs in the given order', async () => {
+        const page = makeFetchPage();
+        const form = [
+            { name: 'q', value: 'a&b' },
+            { name: 'lang', value: 'en' },
+        ];
+        await httpRequest(makeHttpRequest({ form }), page);
+        expect(fetchArguments(page).form).toEqual([
+            ['q', 'a&b'],
+            ['lang', 'en'],
+        ]);
+    });
+
+    it('sends no form when no field is given', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest(), page);
+        expect(fetchArguments(page).form).toBeUndefined();
+    });
+
+    it('reads a multipart file from its path', async () => {
+        const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'http-')), 'notes.txt');
+        fs.writeFileSync(file, 'hello');
+        const page = makeFetchPage();
+        await httpRequest(
+            makeHttpRequest({
+                multipart: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }],
+            }),
+            page,
+        );
+        const [field] = fetchArguments(page).multipart;
+        expect(field).toEqual({
+            name: 'file',
+            fileName: 'notes.txt',
+            mimeType: 'text/plain',
+            buffer: new Uint8Array(Buffer.from('hello')),
+        });
+    });
+
+    it('sends a multipart value as text', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ multipart: [{ name: 'count', value: '3' }] }), page);
+        expect(fetchArguments(page).multipart).toEqual([{ name: 'count', value: '3' }]);
+    });
+
+    it('fails with the timeout in milliseconds when the fetch timed out', async () => {
+        const page = makeFetchPage({ timedOut: true } as any);
+        await expect(httpRequest(makeHttpRequest({ timeout: 500 }), page)).rejects.toThrow(
+            'Timeout 500ms exceeded while waiting for the response of /api/echo.',
+        );
+    });
+
+    it('returns the response metadata and the raw body bytes', async () => {
+        const [message] = await httpRequest(makeHttpRequest(), makeFetchPage());
+        expect(JSON.parse(message.json)).toEqual({
+            status: 200,
+            statusText: 'OK',
+            ok: true,
+            url: 'http://localhost/api/echo',
+            headers: JSON.stringify({ 'content-type': 'text/plain' }),
+            redirected: false,
+            type: 'basic',
+        });
+        expect(Buffer.from(message.bodyBytes)).toEqual(Buffer.from('hi'));
     });
 });

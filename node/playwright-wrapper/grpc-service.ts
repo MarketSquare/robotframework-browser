@@ -423,16 +423,20 @@ export class PlaywrightServer {
     advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     async waitForRequest(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
-        await this.streamCaptured(call, network.waitForRequest);
+        await this.streamMessages(call, network.waitForRequest);
     }
 
     async waitForResponse(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
-        await this.streamCaptured(call, network.waitForResponse);
+        await this.streamMessages(call, network.waitForResponse);
     }
 
-    private async streamCaptured(
-        call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>,
-        capture: (request: pb.Request_HttpCapture, page: Page) => Promise<pb.Response_Json[]>,
+    async httpRequest(call: ServerWritableStream<pb.Request_HttpRequest, pb.Response_Json>): Promise<void> {
+        await this.streamMessages(call, network.httpRequest);
+    }
+
+    private async streamMessages<T>(
+        call: ServerWritableStream<T, pb.Response_Json>,
+        capture: (request: T, page: Page) => Promise<pb.Response_Json[]>,
     ): Promise<void> {
         try {
             const request = call.request;
@@ -486,7 +490,6 @@ export class PlaywrightServer {
     highlightElements = this.wrapping(evaluation.highlightElements);
     download = this.wrapping(evaluation.download);
     setViewportSize = this.wrappingPage(browserControl.setViewportSize);
-    httpRequest = this.wrappingPage(network.httpRequest);
 
     async getDevice(
         call: ServerUnaryCall<pb.Request_Device, pb.Response_Json>,

@@ -125,6 +125,16 @@ given inline, as a URL, or as a file. A keyword takes exactly one source; an emp
 as not given.
 _Avoid_: input, body
 
+**Page request**:
+An HTTP request a page makes itself: a navigation, a resource it loads, or a `fetch` in the
+page, which is what `HTTP` sends.
+_Avoid_: browser request, network request
+
+**API request**:
+An HTTP request the library sends through a context, outside any page, as
+`Send API Request` does. It shares the context's cookies but is not page traffic.
+_Avoid_: API call, backend request, page request
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -166,6 +176,10 @@ _Avoid_: input, body
 - An **init script** runs in every document its context or page loads, before the document's
   own scripts. A **script tag** runs once, when it is added, in the document it was added
   to.
+- Only a **page request** is seen by `Wait For Request` and `Wait For Response`. An **API
+  request** is not, even when a page of the same context is open.
+- An **API request** and the **page requests** of its context share one cookie jar: a cookie
+  either one receives is there for the other, which then sends it by its own rules.
 - An **adopted context** is registered by `call_js_keyword`, from what Node reports when
   `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 

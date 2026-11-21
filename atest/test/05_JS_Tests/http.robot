@@ -42,6 +42,6 @@ DELETE
     Should Be Equal    ${response.status}    ${200}
 
 HEAD
-    &{response} =    HTTP    /api/get/json
+    &{response} =    HTTP    /api/get/json    HEAD
     Should Be Equal    ${response.status}    ${200}
     Should Be Equal    ${response.headers['content-type']}    application/json; charset=utf-8
