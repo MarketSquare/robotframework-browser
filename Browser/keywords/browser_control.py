@@ -28,7 +28,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     BoundingBox,
-    HeaderTarget,
+    ContextOrPage,
     HighlightMode,
     HttpCredentials,
     PageLoadStates,
@@ -732,7 +732,7 @@ class Control(LibraryComponent):
     def set_extra_http_headers(
         self,
         *,
-        target: HeaderTarget = HeaderTarget.Context,
+        on: ContextOrPage = ContextOrPage.Context,
         **headers: str | Secret,
     ):
         """Sets the extra HTTP headers that every request of the active context or page sends.
@@ -740,12 +740,12 @@ class Control(LibraryComponent):
         *Arguments:*
           - ``headers``: The headers, as free named arguments ``name=value``. A value is a
                 string or a Robot Framework 7.4 ``Secret``. An empty string is sent as an empty
-                header. No headers clears the extra headers of the ``target``.
-          - ``target``: Where the headers are set, see `HeaderTarget`. ``Context`` (default)
+                header. No headers clears them.
+          - ``on``: Where the headers are set, see `ContextOrPage`. ``Context`` (default)
                 for every page of the active context, also pages opened later, ``Page`` for the
                 active page only. Fails when no context or page is open.
 
-        The given headers replace all extra headers of the ``target``, also those given as
+        The given headers replace all extra headers of the context or page, also those given as
         ``extraHTTPHeaders`` to `New Context`. To keep a header, pass it again. Page headers
         are sent on top of the context headers; for the same name the page header wins.
 
@@ -763,7 +763,7 @@ class Control(LibraryComponent):
         | `New Context`    extraHTTPHeaders={'X-Tenant': 'a'}
         | `New Page`    ${URL}/login
         | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=Bearer ${token}    # X-Tenant passed again to keep it
-        | `Set Extra HTTP Headers`    X-Experiment=variant-b    target=Page
+        | `Set Extra HTTP Headers`    X-Experiment=variant-b    on=Page
         | `Set Extra HTTP Headers`    # clears the context headers
         """
         resolved = {
@@ -772,7 +772,7 @@ class Control(LibraryComponent):
         }
         request = Request().ExtraHttpHeaders(headers=resolved)
         with self.playwright.grpc_channel() as stub:
-            if target == HeaderTarget.Page:
+            if on == ContextOrPage.Page:
                 response = stub.SetPageExtraHttpHeaders(request)
             else:
                 response = stub.SetContextExtraHttpHeaders(request)

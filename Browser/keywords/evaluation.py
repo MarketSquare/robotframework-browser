@@ -24,9 +24,9 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     ROBOT_FRAMEWORK_BROWSER_NO_SET,
+    ContextOrPage,
     DownloadInfo,
     HighlightMode,
-    InitScriptTarget,
     keyword,
     logger,
 )
@@ -314,7 +314,7 @@ class Evaluation(LibraryComponent):
         *,
         path: PathLike | None = None,
         arg: Any = None,
-        on: InitScriptTarget = InitScriptTarget.Context,
+        on: ContextOrPage = ContextOrPage.Context,
     ):
         """Adds an init script: JavaScript that runs in every document of the active context or page before the document's own scripts.
 
@@ -327,7 +327,7 @@ class Evaluation(LibraryComponent):
                 function expression, given as ``content`` or read from ``path``, which is
                 called with ``arg``. Source that is not a single
                 expression fails before the script is added. ``None`` means no argument.
-          - ``on``: Where the script is added, see `InitScriptTarget`. ``Context`` (default)
+          - ``on``: Where the script is added, see `ContextOrPage`. ``Context`` (default)
                 for every page, popup and frame of the active context, ``Page`` for the active
                 page and its frames, not its popups. Fails when no context or page is open.
 
@@ -361,7 +361,7 @@ class Evaluation(LibraryComponent):
         if arg is not None:
             request.arg = json.dumps(arg)
         with self.playwright.grpc_channel() as stub:
-            if on == InitScriptTarget.Page:
+            if on == ContextOrPage.Page:
                 response = stub.AddPageInitScript(request)
             else:
                 response = stub.AddContextInitScript(request)

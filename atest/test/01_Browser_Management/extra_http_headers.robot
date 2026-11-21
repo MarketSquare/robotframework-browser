@@ -33,14 +33,14 @@ Context Headers Reach A Page Opened Later
     Echoed Header Should Be    x-tenant    b
 
 Page Headers Reach Only The Active Page
-    Set Extra HTTP Headers    X-Page=1    target=Page
+    Set Extra HTTP Headers    X-Page=1    on=Page
     Echoed Header Should Be    x-page    1
     New Page    ${HTTP_URL}
     Header Should Not Be Echoed    x-page
 
 Page Header Wins Over A Context Header Of The Same Name
     Set Extra HTTP Headers    X-Tenant=context    X-Context=1
-    Set Extra HTTP Headers    X-Tenant=page    target=Page
+    Set Extra HTTP Headers    X-Tenant=page    on=Page
     Echoed Header Should Be    x-tenant    page
     Echoed Header Should Be    x-context    1
 
