@@ -750,17 +750,19 @@ class Control(LibraryComponent):
         are sent on top of the context headers; for the same name the page header wins.
 
         The keyword logs only the header names. A string value still shows in the keyword's
-        arguments in the Robot Framework log; give a token as ``Secret`` to keep it out.
+        arguments in the Robot Framework log; give a token as ``Secret`` to keep it out. The
+        ``$variable`` syntax of `Set HTTP Credentials` is not resolved here: ``$token`` is
+        sent as it is.
 
         An ``Authorization`` header goes to every origin the page calls, third-party origins
         included. For HTTP Basic authentication `Set HTTP Credentials` with an ``origin`` is
-        safer. Since Playwright 1.63 the headers also reach WebSocket handshakes in Chromium and
-        WebKit; Firefox does not send them for a WebSocket opened inside a Worker.
+        safer. Since Playwright 1.63 the headers also reach WebSocket handshakes in Chromium 151+
+        and WebKit; Firefox does not send them for a WebSocket opened inside a Worker.
 
         Example:
         | `New Context`    extraHTTPHeaders={'X-Tenant': 'a'}
         | `New Page`    ${URL}/login
-        | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=${token}    # X-Tenant passed again to keep it
+        | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=Bearer ${token}    # X-Tenant passed again to keep it
         | `Set Extra HTTP Headers`    X-Experiment=variant-b    target=Page
         | `Set Extra HTTP Headers`    # clears the context headers
         """

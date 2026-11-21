@@ -6,12 +6,11 @@ Test Teardown    Close Context
 Test Tags        no-iframe
 
 *** Variables ***
-${USERNAME} =        robot
-${PASSWORD} =        secret
-${AUTH_PATH} =       api/basic-auth/robot/secret
-${OTHER_USER} =      other
-${OTHER_PW} =        other-pw
-${OTHER_ORIGIN} =    http://127.0.0.1:${SERVER_PORT}
+${USERNAME} =      robot
+${PASSWORD} =      secret
+${AUTH_PATH} =     api/basic-auth/robot/secret
+${OTHER_USER} =    other
+${OTHER_PW} =      other-pw
 
 *** Test Cases ***
 Credentials Set Mid Test Pass Basic Auth
@@ -29,7 +28,7 @@ Credentials With An Origin Are Sent Only To That Origin
 
 First Credential Matching The Origin Is Used
     Open Context
-    VAR    &{other} =    username=$OTHER_USER    password=$OTHER_PW    origin=${OTHER_ORIGIN}
+    VAR    &{other} =    username=$OTHER_USER    password=$OTHER_PW    origin=${OTHER_ORIGIN_ROOT_URL.rstrip('/')}
     VAR    &{credential} =    username=$USERNAME    password=$PASSWORD
     Set HTTP Credentials    ${other}    ${credential}
     Basic Auth Status Should Be    ${ROOT_URL}${AUTH_PATH}    200
@@ -40,6 +39,7 @@ Credentials Replace The Credentials Of New Context
     VAR    &{other} =    username=$OTHER_USER    password=$OTHER_PW
     Set HTTP Credentials    ${other}
     Basic Auth Status Should Be    ${ROOT_URL}${AUTH_PATH}    401
+    Basic Auth Status Should Be    ${ROOT_URL}api/basic-auth/other/other-pw    200
 
 No Credentials Clear The Credentials
     Open Context    httpCredentials={'username': '$USERNAME', 'password': '$PASSWORD'}
