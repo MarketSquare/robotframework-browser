@@ -2118,13 +2118,14 @@ class CoverageType(Enum):
     all = auto()
 
 
-class InitScriptTarget(Enum):
-    """Defines where `Add Init Script` adds the init script, and so how long it lives.
+class ContextOrPage(Enum):
+    """Defines whether a keyword works on the active context or the active page.
 
-    - ``Context``: The active context. The script runs in every page, popup and frame of the
-      context and lives until the context closes.
-    - ``Page``: The active page. The script runs in the page and its frames, not in the popups it
-      opens, and lives until the page closes.
+    - ``Context``: The active context, and so every page in it, also pages opened later.
+    - ``Page``: The active page only.
+
+    Each keyword that takes it, for example `Add Init Script` or `Set Extra HTTP Headers`,
+    explains what that means for it.
     """
 
     Context = auto()

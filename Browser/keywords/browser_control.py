@@ -19,7 +19,7 @@ from collections.abc import Iterable
 from contextlib import contextmanager
 from datetime import timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from robot.utils import get_link_path
@@ -28,7 +28,9 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     BoundingBox,
+    ContextOrPage,
     HighlightMode,
+    HttpCredentials,
     PageLoadStates,
     Permission,
     Scale,
@@ -40,6 +42,7 @@ from ..utils import (
 )
 from ..utils.data_types import HighLightElement
 from ..utils.logger import LOGLEVEL
+from ..utils.types import Secret
 
 if TYPE_CHECKING:
     from typing import Any  # noqa: F401
@@ -139,8 +142,9 @@ class Control(LibraryComponent):
                 consider the operation to be finished when the network response is
                 received and the document started loading.
           - ``referer``: Value of the ``Referer`` header sent with this one navigation
-                request. Has no effect when the context already sets ``Referer`` with
-                ``extraHTTPHeaders`` in `New Context`; the context value is sent then.
+                request. Has no effect when the context or page already sets ``Referer``
+                with ``extraHTTPHeaders`` in `New Context` or with `Set Extra HTTP Headers`;
+                that value is sent then.
 
 
         Returns the HTTP status code of the navigation request as an integer, or 0 if no response was received.
@@ -723,6 +727,106 @@ class Control(LibraryComponent):
         logger.info(geolocation)
         with self.playwright.grpc_channel() as stub:
             response = stub.SetGeolocation(Request().Json(body=geolocation))
+            logger.info(response.log)
+
+    @keyword(name="Set Extra HTTP Headers", tags=("Setter", "BrowserControl"))
+    def set_extra_http_headers(
+        self,
+        *,
+        on: ContextOrPage = ContextOrPage.Context,
+        **headers: str | Secret,
+    ):
+        """Sets the extra HTTP headers that every request of the active context or page sends.
+
+        *Arguments:*
+          - ``headers``: The headers, as free named arguments ``name=value``. A value is a
+                string or a Robot Framework ``Secret``. An empty string is sent as an empty
+                header. No headers clears them. A header named ``on`` cannot be set, because
+                ``on=`` is the argument below.
+          - ``on``: Where the headers are set, see `ContextOrPage`. ``Context`` (default)
+                for every page of the active context, also pages opened later, ``Page`` for the
+                active page only. Fails when no context or page is open.
+
+        The given headers replace all extra headers of the context or page, also those given as
+        ``extraHTTPHeaders`` to `New Context`. To keep a header, pass it again. Page headers
+        are sent on top of the context headers; for the same name the page header wins.
+
+        The keyword logs only the header names. A string value still shows in the keyword's
+        arguments in the Robot Framework log; give a token as ``Secret`` to keep it out. The
+        ``$variable`` syntax of `Set HTTP Credentials` is not resolved here: ``$token`` is
+        sent as it is. With ``enable_playwright_debug`` in the library import, the values are
+        visible as plain text in the Playwright debug log.
+
+        An ``Authorization`` header goes to every origin the page calls, third-party origins
+        included. For HTTP Basic authentication `Set HTTP Credentials` with an ``origin`` is
+        safer. In Playwright the headers also reach WebSocket handshakes in Chromium 151+
+        and WebKit; Firefox does not send them for a WebSocket opened inside a Worker.
+
+        Example:
+        | `New Context`    extraHTTPHeaders={'X-Tenant': 'a'}
+        | `New Page`    ${URL}/login
+        | VAR    ${token: Secret} =    %{API_AUTHORIZATION}    # e.g. "Bearer abc123"
+        | `Set Extra HTTP Headers`    X-Tenant=a    Authorization=${token}    # X-Tenant passed again to keep it
+        | `Set Extra HTTP Headers`    X-Experiment=variant-b    on=Page
+        | `Set Extra HTTP Headers`    # clears the context headers
+        """
+        resolved = {
+            name: value.value if isinstance(value, Secret) else value
+            for name, value in headers.items()
+        }
+        request = Request().ExtraHttpHeaders(headers=resolved)
+        with self.playwright.grpc_channel() as stub:
+            if on == ContextOrPage.Page:
+                response = stub.SetPageExtraHttpHeaders(request)
+            else:
+                response = stub.SetContextExtraHttpHeaders(request)
+            logger.info(response.log)
+
+    @keyword(name="Set HTTP Credentials", tags=("Setter", "BrowserControl"))
+    def set_http_credentials(self, *credentials: HttpCredentials):
+        """Sets the credentials the active context sends for HTTP authentication.
+
+        *Arguments:*
+          - ``credentials``: Zero or more `HttpCredentials` dictionaries with ``username``,
+                ``password`` and an optional ``origin`` (``scheme://host:port``). A credential
+                with ``origin`` is sent only to that origin, one without to any origin that asks
+                for authentication. For a request, the first credential whose ``origin`` matches,
+                or that has none, is used. No credentials clears them.
+
+        The given credentials replace all credentials of the active context, also those given
+        as ``httpCredentials`` to `New Context`. To keep a credential, pass it again.
+
+        As in `New Context`, ``username`` and ``password`` are given as Robot Framework
+        ``Secret`` or with the ``$variable`` syntax, so their values stay out of the log. The
+        keyword logs only the origins. With ``enable_playwright_debug`` in the library import,
+        the values are visible as plain text in the Playwright debug log.
+
+        Browsers may cache credentials per origin after a successful authentication, so
+        changing the credentials of an origin that has already authenticated may have no
+        effect. To switch users reliably, open a `New Context`.
+
+        Example:
+        | VAR    &{admin} =    username=$admin_user    password=$admin_pwd    origin=https://admin.example.com
+        | VAR    &{api} =    username=$api_user    password=$api_pwd    origin=https://api.example.com
+        | `New Context`
+        | `Set HTTP Credentials`    ${admin}    ${api}
+        | `New Page`    https://admin.example.com
+        | `Set HTTP Credentials`    # clears the credentials
+        """
+        request = Request().HttpCredentials()
+        for credential in credentials:
+            resolved = cast(
+                "dict[str, str]", self.resolve_secret(credential, "credentials")
+            )
+            request.credentials.append(
+                Request().HttpCredential(
+                    username=resolved["username"],
+                    password=resolved["password"],
+                    origin=resolved.get("origin"),
+                )
+            )
+        with self.playwright.grpc_channel() as stub:
+            response = stub.SetHttpCredentials(request)
             logger.info(response.log)
 
     @keyword(tags=("Setter", "BrowserControl"))

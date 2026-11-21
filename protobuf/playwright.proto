@@ -381,6 +381,20 @@ message Request {
     optional string arg = 2;
   }
 
+  message ExtraHttpHeaders {
+    map<string, string> headers = 1;
+  }
+
+  message HttpCredential {
+    string username = 1;
+    string password = 2;
+    optional string origin = 3;
+  }
+
+  message HttpCredentials {
+    repeated HttpCredential credentials = 1;
+  }
+
   message ElementSelectorWithOptions {
     string selector = 1;
     string options = 2;
@@ -721,6 +735,12 @@ service  Playwright {
 
   rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);
   rpc SetOffline(Request.Bool) returns (Response.Empty);
+  /* Sets the extra HTTP headers of the active context: browserContext.setExtraHTTPHeaders */
+  rpc SetContextExtraHttpHeaders(Request.ExtraHttpHeaders) returns (Response.Empty);
+  /* Sets the extra HTTP headers of the active page: page.setExtraHTTPHeaders */
+  rpc SetPageExtraHttpHeaders(Request.ExtraHttpHeaders) returns (Response.Empty);
+  /* Sets the HTTP credentials of the active context: browserContext.setHTTPCredentials */
+  rpc SetHttpCredentials(Request.HttpCredentials) returns (Response.Empty);
   rpc Reload(Request.NavigationOptions) returns (Response.Empty);
 
   /* Playwright State handling keywords */

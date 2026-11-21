@@ -590,6 +590,9 @@ export class PlaywrightServer {
     }
 
     reload = this.wrappingPage(browserControl.reload);
+    setContextExtraHttpHeaders = this.wrapping(browserControl.setContextExtraHttpHeaders);
+    setPageExtraHttpHeaders = this.wrapping(browserControl.setPageExtraHttpHeaders);
+    setHttpCredentials = this.wrapping(browserControl.setHttpCredentials);
 
     async setPeerId(
         call: ServerUnaryCall<pb.Request_Index, pb.Response_String>,
