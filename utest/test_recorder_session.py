@@ -325,6 +325,36 @@ def test_an_existing_argument_name_reuses_the_argument_and_offers_the_marked_tex
     assert saved.count("Click    \\#row-${row}") == 3
 
 
+def test_a_replace_without_its_offer_is_rejected_and_changes_nothing():
+    s, target, _ = session()
+    start(s, "K")
+    s.handle_event("added", {"name": "click", "selector": "#row-1"})
+    s.handle_event("added", {"name": "click", "selector": "#row-2 .col-1"})
+    s.handle_command(
+        {
+            "cmd": "argument",
+            "call": 0,
+            "value": 0,
+            "start": 5,
+            "end": 6,
+            "name": "row",
+            "raw": "#row-1",
+        }
+    )
+    assert s.toolbar_state()["offer"]
+    s.handle_event("added", CLICK)
+    assert s.toolbar_state()["offer"] is None
+    s.handle_command({"cmd": "replace", "argument": "row", "occurrences": [[1, 0]]})
+    assert "changed" in s.toolbar_state()["error"]
+    assert "#row-2 .col-1" in target.saved[-1]
+
+
+def test_skipping_without_an_offer_is_no_error():
+    s, _, _ = recording()
+    s.handle_command({"cmd": "replace", "argument": "who", "occurrences": []})
+    assert s.toolbar_state()["error"] is None
+
+
 def test_argument_written_as_a_variable_gets_its_plain_name():
     s, target, _ = session()
     start(s, "K")

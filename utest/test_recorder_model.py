@@ -24,6 +24,7 @@ from Browser.recorder.model import (
     Argument,
     Call,
     DisplayNames,
+    MadeArgument,
     RecordedKeyword,
     SettingNames,
     Value,
@@ -67,7 +68,8 @@ def test_undo_removes_the_whole_group():
 def test_make_argument_whole_value_with_default():
     kw = RecordedKeyword("K")
     kw.add(fill("admin@example.com"))
-    assert kw.make_argument(0, 1, 0, len("admin@example.com"), "email") == []
+    made = kw.make_argument(0, 1, 0, len("admin@example.com"), "email")
+    assert made == MadeArgument("email", "admin@example.com", [])
     assert kw.lines() == [
         "[Tags]    recorded",
         "[Arguments]    ${email}=admin@example.com",
@@ -119,8 +121,8 @@ def test_make_argument_reports_other_occurrences():
             [Value.literal("#search", False), Value.literal("admin@example.com")],
         )
     )
-    assert kw.make_argument(0, 1, 0, 17, "email") == [(1, 1)]
-    kw.replace("email", [(1, 1)])
+    assert kw.make_argument(0, 1, 0, 17, "email").occurrences == [(1, 1)]
+    kw.replace("email", [(1, 1)], "admin@example.com")
     assert kw.calls()[1].render(CANONICAL) == "Fill Text    \\#search    ${email}"
 
 
@@ -182,14 +184,36 @@ def test_an_existing_argument_name_in_any_spelling_reuses_the_argument_and_its_d
     ]
 
 
+def test_typing_on_in_a_reused_argument_keeps_its_default():
+    kw = RecordedKeyword("K")
+    kw.add(fill("Alice"))
+    kw.add(fill("Bob"))
+    kw.make_argument(0, 1, 0, 5, "who")
+    kw.make_argument(1, 1, 0, 3, "who")
+    assert kw.update_last(fill("Bobby"))
+    assert kw.arguments == [Argument("who", "Alice", True)]
+    assert kw.calls()[1].render(CANONICAL) == "Fill Text    \\#name    ${who}"
+
+
+def test_typing_on_in_a_replaced_occurrence_keeps_the_default():
+    kw = RecordedKeyword("K")
+    kw.add(fill("Alice"))
+    kw.add(fill("Alice"))
+    kw.make_argument(0, 1, 0, 5, "who")
+    kw.replace("who", [(1, 1)], "Alice")
+    assert kw.update_last(fill("Alicex"))
+    assert kw.arguments == [Argument("who", "Alice", True)]
+
+
 def test_replace_after_reusing_an_argument_replaces_the_newly_marked_text():
     kw = RecordedKeyword("K")
     kw.add(fill("alice"))
     kw.add(fill("bob"))
     kw.add(fill("bob"))
     kw.make_argument(0, 1, 0, 5, "user")
-    assert kw.make_argument(1, 1, 0, 3, "user") == [(2, 1)]
-    kw.replace("user", [(2, 1)], "bob")
+    made = kw.make_argument(1, 1, 0, 3, "${User}")
+    assert made == MadeArgument("user", "bob", [(2, 1)])
+    kw.replace(made.name, made.occurrences, made.marked)
     assert [c.render(CANONICAL) for c in kw.calls()] == [
         "Fill Text    \\#name    ${user}",
         "Fill Text    \\#name    ${user}",
@@ -290,7 +314,7 @@ def test_replace_skips_occurrences_that_no_longer_contain_the_text_or_are_select
         )
     )
     kw.make_argument(0, 1, 0, 5, "user")
-    kw.replace("user", [(1, 0), (1, 1)])
+    kw.replace("user", [(1, 0), (1, 1)], "admin")
     assert kw.calls()[1].render(CANONICAL) == "Fill Text    \\#admin    something else"
 
 
