@@ -116,6 +116,21 @@ Invalid Multipart Body Is Still Echoed
     Should Be Equal    ${response.body.parts}    ${None}
     Should Not Be Empty    ${response.body.partsError}
 
+Multipart Body Cut Off Inside A File Is Still Echoed
+    ${body} =    Catenate    SEPARATOR=\r\n
+    ...    --boundary-3
+    ...    Content-Disposition: form-data; name="file"; filename="cut.txt"
+    ...    Content-Type: text/plain
+    ...    ${EMPTY}
+    ...    no closing boundary
+    &{response} =    HTTP    /api/echo/cut    POST    ${body}
+    ...    headers={"Content-Type": "multipart/form-data; boundary=boundary-3"}
+    Should Be Equal    ${response.status}    ${200}
+    Should Be Equal    ${response.body.parts}    ${None}
+    Should Be Equal    ${response.body.partsError}    Unexpected end of form
+    &{response} =    HTTP    /api/echo/after-cut
+    Should Be Equal    ${response.status}    ${200}
+
 Form Submit Shows The Echo In The Panel
     ${url} =    HTTP Page Url    ${HTTP_URL}    kind=form    method=POST    url=/api/echo/form
     ...    bodyMode=form-urlencoded    body={"name": "robot"}
@@ -162,6 +177,14 @@ Cross Origin Fetch Is Blocked When CORS Is Off
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${OTHER_ORIGIN_ROOT_URL}api/echo/cross?cors=off
     Go To    ${url}
     Get Text    id=state    ==    error
+
+Cross Origin Basic Auth Challenge Is Readable With Credentials
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${OTHER_ORIGIN_ROOT_URL}api/basic-auth/robot/secret
+    ...    credentials=include
+    Go To    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=status    ==    401
+    Get Text    id=response-headers    contains    "www-authenticate": "Basic realm=\\"test-app\\""
 
 Basic Auth Endpoint Rejects A Request Without Credentials
     &{response} =    HTTP    /api/basic-auth/robot/secret
@@ -223,3 +246,23 @@ Unknown Prefill Value Is Reported Instead Of Sent
     Get Text    id=state    ==    error
     Get Text    id=error    ==    unknown bodyMode: JSON
     Get Text    id=request-count    ==    0
+
+Image Load Answering After A Later One Keeps Its History Entry
+    ${url} =    HTTP Page Url    ${HTTP_URL}    kind=img    url=/api/respond/slow?delay=1000&file=image.png
+    # The pending image would hold back the load event until it answers.
+    Go To    ${url}    wait_until=domcontentloaded
+    Fill Text    id=url    /api/respond/fast?file=image.png
+    Click    id=send
+    Get Element Count    css=#history li    ==    2
+    Get Text    css=#history li >> nth=0    ==    img GET /api/respond/fast?file=image.png -> loaded 64x48
+    Get Text    css=#history li >> nth=1    ==    img GET /api/respond/slow?delay=1000&file=image.png -> loaded 64x48
+    Get Text    id=state    ==    done
+    Get Element States    id=response-image    contains    visible
+
+Form Fields Named Like Form Properties Are Submitted
+    ${url} =    HTTP Page Url    ${HTTP_URL}    kind=form    method=POST    url=/api/echo/form
+    ...    bodyMode=form-urlencoded    body={"submit": "go", "action": "x", "appendChild": "y"}
+    Go To    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=response-url    ==    ${ROOT_URL}api/echo/form?format=html
+    Get Text    id=response-body    contains    "text": "submit=go&action=x&appendChild=y"

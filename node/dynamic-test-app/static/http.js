@@ -137,8 +137,6 @@
         }
         $('response-headers').textContent = '';
         $('response-body').textContent = '';
-        $('response-image').onload = null;
-        $('response-image').onerror = null;
         $('response-image').hidden = true;
         $('response-image').removeAttribute('src');
         if (imageUrl) URL.revokeObjectURL(imageUrl);
@@ -259,9 +257,14 @@
 
     function sendImg(config) {
         return new Promise((resolve, reject) => {
-            const image = $('response-image');
+            // Each load has its own element, so a later request cannot cancel this one.
+            const image = new Image();
+            image.alt = 'response image';
             image.onload = () => {
-                image.hidden = false;
+                if (isCurrent(config)) {
+                    image.id = 'response-image';
+                    $('response-image').replaceWith(image);
+                }
                 const size = image.naturalWidth + 'x' + image.naturalHeight;
                 showResult(config, image.currentSrc, 'image ' + size, 'loaded ' + size);
                 resolve();
@@ -274,12 +277,26 @@
     // Navigations that never load leave no event behind; after this long the form submit counts as failed.
     const FORM_TIMEOUT_MS = 15000;
 
+    // A form control named like a form property (submit, action, appendChild...) masks that property,
+    // so the form is only touched through attributes and the prototypes' methods.
+    function appendToForm(form, node) {
+        Node.prototype.appendChild.call(form, node);
+    }
+
     function addHiddenInput(form, name, value) {
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = name;
         input.value = String(value);
-        form.appendChild(input);
+        appendToForm(form, input);
+    }
+
+    function submitForm(form) {
+        HTMLFormElement.prototype.submit.call(form);
+    }
+
+    function removeForm(form) {
+        Element.prototype.remove.call(form);
     }
 
     function readFormResult(frame, action) {
@@ -302,20 +319,20 @@
         const action = new URL(config.url, location.href);
         if (!action.searchParams.has('format')) action.searchParams.set('format', 'html');
         const form = document.createElement('form');
-        form.method = config.method === 'GET' ? 'GET' : 'POST';
-        form.target = config.target;
-        form.hidden = true;
-        if (form.method.toUpperCase() === 'GET') {
-            // A GET form replaces the action's query with its fields, so the query travels as fields.
+        const method = config.method === 'GET' ? 'GET' : 'POST';
+        // A GET form replaces the action's query with its fields, so the query travels as fields.
+        const formAction = method === 'GET' ? action.origin + action.pathname : action.href;
+        form.setAttribute('method', method);
+        form.setAttribute('target', config.target);
+        form.setAttribute('action', formAction);
+        form.setAttribute('hidden', '');
+        if (method === 'GET') {
             for (const [name, value] of action.searchParams) addHiddenInput(form, name, value);
-            form.action = action.origin + action.pathname;
-        } else {
-            form.action = action.href;
         }
         const fields = ['form-urlencoded', 'multipart', 'json'].includes(config.bodyMode) ? bodyFields(config) : {};
         for (const [name, value] of Object.entries(fields)) addHiddenInput(form, name, value);
         if (config.bodyMode === 'multipart') {
-            form.enctype = 'multipart/form-data';
+            form.setAttribute('enctype', 'multipart/form-data');
             const transfer = new DataTransfer();
             for (const file of await selectedFiles(config)) transfer.items.add(file);
             const input = document.createElement('input');
@@ -323,22 +340,18 @@
             input.name = config.fileField;
             input.multiple = true;
             input.files = transfer.files;
-            form.appendChild(input);
+            appendToForm(form, input);
         }
         document.body.appendChild(form);
         if (config.target !== 'form-result') {
-            form.submit();
-            form.remove();
+            submitForm(form);
+            removeForm(form);
             return;
         }
         const frame = document.querySelector('iframe[name="form-result"]');
         try {
             await new Promise((resolve, reject) => {
-                const timer = setTimeout(() => {
-                    frame.onload = null;
-                    reject(new Error('form submit got no response within ' + FORM_TIMEOUT_MS + ' ms'));
-                }, FORM_TIMEOUT_MS);
-                frame.onload = () => {
+                const onLoad = () => {
                     frame.onload = null;
                     clearTimeout(timer);
                     const result = readFormResult(frame, action);
@@ -346,13 +359,19 @@
                         reject(new Error(result.error));
                         return;
                     }
-                    showResult(config, form.action, result.text, 'submitted');
+                    showResult(config, formAction, result.text, 'submitted');
                     resolve();
                 };
-                form.submit();
+                const timer = setTimeout(() => {
+                    // A later submit into the same frame owns the handler by now.
+                    if (frame.onload === onLoad) frame.onload = null;
+                    reject(new Error('form submit got no response within ' + FORM_TIMEOUT_MS + ' ms'));
+                }, FORM_TIMEOUT_MS);
+                frame.onload = onLoad;
+                submitForm(form);
             });
         } finally {
-            form.remove();
+            removeForm(form);
         }
     }
 

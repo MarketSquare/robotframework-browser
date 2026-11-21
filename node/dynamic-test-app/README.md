@@ -143,7 +143,11 @@ exchange. `#response-body` is the body decoded as UTF-8 exactly as received, or
 answers later only adds its history entry. An `<img>` load and a form submit
 cannot read the status, size or headers, so for them only the body (image size,
 or the form result) is shown. A form submit that ends on the browser's error page
-is an `error`; one that never loads counts as an `error` after 15 seconds.
+is an `error`; one that never loads counts as an `error` after 15 seconds. The
+page cannot tell the browser's error page from a page on another origin, so a
+same-origin form submit that a redirect takes to another origin is an `error`
+too. Test cross-origin redirects with `fetch`, where `#response-url` shows the
+final URL.
 
 `static/http-fixtures/SHA256SUMS` lists the checksums of the fixtures. The
 helpers in `atest/library/http_test_page.py` build prefilled page URLs and

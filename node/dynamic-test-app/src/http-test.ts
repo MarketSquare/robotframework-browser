@@ -117,6 +117,8 @@ function parseMultipart(raw: Buffer, headers: IncomingHttpHeaders): Promise<Part
                 truncated: false,
             });
             const chunks: Buffer[] = [];
+            // Busboy reports a cut-off file part on the file stream, not on the parser.
+            stream.on('error', reject);
             stream.on('data', (chunk: Buffer) => chunks.push(chunk));
             stream.on('end', () => {
                 const data = Buffer.concat(chunks);
@@ -405,7 +407,7 @@ export function registerHttpTestRoutes(app: Express, log: LogJson, fixturesDir: 
                 return answerPreflight(req, res, log, 'basic-auth');
             }
             const echo = await buildEcho(req);
-            const cors = applyCors(req, res, []);
+            const cors = applyCors(req, res, ['WWW-Authenticate']);
             const credentials = decodeBasicAuth(req.get('authorization'));
             const user = String(req.params.user);
             if (credentials?.user !== user || credentials.password !== String(req.params.password)) {
