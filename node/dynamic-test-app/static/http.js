@@ -84,6 +84,7 @@
         const files = Array.from($('file').files);
         if (config.fixture) {
             const response = await fetch('/http-fixtures/' + config.fixture);
+            if (!response.ok) throw new Error('fixture ' + config.fixture + ' answered ' + response.status);
             const blob = await response.blob();
             files.push(new File([blob], config.fixture, { type: blob.type }));
         }
@@ -126,7 +127,9 @@
     }
 
     // ---------- response panel ----------
+    // Every send() gets a run number; only the latest run writes the panel, older ones only the history.
     let imageUrl = null;
+    const isCurrent = (config) => config.run === requestCount;
 
     function resetPanel() {
         for (const id of ['status', 'status-text', 'response-url', 'response-size', 'response-sha256', 'error']) {
@@ -147,21 +150,16 @@
     }
 
     function describeBody(bytes) {
-        let text;
         try {
-            text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+            return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
         } catch {
             return '[binary: ' + bytes.length + ' bytes]';
-        }
-        try {
-            return text.trim() === '' ? text : JSON.stringify(JSON.parse(text), null, 2);
-        } catch {
-            return text;
         }
     }
 
     function addHistory(config, outcome) {
         const item = document.createElement('li');
+        item.dataset.run = String(config.run ?? '');
         item.dataset.kind = config.kind;
         item.dataset.method = config.method;
         item.dataset.url = config.url;
@@ -173,11 +171,13 @@
     }
 
     function showResponse(config, response) {
+        const sha256 = sha256Hex(response.bytes);
+        addHistory(config, { status: response.status, sha256 });
+        if (!isCurrent(config)) return;
         $('status').textContent = String(response.status);
         $('status-text').textContent = response.statusText;
         $('response-url').textContent = response.url;
         $('response-size').textContent = String(response.bytes.length);
-        const sha256 = sha256Hex(response.bytes);
         $('response-sha256').textContent = sha256;
         $('response-headers').textContent = JSON.stringify(response.headers, null, 2);
         $('response-body').textContent = describeBody(response.bytes);
@@ -187,13 +187,22 @@
             $('response-image').src = imageUrl;
             $('response-image').hidden = false;
         }
-        addHistory(config, { status: response.status, sha256 });
+        setState('done');
+    }
+
+    // For an <img> load or a form submit: no status, size or headers, only a body summary.
+    function showResult(config, url, body, summary) {
+        addHistory(config, { summary });
+        if (!isCurrent(config)) return;
+        $('response-url').textContent = url;
+        $('response-body').textContent = body;
         setState('done');
     }
 
     function showError(config, message) {
-        $('error').textContent = message;
         addHistory(config, { summary: 'error: ' + message });
+        if (!isCurrent(config)) return;
+        $('error').textContent = message;
         setState('error');
     }
 
@@ -242,6 +251,8 @@
                 resolve();
             };
             xhr.onerror = () => reject(new Error('XMLHttpRequest network error'));
+            xhr.onabort = () => reject(new Error('XMLHttpRequest aborted'));
+            xhr.ontimeout = () => reject(new Error('XMLHttpRequest timed out'));
             xhr.send(config.method === 'GET' || config.method === 'HEAD' ? null : body);
         });
     }
@@ -251,10 +262,8 @@
             const image = $('response-image');
             image.onload = () => {
                 image.hidden = false;
-                $('response-url').textContent = image.currentSrc;
-                $('response-body').textContent = 'image ' + image.naturalWidth + 'x' + image.naturalHeight;
-                addHistory(config, { summary: 'loaded ' + image.naturalWidth + 'x' + image.naturalHeight });
-                setState('done');
+                const size = image.naturalWidth + 'x' + image.naturalHeight;
+                showResult(config, image.currentSrc, 'image ' + size, 'loaded ' + size);
                 resolve();
             };
             image.onerror = () => reject(new Error('image failed to load'));
@@ -262,26 +271,49 @@
         });
     }
 
-    function withHtmlFormat(url) {
-        const parsed = new URL(url, location.href);
-        if (!parsed.searchParams.has('format')) parsed.searchParams.set('format', 'html');
-        return parsed.href;
+    // Navigations that never load leave no event behind; after this long the form submit counts as failed.
+    const FORM_TIMEOUT_MS = 15000;
+
+    function addHiddenInput(form, name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = String(value);
+        form.appendChild(input);
+    }
+
+    function readFormResult(frame, action) {
+        let doc = null;
+        try {
+            doc = frame.contentDocument;
+        } catch {
+            doc = null;
+        }
+        if (doc && doc.location.origin === action.origin) {
+            const echo = doc.getElementById('echo');
+            return { text: echo ? echo.textContent : doc.body.textContent };
+        }
+        // A same-origin action whose result is unreadable or on another origin got the browser's error page.
+        if (action.origin === location.origin) return { error: 'form submit failed' };
+        return { text: '[cross-origin result]' };
     }
 
     async function sendForm(config) {
+        const action = new URL(config.url, location.href);
+        if (!action.searchParams.has('format')) action.searchParams.set('format', 'html');
         const form = document.createElement('form');
         form.method = config.method === 'GET' ? 'GET' : 'POST';
-        form.action = withHtmlFormat(config.url);
         form.target = config.target;
         form.hidden = true;
-        const fields = ['form-urlencoded', 'multipart', 'json'].includes(config.bodyMode) ? bodyFields(config) : {};
-        for (const [name, value] of Object.entries(fields)) {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = String(value);
-            form.appendChild(input);
+        if (form.method.toUpperCase() === 'GET') {
+            // A GET form replaces the action's query with its fields, so the query travels as fields.
+            for (const [name, value] of action.searchParams) addHiddenInput(form, name, value);
+            form.action = action.origin + action.pathname;
+        } else {
+            form.action = action.href;
         }
+        const fields = ['form-urlencoded', 'multipart', 'json'].includes(config.bodyMode) ? bodyFields(config) : {};
+        for (const [name, value] of Object.entries(fields)) addHiddenInput(form, name, value);
         if (config.bodyMode === 'multipart') {
             form.enctype = 'multipart/form-data';
             const transfer = new DataTransfer();
@@ -294,48 +326,51 @@
             form.appendChild(input);
         }
         document.body.appendChild(form);
-        if (config.target === 'form-result') {
-            const frame = document.querySelector('iframe[name="form-result"]');
-            await new Promise((resolve) => {
+        if (config.target !== 'form-result') {
+            form.submit();
+            form.remove();
+            return;
+        }
+        const frame = document.querySelector('iframe[name="form-result"]');
+        try {
+            await new Promise((resolve, reject) => {
+                const timer = setTimeout(() => {
+                    frame.onload = null;
+                    reject(new Error('form submit got no response within ' + FORM_TIMEOUT_MS + ' ms'));
+                }, FORM_TIMEOUT_MS);
                 frame.onload = () => {
                     frame.onload = null;
-                    let text;
-                    try {
-                        const doc = frame.contentDocument;
-                        const echo = doc.getElementById('echo');
-                        text = echo ? echo.textContent : doc.body.textContent;
-                    } catch {
-                        text = '[cross-origin result]';
+                    clearTimeout(timer);
+                    const result = readFormResult(frame, action);
+                    if (result.error) {
+                        reject(new Error(result.error));
+                        return;
                     }
-                    $('response-url').textContent = form.action;
-                    $('response-body').textContent = text;
-                    addHistory(config, { summary: 'submitted' });
-                    setState('done');
+                    showResult(config, form.action, result.text, 'submitted');
                     resolve();
                 };
                 form.submit();
             });
-        } else {
-            form.submit();
+        } finally {
+            form.remove();
         }
-        form.remove();
     }
 
     const SENDERS = { fetch: sendFetch, xhr: sendXhr, img: sendImg, form: sendForm };
 
     async function send() {
+        requestCount += 1;
+        $('request-count').textContent = String(requestCount);
+        resetPanel();
+        setState('pending');
         let config;
         try {
             config = readBuilder();
         } catch (error) {
-            resetPanel();
-            showError({ kind: '', method: '', url: '' }, 'invalid builder input: ' + error.message);
+            showError({ run: requestCount, kind: '', method: '', url: '' }, 'invalid builder input: ' + error.message);
             return;
         }
-        resetPanel();
-        requestCount += 1;
-        $('request-count').textContent = String(requestCount);
-        setState('pending');
+        config.run = requestCount;
         try {
             await SENDERS[config.kind](config);
         } catch (error) {
@@ -357,14 +392,24 @@
         target: 'target',
     };
 
+    // Returns an error message for a value a select does not offer, so a typo never sends silently.
     function prefill() {
         const params = new URLSearchParams(location.search);
         for (const [param, id] of Object.entries(PREFILL)) {
-            if (params.has(param)) $(id).value = params.get(param);
+            if (!params.has(param)) continue;
+            const value = params.get(param);
+            $(id).value = value;
+            if ($(id).value !== value) return 'unknown ' + param + ': ' + value;
         }
-        return params.get('send') === '1';
+        return params.get('send') === '1' ? null : undefined;
     }
 
     $('send').addEventListener('click', () => void send());
-    if (prefill()) void send();
+    const prefillResult = prefill();
+    if (typeof prefillResult === 'string') {
+        $('error').textContent = prefillResult;
+        setState('error');
+    } else if (prefillResult === null) {
+        void send();
+    }
 })();

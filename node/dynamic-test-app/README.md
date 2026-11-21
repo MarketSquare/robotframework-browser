@@ -42,7 +42,7 @@ Written directly by `src/server.ts`.
 |----------------|-------------------|
 | `server_start` | `url` |
 | `http`         | `method`, `url`, `status`, `contentLength`, `responseTimeMs` |
-| `http_echo`    | `endpoint` (`echo`, `respond`, `basic-auth`), `method`, `url`, `status`, `bodySize`, `bodySha256`, `parts`, `cors`; `file` for respond, `auth` (`ok`, `wrong`, `missing`) for basic-auth. Never the body itself |
+| `http_echo`    | `endpoint` (`echo`, `respond`, `basic-auth`), `method`, `url`, `status`, `bodySize`, `bodySha256`, `parts`, `cors`; `file` and `error` for respond, `auth` (`ok`, `wrong`, `missing`) for basic-auth. The request body itself is never logged; the `url` holds the whole query, including a respond `body=` |
 
 Examples:
 ```json
@@ -110,8 +110,8 @@ query turns that off.
 
 | Endpoint | Behaviour |
 |----------|-----------|
-| `/api/echo/**` | Any method. Returns JSON with `method`, `url`, `path`, `query`, `headers`, `origin`, `body` (`size`, `sha256`, `contentType`, `text`, `json`, `base64`) and `parts` for `multipart/form-data` (`name`, `filename`, `mimeType`, `size`, `sha256`, `text`). `format=html` wraps the JSON in `<pre id="echo">` |
-| `/api/respond/**` | The query defines the response: `status`, `statusText`, `contentType`, `header=Name:Value` (repeatable), `delay` (ms), `body`, `file` (a name in `static/http-fixtures/`). Without `body` or `file` it answers with the echo |
+| `/api/echo/**` | Any method. Returns JSON with `method`, `url`, `path`, `query`, `headers`, `origin`, `body` (`size`, `sha256`, `contentType`, `text`, `json`, `base64`) and `parts` for `multipart/form-data` in the order sent (`name`, `filename`, `mimeType`, `size`, `sha256`, `text`, `truncated`). A multipart body that cannot be parsed is still echoed, with `parts: null` and `partsError`. `format=html` wraps the JSON in `<pre id="echo">` |
+| `/api/respond/**` | The query defines the response: `status`, `statusText`, `contentType`, `header=Name:Value` (repeatable), `delay` (ms), `body`, `file` (a name in `static/http-fixtures/`). Without `body` or `file` it answers with the echo. An invalid `status` (an integer from 200 to 599), `delay`, `statusText` or `header` gets `400` with an `error` naming it |
 | `/api/basic-auth/:user/:password` | `401` with `WWW-Authenticate: Basic realm="test-app"` unless the `Authorization` header matches; otherwise the echo plus `authenticatedUser` |
 
 A second origin is the same server reached through `127.0.0.1` instead of
@@ -132,12 +132,18 @@ The page's builder:
 | `credentials` | `credentials` | fetch `credentials`: `same-origin`, `include`, `omit` |
 | `target` | `target` | form target: `form-result` (iframe on the page) or `_self` |
 
-`send=1` sends the request as soon as the page has loaded. The response panel
+`send=1` sends the request as soon as the page has loaded. A prefill value
+that a select does not offer sends nothing; the page shows `#state` `error` and
+the value in `#error`. The response panel
 shows `#state` (`idle`, `pending`, `done`, `error`), `#status`, `#status-text`,
 `#response-url`, `#response-size`, `#response-sha256`, `#response-headers`,
 `#response-body`, `#response-image` and `#error`; `#history` lists every
-exchange. An `<img>` load and a form submit cannot read the status, size or
-headers, so for them only the body (image size, or the form result) is shown.
+exchange. `#response-body` is the body decoded as UTF-8 exactly as received, or
+`[binary: N bytes]`. Only the latest request writes the panel; an earlier one that
+answers later only adds its history entry. An `<img>` load and a form submit
+cannot read the status, size or headers, so for them only the body (image size,
+or the form result) is shown. A form submit that ends on the browser's error page
+is an `error`; one that never loads counts as an `error` after 15 seconds.
 
 `static/http-fixtures/SHA256SUMS` lists the checksums of the fixtures. The
 helpers in `atest/library/http_test_page.py` build prefilled page URLs and

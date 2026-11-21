@@ -34,3 +34,25 @@ def http_page_url(page_url: str, send: bool = True, **fields: str) -> str:
     if send:
         fields["send"] = "1"
     return f"{page_url}?{urlencode(fields)}"
+
+
+def multipart_body(boundary: str, *parts: dict[str, str]) -> str:
+    """Return a ``multipart/form-data`` body with ``parts`` in the given order.
+
+    Each part is a dictionary with ``name`` and ``value``; a part with ``filename``
+    is sent as a file of type ``text/plain``.
+    """
+    lines = []
+    for part in parts:
+        disposition = f'form-data; name="{part["name"]}"'
+        lines.append(f"--{boundary}")
+        if "filename" in part:
+            lines.append(
+                f'Content-Disposition: {disposition}; filename="{part["filename"]}"'
+            )
+            lines.append("Content-Type: text/plain")
+        else:
+            lines.append(f"Content-Disposition: {disposition}")
+        lines.extend(["", part["value"]])
+    lines.append(f"--{boundary}--")
+    return "\r\n".join(lines) + "\r\n"

@@ -26,6 +26,7 @@ interface Part {
     size: number;
     sha256: string;
     text: string | null;
+    truncated: boolean;
 }
 
 interface Echo {
@@ -37,6 +38,7 @@ interface Echo {
     origin: string | null;
     body: BodyView;
     parts: Part[] | null;
+    partsError?: string;
 }
 
 const sha256 = (data: Buffer) => createHash('sha256').update(data).digest('hex');
@@ -84,8 +86,13 @@ function bodyView(raw: Buffer, contentType: string | undefined): BodyView {
 
 function parseMultipart(raw: Buffer, headers: IncomingHttpHeaders): Promise<Part[]> {
     return new Promise((resolve, reject) => {
+        // A slot per part in arrival order; a file's slot is filled when its stream ends.
         const parts: Part[] = [];
-        const parser = busboy({ headers, limits: { fileSize: MAX_BODY_BYTES } });
+        const parser = busboy({
+            headers,
+            defParamCharset: 'utf8',
+            limits: { fileSize: MAX_BODY_BYTES, fieldSize: MAX_BODY_BYTES },
+        });
         parser.on('field', (name, value, info) => {
             const data = Buffer.from(value, 'utf8');
             parts.push({
@@ -95,21 +102,30 @@ function parseMultipart(raw: Buffer, headers: IncomingHttpHeaders): Promise<Part
                 size: data.length,
                 sha256: sha256(data),
                 text: value,
+                truncated: info.valueTruncated,
             });
         });
         parser.on('file', (name, stream, info) => {
+            const index = parts.length;
+            parts.push({
+                name,
+                filename: info.filename ?? null,
+                mimeType: info.mimeType,
+                size: 0,
+                sha256: '',
+                text: null,
+                truncated: false,
+            });
             const chunks: Buffer[] = [];
             stream.on('data', (chunk: Buffer) => chunks.push(chunk));
             stream.on('end', () => {
                 const data = Buffer.concat(chunks);
-                parts.push({
-                    name,
-                    filename: info.filename ?? null,
-                    mimeType: info.mimeType,
+                parts[index] = {
+                    ...parts[index],
                     size: data.length,
                     sha256: sha256(data),
-                    text: null,
-                });
+                    truncated: stream.truncated === true,
+                };
             });
         });
         parser.on('close', () => resolve(parts));
@@ -120,12 +136,13 @@ function parseMultipart(raw: Buffer, headers: IncomingHttpHeaders): Promise<Part
 
 function queryObject(req: Request): Record<string, string | string[]> {
     const params = new URL(req.originalUrl, 'http://test-app').searchParams;
-    const query: Record<string, string | string[]> = {};
-    for (const key of new Set(params.keys())) {
-        const values = params.getAll(key);
-        query[key] = values.length === 1 ? values[0] : values;
-    }
-    return query;
+    // Object.fromEntries defines own properties, so a key such as `__proto__` is kept.
+    return Object.fromEntries(
+        [...new Set(params.keys())].map((key) => {
+            const values = params.getAll(key);
+            return [key, values.length === 1 ? values[0] : values];
+        }),
+    );
 }
 
 function queryValues(req: Request, name: string): string[] {
@@ -140,7 +157,7 @@ async function buildEcho(req: Request): Promise<Echo> {
     const raw = await readRawBody(req);
     const contentType = req.get('content-type');
     const isMultipart = (contentType ?? '').toLowerCase().startsWith('multipart/form-data');
-    return {
+    const echo: Echo = {
         method: req.method,
         url: req.originalUrl,
         path: new URL(req.originalUrl, 'http://test-app').pathname,
@@ -148,8 +165,16 @@ async function buildEcho(req: Request): Promise<Echo> {
         headers: req.headers,
         origin: req.get('origin') ?? null,
         body: bodyView(raw, contentType),
-        parts: isMultipart ? await parseMultipart(raw, req.headers) : null,
+        parts: null,
     };
+    if (isMultipart) {
+        try {
+            echo.parts = await parseMultipart(raw, req.headers);
+        } catch (error) {
+            echo.partsError = error instanceof Error ? error.message : String(error);
+        }
+    }
+    return echo;
 }
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -225,14 +250,59 @@ function logExchange(log: LogJson, endpoint: string, echo: Echo, status: number,
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-function parseHeaderParams(req: Request): [string, string][] {
-    return queryValues(req, 'header').flatMap((value): [string, string][] => {
-        const colon = value.indexOf(':');
-        if (colon <= 0) {
-            return [];
+const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+const HEADER_TEXT = /^[\t\x20-\x7e\x80-\xff]*$/;
+
+interface RespondSpec {
+    status: number;
+    statusText: string | undefined;
+    contentType: string | undefined;
+    headers: [string, string][];
+    body: string | undefined;
+    file: string | undefined;
+    delay: number;
+}
+
+function parseInteger(value: string | undefined, fallback: number): number {
+    if (value === undefined) {
+        return fallback;
+    }
+    return /^\d+$/.test(value) ? Number(value) : NaN;
+}
+
+/** Reads the `/api/respond` query; returns an error message naming the first bad parameter. */
+function parseRespondSpec(req: Request): RespondSpec | string {
+    const status = parseInteger(queryValue(req, 'status'), 200);
+    if (!(status >= 200 && status <= 599)) {
+        return `Invalid status: ${queryValue(req, 'status')} (an integer from 200 to 599)`;
+    }
+    const delay = parseInteger(queryValue(req, 'delay'), 0);
+    if (Number.isNaN(delay)) {
+        return `Invalid delay: ${queryValue(req, 'delay')} (milliseconds as a non-negative integer)`;
+    }
+    const statusText = queryValue(req, 'statusText');
+    if (statusText !== undefined && !HEADER_TEXT.test(statusText)) {
+        return `Invalid statusText: ${statusText} (Latin-1 text without line breaks)`;
+    }
+    const headers: [string, string][] = [];
+    for (const header of queryValues(req, 'header')) {
+        const colon = header.indexOf(':');
+        const name = header.slice(0, colon).trim();
+        const value = header.slice(colon + 1).trim();
+        if (colon <= 0 || !HEADER_NAME.test(name) || !HEADER_TEXT.test(value)) {
+            return `Invalid header: ${header} (Name:Value with a valid header name and Latin-1 value)`;
         }
-        return [[value.slice(0, colon).trim(), value.slice(colon + 1).trim()]];
-    });
+        headers.push([name, value]);
+    }
+    return {
+        status,
+        statusText,
+        contentType: queryValue(req, 'contentType'),
+        headers,
+        body: queryValue(req, 'body'),
+        file: queryValue(req, 'file'),
+        delay,
+    };
 }
 
 function decodeBasicAuth(header: string | undefined): { user: string; password: string } | null {
@@ -278,18 +348,21 @@ export function registerHttpTestRoutes(app: Express, log: LogJson, fixturesDir: 
                 return answerPreflight(req, res, log, 'respond');
             }
             const echo = await buildEcho(req);
-            const headers = parseHeaderParams(req);
+            const spec = parseRespondSpec(req);
+            if (typeof spec === 'string') {
+                const cors = applyCors(req, res, []);
+                logExchange(log, 'respond', echo, 400, cors, { error: spec });
+                res.status(400)
+                    .type('json')
+                    .send(JSON.stringify({ error: spec }));
+                return;
+            }
+            const { status, statusText, contentType, headers, body, file, delay } = spec;
             const cors = applyCors(
                 req,
                 res,
                 headers.map(([name]) => name),
             );
-            const status = parseInt(queryValue(req, 'status') ?? '200', 10);
-            const statusText = queryValue(req, 'statusText');
-            const contentType = queryValue(req, 'contentType');
-            const body = queryValue(req, 'body');
-            const file = queryValue(req, 'file');
-            const delay = parseInt(queryValue(req, 'delay') ?? '0', 10);
 
             let fileData: Buffer | null = null;
             if (file !== undefined) {
