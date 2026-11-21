@@ -17,7 +17,8 @@ of the CI matrix; change both together.
 - `node/playwright-wrapper/grpc-service.ts`: one handler per rpc. `playwright-state.ts` owns the
   browser, context and page lifecycle. `playwright-invoke.ts` has `findLocator`, which resolves
   selectors, strict mode and frames for almost every keyword.
-- `node/dynamic-test-app/`: the Test App that the acceptance tests drive.
+- `node/dynamic-test-app/`: the Test App that the acceptance tests drive. Network tests use its
+  HTTP test page (`static/http.html`, the generic echo/respond endpoints, see its README).
 - `tools/ci_failures/`: maintainers' analysis of CI failures.
 
 `GLOSSARY-MAP.md` lists the domain contexts and where each `GLOSSARY.md` lives, and

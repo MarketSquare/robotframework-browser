@@ -5,6 +5,8 @@ import * as https from 'https';
 import morgan from 'morgan';
 import * as path from 'path';
 
+import { registerHttpTestRoutes } from './http-test';
+
 const app = express.default();
 
 const logJson = (entry: Record<string, unknown>) => {
@@ -24,6 +26,7 @@ app.use(
         }),
     ),
 );
+registerHttpTestRoutes(app, logJson, path.join(__dirname, '..', 'static', 'http-fixtures'));
 app.use(express.json());
 
 const program = new Command();

@@ -29,7 +29,7 @@ A single JSON line written to stdout by the Test App, captured into the Test App
 _Avoid_: log line, log record
 
 **Server Event**:
-A Log Entry written directly by the Test App process itself. Current Server Events are `server_start` and `http`. `http` carries request metadata such as `method`, `url`, `status`, `contentLength`, and `responseTimeMs`.
+A Log Entry written directly by the Test App process itself. Current Server Events are `server_start`, `http` and `http_echo`. `http` carries request metadata such as `method`, `url`, `status`, `contentLength`, and `responseTimeMs`. `http_echo` is written by the HTTP test page endpoints (`/api/echo`, `/api/respond`, `/api/basic-auth`) and carries `endpoint`, `method`, `url`, `status`, the body's `bodySize` and `bodySha256`, the multipart `parts` names and the `cors` outcome, never the body itself; the full field list is in `node/dynamic-test-app/README.md`.
 _Avoid_: access log, startup log
 
 **Context Event**:

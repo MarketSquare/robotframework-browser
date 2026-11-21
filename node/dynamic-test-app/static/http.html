@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>HTTP Test Page</title>
+    <style>
+        body { font-family: sans-serif; margin: 1em; }
+        fieldset { margin-bottom: 1em; }
+        label { display: inline-block; min-width: 7em; }
+        textarea { width: 40em; height: 5em; font-family: monospace; }
+        input#url { width: 40em; }
+        pre { background: #f4f4f4; padding: 0.5em; max-height: 20em; overflow: auto; white-space: pre-wrap; }
+        #response-image[hidden] { display: none; }
+        iframe[name="form-result"] { width: 40em; height: 6em; }
+    </style>
+</head>
+<body>
+<h1>HTTP Test Page</h1>
+
+<fieldset id="builder">
+    <legend>Request</legend>
+    <p>
+        <label for="kind">Kind</label>
+        <select id="kind">
+            <option value="fetch" selected>fetch</option>
+            <option value="xhr">XMLHttpRequest</option>
+            <option value="img">&lt;img&gt; load</option>
+            <option value="form">&lt;form&gt; submit</option>
+        </select>
+        <label for="method">Method</label>
+        <select id="method">
+            <option selected>GET</option>
+            <option>POST</option>
+            <option>PUT</option>
+            <option>PATCH</option>
+            <option>DELETE</option>
+            <option>HEAD</option>
+            <option>OPTIONS</option>
+        </select>
+    </p>
+    <p><label for="url">URL</label><input id="url" type="text" value="/api/echo/hello"></p>
+    <p><label for="headers">Headers (JSON)</label><textarea id="headers">{}</textarea></p>
+    <p>
+        <label for="body-mode">Body</label>
+        <select id="body-mode">
+            <option value="none" selected>none</option>
+            <option value="text">text</option>
+            <option value="json">json</option>
+            <option value="form-urlencoded">form-urlencoded (JSON object of fields)</option>
+            <option value="multipart">multipart (JSON object of fields + files)</option>
+            <option value="raw-file">raw file</option>
+        </select>
+    </p>
+    <p><label for="body">Body text</label><textarea id="body"></textarea></p>
+    <p>
+        <label for="file">Files</label><input id="file" type="file" multiple>
+        <label for="fixture">or fixture</label>
+        <select id="fixture">
+            <option value="" selected>none</option>
+            <option>image.png</option>
+            <option>image.jpg</option>
+            <option>document.pdf</option>
+            <option>random.bin</option>
+        </select>
+        <label for="file-field">File field</label><input id="file-field" type="text" value="file">
+    </p>
+    <p>
+        <label for="credentials">fetch credentials</label>
+        <select id="credentials">
+            <option value="same-origin" selected>same-origin</option>
+            <option value="include">include</option>
+            <option value="omit">omit</option>
+        </select>
+        <label for="target">form target</label>
+        <select id="target">
+            <option value="form-result" selected>iframe</option>
+            <option value="_self">_self</option>
+        </select>
+    </p>
+    <button id="send" type="button">Send</button>
+</fieldset>
+
+<fieldset id="response">
+    <legend>Response</legend>
+    <p>State: <span id="state">idle</span> &middot; Requests sent: <span id="request-count">0</span></p>
+    <p>Status: <span id="status"></span> <span id="status-text"></span> &middot; URL: <span id="response-url"></span></p>
+    <p>Size: <span id="response-size"></span> bytes &middot; SHA-256: <span id="response-sha256"></span></p>
+    <p>Error: <span id="error"></span></p>
+    <p>Headers:</p>
+    <pre id="response-headers"></pre>
+    <p>Body:</p>
+    <pre id="response-body"></pre>
+    <img id="response-image" alt="response image" hidden>
+    <p>Form result:</p>
+    <iframe name="form-result" title="form result"></iframe>
+</fieldset>
+
+<fieldset>
+    <legend>History</legend>
+    <ol id="history"></ol>
+</fieldset>
+
+<script src="/http.js"></script>
+<script src="/test-app-logger.js"></script>
+</body>
+</html>
