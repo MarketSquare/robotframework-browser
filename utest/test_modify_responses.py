@@ -134,3 +134,11 @@ def test_invalid_arguments_fail_before_the_rpc(network, arguments, message):
     with pytest.raises(ValueError, match=re.escape(message)):
         network.modify_responses("**/api", **arguments)
     stub.AddContextRoute.assert_not_called()
+
+
+def test_secret_body_is_revealed_before_the_rpc(network):
+    network, stub = network
+    network.modify_responses("**/api", body=Secret("response-secret"))
+    modify = sent_modify(stub)
+    assert modify.body == b"response-secret"
+    assert dict(modify.headers) == {"Content-Type": "text/plain; charset=utf-8"}

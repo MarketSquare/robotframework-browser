@@ -1,4 +1,4 @@
-import { describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { Page, Route } from 'playwright';
 
 jest.mock('uuid', () => ({ v4: jest.fn().mockReturnValue('test-uuid') }));
@@ -199,6 +199,10 @@ async function runModify(modify: Partial<pb.Request_RouteModify>, route: ReturnT
 }
 
 describe('modify route rules', () => {
+    beforeEach(() => {
+        jest.mocked(logger.info).mockClear();
+    });
+
     it('fulfills with the real response, the new status and merged headers', async () => {
         const route = fakeModifyRoute({
             'content-type': 'application/json',
@@ -290,6 +294,29 @@ describe('modify route rules', () => {
         const logged = jest.mocked(logger.info).mock.calls.map(([message]) => String(message));
         expect(logged.some((message) => message.includes('connect ECONNREFUSED 127.0.0.1:1'))).toBe(true);
         expect(logged.some((message) => message.includes('Bearer abc') || message.includes('Call log'))).toBe(false);
+    });
+
+    it('aborts the request and logs the error without the call log when the fulfill fails', async () => {
+        const route = fakeModifyRoute();
+        route.fulfill.mockRejectedValueOnce(
+            new Error('route.fulfill: Cannot fulfill with redirect status: 302\nCall log:\n  - x-token: abc'),
+        );
+        await runModify({ status: 302 }, route);
+        expect(route.abort).toHaveBeenCalledWith('failed');
+        const logged = jest.mocked(logger.info).mock.calls.map(([message]) => String(message));
+        expect(logged.some((message) => message.includes('Cannot fulfill with redirect status: 302'))).toBe(true);
+        expect(logged.some((message) => message.includes('x-token: abc'))).toBe(false);
+    });
+
+    it('logs the sanitized error when the abort fails too', async () => {
+        const route = fakeModifyRoute({}, '', {}, async () => {
+            throw new Error('connect ECONNREFUSED\nCall log:\n  - authorization: Bearer abc');
+        });
+        route.abort.mockRejectedValueOnce(new Error('route.abort: Target page has been closed'));
+        await runModify({ url: 'http://127.0.0.1:1/' }, route);
+        const logged = jest.mocked(logger.info).mock.calls.map(([message]) => String(message));
+        expect(logged.some((message) => message.includes('connect ECONNREFUSED'))).toBe(true);
+        expect(logged.some((message) => message.includes('Bearer abc'))).toBe(false);
     });
 
     it('aborts the request when the real body is not JSON', async () => {
