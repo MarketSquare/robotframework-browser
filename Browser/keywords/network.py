@@ -327,7 +327,8 @@ class Network(LibraryComponent):
                 JavaScript arrow-function that receives the
                 [https://playwright.dev/docs/api/class-request | Request] object and
                 returns a boolean. By default (with an empty string) the first request
-                is matched. For additional information, see the Playwright
+                is matched. The matcher syntax is the same as in `Wait For Response`,
+                see its matcher examples. For additional information, see the Playwright
                 [https://playwright.dev/docs/api/class-page#page-wait-for-request |
                 waitForRequest] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
@@ -411,10 +412,10 @@ class Network(LibraryComponent):
         Possible wildcards/patterns are:
         - ``*`` matches any number of characters, except ``/``
         - ``**`` matches any number of characters, including ``/``
-        - ``?`` matches one character, except ``/``
-        - ``[abc]`` matches one character in the brackets (in this example ``a``, ``b`` or ``c``)
-        - ``[a-z]`` matches one character in the range (in this example ``a`` to ``z``)
         - ``{foo,bar,baz}`` matches one of the strings in the braces (in this example ``foo``, ``bar`` or ``baz``)
+
+        All other characters match literally, also ``?``, ``[`` and ``]``. To match exactly one
+        character or a character class, use a RegExp instead.
 
         Example:
         | `Wait For Response`    **/api/get/text    # matches any response with url ending with /api/get/text. example: https://browser.fi/api/get/text
