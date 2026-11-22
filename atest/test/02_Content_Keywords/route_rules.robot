@@ -286,6 +286,188 @@ Secret Body And Header Values Reach The Page
     Get Text    id=response-body    ==    secret-token
     Get Text    id=response-headers    *=    "x-token": "secret-token"
 
+Modified Response Has The New Status And A Merged Header
+    ${path} =    Unique HTTP Path    /api/echo/modify-status
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    status=503    headers=${{ {"X-Added": "yes"} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=status    ==    503
+    Get Text    id=response-headers    *=    "x-added": "yes"
+    Get Text    id=served-by    matches    ^test-app #\\d+$
+    ${journal} =    HTTP Journal    ${path}
+    Length Should Be    ${journal}    1
+
+Empty Header Value Removes A Real Response Header
+    ${path} =    Unique HTTP Path    /api/respond/modify-remove-header
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?header=X-Remove:me
+    Modify Responses    **${path}*    headers=${{ {"x-remove": ""} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=response-headers    not contains    x-remove
+    Get Text    id=served-by    matches    ^test-app #\\d+$
+
+JSON Patch Changes Nested Fields Of The Real JSON
+    ${path} =    Unique HTTP Path    /api/echo/modify-json-patch
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?tag=a&tag=b
+    VAR    &{patch} =
+    ...    body=${{ {"size": 99, "sha256": None} }}
+    ...    query=${{ {"tag": ["c"]} }}
+    Modify Responses    **${path}*    json_patch=${patch}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[body][size]    ${99}
+    Dictionary Should Not Contain Key    ${echo}[body]    sha256
+    Should Be Equal    ${echo}[body][text]    ${EMPTY}
+    Should Be Equal    ${echo}[query][tag]    ${{ ["c"] }}
+    Should Be Equal    ${echo}[path]    ${path}
+    Get Text    id=response-headers    *=    "content-type": "application/json; charset=utf-8"
+
+Body Replaces The Real Body After The Request Reached The Server
+    ${path} =    Unique HTTP Path    /api/echo/modify-body
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    body=replaced
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=response-body    ==    replaced
+    Get Text    id=response-headers    *=    "content-type": "text/plain; charset=utf-8"
+    Get Text    id=served-by    matches    ^test-app #\\d+$
+    ${journal} =    HTTP Journal    ${path}
+    Length Should Be    ${journal}    1
+
+JSON Patch On A Compressed Response Drops The Stale Encoding Headers
+    ${path} =    Unique HTTP Path    /api/respond/modify-gzip
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?encoding=gzip
+    Modify Responses    **${path}*    json_patch=${{ {"patched": True} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[patched]    ${True}
+    Should Be Equal    ${echo}[path]    ${path}
+    Get Text    id=response-headers    not contains    content-encoding
+    ${size} =    Get Text    id=response-size
+    ${headers} =    Panel JSON    response-headers
+    Should Be Equal    ${{ $headers.get("content-length", $size) }}    ${size}
+
+Relative Request URL Reaches The New Path And The Page Keeps Its URL
+    ${path} =    Unique HTTP Path    /api/echo/modify-relative
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    request_url=${path}/v2
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[path]    ${path}/v2
+    Get Text    id=response-url    ==    ${{ $ROOT_URL.rstrip("/") + $path }}
+
+Cross Origin Request URL Gets The Cookies Of The New Host
+    ${path} =    Unique HTTP Path    /api/echo/modify-cookie
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Add Cookie    original    localhost    url=${ROOT_URL}
+    Add Cookie    other    other-origin    url=${OTHER_ORIGIN_ROOT_URL}
+    Modify Responses    **${path}    request_url=${{ $OTHER_ORIGIN_ROOT_URL.rstrip("/") + $path }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[headers][cookie]    other=other-origin
+    Should Be Equal    ${echo}[headers][host]    ${{ $OTHER_ORIGIN_ROOT_URL.split("/")[2] }}
+
+Request Method And Body Change
+    ${path} =    Unique HTTP Path    /api/echo/modify-post
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    request_method=POST    request_body=Hyvää päivää
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[method]    POST
+    Should Be Equal    ${echo}[body][text]    Hyvää päivää
+
+Changing A POST To GET Sends No Body
+    ${path} =    Unique HTTP Path    /api/echo/modify-get
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}    method=POST    bodyMode=text    body=payload
+    Modify Responses    **${path}    request_method=GET
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[method]    GET
+    Should Be Equal    ${echo}[body][size]    ${0}
+
+Request Headers Merge Onto The Real Request Headers
+    ${path} =    Unique HTTP Path    /api/echo/modify-request-headers
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}    headers={"X-Remove": "page"}
+    Modify Responses    **${path}    request_headers=${{ {"X-Added": "yes", "x-remove": ""} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[headers][x-added]    yes
+    Dictionary Should Not Contain Key    ${echo}[headers]    x-remove
+    Dictionary Should Contain Key    ${echo}[headers]    user-agent
+
+Redirect Is Followed And The Page Keeps Its URL
+    ${path} =    Unique HTTP Path    /api/respond/modify-redirect
+    ${target} =    Unique HTTP Path    /api/echo/modify-redirect-target
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?status=302&header=Location:${target}
+    Modify Responses    **${path}**    headers=${{ {"X-Added": "yes"} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=status    ==    200
+    Get Text    id=response-headers    *=    "x-added": "yes"
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[path]    ${target}
+    Get Text    id=response-url    *=    ${path}?status=302
+
+Unreachable Request URL Fails The Page Request
+    ${path} =    Unique HTTP Path    /api/echo/modify-unreachable
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    request_url=http://127.0.0.1:1/
+    New Page    ${url}
+    Get Text    id=state    ==    error
+
+Request Slower Than The Timeout When The Rule Was Added Fails
+    ${path} =    Unique HTTP Path    /api/respond/modify-timeout
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?delay=3000
+    ${old} =    Set Browser Timeout    1s
+    Modify Responses    **${path}*    status=200
+    Set Browser Timeout    ${old}
+    New Page    ${url}
+    Get Text    id=state    ==    error
+
+JSON Patch On A Body That Is Not JSON Fails The Page Request
+    ${path} =    Unique HTTP Path    /api/respond/modify-not-json
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?body=plain
+    Modify Responses    **${path}*    json_patch=${{ {"a": 1} }}
+    New Page    ${url}
+    Get Text    id=state    ==    error
+
+Invalid Modify Responses Fail
+    Run Keyword And Expect Error
+    ...    ValueError: Modify Responses needs at least one change.
+    ...    Modify Responses    **/api/echo/never
+    Run Keyword And Expect Error
+    ...    ValueError: Give at most one of body, json, path and json_patch, got json and json_patch.
+    ...    Modify Responses    **/api/echo/never    json=${1}    json_patch=${{ {"a": 1} }}
+    Run Keyword And Expect Error
+    ...    ValueError: status must be from 100 to 599, got 99.
+    ...    Modify Responses    **/api/echo/never    status=99
+    Run Keyword And Expect Error
+    ...    ValueError: path ${CURDIR}${/}missing.json is not a file.
+    ...    Modify Responses    **/api/echo/never    path=${CURDIR}/missing.json
+    Run Keyword And Expect Error
+    ...    TypeError: Object of type set is not JSON serializable
+    ...    Modify Responses    **/api/echo/never    json=${{ {1, 2} }}
+    Run Keyword And Expect Error
+    ...    TypeError: Object of type set is not JSON serializable
+    ...    Modify Responses    **/api/echo/never    json_patch=${{ {"a": {1, 2}} }}
+    Run Keyword And Expect Error
+    ...    *RequestMethod*
+    ...    Modify Responses    **/api/echo/never    request_method=FETCH
+    Run Keyword And Expect Error
+    ...    ValueError: times must be 1 or more, got 0.
+    ...    Modify Responses    **/api/echo/never    status=200    times=0
+    Run Keyword And Expect Error
+    ...    *Tried to add a route rule, but no page was open.*
+    ...    Modify Responses    **/api/echo/never    status=200    on=Page
+
 *** Keywords ***
 Open HTTP Page Without Sending
     [Arguments]    ${prefix}
@@ -306,3 +488,8 @@ Request Aborted With Error Code Fails
     ${path} =    Open HTTP Page Without Sending    /api/echo/code-${error_code}
     Abort Requests    **${path}    errorCode=${error_code}
     Send Request    expected_state=error
+
+Panel JSON
+    [Arguments]    ${id}
+    ${text} =    Get Text    id=${id}
+    RETURN    ${{ json.loads($text) }}
