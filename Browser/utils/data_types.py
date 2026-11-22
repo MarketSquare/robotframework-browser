@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import re
+from collections.abc import Mapping
 from datetime import timedelta
 from enum import Enum, IntFlag, StrEnum, auto
+from os import PathLike
 from pathlib import Path
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
@@ -1148,29 +1150,161 @@ class CapturedRequest(TypedDict):
 
 
 class MultipartFile(TypedDict, total=False):
-    """A file in the ``multipart`` argument of `HTTP` and `Send API Request`.
+    """A checked file of `MultipartFields`: ``path`` as a ``Path``, ``buffer`` as ``bytes``."""
 
-    Give either ``path`` or ``buffer``. These four keys are the only ones, spelled as here.
+    path: Path
+    buffer: bytes
+    name: str
+    mimeType: str
+
+
+MULTIPART_FILE_KEYS = ("path", "buffer", "name", "mimeType")
+
+
+def _kind_of(value: Any) -> str:
+    if isinstance(value, Mapping):
+        return "a dictionary"
+    if isinstance(value, list | tuple):
+        return "a list"
+    if isinstance(value, bytes | bytearray):
+        return "bytes"
+    if value is None:
+        return "None"
+    return type(value).__name__
+
+
+def _field_text(name: str, value: Any) -> str | None:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, str | int | float):
+        return str(value)
+    return None
+
+
+def _form_text(name: str, value: Any) -> str:
+    text = _field_text(name, value)
+    if text is None:
+        raise ValueError(
+            f"Field {name!r} must be a string, a number or a boolean, "
+            f"got {_kind_of(value)}."
+        )
+    return text
+
+
+def _multipart_file(name: str, file: Mapping) -> MultipartFile:
+    unknown = [key for key in file if key not in MULTIPART_FILE_KEYS]
+    if unknown:
+        raise ValueError(
+            f"Multipart file {name!r} has the unknown key {unknown[0]!r}; "
+            "the keys are path, buffer, name and mimeType."
+        )
+    checked = _multipart_file_content(name, file.get("path"), file.get("buffer"))
+    for key in ("name", "mimeType"):
+        if key in file:
+            if not isinstance(file[key], str):
+                raise ValueError(
+                    f"Multipart file {name!r}: {key!r} must be a string, "
+                    f"got {_kind_of(file[key])}."
+                )
+            checked[key] = file[key]
+    if "buffer" in checked and not checked.get("name"):
+        raise ValueError(f"Multipart file {name!r} with 'buffer' needs a 'name'.")
+    return checked
+
+
+def _multipart_file_content(name: str, path: Any, buffer: Any) -> MultipartFile:
+    if (path is None) == (buffer is None):
+        raise ValueError(
+            f"Multipart file {name!r} needs either 'path' or 'buffer', "
+            f"not {'both' if path is not None else 'neither'}."
+        )
+    if path is not None:
+        if not isinstance(path, str | PathLike):
+            raise ValueError(
+                f"Multipart file {name!r}: 'path' must be a path, got {_kind_of(path)}."
+            )
+        return MultipartFile(path=Path(path))
+    if isinstance(buffer, str):
+        return MultipartFile(buffer=buffer.encode("utf-8"))
+    if isinstance(buffer, bytes | bytearray):
+        return MultipartFile(buffer=bytes(buffer))
+    raise ValueError(
+        f"Multipart file {name!r}: 'buffer' must be bytes or a string, "
+        f"got {_kind_of(buffer)}."
+    )
+
+
+class FormFields(dict):
+    """Form fields, a dictionary of field names and values.
+
+    A value is a string, a number or a boolean. Numbers are sent as their text and a boolean
+    as ``true`` or ``false``, the way JavaScript writes them. Any other value, such as a
+    nested dictionary or a list, fails before the request is sent.
+
+    | &{fields} =    Create Dictionary    username=demo    remember=${True}
+    """
+
+    @classmethod
+    def from_dict(cls, value: dict) -> "FormFields":
+        return cls({name: _form_text(name, item) for name, item in value.items()})
+
+
+class QueryParams:
+    """Query parameters, a dictionary or a string.
+
+    A dictionary is URL-encoded and checked like `FormFields`: a value is a string, a number
+    or a boolean. A string is used as given, so it must already be URL-encoded, e.g.
+    ``q=a%20b&page=2``.
+
+    | &{params} =    Create Dictionary    q=robot    page=${2}
+    """
+
+    @staticmethod
+    def from_value(value: dict | str) -> "FormFields | str":
+        if isinstance(value, str):
+            return value
+        return FormFields.from_dict(value)
+
+
+class MultipartFields(dict):
+    """Fields of a ``multipart/form-data`` body, a dictionary of field names and values.
+
+    A value is a text field or a file:
+    - A string, a number or a boolean is a text field, sent like in `FormFields`.
+    - A dictionary is a file, with either ``path`` or ``buffer``:
 
     | =Key= | =Description= |
     | ``path`` | Path of the file to send. A relative path is relative to the working directory of the Robot Framework process. The file name and mime type default to the file's name and the type its extension suggests. |
-    | ``buffer`` | The file content as ``bytes``. A ``str`` is sent encoded as UTF-8. |
+    | ``buffer`` | The file content as ``bytes``. A string is sent encoded as UTF-8. |
     | ``name`` | The file name the server receives. Required with ``buffer``. |
     | ``mimeType`` | The mime type of the file, e.g. ``image/png``. Defaults to ``application/octet-stream`` with ``buffer``. |
 
-    The file must be a real dictionary, created for example with ``Create Dictionary``
-    or ``${{ {...} }}``. A string that only looks like a dictionary is sent as a text
-    field. A dictionary with a key that is not in the table, such as ``mimetype``, cannot
-    become a ``MultipartFile`` either, and is also sent as a text field: its text.
+    These four keys are the only ones, spelled as here. Any other value, a dictionary with
+    another key such as ``mimetype``, or a file with both or none of ``path`` and
+    ``buffer``, fails before the request is sent. So does a string that only looks like a
+    dictionary given for the whole argument; create the dictionaries with
+    ``Create Dictionary`` or ``${{ {...} }}``.
 
-    | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
-    | &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
+    | &{file} =      Create Dictionary    path=${CURDIR}/avatar.png
+    | &{notes} =     Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
+    | &{fields} =    Create Dictionary    description=Profile picture    avatar=${file}    notes=${notes}
     """
 
-    path: Path
-    buffer: bytes | str
-    name: str
-    mimeType: str
+    @classmethod
+    def from_dict(cls, value: dict) -> "MultipartFields":
+        return cls({name: _multipart_value(name, item) for name, item in value.items()})
+
+
+def _multipart_value(name: str, value: Any) -> str | MultipartFile:
+    if isinstance(value, Mapping):
+        return _multipart_file(name, value)
+    text = _field_text(name, value)
+    if text is None:
+        raise ValueError(
+            f"Field {name!r} must be a string, a number, a boolean or a file, "
+            f"got {_kind_of(value)}."
+        )
+    return text
 
 
 class HttpResponse(TypedDict):

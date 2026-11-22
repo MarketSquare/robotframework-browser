@@ -830,7 +830,7 @@ describe('pageFetch', () => {
 });
 
 function makeApiRequest(overrides: Record<string, unknown> = {}) {
-    return { url: '/api', method: 'GET', timeout: 1000, params: [], form: [], multipart: [], ...overrides } as any;
+    return { url: '/api', method: 'GET', timeout: 1000, ...overrides } as any;
 }
 
 function makeApiContext(body = Buffer.from('{"name":"robot"}')) {
@@ -854,6 +854,7 @@ function fetchOptions(fetch: jest.Mock) {
 
 describe('sendApiRequest', () => {
     it('fails without an open context', async () => {
+        expect.assertions(1);
         await expect(sendApiRequest(makeApiRequest(), undefined)).rejects.toThrow(
             'Tried to send an API request, but no context was open.',
         );
@@ -890,7 +891,7 @@ describe('sendApiRequest', () => {
 
     it('passes dictionary params as an object and string params as given', async () => {
         const first = makeApiContext();
-        await sendApiRequest(makeApiRequest({ params: [{ name: 'q', value: 'robot' }] }), first.context);
+        await sendApiRequest(makeApiRequest({ params: { fields: [{ name: 'q', value: 'robot' }] } }), first.context);
         expect(fetchOptions(first.fetch).params).toEqual({ q: 'robot' });
         const second = makeApiContext();
         await sendApiRequest(makeApiRequest({ encodedParams: 'q=a%20b' }), second.context);
@@ -908,9 +909,15 @@ describe('sendApiRequest', () => {
         expect(fetchOptions(fetch).data).toEqual(expected);
     });
 
+    it.each(['params', 'form', 'multipart'])('passes an empty %s as an empty object', async (option) => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest({ [option]: { fields: [] } }), context);
+        expect(fetchOptions(fetch)[option]).toEqual({});
+    });
+
     it('passes form fields as an object', async () => {
         const { context, fetch } = makeApiContext();
-        await sendApiRequest(makeApiRequest({ form: [{ name: 'q', value: 'a&b' }] }), context);
+        await sendApiRequest(makeApiRequest({ form: { fields: [{ name: 'q', value: 'a&b' }] } }), context);
         expect(fetchOptions(fetch).form).toEqual({ q: 'a&b' });
     });
 
@@ -920,12 +927,14 @@ describe('sendApiRequest', () => {
         const { context, fetch } = makeApiContext();
         await sendApiRequest(
             makeApiRequest({
-                multipart: [
-                    { name: 'text', value: 'a' },
-                    { name: 'empty' },
-                    { name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' },
-                    { name: 'blob', buffer: Buffer.from('raw') },
-                ],
+                multipart: {
+                    fields: [
+                        { name: 'text', value: 'a' },
+                        { name: 'empty' },
+                        { name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' },
+                        { name: 'blob', buffer: Buffer.from('raw') },
+                    ],
+                },
             }),
             context,
         );
@@ -953,6 +962,7 @@ describe('sendApiRequest', () => {
     });
 
     it('disposes the response when its body cannot be read', async () => {
+        expect.assertions(2);
         const { context, response } = makeApiContext();
         response.body.mockRejectedValue(new Error('gone'));
         await expect(sendApiRequest(makeApiRequest(), context)).rejects.toThrow('gone');

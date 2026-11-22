@@ -207,15 +207,15 @@ async function apiFetchOptions(request: pb.Request_ApiRequest): Promise<ApiFetch
     if (request.headers !== undefined) options.headers = JSON.parse(request.headers);
     if (request.encodedParams !== undefined) {
         options.params = request.encodedParams;
-    } else if (request.params.length > 0) {
-        options.params = fieldsObject(request.params);
+    } else if (request.params !== undefined) {
+        options.params = fieldsObject(request.params.fields);
     }
     const data = apiRequestData(request);
     if (data !== undefined) options.data = data;
-    if (request.form.length > 0) options.form = fieldsObject(request.form);
-    if (request.multipart.length > 0) {
+    if (request.form !== undefined) options.form = fieldsObject(request.form.fields);
+    if (request.multipart !== undefined) {
         const fields = await Promise.all(
-            request.multipart.map(async (field) => [field.name, await apiMultipartValue(field)] as const),
+            request.multipart.fields.map(async (field) => [field.name, await apiMultipartValue(field)] as const),
         );
         options.multipart = Object.fromEntries(fields);
     }

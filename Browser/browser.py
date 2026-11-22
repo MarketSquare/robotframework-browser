@@ -82,9 +82,12 @@ from .utils import (
 from .utils.data_types import (
     AdoptedContextOptions,
     DelayedKeyword,
+    FormFields,
     HighLightElement,
     KeywordCallStackEntry,
     LambdaFunction,
+    MultipartFields,
+    QueryParams,
     RecordHar,
     RecordVideo,
     RegExp,
@@ -139,7 +142,13 @@ class _RFContextTracker:
 
 
 @library(
-    converters={RegExp: RegExp.from_string, LambdaFunction: LambdaFunction.from_string}
+    converters={
+        RegExp: RegExp.from_string,
+        LambdaFunction: LambdaFunction.from_string,
+        FormFields: FormFields.from_dict,
+        QueryParams: QueryParams.from_value,
+        MultipartFields: MultipartFields.from_dict,
+    }
 )
 class Browser(DynamicCore):
     """Browser library is a browser automation library for Robot Framework.

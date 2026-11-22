@@ -493,13 +493,13 @@ message Request {
      string url = 1;
      string method = 2;
      optional string headers = 3;
-     repeated FormField params = 4;
+     optional FormFields params = 4;
      optional string encodedParams = 5;
      optional string dataText = 6;
      optional bytes dataBytes = 7;
      optional string dataJson = 8;
-     repeated FormField form = 9;
-     repeated MultipartField multipart = 10;
+     optional FormFields form = 9;
+     optional MultipartFields multipart = 10;
      double timeout = 11;
      optional bool failOnStatusCode = 12;
      optional int32 maxRedirects = 13;
@@ -510,6 +510,14 @@ message Request {
   message FormField {
      string name = 1;
      string value = 2;
+  }
+
+  message FormFields {
+     repeated FormField fields = 1;
+  }
+
+  message MultipartFields {
+     repeated MultipartField fields = 1;
   }
 
   message MultipartField {

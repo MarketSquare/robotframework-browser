@@ -44,7 +44,9 @@ def sent(browser: Browser, stub: MagicMock, url="/api", **arguments):
 
 def convert_like_robot(argument: str, value):
     hint = get_type_hints(Network.send_api_request)[argument]
-    return TypeInfo.from_type_hint(hint).convert(value)
+    return TypeInfo.from_type_hint(hint).convert(
+        value, custom_converters=Browser.ROBOT_LIBRARY_CONVERTERS
+    )
 
 
 def test_only_url_method_and_timeout_are_sent_by_default(browser, stub):
@@ -64,9 +66,9 @@ def test_only_url_method_and_timeout_are_sent_by_default(browser, stub):
         "ignoreHTTPSErrors",
     ):
         assert not request.HasField(option), option
-    assert not request.params
-    assert not request.form
-    assert not request.multipart
+    assert not request.HasField("params")
+    assert not request.HasField("form")
+    assert not request.HasField("multipart")
 
 
 def test_timeout_is_sent_in_milliseconds(browser, stub):
@@ -80,7 +82,8 @@ def test_headers_are_sent_as_json(browser, stub):
 
 def test_dictionary_params_are_sent_as_fields_with_text_values(browser, stub):
     request = sent(browser, stub, params={"q": "robot", "page": 2, "all": True})
-    assert [(field.name, field.value) for field in request.params] == [
+    assert request.HasField("params")
+    assert [(field.name, field.value) for field in request.params.fields] == [
         ("q", "robot"),
         ("page", "2"),
         ("all", "true"),
@@ -91,7 +94,7 @@ def test_dictionary_params_are_sent_as_fields_with_text_values(browser, stub):
 def test_string_params_are_sent_as_encoded_params(browser, stub):
     request = sent(browser, stub, params="q=a%20b")
     assert request.encodedParams == "q=a%20b"
-    assert not request.params
+    assert not request.HasField("params")
 
 
 @pytest.mark.parametrize(
@@ -115,7 +118,7 @@ def test_data_is_sent_by_its_type(browser, stub, data, field, value):
 
 def test_form_values_are_sent_as_text(browser, stub):
     request = sent(browser, stub, form={"q": "robot", "n": 1, "all": False})
-    assert [(field.name, field.value) for field in request.form] == [
+    assert [(field.name, field.value) for field in request.form.fields] == [
         ("q", "robot"),
         ("n", "1"),
         ("all", "false"),
@@ -126,10 +129,17 @@ def test_multipart_file_from_path_is_resolved_in_python(browser, stub, tmp_path)
     file = tmp_path / "notes.txt"
     file.write_text("hello")
     request = sent(browser, stub, multipart={"text": "a", "file": {"path": file}})
-    assert request.multipart[0].value == "a"
-    assert request.multipart[1].path == str(file.resolve())
-    assert request.multipart[1].fileName == "notes.txt"
-    assert request.multipart[1].mimeType == "text/plain"
+    assert request.multipart.fields[0].value == "a"
+    assert request.multipart.fields[1].path == str(file.resolve())
+    assert request.multipart.fields[1].fileName == "notes.txt"
+    assert request.multipart.fields[1].mimeType == "text/plain"
+
+
+@pytest.mark.parametrize("option", ["params", "form", "multipart"])
+def test_an_empty_dictionary_is_sent_as_given(browser, stub, option):
+    request = sent(browser, stub, **{option: {}})
+    assert request.HasField(option)
+    assert not getattr(request, option).fields
 
 
 @pytest.mark.parametrize(
@@ -138,7 +148,7 @@ def test_multipart_file_from_path_is_resolved_in_python(browser, stub, tmp_path)
         ("failOnStatusCode", True),
         ("maxRedirects", 0),
         ("maxRetries", 3),
-        ("ignoreHTTPSErrors", False),
+        ("ignoreHTTPSErrors", True),
     ],
 )
 def test_given_options_are_sent(browser, stub, option, value):
@@ -178,6 +188,11 @@ def test_response_is_logged_without_headers_and_body(browser, stub, monkeypatch)
     assert "session=1" in debug.call_args.args[0]
 
 
+def test_robot_rejects_a_nested_params_value():
+    with pytest.raises(ValueError, match="'q' must be"):
+        convert_like_robot("params", {"q": {"a": 1}})
+
+
 def test_robot_keeps_dictionary_looking_data_as_text():
     assert convert_like_robot("data", '{"name": "robot"}') == '{"name": "robot"}'
 
@@ -195,3 +210,17 @@ def test_robot_keeps_a_number_or_boolean_as_data(value):
     converted = convert_like_robot("data", value)
     assert converted == value
     assert type(converted) is type(value)
+
+
+@pytest.mark.parametrize(
+    ("option", "value", "message"),
+    [
+        ("params", {"q": [1]}, "'q' must be"),
+        ("form", {"q": {"a": 1}}, "'q' must be"),
+        ("multipart", {"f": {"path": "a", "mimetype": "x"}}, "unknown key"),
+    ],
+)
+def test_python_caller_gets_the_same_checks(browser, stub, option, value, message):
+    with pytest.raises(ValueError, match=message):
+        browser.send_api_request("/api", **{option: value})
+    stub.SendApiRequest.assert_not_called()

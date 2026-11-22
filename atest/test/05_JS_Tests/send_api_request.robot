@@ -141,10 +141,25 @@ Multipart Sends A File From Buffer
     ${sha256} =    Sha256 Of Bytes    ${{ 'häkä €'.encode('utf-8') }}
     Should Be Equal    ${part}[sha256]    ${sha256}
 
+Nested Form Value Fails Before Sending
+    &{fields} =    Create Dictionary    q=${{ {'a': 1} }}
+    Run Keyword And Expect Error
+    ...    *cannot be converted to FormFields: Field 'q' must be a string, a number or a boolean, got a dictionary.
+    ...    Send API Request    /api/echo/form    POST    form=${fields}
+
 Data Together With Form Fails
     &{fields} =    Create Dictionary    q=1
     Run Keyword And Expect Error    *Only one of 'data', 'form' or 'multipart' can be specified*
     ...    Send API Request    /api/echo/form    POST    data=x    form=${fields}
+
+Data Together With An Empty Form Fails
+    Run Keyword And Expect Error    *Only one of 'data', 'form' or 'multipart' can be specified*
+    ...    Send API Request    /api/echo/form    POST    data=x    form=${{ {} }}
+
+Empty Form Is Sent As An Empty URL Encoded Body
+    ${response} =    Send API Request    /api/echo/form    POST    form=${{ {} }}
+    Should Start With    ${response.json.body.contentType}    application/x-www-form-urlencoded
+    Should Be Equal    ${response.json.body.size}    ${0}
 
 Cookies Of The Context Are Sent
     Add Cookie    flavour    oat    url=${STATIC_URL}
