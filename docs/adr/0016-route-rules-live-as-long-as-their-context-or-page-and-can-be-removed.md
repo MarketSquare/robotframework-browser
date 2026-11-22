@@ -24,4 +24,8 @@ that the application recovers.
 - When one context is shared by a whole suite, a Context rule added in one test also applies
   in the tests after it. A test that needs a clean slate opens its own `New Context` or
   removes all route rules in its teardown.
+- A rule is removed by the id its adding keyword returned, not by its matcher as with
+  `Remove Locator Handler`: two rules with the same matcher stay distinguishable, and a Page
+  rule can be removed while another page is active. Removing all rules covers the active
+  context and every page in it, and only the rules this library added.
 - The Robot Framework path and the Python path behave the same.
