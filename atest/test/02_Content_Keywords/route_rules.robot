@@ -14,8 +14,8 @@ Aborted Request Shows An Error And Never Reaches The Server
     Abort Requests    **${path}
     New Page    ${url}
     Get Text    id=state    ==    error
-    ${count} =    HTTP Echo Count    ${path}
-    Should Be Equal    ${count}    ${0}
+    ${journal} =    HTTP Journal    ${path}
+    Should Be Empty    ${journal}
 
 Rule With Times Aborts Only The First Requests
     ${path} =    Open HTTP Page Without Sending    /api/echo/times
@@ -25,8 +25,8 @@ Rule With Times Aborts Only The First Requests
     Send Request    expected_state=done
     Get Text    id=request-count    ==    3
     Get Element Count    css=#history li[data-status="200"]    ==    1
-    ${count} =    HTTP Echo Count    ${path}
-    Should Be Equal    ${count}    ${1}
+    ${journal} =    HTTP Journal    ${path}
+    Length Should Be    ${journal}    1
 
 Removing A Rule Ends The Outage
     ${path} =    Open HTTP Page Without Sending    /api/echo/outage

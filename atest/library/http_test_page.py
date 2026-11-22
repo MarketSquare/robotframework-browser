@@ -7,7 +7,6 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from robot.libraries.BuiltIn import BuiltIn
-from test_app_server import TEST_APP_LOG_DIR, app_log_file
 
 FIXTURES_DIR = (
     Path(__file__).parent.parent.parent
@@ -96,24 +95,6 @@ def unique_http_path(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:12]}"
 
 
-def http_echo_count(path: str) -> int:
-    """Return how many ``http_echo`` entries in the Test App Log File have a URL starting with ``path``.
-
-    The Test App is the one at ``${SERVER_PORT}``. Each entry is one request that reached
-    an HTTP test page endpoint.
-    """
-    port = BuiltIn().get_variable_value("${SERVER_PORT}")
-    log_file = app_log_file(TEST_APP_LOG_DIR, port)
-    count = 0
-    for line in log_file.read_text(encoding="utf-8").splitlines():
-        if '"http_echo"' not in line:
-            continue
-        entry = json.loads(line)
-        if entry.get("event") == "http_echo" and entry.get("url", "").startswith(path):
-            count += 1
-    return count
-
-
 def http_journal(path: str) -> list[dict]:
     """Return the Test App request journal entries whose path starts with ``path``.
 
@@ -122,5 +103,7 @@ def http_journal(path: str) -> list[dict]:
     """
     port = BuiltIn().get_variable_value("${SERVER_PORT}")
     query = urlencode({"path": path})
-    with urlopen(f"http://localhost:{port}/api/journal?{query}", timeout=10) as response:
+    with urlopen(
+        f"http://localhost:{port}/api/journal?{query}", timeout=10
+    ) as response:
         return json.loads(response.read())
