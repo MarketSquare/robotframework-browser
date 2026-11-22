@@ -1,5 +1,4 @@
 *** Settings ***
-Library          Browser    jsextension=${CURDIR}/route_plugin.js
 Library          ../../library/http_test_page.py
 Resource         imports.resource
 
@@ -217,14 +216,6 @@ Newest Rule Wins And A Page Rule Wins Over A Context Rule
     Mock Responses    **${path}    body=context
     Send Request    expected_state=done
     Get Text    id=response-body    ==    page
-
-Plugin Routes Survive Remove All Route Rules
-    ${path} =    Open HTTP Page Without Sending    /api/echo/mock-plugin
-    Add Plugin Route    **${path}
-    Mock Responses    **${path}    body=library
-    Remove All Route Rules
-    Send Request    expected_state=done
-    Get Text    id=response-body    ==    plugin
 
 Cross Origin Mock Without CORS Headers Reaches The Page
     ${path} =    Unique HTTP Path    /api/echo/mock-cors

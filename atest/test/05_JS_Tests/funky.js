@@ -63,6 +63,10 @@ async function contextAndBrowserDemo(message, context, browser, logger) {
     };
 }
 
+async function addPluginRoute(matcher, page) {
+    await page.route(matcher, (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: 'plugin' }));
+}
+
 exports.__esModule = true;
 exports.myFunkyKeyword = myFunkyKeyword;
 exports.createRemoteBrowser = createRemoteBrowser;
@@ -72,3 +76,4 @@ exports.withDefaultValue = withDefaultValue;
 exports.moreDefaults = moreDefaults;
 exports.myNewStyleFunkyKeyword = myNewStyleFunkyKeyword;
 exports.contextAndBrowserDemo = contextAndBrowserDemo;
+exports.addPluginRoute = addPluginRoute;
