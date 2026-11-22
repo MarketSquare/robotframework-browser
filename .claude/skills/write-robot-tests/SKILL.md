@@ -41,6 +41,8 @@ Test Login
 
 Test cases and user keywords defined in `.robot` files must **not** use `[Documentation]`. The name and structure must be sufficient. Inline comments (`#`) are acceptable sparingly for genuinely non-obvious details — they are the exception, not the rule.
 
+The one exception: a test that checks what a keyword logs puts its robotstatuschecker expectations in `[Documentation]`, because that is the only place `inv atest` reads them from, for example `...    LOG 5:*    INFO    REGEXP: Removed route rule \\S+\\. It ran 2 times\\.` in `route_rules.robot`. The documentation then holds only those `LOG` lines.
+
 **Good**
 ```robotframework
 *** Keywords ***
