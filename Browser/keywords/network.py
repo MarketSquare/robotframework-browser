@@ -71,9 +71,10 @@ def _mock_payload(
         file = Path(path)
         if not file.is_file():
             raise ValueError(f"path {file} is not a file.")
-        content_type = mimetypes.guess_type(file.name)[0]
-        payload = file.read_bytes()
-        return payload, content_type or "application/octet-stream", f"file {file}"
+        content_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
+        if content_type.startswith("text/"):
+            content_type = f"{content_type}; charset=utf-8"
+        return file.read_bytes(), content_type, f"file {file}"
     if json_value is not None:
         return json.dumps(json_value).encode("utf-8"), "application/json", "json body"
     if body is not None:
@@ -837,7 +838,8 @@ class Network(LibraryComponent):
         with ``status=204``. Unless ``headers`` has a Content-Type, which always wins, the
         Content-Type is ``text/plain; charset=utf-8`` for ``body``, ``application/json`` for
         ``json``, guessed from the file extension for ``path`` (``application/octet-stream``
-        if unknown), and none without a payload, which WebKit reports as
+        if unknown, and with ``charset=utf-8`` for a ``text/`` type, so give a file in another
+        encoding its Content-Type in ``headers``), and none without a payload, which WebKit reports as
         ``application/octet-stream``.
 
         Returns the rule id, to give to `Remove Route Rule`.
