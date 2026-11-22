@@ -241,12 +241,14 @@ app.get('/api/slow-body', (req, res) => {
 app.get('/api/download/slow', (req, res) => {
     const startDelayMs = Number(req.query.startDelayMs ?? 0);
     const transferMs = Number(req.query.transferMs ?? 0);
-    const totalBytes = 10;
+    const totalBytes = Number(req.query.totalBytes ?? 10);
+    let timer: NodeJS.Timeout | undefined;
+    res.on('close', () => clearInterval(timer));
     setTimeout(() => {
         res.attachment('slow_download.txt');
         res.setHeader('Content-Length', totalBytes);
         let sent = 0;
-        const timer = setInterval(() => {
+        timer = setInterval(() => {
             res.write('x');
             sent += 1;
             if (sent === totalBytes) {

@@ -88,6 +88,17 @@ Multipart Sends Fields And A File From Path
     Should Be Equal    ${parts}[1][mimeType]    image/jpeg
     Should Be Equal    ${parts}[1][sha256]    ${sha256}
 
+Multipart File From A Relative Path Is Resolved Against The Working Directory
+    [Tags]    no-docker-pr
+    VAR    ${path} =    node/dynamic-test-app/static/http-fixtures/image.jpg
+    File Should Exist    ${path}
+    ${sha256} =    HTTP Fixture Sha256    image.jpg
+    &{file} =    Create Dictionary    path=${path}
+    &{fields} =    Create Dictionary    file=${file}
+    ${response} =    HTTP    /api/echo/upload    POST    multipart=${fields}
+    Should Be Equal    ${response.json.parts}[0][filename]    image.jpg
+    Should Be Equal    ${response.json.parts}[0][sha256]    ${sha256}
+
 Multipart Sends A File From Buffer
     &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=${{ b'hello' }}
     &{fields} =    Create Dictionary    file=${file}

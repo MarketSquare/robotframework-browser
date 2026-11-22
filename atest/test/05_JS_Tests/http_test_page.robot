@@ -89,6 +89,30 @@ Uploaded File Keeps Its Non ASCII Name
     Get Text    id=state    ==    done
     Get Text    id=response-body    contains    "filename": "bild-ä.png"
 
+Uploaded Buffer With Non ASCII Text Arrives As UTF-8
+    VAR    ${text} =    Grüße aus Köln – ✓ 日本
+    ${sha256} =    Sha256 Of Bytes    ${{ $text.encode("utf-8") }}
+    ${url} =    HTTP Page Url    ${HTTP_URL}    send=False    method=POST    url=/api/echo/upload
+    ...    bodyMode=multipart
+    Go To    ${url}
+    VAR    &{buffer} =    name=gruesse.txt    mimeType=text/plain    buffer=${text}
+    Upload File By Selector    id=file    ${buffer}
+    Click    id=send
+    Get Text    id=state    ==    done
+    Get Text    id=response-body    contains    "filename": "gruesse.txt"
+    Get Text    id=response-body    contains    "sha256": "${sha256}"
+
+Uploaded Buffer Keeps Its Explicit MIME Type
+    ${url} =    HTTP Page Url    ${HTTP_URL}    send=False    method=POST    url=/api/echo/upload
+    ...    bodyMode=multipart
+    Go To    ${url}
+    VAR    &{buffer} =    name=data.bin    mimeType=application/json    buffer={"a": 1}
+    Upload File By Selector    id=file    ${buffer}
+    Click    id=send
+    Get Text    id=state    ==    done
+    Get Text    id=response-body    contains    "filename": "data.bin"
+    Get Text    id=response-body    contains    "mimeType": "application/json"
+
 Multipart Parts Are Echoed In The Order They Were Sent
     VAR    &{file} =    name=first    filename=first.txt    value=file content
     VAR    &{field} =    name=second    value=field value

@@ -1,5 +1,6 @@
 *** Settings ***
 Resource          imports.resource
+Library           ../../library/node_working_directory.py
 
 Suite Teardown    Close Browser    ALL
 
@@ -12,6 +13,16 @@ New Persistent Context Creates A Browser And A Context
     ${context_id} =    Switch Context    CURRENT
     Should Not Be Equal    ${context_id}    NO CONTEXT OPEN
     Close Context
+
+Relative userDataDir Is Not Relative To The Working Directory
+    [Tags]    no-docker-pr
+    # Today Playwright resolves it against the working directory of the Node process; issue #5620 changes this.
+    New Persistent Context    userDataDir=pinned-relative-profile    url=${LOGIN_URL}
+    Directory Should Not Exist    ${EXECDIR}${/}pinned-relative-profile
+    [Teardown]    Run Keywords
+    ...    Close Browser
+    ...    AND
+    ...    Remove From Node Working Directory    pinned-relative-profile
 
 Switching Between Two Persistent Contexts Works
     Get Browser Catalog

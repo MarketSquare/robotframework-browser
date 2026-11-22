@@ -235,6 +235,28 @@ Screenshot Returns Bytes And Path String
         Log    correct error
     END
 
+Screenshot As Bytes Without Logging Leaves No File
+    ${bytes} =    Take Screenshot    pinned-bytes-unlogged    return_as=bytes    log_screenshot=False
+    Should Be True    isinstance($bytes, bytes) and $bytes.startswith(b'\\x89PNG')
+    File Should Not Exist    ${OUTPUT_DIR}/browser/screenshot/pinned-bytes-unlogged.png
+
+Screenshot As Base64 Without Logging Leaves No File
+    ${base64} =    Take Screenshot    pinned-base64-unlogged    return_as=base64    log_screenshot=False
+    Should Be True    base64.b64decode($base64).startswith(b'\\x89PNG')
+    File Should Not Exist    ${OUTPUT_DIR}/browser/screenshot/pinned-base64-unlogged.png
+
+Screenshot As Bytes With Logging Keeps The File
+    ${bytes} =    Take Screenshot    pinned-bytes-logged    return_as=bytes
+    Should Be True    isinstance($bytes, bytes)
+    File Should Exist    ${OUTPUT_DIR}/browser/screenshot/pinned-bytes-logged.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/pinned-bytes-logged.png
+
+Screenshot Without Logging Keeps A Named File
+    ${path} =    Take Screenshot    pinned-path-unlogged    log_screenshot=False
+    File Should Exist    ${path}
+    Should Be Equal    ${path}    ${OUTPUT_DIR}${/}browser${/}screenshot${/}pinned-path-unlogged.png
+    [Teardown]    Remove File    ${OUTPUT_DIR}/browser/screenshot/pinned-path-unlogged.png
+
 Screenshot On Failure
     [Documentation]
     ...    LOG 6:2    INFO    Highlighting ${INPUT_ELEMENT_COUNT_IN_LOGIN} elements

@@ -23,6 +23,30 @@ Open Browser With Client Certificate
     ...    clientCertificates=${certs}
     New Page    https://local.playwright:${https_port}/
 
+Missing Client Certificate Fails At New Context
+    New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    VAR    &{cert} =
+    ...    origin=https://local.playwright:${https_port}
+    ...    certPath=${OUTPUT_DIR}/not_here.crt
+    ...    keyPath=${OUTPUT_DIR}/client.key
+    VAR    @{certs} =    ${cert}
+    Run Keyword And Expect Error    *ENOENT*not_here.crt*
+    ...    New Context    ignoreHTTPSErrors=True    clientCertificates=${certs}
+
+Relative Client Certificate Path Is Not Relative To The Working Directory
+    New Browser    browser=${BROWSER}    headless=${HEADLESS}
+    ${cert_path} =    Evaluate    os.path.relpath($OUTPUT_DIR + '/client.crt')
+    ${key_path} =    Evaluate    os.path.relpath($OUTPUT_DIR + '/client.key')
+    File Should Exist    ${cert_path}
+    VAR    &{cert} =
+    ...    origin=https://local.playwright:${https_port}
+    ...    certPath=${cert_path}
+    ...    keyPath=${key_path}
+    VAR    @{certs} =    ${cert}
+    # Today the Node process resolves it against its own working directory; issue #5620 changes this.
+    Run Keyword And Expect Error    *ENOENT*client.crt*
+    ...    New Context    ignoreHTTPSErrors=True    clientCertificates=${certs}
+
 Open Browser Without Client Certificate
     [Tags]    no-windows-support
     New Browser    browser=${BROWSER}    headless=${HEADLESS}
