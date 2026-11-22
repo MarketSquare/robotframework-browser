@@ -93,14 +93,20 @@ Invalid Abort Requests Fail
     ...    Abort Requests    **/api/echo/never    times=0
     Run Keyword And Expect Error
     ...    *AbortErrorCode*
-    ...    Abort Requests    **/api/echo/never    error_code=nosuchcode
+    ...    Abort Requests    **/api/echo/never    errorCode=nosuchcode
     Run Keyword And Expect Error
     ...    *Invalid regular expression*
     ...    Abort Requests    /api/echo/[/
+    Run Keyword And Expect Error
+    ...    *Tried to add a route rule, but no page was open.*
+    ...    Abort Requests    **/api/echo/never    on=Page
     Close Context    ALL
     Run Keyword And Expect Error
     ...    *Tried to add a route rule, but no context was open.*
     ...    Abort Requests    **/api/echo/never
+
+Removing Rules Without A Context Passes
+    Close Context    ALL
     Remove Route Rule    00000000-0000-0000-0000-000000000000
     Remove All Route Rules
 
@@ -140,5 +146,5 @@ Send Request
 Request Aborted With Error Code Fails
     [Arguments]    ${error_code}
     ${path} =    Open HTTP Page Without Sending    /api/echo/code-${error_code}
-    Abort Requests    **${path}    error_code=${error_code}
+    Abort Requests    **${path}    errorCode=${error_code}
     Send Request    expected_state=error

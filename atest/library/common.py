@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 from test_app_server import (
-    ROOT_DIR,
     SERVER_JS,
+    TEST_APP_LOG_DIR,
     RunningTestApp,
     https_ready,
     start_test_app,
@@ -17,7 +17,6 @@ from test_app_server import (
 from Browser.utils import FormatterKeywords
 
 SERVERS: dict[str, RunningTestApp] = {}
-TEST_APP_LOG_DIR = ROOT_DIR / "atest" / "output" / "test-app"
 
 
 def _start(**kwargs) -> str:

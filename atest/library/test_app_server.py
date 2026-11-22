@@ -17,6 +17,12 @@ OVERALL_DEADLINE_SECONDS = 25
 # For some reason, we need to have cwd at project root for the server to run properly.
 ROOT_DIR = (Path(__file__).parent / ".." / "..").resolve()
 SERVER_JS = ROOT_DIR / "node" / "dynamic-test-app" / "dist" / "server.js"
+TEST_APP_LOG_DIR = ROOT_DIR / "atest" / "output" / "test-app"
+
+
+def app_log_file(log_dir: Path, port: str) -> Path:
+    """Return the Test App Log File of the Test App on ``port``."""
+    return log_dir / f"test-app-{port}.log"
 
 CommandBuilder = Callable[[str, str], list]
 ReadinessCheck = Callable[[str, str, Path], bool]
@@ -77,7 +83,7 @@ def start_test_app(
     while True:
         port = str(find_free_port())
         token = uuid.uuid4().hex
-        log_path = log_dir / f"test-app-{port}.log"
+        log_path = app_log_file(log_dir, port)
         with log_path.open("w", encoding="utf-8") as log_file:
             process = Popen(
                 cmd_builder(port, token),

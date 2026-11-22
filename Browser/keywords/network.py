@@ -534,7 +534,7 @@ class Network(LibraryComponent):
         self,
         matcher: str,
         *,
-        error_code: AbortErrorCode = AbortErrorCode.failed,
+        errorCode: AbortErrorCode = AbortErrorCode.failed,
         times: int | None = None,
         on: ContextOrPage = ContextOrPage.Context,
     ) -> str:
@@ -543,7 +543,7 @@ class Network(LibraryComponent):
         *Arguments:*
           - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
                 ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
-          - ``error_code``: The network error the request fails with, see `AbortErrorCode`.
+          - ``errorCode``: The network error the request fails with, see `AbortErrorCode`.
           - ``times``: How many matching requests the rule aborts before it ends. ``None``
                 (default) aborts every matching request until the rule is removed. Must be 1
                 or more.
@@ -564,8 +564,8 @@ class Network(LibraryComponent):
 
         Example, an outage of two requests and then recovery:
         | `Abort Requests`    **/api/orders    times=2
-        | `Click`    id=reload-orders    # fails
-        | `Click`    id=reload-orders    # fails
+        | `Click`    id=reload-orders    # request aborted
+        | `Click`    id=reload-orders    # request aborted
         | `Click`    id=reload-orders    # reaches the server
         | `Get Text`    id=orders-status    ==    loaded
 
@@ -577,7 +577,7 @@ class Network(LibraryComponent):
         request = Request().RouteRule(
             url=matcher,
             times=times,
-            abort=Request().RouteAbort(errorCode=error_code.name),
+            abort=Request().RouteAbort(errorCode=errorCode.name),
         )
         with self.playwright.grpc_channel() as stub:
             if on == ContextOrPage.Page:
@@ -585,7 +585,7 @@ class Network(LibraryComponent):
             else:
                 response = stub.AddContextRoute(request)
         logger.info(
-            f"Added route rule {response.id}: abort {matcher} with {error_code.name}, "
+            f"Added route rule {response.id}: abort {matcher} with {errorCode.name}, "
             f"times={times}, on={on.name}."
         )
         return response.id
@@ -604,7 +604,7 @@ class Network(LibraryComponent):
 
         Example:
         | ${rule} =    `Abort Requests`    **/api/orders
-        | `Click`    id=reload-orders    # fails
+        | `Click`    id=reload-orders    # request aborted
         | `Remove Route Rule`    ${rule}
         | `Click`    id=reload-orders    # reaches the server
         """

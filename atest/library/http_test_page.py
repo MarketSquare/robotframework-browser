@@ -5,8 +5,8 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from robot.libraries.BuiltIn import BuiltIn
+from test_app_server import TEST_APP_LOG_DIR, app_log_file
 
-TEST_APP_LOG_DIR = Path(__file__).parent.parent / "output" / "test-app"
 FIXTURES_DIR = (
     Path(__file__).parent.parent.parent
     / "node"
@@ -75,7 +75,7 @@ def http_echo_count(path: str) -> int:
     an HTTP test page endpoint.
     """
     port = BuiltIn().get_variable_value("${SERVER_PORT}")
-    log_file = TEST_APP_LOG_DIR / f"test-app-{port}.log"
+    log_file = app_log_file(TEST_APP_LOG_DIR, port)
     count = 0
     for line in log_file.read_text(encoding="utf-8").splitlines():
         if '"http_echo"' not in line:

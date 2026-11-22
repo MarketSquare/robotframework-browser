@@ -40,7 +40,7 @@ def test_page_rule_sends_times_and_error_code():
     network, stub = make_network()
     rule_id = network.abort_requests(
         "/api/",
-        error_code=AbortErrorCode.timedout,
+        errorCode=AbortErrorCode.timedout,
         times=2,
         on=ContextOrPage.Page,
     )
