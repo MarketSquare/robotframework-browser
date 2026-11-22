@@ -31,9 +31,9 @@ function fakeState() {
     return { state, context, page, indexedContext };
 }
 
-function fakeRoute(abort: (errorCode?: string) => Promise<void> = async () => {}): Route {
+function fakeRoute(abort: (errorCode?: string) => Promise<void> = async () => {}, fulfill = jest.fn()): Route {
     const request = { method: () => 'GET', url: () => 'http://x/api' };
-    return { abort, request: () => request } as unknown as Route;
+    return { abort, fulfill, request: () => request } as unknown as Route;
 }
 
 describe('route rules', () => {
@@ -43,6 +43,18 @@ describe('route rules', () => {
         const abort = jest.fn<(errorCode?: string) => Promise<void>>(async () => {});
         await context.handlers[0](fakeRoute(abort));
         expect(abort).toHaveBeenCalledWith('timedout');
+    });
+
+    it('fulfills with the status, headers and body bytes', async () => {
+        const { state, page } = fakeState();
+        const body = Buffer.from([0x89, 0x50, 0x00, 0xff]);
+        await addPageRoute(
+            { url: '**/api', fulfill: { status: 418, headers: { 'Content-Type': 'image/png' }, body } },
+            state,
+        );
+        const fulfill = jest.fn<(options: unknown) => Promise<void>>(async () => {});
+        await page.handlers[0](fakeRoute(undefined, fulfill));
+        expect(fulfill).toHaveBeenCalledWith({ status: 418, headers: { 'Content-Type': 'image/png' }, body });
     });
 
     it('waits for running handler calls before a removal returns', async () => {

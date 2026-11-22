@@ -19,6 +19,7 @@ import mimetypes
 from collections.abc import Mapping
 from datetime import timedelta
 from enum import Enum
+from os import PathLike
 from pathlib import Path
 from typing import Any, cast
 from urllib.parse import parse_qsl
@@ -45,6 +46,39 @@ from ..utils import (
     logger,
 )
 from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
+
+HTTP_STATUS_CODES = range(100, 600)
+
+
+def _check_times(times: int | None):
+    if times is not None and times < 1:
+        raise ValueError(f"times must be 1 or more, got {times}.")
+
+
+def _has_content_type(headers: dict[str, str]) -> bool:
+    return any(name.lower() == "content-type" for name in headers)
+
+
+def _mock_payload(
+    body: str | None, json_value: Any, path: PathLike | None
+) -> tuple[bytes, str | None, str]:
+    given = {"body": body, "json": json_value, "path": path}
+    given_names = [name for name, value in given.items() if value is not None]
+    if len(given_names) > 1:
+        named = f"{', '.join(given_names[:-1])} and {given_names[-1]}"
+        raise ValueError(f"Give at most one of body, json and path, got {named}.")
+    if path is not None:
+        file = Path(path)
+        if not file.is_file():
+            raise ValueError(f"path {file} is not a file.")
+        content_type = mimetypes.guess_type(file.name)[0]
+        payload = file.read_bytes()
+        return payload, content_type or "application/octet-stream", f"file {file}"
+    if json_value is not None:
+        return json.dumps(json_value).encode("utf-8"), "application/json", "json body"
+    if body is not None:
+        return body.encode("utf-8"), "text/plain; charset=utf-8", "text body"
+    return b"", None, "no body"
 
 
 def _get_headers(body: str, headers: dict):
@@ -734,7 +768,8 @@ class Network(LibraryComponent):
 
         A request that a service worker answers never reaches a route rule; open the context
         with ``serviceWorkers=block`` in `New Context` to route those requests too. Each
-        aborted request is logged only in ``playwright-log.txt``.
+        aborted request is logged only in ``playwright-log.txt``. When several rules match a
+        request, the newest one wins, and a Page rule wins over a Context rule.
 
         Example, an outage of two requests and then recovery:
         | `Abort Requests`    **/api/orders    times=2
@@ -746,30 +781,121 @@ class Network(LibraryComponent):
         See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
         more.
         """
-        if times is not None and times < 1:
-            raise ValueError(f"times must be 1 or more, got {times}.")
+        _check_times(times)
         request = Request().RouteRule(
             url=matcher,
             times=times,
             abort=Request().RouteAbort(errorCode=errorCode.name),
         )
-        with self.playwright.grpc_channel() as stub:
-            if on == ContextOrPage.Page:
-                response = stub.AddPageRoute(request)
-            else:
-                response = stub.AddContextRoute(request)
+        rule_id = self._add_route_rule(request, on)
         logger.info(
-            f"Added route rule {response.id}: abort {matcher} with {errorCode.name}, "
+            f"Added route rule {rule_id}: abort {matcher} with {errorCode.name}, "
             f"times={times}, on={on.name}."
         )
-        return response.id
+        return rule_id
+
+    @keyword(tags=("Route", "Setter"))
+    def mock_responses(
+        self,
+        matcher: str,
+        *,
+        status: int = 200,
+        body: str | None = None,
+        json: Any = None,
+        path: PathLike | None = None,
+        headers: dict[str, str] | None = None,
+        times: int | None = None,
+        on: ContextOrPage = ContextOrPage.Context,
+    ) -> str:
+        """Adds a route rule that answers every request matching ``matcher`` with a mock response.
+
+        The request never reaches the server.
+
+        *Arguments:*
+          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
+                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``status``: The response status, from 100 to 599. There is no reason phrase
+                argument: the browser shows the standard phrase, or ``Unknown`` for a code
+                such as 299.
+          - ``body``: The response body as text, sent as UTF-8. ``body=`` is an empty body.
+          - ``json``: Any JSON-serializable value, such as a dictionary, list or number,
+                sent JSON-encoded. A string is sent as a JSON string, so JSON text goes in
+                ``body`` with a Content-Type header.
+          - ``path``: A file whose bytes are the body; binary files work. A relative path
+                resolves against the working directory.
+          - ``headers``: All headers of the mock response; header names are case-insensitive.
+          - ``times``: How many matching requests the rule answers before it ends. ``None``
+                (default) answers every matching request until the rule is removed. Must be 1
+                or more.
+          - ``on``: Where the rule is added, see `ContextOrPage`. ``Context`` (default) for
+                every page of the active context, also pages opened later, ``Page`` for the
+                active page only: the rule stays on that page and does not follow
+                `Switch Page`. Fails when no context or page is open.
+
+        Give at most one of ``body``, ``json`` and ``path``; none is an empty body, for example
+        with ``status=204``. Unless ``headers`` has a Content-Type, which always wins, the
+        Content-Type is ``text/plain; charset=utf-8`` for ``body``, ``application/json`` for
+        ``json``, guessed from the file extension for ``path`` (``application/octet-stream``
+        if unknown), and none without a payload, which WebKit reports as
+        ``application/octet-stream``.
+
+        Returns the rule id, to give to `Remove Route Rule`.
+
+        A rule ends when its context or page closes, when it is removed with
+        `Remove Route Rule` or `Remove All Route Rules`, or when it has used up its ``times``.
+        It does not end with the test or suite.
+
+        A request that a service worker answers never reaches a route rule; open the context
+        with ``serviceWorkers=block`` in `New Context` to route those requests too. Each
+        answered request is logged only in ``playwright-log.txt``. When several rules match a
+        request, the newest one wins, and a Page rule wins over a Context rule.
+
+        A cross-origin mock response needs no CORS headers. If it sets its own
+        ``Access-Control-Allow-Origin``, the browser checks it, so ``*`` together with
+        credentials fails.
+
+        Example, stub the orders and then fail the next request once:
+        | `Mock Responses`    **/api/orders    json=${orders}
+        | `Mock Responses`    **/api/orders    status=500    times=1
+        | `Click`    id=reload-orders    # gets 500
+        | `Click`    id=reload-orders    # gets ${orders}
+
+        See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
+        more.
+        """
+        _check_times(times)
+        if status not in HTTP_STATUS_CODES:
+            raise ValueError(f"status must be from 100 to 599, got {status}.")
+        payload, content_type, payload_kind = _mock_payload(body, json, path)
+        response_headers = dict(headers or {})
+        if content_type and not _has_content_type(response_headers):
+            response_headers["Content-Type"] = content_type
+        request = Request().RouteRule(
+            url=matcher,
+            times=times,
+            fulfill=Request().RouteFulfill(
+                status=status, headers=response_headers, body=payload
+            ),
+        )
+        rule_id = self._add_route_rule(request, on)
+        logger.info(
+            f"Added route rule {rule_id}: mock {matcher} with status {status} and "
+            f"{payload_kind}, times={times}, on={on.name}."
+        )
+        return rule_id
+
+    def _add_route_rule(self, request: Request.RouteRule, on: ContextOrPage) -> str:
+        with self.playwright.grpc_channel() as stub:
+            if on == ContextOrPage.Page:
+                return stub.AddPageRoute(request).id
+            return stub.AddContextRoute(request).id
 
     @keyword(tags=("Route", "Setter"))
     def remove_route_rule(self, rule_id: str):
         """Removes the route rule with ``rule_id``.
 
         *Arguments:*
-          - ``rule_id``: The id that `Abort Requests` returned. The rule is found in any
+          - ``rule_id``: The id that `Abort Requests` or `Mock Responses` returned. The rule is found in any
                 context, so a Page rule can be removed while another page is active.
 
         An unknown or already ended id, or no open context, is logged and the keyword passes.

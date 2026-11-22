@@ -182,7 +182,7 @@ async function buildEcho(req: Request): Promise<Echo> {
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 function sendEcho(req: Request, res: Response, payload: Record<string, unknown>, contentType = 'json') {
-    const json = JSON.stringify(payload, null, 2);
+    const json = JSON.stringify({ ...payload, served: res.locals.served }, null, 2);
     if (queryValue(req, 'format') === 'html') {
         res.type('html').send(
             '<html lang="en"><head><title>Echo</title></head>' +
@@ -194,6 +194,17 @@ function sendEcho(req: Request, res: Response, payload: Record<string, unknown>,
 }
 
 type CorsOutcome = 'off' | 'none' | 'allowed' | 'preflight';
+
+const SERVED_HEADER = 'X-Test-App-Served';
+
+interface JournalEntry {
+    id: number;
+    method: string;
+    path: string;
+    url: string;
+    status: number;
+    headers: IncomingHttpHeaders;
+}
 
 function applyCors(req: Request, res: Response, exposeHeaders: string[]): CorsOutcome {
     if (queryValue(req, 'cors') === 'off') {
@@ -207,7 +218,7 @@ function applyCors(req: Request, res: Response, exposeHeaders: string[]): CorsOu
     res.set('Access-Control-Allow-Credentials', 'true');
     res.append('Vary', 'Origin');
     // With credentials, `*` is not a wildcard, so the custom names are listed as well.
-    res.set('Access-Control-Expose-Headers', ['*', ...exposeHeaders].join(', '));
+    res.set('Access-Control-Expose-Headers', ['*', SERVED_HEADER, ...exposeHeaders].join(', '));
     return 'allowed';
 }
 
@@ -330,6 +341,32 @@ const asyncRoute =
  * Registered before any body parser, because they read every request body raw.
  */
 export function registerHttpTestRoutes(app: Express, log: LogJson, fixturesDir: string) {
+    let servedCount = 0;
+    const journal: JournalEntry[] = [];
+
+    app.get('/api/journal', (req, res) => {
+        const prefix = queryValue(req, 'path') ?? '';
+        res.set('Access-Control-Allow-Origin', '*');
+        res.json(journal.filter((entry) => entry.path.startsWith(prefix)));
+    });
+
+    app.use(['/api/echo', '/api/respond', '/api/basic-auth'], (req, res, next) => {
+        const id = ++servedCount;
+        res.locals.served = id;
+        res.set(SERVED_HEADER, String(id));
+        res.on('finish', () =>
+            journal.push({
+                id,
+                method: req.method,
+                path: new URL(req.originalUrl, 'http://test-app').pathname,
+                url: req.originalUrl,
+                status: res.statusCode,
+                headers: req.headers,
+            }),
+        );
+        next();
+    });
+
     app.use(
         '/api/echo',
         asyncRoute(async (req, res) => {
