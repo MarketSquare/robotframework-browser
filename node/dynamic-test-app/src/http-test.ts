@@ -4,6 +4,7 @@ import type { Express, NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
 import type { IncomingHttpHeaders } from 'http';
 import * as path from 'path';
+import * as zlib from 'zlib';
 
 type LogJson = (entry: Record<string, unknown>) => void;
 
@@ -181,17 +182,28 @@ async function buildEcho(req: Request): Promise<Echo> {
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-function sendEcho(req: Request, res: Response, payload: Record<string, unknown>, contentType = 'json') {
+function echoContent(req: Request, res: Response, payload: Record<string, unknown>, contentType = 'json') {
     const json = JSON.stringify({ ...payload, served: res.locals.served }, null, 2);
     if (queryValue(req, 'format') === 'html') {
-        res.type('html').send(
-            '<html lang="en"><head><title>Echo</title></head>' +
+        return {
+            type: 'html',
+            data:
+                '<html lang="en"><head><title>Echo</title></head>' +
                 `<body><pre id="echo">${escapeHtml(json)}</pre></body></html>`,
-        );
-    } else {
-        res.type(contentType).send(json);
+        };
     }
+    return { type: contentType, data: json };
 }
+
+function sendEcho(req: Request, res: Response, payload: Record<string, unknown>, contentType = 'json') {
+    const { type, data } = echoContent(req, res, payload, contentType);
+    res.type(type).send(data);
+}
+
+const ENCODERS: Record<string, (data: string | Buffer) => Buffer> = {
+    gzip: zlib.gzipSync,
+    br: zlib.brotliCompressSync,
+};
 
 type CorsOutcome = 'off' | 'none' | 'allowed' | 'preflight';
 
@@ -274,6 +286,7 @@ interface RespondSpec {
     body: string | undefined;
     file: string | undefined;
     delay: number;
+    encoding: string | undefined;
 }
 
 function parseInteger(value: string | undefined, fallback: number): number {
@@ -297,6 +310,10 @@ function parseRespondSpec(req: Request): RespondSpec | string {
     if (statusText !== undefined && !HEADER_TEXT.test(statusText)) {
         return `Invalid statusText: ${statusText} (Latin-1 text without line breaks)`;
     }
+    const encoding = queryValue(req, 'encoding');
+    if (encoding !== undefined && !(encoding in ENCODERS)) {
+        return `Invalid encoding: ${encoding} (gzip or br)`;
+    }
     const headers: [string, string][] = [];
     for (const header of queryValues(req, 'header')) {
         const colon = header.indexOf(':');
@@ -315,6 +332,7 @@ function parseRespondSpec(req: Request): RespondSpec | string {
         body: queryValue(req, 'body'),
         file: queryValue(req, 'file'),
         delay,
+        encoding,
     };
 }
 
@@ -396,7 +414,7 @@ export function registerHttpTestRoutes(app: Express, log: LogJson, fixturesDir: 
                     .send(JSON.stringify({ error: spec }));
                 return;
             }
-            const { status, statusText, contentType, headers, body, file, delay } = spec;
+            const { status, statusText, contentType, headers, body, file, delay, encoding } = spec;
             const cors = applyCors(
                 req,
                 res,
@@ -427,12 +445,20 @@ export function registerHttpTestRoutes(app: Express, log: LogJson, fixturesDir: 
                 res.append(name, value);
             }
             logExchange(log, 'respond', echo, status, cors, { file: file ?? null });
+            let content: { type: string; data: string | Buffer };
             if (fileData !== null) {
-                res.type(contentType ?? path.extname(file ?? '')).send(fileData);
+                content = { type: contentType ?? path.extname(file ?? ''), data: fileData };
             } else if (body !== undefined) {
-                res.type(contentType ?? 'text/plain').send(body);
+                content = { type: contentType ?? 'text/plain', data: body };
             } else {
-                sendEcho(req, res, { ...echo }, contentType);
+                content = echoContent(req, res, { ...echo }, contentType);
+            }
+            res.type(content.type);
+            if (encoding !== undefined) {
+                res.set('Content-Encoding', encoding);
+                res.send(ENCODERS[encoding](content.data));
+            } else {
+                res.send(content.data);
             }
         }),
     );

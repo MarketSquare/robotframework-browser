@@ -4,8 +4,17 @@ import type { Page, Route } from 'playwright';
 jest.mock('uuid', () => ({ v4: jest.fn().mockReturnValue('test-uuid') }));
 jest.mock('../browser_logger', () => ({ logger: { info: jest.fn() } }));
 
+import { logger } from '../browser_logger';
+import type * as pb from '../generated/playwright';
 import type { PlaywrightState } from '../playwright-state';
-import { addContextRoute, addPageRoute, removeAllRouteRules, removeRouteRule, RouteRules } from '../route-rules';
+import {
+    addContextRoute,
+    addPageRoute,
+    jsonMergePatch,
+    removeAllRouteRules,
+    removeRouteRule,
+    RouteRules,
+} from '../route-rules';
 
 type Handler = (route: Route) => Promise<void>;
 
@@ -145,5 +154,174 @@ describe('route rules', () => {
         expect.assertions(1);
         const { state } = fakeState();
         await expect(addContextRoute({ url: '/[/', abort: {} }, state)).rejects.toThrow('Invalid regular expression');
+    });
+});
+
+type FetchOptions = {
+    url?: string;
+    method?: string;
+    headers?: Record<string, string>;
+    postData?: Buffer;
+    timeout?: number;
+};
+type FulfillOptions = { response?: unknown; status?: number; headers?: Record<string, string>; body?: Buffer };
+
+function fakeModifyRoute(
+    realHeaders: Record<string, string> = {},
+    realBody = '',
+    requestHeaders: Record<string, string> = {},
+    fetch: (options: FetchOptions) => Promise<unknown> = async () => ({
+        headers: () => realHeaders,
+        body: async () => Buffer.from(realBody),
+    }),
+) {
+    const request = {
+        method: () => 'GET',
+        url: () => 'http://localhost/api/orders?x=1',
+        headers: () => requestHeaders,
+    };
+    const route = {
+        fetch: jest.fn(fetch),
+        fulfill: jest.fn<(options: FulfillOptions) => Promise<void>>(async () => {}),
+        abort: jest.fn<(errorCode?: string) => Promise<void>>(async () => {}),
+        request: () => request,
+    };
+    return route;
+}
+
+async function runModify(modify: Partial<pb.Request_RouteModify>, route: ReturnType<typeof fakeModifyRoute>) {
+    const { state, context } = fakeState();
+    await addContextRoute(
+        { url: '**/api', modify: { requestHeaders: {}, headers: {}, timeout: 5000, ...modify } },
+        state,
+    );
+    await context.handlers[0](route as unknown as Route);
+}
+
+describe('modify route rules', () => {
+    it('fulfills with the real response, the new status and merged headers', async () => {
+        const route = fakeModifyRoute({
+            'content-type': 'application/json',
+            'x-real': 'kept',
+            'X-Drop': 'gone',
+            'x-over': 'old',
+        });
+        await runModify({ status: 500, headers: { 'X-New': 'added', 'x-drop': '', 'X-Over': 'new' } }, route);
+        const options = route.fulfill.mock.calls[0][0];
+        expect(options.status).toBe(500);
+        expect(options.headers).toEqual({
+            'content-type': 'application/json',
+            'x-real': 'kept',
+            'X-New': 'added',
+            'X-Over': 'new',
+        });
+        expect(options.body).toBeUndefined();
+        expect(options.response).toBe(await route.fetch.mock.results[0].value);
+    });
+
+    it('applies the JSON merge patch and drops the stale encoding headers', async () => {
+        const route = fakeModifyRoute(
+            { 'content-type': 'application/json', 'content-encoding': 'gzip', 'Content-Length': '99' },
+            '{"order": {"id": 1, "note": "x"}, "items": [1, 2]}',
+        );
+        await runModify({ jsonPatch: '{"order": {"note": null, "state": "open"}, "items": [3]}' }, route);
+        const options = route.fulfill.mock.calls[0][0];
+        expect(options.headers).toEqual({ 'content-type': 'application/json' });
+        expect(JSON.parse(String(options.body))).toEqual({ order: { id: 1, state: 'open' }, items: [3] });
+    });
+
+    it('replaces the body and keeps the content type that Python resolved', async () => {
+        const route = fakeModifyRoute({ 'content-type': 'application/json', 'content-length': '2' }, '{}');
+        const body = Buffer.from('replaced');
+        await runModify({ body, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }, route);
+        const options = route.fulfill.mock.calls[0][0];
+        expect(options.headers).toEqual({ 'Content-Type': 'text/plain; charset=utf-8' });
+        expect(options.body).toBe(body);
+    });
+
+    it('fetches the original request when only the response changes', async () => {
+        const route = fakeModifyRoute();
+        await runModify({ status: 201 }, route);
+        expect(route.fetch).toHaveBeenCalledWith({ timeout: 5000 });
+    });
+
+    it('merges the request headers onto the real ones', async () => {
+        const route = fakeModifyRoute({}, '', { accept: '*/*', 'x-remove': 'a', Cookie: 'kept=1' });
+        await runModify({ requestHeaders: { Authorization: 'Bearer abc', 'X-Remove': '' } }, route);
+        expect(route.fetch.mock.calls[0][0].headers).toEqual({
+            accept: '*/*',
+            Cookie: 'kept=1',
+            Authorization: 'Bearer abc',
+        });
+    });
+
+    it('resolves a relative URL and drops the original host and cookie', async () => {
+        const route = fakeModifyRoute({}, '', { host: 'localhost', Cookie: 'a=1', accept: '*/*' });
+        await runModify({ url: '/api/v2/orders' }, route);
+        const options = route.fetch.mock.calls[0][0];
+        expect(options.url).toBe('http://localhost/api/v2/orders');
+        expect(options.headers).toEqual({ accept: '*/*' });
+    });
+
+    it('sends the new method and body', async () => {
+        const route = fakeModifyRoute();
+        const postData = Buffer.from('{"a": 1}');
+        await runModify({ method: 'POST', postData }, route);
+        const options = route.fetch.mock.calls[0][0];
+        expect(options.method).toBe('POST');
+        expect(options.postData).toBe(postData);
+    });
+
+    it.each(['GET', 'HEAD'])('sends no body when the method changes to %s without one', async (method) => {
+        const route = fakeModifyRoute();
+        await runModify({ method }, route);
+        expect(route.fetch.mock.calls[0][0].postData).toEqual(Buffer.alloc(0));
+    });
+
+    it('aborts the request and logs the error without the call log when the fetch fails', async () => {
+        const error = new Error(
+            'apiRequestContext.fetch: connect ECONNREFUSED 127.0.0.1:1\nCall log:\n  - → GET http://127.0.0.1:1/\n    - authorization: Bearer abc',
+        );
+        const route = fakeModifyRoute({}, '', {}, async () => {
+            throw error;
+        });
+        await runModify({ url: 'http://127.0.0.1:1/' }, route);
+        expect(route.abort).toHaveBeenCalledWith('failed');
+        const logged = jest.mocked(logger.info).mock.calls.map(([message]) => String(message));
+        expect(logged.some((message) => message.includes('connect ECONNREFUSED 127.0.0.1:1'))).toBe(true);
+        expect(logged.some((message) => message.includes('Bearer abc') || message.includes('Call log'))).toBe(false);
+    });
+
+    it('aborts the request when the real body is not JSON', async () => {
+        const route = fakeModifyRoute({}, 'not json');
+        await runModify({ jsonPatch: '{"a": 1}' }, route);
+        expect(route.abort).toHaveBeenCalledWith('failed');
+        expect(route.fulfill).not.toHaveBeenCalled();
+    });
+});
+
+describe('jsonMergePatch', () => {
+    it.each([
+        [{ a: 'b' }, { a: 'c' }, { a: 'c' }],
+        [{ a: 'b' }, { b: 'c' }, { a: 'b', b: 'c' }],
+        [{ a: 'b' }, { a: null }, {}],
+        [{ a: 'b', b: 'c' }, { a: null }, { b: 'c' }],
+        [{ a: ['b'] }, { a: 'c' }, { a: 'c' }],
+        [{ a: 'c' }, { a: ['b'] }, { a: ['b'] }],
+        [{ a: { b: 'c' } }, { a: { b: 'd', c: null } }, { a: { b: 'd' } }],
+        [{ a: [{ b: 'c' }] }, { a: [1] }, { a: [1] }],
+        [
+            ['a', 'b'],
+            ['c', 'd'],
+            ['c', 'd'],
+        ],
+        [{ a: 'b' }, ['c'], ['c']],
+        [{ a: 'foo' }, null, null],
+        [{ a: 'foo' }, 'bar', 'bar'],
+        [{ e: null }, { a: 1 }, { e: null, a: 1 }],
+        [[1, 2], { a: 'b', c: null }, { a: 'b' }],
+        [{}, { a: { bb: { ccc: null } } }, { a: { bb: {} } }],
+    ])('patches %j with %j into %j (RFC 7386 Appendix A)', (target, patch, expected) => {
+        expect(jsonMergePatch(target, patch)).toEqual(expected);
     });
 });

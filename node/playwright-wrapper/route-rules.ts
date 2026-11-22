@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { randomUUID } from 'crypto';
-import { BrowserContext, Disposable, Page, Route } from 'playwright';
+import { APIResponse, BrowserContext, Disposable, Page, Request, Route } from 'playwright';
 
 import { logger } from './browser_logger';
 import { isTargetClosed } from './context-tracer';
@@ -62,6 +62,95 @@ export class RouteRules {
     }
 }
 
+type JsonObject = { [key: string]: unknown };
+
+function isJsonObject(value: unknown): value is JsonObject {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function jsonMergePatch(target: unknown, patch: unknown): unknown {
+    if (!isJsonObject(patch)) return patch;
+    const merged: JsonObject = isJsonObject(target) ? { ...target } : {};
+    for (const [key, value] of Object.entries(patch)) {
+        if (value === null) delete merged[key];
+        else
+            Object.defineProperty(merged, key, {
+                value: jsonMergePatch(merged[key], value),
+                enumerable: true,
+                writable: true,
+                configurable: true,
+            });
+    }
+    return merged;
+}
+
+function mergeHeaders(real: Record<string, string>, changes: Record<string, string>): Record<string, string> {
+    const changed = new Set(Object.keys(changes).map((name) => name.toLowerCase()));
+    const merged = Object.fromEntries(Object.entries(real).filter(([name]) => !changed.has(name.toLowerCase())));
+    for (const [name, value] of Object.entries(changes)) {
+        if (value !== '') merged[name] = value;
+    }
+    return merged;
+}
+
+const STALE_BODY_HEADERS = new Set(['content-encoding', 'content-length']);
+
+async function modifiedBody(modify: pb.Request_RouteModify, response: APIResponse): Promise<Buffer | undefined> {
+    if (modify.jsonPatch === undefined) return modify.body;
+    const real: unknown = JSON.parse((await response.body()).toString('utf8'));
+    return Buffer.from(JSON.stringify(jsonMergePatch(real, JSON.parse(modify.jsonPatch))));
+}
+
+const ORIGINAL_TARGET_HEADERS = new Set(['host', 'cookie']);
+const BODYLESS_METHODS = new Set(['GET', 'HEAD']);
+
+function withoutHeaders(headers: Record<string, string>, names: Set<string>): Record<string, string> {
+    return Object.fromEntries(Object.entries(headers).filter(([name]) => !names.has(name.toLowerCase())));
+}
+
+function fetchOptions(modify: pb.Request_RouteModify, request: Request): Parameters<Route['fetch']>[0] {
+    const options: Parameters<Route['fetch']>[0] = { timeout: modify.timeout };
+    let headers = request.headers();
+    if (modify.url !== undefined) {
+        options.url = new URL(modify.url, request.url()).toString();
+        headers = withoutHeaders(headers, ORIGINAL_TARGET_HEADERS);
+    }
+    if (modify.url !== undefined || Object.keys(modify.requestHeaders).length > 0) {
+        options.headers = mergeHeaders(headers, modify.requestHeaders);
+    }
+    if (modify.method !== undefined) options.method = modify.method;
+    if (modify.postData !== undefined) options.postData = modify.postData;
+    else if (modify.method !== undefined && BODYLESS_METHODS.has(modify.method)) options.postData = Buffer.alloc(0);
+    return options;
+}
+
+function withoutCallLog(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.split(/\n\s*Call log:/)[0];
+}
+
+function modifyAction(modify: pb.Request_RouteModify): RouteAction {
+    return async (route) => {
+        let response: APIResponse;
+        let body: Buffer | undefined;
+        try {
+            response = await route.fetch(fetchOptions(modify, route.request()));
+            body = await modifiedBody(modify, response);
+        } catch (error) {
+            await route.abort('failed');
+            throw new Error(`request failed: ${withoutCallLog(error)}`, { cause: error });
+        }
+        let realHeaders = response.headers();
+        if (body !== undefined) realHeaders = withoutHeaders(realHeaders, STALE_BODY_HEADERS);
+        await route.fulfill({
+            response,
+            status: modify.status,
+            headers: mergeHeaders(realHeaders, modify.headers),
+            body,
+        });
+    };
+}
+
 function routeAction(request: pb.Request_RouteRule): RouteAction {
     if (request.abort) {
         const errorCode = request.abort.errorCode;
@@ -71,6 +160,7 @@ function routeAction(request: pb.Request_RouteRule): RouteAction {
         const { status, headers, body } = request.fulfill;
         return (route) => route.fulfill({ status, headers, body });
     }
+    if (request.modify) return modifyAction(request.modify);
     throw new Error('Route rule has no action.');
 }
 

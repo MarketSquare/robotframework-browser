@@ -64,14 +64,61 @@ def _has_content_type(headers: dict[str, str]) -> bool:
     return any(name.lower() == "content-type" for name in headers)
 
 
+def _check_status(status: int):
+    if status not in HTTP_STATUS_CODES:
+        raise ValueError(f"status must be from 100 to 599, got {status}.")
+
+
+def _named(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+
+
+def _check_at_most_one(**given: Any):
+    given_names = [name for name, value in given.items() if value is not None]
+    if len(given_names) > 1:
+        raise ValueError(
+            f"Give at most one of {_named(list(given))}, got {_named(given_names)}."
+        )
+
+
+def _revealed_headers(headers: dict[str, str | Secret] | None) -> dict[str, str]:
+    return {name: _reveal(value) for name, value in (headers or {}).items()}
+
+
+def _change_log(changes: list[str]) -> str:
+    return ", ".join(changes) if changes else "unchanged"
+
+
+def _header_names(headers: dict[str, str]) -> str:
+    return f"[{', '.join(headers)}]"
+
+
+def _json_text(value: Any) -> str:
+    return json.dumps(value)
+
+
+def _request_changes(
+    url: str | Secret | None,
+    method: RequestMethod | None,
+    headers: dict[str, str],
+    body: str | Secret | None,
+) -> list[str]:
+    changes = []
+    if url is not None:
+        changes.append(f"url={'<secret>' if isinstance(url, Secret) else url}")
+    if method is not None:
+        changes.append(f"method={method.name}")
+    if headers:
+        changes.append(f"headers={_header_names(headers)}")
+    if body is not None:
+        changes.append("body")
+    return changes
+
+
 def _mock_payload(
     body: str | None, json_value: Any, path: PathLike | None
 ) -> tuple[bytes, str | None, str]:
-    given = {"body": body, "json": json_value, "path": path}
-    given_names = [name for name, value in given.items() if value is not None]
-    if len(given_names) > 1:
-        named = f"{', '.join(given_names[:-1])} and {given_names[-1]}"
-        raise ValueError(f"Give at most one of body, json and path, got {named}.")
+    _check_at_most_one(body=body, json=json_value, path=path)
     if path is not None:
         file = Path(path)
         if not file.is_file():
@@ -879,12 +926,9 @@ class Network(LibraryComponent):
         more.
         """
         _check_times(times)
-        if status not in HTTP_STATUS_CODES:
-            raise ValueError(f"status must be from 100 to 599, got {status}.")
+        _check_status(status)
         payload, content_type, payload_kind = _mock_payload(_reveal(body), json, path)
-        response_headers = {
-            name: _reveal(value) for name, value in (headers or {}).items()
-        }
+        response_headers = _revealed_headers(headers)
         if content_type and not _has_content_type(response_headers):
             response_headers["Content-Type"] = content_type
         request = Request().RouteRule(
@@ -901,6 +945,145 @@ class Network(LibraryComponent):
         )
         return rule_id
 
+    @keyword(tags=("Route", "Setter"))
+    def modify_responses(
+        self,
+        matcher: str,
+        *,
+        status: int | None = None,
+        body: str | None = None,
+        json: Any = None,
+        path: PathLike | None = None,
+        json_patch: dict[str, Any] | None = None,
+        headers: dict[str, str | Secret] | None = None,
+        request_url: str | Secret | None = None,
+        request_method: RequestMethod | None = None,
+        request_headers: dict[str, str | Secret] | None = None,
+        request_body: str | Secret | None = None,
+        times: int | None = None,
+        on: ContextOrPage = ContextOrPage.Context,
+    ) -> str:
+        """Adds a route rule that sends every request matching ``matcher`` to the server and changes the real response.
+
+        The request reaches the server, and only the named parts of the request and of the
+        response change. Every change is ``None`` by default, meaning the real value is kept;
+        give at least one.
+
+        *Arguments:*
+          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
+                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``status``: The response status, from 100 to 599.
+          - ``body``: Replaces the real body with text, sent as UTF-8, as in `Mock Responses`.
+          - ``json``: Replaces the real body with a JSON-encoded value, as in `Mock Responses`.
+          - ``path``: Replaces the real body with the bytes of a file, as in `Mock Responses`.
+          - ``json_patch``: A dictionary applied to the real JSON body as a
+                [https://www.rfc-editor.org/rfc/rfc7386|RFC 7386 JSON Merge Patch]: objects
+                merge deeply, ``None`` deletes a key and lists replace the whole list. The real
+                Content-Type is kept. Use ``json`` to replace the whole body.
+          - ``headers``: Merged onto the real response headers.
+          - ``request_url``: The URL the request is sent to, absolute or relative to the
+                original request URL. The page keeps its original URL. The cookies come from
+                the context for the new URL; the original ``Cookie`` and ``Host`` headers are
+                not sent.
+          - ``request_method``: The method the request is sent with. ``GET`` or ``HEAD``
+                without ``request_body`` sends no body.
+          - ``request_headers``: Merged onto the real request headers.
+          - ``request_body``: The request body as text, sent as UTF-8. The Content-Type stays as
+                the original request had it unless ``request_headers`` sets it.
+          - ``times``: How many matching requests the rule changes before it ends. ``None``
+                (default) changes every matching request until the rule is removed. Must be 1
+                or more.
+          - ``on``: Where the rule is added, see `ContextOrPage`. ``Context`` (default) for
+                every page of the active context, also pages opened later, ``Page`` for the
+                active page only. Fails when no context or page is open.
+
+        Give at most one of ``body``, ``json``, ``path`` and ``json_patch``. A replaced body gets
+        the Content-Type that `Mock Responses` gives it, and a Content-Type in ``headers``
+        always wins.
+
+        Header names are case-insensitive, a given value wins, and an empty string removes the
+        header. A value is a string or a Robot Framework ``Secret``.
+
+        Redirects are followed, and the page gets the final response at its original URL. When
+        the real request fails, or ``json_patch`` meets a body that is not JSON, the page
+        request fails as a network error. The timeout of the real request is the browser
+        timeout when the rule is added. A replaced body and ``request_body`` go to the browser
+        in one message, so over about 4 MB they fail.
+
+        Returns the rule id, to give to `Remove Route Rule`.
+
+        A rule ends when its context or page closes, when it is removed with
+        `Remove Route Rule` or `Remove All Route Rules`, or when it has used up its ``times``.
+        It does not end with the test or suite.
+
+        A request that a service worker answers never reaches a route rule; open the context
+        with ``serviceWorkers=block`` in `New Context` to route those requests too. Each
+        changed request is logged only in ``playwright-log.txt``. When several rules match a
+        request, the newest one wins, and a Page rule wins over a Context rule.
+
+        The keyword logs header names but never their values, nor the bodies. A string value
+        still shows in the keyword's arguments in the Robot Framework log; give a token as
+        ``Secret`` to keep it out. With ``enable_playwright_debug`` in the library import, the
+        values are visible as plain text in the Playwright debug log, and Playwright may log
+        them too.
+
+        Example, an order in an edge-case state, fetched with a token:
+        | VAR    ${token: Secret} =    %{API_TOKEN}
+        | VAR    &{auth} =    Authorization=${token}
+        | VAR    &{patch} =    state=cancelled    note=${None}
+        | `Modify Responses`    **/api/orders/1    json_patch=${patch}    request_headers=${auth}
+
+        See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
+        more.
+        """
+        _check_times(times)
+        response_headers = _revealed_headers(headers)
+        sent_headers = _revealed_headers(request_headers)
+        payloads = {"body": body, "json": json, "path": path, "json_patch": json_patch}
+        _check_at_most_one(**payloads)
+        request_changes = _request_changes(
+            request_url, request_method, sent_headers, request_body
+        )
+        response_changes = [
+            *([f"status={status}"] if status is not None else []),
+            *(name for name, value in payloads.items() if value is not None),
+            *(
+                [f"headers={_header_names(response_headers)}"]
+                if response_headers
+                else []
+            ),
+        ]
+        if not request_changes and not response_changes:
+            raise ValueError("Modify Responses needs at least one change.")
+        if status is not None:
+            _check_status(status)
+        modify = Request().RouteModify(
+            url=_reveal(request_url),
+            method=request_method.name if request_method else None,
+            postData=None
+            if request_body is None
+            else _reveal(request_body).encode("utf-8"),
+            timeout=int(self.get_timeout(None)),
+            status=status,
+            requestHeaders=sent_headers,
+        )
+        if json_patch is not None:
+            modify.jsonPatch = _json_text(json_patch)
+        elif body is not None or json is not None or path is not None:
+            modify.body, content_type, _ = _mock_payload(body, json, path)
+            if content_type and not _has_content_type(response_headers):
+                response_headers["Content-Type"] = content_type
+        modify.headers.update(response_headers)
+        rule_id = self._add_route_rule(
+            Request().RouteRule(url=matcher, times=times, modify=modify), on
+        )
+        logger.info(
+            f"Added route rule {rule_id}: modify {matcher}, "
+            f"request: {_change_log(request_changes)}; "
+            f"response: {_change_log(response_changes)}, times={times}, on={on.name}."
+        )
+        return rule_id
+
     def _add_route_rule(self, request: Request.RouteRule, on: ContextOrPage) -> str:
         with self.playwright.grpc_channel() as stub:
             if on == ContextOrPage.Page:
@@ -912,8 +1095,9 @@ class Network(LibraryComponent):
         """Removes the route rule with ``rule_id``.
 
         *Arguments:*
-          - ``rule_id``: The id that `Abort Requests` or `Mock Responses` returned. The rule is found in any
-                context, so a Page rule can be removed while another page is active.
+          - ``rule_id``: The id that `Abort Requests`, `Mock Responses` or `Modify Responses`
+                returned. The rule is found in any context, so a Page rule can be removed while
+                another page is active.
 
         It logs how many times the rule ran. An unknown or already ended id, or no open context,
         is logged and the keyword passes. When the keyword returns, the rule affects no request:

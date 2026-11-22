@@ -391,12 +391,25 @@ message Request {
     bytes body = 3;
   }
 
+  message RouteModify {
+    optional string url = 1;
+    optional string method = 2;
+    map<string, string> requestHeaders = 3;
+    optional bytes postData = 4;
+    int32 timeout = 5;
+    optional int32 status = 10;
+    map<string, string> headers = 11;
+    optional bytes body = 12;
+    optional string jsonPatch = 13;
+  }
+
   message RouteRule {
     string url = 1;
     optional int32 times = 2;
     oneof action {
       RouteAbort abort = 10;
       RouteFulfill fulfill = 11;
+      RouteModify modify = 12;
     }
   }
 
