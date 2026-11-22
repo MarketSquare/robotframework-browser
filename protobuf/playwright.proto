@@ -489,9 +489,35 @@ message Request {
      double timeout = 17;
   }
 
+  message ApiRequest {
+     string url = 1;
+     string method = 2;
+     optional string headers = 3;
+     optional FormFields params = 4;
+     optional string encodedParams = 5;
+     optional string dataText = 6;
+     optional bytes dataBytes = 7;
+     optional string dataJson = 8;
+     optional FormFields form = 9;
+     optional MultipartFields multipart = 10;
+     double timeout = 11;
+     optional bool failOnStatusCode = 12;
+     optional int32 maxRedirects = 13;
+     optional int32 maxRetries = 14;
+     optional bool ignoreHTTPSErrors = 15;
+  }
+
   message FormField {
      string name = 1;
      string value = 2;
+  }
+
+  message FormFields {
+     repeated FormField fields = 1;
+  }
+
+  message MultipartFields {
+     repeated MultipartField fields = 1;
   }
 
   message MultipartField {
@@ -775,6 +801,7 @@ service  Playwright {
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
   /* Makes a `fetch` request in the page: metadata in the first message, raw response body chunked in bodyBytes */
   rpc HttpRequest(Request.HttpRequest) returns (stream Response.Json);
+  rpc SendApiRequest(Request.ApiRequest) returns (stream Response.Json);
   /* Streams the captured request: metadata in the first message, raw post data chunked in postDataBytes */
   rpc WaitForRequest(Request.HttpCapture) returns (stream Response.Json);
   /* Streams the captured response: metadata in the first message, raw body chunked in bodyBytes and the request's raw post data in postDataBytes */

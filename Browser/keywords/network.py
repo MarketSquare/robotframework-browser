@@ -30,6 +30,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     AbortErrorCode,
+    APIResponse,
     CapturedRequest,
     CapturedResponse,
     ContextOrPage,
@@ -38,14 +39,23 @@ from ..utils import (
     FetchMode,
     FetchPriority,
     FetchRedirect,
+    FormFields,
     HttpResponse,
     JsonDotDict,
+    MultipartFields,
     MultipartFile,
+    QueryParams,
     ReferrerPolicy,
     keyword,
     logger,
 )
-from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
+from ..utils.data_types import (
+    PageLoadStates,
+    RegExp,
+    RequestMethod,
+    _kind_of,
+    javascript_text,
+)
 from ..utils.types import Secret
 
 HTTP_STATUS_CODES = range(100, 600)
@@ -324,58 +334,123 @@ def _log_response(response: dict) -> None:
 METHODS_WITHOUT_BODY = ("GET", "HEAD")
 
 
-def _form_value(value: Any) -> str:
-    if isinstance(value, bool):
-        return "true" if value else "false"
-    return str(value)
-
-
-def _set_given(request: Request.HttpRequest, **values: Any) -> None:
+def _set_given(
+    request: Request.HttpRequest | Request.ApiRequest, **values: Any
+) -> None:
     for name, value in values.items():
         if value is not None:
             setattr(request, name, value.value if isinstance(value, Enum) else value)
 
 
-def _multipart_field(name: str, value: Any) -> Request.MultipartField:
-    if isinstance(value, Mapping):
-        return _multipart_file(name, value)
-    return Request.MultipartField(name=name, value=_form_value(value))
-
-
-def _multipart_file(name: str, file: Mapping[str, Any]) -> Request.MultipartField:
-    path, buffer = file.get("path"), file.get("buffer")
-    if (path is None) == (buffer is None):
-        raise ValueError(
-            f"Multipart file {name!r} needs either 'path' or 'buffer', not {'both' if path else 'neither'}."
-        )
-    if path is not None:
-        file_path = Path(path)
+def _multipart_field(name: str, value: str | MultipartFile) -> Request.MultipartField:
+    if isinstance(value, str):
+        return Request.MultipartField(name=name, value=value)
+    if "path" in value:
+        file_path = value["path"]
         if not file_path.is_file():
             raise FileNotFoundError(f"Multipart file {name!r}: no file at {file_path}.")
         return Request.MultipartField(
             name=name,
             path=str(file_path.resolve()),
-            fileName=file.get("name") or file_path.name,
-            mimeType=file.get("mimeType")
+            fileName=value.get("name") or file_path.name,
+            mimeType=value.get("mimeType")
             or mimetypes.guess_type(file_path.name)[0]
             or "application/octet-stream",
         )
-    if not file.get("name"):
-        raise ValueError(f"Multipart file {name!r} with 'buffer' needs a 'name'.")
-    content = cast(str | bytes, buffer)
     return Request.MultipartField(
         name=name,
-        buffer=content.encode("utf-8") if isinstance(content, str) else bytes(content),
-        fileName=file["name"],
-        mimeType=file.get("mimeType") or "application/octet-stream",
+        buffer=value["buffer"],
+        fileName=value["name"],
+        mimeType=value.get("mimeType") or "application/octet-stream",
     )
 
 
-def _add_http_response_views(response: dict, body: bytes) -> None:
+def _multipart_fields(
+    multipart: Mapping[str, str | MultipartFile],
+) -> list[Request.MultipartField]:
+    return [_multipart_field(name, value) for name, value in multipart.items()]
+
+
+def _form_fields(fields: Mapping[str, str]) -> list[Request.FormField]:
+    return [Request.FormField(name=name, value=value) for name, value in fields.items()]
+
+
+def _checked_form(form: Any) -> dict[str, str] | None:
+    return None if form is None else FormFields.from_dict(form)
+
+
+def _checked_multipart(multipart: Any) -> dict[str, str | MultipartFile] | None:
+    return None if multipart is None else MultipartFields.from_dict(multipart)
+
+
+def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
+    if data is None:
+        return
+    if isinstance(data, str):
+        request.dataText = data
+    elif isinstance(data, bytes | bytearray):
+        request.dataBytes = bytes(data)
+    else:
+        try:
+            request.dataJson = json.dumps(data, separators=(",", ":"), allow_nan=False)
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "data cannot be sent as JSON: "
+                f"{error}. Give a string, bytes, or a dictionary, a list, a number or a "
+                "boolean that holds only such values and None."
+            ) from error
+
+
+def _api_headers(headers: Mapping) -> dict[str, str]:
+    texts = {}
+    for name, value in headers.items():
+        text = javascript_text(value)
+        if text is None:
+            raise ValueError(
+                f"Header {name!r} must be a string, a number or a boolean, "
+                f"got {_kind_of(value)}."
+            )
+        texts[name] = text
+    return texts
+
+
+def _set_api_params(
+    request: Request.ApiRequest, params: Mapping[str, str] | str
+) -> None:
+    if isinstance(params, str):
+        request.encodedParams = params
+    else:
+        request.params.SetInParent()
+        request.params.fields.extend(_form_fields(params))
+
+
+def _set_api_fields(
+    request: Request.ApiRequest,
+    form: Mapping[str, str] | None,
+    multipart: Mapping[str, str | MultipartFile] | None,
+) -> None:
+    if form is not None:
+        request.form.SetInParent()
+        request.form.fields.extend(_form_fields(form))
+    if multipart is not None:
+        request.multipart.SetInParent()
+        request.multipart.fields.extend(_multipart_fields(multipart))
+
+
+def _add_body_views(response: dict, body: bytes) -> str:
     text = body.decode("utf-8", errors="replace")
-    response["body"] = text
-    _jsonize_content(response, "body")
     response.update(bytes=body, text=text, json=_json_or_none(text))
+    return text
+
+
+API_RESPONSE_HEADER_KEYS = ("headers", "headersArray")
+
+
+def _add_http_response_views(response: dict, body: bytes) -> None:
+    views: dict = {}
+    response["body"] = _add_body_views(views, body)
+    _jsonize_content(response, "body")
+    response.update(views)
 
 
 class Network(LibraryComponent):
@@ -387,8 +462,10 @@ class Network(LibraryComponent):
         body: str | bytes | None = None,
         headers: dict | None = None,
         *,
-        form: dict[str, str | int | float | bool] | None = None,
-        multipart: dict[str, MultipartFile | str | int | float | bool] | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to FormFields or None". A None default passes None anyway.
+        form: FormFields = None,  # type: ignore[assignment]
+        multipart: MultipartFields = None,  # type: ignore[assignment]
         credentials: FetchCredentials | None = None,
         redirect: FetchRedirect | None = None,
         mode: FetchMode | None = None,
@@ -408,6 +485,9 @@ class Network(LibraryComponent):
         `Wait For Response` see it. The browser does not let a page set some headers, such
         as ``Cookie``, ``Host`` or ``Origin``, and drops them without an error.
 
+        Use `Send API Request` instead for a request outside the page, which shares the
+        cookies of the context but not the page's rules, such as CORS.
+
         The named-only arguments are the options of the browser's
         [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit|fetch]. An argument
         that is not given keeps the browser's default.
@@ -423,20 +503,17 @@ class Network(LibraryComponent):
                 browser sends a ``str`` body as ``text/plain;charset=UTF-8``, and ``bytes``
                 without a ``Content-Type``.
           - ``headers``: A dictionary of request headers.
-          - ``form``: A dictionary of form fields, sent URL-encoded as
+          - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``, the way the browser encodes a
-                ``URLSearchParams`` body. Numbers and booleans are sent as text, a boolean
-                as ``true`` or ``false``. Any other value is sent as its text, so a nested
-                dictionary or list arrives as its Python representation.
-          - ``multipart``: A dictionary of form fields sent as ``multipart/form-data``, the
-                way the browser encodes a ``FormData`` body, in the order given. A value is
-                a text field: a ``str``, a number or a boolean, sent like in ``form``. A file
-                is a `MultipartFile` dictionary with either ``path`` or ``buffer``; its
-                documentation says how to create one so that it is not sent as text. Do not
-                set a ``Content-Type`` in ``headers``: the browser then leaves out the
+                ``URLSearchParams`` body.
+          - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
+                ``multipart/form-data`` the way the browser encodes a ``FormData`` body, in
+                the order given. Do not set a ``Content-Type`` in ``headers``: the browser then leaves out the
                 boundary of the parts, and the server cannot read the body. ``body``,
                 ``form`` and ``multipart`` exclude each other, and ``form`` and
                 ``multipart`` fail with ``GET`` and ``HEAD``.
+                For now the ``body`` and the files given as ``buffer`` can be at most 4 MiB
+                together; a file given as ``path`` does not count.
           - ``credentials``: Whether cookies and HTTP authentication are sent, see
                 `FetchCredentials`. The browser's default sends them only to the page's own
                 origin.
@@ -472,11 +549,11 @@ class Network(LibraryComponent):
         | Should Be Equal    ${response.status}            ${200}
         | Should Be Equal    ${response.json.some_field}   some value
         |
-        | &{fields} =        Create Dictionary    username=demo    password=mode
+        | VAR    &{fields} =    username=demo    password=mode
         | ${response} =      `HTTP`    /login    POST    form=${fields}
         |
-        | &{file} =          Create Dictionary    path=${CURDIR}/avatar.png
-        | &{fields} =        Create Dictionary    description=Profile picture    file=${file}
+        | VAR    &{file} =    path=${CURDIR}/avatar.png
+        | VAR    &{fields} =    description=Profile picture    file=${file}
         | ${response} =      `HTTP`    /api/avatar    POST    multipart=${fields}    timeout=30s
         |
         | ${response} =      `HTTP`    /logo.png
@@ -485,12 +562,14 @@ class Network(LibraryComponent):
         [https://forum.robotframework.org/t//4296|Comment >>]
         """
         method_name = method.name if method else "GET"
+        checked_form = _checked_form(form)
+        checked_multipart = _checked_multipart(multipart)
         given = [
             name
             for name, value in (
                 ("body", body),
-                ("form", form),
-                ("multipart", multipart),
+                ("form", checked_form),
+                ("multipart", checked_multipart),
             )
             if value
         ]
@@ -504,8 +583,8 @@ class Network(LibraryComponent):
                     name
                     for name, value in (
                         ("bytes", isinstance(body, bytes) and body),
-                        ("form", form),
-                        ("multipart", multipart),
+                        ("form", checked_form),
+                        ("multipart", checked_multipart),
                     )
                     if value
                 ),
@@ -520,10 +599,7 @@ class Network(LibraryComponent):
             url=url,
             method=method_name,
             timeout=self.get_timeout(timeout),
-            multipart=[
-                _multipart_field(name, value)
-                for name, value in (multipart or {}).items()
-            ],
+            multipart=_multipart_fields(checked_multipart or {}),
         )
         _set_given(
             request,
@@ -537,10 +613,7 @@ class Network(LibraryComponent):
             keepalive=keepalive,
             priority=priority,
         )
-        request.form.extend(
-            Request.FormField(name=key, value=_form_value(value))
-            for key, value in (form or {}).items()
-        )
+        request.form.extend(_form_fields(checked_form or {}))
         if body and method_name not in METHODS_WITHOUT_BODY:
             if isinstance(body, bytes):
                 request.bodyBytes = body
@@ -554,6 +627,154 @@ class Network(LibraryComponent):
         logger.info(_without(response, RESPONSE_BODY_KEYS))
         _trace_content("Response body", response["bytes"])
         return cast(HttpResponse, JsonDotDict(response))
+
+    @keyword(name="Send API Request", tags=("HTTP",))
+    def send_api_request(
+        self,
+        url: str,
+        method: RequestMethod = RequestMethod.GET,
+        *,
+        headers: dict | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to QueryParams or None". A None default passes None anyway.
+        params: QueryParams = None,  # type: ignore[assignment]
+        data: Any = None,
+        form: FormFields = None,  # type: ignore[assignment]
+        multipart: MultipartFields = None,  # type: ignore[assignment]
+        timeout: timedelta | None = None,
+        failOnStatusCode: bool | None = None,
+        maxRedirects: int | None = None,
+        maxRetries: int | None = None,
+        ignoreHTTPSErrors: bool | None = None,
+    ) -> APIResponse:
+        """Sends an HTTP request through the active context, outside any page.
+
+        The keyword is Playwright's
+        [https://playwright.dev/docs/api/class-apirequestcontext#api-request-context-fetch|APIRequestContext.fetch]
+        of the active context. The request is an API request, not page traffic:
+
+        - It uses the cookies of the context. A cookie that a page received is sent, and a
+          cookie that the response sets is there for the pages of the context too.
+        - It uses the context's ``baseURL``, ``extraHTTPHeaders``, ``httpCredentials``,
+          ``proxy``, ``userAgent``, ``ignoreHTTPSErrors`` and ``clientCertificates`` from
+          `New Context`, as they are when the request is sent.
+        - It needs an open context but no page, and fails when no context is open.
+        - The browser's rules for a page do not apply: there is no CORS, and headers that a
+          page cannot set, such as ``Origin`` or ``Cookie``, are sent as given.
+        - Route rules, such as those of `Abort Requests`, and `Wait For Request` and
+          `Wait For Response` do not see it.
+
+        Use `HTTP` instead for a request that the page itself sends, with the page's rules.
+
+        The named-only arguments are the options of Playwright's ``fetch``, with Playwright's
+        names. An argument that is not given keeps Playwright's default.
+
+        *Arguments:*
+          - ``url``: The request URL. A relative URL is resolved against the context's
+                ``baseURL`` and fails without one.
+          - ``method``: The HTTP method. Defaults to ``GET``.
+          - ``headers``: A dictionary of request headers. They override the context's
+                ``extraHTTPHeaders`` with the same name. Numbers and booleans are sent as
+                text, the way JavaScript writes them, a boolean as ``true`` or ``false``.
+          - ``params``: `QueryParams` (a dictionary or a string) added to the query of the
+                ``url``. Characters such as ``&`` in a string keep their meaning in a query,
+                see `QueryParams`. The string ``None`` adds no parameters.
+          - ``data``: The request body. Leave it out to send no body; the string ``None`` is
+                sent as the text ``None``.
+                - A dictionary, a list, a number or a boolean is sent as JSON, exactly as
+                  Python writes it, so large integers arrive unchanged. The ``Content-Type``
+                  is ``application/json`` unless ``headers`` has one. A value that JSON
+                  cannot hold, such as ``NaN``, a date or ``bytes`` inside a dictionary,
+                  fails before the request is sent.
+                - ``bytes`` are sent as given, as ``application/octet-stream`` unless
+                  ``headers`` has a ``Content-Type``.
+                - A string is sent as given, but the ``Content-Type`` in ``headers``
+                  decides how. Without one, it is ``application/octet-stream``, also when
+                  the string is JSON. With ``application/json``, parameters such as
+                  ``charset`` aside, a string that is valid JSON is sent as given, and any
+                  other string is encoded as a JSON string, so ``hello`` is sent as
+                  ``"hello"``. Any other ``Content-Type``, also a JSON type such as
+                  ``application/problem+json``, sends the string as given.
+                - To send JSON written in the test data, give a dictionary, e.g.
+                  ``data=${{ {"name": "robot"} }}``, or set the ``Content-Type`` in
+                  ``headers``.
+          - ``form``: `FormFields` (a dictionary), sent URL-encoded as
+                ``application/x-www-form-urlencoded``.
+          - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
+                ``multipart/form-data``, in the order given. ``data``, ``form`` and
+                ``multipart`` exclude each other, also when ``form`` or ``multipart`` is an
+                empty dictionary.
+                For now the ``data`` and the files given as ``buffer`` can be at most 4 MiB
+                together; a file given as ``path`` does not count.
+          - ``timeout``: How long to wait for the whole response, body included. Defaults to
+                the library timeout; ``0`` waits without a limit.
+          - ``failOnStatusCode``: When ``True``, the keyword fails on a status that is not
+                2xx or 3xx. By default a response with an error status, such as ``404``, does
+                not fail it.
+          - ``maxRedirects``: How many redirects are followed. Playwright's default is 20,
+                and it fails when there are more. ``0`` follows none and returns the redirect
+                response.
+          - ``maxRetries``: How often the request is retried when the connection is reset
+                (``ECONNRESET``). Any other error fails at once, and an error status is never
+                retried. Playwright's default is ``0``, no retry.
+          - ``ignoreHTTPSErrors``: When ``True``, errors of the server's HTTPS certificate are
+                ignored. They are also ignored when the context was opened with
+                ``ignoreHTTPSErrors=True``; ``False`` cannot turn that off.
+
+        The keyword fails on a network error, a timeout, too many redirects and, with
+        ``failOnStatusCode``, an error status.
+
+        Returns an `APIResponse` with the status, all headers, ``set-cookie`` included, the
+        raw body as ``bytes`` and the views ``text`` and ``json``. The response is logged
+        without its headers and body, the headers at ``DEBUG`` level, as they can contain
+        cookies, and the body at ``TRACE`` level.
+
+        Assigned with ``&{response} =``, ``bytes`` holds base64 text. Assign with
+        ``${response} =`` to get the raw ``bytes``.
+
+        | `New Context`    baseURL=https://example.com
+        | `New Page`    /login
+        | # ... log in on the page ...
+        | VAR    &{user} =    name=robot
+        | ${response} =    `Send API Request`    /api/users    POST    data=${user}    failOnStatusCode=True
+        | Should Be Equal    ${response.status}    ${201}
+        | Should Be Equal    ${response.json.name}    robot
+        |
+        | VAR    &{params} =    q=robot    page=${2}
+        | ${response} =    `Send API Request`    /api/search    params=${params}
+        |
+        | VAR    &{file} =    path=${CURDIR}/avatar.png
+        | VAR    &{fields} =    description=Profile picture    file=${file}
+        | ${response} =    `Send API Request`    /api/avatar    POST    multipart=${fields}
+        """
+        request = Request().ApiRequest(
+            url=url,
+            method=method.name if method else "GET",
+            timeout=self.get_timeout(timeout),
+        )
+        _set_api_fields(request, _checked_form(form), _checked_multipart(multipart))
+        if headers is not None:
+            request.headers = json.dumps(_api_headers(headers))
+        checked_params = (
+            None if params is None else QueryParams.from_value(cast(Any, params))
+        )
+        if checked_params is not None:
+            _set_api_params(request, checked_params)
+        _set_api_data(request, data)
+        _set_given(
+            request,
+            failOnStatusCode=failOnStatusCode,
+            maxRedirects=maxRedirects,
+            maxRetries=maxRetries,
+            ignoreHTTPSErrors=ignoreHTTPSErrors,
+        )
+        with self.playwright.grpc_channel() as stub:
+            response, body, _ = _collect_stream(stub.SendApiRequest(request))
+        _add_body_views(response, body)
+        logger.info(_without(response, API_RESPONSE_HEADER_KEYS + RESPONSE_BODY_KEYS))
+        logger.debug(f"Response headers: {response['headersArray']}")
+        _trace_content("Response body", body)
+        return cast(APIResponse, JsonDotDict(response))
 
     def _wait_for_http_request(self, matcher, timeout, wait_for_all_fields) -> dict:
         with self.playwright.grpc_channel() as stub:

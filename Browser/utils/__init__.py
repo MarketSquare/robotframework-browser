@@ -17,6 +17,7 @@
 from .json_dotdict import JsonDotDict
 from .data_types import (
     AdoptedContextOptions,
+    APIResponse,
     AutoClosingLevel,
     BrowserInfo,
     BoundingBox,
@@ -33,6 +34,7 @@ from .data_types import (
     DownloadInfo,
     ElementState,
     FetchCache,
+    FormFields,
     FetchCredentials,
     FetchMode,
     FetchPriority,
@@ -55,6 +57,7 @@ from .data_types import (
     LambdaFunction,
     NewPageDetails,
     Media,
+    MultipartFields,
     MultipartFile,
     PageLoadStates,
     Permission,
@@ -66,6 +69,7 @@ from .data_types import (
     RecordVideo,
     ReduceMotion,
     ReducedMotion,
+    QueryParams,
     ReferrerPolicy,
     ReloadPages,
     RequestMethod,

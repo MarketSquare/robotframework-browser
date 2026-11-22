@@ -11,9 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
 import re
+from collections.abc import Mapping
 from datetime import timedelta
 from enum import Enum, IntFlag, StrEnum, auto
+from os import PathLike
 from pathlib import Path
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
@@ -1148,29 +1151,246 @@ class CapturedRequest(TypedDict):
 
 
 class MultipartFile(TypedDict, total=False):
-    """A file in the ``multipart`` argument of `HTTP`.
+    """A checked file of `MultipartFields`: ``path`` as a ``Path``, ``buffer`` as ``bytes``."""
 
-    Give either ``path`` or ``buffer``. These four keys are the only ones, spelled as here.
+    path: Path
+    buffer: bytes
+    name: str
+    mimeType: str
+
+
+MULTIPART_FILE_KEYS = ("path", "buffer", "name", "mimeType")
+
+
+def _kind_of(value: Any) -> str:
+    if isinstance(value, Mapping):
+        return "a dictionary"
+    if isinstance(value, list | tuple):
+        return "a list"
+    if isinstance(value, bytes | bytearray):
+        return "bytes"
+    if isinstance(value, str):
+        return "a string"
+    if value is None:
+        return "None"
+    return type(value).__name__
+
+
+# JavaScript's Number::toString writes the digits without an exponent while the decimal
+# point is at most 21 digits right and less than 6 zeros left of the first digit.
+JS_MAX_POINT = 21
+JS_MIN_POINT = -6
+
+
+def _javascript_float(value: float) -> str:
+    """Write ``value`` the way JavaScript's ``String(number)`` does."""
+    if math.isnan(value):
+        return "NaN"
+    if math.isinf(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    if value == 0:
+        return "0"
+    sign = "-" if value < 0 else ""
+    mantissa, _, exponent = repr(abs(value)).partition("e")
+    whole, _, fraction = mantissa.partition(".")
+    digits = (whole + fraction.rstrip("0")).lstrip("0") or "0"
+    leading_zeros = len(fraction) - len(fraction.lstrip("0"))
+    point = (-leading_zeros if whole == "0" else len(whole)) + int(exponent or 0)
+    if len(digits) <= point <= JS_MAX_POINT:
+        text = digits + "0" * (point - len(digits))
+    elif 0 < point <= JS_MAX_POINT:
+        text = f"{digits[:point]}.{digits[point:]}"
+    elif JS_MIN_POINT < point <= 0:
+        text = "0." + "0" * -point + digits
+    else:
+        rest = f".{digits[1:]}" if len(digits) > 1 else ""
+        text = f"{digits[0]}{rest}e{'+' if point > 0 else '-'}{abs(point - 1)}"
+    return sign + text
+
+
+def javascript_text(value: Any) -> str | None:
+    """Write a string, a number or a boolean the way JavaScript's ``String()`` does."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return _javascript_float(value)
+    if isinstance(value, str | int):
+        return str(value)
+    return None
+
+
+def _check_names(value: Mapping) -> Mapping:
+    for name in value:
+        if not isinstance(name, str):
+            raise ValueError(f"Field names must be strings, got {_kind_of(name)}.")
+    return value
+
+
+def _form_text(name: str, value: Any) -> str:
+    text = javascript_text(value)
+    if text is None:
+        raise ValueError(
+            f"Field {name!r} must be a string, a number or a boolean, "
+            f"got {_kind_of(value)}."
+        )
+    return text
+
+
+def _multipart_file(name: str, file: Mapping) -> MultipartFile:
+    unknown = [key for key in file if key not in MULTIPART_FILE_KEYS]
+    if unknown:
+        raise ValueError(
+            f"Multipart file {name!r} has the unknown key {unknown[0]!r}; "
+            "the keys are path, buffer, name and mimeType."
+        )
+    checked = _multipart_file_content(name, file.get("path"), file.get("buffer"))
+    for key in ("name", "mimeType"):
+        if key in file:
+            if not isinstance(file[key], str):
+                raise ValueError(
+                    f"Multipart file {name!r}: {key!r} must be a string, "
+                    f"got {_kind_of(file[key])}."
+                )
+            checked[key] = file[key]
+    if "buffer" in checked and not checked.get("name"):
+        raise ValueError(f"Multipart file {name!r} with 'buffer' needs a 'name'.")
+    return checked
+
+
+def _multipart_file_content(name: str, path: Any, buffer: Any) -> MultipartFile:
+    if (path is None) == (buffer is None):
+        raise ValueError(
+            f"Multipart file {name!r} needs either 'path' or 'buffer', "
+            f"not {'both' if path is not None else 'neither'}."
+        )
+    if path is not None:
+        if not isinstance(path, str | PathLike):
+            raise ValueError(
+                f"Multipart file {name!r}: 'path' must be a path, got {_kind_of(path)}."
+            )
+        return MultipartFile(path=Path(path))
+    if isinstance(buffer, str):
+        return MultipartFile(buffer=buffer.encode("utf-8"))
+    if isinstance(buffer, bytes | bytearray):
+        return MultipartFile(buffer=bytes(buffer))
+    raise ValueError(
+        f"Multipart file {name!r}: 'buffer' must be bytes or a string, "
+        f"got {_kind_of(buffer)}."
+    )
+
+
+def _require_mapping(type_name: str, value: Any) -> Mapping:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{type_name} must be a dictionary, got {_kind_of(value)}.")
+    return value
+
+
+class FormFields:
+    """Form fields: a dictionary of field names and values, used by `HTTP` and `Send API Request`.
+
+    A value is a string, a number or a boolean. Numbers are sent as their text and a boolean
+    as ``true`` or ``false``, the way JavaScript writes them. Any other value, such as a
+    nested dictionary or a list, fails before the request is sent.
+
+    Names and values are encoded completely, so they can hold any character: a space, ``&``,
+    ``=``, ``+`` or ``%`` arrives at the server as written.
+
+    | VAR    &{fields} =    username=demo    password=a&b=c    remember=${True}
+    | ${response} =    `HTTP`    /login    POST    form=${fields}
+    | # sent as: username=demo&password=a%26b%3Dc&remember=true
+    """
+
+    @staticmethod
+    def from_dict(value: Mapping) -> dict[str, str]:
+        fields = _check_names(_require_mapping("FormFields", value))
+        return {name: _form_text(name, item) for name, item in fields.items()}
+
+
+class QueryParams:
+    """Query parameters added to the URL of `Send API Request`: a dictionary or a string.
+
+    The parameters are appended to the query that the URL already has.
+
+    *A dictionary* of parameter names and values is checked like `FormFields`: a value is
+    a string, a number or a boolean. Names and values are encoded completely, so they can
+    hold any character, also ``&``, ``=``, ``+`` and ``%``. Prefer a dictionary unless the
+    query is already at hand as text.
+
+    | VAR    &{params} =    q=rock & roll    page=${2}    exact=${True}
+    | ${response} =    `Send API Request`    /api/search?lang=en    params=${params}
+    | # sends /api/search?lang=en&q=rock+%26+roll&page=2&exact=true
+
+    *A string* is appended as written; the string ``None`` adds no parameters. Characters that a URL cannot hold, such as a space,
+    an umlaut or ``#``, are encoded on the way. The characters that structure a query keep
+    that meaning: ``&`` separates parameters, ``=`` separates a name from its value, ``+``
+    stands for a space and ``%`` starts an encoded character. Write them as ``%26``,
+    ``%3D``, ``%2B`` and ``%25`` to send them as text.
+
+    | ${response} =    `Send API Request`    /api/search    params=q=rock roll&page=2
+    | # the server reads q = "rock roll" and page = "2"
+    | ${response} =    `Send API Request`    /api/search    params=q=rock %26 roll
+    | # the server reads q = "rock & roll"; with a plain & it would read q = "rock " and " roll" = ""
+    """
+
+    @staticmethod
+    def from_value(value: Mapping | str) -> dict[str, str] | str | None:
+        if value == "None":
+            return None
+        if isinstance(value, str):
+            return value
+        if not isinstance(value, Mapping):
+            raise ValueError(
+                f"QueryParams must be a dictionary or a string, got {_kind_of(value)}."
+            )
+        return FormFields.from_dict(value)
+
+
+class MultipartFields:
+    """Fields of a ``multipart/form-data`` body, used by `HTTP` and `Send API Request`.
+
+    A dictionary of field names and values. A value is a text field or a file:
+    - A string, a number or a boolean is a text field, sent like in `FormFields`.
+    - A dictionary is a file, with either ``path`` or ``buffer``:
 
     | =Key= | =Description= |
     | ``path`` | Path of the file to send. A relative path is relative to the working directory of the Robot Framework process. The file name and mime type default to the file's name and the type its extension suggests. |
-    | ``buffer`` | The file content as ``bytes``. A ``str`` is sent encoded as UTF-8. |
+    | ``buffer`` | The file content as ``bytes``. A string is sent encoded as UTF-8. |
     | ``name`` | The file name the server receives. Required with ``buffer``. |
     | ``mimeType`` | The mime type of the file, e.g. ``image/png``. Defaults to ``application/octet-stream`` with ``buffer``. |
 
-    The file must be a real dictionary, created for example with ``Create Dictionary``
-    or ``${{ {...} }}``. A string that only looks like a dictionary is sent as a text
-    field. A dictionary with a key that is not in the table, such as ``mimetype``, cannot
-    become a ``MultipartFile`` either, and is also sent as a text field: its text.
+    These four keys are the only ones, spelled as here. Any other value, a dictionary with
+    another key such as ``mimetype``, or a file with both or none of ``path`` and
+    ``buffer``, fails before the request is sent. So does a string that only looks like a
+    dictionary given for the whole argument; create the dictionaries with
+    ``VAR`` or ``${{ {...} }}``.
 
-    | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
-    | &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
+    A file from disk, a file made from text and a text field:
+    | VAR    &{avatar} =    path=${CURDIR}/avatar.png
+    | VAR    &{notes} =    name=notes.txt    mimeType=text/plain    buffer=Hello
+    | VAR    &{fields} =    description=Profile picture    avatar=${avatar}    notes=${notes}
+    | ${response} =    `Send API Request`    /api/profile    POST    multipart=${fields}
+
+    The same with inline Python dictionaries:
+    | ${response} =    `HTTP`    /api/profile    POST
+    | ...    multipart=${{ {'description': 'Profile picture', 'avatar': {'path': 'avatar.png'}} }}
     """
 
-    path: Path
-    buffer: bytes | str
-    name: str
-    mimeType: str
+    @staticmethod
+    def from_dict(value: Mapping) -> dict[str, str | MultipartFile]:
+        fields = _check_names(_require_mapping("MultipartFields", value))
+        return {name: _multipart_value(name, item) for name, item in fields.items()}
+
+
+def _multipart_value(name: str, value: Any) -> str | MultipartFile:
+    if isinstance(value, Mapping):
+        return _multipart_file(name, value)
+    text = javascript_text(value)
+    if text is None:
+        raise ValueError(
+            f"Field {name!r} must be a string, a number, a boolean or a file, "
+            f"got {_kind_of(value)}."
+        )
+    return text
 
 
 class HttpResponse(TypedDict):
@@ -1242,6 +1462,67 @@ class HttpResponse(TypedDict):
     redirected: bool
     type: str
     body: Any
+    bytes: bytes
+    text: str
+    json: Any
+
+
+class APIResponse(TypedDict):
+    """The response of `Send API Request`.
+
+    The keys mirror Playwright's
+    [https://playwright.dev/docs/api/class-apiresponse|APIResponse]. The value is a Robot
+    Framework dictionary, so keys can be accessed as ``${response.status}`` or
+    ``${response}[status]``.
+
+    | =Key= | =Description= |
+    | ``status`` | The HTTP status code, e.g. ``200``. |
+    | ``statusText`` | The status text, e.g. ``OK``. |
+    | ``ok`` | ``True`` if ``status`` is in the range 200-299. |
+    | ``url`` | The final URL of the response, after redirects. |
+    | ``headers`` | Dictionary of all response headers, ``set-cookie`` included, with lower-case names. Repeated headers are joined: ``set-cookie`` with a new line, the others with ``, ``. |
+    | ``headersArray`` | List of all response headers as ``name`` and ``value`` dictionaries, with the names as the server sent them and one entry for each repeated header. |
+    | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
+    | ``text`` | The response body decoded as UTF-8. Invalid bytes become the replacement character U+FFFD. |
+    | ``json`` | The response body parsed as JSON regardless of the ``content-type``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
+
+    ``bytes``, ``text`` and ``json`` follow the same rules as in `HttpResponse` and
+    `CapturedResponse`. There is no legacy ``body`` key.
+
+    Assigned with ``&{response} =``, ``bytes`` holds base64 text. Assign with
+    ``${response} =`` to get the raw ``bytes``.
+
+    = Example =
+
+    | {
+    |   "status": 201,
+    |   "statusText": "Created",
+    |   "ok": true,
+    |   "url": "https://example.com/api/users",
+    |   "headers": {
+    |     "content-type": "application/json; charset=utf-8",
+    |     "set-cookie": "session=abc; Path=/"
+    |   },
+    |   "headersArray": [
+    |     {"name": "Content-Type", "value": "application/json; charset=utf-8"},
+    |     {"name": "Set-Cookie", "value": "session=abc; Path=/"}
+    |   ],
+    |   "bytes": "eyJuYW1lIjoicm9ib3QifQ==",
+    |   "text": "{\\"name\\":\\"robot\\"}",
+    |   "json": {
+    |     "name": "robot"
+    |   }
+    | }
+
+    ``bytes`` is shown as base64 text, the way ``json.dumps`` writes it.
+    """
+
+    status: int
+    statusText: str
+    ok: bool
+    url: str
+    headers: dict[str, str]
+    headersArray: list[dict[str, str]]
     bytes: bytes
     text: str
     json: Any

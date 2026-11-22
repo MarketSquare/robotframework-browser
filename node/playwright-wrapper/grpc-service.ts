@@ -423,26 +423,31 @@ export class PlaywrightServer {
     advanceClock = this.wrapping(clock.advanceClock);
     waitForElementsState = this.wrapping(evaluation.waitForElementState);
     async waitForRequest(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
-        await this.streamMessages(call, network.waitForRequest);
+        await this.streamMessages(call, network.waitForRequest, () => this.getActivePage(call));
     }
 
     async waitForResponse(call: ServerWritableStream<pb.Request_HttpCapture, pb.Response_Json>): Promise<void> {
-        await this.streamMessages(call, network.waitForResponse);
+        await this.streamMessages(call, network.waitForResponse, () => this.getActivePage(call));
     }
 
     async httpRequest(call: ServerWritableStream<pb.Request_HttpRequest, pb.Response_Json>): Promise<void> {
-        await this.streamMessages(call, network.httpRequest);
+        await this.streamMessages(call, network.httpRequest, () => this.getActivePage(call));
     }
 
-    private async streamMessages<T>(
+    async sendApiRequest(call: ServerWritableStream<pb.Request_ApiRequest, pb.Response_Json>): Promise<void> {
+        await this.streamMessages(call, network.sendApiRequest, () => this.getActiveContext(call));
+    }
+
+    private async streamMessages<T, S>(
         call: ServerWritableStream<T, pb.Response_Json>,
-        capture: (request: T, page: Page) => Promise<pb.Response_Json[]>,
+        capture: (request: T, target: S) => Promise<pb.Response_Json[]>,
+        target: () => S,
     ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             logger.info({ event_kind: 'grpc', action: capture.name, status: 'started' });
-            const results = await capture(request, this.getActivePage(call));
+            const results = await capture(request, target());
             logger.info({ event_kind: 'grpc', action: capture.name, status: 'succeeded' });
             for (const result of results) {
                 if (result.log) logger.info(`Sending ${result.log}`);

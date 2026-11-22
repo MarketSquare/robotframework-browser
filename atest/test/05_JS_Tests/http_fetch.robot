@@ -119,6 +119,13 @@ Multipart Sends A Text Buffer As UTF-8
     ${sha256} =    Sha256 Of Bytes    ${{ 'häkä €'.encode('utf-8') }}
     Should Be Equal    ${part}[sha256]    ${sha256}
 
+Multipart File With An Unknown Key Fails Before Sending
+    &{file} =    Create Dictionary    path=avatar.png    mimetype=image/png
+    &{fields} =    Create Dictionary    file=${file}
+    Run Keyword And Expect Error
+    ...    *cannot be converted to MultipartFields: Multipart file 'file' has the unknown key 'mimetype'*
+    ...    HTTP    /api/echo/upload    POST    multipart=${fields}
+
 Own Content Type In Lower Case Is Kept For A JSON Body
     &{headers} =    Create Dictionary    content-type=text/plain
     ${response} =    HTTP    /api/echo/json    POST    {"name": "robot"}    ${headers}

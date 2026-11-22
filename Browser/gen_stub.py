@@ -49,6 +49,7 @@ pyi_boilerplate = """\
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from collections.abc import Mapping
 from datetime import datetime
 from concurrent.futures import Future
 from os import PathLike
@@ -58,7 +59,8 @@ from assertionengine import AssertionOperator
 from robot.utils import DotDict
 
 from Browser.utils import (
-    CapturedRequest, CapturedResponse, HttpResponse, MultipartFile,
+    APIResponse, CapturedRequest, CapturedResponse, HttpResponse, MultipartFile,
+    FormFields, MultipartFields, QueryParams,
     FetchCache, FetchCredentials, FetchMode, FetchPriority, FetchRedirect, ReferrerPolicy,
     ClockType, CLockAdvanceType, FormatterTypes, CookieType, CookieSameSite, DownloadInfo, NewPageDetails,
     BrowserInfo, PageLoadStates,ViewportDimensions, ServiceWorkersPermissions,
@@ -83,12 +85,32 @@ with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     for line in parse_kw_stubs():
         stub_file.write(line)
 
+# Custom converter types only document and check; Python callers pass plain values
+# (ADR 0006: widen only here).
+# The keywords annotate them without "| None", so that Robot Framework reports the
+# converter's error, see Browser/keywords/network.py.
+FIELD_VALUE = "str | int | float | bool"
+WIDENED = {
+    "FormFields = None": f"Mapping[str, {FIELD_VALUE}] | None = None",
+    "QueryParams = None": f"Mapping[str, {FIELD_VALUE}] | str | None = None",
+    "MultipartFields = None": (
+        f"Mapping[str, {FIELD_VALUE} | MultipartFile | Mapping[str, Any]] | None = None"
+    ),
+}
+
+
+def widened(line: str) -> str:
+    for narrow, wide in WIDENED.items():
+        line = line.replace(narrow, wide)
+    return line
+
+
 lines = []
 with Path("Browser/browser.pyi").open("r", encoding="utf-8") as stub_file:
     for line in stub_file.readlines():
         if "from robotlibcore import DynamicCore" in line:
             lines.append("from robotlibcore import DynamicCore # type: ignore\n")
         else:
-            lines.append(line)
+            lines.append(widened(line))
 with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     stub_file.writelines(lines)

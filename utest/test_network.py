@@ -4,17 +4,26 @@ from typing import get_type_hints
 import pytest
 from robot.running.arguments.typeinfo import TypeInfo
 
+from Browser import Browser
 from Browser.keywords.network import (
     Network,
     _add_http_response_views,
     _get_headers,
-    _multipart_field,
 )
+from Browser.keywords.network import _multipart_field as _proto_multipart_field
+from Browser.utils.data_types import MultipartFields
 
 
 def convert_like_robot(argument: str, value):
     hint = get_type_hints(Network.http)[argument]
-    return TypeInfo.from_type_hint(hint).convert(value)
+    return TypeInfo.from_type_hint(hint).convert(
+        value, custom_converters=Browser.ROBOT_LIBRARY_CONVERTERS
+    )
+
+
+def _multipart_field(name: str, value):
+    checked = MultipartFields.from_dict({name: value})
+    return _proto_multipart_field(name, checked[name])
 
 
 def http_response(headers: str, body: bytes) -> dict:
@@ -144,16 +153,33 @@ def test_robot_converts_a_multipart_file_dictionary_with_path_to_path():
     assert converted["file"] == {"path": Path("avatar.png")}
 
 
-def test_robot_keeps_a_text_buffer_of_a_multipart_file_as_text():
+def test_robot_encodes_a_text_buffer_of_a_multipart_file_as_utf8():
     converted = convert_like_robot(
         "multipart", {"file": {"name": "notes.txt", "buffer": "häkä €"}}
     )
-    assert converted["file"]["buffer"] == "häkä €"
+    assert converted["file"]["buffer"] == "häkä €".encode()
 
 
 def test_robot_keeps_a_multipart_text_that_looks_like_a_dictionary_as_text():
     converted = convert_like_robot("multipart", {"note": "{'path': 'a.png'}"})
     assert converted["note"] == "{'path': 'a.png'}"
+
+
+def test_robot_rejects_a_multipart_file_with_an_unknown_key():
+    with pytest.raises(ValueError, match="unknown key 'mimetype'"):
+        convert_like_robot(
+            "multipart", {"file": {"path": "a.png", "mimetype": "image/png"}}
+        )
+
+
+def test_robot_rejects_a_string_as_multipart():
+    with pytest.raises(ValueError, match="cannot be converted to MultipartFields"):
+        convert_like_robot("multipart", "{'file': {'path': 'a.png'}}")
+
+
+def test_robot_rejects_a_nested_form_value():
+    with pytest.raises(ValueError, match="'q' must be a string, a number or a boolean"):
+        convert_like_robot("form", {"q": {"a": 1}})
 
 
 def test_multipart_file_from_path_object(tmp_path):

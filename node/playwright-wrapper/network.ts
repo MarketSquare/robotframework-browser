@@ -14,7 +14,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Page, Request, Response as PlaywrightResponse } from 'playwright';
+import { APIRequestContext, BrowserContext, Page, Request, Response as PlaywrightResponse } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { logger } from './browser_logger';
@@ -22,6 +22,7 @@ import { MAX_RESPONSE_CHUNK_BYTES, splitBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { withLoadReport } from './load-report';
 import { LifecycleState, navigationOptions } from './navigation-options';
+import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
@@ -50,8 +51,12 @@ interface PageFetchResult {
     body: Uint8Array;
 }
 
+async function multipartFileContent(field: pb.Request_MultipartField): Promise<Uint8Array | undefined> {
+    return field.path !== undefined ? await fs.promises.readFile(field.path) : field.buffer;
+}
+
 async function pageMultipartField(field: pb.Request_MultipartField): Promise<PageMultipartField> {
-    const content = field.path !== undefined ? await fs.promises.readFile(field.path) : field.buffer;
+    const content = await multipartFileContent(field);
     if (content === undefined) {
         return { name: field.name, value: field.value ?? '' };
     }
@@ -171,6 +176,90 @@ export async function httpRequest(request: pb.Request_HttpRequest, page: Page): 
         postData: null,
         body: Buffer.from(result.body),
     });
+}
+
+type ApiFetchOptions = NonNullable<Parameters<APIRequestContext['fetch']>[1]>;
+
+function searchParams(fields: pb.Request_FormField[]): URLSearchParams {
+    return new URLSearchParams(fields.map((field): [string, string] => [field.name, field.value]));
+}
+
+function formData(fields: pb.Request_FormField[]): FormData {
+    const form = new FormData();
+    for (const field of fields) form.append(field.name, field.value);
+    return form;
+}
+
+async function multipartFormData(fields: pb.Request_MultipartField[]): Promise<FormData> {
+    const form = new FormData();
+    for (const field of fields) {
+        const content = await multipartFileContent(field);
+        if (content === undefined) {
+            form.append(field.name, field.value ?? '');
+        } else {
+            const type = field.mimeType ?? 'application/octet-stream';
+            form.append(field.name, new Blob([new Uint8Array(content)], { type }), field.fileName ?? field.name);
+        }
+    }
+    return form;
+}
+
+function hasHeader(headers: Record<string, string>, name: string): boolean {
+    return Object.keys(headers).some((key) => key.toLowerCase() === name);
+}
+
+function setApiRequestData(options: ApiFetchOptions, request: pb.Request_ApiRequest): void {
+    if (request.dataText !== undefined) {
+        options.data = request.dataText;
+    } else if (request.dataBytes !== undefined) {
+        options.data = Buffer.from(request.dataBytes);
+    } else if (request.dataJson !== undefined) {
+        // Playwright sends a JSON string as written when the content type is JSON, so the
+        // JSON that Python wrote reaches the server unchanged, large integers included.
+        const headers = (options.headers ?? {}) as Record<string, string>;
+        if (!hasHeader(headers, 'content-type')) headers['content-type'] = 'application/json';
+        options.headers = headers;
+        options.data = request.dataJson;
+    }
+}
+
+async function apiFetchOptions(request: pb.Request_ApiRequest): Promise<ApiFetchOptions> {
+    const options: ApiFetchOptions = { method: request.method, timeout: request.timeout };
+    if (request.headers !== undefined) options.headers = JSON.parse(request.headers);
+    if (request.encodedParams !== undefined) {
+        options.params = request.encodedParams;
+    } else if (request.params !== undefined) {
+        options.params = searchParams(request.params.fields);
+    }
+    setApiRequestData(options, request);
+    if (request.form !== undefined) options.form = formData(request.form.fields);
+    if (request.multipart !== undefined) options.multipart = await multipartFormData(request.multipart.fields);
+    if (request.failOnStatusCode !== undefined) options.failOnStatusCode = request.failOnStatusCode;
+    if (request.maxRedirects !== undefined) options.maxRedirects = request.maxRedirects;
+    if (request.maxRetries !== undefined) options.maxRetries = request.maxRetries;
+    if (request.ignoreHTTPSErrors !== undefined) options.ignoreHTTPSErrors = request.ignoreHTTPSErrors;
+    return options;
+}
+
+export async function sendApiRequest(
+    request: pb.Request_ApiRequest,
+    context: BrowserContext | undefined,
+): Promise<pb.Response_Json[]> {
+    exists(context, 'Tried to send an API request, but no context was open.');
+    const response = await context.request.fetch(request.url, await apiFetchOptions(request));
+    try {
+        const meta = {
+            status: response.status(),
+            statusText: response.statusText(),
+            ok: response.ok(),
+            url: response.url(),
+            headers: response.headers(),
+            headersArray: response.headersArray(),
+        };
+        return capturedMessages({ meta, log: 'API request sent.', postData: null, body: await response.body() });
+    } finally {
+        await response.dispose();
+    }
 }
 
 export function deserializeUrlOrPredicate(
