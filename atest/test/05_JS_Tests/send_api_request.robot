@@ -98,6 +98,24 @@ Dictionary Data Is Sent As JSON
     Should Start With    ${response.json.body.contentType}    application/json
     Should Be Equal    ${response.json.body.json}    ${{ {'name': 'robot', 'legs': 2} }}
 
+Large Integers In Dictionary Data Arrive Exactly
+    ${response} =    Send API Request    /api/echo/json    POST    data=${{ {'id': 9007199254740993, 'x': 1.0} }}
+    Should Be Equal    ${response.json.body.text}    {"id":9007199254740993,"x":1.0}
+    Should Start With    ${response.json.body.contentType}    application/json
+
+Header Values That Are Numbers Or Booleans Are Sent As Text
+    ${response} =    Send API Request    /api/echo/headers    headers=${{ {'X-Count': 5, 'X-On': True} }}
+    Should Be Equal    ${response.json.headers['x-count']}    5
+    Should Be Equal    ${response.json.headers['x-on']}    true
+
+Fields Keep Their Order Also With Number Like Names
+    VAR    &{params}    b=1    2=2    a=3
+    ${response} =    Send API Request    /api/echo/order    params=${params}
+    Should Be Equal    ${response.url}    ${STATIC_URL}api/echo/order?b=1&2=2&a=3
+    VAR    &{fields}    b=1    2=2    a=3
+    ${response} =    Send API Request    /api/echo/order    POST    multipart=${fields}
+    Should Be Equal    ${{ [part['name'] for part in $response.json['parts']] }}    ${{ ['b', '2', 'a'] }}
+
 String Data Is Sent As Given With Octet Stream Content Type
     ${response} =    Send API Request    /api/echo/text    POST    data={"name": "robot"}
     Should Be Equal    ${response.json.body.contentType}    application/octet-stream

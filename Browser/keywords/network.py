@@ -49,7 +49,13 @@ from ..utils import (
     keyword,
     logger,
 )
-from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
+from ..utils.data_types import (
+    PageLoadStates,
+    RegExp,
+    RequestMethod,
+    _kind_of,
+    javascript_text,
+)
 from ..utils.types import Secret
 
 HTTP_STATUS_CODES = range(100, 600)
@@ -385,7 +391,27 @@ def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
     elif isinstance(data, bytes | bytearray):
         request.dataBytes = bytes(data)
     else:
-        request.dataJson = json.dumps(data)
+        try:
+            request.dataJson = json.dumps(data, separators=(",", ":"), allow_nan=False)
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                "data cannot be sent as JSON: "
+                f"{error}. Give a string, bytes, or a dictionary, a list, a number or a "
+                "boolean that holds only such values and None."
+            ) from error
+
+
+def _api_headers(headers: Mapping) -> dict[str, str]:
+    texts = {}
+    for name, value in headers.items():
+        text = javascript_text(value)
+        if text is None:
+            raise ValueError(
+                f"Header {name!r} must be a string, a number or a boolean, "
+                f"got {_kind_of(value)}."
+            )
+        texts[name] = text
+    return texts
 
 
 def _set_api_params(
@@ -486,6 +512,8 @@ class Network(LibraryComponent):
                 boundary of the parts, and the server cannot read the body. ``body``,
                 ``form`` and ``multipart`` exclude each other, and ``form`` and
                 ``multipart`` fail with ``GET`` and ``HEAD``.
+                For now the ``body`` and the files given as ``buffer`` can be at most 4 MiB
+                together; a file given as ``path`` does not count.
           - ``credentials``: Whether cookies and HTTP authentication are sent, see
                 `FetchCredentials`. The browser's default sends them only to the page's own
                 origin.
@@ -646,13 +674,18 @@ class Network(LibraryComponent):
                 ``baseURL`` and fails without one.
           - ``method``: The HTTP method. Defaults to ``GET``.
           - ``headers``: A dictionary of request headers. They override the context's
-                ``extraHTTPHeaders`` with the same name.
+                ``extraHTTPHeaders`` with the same name. Numbers and booleans are sent as
+                text, the way JavaScript writes them, a boolean as ``true`` or ``false``.
           - ``params``: `QueryParams` (a dictionary or a string) added to the query of the
                 ``url``. Characters such as ``&`` in a string keep their meaning in a query,
-                see `QueryParams`.
-          - ``data``: The request body.
-                - A dictionary, a list, a number or a boolean is sent as JSON, with the
-                  ``Content-Type`` ``application/json``.
+                see `QueryParams`. The string ``None`` adds no parameters.
+          - ``data``: The request body. Leave it out to send no body; the string ``None`` is
+                sent as the text ``None``.
+                - A dictionary, a list, a number or a boolean is sent as JSON, exactly as
+                  Python writes it, so large integers arrive unchanged. The ``Content-Type``
+                  is ``application/json`` unless ``headers`` has one. A value that JSON
+                  cannot hold, such as ``NaN``, a date or ``bytes`` inside a dictionary,
+                  fails before the request is sent.
                 - ``bytes`` are sent as given, as ``application/octet-stream`` unless
                   ``headers`` has a ``Content-Type``.
                 - A string is sent as given, but the ``Content-Type`` in ``headers``
@@ -668,8 +701,11 @@ class Network(LibraryComponent):
           - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``.
           - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
-                ``multipart/form-data``. ``data``, ``form`` and ``multipart`` exclude each other, also when ``form``
-                or ``multipart`` is an empty dictionary.
+                ``multipart/form-data``, in the order given. ``data``, ``form`` and
+                ``multipart`` exclude each other, also when ``form`` or ``multipart`` is an
+                empty dictionary.
+                For now the ``data`` and the files given as ``buffer`` can be at most 4 MiB
+                together; a file given as ``path`` does not count.
           - ``timeout``: How long to wait for the whole response, body included. Defaults to
                 the library timeout; ``0`` waits without a limit.
           - ``failOnStatusCode``: When ``True``, the keyword fails on a status that is not
@@ -718,9 +754,12 @@ class Network(LibraryComponent):
         )
         _set_api_fields(request, _checked_form(form), _checked_multipart(multipart))
         if headers is not None:
-            request.headers = json.dumps(headers)
-        if params is not None:
-            _set_api_params(request, QueryParams.from_value(cast(Any, params)))
+            request.headers = json.dumps(_api_headers(headers))
+        checked_params = (
+            None if params is None else QueryParams.from_value(cast(Any, params))
+        )
+        if checked_params is not None:
+            _set_api_params(request, checked_params)
         _set_api_data(request, data)
         _set_given(
             request,

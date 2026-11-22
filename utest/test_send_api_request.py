@@ -103,8 +103,13 @@ def test_string_params_are_sent_as_encoded_params(browser, stub):
         ("hello", "dataText", "hello"),
         ("", "dataText", ""),
         (b"\x00\xff", "dataBytes", b"\x00\xff"),
-        ({"name": "robot"}, "dataJson", '{"name": "robot"}'),
-        ([1, 2], "dataJson", "[1, 2]"),
+        ({"name": "robot"}, "dataJson", '{"name":"robot"}'),
+        ([1, 2], "dataJson", "[1,2]"),
+        (
+            {"id": 9007199254740993, "x": 1.0},
+            "dataJson",
+            '{"id":9007199254740993,"x":1.0}',
+        ),
         (5, "dataJson", "5"),
         (False, "dataJson", "false"),
     ],
@@ -226,3 +231,43 @@ def test_python_caller_gets_the_same_checks(browser, stub, option, value, messag
     with pytest.raises(ValueError, match=message):
         browser.send_api_request("/api", **{option: value})
     stub.SendApiRequest.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        ({"v": float("nan")}, "data cannot be sent as JSON: Out of range float values"),
+        ({"b": b"x"}, "data cannot be sent as JSON: Object of type bytes"),
+    ],
+)
+def test_data_that_is_not_json_fails_with_a_clear_message(browser, stub, data, message):
+    with pytest.raises(ValueError, match=message):
+        browser.send_api_request("/api", data=data)
+    stub.SendApiRequest.assert_not_called()
+
+
+def test_header_values_are_sent_as_text(browser, stub):
+    request = sent(browser, stub, headers={"X-Count": 5, "X-On": True, "X-Ratio": 1.0})
+    assert json.loads(request.headers) == {
+        "X-Count": "5",
+        "X-On": "true",
+        "X-Ratio": "1",
+    }
+
+
+def test_a_header_value_that_is_not_text_number_or_boolean_fails(browser, stub):
+    with pytest.raises(
+        ValueError,
+        match="Header 'X-List' must be a string, a number or a boolean, got a list",
+    ):
+        browser.send_api_request("/api", headers={"X-List": [1]})
+
+
+def test_robot_accepts_another_mapping_as_form():
+    from robot.utils import NormalizedDict
+
+    assert convert_like_robot("form", NormalizedDict({"q": 1})) == {"q": "1"}
+
+
+def test_robot_converts_the_string_none_to_no_params():
+    assert convert_like_robot("params", "None") is None

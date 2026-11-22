@@ -889,10 +889,16 @@ describe('sendApiRequest', () => {
         });
     });
 
-    it('passes dictionary params as an object and string params as given', async () => {
+    it('passes dictionary params in the given order and string params as given', async () => {
         const first = makeApiContext();
-        await sendApiRequest(makeApiRequest({ params: { fields: [{ name: 'q', value: 'robot' }] } }), first.context);
-        expect(fetchOptions(first.fetch).params).toEqual({ q: 'robot' });
+        const params = {
+            fields: [
+                { name: 'b', value: '1' },
+                { name: '2', value: 'x y' },
+            ],
+        };
+        await sendApiRequest(makeApiRequest({ params }), first.context);
+        expect(String(fetchOptions(first.fetch).params)).toBe('b=1&2=x+y');
         const second = makeApiContext();
         await sendApiRequest(makeApiRequest({ encodedParams: 'q=a%20b' }), second.context);
         expect(fetchOptions(second.fetch).params).toBe('q=a%20b');
@@ -901,27 +907,47 @@ describe('sendApiRequest', () => {
     it.each([
         [{ dataText: '' }, ''],
         [{ dataBytes: Buffer.from([0, 255]) }, Buffer.from([0, 255])],
-        [{ dataJson: '{"name":"robot"}' }, { name: 'robot' }],
-        [{ dataJson: 'false' }, false],
+        [{ dataJson: '{"id":9007199254740993}' }, '{"id":9007199254740993}'],
     ])('passes data %p to Playwright as %p', async (data, expected) => {
         const { context, fetch } = makeApiContext();
         await sendApiRequest(makeApiRequest(data), context);
         expect(fetchOptions(fetch).data).toEqual(expected);
     });
 
-    it.each(['params', 'form', 'multipart'])('passes an empty %s as an empty object', async (option) => {
+    it('sends JSON data as written with a JSON content type when none is given', async () => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest({ dataJson: '[1.0]' }), context);
+        expect(fetchOptions(fetch).headers).toEqual({ 'content-type': 'application/json' });
+    });
+
+    it('keeps an own content type of any case for JSON data', async () => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest({ dataJson: '1', headers: '{"Content-Type":"text/x"}' }), context);
+        expect(fetchOptions(fetch).headers).toEqual({ 'Content-Type': 'text/x' });
+    });
+
+    it.each(['params', 'form', 'multipart'])('passes an empty %s', async (option) => {
         const { context, fetch } = makeApiContext();
         await sendApiRequest(makeApiRequest({ [option]: { fields: [] } }), context);
-        expect(fetchOptions(fetch)[option]).toEqual({});
+        expect([...(fetchOptions(fetch)[option] as Iterable<unknown>)]).toEqual([]);
     });
 
-    it('passes form fields as an object', async () => {
+    it('passes form fields in the given order', async () => {
         const { context, fetch } = makeApiContext();
-        await sendApiRequest(makeApiRequest({ form: { fields: [{ name: 'q', value: 'a&b' }] } }), context);
-        expect(fetchOptions(fetch).form).toEqual({ q: 'a&b' });
+        const form = {
+            fields: [
+                { name: 'b', value: '1' },
+                { name: '2', value: 'a&b' },
+            ],
+        };
+        await sendApiRequest(makeApiRequest({ form }), context);
+        expect([...(fetchOptions(fetch).form as FormData)]).toEqual([
+            ['b', '1'],
+            ['2', 'a&b'],
+        ]);
     });
 
-    it('passes multipart text fields, buffers and files read from their path', async () => {
+    it('passes multipart text fields, buffers and files read from their path in the given order', async () => {
         const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'api-')), 'notes.txt');
         fs.writeFileSync(file, 'hello');
         const { context, fetch } = makeApiContext();
@@ -930,6 +956,7 @@ describe('sendApiRequest', () => {
                 multipart: {
                     fields: [
                         { name: 'text', value: 'a' },
+                        { name: '2', value: 'number-like name' },
                         { name: 'empty' },
                         { name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' },
                         { name: 'blob', buffer: Buffer.from('raw') },
@@ -938,12 +965,14 @@ describe('sendApiRequest', () => {
             }),
             context,
         );
-        expect(fetchOptions(fetch).multipart).toEqual({
-            text: 'a',
-            empty: '',
-            file: { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') },
-            blob: { name: 'blob', mimeType: 'application/octet-stream', buffer: Buffer.from('raw') },
-        });
+        const entries = [...(fetchOptions(fetch).multipart as FormData)];
+        expect(entries.map(([name]) => name)).toEqual(['text', '2', 'empty', 'file', 'blob']);
+        expect(entries[0][1]).toBe('a');
+        expect(entries[2][1]).toBe('');
+        const notes = entries[3][1] as File;
+        expect([notes.name, notes.type, await notes.text()]).toEqual(['notes.txt', 'text/plain', 'hello']);
+        const blob = entries[4][1] as File;
+        expect([blob.name, blob.type, await blob.text()]).toEqual(['blob', 'application/octet-stream', 'raw']);
     });
 
     it('returns the response metadata and the raw body, and disposes the response', async () => {

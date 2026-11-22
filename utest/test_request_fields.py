@@ -117,3 +117,44 @@ def test_a_value_of_the_wrong_kind_fails(convert, message):
 def test_types_are_not_dictionaries_so_python_callers_get_no_builtin_conversion():
     assert not issubclass(FormFields, dict)
     assert not issubclass(MultipartFields, dict)
+
+
+@pytest.mark.parametrize(
+    ("value", "text"),
+    [
+        (1.0, "1"),
+        (-2.0, "-2"),
+        (1.5, "1.5"),
+        (0.1, "0.1"),
+        (1e16, "10000000000000000"),
+        (1e21, "1e+21"),
+        (1.5e-5, "0.000015"),
+        (1e-7, "1e-7"),
+        (2.5e-7, "2.5e-7"),
+        (123456789012345680000.0, "123456789012345680000"),
+        (float("nan"), "NaN"),
+        (float("inf"), "Infinity"),
+        (float("-inf"), "-Infinity"),
+        (9007199254740993, "9007199254740993"),
+        (-0.0, "0"),
+    ],
+)
+def test_numbers_are_written_the_way_javascript_writes_them(value, text):
+    assert FormFields.from_dict({"n": value}) == {"n": text}
+
+
+def test_field_names_must_be_strings():
+    with pytest.raises(ValueError, match="Field names must be strings, got int"):
+        FormFields.from_dict({1: "a"})
+    with pytest.raises(ValueError, match="Field names must be strings, got int"):
+        MultipartFields.from_dict({1: "a"})
+
+
+def test_the_string_none_means_no_query_params():
+    assert QueryParams.from_value("None") is None
+
+
+def test_any_mapping_is_accepted():
+    from robot.utils import NormalizedDict
+
+    assert FormFields.from_dict(NormalizedDict({"q": 1})) == {"q": "1"}

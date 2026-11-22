@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import math
 import re
 from collections.abc import Mapping
 from datetime import timedelta
@@ -1175,16 +1176,58 @@ def _kind_of(value: Any) -> str:
     return type(value).__name__
 
 
-def _field_text(name: str, value: Any) -> str | None:
+# JavaScript's Number::toString writes the digits without an exponent while the decimal
+# point is at most 21 digits right and less than 6 zeros left of the first digit.
+JS_MAX_POINT = 21
+JS_MIN_POINT = -6
+
+
+def _javascript_float(value: float) -> str:
+    """Write ``value`` the way JavaScript's ``String(number)`` does."""
+    if math.isnan(value):
+        return "NaN"
+    if math.isinf(value):
+        return "Infinity" if value > 0 else "-Infinity"
+    if value == 0:
+        return "0"
+    sign = "-" if value < 0 else ""
+    mantissa, _, exponent = repr(abs(value)).partition("e")
+    whole, _, fraction = mantissa.partition(".")
+    digits = (whole + fraction.rstrip("0")).lstrip("0") or "0"
+    leading_zeros = len(fraction) - len(fraction.lstrip("0"))
+    point = (-leading_zeros if whole == "0" else len(whole)) + int(exponent or 0)
+    if len(digits) <= point <= JS_MAX_POINT:
+        text = digits + "0" * (point - len(digits))
+    elif 0 < point <= JS_MAX_POINT:
+        text = f"{digits[:point]}.{digits[point:]}"
+    elif JS_MIN_POINT < point <= 0:
+        text = "0." + "0" * -point + digits
+    else:
+        rest = f".{digits[1:]}" if len(digits) > 1 else ""
+        text = f"{digits[0]}{rest}e{'+' if point > 0 else '-'}{abs(point - 1)}"
+    return sign + text
+
+
+def javascript_text(value: Any) -> str | None:
+    """Write a string, a number or a boolean the way JavaScript's ``String()`` does."""
     if isinstance(value, bool):
         return "true" if value else "false"
-    if isinstance(value, str | int | float):
+    if isinstance(value, float):
+        return _javascript_float(value)
+    if isinstance(value, str | int):
         return str(value)
     return None
 
 
+def _check_names(value: Mapping) -> Mapping:
+    for name in value:
+        if not isinstance(name, str):
+            raise ValueError(f"Field names must be strings, got {_kind_of(name)}.")
+    return value
+
+
 def _form_text(name: str, value: Any) -> str:
-    text = _field_text(name, value)
+    text = javascript_text(value)
     if text is None:
         raise ValueError(
             f"Field {name!r} must be a string, a number or a boolean, "
@@ -1258,8 +1301,8 @@ class FormFields:
     """
 
     @staticmethod
-    def from_dict(value: dict) -> dict[str, str]:
-        fields = _require_mapping("FormFields", value)
+    def from_dict(value: Mapping) -> dict[str, str]:
+        fields = _check_names(_require_mapping("FormFields", value))
         return {name: _form_text(name, item) for name, item in fields.items()}
 
 
@@ -1277,7 +1320,7 @@ class QueryParams:
     | ${response} =    `Send API Request`    /api/search?lang=en    params=${params}
     | # sends /api/search?lang=en&q=rock+%26+roll&page=2&exact=true
 
-    *A string* is appended as written. Characters that a URL cannot hold, such as a space,
+    *A string* is appended as written; the string ``None`` adds no parameters. Characters that a URL cannot hold, such as a space,
     an umlaut or ``#``, are encoded on the way. The characters that structure a query keep
     that meaning: ``&`` separates parameters, ``=`` separates a name from its value, ``+``
     stands for a space and ``%`` starts an encoded character. Write them as ``%26``,
@@ -1290,7 +1333,9 @@ class QueryParams:
     """
 
     @staticmethod
-    def from_value(value: dict | str) -> dict[str, str] | str:
+    def from_value(value: Mapping | str) -> dict[str, str] | str | None:
+        if value == "None":
+            return None
         if isinstance(value, str):
             return value
         if not isinstance(value, Mapping):
@@ -1331,15 +1376,15 @@ class MultipartFields:
     """
 
     @staticmethod
-    def from_dict(value: dict) -> dict[str, str | MultipartFile]:
-        fields = _require_mapping("MultipartFields", value)
+    def from_dict(value: Mapping) -> dict[str, str | MultipartFile]:
+        fields = _check_names(_require_mapping("MultipartFields", value))
         return {name: _multipart_value(name, item) for name, item in fields.items()}
 
 
 def _multipart_value(name: str, value: Any) -> str | MultipartFile:
     if isinstance(value, Mapping):
         return _multipart_file(name, value)
-    text = _field_text(name, value)
+    text = javascript_text(value)
     if text is None:
         raise ValueError(
             f"Field {name!r} must be a string, a number, a boolean or a file, "
