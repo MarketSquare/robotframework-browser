@@ -25,13 +25,8 @@ import { LifecycleState, navigationOptions } from './navigation-options';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
-interface PageMultipartField {
-    name: string;
-    value?: string;
-    fileName?: string;
-    mimeType?: string;
-    buffer?: Uint8Array;
-}
+type PageMultipartField =
+    { name: string; value: string } | { name: string; fileName?: string; mimeType?: string; buffer: Uint8Array };
 
 interface PageFetchArguments {
     url: string;
@@ -82,56 +77,66 @@ function requestInit(request: pb.Request_HttpRequest): Record<string, unknown> {
     return init;
 }
 
-async function fetchInPage(page: Page, args: PageFetchArguments): Promise<PageFetchResult> {
-    return page.evaluate(async ({ url, init, text, bytes, form, multipart, timeout }) => {
-        const options: Record<string, unknown> = { ...init };
-        if (text !== undefined) {
-            options.body = text;
-        } else if (bytes !== undefined) {
-            options.body = bytes;
-        } else if (form !== undefined) {
-            options.body = new URLSearchParams(form);
-        } else if (multipart !== undefined) {
-            const formData = new FormData();
-            for (const field of multipart) {
-                if (field.buffer !== undefined) {
-                    formData.append(
-                        field.name,
-                        new Blob([new Uint8Array(field.buffer)], { type: field.mimeType }),
-                        field.fileName,
-                    );
-                } else {
-                    formData.append(field.name, field.value ?? '');
-                }
+/**
+ * Runs in the page through `page.evaluate`, so it uses only the browser's fetch API and
+ * nothing from this module's scope.
+ */
+export async function pageFetch({
+    url,
+    init,
+    text,
+    bytes,
+    form,
+    multipart,
+    timeout,
+}: PageFetchArguments): Promise<PageFetchResult> {
+    const options: Record<string, unknown> = { ...init };
+    if (text !== undefined) {
+        options.body = text;
+    } else if (bytes !== undefined) {
+        options.body = bytes;
+    } else if (form !== undefined) {
+        options.body = new URLSearchParams(form);
+    } else if (multipart !== undefined) {
+        const formData = new FormData();
+        for (const field of multipart) {
+            if ('buffer' in field) {
+                formData.append(
+                    field.name,
+                    new Blob([new Uint8Array(field.buffer)], { type: field.mimeType }),
+                    field.fileName,
+                );
+            } else {
+                formData.append(field.name, field.value);
             }
-            options.body = formData;
         }
-        if (timeout > 0) {
-            options.signal = AbortSignal.timeout(timeout);
+        options.body = formData;
+    }
+    if (timeout > 0) {
+        options.signal = AbortSignal.timeout(timeout);
+    }
+    try {
+        const response = await fetch(url, options);
+        const body = new Uint8Array(await response.arrayBuffer());
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, name) => (headers[name] = value));
+        return {
+            timedOut: false,
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            ok: response.ok,
+            redirected: response.redirected,
+            type: response.type,
+            headers,
+            body,
+        };
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'TimeoutError') {
+            return { timedOut: true } as PageFetchResult;
         }
-        try {
-            const response = await fetch(url, options);
-            const body = new Uint8Array(await response.arrayBuffer());
-            const headers: Record<string, string> = {};
-            response.headers.forEach((value, name) => (headers[name] = value));
-            return {
-                timedOut: false,
-                status: response.status,
-                statusText: response.statusText,
-                url: response.url,
-                ok: response.ok,
-                redirected: response.redirected,
-                type: response.type,
-                headers,
-                body,
-            };
-        } catch (error) {
-            if (error instanceof DOMException && error.name === 'TimeoutError') {
-                return { timedOut: true } as PageFetchResult;
-            }
-            throw error;
-        }
-    }, args);
+        throw error;
+    }
 }
 
 export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json[]> {
@@ -139,7 +144,7 @@ export async function httpRequest(request: pb.Request_HttpRequest, page: Page): 
         request.form.length > 0 ? request.form.map((field): [string, string] => [field.name, field.value]) : undefined;
     const multipart =
         request.multipart.length > 0 ? await Promise.all(request.multipart.map(pageMultipartField)) : undefined;
-    const result = await fetchInPage(page, {
+    const result = await page.evaluate(pageFetch, {
         url: request.url,
         init: requestInit(request),
         text: request.body,
