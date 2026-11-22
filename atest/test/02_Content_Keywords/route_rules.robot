@@ -46,6 +46,15 @@ Removing An Ended Rule Passes
     Remove Route Rule    ${used_up}
     Send Request    expected_state=done
 
+Removing A Rule Logs How Many Times It Ran
+    [Documentation]
+    ...    LOG 5:*    INFO    REGEXP: Removed route rule \\S+\\. It ran 2 times\\.
+    ${path} =    Open HTTP Page Without Sending    /api/echo/runs
+    ${rule} =    Abort Requests    **${path}
+    Send Request    expected_state=error
+    Send Request    expected_state=error
+    Remove Route Rule    ${rule}
+
 Context Rule Applies To A Page Opened Later And Survives Navigation
     ${path} =    Unique HTTP Path    /api/echo/context-rule
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
@@ -86,6 +95,15 @@ Remove All Route Rules Clears The Active Context Only
     Send Request    expected_state=done
     Switch Context    ${other}
     Send Request    expected_state=error
+
+Remove All Route Rules Logs How Many Times Each Rule Ran
+    [Documentation]
+    ...    LOG 5:*    INFO    REGEXP: Removed 1 Context and 1 Page route rules from context \\S+\\.\\nContext route rule \\S+ ran 1 time\\.\\nPage route rule \\S+ ran 0 times\\.
+    ${path} =    Open HTTP Page Without Sending    /api/echo/runs-all
+    Abort Requests    **${path}
+    Send Request    expected_state=error
+    Abort Requests    **${path}    on=Page
+    Remove All Route Rules
 
 Invalid Abort Requests Fail
     Run Keyword And Expect Error

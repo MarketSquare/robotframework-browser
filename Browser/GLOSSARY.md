@@ -102,7 +102,7 @@ A rule on a context or page that decides what happens to the matching requests b
 reach the network, for example aborting them. It lives until its context or page closes, it
 is removed, or it has used up the number of times it may run. A Page rule stays on the page
 it was added to.
-_Avoid_: mock, interceptor, route handler
+_Avoid_: mock, interceptor, route handler; a rule runs for a request, it does not fire or trigger
 
 **Mock response**:
 A response that a **route rule** makes up and gives to the page, without sending the request

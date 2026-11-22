@@ -29,6 +29,7 @@ type RouteRule = {
     page: Page | undefined;
     disposable: Disposable | undefined;
     inFlight: Set<Promise<void>>;
+    runs: number;
 };
 
 export class RouteRules {
@@ -81,11 +82,12 @@ async function addRouteRule(
 ): Promise<pb.Response_RouteRuleId> {
     const url = parseRegExpOrKeepStringOrThrow(request.url);
     const action = routeAction(request);
-    const rule: RouteRule = { id: randomUUID(), page, disposable: undefined, inFlight: new Set() };
+    const rule: RouteRule = { id: randomUUID(), page, disposable: undefined, inFlight: new Set(), runs: 0 };
     let remaining = request.times;
     const handler = (route: Route): Promise<void> => {
         if (remaining !== undefined) remaining -= 1;
-        logger.info(`Route rule ${rule.id} matched ${route.request().method()} ${route.request().url()}`);
+        rule.runs += 1;
+        logger.info(`Route rule ${rule.id} ran for ${route.request().method()} ${route.request().url()}`);
         const call: Promise<void> = action(route)
             .catch((error: unknown) => logger.info(`Route rule ${rule.id} failed: ${String(error)}`))
             .finally(() => {
@@ -125,6 +127,10 @@ export async function addPageRoute(
     return addRouteRule(page.p, page.p, context.routeRules, request);
 }
 
+function ranTimes(rule: RouteRule): string {
+    return rule.runs === 1 ? '1 time' : `${rule.runs} times`;
+}
+
 async function endRule(rule: RouteRule): Promise<void> {
     try {
         await rule.disposable?.dispose();
@@ -143,7 +149,7 @@ export async function removeRouteRule(
             const rule = context.routeRules.take(request.id);
             if (rule) {
                 await endRule(rule);
-                return emptyWithLog(`Removed route rule ${request.id}.`);
+                return emptyWithLog(`Removed route rule ${request.id}. It ran ${ranTimes(rule)}.`);
             }
         }
     }
@@ -161,7 +167,9 @@ export async function removeAllRouteRules(
     const failure = results.find((result) => result.status === 'rejected');
     if (failure) throw failure.reason;
     const pageRules = rules.filter((rule) => rule.page !== undefined).length;
-    return emptyWithLog(
-        `Removed ${rules.length - pageRules} Context and ${pageRules} Page route rules from context ${context.id}.`,
+    const summary = `Removed ${rules.length - pageRules} Context and ${pageRules} Page route rules from context ${context.id}.`;
+    const ruleLines = rules.map(
+        (rule) => `${rule.page === undefined ? 'Context' : 'Page'} route rule ${rule.id} ran ${ranTimes(rule)}.`,
     );
+    return emptyWithLog([summary, ...ruleLines].join('\n'));
 }
