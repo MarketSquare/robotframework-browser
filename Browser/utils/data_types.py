@@ -14,6 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, StrEnum, auto
+from pathlib import Path
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
@@ -1149,17 +1150,25 @@ class CapturedRequest(TypedDict):
 class MultipartFile(TypedDict, total=False):
     """A file in the ``multipart`` argument of `HTTP`.
 
-    Give either ``path`` or ``buffer``.
+    Give either ``path`` or ``buffer``. These four keys are the only ones, spelled as here.
 
     | =Key= | =Description= |
-    | ``path`` | Path of a file to send. The file name and mime type default to the file's name and the type its extension suggests. |
+    | ``path`` | Path of the file to send. A relative path is relative to the working directory of the Robot Framework process. The file name and mime type default to the file's name and the type its extension suggests. |
     | ``buffer`` | The file content as ``bytes``. A ``str`` is sent encoded as UTF-8. |
     | ``name`` | The file name the server receives. Required with ``buffer``. |
     | ``mimeType`` | The mime type of the file, e.g. ``image/png``. Defaults to ``application/octet-stream`` with ``buffer``. |
+
+    The file must be a real dictionary, created for example with ``Create Dictionary``
+    or ``${{ {...} }}``. A string that only looks like a dictionary is sent as a text
+    field. A dictionary with a key that is not in the table, such as ``mimetype``, cannot
+    become a ``MultipartFile`` either, and is also sent as a text field: its text.
+
+    | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
+    | &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
     """
 
-    path: str
-    buffer: bytes
+    path: Path
+    buffer: bytes | str
     name: str
     mimeType: str
 

@@ -1,6 +1,20 @@
-import pytest
+from pathlib import Path
+from typing import get_type_hints
 
-from Browser.keywords.network import _add_http_response_views, _multipart_field
+import pytest
+from robot.running.arguments.typeinfo import TypeInfo
+
+from Browser.keywords.network import (
+    Network,
+    _add_http_response_views,
+    _get_headers,
+    _multipart_field,
+)
+
+
+def convert_like_robot(argument: str, value):
+    hint = get_type_hints(Network.http)[argument]
+    return TypeInfo.from_type_hint(hint).convert(value)
 
 
 def http_response(headers: str, body: bytes) -> dict:
@@ -123,3 +137,36 @@ def test_multipart_file_from_buffer_needs_a_name():
 def test_multipart_file_from_missing_path_fails(tmp_path):
     with pytest.raises(FileNotFoundError, match="no file at"):
         _multipart_field("file", {"path": str(tmp_path / "missing.png")})
+
+
+def test_robot_converts_a_multipart_file_dictionary_with_path_to_path():
+    converted = convert_like_robot("multipart", {"file": {"path": "avatar.png"}})
+    assert converted["file"] == {"path": Path("avatar.png")}
+
+
+def test_robot_keeps_a_text_buffer_of_a_multipart_file_as_text():
+    converted = convert_like_robot(
+        "multipart", {"file": {"name": "notes.txt", "buffer": "häkä €"}}
+    )
+    assert converted["file"]["buffer"] == "häkä €"
+
+
+def test_robot_keeps_a_multipart_text_that_looks_like_a_dictionary_as_text():
+    converted = convert_like_robot("multipart", {"note": "{'path': 'a.png'}"})
+    assert converted["note"] == "{'path': 'a.png'}"
+
+
+def test_multipart_file_from_path_object(tmp_path):
+    path = tmp_path / "avatar.png"
+    path.write_bytes(b"png")
+    field = _multipart_field("file", {"path": path})
+    assert (field.path, field.fileName) == (str(path.resolve()), "avatar.png")
+
+
+def test_json_content_type_is_added_for_a_json_body():
+    assert _get_headers('{"a": 1}', {}) == {"Content-Type": "application/json"}
+
+
+def test_own_content_type_in_any_case_is_kept_for_a_json_body():
+    headers = {"content-type": "text/plain"}
+    assert _get_headers('{"a": 1}', headers) == headers

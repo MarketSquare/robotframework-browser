@@ -99,6 +99,24 @@ Multipart Sends A File From Buffer
     ${sha256} =    Sha256 Of Bytes    ${{ b'hello' }}
     Should Be Equal    ${part}[sha256]    ${sha256}
 
+Multipart Sends A Text Buffer As UTF-8
+    &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=häkä €
+    &{fields} =    Create Dictionary    file=${file}
+    ${response} =    HTTP    /api/echo/upload    POST    multipart=${fields}
+    ${part} =    Set Variable    ${response.json.parts}[0]
+    Should Be Equal    ${part}[filename]    notes.txt
+    ${sha256} =    Sha256 Of Bytes    ${{ 'häkä €'.encode('utf-8') }}
+    Should Be Equal    ${part}[sha256]    ${sha256}
+
+Own Content Type In Lower Case Is Kept For A JSON Body
+    &{headers} =    Create Dictionary    content-type=text/plain
+    ${response} =    HTTP    /api/echo/json    POST    {"name": "robot"}    ${headers}
+    Should Be Equal    ${response.json.headers['content-type']}    text/plain
+
+Bytes Body With GET Fails
+    Run Keyword And Expect Error    *GET request cannot have a body, got bytes*
+    ...    HTTP    /api/echo/get    GET    ${{ b'raw' }}
+
 Body Together With Form Fails
     &{fields} =    Create Dictionary    q=1
     Run Keyword And Expect Error    *Only one of*

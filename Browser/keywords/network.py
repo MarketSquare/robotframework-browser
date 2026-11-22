@@ -48,6 +48,8 @@ from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
 
 
 def _get_headers(body: str, headers: dict):
+    if any(name.lower() == "content-type" for name in headers):
+        return headers
     try:
         json.loads(body)
         return {"Content-Type": "application/json", **headers}
@@ -268,7 +270,7 @@ class Network(LibraryComponent):
         headers: dict | None = None,
         *,
         form: dict[str, str | int | float | bool] | None = None,
-        multipart: dict[str, str | int | float | bool | MultipartFile] | None = None,
+        multipart: dict[str, MultipartFile | str | int | float | bool] | None = None,
         credentials: FetchCredentials | None = None,
         redirect: FetchRedirect | None = None,
         mode: FetchMode | None = None,
@@ -295,23 +297,28 @@ class Network(LibraryComponent):
         *Arguments:*
           - ``url``: The request URL, e.g. ``/api/foo``.
           - ``method``: The HTTP method. Defaults to ``GET``.
-          - ``body``: The request body, as ``str`` or ``bytes``. It is not sent with ``GET``
-                and ``HEAD``, which cannot have a body. When a ``str`` body can be parsed as
-                JSON, the ``Content-Type`` header is set to ``application/json``, unless
-                ``headers`` already has that header. Otherwise the browser sends a ``str``
-                body as ``text/plain;charset=UTF-8``, and ``bytes`` without a
-                ``Content-Type``.
+          - ``body``: The request body, as ``str`` or ``bytes``. ``GET`` and ``HEAD``
+                cannot have a body: a ``str`` body is silently left out there, as it always
+                was, and a ``bytes`` body fails. When a ``str`` body can be parsed as JSON,
+                the ``Content-Type`` header is set to ``application/json``, unless
+                ``headers`` already has a ``Content-Type``, in any case. Otherwise the
+                browser sends a ``str`` body as ``text/plain;charset=UTF-8``, and ``bytes``
+                without a ``Content-Type``.
           - ``headers``: A dictionary of request headers.
           - ``form``: A dictionary of form fields, sent URL-encoded as
                 ``application/x-www-form-urlencoded``, the way the browser encodes a
                 ``URLSearchParams`` body. Numbers and booleans are sent as text, a boolean
-                as ``true`` or ``false``.
+                as ``true`` or ``false``. Any other value is sent as its text, so a nested
+                dictionary or list arrives as its Python representation.
           - ``multipart``: A dictionary of form fields sent as ``multipart/form-data``, the
                 way the browser encodes a ``FormData`` body, in the order given. A value is
-                a ``str``, a number or a `MultipartFile` dictionary for a file, with either
-                ``path`` or ``buffer``. ``body``, ``form`` and ``multipart`` exclude each
-                other. ``form`` and ``multipart`` fail with ``GET`` and ``HEAD``; only
-                ``body`` is silently left out there, as it always was.
+                a text field: a ``str``, a number or a boolean, sent like in ``form``. A file
+                is a `MultipartFile` dictionary with either ``path`` or ``buffer``; its
+                documentation says how to create one so that it is not sent as text. Do not
+                set a ``Content-Type`` in ``headers``: the browser then leaves out the
+                boundary of the parts, and the server cannot read the body. ``body``,
+                ``form`` and ``multipart`` exclude each other, and ``form`` and
+                ``multipart`` fail with ``GET`` and ``HEAD``.
           - ``credentials``: Whether cookies and HTTP authentication are sent, see
                 `FetchCredentials`. The browser's default sends them only to the page's own
                 origin.
@@ -373,10 +380,23 @@ class Network(LibraryComponent):
             raise ValueError(
                 f"Only one of body, form or multipart can be given, got {' and '.join(given)}."
             )
-        if method_name in METHODS_WITHOUT_BODY and (form or multipart):
-            raise ValueError(
-                f"A {method_name} request cannot have a body, got {'form' if form else 'multipart'}."
+        if method_name in METHODS_WITHOUT_BODY:
+            not_allowed = next(
+                (
+                    name
+                    for name, value in (
+                        ("bytes", isinstance(body, bytes) and body),
+                        ("form", form),
+                        ("multipart", multipart),
+                    )
+                    if value
+                ),
+                None,
             )
+            if not_allowed:
+                raise ValueError(
+                    f"A {method_name} request cannot have a body, got {not_allowed}."
+                )
         headers = headers or {}
         request = Request().HttpRequest(
             url=url,
