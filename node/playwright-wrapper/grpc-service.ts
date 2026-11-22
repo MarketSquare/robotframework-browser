@@ -35,6 +35,7 @@ import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 import * as recorder from './recorder';
 import { errorResponse, stringResponse } from './response-util';
+import * as routeRules from './route-rules';
 import * as selectorPicker from './selector-picker';
 
 // The rpcs that do not act on the context active when they are called: they send the open trace
@@ -412,6 +413,10 @@ export class PlaywrightServer {
     addScriptTag = this.wrapping(evaluation.addScriptTag);
     addContextInitScript = this.wrapping(initScript.addContextInitScript);
     addPageInitScript = this.wrapping(initScript.addPageInitScript);
+    addContextRoute = this.wrapping(routeRules.addContextRoute);
+    addPageRoute = this.wrapping(routeRules.addPageRoute);
+    removeRouteRule = this.wrapping(routeRules.removeRouteRule);
+    removeAllRouteRules = this.wrapping(routeRules.removeAllRouteRules);
     setTime = this.wrapping(clock.setTime);
     clockResume = this.wrapping(clock.clockResume);
     clockPauseAt = this.wrapping(clock.clockPauseAt);

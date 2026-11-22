@@ -1,0 +1,167 @@
+// Copyright 2020-     Robot Framework Foundation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import { randomUUID } from 'crypto';
+import { BrowserContext, Disposable, Page, Route } from 'playwright';
+
+import { logger } from './browser_logger';
+import { isTargetClosed } from './context-tracer';
+import * as pb from './generated/playwright';
+import { exists } from './playwright-invoke';
+import { PlaywrightState } from './playwright-state';
+import { emptyWithLog, parseRegExpOrKeepStringOrThrow } from './response-util';
+
+type RouteAction = (route: Route) => Promise<void>;
+
+type RouteRule = {
+    id: string;
+    page: Page | undefined;
+    disposable: Disposable | undefined;
+    inFlight: Set<Promise<void>>;
+};
+
+export class RouteRules {
+    private rules = new Map<string, RouteRule>();
+
+    add(rule: RouteRule): void {
+        this.rules.set(rule.id, rule);
+    }
+
+    take(id: string): RouteRule | undefined {
+        const rule = this.rules.get(id);
+        this.rules.delete(id);
+        return rule;
+    }
+
+    takeAll(): RouteRule[] {
+        const rules = [...this.rules.values()];
+        this.rules.clear();
+        return rules;
+    }
+
+    dropPage(page: Page): void {
+        for (const rule of this.rules.values()) {
+            if (rule.page === page) this.rules.delete(rule.id);
+        }
+    }
+
+    clear(): void {
+        this.rules.clear();
+    }
+}
+
+function routeAction(request: pb.Request_RouteRule): RouteAction {
+    if (request.abort) {
+        const errorCode = request.abort.errorCode;
+        return (route) => route.abort(errorCode);
+    }
+    throw new Error('Route rule has no action.');
+}
+
+function ruleTarget(request: pb.Request_RouteRule): string {
+    return request.times === undefined ? request.url : `${request.url} (times=${request.times})`;
+}
+
+async function addRouteRule(
+    target: BrowserContext | Page,
+    page: Page | undefined,
+    rules: RouteRules,
+    request: pb.Request_RouteRule,
+): Promise<pb.Response_RouteRuleId> {
+    const url = parseRegExpOrKeepStringOrThrow(request.url);
+    const action = routeAction(request);
+    const rule: RouteRule = { id: randomUUID(), page, disposable: undefined, inFlight: new Set() };
+    let remaining = request.times;
+    const handler = (route: Route): Promise<void> => {
+        if (remaining !== undefined) remaining -= 1;
+        logger.info(`Route rule ${rule.id} matched ${route.request().method()} ${route.request().url()}`);
+        const call: Promise<void> = action(route)
+            .catch((error: unknown) => logger.info(`Route rule ${rule.id} failed: ${String(error)}`))
+            .finally(() => {
+                rule.inFlight.delete(call);
+                if (remaining === 0 && rule.inFlight.size === 0) rules.take(rule.id);
+            });
+        rule.inFlight.add(call);
+        return call;
+    };
+    rules.add(rule);
+    try {
+        rule.disposable = await target.route(url, handler, { times: request.times });
+    } catch (error) {
+        rules.take(rule.id);
+        throw error;
+    }
+    return { id: rule.id };
+}
+
+export async function addContextRoute(
+    request: pb.Request_RouteRule,
+    state: PlaywrightState,
+): Promise<pb.Response_RouteRuleId> {
+    const context = state.activeBrowser?.context;
+    exists(context, 'Tried to add a route rule, but no context was open.');
+    logger.info(`Adding route rule for ${ruleTarget(request)} to context ${context.id}`);
+    return addRouteRule(context.c, undefined, context.routeRules, request);
+}
+
+export async function addPageRoute(
+    request: pb.Request_RouteRule,
+    state: PlaywrightState,
+): Promise<pb.Response_RouteRuleId> {
+    const context = state.activeBrowser?.context;
+    const page = state.activeBrowser?.page;
+    exists(context, 'Tried to add a route rule, but no context was open.');
+    exists(page, 'Tried to add a route rule, but no page was open.');
+    logger.info(`Adding route rule for ${ruleTarget(request)} to page ${page.id}`);
+    return addRouteRule(page.p, page.p, context.routeRules, request);
+}
+
+async function endRule(rule: RouteRule): Promise<void> {
+    try {
+        await rule.disposable?.dispose();
+    } catch (error) {
+        if (!isTargetClosed(error)) throw error;
+    }
+    await Promise.allSettled(rule.inFlight);
+}
+
+export async function removeRouteRule(
+    request: pb.Request_RouteRuleId,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    for (const browser of state.browserStack) {
+        for (const context of browser.contextStack) {
+            const rule = context.routeRules.take(request.id);
+            if (rule) {
+                await endRule(rule);
+                return emptyWithLog(`Removed route rule ${request.id}.`);
+            }
+        }
+    }
+    return emptyWithLog(`No route rule ${request.id}: it was removed, used up, or its context or page closed.`);
+}
+
+export async function removeAllRouteRules(
+    _request: pb.Request_Empty,
+    state: PlaywrightState,
+): Promise<pb.Response_Empty> {
+    const context = state.activeBrowser?.context;
+    if (context === undefined) return emptyWithLog('No context open, no route rules to remove.');
+    const rules = context.routeRules.takeAll();
+    await Promise.all(rules.map(endRule));
+    const pageRules = rules.filter((rule) => rule.page !== undefined).length;
+    return emptyWithLog(
+        `Removed ${rules.length - pageRules} Context and ${pageRules} Page route rules from context ${context.id}.`,
+    );
+}
