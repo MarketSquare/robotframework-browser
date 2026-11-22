@@ -63,7 +63,7 @@ from Browser.utils import (
     BrowserInfo, PageLoadStates,ViewportDimensions, ServiceWorkersPermissions,
     ReduceMotion, RecordVideo, RecordHar, Proxy, Permission, HttpCredentials,
     GeoLocation, ForcedColors, ColorScheme, ClientCertificate, HighlightMode, ScreenshotReturnType,
-    Scale, ScreenshotFileTypes, BoundingBox, ReducedMotion, ReloadPages, ContextOrPage, Media, PdfMarging,
+    Scale, ScreenshotFileTypes, BoundingBox, ReducedMotion, ReloadPages, ContextOrPage, AbortErrorCode, Media, PdfMarging,
     PdfFormat, CoverageType, RequestMethod, ElementState, ScrollPosition,
     SelectAttribute, SelectOptions, ConditionInputs, FileUploadBuffer, SelectAttribute, SelectorGenerator
 )

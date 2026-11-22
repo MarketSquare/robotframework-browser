@@ -381,6 +381,22 @@ message Request {
     optional string arg = 2;
   }
 
+  message RouteAbort {
+    optional string errorCode = 1;
+  }
+
+  message RouteRule {
+    string url = 1;
+    optional int32 times = 2;
+    oneof action {
+      RouteAbort abort = 10;
+    }
+  }
+
+  message RouteRuleId {
+    string id = 1;
+  }
+
   message ExtraHttpHeaders {
     map<string, string> headers = 1;
   }
@@ -504,6 +520,10 @@ message Types {
 }
 
 message Response {
+  message RouteRuleId {
+    string id = 1;
+  }
+
   message Empty {
     string log = 1;
   }
@@ -671,6 +691,14 @@ service  Playwright {
   rpc AddContextInitScript(Request.InitScript) returns (Response.Empty);
   /* Adds an init script to the active page: page.addInitScript */
   rpc AddPageInitScript(Request.InitScript) returns (Response.Empty);
+  /* Adds a route rule to the active context: browserContext.route */
+  rpc AddContextRoute(Request.RouteRule) returns (Response.RouteRuleId);
+  /* Adds a route rule to the active page: page.route */
+  rpc AddPageRoute(Request.RouteRule) returns (Response.RouteRuleId);
+  /* Remove Route Rule: disposes one route rule and waits for its running handler calls */
+  rpc RemoveRouteRule(Request.RouteRuleId) returns (Response.Empty);
+  /* Remove All Route Rules: disposes the library's route rules of the active context and its pages */
+  rpc RemoveAllRouteRules(Request.Empty) returns (Response.Empty);
   /* Highlights elements matching selector for duration */
   rpc HighlightElements(Request.ElementSelectorWithDuration) returns (Response.Int);
   /* Download url content */

@@ -2132,6 +2132,47 @@ class ContextOrPage(Enum):
     Page = auto()
 
 
+class AbortErrorCode(Enum):
+    """The network error that `Abort Requests` makes an aborted request fail with.
+
+    The members are Playwright's
+    [https://playwright.dev/docs/api/class-route#route-abort|error codes]. The page sees
+    the request fail with that network error, for example ``net::ERR_TIMED_OUT`` in
+    Chromium for ``timedout``. Firefox and WebKit report most codes as one generic failure.
+
+    - ``aborted``: The operation was aborted, by the user or by the page.
+    - ``accessdenied``: Permission to access a resource, other than the network, was denied.
+    - ``addressunreachable``: The IP address is unreachable.
+    - ``blockedbyclient``: The client chose to block the request.
+    - ``blockedbyresponse``: The request failed because the response came with requirements
+      that were not met, for example ``X-Frame-Options`` or ``Content-Security-Policy``.
+    - ``connectionaborted``: The connection timed out because no ACK was received for data sent.
+    - ``connectionclosed``: The connection was closed.
+    - ``connectionfailed``: The connection attempt failed.
+    - ``connectionrefused``: The connection attempt was refused.
+    - ``connectionreset``: The connection was reset.
+    - ``internetdisconnected``: The Internet connection was lost.
+    - ``namenotresolved``: The host name could not be resolved.
+    - ``timedout``: The operation timed out.
+    - ``failed``: A generic failure. The default.
+    """
+
+    aborted = auto()
+    accessdenied = auto()
+    addressunreachable = auto()
+    blockedbyclient = auto()
+    blockedbyresponse = auto()
+    connectionaborted = auto()
+    connectionclosed = auto()
+    connectionfailed = auto()
+    connectionrefused = auto()
+    connectionreset = auto()
+    internetdisconnected = auto()
+    namenotresolved = auto()
+    timedout = auto()
+    failed = auto()
+
+
 class ReloadPages(Enum):
     """Defines which pages `Set Storage State` reloads while it restores the state.
 

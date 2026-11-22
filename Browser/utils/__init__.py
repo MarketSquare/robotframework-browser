@@ -42,6 +42,7 @@ from .data_types import (
     HighLightElement,
     HighlightMode,
     ContextOrPage,
+    AbortErrorCode,
     HttpCredentials,
     InstallableBrowser,
     InstallationOptions,

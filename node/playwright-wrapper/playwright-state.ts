@@ -97,6 +97,7 @@ import {
     parseRegExpOrKeepStringOrThrow,
     stringResponse,
 } from './response-util';
+import { RouteRules } from './route-rules';
 import { TraceGroups } from './trace-groups';
 
 function lastItem<T>(array: T[]): T | undefined {
@@ -333,7 +334,9 @@ async function _createIndexedContext(
         pageStack: [] as IndexedPage[],
         options: options,
         tracer: new ContextTracer(contextId, context.tracing),
+        routeRules: new RouteRules(),
     };
+    context.on('close', () => indexedContext.routeRules.clear());
     if (traceFile) {
         logger.info(`Tracing enabled with: ${JSON.stringify(CONTEXT_TRACE_OPTIONS)}`);
         await indexedContext.tracer.start(CONTEXT_TRACE_OPTIONS, contextTraceFile(traceFile, contextId));
@@ -405,6 +408,7 @@ async function _newPage(context: IndexedContext, page: Page | undefined = undefi
     const newPage = page === undefined ? await context.c.newPage() : page;
     const contextPage = indexedPage(newPage);
     newPage.on('close', () => {
+        context.routeRules.dropPage(newPage);
         const oldPageStackLength = context.pageStack.length;
         const filteredPageStack = context.pageStack.filter((page: IndexedPage) => page.p != contextPage.p);
 
@@ -706,6 +710,7 @@ type IndexedContext = {
     id: Uuid;
     tracer: ContextTracer;
     pageStack: IndexedPage[];
+    routeRules: RouteRules;
     options?: Record<string, unknown>;
     // A restore which timed out keeps running, see setStorageState.
     storageStateRestorePending?: boolean;

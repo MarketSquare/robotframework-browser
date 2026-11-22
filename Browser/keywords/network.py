@@ -24,8 +24,10 @@ from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
+    AbortErrorCode,
     CapturedRequest,
     CapturedResponse,
+    ContextOrPage,
     DotDict,
     JsonDotDict,
     keyword,
@@ -526,3 +528,108 @@ class Network(LibraryComponent):
                 )
             )
             logger.debug(response.log)
+
+    @keyword(tags=("Route", "Setter"))
+    def abort_requests(
+        self,
+        matcher: str,
+        *,
+        error_code: AbortErrorCode = AbortErrorCode.failed,
+        times: int | None = None,
+        on: ContextOrPage = ContextOrPage.Context,
+    ) -> str:
+        """Adds a route rule that makes every request matching ``matcher`` fail.
+
+        *Arguments:*
+          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
+                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``error_code``: The network error the request fails with, see `AbortErrorCode`.
+          - ``times``: How many matching requests the rule aborts before it ends. ``None``
+                (default) aborts every matching request until the rule is removed. Must be 1
+                or more.
+          - ``on``: Where the rule is added, see `ContextOrPage`. ``Context`` (default) for
+                every page of the active context, also pages opened later, ``Page`` for the
+                active page only: the rule stays on that page and does not follow
+                `Switch Page`. Fails when no context or page is open.
+
+        Returns the rule id, to give to `Remove Route Rule`.
+
+        A rule ends when its context or page closes, when it is removed with
+        `Remove Route Rule` or `Remove All Route Rules`, or when it has used up its ``times``.
+        It does not end with the test or suite.
+
+        A request that a service worker answers never reaches a route rule; open the context
+        with ``serviceWorkers=block`` in `New Context` to route those requests too. Each
+        aborted request is logged only in ``playwright-log.txt``.
+
+        Example, an outage of two requests and then recovery:
+        | `Abort Requests`    **/api/orders    times=2
+        | `Click`    id=reload-orders    # fails
+        | `Click`    id=reload-orders    # fails
+        | `Click`    id=reload-orders    # reaches the server
+        | `Get Text`    id=orders-status    ==    loaded
+
+        See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
+        more.
+        """
+        if times is not None and times < 1:
+            raise ValueError(f"times must be 1 or more, got {times}.")
+        request = Request().RouteRule(
+            url=matcher,
+            times=times,
+            abort=Request().RouteAbort(errorCode=error_code.name),
+        )
+        with self.playwright.grpc_channel() as stub:
+            if on == ContextOrPage.Page:
+                response = stub.AddPageRoute(request)
+            else:
+                response = stub.AddContextRoute(request)
+        logger.info(
+            f"Added route rule {response.id}: abort {matcher} with {error_code.name}, "
+            f"times={times}, on={on.name}."
+        )
+        return response.id
+
+    @keyword(tags=("Route", "Setter"))
+    def remove_route_rule(self, rule_id: str):
+        """Removes the route rule with ``rule_id``.
+
+        *Arguments:*
+          - ``rule_id``: The id that `Abort Requests` returned. The rule is found in any
+                context, so a Page rule can be removed while another page is active.
+
+        An unknown or already ended id, or no open context, is logged and the keyword passes.
+        When the keyword returns, the rule affects no request: it waits for the rule's running
+        handlers to finish.
+
+        Example:
+        | ${rule} =    `Abort Requests`    **/api/orders
+        | `Click`    id=reload-orders    # fails
+        | `Remove Route Rule`    ${rule}
+        | `Click`    id=reload-orders    # reaches the server
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RemoveRouteRule(Request().RouteRuleId(id=rule_id))
+        logger.info(response.log)
+
+    @keyword(tags=("Route", "Setter"))
+    def remove_all_route_rules(self):
+        """Removes the route rules of the active context and of every page in it.
+
+        Only rules added by this library are removed, routes that a plugin or a JavaScript
+        keyword added with ``page.route`` stay. Like `Remove Route Rule`, the keyword waits for
+        running handlers to finish. It logs how many Context and Page rules it removed. With no
+        rules, or no open context, it logs and passes, so it is safe in a teardown.
+
+        Only the active context is covered. For several contexts, switch to each one:
+        | FOR    ${context}    IN    @{contexts}
+        |     `Switch Context`    ${context}
+        |     `Remove All Route Rules`
+        | END
+
+        Example:
+        | [Teardown]    `Remove All Route Rules`
+        """
+        with self.playwright.grpc_channel() as stub:
+            response = stub.RemoveAllRouteRules(Request().Empty())
+        logger.info(response.log)

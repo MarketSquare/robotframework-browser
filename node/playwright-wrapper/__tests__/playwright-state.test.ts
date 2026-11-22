@@ -30,6 +30,7 @@ import {
     stopTracing,
     switchPage,
 } from '../playwright-state';
+import { RouteRules } from '../route-rules';
 
 function idleTracer(contextId = 'context=1') {
     return new ContextTracer(contextId, {} as any);
@@ -280,6 +281,7 @@ describe('BrowserState', () => {
             id: 'context=1',
             tracer: await tracerSavingTo('/tmp/trace.zip', tracingStop),
             pageStack: [],
+            routeRules: new RouteRules(),
             options: {},
         });
 
