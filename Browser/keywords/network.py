@@ -16,6 +16,7 @@ import base64
 import contextlib
 import json
 import mimetypes
+from collections.abc import Mapping
 from datetime import timedelta
 from enum import Enum
 from os import PathLike
@@ -358,19 +359,21 @@ def _multipart_field(name: str, value: str | MultipartFile) -> Request.Multipart
     )
 
 
-def _multipart_fields(multipart: MultipartFields) -> list[Request.MultipartField]:
+def _multipart_fields(
+    multipart: Mapping[str, str | MultipartFile],
+) -> list[Request.MultipartField]:
     return [_multipart_field(name, value) for name, value in multipart.items()]
 
 
-def _form_fields(fields: FormFields) -> list[Request.FormField]:
+def _form_fields(fields: Mapping[str, str]) -> list[Request.FormField]:
     return [Request.FormField(name=name, value=value) for name, value in fields.items()]
 
 
-def _checked_form(form: Any) -> FormFields | None:
+def _checked_form(form: Any) -> dict[str, str] | None:
     return None if form is None else FormFields.from_dict(form)
 
 
-def _checked_multipart(multipart: Any) -> MultipartFields | None:
+def _checked_multipart(multipart: Any) -> dict[str, str | MultipartFile] | None:
     return None if multipart is None else MultipartFields.from_dict(multipart)
 
 
@@ -385,7 +388,9 @@ def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
         request.dataJson = json.dumps(data)
 
 
-def _set_api_params(request: Request.ApiRequest, params: FormFields | str) -> None:
+def _set_api_params(
+    request: Request.ApiRequest, params: Mapping[str, str] | str
+) -> None:
     if isinstance(params, str):
         request.encodedParams = params
     else:
@@ -395,8 +400,8 @@ def _set_api_params(request: Request.ApiRequest, params: FormFields | str) -> No
 
 def _set_api_fields(
     request: Request.ApiRequest,
-    form: FormFields | None,
-    multipart: MultipartFields | None,
+    form: Mapping[str, str] | None,
+    multipart: Mapping[str, str | MultipartFile] | None,
 ) -> None:
     if form is not None:
         request.form.SetInParent()
@@ -472,10 +477,10 @@ class Network(LibraryComponent):
                 browser sends a ``str`` body as ``text/plain;charset=UTF-8``, and ``bytes``
                 without a ``Content-Type``.
           - ``headers``: A dictionary of request headers.
-          - ``form``: `FormFields`, sent URL-encoded as
+          - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``, the way the browser encodes a
                 ``URLSearchParams`` body.
-          - ``multipart``: `MultipartFields`, text fields and files, sent as
+          - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
                 ``multipart/form-data`` the way the browser encodes a ``FormData`` body, in
                 the order given. Do not set a ``Content-Type`` in ``headers``: the browser then leaves out the
                 boundary of the parts, and the server cannot read the body. ``body``,
@@ -516,11 +521,11 @@ class Network(LibraryComponent):
         | Should Be Equal    ${response.status}            ${200}
         | Should Be Equal    ${response.json.some_field}   some value
         |
-        | &{fields} =        Create Dictionary    username=demo    password=mode
+        | VAR    &{fields}    username=demo    password=mode
         | ${response} =      `HTTP`    /login    POST    form=${fields}
         |
-        | &{file} =          Create Dictionary    path=${CURDIR}/avatar.png
-        | &{fields} =        Create Dictionary    description=Profile picture    file=${file}
+        | VAR    &{file}    path=${CURDIR}/avatar.png
+        | VAR    &{fields}    description=Profile picture    file=${file}
         | ${response} =      `HTTP`    /api/avatar    POST    multipart=${fields}    timeout=30s
         |
         | ${response} =      `HTTP`    /logo.png
@@ -566,7 +571,7 @@ class Network(LibraryComponent):
             url=url,
             method=method_name,
             timeout=self.get_timeout(timeout),
-            multipart=_multipart_fields(checked_multipart or MultipartFields()),
+            multipart=_multipart_fields(checked_multipart or {}),
         )
         _set_given(
             request,
@@ -580,7 +585,7 @@ class Network(LibraryComponent):
             keepalive=keepalive,
             priority=priority,
         )
-        request.form.extend(_form_fields(checked_form or FormFields()))
+        request.form.extend(_form_fields(checked_form or {}))
         if body and method_name not in METHODS_WITHOUT_BODY:
             if isinstance(body, bytes):
                 request.bodyBytes = body
@@ -642,8 +647,9 @@ class Network(LibraryComponent):
           - ``method``: The HTTP method. Defaults to ``GET``.
           - ``headers``: A dictionary of request headers. They override the context's
                 ``extraHTTPHeaders`` with the same name.
-          - ``params``: `QueryParams` added to the ``url``. The query of the ``url`` is
-                kept.
+          - ``params``: `QueryParams` (a dictionary or a string) added to the query of the
+                ``url``. Characters such as ``&`` in a string keep their meaning in a query,
+                see `QueryParams`.
           - ``data``: The request body.
                 - A dictionary, a list, a number or a boolean is sent as JSON, with the
                   ``Content-Type`` ``application/json``.
@@ -659,9 +665,9 @@ class Network(LibraryComponent):
                 - To send JSON written in the test data, give a dictionary, e.g.
                   ``data=${{ {"name": "robot"} }}``, or set the ``Content-Type`` in
                   ``headers``.
-          - ``form``: `FormFields`, sent URL-encoded as
+          - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``.
-          - ``multipart``: `MultipartFields`, text fields and files, sent as
+          - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
                 ``multipart/form-data``. ``data``, ``form`` and ``multipart`` exclude each other, also when ``form``
                 or ``multipart`` is an empty dictionary.
           - ``timeout``: How long to wait for the whole response, body included. Defaults to
@@ -693,16 +699,16 @@ class Network(LibraryComponent):
         | `New Context`    baseURL=https://example.com
         | `New Page`    /login
         | # ... log in on the page ...
-        | &{user} =    Create Dictionary    name=robot
+        | VAR    &{user}    name=robot
         | ${response} =    `Send API Request`    /api/users    POST    data=${user}    failOnStatusCode=True
         | Should Be Equal    ${response.status}    ${201}
         | Should Be Equal    ${response.json.name}    robot
         |
-        | &{params} =    Create Dictionary    q=robot    page=${2}
+        | VAR    &{params}    q=robot    page=${2}
         | ${response} =    `Send API Request`    /api/search    params=${params}
         |
-        | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
-        | &{fields} =    Create Dictionary    description=Profile picture    file=${file}
+        | VAR    &{file}    path=${CURDIR}/avatar.png
+        | VAR    &{fields}    description=Profile picture    file=${file}
         | ${response} =    `Send API Request`    /api/avatar    POST    multipart=${fields}
         """
         request = Request().ApiRequest(
@@ -714,7 +720,7 @@ class Network(LibraryComponent):
         if headers is not None:
             request.headers = json.dumps(headers)
         if params is not None:
-            _set_api_params(request, QueryParams.from_value(cast(dict | str, params)))
+            _set_api_params(request, QueryParams.from_value(cast(Any, params)))
         _set_api_data(request, data)
         _set_given(
             request,

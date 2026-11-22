@@ -13,7 +13,7 @@ def test_form_error_names_the_kind_of_value():
 def test_form_values_become_text_with_booleans_like_javascript():
     fields = FormFields.from_dict({"q": "robot", "n": 2, "x": 1.5, "all": True})
     assert fields == {"q": "robot", "n": "2", "x": "1.5", "all": "true"}
-    assert isinstance(fields, FormFields)
+    assert type(fields) is dict
 
 
 @pytest.mark.parametrize("value", [{"a": 1}, [1], None, b"raw"])
@@ -34,7 +34,7 @@ def test_query_params_keep_a_string_as_given():
 def test_query_params_from_a_dictionary_are_form_fields():
     params = QueryParams.from_value({"page": 2})
     assert params == {"page": "2"}
-    assert isinstance(params, FormFields)
+    assert type(params) is dict
 
 
 def test_query_params_reject_a_nested_value():
@@ -93,3 +93,27 @@ def test_multipart_rejects_a_list_value():
 def test_multipart_fields_are_checked_again_without_change():
     fields = MultipartFields.from_dict({"file": {"path": "a"}, "n": 1})
     assert MultipartFields.from_dict(fields) == fields
+
+
+@pytest.mark.parametrize(
+    ("convert", "message"),
+    [
+        (FormFields.from_dict, "FormFields must be a dictionary, got a string"),
+        (
+            MultipartFields.from_dict,
+            "MultipartFields must be a dictionary, got a string",
+        ),
+        (
+            QueryParams.from_value,
+            "QueryParams must be a dictionary or a string, got a list",
+        ),
+    ],
+)
+def test_a_value_of_the_wrong_kind_fails(convert, message):
+    with pytest.raises(ValueError, match=message):
+        convert("q=1" if "QueryParams" not in message else [1])
+
+
+def test_types_are_not_dictionaries_so_python_callers_get_no_builtin_conversion():
+    assert not issubclass(FormFields, dict)
+    assert not issubclass(MultipartFields, dict)

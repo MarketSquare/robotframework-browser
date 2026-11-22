@@ -85,16 +85,16 @@ with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
     for line in parse_kw_stubs():
         stub_file.write(line)
 
-# Custom converter types accept plain values from Python too (ADR 0006: widen only here).
+# Custom converter types only document and check; Python callers pass plain values
+# (ADR 0006: widen only here).
 # The keywords annotate them without "| None", so that Robot Framework reports the
 # converter's error, see Browser/keywords/network.py.
 FIELD_VALUE = "str | int | float | bool"
 WIDENED = {
-    "FormFields = None": f"FormFields | Mapping[str, {FIELD_VALUE}] | None = None",
+    "FormFields = None": f"Mapping[str, {FIELD_VALUE}] | None = None",
     "QueryParams = None": f"Mapping[str, {FIELD_VALUE}] | str | None = None",
     "MultipartFields = None": (
-        f"MultipartFields | Mapping[str, {FIELD_VALUE} | MultipartFile | Mapping[str, Any]]"
-        " | None = None"
+        f"Mapping[str, {FIELD_VALUE} | MultipartFile | Mapping[str, Any]] | None = None"
     ),
 }
 

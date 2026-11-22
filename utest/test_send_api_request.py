@@ -218,6 +218,8 @@ def test_robot_keeps_a_number_or_boolean_as_data(value):
         ("params", {"q": [1]}, "'q' must be"),
         ("form", {"q": {"a": 1}}, "'q' must be"),
         ("multipart", {"f": {"path": "a", "mimetype": "x"}}, "unknown key"),
+        ("form", "{'q': 1}", "FormFields must be a dictionary"),
+        ("multipart", "{'q': 1}", "MultipartFields must be a dictionary"),
     ],
 )
 def test_python_caller_gets_the_same_checks(browser, stub, option, value, message):

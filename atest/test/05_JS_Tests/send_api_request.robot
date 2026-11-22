@@ -79,6 +79,15 @@ Params From A Dictionary Are Added To The Query
     ${response} =    Send API Request    /api/echo/params?page=2    params=${params}
     Should Be Equal    ${response.json.query}    ${{ {'page': '2', 'q': 'a&b c', 'n': '1', 'flag': 'true'} }}
 
+Params As A String Are Encoded Except The Characters That Structure A Query
+    ${response} =    Send API Request    /api/echo/params    params=q=rock roll&n=ä#1&x=%26
+    Should Be Equal    ${response.json.query}    ${{ {'q': 'rock roll', 'n': 'ä#1', 'x': '&'} }}
+
+Params From A Dictionary Encode Every Character
+    VAR    &{params}    q=rock & roll    sum=1+1=2
+    ${response} =    Send API Request    /api/echo/params    params=${params}
+    Should Be Equal    ${response.json.query}    ${{ {'q': 'rock & roll', 'sum': '1+1=2'} }}
+
 Params As A String Are Appended As Given
     ${response} =    Send API Request    /api/echo/params?page=2    params=q=a%20b&n=1
     Should Be Equal    ${response.json.query}    ${{ {'page': '2', 'q': 'a b', 'n': '1'} }}

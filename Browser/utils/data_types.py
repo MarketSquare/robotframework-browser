@@ -1168,6 +1168,8 @@ def _kind_of(value: Any) -> str:
         return "a list"
     if isinstance(value, bytes | bytearray):
         return "bytes"
+    if isinstance(value, str):
+        return "a string"
     if value is None:
         return "None"
     return type(value).__name__
@@ -1234,42 +1236,74 @@ def _multipart_file_content(name: str, path: Any, buffer: Any) -> MultipartFile:
     )
 
 
-class FormFields(dict):
-    """Form fields, a dictionary of field names and values.
+def _require_mapping(type_name: str, value: Any) -> Mapping:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{type_name} must be a dictionary, got {_kind_of(value)}.")
+    return value
+
+
+class FormFields:
+    """Form fields: a dictionary of field names and values, used by `HTTP` and `Send API Request`.
 
     A value is a string, a number or a boolean. Numbers are sent as their text and a boolean
     as ``true`` or ``false``, the way JavaScript writes them. Any other value, such as a
     nested dictionary or a list, fails before the request is sent.
 
-    | &{fields} =    Create Dictionary    username=demo    remember=${True}
-    """
+    Names and values are encoded completely, so they can hold any character: a space, ``&``,
+    ``=``, ``+`` or ``%`` arrives at the server as written.
 
-    @classmethod
-    def from_dict(cls, value: dict) -> "FormFields":
-        return cls({name: _form_text(name, item) for name, item in value.items()})
-
-
-class QueryParams:
-    """Query parameters, a dictionary or a string.
-
-    A dictionary is URL-encoded and checked like `FormFields`: a value is a string, a number
-    or a boolean. A string is used as given, so it must already be URL-encoded, e.g.
-    ``q=a%20b&page=2``.
-
-    | &{params} =    Create Dictionary    q=robot    page=${2}
+    | VAR    &{fields}    username=demo    password=a&b=c    remember=${True}
+    | ${response} =    `HTTP`    /login    POST    form=${fields}
+    | # sent as: username=demo&password=a%26b%3Dc&remember=true
     """
 
     @staticmethod
-    def from_value(value: dict | str) -> "FormFields | str":
+    def from_dict(value: dict) -> dict[str, str]:
+        fields = _require_mapping("FormFields", value)
+        return {name: _form_text(name, item) for name, item in fields.items()}
+
+
+class QueryParams:
+    """Query parameters added to the URL of `Send API Request`: a dictionary or a string.
+
+    The parameters are appended to the query that the URL already has.
+
+    *A dictionary* of parameter names and values is checked like `FormFields`: a value is
+    a string, a number or a boolean. Names and values are encoded completely, so they can
+    hold any character, also ``&``, ``=``, ``+`` and ``%``. Prefer a dictionary unless the
+    query is already at hand as text.
+
+    | VAR    &{params}    q=rock & roll    page=${2}    exact=${True}
+    | ${response} =    `Send API Request`    /api/search?lang=en    params=${params}
+    | # sends /api/search?lang=en&q=rock+%26+roll&page=2&exact=true
+
+    *A string* is appended as written. Characters that a URL cannot hold, such as a space,
+    an umlaut or ``#``, are encoded on the way. The characters that structure a query keep
+    that meaning: ``&`` separates parameters, ``=`` separates a name from its value, ``+``
+    stands for a space and ``%`` starts an encoded character. Write them as ``%26``,
+    ``%3D``, ``%2B`` and ``%25`` to send them as text.
+
+    | ${response} =    `Send API Request`    /api/search    params=q=rock roll&page=2
+    | # the server reads q = "rock roll" and page = "2"
+    | ${response} =    `Send API Request`    /api/search    params=q=rock %26 roll
+    | # the server reads q = "rock & roll"; with a plain & it would read q = "rock " and " roll" = ""
+    """
+
+    @staticmethod
+    def from_value(value: dict | str) -> dict[str, str] | str:
         if isinstance(value, str):
             return value
+        if not isinstance(value, Mapping):
+            raise ValueError(
+                f"QueryParams must be a dictionary or a string, got {_kind_of(value)}."
+            )
         return FormFields.from_dict(value)
 
 
-class MultipartFields(dict):
-    """Fields of a ``multipart/form-data`` body, a dictionary of field names and values.
+class MultipartFields:
+    """Fields of a ``multipart/form-data`` body, used by `HTTP` and `Send API Request`.
 
-    A value is a text field or a file:
+    A dictionary of field names and values. A value is a text field or a file:
     - A string, a number or a boolean is a text field, sent like in `FormFields`.
     - A dictionary is a file, with either ``path`` or ``buffer``:
 
@@ -1283,16 +1317,23 @@ class MultipartFields(dict):
     another key such as ``mimetype``, or a file with both or none of ``path`` and
     ``buffer``, fails before the request is sent. So does a string that only looks like a
     dictionary given for the whole argument; create the dictionaries with
-    ``Create Dictionary`` or ``${{ {...} }}``.
+    ``VAR`` or ``${{ {...} }}``.
 
-    | &{file} =      Create Dictionary    path=${CURDIR}/avatar.png
-    | &{notes} =     Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
-    | &{fields} =    Create Dictionary    description=Profile picture    avatar=${file}    notes=${notes}
+    A file from disk, a file made from text and a text field:
+    | VAR    &{avatar}    path=${CURDIR}/avatar.png
+    | VAR    &{notes}    name=notes.txt    mimeType=text/plain    buffer=Hello
+    | VAR    &{fields}    description=Profile picture    avatar=${avatar}    notes=${notes}
+    | ${response} =    `Send API Request`    /api/profile    POST    multipart=${fields}
+
+    The same with inline Python dictionaries:
+    | ${response} =    `HTTP`    /api/profile    POST
+    | ...    multipart=${{ {'description': 'Profile picture', 'avatar': {'path': 'avatar.png'}} }}
     """
 
-    @classmethod
-    def from_dict(cls, value: dict) -> "MultipartFields":
-        return cls({name: _multipart_value(name, item) for name, item in value.items()})
+    @staticmethod
+    def from_dict(value: dict) -> dict[str, str | MultipartFile]:
+        fields = _require_mapping("MultipartFields", value)
+        return {name: _multipart_value(name, item) for name, item in fields.items()}
 
 
 def _multipart_value(name: str, value: Any) -> str | MultipartFile:
