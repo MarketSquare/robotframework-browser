@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as fs from 'fs';
 import * as path from 'path';
 import { Page, Request, Response as PlaywrightResponse } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,34 +25,152 @@ import { LifecycleState, navigationOptions } from './navigation-options';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
-export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json> {
-    const opts: { [k: string]: any } = {
-        method: request.method,
-        url: request.url,
-        headers: JSON.parse(request.headers),
-    };
-    if (opts.method != 'GET') {
-        opts.body = request.body;
+type PageMultipartField =
+    { name: string; value: string } | { name: string; fileName?: string; mimeType?: string; buffer: Uint8Array };
+
+interface PageFetchArguments {
+    url: string;
+    init: Record<string, unknown>;
+    text?: string;
+    bytes?: Uint8Array;
+    form?: [string, string][];
+    multipart?: PageMultipartField[];
+    timeout: number;
+}
+
+interface PageFetchResult {
+    timedOut: boolean;
+    status: number;
+    statusText: string;
+    url: string;
+    ok: boolean;
+    redirected: boolean;
+    type: string;
+    headers: Record<string, string>;
+    body: Uint8Array;
+}
+
+async function pageMultipartField(field: pb.Request_MultipartField): Promise<PageMultipartField> {
+    const content = field.path !== undefined ? await fs.promises.readFile(field.path) : field.buffer;
+    if (content === undefined) {
+        return { name: field.name, value: field.value ?? '' };
     }
-    const response = await page.evaluate(({ url, method, body, headers }) => {
-        return fetch(url, { method, body, headers }).then((data: Response) => {
-            return data.text().then((body) => {
-                const headers: { [k: string]: any } = {};
-                data.headers.forEach((value, name) => (headers[name] = value));
-                return {
-                    status: data.status,
-                    body: body,
-                    headers: JSON.stringify(headers),
-                    type: data.type,
-                    statusText: data.statusText,
-                    url: data.url,
-                    ok: data.ok,
-                    redirected: data.redirected,
-                };
-            });
-        });
-    }, opts);
-    return jsonResponse(JSON.stringify(response), 'Request performed successfully.');
+    return { name: field.name, fileName: field.fileName, mimeType: field.mimeType, buffer: new Uint8Array(content) };
+}
+
+function requestInit(request: pb.Request_HttpRequest): Record<string, unknown> {
+    const init: Record<string, unknown> = { method: request.method, headers: JSON.parse(request.headers) };
+    const options = {
+        credentials: request.credentials,
+        redirect: request.redirect,
+        mode: request.mode,
+        cache: request.cache,
+        referrer: request.referrer,
+        referrerPolicy: request.referrerPolicy,
+        integrity: request.integrity,
+        keepalive: request.keepalive,
+        priority: request.priority,
+    };
+    for (const [name, value] of Object.entries(options)) {
+        if (value !== undefined) init[name] = value;
+    }
+    return init;
+}
+
+/**
+ * Runs in the page through `page.evaluate`, so it uses only the browser's fetch API and
+ * nothing from this module's scope.
+ */
+export async function pageFetch({
+    url,
+    init,
+    text,
+    bytes,
+    form,
+    multipart,
+    timeout,
+}: PageFetchArguments): Promise<PageFetchResult> {
+    const options: Record<string, unknown> = { ...init };
+    if (text !== undefined) {
+        options.body = text;
+    } else if (bytes !== undefined) {
+        options.body = bytes;
+    } else if (form !== undefined) {
+        options.body = new URLSearchParams(form);
+    } else if (multipart !== undefined) {
+        const formData = new FormData();
+        for (const field of multipart) {
+            if ('buffer' in field) {
+                formData.append(
+                    field.name,
+                    new Blob([new Uint8Array(field.buffer)], { type: field.mimeType }),
+                    field.fileName,
+                );
+            } else {
+                formData.append(field.name, field.value);
+            }
+        }
+        options.body = formData;
+    }
+    if (timeout > 0) {
+        options.signal = AbortSignal.timeout(timeout);
+    }
+    try {
+        const response = await fetch(url, options);
+        const body = new Uint8Array(await response.arrayBuffer());
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, name) => (headers[name] = value));
+        return {
+            timedOut: false,
+            status: response.status,
+            statusText: response.statusText,
+            url: response.url,
+            ok: response.ok,
+            redirected: response.redirected,
+            type: response.type,
+            headers,
+            body,
+        };
+    } catch (error) {
+        if (error instanceof DOMException && error.name === 'TimeoutError') {
+            return { timedOut: true } as PageFetchResult;
+        }
+        throw error;
+    }
+}
+
+export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json[]> {
+    const form =
+        request.form.length > 0 ? request.form.map((field): [string, string] => [field.name, field.value]) : undefined;
+    const multipart =
+        request.multipart.length > 0 ? await Promise.all(request.multipart.map(pageMultipartField)) : undefined;
+    const result = await page.evaluate(pageFetch, {
+        url: request.url,
+        init: requestInit(request),
+        text: request.body,
+        bytes: request.bodyBytes !== undefined ? new Uint8Array(request.bodyBytes) : undefined,
+        form,
+        multipart,
+        timeout: request.timeout,
+    });
+    if (result.timedOut) {
+        throw new Error(`Timeout ${request.timeout}ms exceeded while waiting for the response of ${request.url}.`);
+    }
+    const meta = {
+        status: result.status,
+        statusText: result.statusText,
+        ok: result.ok,
+        url: result.url,
+        headers: JSON.stringify(result.headers),
+        redirected: result.redirected,
+        type: result.type,
+    };
+    return capturedMessages({
+        meta,
+        log: 'Request performed successfully.',
+        postData: null,
+        body: Buffer.from(result.body),
+    });
 }
 
 export function deserializeUrlOrPredicate(

@@ -14,6 +14,7 @@
 import re
 from datetime import timedelta
 from enum import Enum, IntFlag, StrEnum, auto
+from pathlib import Path
 from types import UnionType
 from typing import Any, Dict, TypedDict, Union  # noqa: UP035
 
@@ -1146,6 +1147,106 @@ class CapturedRequest(TypedDict):
     frame: RequestFrame | None
 
 
+class MultipartFile(TypedDict, total=False):
+    """A file in the ``multipart`` argument of `HTTP`.
+
+    Give either ``path`` or ``buffer``. These four keys are the only ones, spelled as here.
+
+    | =Key= | =Description= |
+    | ``path`` | Path of the file to send. A relative path is relative to the working directory of the Robot Framework process. The file name and mime type default to the file's name and the type its extension suggests. |
+    | ``buffer`` | The file content as ``bytes``. A ``str`` is sent encoded as UTF-8. |
+    | ``name`` | The file name the server receives. Required with ``buffer``. |
+    | ``mimeType`` | The mime type of the file, e.g. ``image/png``. Defaults to ``application/octet-stream`` with ``buffer``. |
+
+    The file must be a real dictionary, created for example with ``Create Dictionary``
+    or ``${{ {...} }}``. A string that only looks like a dictionary is sent as a text
+    field. A dictionary with a key that is not in the table, such as ``mimetype``, cannot
+    become a ``MultipartFile`` either, and is also sent as a text field: its text.
+
+    | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
+    | &{file} =    Create Dictionary    name=notes.txt    mimeType=text/plain    buffer=Hello
+    """
+
+    path: Path
+    buffer: bytes | str
+    name: str
+    mimeType: str
+
+
+class HttpResponse(TypedDict):
+    """The response of `HTTP`, read from the response the page's ``fetch`` received.
+
+    The keys mirror the browser's
+    [https://developer.mozilla.org/en-US/docs/Web/API/Response|fetch Response]. The value is
+    a Robot Framework dictionary, so keys can be accessed as ``${response.status}`` or
+    ``${response}[status]``.
+
+    | =Key= | =Description= |
+    | ``status`` | The HTTP status code, e.g. ``200``. ``0`` for a response of type ``opaque`` or ``opaqueredirect``. |
+    | ``statusText`` | The status text, e.g. ``OK``. Empty over HTTP/2. |
+    | ``ok`` | ``True`` if ``status`` is in the range 200-299. |
+    | ``url`` | The final URL of the response, after redirects. |
+    | ``headers`` | Dictionary of the response headers the page can read, with lower-case names. The browser leaves out ``set-cookie``, joins repeated headers with ``, `` and, for a cross-origin response, shows only the headers CORS exposes. |
+    | ``redirected`` | ``True`` if the response is the result of a redirect. |
+    | ``type`` | ``basic`` for a same-origin response, ``cors`` for a cross-origin one, ``opaque`` for ``mode=no-cors`` and ``opaqueredirect`` for ``redirect=manual``. |
+    | ``body`` | Legacy. Parsed as JSON when the ``content-type`` is JSON, otherwise text. Prefer ``json``, ``text`` or ``bytes``. |
+    | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
+    | ``text`` | The response body decoded as UTF-8, like fetch's ``text()``. Invalid bytes become the replacement character U+FFFD. |
+    | ``json`` | The response body parsed as JSON regardless of the ``content-type``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
+
+    The keys ``status``, ``statusText``, ``ok``, ``url``, ``bytes``, ``text`` and ``json``
+    mean the same as in `CapturedResponse`, so a response of `HTTP` can be compared with
+    the one `Wait For Response` captures for the same request. Two keys differ: ``headers``
+    holds only what the page can read, while `CapturedResponse` sees every header but
+    security-related ones such as ``set-cookie``; and the legacy ``body`` of `HTTP` is parsed as JSON only with a JSON
+    ``content-type``, while that of `CapturedResponse` is parsed whenever it is valid
+    JSON.
+
+    = Example =
+
+    | {
+    |   "status": 200,
+    |   "statusText": "OK",
+    |   "ok": true,
+    |   "url": "https://example.com/api/user",
+    |   "headers": {
+    |     "content-type": "application/json; charset=utf-8",
+    |     "content-length": "33"
+    |   },
+    |   "redirected": false,
+    |   "type": "basic",
+    |   "body": {
+    |     "user": "demo",
+    |     "roles": [
+    |       "admin"
+    |     ]
+    |   },
+    |   "bytes": "eyJ1c2VyIjoiZGVtbyIsInJvbGVzIjpbImFkbWluIl19",
+    |   "text": "{\\"user\\":\\"demo\\",\\"roles\\":[\\"admin\\"]}",
+    |   "json": {
+    |     "user": "demo",
+    |     "roles": [
+    |       "admin"
+    |     ]
+    |   }
+    | }
+
+    ``bytes`` is shown as base64 text, the way ``json.dumps`` writes it.
+    """
+
+    status: int
+    statusText: str
+    ok: bool
+    url: str
+    headers: dict[str, str]
+    redirected: bool
+    type: str
+    body: Any
+    bytes: bytes
+    text: str
+    json: Any
+
+
 class CapturedResponse(TypedDict):
     """A response captured by `Wait For Response`.
 
@@ -1580,9 +1681,107 @@ class RequestMethod(Enum):
     HEAD = auto()
     DELETE = auto()
     GET = auto()
+    OPTIONS = auto()
     PATCH = auto()
     POST = auto()
     PUT = auto()
+
+
+FetchCredentials = Enum(
+    "FetchCredentials",
+    {"omit": "omit", "same-origin": "same-origin", "include": "include"},
+)
+FetchCredentials.__doc__ = """Whether `HTTP` sends cookies and HTTP authentication, the fetch ``credentials`` option.
+
+| = Value = | = Description = |
+| ``omit`` | Never sends them. |
+| ``same-origin`` | Sends them only to the page's own origin. The browser's default. |
+| ``include`` | Sends them to every origin, also cross-origin. The server must allow credentials with CORS. |
+
+See [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#credentials|MDN RequestInit credentials].
+"""
+
+FetchRedirect = Enum(
+    "FetchRedirect", {"follow": "follow", "error": "error", "manual": "manual"}
+)
+FetchRedirect.__doc__ = """How `HTTP` handles a redirect response, the fetch ``redirect`` option.
+
+| = Value = | = Description = |
+| ``follow`` | Follows the redirect. The browser's default. |
+| ``error`` | Fails on a redirect. |
+| ``manual`` | Returns the redirect itself as a response of type ``opaqueredirect`` with status ``0``; its headers and body cannot be read. |
+
+See [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#redirect|MDN RequestInit redirect].
+"""
+
+FetchMode = Enum(
+    "FetchMode", {"cors": "cors", "no-cors": "no-cors", "same-origin": "same-origin"}
+)
+FetchMode.__doc__ = """Which cross-origin requests `HTTP` allows, the fetch ``mode`` option.
+
+| = Value = | = Description = |
+| ``cors`` | Allows cross-origin requests under the CORS rules. The browser's default. |
+| ``no-cors`` | Sends a cross-origin request without CORS. The response is of type ``opaque``: status ``0``, no headers and an empty body. Only ``GET``, ``HEAD`` and ``POST`` with simple headers are allowed. |
+| ``same-origin`` | Fails on a cross-origin request. |
+
+See [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#mode|MDN RequestInit mode].
+"""
+
+FetchCache = Enum(
+    "FetchCache",
+    {
+        "default": "default",
+        "no-store": "no-store",
+        "reload": "reload",
+        "no-cache": "no-cache",
+        "force-cache": "force-cache",
+        "only-if-cached": "only-if-cached",
+    },
+)
+FetchCache.__doc__ = """How `HTTP` uses the browser's HTTP cache, the fetch ``cache`` option.
+
+| = Value = | = Description = |
+| ``default`` | Uses the cache by the normal HTTP rules. The browser's default. |
+| ``no-store`` | Ignores the cache and does not store the response. |
+| ``reload`` | Ignores the cache but stores the response. |
+| ``no-cache`` | Asks the server to revalidate a cached response. |
+| ``force-cache`` | Uses any cached response, even a stale one. |
+| ``only-if-cached`` | Uses only a cached response and fails without one. Requires ``mode=same-origin``. |
+
+See [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#cache|MDN RequestInit cache].
+"""
+
+ReferrerPolicy = Enum(
+    "ReferrerPolicy",
+    {
+        "no-referrer": "no-referrer",
+        "no-referrer-when-downgrade": "no-referrer-when-downgrade",
+        "same-origin": "same-origin",
+        "origin": "origin",
+        "strict-origin": "strict-origin",
+        "origin-when-cross-origin": "origin-when-cross-origin",
+        "strict-origin-when-cross-origin": "strict-origin-when-cross-origin",
+        "unsafe-url": "unsafe-url",
+    },
+)
+ReferrerPolicy.__doc__ = """How much of the referrer `HTTP` sends in the ``Referer`` header, the fetch ``referrerPolicy`` option.
+
+The browser's default is ``strict-origin-when-cross-origin``. See
+[https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy|MDN Referrer-Policy]
+for what each value sends.
+"""
+
+FetchPriority = Enum("FetchPriority", {"high": "high", "low": "low", "auto": "auto"})
+FetchPriority.__doc__ = """The priority of an `HTTP` request relative to the page's other requests, the fetch ``priority`` option.
+
+| = Value = | = Description = |
+| ``high`` | Higher than other requests of the same kind. |
+| ``low`` | Lower than other requests of the same kind. |
+| ``auto`` | The browser decides. The default. |
+
+Browsers that do not support it ignore it. See
+[https://developer.mozilla.org/en-US/docs/Web/API/RequestInit#priority|MDN RequestInit priority].
+"""
 
 
 class MouseButtonAction(Enum):

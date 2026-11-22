@@ -15,7 +15,11 @@
 import base64
 import contextlib
 import json
+import mimetypes
+from collections.abc import Mapping
 from datetime import timedelta
+from enum import Enum
+from pathlib import Path
 from typing import Any, cast
 from urllib.parse import parse_qsl
 
@@ -28,8 +32,15 @@ from ..utils import (
     CapturedRequest,
     CapturedResponse,
     ContextOrPage,
-    DotDict,
+    FetchCache,
+    FetchCredentials,
+    FetchMode,
+    FetchPriority,
+    FetchRedirect,
+    HttpResponse,
     JsonDotDict,
+    MultipartFile,
+    ReferrerPolicy,
     keyword,
     logger,
 )
@@ -37,6 +48,8 @@ from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
 
 
 def _get_headers(body: str, headers: dict):
+    if any(name.lower() == "content-type" for name in headers):
+        return headers
     try:
         json.loads(body)
         return {"Content-Type": "application/json", **headers}
@@ -57,15 +70,6 @@ def _json_or_none(text: str) -> Any:
         return _strict_json_loads(text)
     except ValueError:
         return None
-
-
-def _format_response(response: dict) -> dict:
-    _jsonize_content(response, "body")
-    if "request" in response:
-        request = response["request"]
-        _jsonize_content(request, "postData")
-    logger.info(response)
-    return response
 
 
 def _jsonize_content(data, bodykey):
@@ -199,69 +203,239 @@ def _log_response(response: dict) -> None:
     _trace_content("Request post data", response["request"]["postDataBuffer"])
 
 
+METHODS_WITHOUT_BODY = ("GET", "HEAD")
+
+
+def _form_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
+def _set_given(request: Request.HttpRequest, **values: Any) -> None:
+    for name, value in values.items():
+        if value is not None:
+            setattr(request, name, value.value if isinstance(value, Enum) else value)
+
+
+def _multipart_field(name: str, value: Any) -> Request.MultipartField:
+    if isinstance(value, Mapping):
+        return _multipart_file(name, value)
+    return Request.MultipartField(name=name, value=_form_value(value))
+
+
+def _multipart_file(name: str, file: Mapping[str, Any]) -> Request.MultipartField:
+    path, buffer = file.get("path"), file.get("buffer")
+    if (path is None) == (buffer is None):
+        raise ValueError(
+            f"Multipart file {name!r} needs either 'path' or 'buffer', not {'both' if path else 'neither'}."
+        )
+    if path is not None:
+        file_path = Path(path)
+        if not file_path.is_file():
+            raise FileNotFoundError(f"Multipart file {name!r}: no file at {file_path}.")
+        return Request.MultipartField(
+            name=name,
+            path=str(file_path.resolve()),
+            fileName=file.get("name") or file_path.name,
+            mimeType=file.get("mimeType")
+            or mimetypes.guess_type(file_path.name)[0]
+            or "application/octet-stream",
+        )
+    if not file.get("name"):
+        raise ValueError(f"Multipart file {name!r} with 'buffer' needs a 'name'.")
+    content = cast(str | bytes, buffer)
+    return Request.MultipartField(
+        name=name,
+        buffer=content.encode("utf-8") if isinstance(content, str) else bytes(content),
+        fileName=file["name"],
+        mimeType=file.get("mimeType") or "application/octet-stream",
+    )
+
+
+def _add_http_response_views(response: dict, body: bytes) -> None:
+    text = body.decode("utf-8", errors="replace")
+    response["body"] = text
+    _jsonize_content(response, "body")
+    response.update(bytes=body, text=text, json=_json_or_none(text))
+
+
 class Network(LibraryComponent):
     @keyword(tags=("HTTP",))
     def http(
         self,
         url: str,
         method: RequestMethod = RequestMethod.GET,
-        body: str | None = None,
+        body: str | bytes | None = None,
         headers: dict | None = None,
-    ) -> Any:
-        """Performs an HTTP request in the current browser context
+        *,
+        form: dict[str, str | int | float | bool] | None = None,
+        multipart: dict[str, MultipartFile | str | int | float | bool] | None = None,
+        credentials: FetchCredentials | None = None,
+        redirect: FetchRedirect | None = None,
+        mode: FetchMode | None = None,
+        cache: FetchCache | None = None,
+        referrer: str | None = None,
+        referrerPolicy: ReferrerPolicy | None = None,
+        integrity: str | None = None,
+        keepalive: bool | None = None,
+        priority: FetchPriority | None = None,
+        timeout: timedelta | None = None,
+    ) -> HttpResponse:
+        """Sends an HTTP request with the browser's ``fetch`` from the active page.
 
-        The request is sent with the browser's ``fetch`` from the currently active page,
-        so a relative ``url`` is resolved against the URL of that page.
+        The request is a request of the page itself: a relative ``url`` is resolved against
+        the URL of the page, the browser's CORS rules apply, the browser sends the cookies of
+        the context by the ``credentials`` rule, and `Wait For Request` and
+        `Wait For Response` see it. The browser does not let a page set some headers, such
+        as ``Cookie``, ``Host`` or ``Origin``, and drops them without an error.
+
+        The named-only arguments are the options of the browser's
+        [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit|fetch]. An argument
+        that is not given keeps the browser's default.
 
         *Arguments:*
-          - ``url``: The request url, e.g. ``/api/foo``.
-          - ``method``: The HTTP method for the request. Defaults to GET.
-          - ``body``: The request body. It is ignored for GET requests, because GET
-                requests cannot have a body. If the body can be parsed as JSON, the
-                ``Content-Type`` header for the request is automatically set to
-                ``application/json``, unless ``headers`` already contains that header.
-                Defaults to None.
-          - ``headers``: A dictionary of additional request headers. Defaults to None.
+          - ``url``: The request URL, e.g. ``/api/foo``.
+          - ``method``: The HTTP method. Defaults to ``GET``.
+          - ``body``: The request body, as ``str`` or ``bytes``. ``GET`` and ``HEAD``
+                cannot have a body: a ``str`` body is silently left out there, as it always
+                was, and a ``bytes`` body fails. When a ``str`` body can be parsed as JSON,
+                the ``Content-Type`` header is set to ``application/json``, unless
+                ``headers`` already has a ``Content-Type``, in any case. Otherwise the
+                browser sends a ``str`` body as ``text/plain;charset=UTF-8``, and ``bytes``
+                without a ``Content-Type``.
+          - ``headers``: A dictionary of request headers.
+          - ``form``: A dictionary of form fields, sent URL-encoded as
+                ``application/x-www-form-urlencoded``, the way the browser encodes a
+                ``URLSearchParams`` body. Numbers and booleans are sent as text, a boolean
+                as ``true`` or ``false``. Any other value is sent as its text, so a nested
+                dictionary or list arrives as its Python representation.
+          - ``multipart``: A dictionary of form fields sent as ``multipart/form-data``, the
+                way the browser encodes a ``FormData`` body, in the order given. A value is
+                a text field: a ``str``, a number or a boolean, sent like in ``form``. A file
+                is a `MultipartFile` dictionary with either ``path`` or ``buffer``; its
+                documentation says how to create one so that it is not sent as text. Do not
+                set a ``Content-Type`` in ``headers``: the browser then leaves out the
+                boundary of the parts, and the server cannot read the body. ``body``,
+                ``form`` and ``multipart`` exclude each other, and ``form`` and
+                ``multipart`` fail with ``GET`` and ``HEAD``.
+          - ``credentials``: Whether cookies and HTTP authentication are sent, see
+                `FetchCredentials`. The browser's default sends them only to the page's own
+                origin.
+          - ``redirect``: How a redirect is handled, see `FetchRedirect`.
+          - ``mode``: Which cross-origin requests are allowed, see `FetchMode`.
+          - ``cache``: How the browser's HTTP cache is used, see `FetchCache`.
+          - ``referrer``: The URL sent as ``Referer``. It must be on the page's origin,
+                otherwise the browser uses the page URL. ``about:client`` is the page URL,
+                an empty string sends none.
+          - ``referrerPolicy``: How much of the referrer is sent, see `ReferrerPolicy`.
+          - ``integrity``: The expected hash of the response body as a
+                [https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity|subresource integrity]
+                value, e.g. ``sha256-...``. The keyword fails when the body does not match.
+          - ``keepalive``: When ``True``, the request outlives the page, for example when it
+                is closed. The body can be at most 64 KiB.
+          - ``priority``: The priority relative to the page's other requests, see
+                `FetchPriority`.
+          - ``timeout``: How long to wait for the whole response, body included. Defaults to
+                the library timeout; ``0`` waits without a limit.
 
-        The response is a Robot Framework dictionary with the following attributes:
-          - ``status`` <int> The status code of the response.
-          - ``statusText`` <str> Status text corresponding to ``status``, e.g. OK or INTERNAL SERVER ERROR. This may not be available for all browsers.
-          - ``body`` <dict> | <str> The response body. If the body can be parsed as a JSON object,
-          it will be returned as Python dictionary, otherwise it is returned as a string.
-          - ``headers`` <dict> A dictionary containing all response headers.
-          - ``ok`` <bool> Whether the request was successful, i.e. the ``status`` is in the range 200-299.
-          - ``url`` <str> The final URL of the response, after possible redirects.
-          - ``redirected`` <bool> Whether the response is the result of a redirect.
-          - ``type`` <str> The type of the response, e.g. ``basic`` or ``cors``.
+        The keyword fails when ``fetch`` fails: on a network error, a request CORS blocks,
+        ``redirect=error`` on a redirect or a wrong ``integrity``. A response with an error
+        status, such as ``404``, does not fail it.
 
-        Here's an example of using Robot Framework dictionary variables and extended variable syntax to
-        do assertions on the response object:
+        Returns an `HttpResponse` with the status, the headers the page can read, the type
+        of the response, the raw body as ``bytes`` and the views ``text`` and ``json``. The
+        response is logged without its body, and the body at ``TRACE`` level.
 
-        | &{res}=             `HTTP`                       /api/endpoint
-        | Should Be Equal     ${res.status}              200
-        | Should Be Equal     ${res.body.some_field}     some value
+        Assigned with ``&{response} =``, ``bytes`` holds base64 text. Assign with
+        ``${response} =`` to get the raw ``bytes``.
+
+        | ${response} =      `HTTP`    /api/endpoint
+        | Should Be Equal    ${response.status}            ${200}
+        | Should Be Equal    ${response.json.some_field}   some value
+        |
+        | &{fields} =        Create Dictionary    username=demo    password=mode
+        | ${response} =      `HTTP`    /login    POST    form=${fields}
+        |
+        | &{file} =          Create Dictionary    path=${CURDIR}/avatar.png
+        | &{fields} =        Create Dictionary    description=Profile picture    file=${file}
+        | ${response} =      `HTTP`    /api/avatar    POST    multipart=${fields}    timeout=30s
+        |
+        | ${response} =      `HTTP`    /logo.png
+        | Create Binary File    ${OUTPUT_DIR}/logo.png    ${response.bytes}
 
         [https://forum.robotframework.org/t//4296|Comment >>]
         """
-        if headers is None:
-            headers = {}
-        body = body if body else ""
-        with self.playwright.grpc_channel() as stub:
-            response = stub.HttpRequest(
-                Request().HttpRequest(
-                    url=url,
-                    method=method.name if method else "GET",
-                    body=body,
-                    headers=json.dumps(_get_headers(body, headers)),
-                )
+        method_name = method.name if method else "GET"
+        given = [
+            name
+            for name, value in (
+                ("body", body),
+                ("form", form),
+                ("multipart", multipart),
             )
-            logger.debug(response.log)
-            response_dict = _format_response(json.loads(response.json))
-            try:
-                return DotDict(response_dict)
-            except Exception:
-                logger.debug(f"Returned response is of type {type(response_dict)}")
-                return response_dict
+            if value
+        ]
+        if len(given) > 1:
+            raise ValueError(
+                f"Only one of body, form or multipart can be given, got {' and '.join(given)}."
+            )
+        if method_name in METHODS_WITHOUT_BODY:
+            not_allowed = next(
+                (
+                    name
+                    for name, value in (
+                        ("bytes", isinstance(body, bytes) and body),
+                        ("form", form),
+                        ("multipart", multipart),
+                    )
+                    if value
+                ),
+                None,
+            )
+            if not_allowed:
+                raise ValueError(
+                    f"A {method_name} request cannot have a body, got {not_allowed}."
+                )
+        headers = headers or {}
+        request = Request().HttpRequest(
+            url=url,
+            method=method_name,
+            timeout=self.get_timeout(timeout),
+            multipart=[
+                _multipart_field(name, value)
+                for name, value in (multipart or {}).items()
+            ],
+        )
+        _set_given(
+            request,
+            credentials=credentials,
+            redirect=redirect,
+            mode=mode,
+            cache=cache,
+            referrer=referrer,
+            referrerPolicy=referrerPolicy,
+            integrity=integrity,
+            keepalive=keepalive,
+            priority=priority,
+        )
+        request.form.extend(
+            Request.FormField(name=key, value=_form_value(value))
+            for key, value in (form or {}).items()
+        )
+        if body and method_name not in METHODS_WITHOUT_BODY:
+            if isinstance(body, bytes):
+                request.bodyBytes = body
+            else:
+                request.body = body
+                headers = _get_headers(body, headers)
+        request.headers = json.dumps(headers)
+        with self.playwright.grpc_channel() as stub:
+            response, body_bytes, _ = _collect_stream(stub.HttpRequest(request))
+        _add_http_response_views(response, body_bytes)
+        logger.info(_without(response, RESPONSE_BODY_KEYS))
+        _trace_content("Response body", response["bytes"])
+        return cast(HttpResponse, JsonDotDict(response))
 
     def _wait_for_http_request(self, matcher, timeout, wait_for_all_fields) -> dict:
         with self.playwright.grpc_channel() as stub:

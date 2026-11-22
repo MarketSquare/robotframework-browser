@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import json
 import uuid
@@ -26,7 +27,23 @@ def http_fixture_path(name: str) -> str:
 
 def http_fixture_sha256(name: str) -> str:
     """Return the SHA-256 hex digest of a file in the Test App's ``static/http-fixtures``."""
-    return hashlib.sha256(Path(http_fixture_path(name)).read_bytes()).hexdigest()
+    return sha256_of_bytes(http_fixture_bytes(name))
+
+
+def http_fixture_bytes(name: str) -> bytes:
+    """Return the content of a file in the Test App's ``static/http-fixtures``."""
+    return Path(http_fixture_path(name)).read_bytes()
+
+
+def http_fixture_integrity(name: str) -> str:
+    """Return the subresource integrity value (``sha256-<base64>``) of an HTTP fixture."""
+    digest = hashlib.sha256(http_fixture_bytes(name)).digest()
+    return f"sha256-{base64.b64encode(digest).decode('ascii')}"
+
+
+def sha256_of_bytes(data: bytes) -> str:
+    """Return the SHA-256 hex digest of ``data``."""
+    return hashlib.sha256(data).hexdigest()
 
 
 def http_page_url(page_url: str, send: bool = True, **fields: str) -> str:
@@ -39,6 +56,16 @@ def http_page_url(page_url: str, send: bool = True, **fields: str) -> str:
     if send:
         fields["send"] = "1"
     return f"{page_url}?{urlencode(fields)}"
+
+
+def respond_url(**query: str) -> str:
+    """Return the relative URL ``/api/respond/fetch`` with ``query`` URL-encoded.
+
+    ``/api/respond/**`` answers any path below it the same way, so ``fetch`` only names the
+    request. ``query`` holds the endpoint's parameters (``status``, ``statusText``,
+    ``contentType``, ``header``, ``delay``, ``body``, ``file``).
+    """
+    return f"/api/respond/fetch?{urlencode(query)}"
 
 
 def multipart_body(boundary: str, *parts: dict[str, str]) -> str:

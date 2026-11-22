@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 
 jest.mock('../browser_logger', () => ({
     logger: { info: jest.fn(), error: jest.fn() },
@@ -8,7 +8,13 @@ jest.mock('uuid', () => ({
     v4: jest.fn().mockReturnValue('mock-uuid-1234'),
 }));
 
-import { _waitForDownload, waitForRequest, waitForResponse } from '../network';
+import * as fs from 'fs';
+import * as http from 'http';
+import { AddressInfo } from 'net';
+import * as os from 'os';
+import * as path from 'path';
+
+import { _waitForDownload, httpRequest, pageFetch, waitForRequest, waitForResponse } from '../network';
 
 function makeRequest(urlOrPredicate = '/.*/', timeout = 5000, excludeBody = false) {
     return { urlOrPredicate, timeout, excludeBody } as any;
@@ -208,7 +214,9 @@ describe('waitForRequest', () => {
         circularObject.self = circularObject;
         const request = makeMockRequest({ headers: jest.fn().mockReturnValue(circularObject) });
 
-        await expect(waitForRequest(makeRequest(), pageWithRequest(request))).rejects.toThrow(TypeError);
+        await expect(waitForRequest(makeRequest(), pageWithRequest(request))).rejects.toMatchObject({
+            name: 'TypeError',
+        });
     });
 
     it('throws when JSON.stringify fails due to non-serializable toJSON method', async () => {
@@ -568,5 +576,255 @@ describe('_waitForDownload', () => {
 
         expect(JSON.parse((await result).json).state).toBe('finished');
         expect(download.cancel).not.toHaveBeenCalled();
+    });
+});
+
+function makeHttpRequest(overrides: Record<string, unknown> = {}) {
+    return {
+        url: '/api/echo',
+        method: 'POST',
+        headers: '{}',
+        form: [],
+        multipart: [],
+        timeout: 0,
+        ...overrides,
+    } as any;
+}
+
+function makeFetchResult(overrides: Record<string, unknown> = {}) {
+    return {
+        timedOut: false,
+        status: 200,
+        statusText: 'OK',
+        url: 'http://localhost/api/echo',
+        ok: true,
+        redirected: false,
+        type: 'basic',
+        headers: { 'content-type': 'text/plain' },
+        body: new Uint8Array([104, 105]),
+        ...overrides,
+    };
+}
+
+function makeFetchPage(result = makeFetchResult()) {
+    return { evaluate: jest.fn().mockResolvedValue(result) } as any;
+}
+
+function fetchArguments(page: any) {
+    return page.evaluate.mock.calls[0][1];
+}
+
+describe('httpRequest', () => {
+    it('passes only the given fetch options to RequestInit, falsy ones included', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ keepalive: false, referrer: '', mode: 'no-cors' }), page);
+        expect(fetchArguments(page).init).toEqual({
+            method: 'POST',
+            headers: {},
+            keepalive: false,
+            referrer: '',
+            mode: 'no-cors',
+        });
+    });
+
+    it('sends form fields as name and value pairs in the given order', async () => {
+        const page = makeFetchPage();
+        const form = [
+            { name: 'q', value: 'a&b' },
+            { name: 'lang', value: 'en' },
+        ];
+        await httpRequest(makeHttpRequest({ form }), page);
+        expect(fetchArguments(page).form).toEqual([
+            ['q', 'a&b'],
+            ['lang', 'en'],
+        ]);
+    });
+
+    it('sends no form when no field is given', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest(), page);
+        expect(fetchArguments(page).form).toBeUndefined();
+    });
+
+    it('reads a multipart file from its path', async () => {
+        const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'http-')), 'notes.txt');
+        fs.writeFileSync(file, 'hello');
+        const page = makeFetchPage();
+        await httpRequest(
+            makeHttpRequest({
+                multipart: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }],
+            }),
+            page,
+        );
+        const [field] = fetchArguments(page).multipart;
+        expect(field).toEqual({
+            name: 'file',
+            fileName: 'notes.txt',
+            mimeType: 'text/plain',
+            buffer: new Uint8Array(Buffer.from('hello')),
+        });
+    });
+
+    it('sends a multipart value as text', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ multipart: [{ name: 'count', value: '3' }] }), page);
+        expect(fetchArguments(page).multipart).toEqual([{ name: 'count', value: '3' }]);
+    });
+
+    it('sends a multipart field without value as empty text', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ multipart: [{ name: 'empty' }] }), page);
+        expect(fetchArguments(page).multipart).toEqual([{ name: 'empty', value: '' }]);
+    });
+
+    it('sends a bytes body as Uint8Array', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ bodyBytes: Buffer.from([0, 255]) }), page);
+        expect(fetchArguments(page).bytes).toEqual(new Uint8Array([0, 255]));
+    });
+
+    it('runs pageFetch in the page', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest(), page);
+        expect(page.evaluate.mock.calls[0][0]).toBe(pageFetch);
+    });
+
+    it('fails with the timeout in milliseconds when the fetch timed out', async () => {
+        const page = makeFetchPage({ timedOut: true } as any);
+        await expect(httpRequest(makeHttpRequest({ timeout: 500 }), page)).rejects.toThrow(
+            'Timeout 500ms exceeded while waiting for the response of /api/echo.',
+        );
+    });
+
+    it('returns the response metadata and the raw body bytes', async () => {
+        const [message] = await httpRequest(makeHttpRequest(), makeFetchPage());
+        expect(JSON.parse(message.json)).toEqual({
+            status: 200,
+            statusText: 'OK',
+            ok: true,
+            url: 'http://localhost/api/echo',
+            headers: JSON.stringify({ 'content-type': 'text/plain' }),
+            redirected: false,
+            type: 'basic',
+        });
+        expect(Buffer.from(message.bodyBytes)).toEqual(Buffer.from('hi'));
+    });
+});
+
+describe('pageFetch', () => {
+    let server: http.Server;
+    let baseUrl: string;
+
+    beforeAll(async () => {
+        server = http.createServer((request, response) => {
+            const chunks: Buffer[] = [];
+            request.on('data', (chunk: Buffer) => chunks.push(chunk));
+            request.on('end', () => {
+                const delay = request.url === '/slow' ? 1000 : 0;
+                setTimeout(() => {
+                    response.writeHead(201, 'Created', {
+                        'content-type': 'application/octet-stream',
+                        'x-method': request.method ?? '',
+                        'x-content-type': request.headers['content-type'] ?? '',
+                    });
+                    response.end(Buffer.concat(chunks));
+                }, delay);
+            });
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        baseUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    });
+
+    afterAll(async () => {
+        server.closeAllConnections();
+        await new Promise((resolve) => server.close(resolve));
+    });
+
+    function fetchArgs(overrides: Record<string, unknown> = {}) {
+        return { url: `${baseUrl}/echo`, init: { method: 'POST' }, timeout: 0, ...overrides } as any;
+    }
+
+    function bodyText(result: { body: Uint8Array }) {
+        return Buffer.from(result.body).toString('utf-8');
+    }
+
+    it('returns the response metadata, its headers and the raw body bytes', async () => {
+        const result = await pageFetch(fetchArgs({ bytes: new Uint8Array([0, 255, 137]) }));
+        expect(result).toMatchObject({
+            timedOut: false,
+            status: 201,
+            statusText: 'Created',
+            ok: true,
+            redirected: false,
+            url: `${baseUrl}/echo`,
+        });
+        expect(result.headers['x-method']).toBe('POST');
+        expect(result.body).toEqual(new Uint8Array([0, 255, 137]));
+    });
+
+    it('sends no body when none is given', async () => {
+        const result = await pageFetch(fetchArgs({ init: { method: 'GET' } }));
+        expect(result.headers['x-method']).toBe('GET');
+        expect(result.body).toEqual(new Uint8Array());
+    });
+
+    it('sends a text body', async () => {
+        const result = await pageFetch(fetchArgs({ text: 'häkä' }));
+        expect(bodyText(result)).toBe('häkä');
+        expect(result.headers['x-content-type']).toBe('text/plain;charset=UTF-8');
+    });
+
+    it('sends form fields URL encoded in the given order', async () => {
+        const result = await pageFetch(
+            fetchArgs({
+                form: [
+                    ['q', 'a&b=c d'],
+                    ['lang', 'en'],
+                ],
+            }),
+        );
+        expect(bodyText(result)).toBe('q=a%26b%3Dc+d&lang=en');
+        expect(result.headers['x-content-type']).toBe('application/x-www-form-urlencoded;charset=UTF-8');
+    });
+
+    it('sends multipart values and files with their name and type', async () => {
+        const result = await pageFetch(
+            fetchArgs({
+                multipart: [
+                    { name: 'count', value: '3' },
+                    {
+                        name: 'file',
+                        fileName: 'notes.txt',
+                        mimeType: 'text/plain',
+                        buffer: new Uint8Array(Buffer.from('hello')),
+                    },
+                ],
+            }),
+        );
+        const body = bodyText(result);
+        expect(result.headers['x-content-type']).toMatch(/^multipart\/form-data; boundary=/);
+        expect(body).toMatch(/name="count"\r\n\r\n3\r\n/);
+        expect(body).toMatch(/name="file"; filename="notes.txt"\r\nContent-Type: text\/plain\r\n\r\nhello\r\n/);
+    });
+
+    it('reports a response slower than the timeout as timed out', async () => {
+        const result = await pageFetch(fetchArgs({ url: `${baseUrl}/slow`, timeout: 50 }));
+        expect(result.timedOut).toBe(true);
+    });
+
+    it('rethrows an abort that is not the timeout', async () => {
+        await expect(pageFetch(fetchArgs({ init: { signal: AbortSignal.abort() } }))).rejects.toMatchObject({
+            name: 'AbortError',
+        });
+    });
+
+    it('rethrows a network error', async () => {
+        const closed = http.createServer();
+        await new Promise<void>((resolve) => closed.listen(0, '127.0.0.1', resolve));
+        const port = (closed.address() as AddressInfo).port;
+        await new Promise((resolve) => closed.close(resolve));
+        await expect(pageFetch(fetchArgs({ url: `http://127.0.0.1:${port}/` }))).rejects.toMatchObject({
+            name: 'TypeError',
+        });
     });
 });

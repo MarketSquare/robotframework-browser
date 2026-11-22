@@ -452,8 +452,35 @@ message Request {
   message HttpRequest {
      string url = 1;
      string method = 2;
-     string body = 3;
+     optional string body = 3;
      string headers = 4;
+     optional bytes bodyBytes = 5;
+     repeated FormField form = 6;
+     repeated MultipartField multipart = 7;
+     optional string credentials = 8;
+     optional string redirect = 9;
+     optional string mode = 10;
+     optional string cache = 11;
+     optional string referrer = 12;
+     optional string referrerPolicy = 13;
+     optional string integrity = 14;
+     optional bool keepalive = 15;
+     optional string priority = 16;
+     double timeout = 17;
+  }
+
+  message FormField {
+     string name = 1;
+     string value = 2;
+  }
+
+  message MultipartField {
+     string name = 1;
+     optional string value = 2;
+     optional string fileName = 3;
+     optional string mimeType = 4;
+     optional bytes buffer = 5;
+     optional string path = 6;
   }
 
   message HttpCapture {
@@ -726,8 +753,8 @@ service  Playwright {
   rpc GetStyle(Request.ElementStyle) returns (Response.Json);
   /* Gets elements x, y coordinates and width, height as json object */
   rpc GetBoundingBox(Request.ElementSelector) returns (Response.Json);
-  /* Makes a `fetch` request in the browser */
-  rpc HttpRequest(Request.HttpRequest) returns (Response.Json);
+  /* Makes a `fetch` request in the page: metadata in the first message, raw response body chunked in bodyBytes */
+  rpc HttpRequest(Request.HttpRequest) returns (stream Response.Json);
   /* Streams the captured request: metadata in the first message, raw post data chunked in postDataBytes */
   rpc WaitForRequest(Request.HttpCapture) returns (stream Response.Json);
   /* Streams the captured response: metadata in the first message, raw body chunked in bodyBytes and the request's raw post data in postDataBytes */
