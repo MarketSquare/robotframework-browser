@@ -250,6 +250,12 @@ Header Names Differing Only In Case Give One Header
     New Page    ${url}
     Get Text    id=response-headers    matches    "x-mock": "(upper|lower)"\n
 
+Text File Mock Opened By Navigation Shows UTF-8 Text
+    ${path} =    Unique HTTP Path    /api/echo/mock-text-file
+    Mock Responses    **${path}    path=${CURDIR}/route_rule_greeting.txt
+    New Page    ${{ $ROOT_URL.rstrip("/") + $path }}
+    Get Text    body    ==    Hyvää päivää
+
 *** Keywords ***
 Open HTTP Page Without Sending
     [Arguments]    ${prefix}
