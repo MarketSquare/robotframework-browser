@@ -14,7 +14,7 @@ import { AddressInfo } from 'net';
 import * as os from 'os';
 import * as path from 'path';
 
-import { _waitForDownload, httpRequest, pageFetch, waitForRequest, waitForResponse } from '../network';
+import { _waitForDownload, httpRequest, pageFetch, sendApiRequest, waitForRequest, waitForResponse } from '../network';
 
 function makeRequest(urlOrPredicate = '/.*/', timeout = 5000, excludeBody = false) {
     return { urlOrPredicate, timeout, excludeBody } as any;
@@ -826,5 +826,136 @@ describe('pageFetch', () => {
         await expect(pageFetch(fetchArgs({ url: `http://127.0.0.1:${port}/` }))).rejects.toMatchObject({
             name: 'TypeError',
         });
+    });
+});
+
+function makeApiRequest(overrides: Record<string, unknown> = {}) {
+    return { url: '/api', method: 'GET', timeout: 1000, params: [], form: [], multipart: [], ...overrides } as any;
+}
+
+function makeApiContext(body = Buffer.from('{"name":"robot"}')) {
+    const response = {
+        status: jest.fn().mockReturnValue(201),
+        statusText: jest.fn().mockReturnValue('Created'),
+        ok: jest.fn().mockReturnValue(true),
+        url: jest.fn().mockReturnValue('http://localhost/api'),
+        headers: jest.fn().mockReturnValue({ 'set-cookie': 'a=1' }),
+        headersArray: jest.fn().mockReturnValue([{ name: 'Set-Cookie', value: 'a=1' }]),
+        body: jest.fn().mockResolvedValue(body),
+        dispose: jest.fn().mockResolvedValue(undefined),
+    };
+    const fetch = jest.fn().mockResolvedValue(response);
+    return { context: { request: { fetch } } as any, fetch, response };
+}
+
+function fetchOptions(fetch: jest.Mock) {
+    return fetch.mock.calls[0][1] as Record<string, unknown>;
+}
+
+describe('sendApiRequest', () => {
+    it('fails without an open context', async () => {
+        await expect(sendApiRequest(makeApiRequest(), undefined)).rejects.toThrow(
+            'Tried to send an API request, but no context was open.',
+        );
+    });
+
+    it('passes only method and timeout when nothing else is given', async () => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest(), context);
+        expect(fetch).toHaveBeenCalledWith('/api', { method: 'GET', timeout: 1000 });
+    });
+
+    it('passes the given options, falsy ones included', async () => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(
+            makeApiRequest({
+                headers: '{"X-Robot":"Beep"}',
+                failOnStatusCode: false,
+                maxRedirects: 0,
+                maxRetries: 2,
+                ignoreHTTPSErrors: true,
+            }),
+            context,
+        );
+        expect(fetchOptions(fetch)).toEqual({
+            method: 'GET',
+            timeout: 1000,
+            headers: { 'X-Robot': 'Beep' },
+            failOnStatusCode: false,
+            maxRedirects: 0,
+            maxRetries: 2,
+            ignoreHTTPSErrors: true,
+        });
+    });
+
+    it('passes dictionary params as an object and string params as given', async () => {
+        const first = makeApiContext();
+        await sendApiRequest(makeApiRequest({ params: [{ name: 'q', value: 'robot' }] }), first.context);
+        expect(fetchOptions(first.fetch).params).toEqual({ q: 'robot' });
+        const second = makeApiContext();
+        await sendApiRequest(makeApiRequest({ encodedParams: 'q=a%20b' }), second.context);
+        expect(fetchOptions(second.fetch).params).toBe('q=a%20b');
+    });
+
+    it.each([
+        [{ dataText: '' }, ''],
+        [{ dataBytes: Buffer.from([0, 255]) }, Buffer.from([0, 255])],
+        [{ dataJson: '{"name":"robot"}' }, { name: 'robot' }],
+        [{ dataJson: 'false' }, false],
+    ])('passes data %p to Playwright as %p', async (data, expected) => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest(data), context);
+        expect(fetchOptions(fetch).data).toEqual(expected);
+    });
+
+    it('passes form fields as an object', async () => {
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(makeApiRequest({ form: [{ name: 'q', value: 'a&b' }] }), context);
+        expect(fetchOptions(fetch).form).toEqual({ q: 'a&b' });
+    });
+
+    it('passes multipart text fields, buffers and files read from their path', async () => {
+        const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'api-')), 'notes.txt');
+        fs.writeFileSync(file, 'hello');
+        const { context, fetch } = makeApiContext();
+        await sendApiRequest(
+            makeApiRequest({
+                multipart: [
+                    { name: 'text', value: 'a' },
+                    { name: 'empty' },
+                    { name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' },
+                    { name: 'blob', buffer: Buffer.from('raw') },
+                ],
+            }),
+            context,
+        );
+        expect(fetchOptions(fetch).multipart).toEqual({
+            text: 'a',
+            empty: '',
+            file: { name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hello') },
+            blob: { name: 'blob', mimeType: 'application/octet-stream', buffer: Buffer.from('raw') },
+        });
+    });
+
+    it('returns the response metadata and the raw body, and disposes the response', async () => {
+        const { context, response } = makeApiContext();
+        const [message] = await sendApiRequest(makeApiRequest(), context);
+        expect(JSON.parse(message.json)).toEqual({
+            status: 201,
+            statusText: 'Created',
+            ok: true,
+            url: 'http://localhost/api',
+            headers: { 'set-cookie': 'a=1' },
+            headersArray: [{ name: 'Set-Cookie', value: 'a=1' }],
+        });
+        expect(Buffer.from(message.bodyBytes).toString()).toBe('{"name":"robot"}');
+        expect(response.dispose).toHaveBeenCalled();
+    });
+
+    it('disposes the response when its body cannot be read', async () => {
+        const { context, response } = makeApiContext();
+        response.body.mockRejectedValue(new Error('gone'));
+        await expect(sendApiRequest(makeApiRequest(), context)).rejects.toThrow('gone');
+        expect(response.dispose).toHaveBeenCalled();
     });
 });

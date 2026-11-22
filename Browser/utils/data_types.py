@@ -1148,7 +1148,7 @@ class CapturedRequest(TypedDict):
 
 
 class MultipartFile(TypedDict, total=False):
-    """A file in the ``multipart`` argument of `HTTP`.
+    """A file in the ``multipart`` argument of `HTTP` and `Send API Request`.
 
     Give either ``path`` or ``buffer``. These four keys are the only ones, spelled as here.
 
@@ -1242,6 +1242,67 @@ class HttpResponse(TypedDict):
     redirected: bool
     type: str
     body: Any
+    bytes: bytes
+    text: str
+    json: Any
+
+
+class APIResponse(TypedDict):
+    """The response of `Send API Request`.
+
+    The keys mirror Playwright's
+    [https://playwright.dev/docs/api/class-apiresponse|APIResponse]. The value is a Robot
+    Framework dictionary, so keys can be accessed as ``${response.status}`` or
+    ``${response}[status]``.
+
+    | =Key= | =Description= |
+    | ``status`` | The HTTP status code, e.g. ``200``. |
+    | ``statusText`` | The status text, e.g. ``OK``. |
+    | ``ok`` | ``True`` if ``status`` is in the range 200-299. |
+    | ``url`` | The final URL of the response, after redirects. |
+    | ``headers`` | Dictionary of all response headers, ``set-cookie`` included, with lower-case names. Repeated headers are joined: ``set-cookie`` with a new line, the others with ``, ``. |
+    | ``headersArray`` | List of all response headers as ``name`` and ``value`` dictionaries, with the names as the server sent them and one entry for each repeated header. |
+    | ``bytes`` | The raw response body as ``bytes``. Use it for binary content such as images. |
+    | ``text`` | The response body decoded as UTF-8. Invalid bytes become the replacement character U+FFFD. |
+    | ``json`` | The response body parsed as JSON regardless of the ``content-type``. ``None`` if the body is not valid JSON. A body of ``null`` is also ``None``; ``text`` tells the two apart. |
+
+    ``bytes``, ``text`` and ``json`` follow the same rules as in `HttpResponse` and
+    `CapturedResponse`. There is no legacy ``body`` key.
+
+    Assigned with ``&{response} =``, ``bytes`` holds base64 text. Assign with
+    ``${response} =`` to get the raw ``bytes``.
+
+    = Example =
+
+    | {
+    |   "status": 201,
+    |   "statusText": "Created",
+    |   "ok": true,
+    |   "url": "https://example.com/api/users",
+    |   "headers": {
+    |     "content-type": "application/json; charset=utf-8",
+    |     "set-cookie": "session=abc; Path=/"
+    |   },
+    |   "headersArray": [
+    |     {"name": "Content-Type", "value": "application/json; charset=utf-8"},
+    |     {"name": "Set-Cookie", "value": "session=abc; Path=/"}
+    |   ],
+    |   "bytes": "eyJuYW1lIjoicm9ib3QifQ==",
+    |   "text": "{\\"name\\":\\"robot\\"}",
+    |   "json": {
+    |     "name": "robot"
+    |   }
+    | }
+
+    ``bytes`` is shown as base64 text, the way ``json.dumps`` writes it.
+    """
+
+    status: int
+    statusText: str
+    ok: bool
+    url: str
+    headers: dict[str, str]
+    headersArray: list[dict[str, str]]
     bytes: bytes
     text: str
     json: Any

@@ -30,6 +30,7 @@ from ..base import LibraryComponent
 from ..generated.playwright_pb2 import Request
 from ..utils import (
     AbortErrorCode,
+    APIResponse,
     CapturedRequest,
     CapturedResponse,
     ContextOrPage,
@@ -330,7 +331,9 @@ def _form_value(value: Any) -> str:
     return str(value)
 
 
-def _set_given(request: Request.HttpRequest, **values: Any) -> None:
+def _set_given(
+    request: Request.HttpRequest | Request.ApiRequest, **values: Any
+) -> None:
     for name, value in values.items():
         if value is not None:
             setattr(request, name, value.value if isinstance(value, Enum) else value)
@@ -371,6 +374,34 @@ def _multipart_file(name: str, file: Mapping[str, Any]) -> Request.MultipartFiel
     )
 
 
+def _form_fields(fields: Mapping[str, Any]) -> list[Request.FormField]:
+    return [
+        Request.FormField(name=name, value=_form_value(value))
+        for name, value in fields.items()
+    ]
+
+
+def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
+    if data is None:
+        return
+    if isinstance(data, str):
+        request.dataText = data
+    elif isinstance(data, bytes | bytearray):
+        request.dataBytes = bytes(data)
+    else:
+        request.dataJson = json.dumps(data)
+
+
+def _set_api_params(request: Request.ApiRequest, params: Any) -> None:
+    if isinstance(params, str):
+        request.encodedParams = params
+    elif params:
+        request.params.extend(_form_fields(params))
+
+
+API_RESPONSE_HEADER_KEYS = ("headers", "headersArray")
+
+
 def _add_http_response_views(response: dict, body: bytes) -> None:
     text = body.decode("utf-8", errors="replace")
     response["body"] = text
@@ -407,6 +438,9 @@ class Network(LibraryComponent):
         the context by the ``credentials`` rule, and `Wait For Request` and
         `Wait For Response` see it. The browser does not let a page set some headers, such
         as ``Cookie``, ``Host`` or ``Origin``, and drops them without an error.
+
+        Use `Send API Request` instead for a request outside the page, which shares the
+        cookies of the context but not the page's rules, such as CORS.
 
         The named-only arguments are the options of the browser's
         [https://developer.mozilla.org/en-US/docs/Web/API/RequestInit|fetch]. An argument
@@ -537,10 +571,7 @@ class Network(LibraryComponent):
             keepalive=keepalive,
             priority=priority,
         )
-        request.form.extend(
-            Request.FormField(name=key, value=_form_value(value))
-            for key, value in (form or {}).items()
-        )
+        request.form.extend(_form_fields(form or {}))
         if body and method_name not in METHODS_WITHOUT_BODY:
             if isinstance(body, bytes):
                 request.bodyBytes = body
@@ -554,6 +585,145 @@ class Network(LibraryComponent):
         logger.info(_without(response, RESPONSE_BODY_KEYS))
         _trace_content("Response body", response["bytes"])
         return cast(HttpResponse, JsonDotDict(response))
+
+    @keyword(name="Send API Request", tags=("HTTP",))
+    def send_api_request(
+        self,
+        url: str,
+        method: RequestMethod = RequestMethod.GET,
+        *,
+        headers: dict[str, str] | None = None,
+        params: dict[str, str | int | float | bool] | str | None = None,
+        data: dict | list | str | bytes | int | float | bool | None = None,  # noqa: PYI041
+        form: dict[str, str | int | float | bool] | None = None,
+        multipart: dict[str, MultipartFile | str | int | float | bool] | None = None,
+        timeout: timedelta | None = None,
+        failOnStatusCode: bool | None = None,
+        maxRedirects: int | None = None,
+        maxRetries: int | None = None,
+        ignoreHTTPSErrors: bool | None = None,
+    ) -> APIResponse:
+        """Sends an HTTP request through the active context, outside any page.
+
+        The keyword is Playwright's
+        [https://playwright.dev/docs/api/class-apirequestcontext#api-request-context-fetch|APIRequestContext.fetch]
+        of the active context. The request is an API request, not page traffic:
+
+        - It uses the cookies of the context. A cookie that a page received is sent, and a
+          cookie that the response sets is there for the pages of the context too.
+        - It uses the context's ``baseURL``, ``extraHTTPHeaders``, ``httpCredentials``,
+          ``proxy``, ``userAgent``, ``ignoreHTTPSErrors`` and ``clientCertificates`` from
+          `New Context`, as they are when the request is sent.
+        - It needs an open context but no page, and fails when no context is open.
+        - The browser's rules for a page do not apply: there is no CORS, and headers that a
+          page cannot set, such as ``Origin`` or ``Cookie``, are sent as given.
+        - Route rules, such as those of `Abort Requests`, and `Wait For Request` and
+          `Wait For Response` do not see it.
+
+        Use `HTTP` instead for a request that the page itself sends, with the page's rules.
+
+        The named-only arguments are the options of Playwright's ``fetch``, with Playwright's
+        names. An argument that is not given keeps Playwright's default.
+
+        *Arguments:*
+          - ``url``: The request URL. A relative URL is resolved against the context's
+                ``baseURL`` and fails without one.
+          - ``method``: The HTTP method. Defaults to ``GET``.
+          - ``headers``: A dictionary of request headers. They override the context's
+                ``extraHTTPHeaders`` with the same name.
+          - ``params``: Query parameters added to the ``url``. A dictionary is URL-encoded,
+                with numbers and booleans sent as text, a boolean as ``true`` or ``false``. A
+                string is appended as given, so it must already be URL-encoded, e.g.
+                ``q=a%20b&page=2``. The query of the ``url`` is kept.
+          - ``data``: The request body.
+                - A dictionary, a list, a number or a boolean is sent as JSON, with the
+                  ``Content-Type`` ``application/json``.
+                - ``bytes`` are sent as given, as ``application/octet-stream`` unless
+                  ``headers`` has a ``Content-Type``.
+                - A string is sent as given, but its ``Content-Type`` decides how: without a
+                  ``Content-Type`` in ``headers``, it is ``application/octet-stream``, also
+                  when the string is JSON. With a JSON ``Content-Type``, a string that is
+                  valid JSON is sent as given, and any other string is encoded as a JSON
+                  string, so ``hello`` is sent as ``"hello"``.
+                - To send JSON written in the test data, give a dictionary, e.g.
+                  ``data=${{ {"name": "robot"} }}``, or set the ``Content-Type`` in
+                  ``headers``.
+          - ``form``: A dictionary of form fields, sent URL-encoded as
+                ``application/x-www-form-urlencoded``. Values are sent like in ``params``.
+          - ``multipart``: A dictionary of form fields sent as ``multipart/form-data``. A value
+                is a text field: a ``str``, a number or a boolean, sent like in ``params``. A
+                file is a `MultipartFile` dictionary with either ``path`` or ``buffer``; its
+                documentation says how to create one so that it is not sent as text.
+                ``data``, ``form`` and ``multipart`` exclude each other.
+          - ``timeout``: How long to wait for the whole response, body included. Defaults to
+                the library timeout; ``0`` waits without a limit.
+          - ``failOnStatusCode``: When ``True``, the keyword fails on a status that is not
+                2xx or 3xx. By default a response with an error status, such as ``404``, does
+                not fail it.
+          - ``maxRedirects``: How many redirects are followed. Playwright's default is 20,
+                and it fails when there are more. ``0`` follows none and returns the redirect
+                response.
+          - ``maxRetries``: How often the request is retried on a network error, such as a
+                connection reset. Playwright's default is ``0``, no retry. An error status is
+                never retried.
+          - ``ignoreHTTPSErrors``: When ``True``, errors of the server's HTTPS certificate are
+                ignored. Defaults to the ``ignoreHTTPSErrors`` of the context.
+
+        The keyword fails on a network error, a timeout, too many redirects and, with
+        ``failOnStatusCode``, an error status.
+
+        Returns an `APIResponse` with the status, all headers, ``set-cookie`` included, the
+        raw body as ``bytes`` and the views ``text`` and ``json``. The response is logged
+        without its headers and body, the headers at ``DEBUG`` level, as they can contain
+        cookies, and the body at ``TRACE`` level.
+
+        Assigned with ``&{response} =``, ``bytes`` holds base64 text. Assign with
+        ``${response} =`` to get the raw ``bytes``.
+
+        | `New Context`    baseURL=https://example.com
+        | `New Page`    /login
+        | # ... log in on the page ...
+        | &{user} =    Create Dictionary    name=robot
+        | ${response} =    `Send API Request`    /api/users    POST    data=${user}    failOnStatusCode=True
+        | Should Be Equal    ${response.status}    ${201}
+        | Should Be Equal    ${response.json.name}    robot
+        |
+        | &{params} =    Create Dictionary    q=robot    page=${2}
+        | ${response} =    `Send API Request`    /api/search    params=${params}
+        |
+        | &{file} =    Create Dictionary    path=${CURDIR}/avatar.png
+        | &{fields} =    Create Dictionary    description=Profile picture    file=${file}
+        | ${response} =    `Send API Request`    /api/avatar    POST    multipart=${fields}
+        """
+        request = Request().ApiRequest(
+            url=url,
+            method=method.name if method else "GET",
+            timeout=self.get_timeout(timeout),
+            form=_form_fields(form or {}),
+            multipart=[
+                _multipart_field(name, value)
+                for name, value in (multipart or {}).items()
+            ],
+        )
+        if headers is not None:
+            request.headers = json.dumps(headers)
+        _set_api_params(request, params)
+        _set_api_data(request, data)
+        _set_given(
+            request,
+            failOnStatusCode=failOnStatusCode,
+            maxRedirects=maxRedirects,
+            maxRetries=maxRetries,
+            ignoreHTTPSErrors=ignoreHTTPSErrors,
+        )
+        with self.playwright.grpc_channel() as stub:
+            response, body, _ = _collect_stream(stub.SendApiRequest(request))
+        text = body.decode("utf-8", errors="replace")
+        response.update(bytes=body, text=text, json=_json_or_none(text))
+        logger.info(_without(response, API_RESPONSE_HEADER_KEYS + RESPONSE_BODY_KEYS))
+        logger.debug(f"Response headers: {response['headersArray']}")
+        _trace_content("Response body", body)
+        return cast(APIResponse, JsonDotDict(response))
 
     def _wait_for_http_request(self, matcher, timeout, wait_for_all_fields) -> dict:
         with self.playwright.grpc_channel() as stub:

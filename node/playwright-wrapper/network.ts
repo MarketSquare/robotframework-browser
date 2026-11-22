@@ -14,7 +14,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { Page, Request, Response as PlaywrightResponse } from 'playwright';
+import { APIRequestContext, BrowserContext, Page, Request, Response as PlaywrightResponse } from 'playwright';
 import { v4 as uuidv4 } from 'uuid';
 
 import { logger } from './browser_logger';
@@ -22,6 +22,7 @@ import { MAX_RESPONSE_CHUNK_BYTES, splitBytes } from './chunking';
 import * as pb from './generated/playwright';
 import { withLoadReport } from './load-report';
 import { LifecycleState, navigationOptions } from './navigation-options';
+import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
 import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
@@ -50,8 +51,12 @@ interface PageFetchResult {
     body: Uint8Array;
 }
 
+async function multipartFileContent(field: pb.Request_MultipartField): Promise<Uint8Array | undefined> {
+    return field.path !== undefined ? await fs.promises.readFile(field.path) : field.buffer;
+}
+
 async function pageMultipartField(field: pb.Request_MultipartField): Promise<PageMultipartField> {
-    const content = field.path !== undefined ? await fs.promises.readFile(field.path) : field.buffer;
+    const content = await multipartFileContent(field);
     if (content === undefined) {
         return { name: field.name, value: field.value ?? '' };
     }
@@ -171,6 +176,75 @@ export async function httpRequest(request: pb.Request_HttpRequest, page: Page): 
         postData: null,
         body: Buffer.from(result.body),
     });
+}
+
+type ApiFetchOptions = NonNullable<Parameters<APIRequestContext['fetch']>[1]>;
+type ApiMultipartValue = string | { name: string; mimeType: string; buffer: Buffer };
+
+function fieldsObject(fields: pb.Request_FormField[]): Record<string, string> {
+    return Object.fromEntries(fields.map((field) => [field.name, field.value]));
+}
+
+function apiRequestData(request: pb.Request_ApiRequest): ApiFetchOptions['data'] {
+    if (request.dataText !== undefined) return request.dataText;
+    if (request.dataBytes !== undefined) return Buffer.from(request.dataBytes);
+    if (request.dataJson !== undefined) return JSON.parse(request.dataJson);
+    return undefined;
+}
+
+async function apiMultipartValue(field: pb.Request_MultipartField): Promise<ApiMultipartValue> {
+    const content = await multipartFileContent(field);
+    if (content === undefined) return field.value ?? '';
+    return {
+        name: field.fileName ?? field.name,
+        mimeType: field.mimeType ?? 'application/octet-stream',
+        buffer: Buffer.from(content),
+    };
+}
+
+async function apiFetchOptions(request: pb.Request_ApiRequest): Promise<ApiFetchOptions> {
+    const options: ApiFetchOptions = { method: request.method, timeout: request.timeout };
+    if (request.headers !== undefined) options.headers = JSON.parse(request.headers);
+    if (request.encodedParams !== undefined) {
+        options.params = request.encodedParams;
+    } else if (request.params.length > 0) {
+        options.params = fieldsObject(request.params);
+    }
+    const data = apiRequestData(request);
+    if (data !== undefined) options.data = data;
+    if (request.form.length > 0) options.form = fieldsObject(request.form);
+    if (request.multipart.length > 0) {
+        const fields = await Promise.all(
+            request.multipart.map(async (field) => [field.name, await apiMultipartValue(field)] as const),
+        );
+        options.multipart = Object.fromEntries(fields);
+    }
+    if (request.failOnStatusCode !== undefined) options.failOnStatusCode = request.failOnStatusCode;
+    if (request.maxRedirects !== undefined) options.maxRedirects = request.maxRedirects;
+    if (request.maxRetries !== undefined) options.maxRetries = request.maxRetries;
+    if (request.ignoreHTTPSErrors !== undefined) options.ignoreHTTPSErrors = request.ignoreHTTPSErrors;
+    return options;
+}
+
+export async function sendApiRequest(
+    request: pb.Request_ApiRequest,
+    context: BrowserContext | undefined,
+): Promise<pb.Response_Json[]> {
+    exists(context, 'Tried to send an API request, but no context was open.');
+    const response = await context.request.fetch(request.url, await apiFetchOptions(request));
+    try {
+        const meta = {
+            status: response.status(),
+            statusText: response.statusText(),
+            ok: response.ok(),
+            url: response.url(),
+            headers: response.headers(),
+            headersArray: response.headersArray(),
+        };
+        return capturedMessages({ meta, log: 'API request sent.', postData: null, body: await response.body() });
+    } finally {
+        await response.dispose();
+    }
 }
 
 export function deserializeUrlOrPredicate(

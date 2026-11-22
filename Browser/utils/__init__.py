@@ -17,6 +17,7 @@
 from .json_dotdict import JsonDotDict
 from .data_types import (
     AdoptedContextOptions,
+    APIResponse,
     AutoClosingLevel,
     BrowserInfo,
     BoundingBox,
