@@ -47,7 +47,7 @@ program
 program.parse(process.argv);
 const options = program.opts();
 
-const port = parseInt(options.port);
+const port = Number.parseInt(options.port, 10);
 const tls: boolean = options.tls;
 const certificate = options.certificate;
 const privateKey = options.privateKey;
