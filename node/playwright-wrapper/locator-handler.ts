@@ -30,7 +30,7 @@ export async function addLocatorHandlerCustom(
     if (timesString === 'None') {
         times = undefined;
     } else {
-        times = parseInt(timesString);
+        times = Number.parseInt(timesString, 10);
     }
     logger.info(`Adding locator handler for ${overlaySelector} as times: ${times}`);
     const noWaitAfter = request.noWaitAfter;
