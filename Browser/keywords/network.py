@@ -915,9 +915,9 @@ class Network(LibraryComponent):
           - ``rule_id``: The id that `Abort Requests` or `Mock Responses` returned. The rule is found in any
                 context, so a Page rule can be removed while another page is active.
 
-        An unknown or already ended id, or no open context, is logged and the keyword passes.
-        When the keyword returns, the rule affects no request: it waits for the rule's running
-        handlers to finish.
+        It logs how many times the rule ran. An unknown or already ended id, or no open context,
+        is logged and the keyword passes. When the keyword returns, the rule affects no request:
+        it waits for the rule's running handlers to finish.
 
         Example:
         | ${rule} =    `Abort Requests`    **/api/orders
@@ -935,8 +935,9 @@ class Network(LibraryComponent):
 
         Only rules added by this library are removed, routes that a plugin or a JavaScript
         keyword added with ``page.route`` stay. Like `Remove Route Rule`, the keyword waits for
-        running handlers to finish. It logs how many Context and Page rules it removed. With no
-        rules, or no open context, it logs and passes, so it is safe in a teardown.
+        running handlers to finish. It logs how many Context and Page rules it removed, and how
+        many times each rule ran. With no rules, or no open context, it logs and passes, so it is
+        safe in a teardown.
 
         Only the active context is covered. For several contexts, switch to each one:
         | FOR    ${context}    IN    @{contexts}

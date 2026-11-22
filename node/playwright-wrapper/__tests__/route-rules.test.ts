@@ -72,6 +72,30 @@ describe('route rules', () => {
         expect(removed).toBe(true);
     });
 
+    it('logs that a removed rule never ran', async () => {
+        const { state } = fakeState();
+        const { id } = await addContextRoute({ url: '**/api', abort: {} }, state);
+        const response = await removeRouteRule({ id }, state);
+        expect(response.log).toBe(`Removed route rule ${id}. It ran 0 times.`);
+    });
+
+    it('logs that a removed rule ran once', async () => {
+        const { state, context } = fakeState();
+        const { id } = await addContextRoute({ url: '**/api', abort: {} }, state);
+        await context.handlers[0](fakeRoute());
+        const response = await removeRouteRule({ id }, state);
+        expect(response.log).toBe(`Removed route rule ${id}. It ran 1 time.`);
+    });
+
+    it('logs how many times a removed rule ran', async () => {
+        const { state, page } = fakeState();
+        const { id } = await addPageRoute({ url: '**/api', abort: {} }, state);
+        await page.handlers[0](fakeRoute());
+        await page.handlers[0](fakeRoute());
+        const response = await removeRouteRule({ id }, state);
+        expect(response.log).toBe(`Removed route rule ${id}. It ran 2 times.`);
+    });
+
     it('forgets a rule that used up its times', async () => {
         const { state, context } = fakeState();
         const { id } = await addContextRoute({ url: '**/api', times: 1, abort: {} }, state);
