@@ -169,6 +169,22 @@ No Config File
     ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
     File Should Not Be Empty    ${coverage_file}
 
+Relative Config File Is Ignored
+    [Tags]    no-docker-pr
+    File Should Exist    atest/test/01_Browser_Management/coverageConfigMD.js
+    # Today the Node process looks for it in its own working directory and silently ignores it;
+    # issue #5620 changes this.
+    Start Coverage    config_file=atest/test/01_Browser_Management/coverageConfigMD.js
+    Go To    ${LOGIN_URL}
+    Click    id=delayed_request_big
+    ${coverage_file} =    Stop Coverage
+    Should Be Equal
+    ...    ${coverage_file}
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "index.html" }}
+    File Should Not Be Empty    ${coverage_file}
+    File Should Not Exist
+    ...    ${{ pathlib.Path($OUTPUT_DIR) / "browser" / "coverage" / $PAGE_ID / "coverage-summary.md" }}
+
 Merge Coverage Reports With Keyword
     Start Coverage    raw=True
     Go To    ${LOGIN_URL}

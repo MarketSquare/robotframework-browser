@@ -135,6 +135,49 @@ An HTTP request the library sends through a context, outside any page, as
 `Send API Request` does. It shares the context's cookies but is not page traffic.
 _Avoid_: API call, backend request, page request
 
+**Python side**:
+Where Robot Framework and the library run, with the working directory a test's relative paths
+start from and `${OUTPUT_DIR}`.
+_Avoid_: client side, local side
+
+**Node side**:
+Where the Node process and Playwright run. Every file Playwright reads or writes by path is on
+the Node side. It may share the filesystem of the **Python side** or have its own.
+_Avoid_: server side, remote side, Playwright side
+
+**Test content**:
+A file the test sends, receives, uploads or downloads: test data, uploads, downloads saved to a
+chosen path, a storage state saved to a chosen path, certificates. A relative path is relative
+to the working directory of the **Python side**; a download's is relative to the downloads
+folder when the user chose one.
+_Avoid_: test file, test data file, input file
+
+**Artifact**:
+A file kept for the record after the run: screenshots, PDFs, traces, videos, HAR, coverage. A
+relative path is relative to `${OUTPUT_DIR}`. Not Playwright's `Artifact` class, which also
+covers downloads.
+_Avoid_: output file, log file, report
+
+**Temp file**:
+A file the library or Playwright uses only during the run and deletes automatically, such as a
+download without a chosen path. When the **Node side** shares the filesystem, the library's
+own temp files live under `${OUTPUT_DIR}/browser`; otherwise they live in a temp folder on the
+**Node side**.
+_Avoid_: scratch file, cache file
+
+**Staging**:
+Copying a file to the **Node side**, or back from it, because the **Node side** cannot see the
+file at its path. The copy is a **staging file** and is deleted when it is no longer needed.
+When the **Node side** shares the filesystem, nothing is staged.
+_Avoid_: upload (that is the browser's file upload), transfer, sync
+
+**Environment path**:
+A path that only makes sense where the browser runs: the browser executable, the user data
+folder, extensions, JavaScript extension modules, coverage configuration. A relative one is
+resolved like **test content**, which is only right when the **Node side** shares the
+filesystem.
+_Avoid_: system path, Node path
+
 ## Relationships
 
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
@@ -180,6 +223,13 @@ _Avoid_: API call, backend request, page request
   request** is not, even when a page of the same context is open.
 - An **API request** and the **page requests** of its context share one cookie jar: a cookie
   either one receives is there for the other, which then sends it by its own rules.
+- Every file a keyword takes is **test content**, an **artifact**, a **temp file** or an
+  **environment path**, and that decides what a relative path means. The **Node side** never
+  decides it.
+- The **Node side** uses a file of **test content** directly only when it is the same file the
+  **Python side** sees; otherwise the file goes through **staging**. **Artifacts** that
+  Playwright writes during the run stay on the **Node side** when it has its own filesystem.
+- An empty path is not a path: it keeps the meaning "not given" in every category.
 - An **adopted context** is registered by `call_js_keyword`, from what Node reports when
   `adoptContext` resolves, however the **JavaScript extension keyword** was called.
 

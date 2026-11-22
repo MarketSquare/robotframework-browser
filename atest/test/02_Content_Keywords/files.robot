@@ -227,7 +227,119 @@ Wait For Download With Remote Browser Without SaveAs
     END
     [Teardown]    Close Remote Browser
 
+Get Download State Saves A Download To saveAs When It Has Finished
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    VAR    ${target} =    ${OUTPUT_DIR}${/}download-later${/}test_download_file.js
+    ${dl_promise} =    Promise To Wait For Download    saveAs=${target}    wait_for_finished=False
+    Click    id=file_download
+    ${download} =    Wait For    ${dl_promise}
+    Should Be Equal    ${download}[state]    in_progress
+    Should Be Empty    ${download}[saveAs]
+    ${finished} =    Wait For Condition
+    ...    download_state
+    ...    ${download}
+    ...    validate
+    ...    value['state'] == 'finished'
+    Paths Should Be Equal    ${finished}[saveAs]    ${target}
+    File Should Not Be Empty    ${target}
+    ${again} =    Get Download State    ${download}
+    Should Be Equal    ${again}[state]    finished
+    Paths Should Be Equal    ${again}[saveAs]    ${target}
+    [Teardown]    Remove Directory    ${OUTPUT_DIR}${/}download-later    recursive=True
+
+Download Not Waiting For The End Is Saved To saveAs Later
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    VAR    ${target} =    ${OUTPUT_DIR}${/}download-keyword-later${/}slow_download.txt
+    ${download} =    Download
+    ...    ${ROOT_URL}api/download/slow?transferMs=1000
+    ...    saveAs=${target}
+    ...    wait_for_finished=False
+    Should Be Equal    ${download}[state]    in_progress
+    Should Be Empty    ${download}[saveAs]
+    ${finished} =    Wait For Condition
+    ...    download_state
+    ...    ${download}
+    ...    validate
+    ...    value['state'] == 'finished'
+    Paths Should Be Equal    ${finished}[saveAs]    ${target}
+    ${content} =    Get File    ${target}
+    Should Be Equal    ${content}    xxxxxxxxxx
+    [Teardown]    Remove Directory    ${OUTPUT_DIR}${/}download-keyword-later    recursive=True
+
+Cancel Download Stops A Running Download
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    ${dl_promise} =    Promise To Wait For Download    wait_for_finished=False
+    Click    id=slow_transfer_download
+    ${download} =    Wait For    ${dl_promise}
+    Should Be Equal    ${download}[state]    in_progress
+    Cancel Download    ${download}
+    ${state} =    Get Download State    ${download}
+    Should Be Equal    ${state}[state]    canceled
+    Should Be Empty    ${state}[saveAs]
+
+Cancel Download Accepts The Download Id
+    New Context    acceptDownloads=True
+    New Page    ${DOWNLOADS_URL}
+    ${dl_promise} =    Promise To Wait For Download    wait_for_finished=False
+    Click    id=slow_transfer_download
+    ${download} =    Wait For    ${dl_promise}
+    Cancel Download    ${download}[downloadID]
+    ${state} =    Get Download State    ${download}[downloadID]
+    Should Be Equal    ${state}[state]    canceled
+
+Cancel Download After It Has Finished Keeps The File
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    VAR    ${target} =    ${OUTPUT_DIR}${/}download-cancel-late${/}test_download_file.js
+    ${dl_promise} =    Promise To Wait For Download    saveAs=${target}    wait_for_finished=False
+    Click    id=file_download
+    ${download} =    Wait For    ${dl_promise}
+    Wait For Condition    download_state    ${download}    validate    value['state'] == 'finished'
+    Cancel Download    ${download}
+    ${state} =    Get Download State    ${download}
+    Should Be Equal    ${state}[state]    finished
+    File Should Not Be Empty    ${target}
+    [Teardown]    Remove Directory    ${OUTPUT_DIR}${/}download-cancel-late    recursive=True
+
+Relative saveAs Without downloadsPath Is Not Relative To The Working Directory
+    [Tags]    no-docker-pr
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    # Today the Node process resolves it against its own working directory; issue #5620 changes this.
+    ${dl_promise} =    Promise To Wait For Download    saveAs=pinned-relative-download.js
+    Click    id=file_download
+    ${download} =    Wait For    ${dl_promise}
+    Should Be True    os.path.isabs($download['saveAs'])
+    Should End With    ${download}[saveAs]    ${/}pinned-relative-download.js
+    File Should Exist    ${download}[saveAs]
+    File Should Not Exist    ${EXECDIR}${/}pinned-relative-download.js
+    Remove File    ${download}[saveAs]
+
+Relative downloadsPath Is Not Relative To The Working Directory
+    [Tags]    no-docker-pr
+    New Browser    ${BROWSER}    headless=${HEADLESS}    downloadsPath=pinned-relative-downloads
+    New Context    acceptDownloads=True
+    New Page    ${LOGIN_URL}
+    # Today Playwright resolves it against the working directory of the Node process; issue #5620 changes this.
+    ${dl_promise} =    Promise To Wait For Download    saveAs=test_download_file.js
+    Click    id=file_download
+    ${download} =    Wait For    ${dl_promise}
+    Should End With    ${download}[saveAs]    pinned-relative-downloads${/}test_download_file.js
+    File Should Exist    ${download}[saveAs]
+    Directory Should Not Exist    ${EXECDIR}${/}pinned-relative-downloads
+    Remove Directory    ${{ os.path.dirname($download['saveAs']) }}    recursive=True
+    [Teardown]    Close Browser
+
 *** Keywords ***
+Paths Should Be Equal
+    [Arguments]    ${actual}    ${expected}
+    ${actual} =    Normalize Path    ${actual}
+    ${expected} =    Normalize Path    ${expected}
+    Should Be Equal    ${actual}    ${expected}
+
 Launch And Connect To Remote Browser
     ${ws} =    Launch Browser Server    headless=${HEADLESS}
     Connect To Browser    wsEndpoint=${ws}
