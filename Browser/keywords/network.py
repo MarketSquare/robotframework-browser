@@ -46,6 +46,7 @@ from ..utils import (
     logger,
 )
 from ..utils.data_types import PageLoadStates, RegExp, RequestMethod
+from ..utils.types import Secret
 
 HTTP_STATUS_CODES = range(100, 600)
 
@@ -53,6 +54,10 @@ HTTP_STATUS_CODES = range(100, 600)
 def _check_times(times: int | None):
     if times is not None and times < 1:
         raise ValueError(f"times must be 1 or more, got {times}.")
+
+
+def _reveal(value: Any) -> Any:
+    return value.value if isinstance(value, Secret) else value
 
 
 def _has_content_type(headers: dict[str, str]) -> bool:
@@ -801,10 +806,10 @@ class Network(LibraryComponent):
         matcher: str,
         *,
         status: int = 200,
-        body: str | None = None,
+        body: str | Secret | None = None,
         json: Any = None,
         path: PathLike | None = None,
-        headers: dict[str, str] | None = None,
+        headers: dict[str, str | Secret] | None = None,
         times: int | None = None,
         on: ContextOrPage = ContextOrPage.Context,
     ) -> str:
@@ -818,7 +823,8 @@ class Network(LibraryComponent):
           - ``status``: The response status, from 100 to 599. There is no reason phrase
                 argument: the browser shows the standard phrase, or ``Unknown`` for a code
                 such as 299.
-          - ``body``: The response body as text, sent as UTF-8. ``body=`` is an empty body.
+          - ``body``: The response body as text or a Robot Framework ``Secret``, sent as
+                UTF-8. ``body=`` is an empty body.
           - ``json``: Any JSON-serializable value, such as a dictionary, list or number,
                 sent JSON-encoded. A string is sent as a JSON string, so JSON text goes in
                 ``body`` with a Content-Type header. ``None`` means not given: for a JSON
@@ -826,6 +832,7 @@ class Network(LibraryComponent):
           - ``path``: A file whose bytes are the body; binary files work. A relative path
                 resolves against the working directory.
           - ``headers``: All headers of the mock response; header names are case-insensitive.
+                A value is a string or a Robot Framework ``Secret``.
           - ``times``: How many matching requests the rule answers before it ends. ``None``
                 (default) answers every matching request until the rule is removed. Must be 1
                 or more.
@@ -853,6 +860,11 @@ class Network(LibraryComponent):
         answered request is logged only in ``playwright-log.txt``. When several rules match a
         request, the newest one wins, and a Page rule wins over a Context rule.
 
+        The keyword never logs the body or header values, but a string value still shows in
+        the keyword's arguments in the Robot Framework log; give a token as ``Secret`` to keep
+        it out. With ``enable_playwright_debug`` in the library import, the values are visible
+        as plain text in the Playwright debug log.
+
         A cross-origin mock response needs no CORS headers. If it sets its own
         ``Access-Control-Allow-Origin``, the browser checks it, so ``*`` together with
         credentials fails.
@@ -869,8 +881,10 @@ class Network(LibraryComponent):
         _check_times(times)
         if status not in HTTP_STATUS_CODES:
             raise ValueError(f"status must be from 100 to 599, got {status}.")
-        payload, content_type, payload_kind = _mock_payload(body, json, path)
-        response_headers = dict(headers or {})
+        payload, content_type, payload_kind = _mock_payload(_reveal(body), json, path)
+        response_headers = {
+            name: _reveal(value) for name, value in (headers or {}).items()
+        }
         if content_type and not _has_content_type(response_headers):
             response_headers["Content-Type"] = content_type
         request = Request().RouteRule(

@@ -256,6 +256,18 @@ Text File Mock Opened By Navigation Shows UTF-8 Text
     New Page    ${{ $ROOT_URL.rstrip("/") + $path }}
     Get Text    body    ==    Hyvää päivää
 
+Secret Body And Header Values Reach The Page
+    [Tags]    require-rf-7.4+
+    Set Environment Variable    MOCK_TOKEN    secret-token
+    VAR    ${token: Secret} =    %{MOCK_TOKEN}
+    VAR    &{headers} =    X-Token=${token}
+    ${path} =    Unique HTTP Path    /api/echo/mock-secret
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Mock Responses    **${path}    body=${token}    headers=${headers}
+    New Page    ${url}
+    Get Text    id=response-body    ==    secret-token
+    Get Text    id=response-headers    *=    "x-token": "secret-token"
+
 *** Keywords ***
 Open HTTP Page Without Sending
     [Arguments]    ${prefix}
