@@ -549,11 +549,11 @@ class Network(LibraryComponent):
         | Should Be Equal    ${response.status}            ${200}
         | Should Be Equal    ${response.json.some_field}   some value
         |
-        | VAR    &{fields}    username=demo    password=mode
+        | VAR    &{fields} =    username=demo    password=mode
         | ${response} =      `HTTP`    /login    POST    form=${fields}
         |
-        | VAR    &{file}    path=${CURDIR}/avatar.png
-        | VAR    &{fields}    description=Profile picture    file=${file}
+        | VAR    &{file} =    path=${CURDIR}/avatar.png
+        | VAR    &{fields} =    description=Profile picture    file=${file}
         | ${response} =      `HTTP`    /api/avatar    POST    multipart=${fields}    timeout=30s
         |
         | ${response} =      `HTTP`    /logo.png
@@ -735,16 +735,16 @@ class Network(LibraryComponent):
         | `New Context`    baseURL=https://example.com
         | `New Page`    /login
         | # ... log in on the page ...
-        | VAR    &{user}    name=robot
+        | VAR    &{user} =    name=robot
         | ${response} =    `Send API Request`    /api/users    POST    data=${user}    failOnStatusCode=True
         | Should Be Equal    ${response.status}    ${201}
         | Should Be Equal    ${response.json.name}    robot
         |
-        | VAR    &{params}    q=robot    page=${2}
+        | VAR    &{params} =    q=robot    page=${2}
         | ${response} =    `Send API Request`    /api/search    params=${params}
         |
-        | VAR    &{file}    path=${CURDIR}/avatar.png
-        | VAR    &{fields}    description=Profile picture    file=${file}
+        | VAR    &{file} =    path=${CURDIR}/avatar.png
+        | VAR    &{fields} =    description=Profile picture    file=${file}
         | ${response} =    `Send API Request`    /api/avatar    POST    multipart=${fields}
         """
         request = Request().ApiRequest(

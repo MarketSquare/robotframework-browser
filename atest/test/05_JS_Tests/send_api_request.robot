@@ -84,7 +84,7 @@ Params As A String Are Encoded Except The Characters That Structure A Query
     Should Be Equal    ${response.json.query}    ${{ {'q': 'rock roll', 'n': 'ä#1', 'x': '&'} }}
 
 Params From A Dictionary Encode Every Character
-    VAR    &{params}    q=rock & roll    sum=1+1=2
+    VAR    &{params} =    q=rock & roll    sum=1+1=2
     ${response} =    Send API Request    /api/echo/params    params=${params}
     Should Be Equal    ${response.json.query}    ${{ {'q': 'rock & roll', 'sum': '1+1=2'} }}
 
@@ -109,10 +109,10 @@ Header Values That Are Numbers Or Booleans Are Sent As Text
     Should Be Equal    ${response.json.headers['x-on']}    true
 
 Fields Keep Their Order Also With Number Like Names
-    VAR    &{params}    b=1    2=2    a=3
+    VAR    &{params} =    b=1    2=2    a=3
     ${response} =    Send API Request    /api/echo/order    params=${params}
     Should Be Equal    ${response.url}    ${STATIC_URL}api/echo/order?b=1&2=2&a=3
-    VAR    &{fields}    b=1    2=2    a=3
+    VAR    &{fields} =    b=1    2=2    a=3
     ${response} =    Send API Request    /api/echo/order    POST    multipart=${fields}
     Should Be Equal    ${{ [part['name'] for part in $response.json['parts']] }}    ${{ ['b', '2', 'a'] }}
 

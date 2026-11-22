@@ -1295,7 +1295,7 @@ class FormFields:
     Names and values are encoded completely, so they can hold any character: a space, ``&``,
     ``=``, ``+`` or ``%`` arrives at the server as written.
 
-    | VAR    &{fields}    username=demo    password=a&b=c    remember=${True}
+    | VAR    &{fields} =    username=demo    password=a&b=c    remember=${True}
     | ${response} =    `HTTP`    /login    POST    form=${fields}
     | # sent as: username=demo&password=a%26b%3Dc&remember=true
     """
@@ -1316,7 +1316,7 @@ class QueryParams:
     hold any character, also ``&``, ``=``, ``+`` and ``%``. Prefer a dictionary unless the
     query is already at hand as text.
 
-    | VAR    &{params}    q=rock & roll    page=${2}    exact=${True}
+    | VAR    &{params} =    q=rock & roll    page=${2}    exact=${True}
     | ${response} =    `Send API Request`    /api/search?lang=en    params=${params}
     | # sends /api/search?lang=en&q=rock+%26+roll&page=2&exact=true
 
@@ -1365,9 +1365,9 @@ class MultipartFields:
     ``VAR`` or ``${{ {...} }}``.
 
     A file from disk, a file made from text and a text field:
-    | VAR    &{avatar}    path=${CURDIR}/avatar.png
-    | VAR    &{notes}    name=notes.txt    mimeType=text/plain    buffer=Hello
-    | VAR    &{fields}    description=Profile picture    avatar=${avatar}    notes=${notes}
+    | VAR    &{avatar} =    path=${CURDIR}/avatar.png
+    | VAR    &{notes} =    name=notes.txt    mimeType=text/plain    buffer=Hello
+    | VAR    &{fields} =    description=Profile picture    avatar=${avatar}    notes=${notes}
     | ${response} =    `Send API Request`    /api/profile    POST    multipart=${fields}
 
     The same with inline Python dictionaries:
