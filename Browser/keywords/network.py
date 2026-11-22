@@ -414,8 +414,8 @@ class Network(LibraryComponent):
         - ``**`` matches any number of characters, including ``/``
         - ``{foo,bar,baz}`` matches one of the strings in the braces (in this example ``foo``, ``bar`` or ``baz``)
 
-        All other characters match literally, also ``?``, ``[`` and ``]``. To match exactly one
-        character or a character class, use a RegExp instead.
+        ``?``, ``[`` and ``]`` match literally. To match exactly one character or a character
+        class, use a RegExp (``/.../``, see below).
 
         Example:
         | `Wait For Response`    **/api/get/text    # matches any response with url ending with /api/get/text. example: https://browser.fi/api/get/text
