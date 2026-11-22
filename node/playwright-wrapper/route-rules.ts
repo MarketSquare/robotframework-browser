@@ -69,10 +69,6 @@ function routeAction(request: pb.Request_RouteRule): RouteAction {
     throw new Error('Route rule has no action.');
 }
 
-function ruleTarget(request: pb.Request_RouteRule): string {
-    return request.times === undefined ? request.url : `${request.url} (times=${request.times})`;
-}
-
 async function addRouteRule(
     target: BrowserContext | Page,
     page: Page | undefined,
@@ -111,7 +107,6 @@ export async function addContextRoute(
 ): Promise<pb.Response_RouteRuleId> {
     const context = state.activeBrowser?.context;
     exists(context, 'Tried to add a route rule, but no context was open.');
-    logger.info(`Adding route rule for ${ruleTarget(request)} to context ${context.id}`);
     return addRouteRule(context.c, undefined, context.routeRules, request);
 }
 
@@ -123,7 +118,6 @@ export async function addPageRoute(
     const page = state.activeBrowser?.page;
     exists(context, 'Tried to add a route rule, but no context was open.');
     exists(page, 'Tried to add a route rule, but no page was open.');
-    logger.info(`Adding route rule for ${ruleTarget(request)} to page ${page.id}`);
     return addRouteRule(page.p, page.p, context.routeRules, request);
 }
 
@@ -159,7 +153,9 @@ export async function removeAllRouteRules(
     const context = state.activeBrowser?.context;
     if (context === undefined) return emptyWithLog('No context open, no route rules to remove.');
     const rules = context.routeRules.takeAll();
-    await Promise.all(rules.map(endRule));
+    const results = await Promise.allSettled(rules.map(endRule));
+    const failure = results.find((result) => result.status === 'rejected');
+    if (failure) throw failure.reason;
     const pageRules = rules.filter((rule) => rule.page !== undefined).length;
     return emptyWithLog(
         `Removed ${rules.length - pageRules} Context and ${pageRules} Page route rules from context ${context.id}.`,

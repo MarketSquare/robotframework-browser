@@ -89,7 +89,24 @@ describe('route rules', () => {
         expect((await removeAllRouteRules({}, state)).log).toContain('Removed 0 Context and 0 Page');
     });
 
+    it('waits for every running handler call even when one removal fails', async () => {
+        expect.assertions(2);
+        const { state, context, page } = fakeState();
+        await addContextRoute({ url: '**/a', abort: {} }, state);
+        await addPageRoute({ url: '**/b', abort: {} }, state);
+        context.dispose.mockRejectedValueOnce(new Error('dispose failed'));
+        let finishAbort: () => void = () => {};
+        void page.handlers[0](fakeRoute(() => new Promise<void>((resolve) => (finishAbort = resolve))));
+        let settled = false;
+        const removal = removeAllRouteRules({}, state).finally(() => (settled = true));
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(settled).toBe(false);
+        finishAbort();
+        await expect(removal).rejects.toThrow('dispose failed');
+    });
+
     it('rejects an invalid regular expression', async () => {
+        expect.assertions(1);
         const { state } = fakeState();
         await expect(addContextRoute({ url: '/[/', abort: {} }, state)).rejects.toThrow('Invalid regular expression');
     });
