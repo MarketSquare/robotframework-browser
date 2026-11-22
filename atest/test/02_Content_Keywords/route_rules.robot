@@ -251,6 +251,14 @@ Invalid Mock Responses Fail
     ...    TypeError: Object of type set is not JSON serializable
     ...    Mock Responses    **/api/echo/never    json=${{ {1, 2} }}
 
+Header Names Differing Only In Case Give One Header
+    [Documentation]    Which value the page gets differs between browsers.
+    ${path} =    Unique HTTP Path    /api/echo/mock-header-case
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Mock Responses    **${path}    body=text    headers=${{ {"X-Mock": "upper", "x-mock": "lower"} }}
+    New Page    ${url}
+    Get Text    id=response-headers    matches    "x-mock": "(upper|lower)"\n
+
 *** Keywords ***
 Open HTTP Page Without Sending
     [Arguments]    ${prefix}

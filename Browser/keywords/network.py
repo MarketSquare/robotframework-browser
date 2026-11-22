@@ -820,7 +820,8 @@ class Network(LibraryComponent):
           - ``body``: The response body as text, sent as UTF-8. ``body=`` is an empty body.
           - ``json``: Any JSON-serializable value, such as a dictionary, list or number,
                 sent JSON-encoded. A string is sent as a JSON string, so JSON text goes in
-                ``body`` with a Content-Type header.
+                ``body`` with a Content-Type header. ``None`` means not given: for a JSON
+                ``null`` body use ``body=null`` with a Content-Type header.
           - ``path``: A file whose bytes are the body; binary files work. A relative path
                 resolves against the working directory.
           - ``headers``: All headers of the mock response; header names are case-insensitive.
@@ -854,7 +855,7 @@ class Network(LibraryComponent):
         ``Access-Control-Allow-Origin``, the browser checks it, so ``*`` together with
         credentials fails.
 
-        Example, stub the orders and then fail the next request once:
+        Example, mock the orders and then fail the next request once:
         | `Mock Responses`    **/api/orders    json=${orders}
         | `Mock Responses`    **/api/orders    status=500    times=1
         | `Click`    id=reload-orders    # gets 500
