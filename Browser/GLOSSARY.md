@@ -97,6 +97,13 @@ scripts. It lives as long as the context or page it was added to; a context's in
 runs in the context's popups, a page's does not.
 _Avoid_: preload script, startup script
 
+**Route rule**:
+A rule on a context or page that decides what happens to the matching requests before they
+reach the network, for example aborting them. It lives until its context or page closes, it
+is removed, or it has used up the number of times it may run. A Page rule stays on the page
+it was added to.
+_Avoid_: mock, interceptor, route handler
+
 **Script tag**:
 JavaScript added to the current document of a page or frame as a `<script>` element. It runs
 once, in that document only, and is gone when that page or frame navigates or reloads.
@@ -146,6 +153,8 @@ _Avoid_: input, body
 - An **init script** has no scope of its own. It ends when its context or page closes, so when
   that happens is decided by the automatic closing level, not by the library's `Scope`. On the
   **Python path** it behaves the same.
+- A **route rule** has no scope of its own either, and behaves the same on the **Python
+  path**. Unlike an **init script** it can be removed before its context or page closes.
 - An **init script** runs in every document its context or page loads, before the document's
   own scripts. A **script tag** runs once, when it is added, in the document it was added
   to.
