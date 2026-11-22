@@ -132,7 +132,16 @@
     const isCurrent = (config) => config.run === requestCount;
 
     function resetPanel() {
-        for (const id of ['status', 'status-text', 'response-url', 'response-size', 'response-sha256', 'error']) {
+        const fields = [
+            'served-by',
+            'status',
+            'status-text',
+            'response-url',
+            'response-size',
+            'response-sha256',
+            'error',
+        ];
+        for (const id of fields) {
             $(id).textContent = '';
         }
         $('response-headers').textContent = '';
@@ -163,15 +172,30 @@
         item.dataset.url = config.url;
         item.dataset.status = outcome.status ?? '';
         item.dataset.sha256 = outcome.sha256 ?? '';
-        item.textContent =
-            config.kind + ' ' + config.method + ' ' + config.url + ' -> ' + (outcome.status ?? outcome.summary ?? '');
+        item.dataset.served = outcome.served ?? '';
+        const result = outcome.status ?? outcome.summary ?? '';
+        const served = outcome.served ? ` [${outcome.served}]` : '';
+        item.textContent = `${config.kind} ${config.method} ${config.url} -> ${result}${served}`;
         $('history').appendChild(item);
+    }
+
+    // A real Test App answer carries its served stamp; anything else, such as a mock response, has none.
+    const servedBy = (stamp) => (stamp === undefined || stamp === null ? 'not test-app' : 'test-app #' + stamp);
+
+    function servedStampOfEcho(text) {
+        try {
+            return JSON.parse(text).served;
+        } catch {
+            return undefined;
+        }
     }
 
     function showResponse(config, response) {
         const sha256 = sha256Hex(response.bytes);
-        addHistory(config, { status: response.status, sha256 });
+        const served = servedBy(response.headers['x-test-app-served']);
+        addHistory(config, { status: response.status, sha256, served });
         if (!isCurrent(config)) return;
+        $('served-by').textContent = served;
         $('status').textContent = String(response.status);
         $('status-text').textContent = response.statusText;
         $('response-url').textContent = response.url;
@@ -189,9 +213,11 @@
     }
 
     // For an <img> load or a form submit: no status, size or headers, only a body summary.
-    function showResult(config, url, body, summary) {
-        addHistory(config, { summary });
+    // A form result shows the served stamp of its echo; an <img> load cannot read one.
+    function showResult(config, url, body, summary, served) {
+        addHistory(config, { summary, served });
         if (!isCurrent(config)) return;
+        $('served-by').textContent = served ?? '';
         $('response-url').textContent = url;
         $('response-body').textContent = body;
         setState('done');
@@ -359,7 +385,9 @@
                         reject(new Error(result.error));
                         return;
                     }
-                    showResult(config, formAction, result.text, 'submitted');
+                    const served =
+                        result.text === '[cross-origin result]' ? undefined : servedBy(servedStampOfEcho(result.text));
+                    showResult(config, formAction, result.text, 'submitted', served);
                     resolve();
                 };
                 const timer = setTimeout(() => {

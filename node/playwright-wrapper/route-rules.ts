@@ -66,6 +66,10 @@ function routeAction(request: pb.Request_RouteRule): RouteAction {
         const errorCode = request.abort.errorCode;
         return (route) => route.abort(errorCode);
     }
+    if (request.fulfill) {
+        const { status, headers, body } = request.fulfill;
+        return (route) => route.fulfill({ status, headers, body });
+    }
     throw new Error('Route rule has no action.');
 }
 

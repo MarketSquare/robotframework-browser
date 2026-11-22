@@ -113,6 +113,14 @@ query turns that off.
 | `/api/echo/**` | Any method. Returns JSON with `method`, `url`, `path`, `query`, `headers`, `origin`, `body` (`size`, `sha256`, `contentType`, `text`, `json`, `base64`) and `parts` for `multipart/form-data` in the order sent (`name`, `filename`, `mimeType`, `size`, `sha256`, `text`, `truncated`). A multipart body that cannot be parsed is still echoed, with `parts: null` and `partsError`. `format=html` wraps the JSON in `<pre id="echo">` |
 | `/api/respond/**` | The query defines the response: `status`, `statusText`, `contentType`, `header=Name:Value` (repeatable), `delay` (ms), `body`, `file` (a name in `static/http-fixtures/`). Without `body` or `file` it answers with the echo. An invalid `status` (an integer from 200 to 599), `delay`, `statusText` or `header` gets `400` with an `error` naming it |
 | `/api/basic-auth/:user/:password` | `401` with `WWW-Authenticate: Basic realm="test-app"` unless the `Authorization` header matches; otherwise the echo plus `authenticatedUser` |
+| `/api/journal?path=<prefix>` | `GET`. The request journal: a JSON list of the requests to the three endpoints above whose path starts with `prefix`, with `id` (the served stamp), `method`, `path`, `url`, `status` and the request `headers`. Kept in memory for the life of the server |
+
+**Served stamp.** Every answer from `/api/echo`, `/api/respond` and
+`/api/basic-auth` carries `X-Test-App-Served: <n>`, a per-server counter that
+CORS exposes, and every echo JSON has the same number in `served`. A response
+without the stamp did not come from the Test App, for example a mock response
+of a route rule. Together with the journal a test sees whether a request reached
+the server; give each test its own path so tests sharing one Test App stay apart.
 
 A second origin is the same server reached through `127.0.0.1` instead of
 `localhost`.
@@ -136,9 +144,12 @@ The page's builder:
 that a select does not offer sends nothing; the page shows `#state` `error` and
 the value in `#error`. The response panel
 shows `#state` (`idle`, `pending`, `done`, `error`), `#status`, `#status-text`,
-`#response-url`, `#response-size`, `#response-sha256`, `#response-headers`,
-`#response-body`, `#response-image` and `#error`; `#history` lists every
-exchange. `#response-body` is the body decoded as UTF-8 exactly as received, or
+`#response-url`, `#served-by`, `#response-size`, `#response-sha256`,
+`#response-headers`, `#response-body`, `#response-image` and `#error`;
+`#history` lists every exchange. `#served-by` is `test-app #<n>` for an answer
+with the served stamp and `not test-app` for one without; a form submit reads the
+stamp from the echo, and an `<img>` load leaves it empty. Each history line ends
+with the same value in brackets and has it in `data-served`. `#response-body` is the body decoded as UTF-8 exactly as received, or
 `[binary: N bytes]`. Only the latest request writes the panel; an earlier one that
 answers later only adds its history entry. An `<img>` load and a form submit
 cannot read the status, size or headers, so for them only the body (image size,

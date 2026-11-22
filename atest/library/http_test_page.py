@@ -4,6 +4,7 @@ import json
 import uuid
 from pathlib import Path
 from urllib.parse import urlencode
+from urllib.request import urlopen
 
 from robot.libraries.BuiltIn import BuiltIn
 from test_app_server import TEST_APP_LOG_DIR, app_log_file
@@ -111,3 +112,15 @@ def http_echo_count(path: str) -> int:
         if entry.get("event") == "http_echo" and entry.get("url", "").startswith(path):
             count += 1
     return count
+
+
+def http_journal(path: str) -> list[dict]:
+    """Return the Test App request journal entries whose path starts with ``path``.
+
+    The Test App is the one at ``${SERVER_PORT}``. Each entry is one request that reached
+    ``/api/echo``, ``/api/respond`` or ``/api/basic-auth``.
+    """
+    port = BuiltIn().get_variable_value("${SERVER_PORT}")
+    query = urlencode({"path": path})
+    with urlopen(f"http://localhost:{port}/api/journal?{query}", timeout=10) as response:
+        return json.loads(response.read())
