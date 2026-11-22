@@ -346,9 +346,7 @@ JSON Patch On A Compressed Response Drops The Stale Encoding Headers
     Should Be Equal    ${echo}[patched]    ${True}
     Should Be Equal    ${echo}[path]    ${path}
     Get Text    id=response-headers    not contains    content-encoding
-    ${size} =    Get Text    id=response-size
-    ${headers} =    Panel JSON    response-headers
-    Should Be Equal    ${{ $headers.get("content-length", $size) }}    ${size}
+    Content Length Should Match Response Size
 
 Relative Request URL Reaches The New Path And The Page Keeps Its URL
     ${path} =    Unique HTTP Path    /api/echo/modify-relative
@@ -427,8 +425,11 @@ Request Slower Than The Timeout When The Rule Was Added Fails
     ${path} =    Unique HTTP Path    /api/respond/modify-timeout
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?delay=3000
     ${old} =    Set Browser Timeout    1s
-    Modify Responses    **${path}*    status=200
-    Set Browser Timeout    ${old}
+    TRY
+        Modify Responses    **${path}*    status=200
+    FINALLY
+        Set Browser Timeout    ${old}
+    END
     New Page    ${url}
     Get Text    id=state    ==    error
 
@@ -488,8 +489,3 @@ Request Aborted With Error Code Fails
     ${path} =    Open HTTP Page Without Sending    /api/echo/code-${error_code}
     Abort Requests    **${path}    errorCode=${error_code}
     Send Request    expected_state=error
-
-Panel JSON
-    [Arguments]    ${id}
-    ${text} =    Get Text    id=${id}
-    RETURN    ${{ json.loads($text) }}

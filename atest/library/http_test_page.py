@@ -3,6 +3,7 @@ import hashlib
 import json
 import uuid
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
@@ -107,3 +108,23 @@ def http_journal(path: str) -> list[dict]:
         f"http://localhost:{port}/api/journal?{query}", timeout=10
     ) as response:
         return json.loads(response.read())
+
+
+def panel_json(panel_id: str) -> Any:
+    """Return the text of the HTTP test page panel ``panel_id`` parsed as JSON.
+
+    ``response-body`` holds the echo JSON, ``response-headers`` the response headers.
+    """
+    browser = BuiltIn().get_library_instance("Browser")
+    return json.loads(browser.get_text(f"id={panel_id}"))
+
+
+def content_length_should_match_response_size() -> None:
+    """Fail if the response has a ``content-length`` header that differs from the received size."""
+    browser = BuiltIn().get_library_instance("Browser")
+    size = browser.get_text("id=response-size")
+    content_length = panel_json("response-headers").get("content-length", size)
+    if content_length != size:
+        raise AssertionError(
+            f"content-length {content_length} != received size {size}"
+        )
