@@ -104,6 +104,11 @@ is removed, or it has used up the number of times it may run. A Page rule stays 
 it was added to.
 _Avoid_: mock, interceptor, route handler
 
+**Mock response**:
+A response that a **route rule** makes up and gives to the page, without sending the request
+to the server.
+_Avoid_: fake response, fulfilled response, stub
+
 **Script tag**:
 JavaScript added to the current document of a page or frame as a `<script>` element. It runs
 once, in that document only, and is gone when that page or frame navigates or reloads.
@@ -155,6 +160,9 @@ _Avoid_: input, body
   **Python path** it behaves the same.
 - A **route rule** has no scope of its own either, and behaves the same on the **Python
   path**. Unlike an **init script** it can be removed before its context or page closes.
+- A **route rule** can abort a request, answer it with a **mock response**, or let it reach the
+  server and change the request, the real response, or both. A real response that a rule
+  changes is not a **mock response**.
 - An **init script** runs in every document its context or page loads, before the document's
   own scripts. A **script tag** runs once, when it is added, in the document it was added
   to.
