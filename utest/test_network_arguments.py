@@ -3,7 +3,7 @@
 from typing import get_type_hints
 
 import pytest
-from robot.api.types import Secret
+from Browser.utils.types import Secret
 from robot.running.arguments.typeinfo import TypeInfo
 
 from Browser import Browser

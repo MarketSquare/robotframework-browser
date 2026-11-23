@@ -16,11 +16,8 @@ from collections.abc import Callable, Mapping
 from functools import wraps
 from typing import NamedTuple
 
-from robot.running.arguments.typeconverters import (
-    TypeConverter,
-    UnionConverter,
-    UnknownConverter,
-)
+from robot.running.arguments.typeconverters import TypeConverter
+from robot.running.arguments.typeinfo import TypeInfo
 from robotlibcore import DynamicCore  # type: ignore
 
 from .utils.data_types import RobotTypeConverter
@@ -50,12 +47,14 @@ def _python_converter(hint) -> TypeConverter | None:
     without the library's own converters Robot Framework would pick another member, and turn
     the text ``hello`` into ``bytes``.
     """
-    converter = RobotTypeConverter.converter_for(hint)
-    if isinstance(converter, UnionConverter) and any(
-        isinstance(member, UnknownConverter) for member in converter.nested or ()
+    info = TypeInfo.from_type_hint(hint)
+    # A type without a converter is None before Robot Framework 7.4, a falsy
+    # UnknownConverter from 7.4 on.
+    if info.is_union and not all(
+        TypeConverter.converter_for(item) for item in info.nested
     ):
         return None
-    return converter
+    return RobotTypeConverter.converter_for(hint)
 
 
 class _ArgumentConverter(NamedTuple):
