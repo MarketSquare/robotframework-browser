@@ -1756,7 +1756,7 @@ wheels = [
 
 [[package]]
 name = "robotframework-browser"
-version = "21.0.0"
+version = "21.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "click" },
@@ -1820,7 +1820,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "robotframework", specifier = ">=7.1.1,<9.0.0" },
     { name = "robotframework-assertion-engine", specifier = "==5.0.1" },
-    { name = "robotframework-browser-batteries", marker = "extra == 'bb'", specifier = ">=19.7.2" },
+    { name = "robotframework-browser-batteries", marker = "extra == 'bb'", specifier = ">=21.1.0" },
     { name = "robotframework-pythonlibcore", specifier = "==4.6.0" },
     { name = "robotframework-robocop", marker = "extra == 'robocop'", specifier = ">=8.8.0" },
     { name = "seedir", specifier = ">=0.5.1" },

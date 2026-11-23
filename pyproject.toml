@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "robotframework-browser"
-version = "21.0.0"
+version = "21.1.0"
 dependencies = [
     "grpcio==1.85.3",
     "grpcio-tools==1.85.3",
@@ -65,7 +65,7 @@ robocop = [
     "robotframework-robocop>=8.8.0",
 ]
 bb = [
-    "robotframework-browser-batteries>=19.7.2",
+    "robotframework-browser-batteries>=21.1.0",
 ]
 
 [project.urls]
