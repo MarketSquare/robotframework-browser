@@ -228,8 +228,7 @@ Wait For Download With Remote Browser Without SaveAs
     [Teardown]    Close Remote Browser
 
 Get Download State Saves A Download To saveAs When It Has Finished
-    [Tags]    known-bug
-    ...       robot:skip-on-failure
+    [Tags]    known-bug    robot:skip-on-failure
     # Download can start before the listener is registered, see issue #5645
     New Context    acceptDownloads=True
     New Page    ${LOGIN_URL}
