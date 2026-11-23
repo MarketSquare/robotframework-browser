@@ -498,7 +498,7 @@ def _add_http_response_views(response: dict, body: bytes) -> None:
 
 
 class Network(LibraryComponent):
-    @keyword(tags=("HTTP",))
+    @keyword(tags=("Setter", "HTTP"))
     def http(
         self,
         url: str,
@@ -656,7 +656,7 @@ class Network(LibraryComponent):
         _trace_content("Response body", response["bytes"])
         return cast(HttpResponse, JsonDotDict(response))
 
-    @keyword(name="Send API Request", tags=("HTTP",))
+    @keyword(name="Send API Request", tags=("Setter", "HTTP"))
     def send_api_request(
         self,
         url: str,
@@ -1080,7 +1080,7 @@ class Network(LibraryComponent):
             )
             logger.debug(response.log)
 
-    @keyword(tags=("Route", "Setter"))
+    @keyword(tags=("Route", "Setter", "HTTP"))
     def abort_requests(
         self,
         matcher: str | RegExp,
@@ -1141,7 +1141,7 @@ class Network(LibraryComponent):
         )
         return rule_id
 
-    @keyword(tags=("Route", "Setter"))
+    @keyword(tags=("Route", "Setter", "HTTP"))
     def mock_responses(
         self,
         matcher: str | RegExp,
@@ -1247,7 +1247,7 @@ class Network(LibraryComponent):
         )
         return rule_id
 
-    @keyword(tags=("Route", "Setter"))
+    @keyword(tags=("Route", "Setter", "HTTP"))
     def modify_responses(
         self,
         matcher: str | RegExp,
@@ -1379,7 +1379,7 @@ class Network(LibraryComponent):
                 return stub.AddPageRoute(request).id
             return stub.AddContextRoute(request).id
 
-    @keyword(tags=("Route", "Setter"))
+    @keyword(tags=("Route", "Setter", "HTTP"))
     def remove_route_rule(self, rule_id: str):
         """Removes the route rule with ``rule_id``.
 
@@ -1402,7 +1402,7 @@ class Network(LibraryComponent):
             response = stub.RemoveRouteRule(Request().RouteRuleId(id=rule_id))
         logger.info(response.log)
 
-    @keyword(tags=("Route", "Setter"))
+    @keyword(tags=("Route", "Setter", "HTTP"))
     def remove_all_route_rules(self):
         """Removes the route rules of the active context and of every page in it.
 
