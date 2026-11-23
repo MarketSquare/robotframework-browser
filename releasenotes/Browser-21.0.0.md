@@ -57,7 +57,8 @@ released with NodeJS 26.13.0.
 Now can record their interactions in the browser at any point during a test run, naming
 keywords, turning values into arguments and undoing mistakes as they go, so that they
 can get reusable User Keywords built from Browser keywords, without whole tests being
-generated and without translating generated Playwright code.
+generated and without translating generated Playwright code. Many thanks for the
+Checkmk for providing financial support for making this possible.
 
 ### Let libraries built on Browser hand over their own BrowserContext ([#5317](https://github.com/MarketSquare/robotframework-browser/issues/5317))
 Playwright can drive more than Chromium, Firefox and WebKit. It can drive Electron

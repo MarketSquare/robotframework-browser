@@ -15,7 +15,7 @@ class ExamplePlugin(LibraryComponent):  # Inherit LibraryComponent
     def new_plugin_cookie_keyword(self) -> dict:
         with self.playwright.grpc_channel() as stub:  # Open grpc channel.
             response = stub.GetCookies(
-                Request().Empty()
+                Request.CookieQuery()
             )  # Call the cookies implementation from Node side.
             cookies = json.loads(response.json)  # Get json payload from response.
         # Write Python code as you need, these lines are just examples.
