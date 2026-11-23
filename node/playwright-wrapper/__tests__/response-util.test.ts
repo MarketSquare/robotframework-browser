@@ -8,7 +8,14 @@ import { EventEmitter } from 'events';
 import { errors, Page } from 'playwright';
 
 import { trackRequests, withLoadReport } from '../load-report';
-import { errorResponse, jsonResponse, jsResponse, stringResponse } from '../response-util';
+import {
+    deserializeUrlOrPredicate,
+    errorResponse,
+    jsonResponse,
+    jsResponse,
+    stringResponse,
+    withoutCallLog,
+} from '../response-util';
 
 describe('responses built from JSON.stringify output', () => {
     it('keeps a stringified value as it is', () => {
@@ -71,5 +78,48 @@ describe('errorResponse', () => {
 
     it('sends no metadata for an error without a load report', () => {
         expect(errorResponse(new Error('boom'))?.metadata).toBeUndefined();
+    });
+});
+
+describe('withoutCallLog', () => {
+    it('drops the call log and the lines after it', () => {
+        const error = new Error('apiRequestContext.fetch: refused\nCall log:\n  - Authorization: Bearer x');
+        expect(withoutCallLog(error)).toBe('apiRequestContext.fetch: refused');
+    });
+
+    it('drops an indented call log', () => {
+        expect(withoutCallLog('failed\n  Call log:\n  - cookie: a=1')).toBe('failed');
+    });
+
+    it('keeps a message without a call log', () => {
+        expect(withoutCallLog(new Error('failed\nsecond line'))).toBe('failed\nsecond line');
+    });
+});
+
+describe('deserializeUrlOrPredicate', () => {
+    it('evaluates a function', () => {
+        const matcher = deserializeUrlOrPredicate('function (url) { return url.includes("api"); }');
+        expect(typeof matcher).toBe('function');
+        expect((matcher as (value: unknown) => boolean)('/api')).toBe(true);
+    });
+
+    it.each(['url => url.includes("api")', '(url) => url.includes("api")', '(url, other) => url.includes("api")'])(
+        'evaluates the arrow function %s',
+        (text) => {
+            const matcher = deserializeUrlOrPredicate(text);
+            expect((matcher as (value: unknown) => boolean)('/api')).toBe(true);
+        },
+    );
+
+    it('evaluates an arrow function without parameters', () => {
+        expect((deserializeUrlOrPredicate('() => true') as () => boolean)()).toBe(true);
+    });
+
+    it('keeps a glob', () => {
+        expect(deserializeUrlOrPredicate('**/api/{users,items}')).toBe('**/api/{users,items}');
+    });
+
+    it('makes a RegExp of a RegExp literal', () => {
+        expect(deserializeUrlOrPredicate('/api\\/items/i')).toEqual(/api\/items/i);
     });
 });

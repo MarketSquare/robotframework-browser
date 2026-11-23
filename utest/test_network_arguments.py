@@ -1,23 +1,12 @@
 """The network keywords take bodies, headers and matchers by the same rules."""
 
-from typing import get_type_hints
-
 import pytest
-from Browser.utils.types import Secret
-from robot.running.arguments.typeinfo import TypeInfo
 
-from Browser import Browser
 from Browser.keywords.network import Network
 from Browser.keywords.playwright_state import PlaywrightState
 from Browser.utils.data_types import RegExp
-
-
-def convert(keyword, argument: str, value):
-    hint = get_type_hints(keyword)[argument]
-    return TypeInfo.from_type_hint(hint).convert(
-        value, custom_converters=Browser.ROBOT_LIBRARY_CONVERTERS
-    )
-
+from Browser.utils.types import Secret
+from utest.robot_conversion import convert_like_robot as convert
 
 BODIES = [
     pytest.param(Network.http, "body", id="HTTP body"),

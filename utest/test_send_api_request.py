@@ -1,13 +1,12 @@
 import json
 from datetime import timedelta
-from typing import get_type_hints
 from unittest.mock import MagicMock
 
 import pytest
-from robot.running.arguments.typeinfo import TypeInfo
 
 from Browser import Browser
 from Browser.keywords.network import Network
+from utest.robot_conversion import convert_like_robot as _convert
 
 
 def response_messages(body: bytes = b"", **metadata) -> list[MagicMock]:
@@ -43,10 +42,7 @@ def sent(browser: Browser, stub: MagicMock, url="/api", **arguments):
 
 
 def convert_like_robot(argument: str, value):
-    hint = get_type_hints(Network.send_api_request)[argument]
-    return TypeInfo.from_type_hint(hint).convert(
-        value, custom_converters=Browser.ROBOT_LIBRARY_CONVERTERS
-    )
+    return _convert(Network.send_api_request, argument, value)
 
 
 def test_only_url_method_and_timeout_are_sent_by_default(browser, stub):

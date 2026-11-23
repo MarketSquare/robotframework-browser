@@ -34,7 +34,8 @@ const NO_BYTES = { bodyBytes: Buffer.alloc(0), postDataBytes: Buffer.alloc(0) };
 
 export function withoutCallLog(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);
-    return message.split(/\n\s*Call log:/)[0];
+    const callLog = message.indexOf('Call log:');
+    return callLog === -1 ? message : message.slice(0, callLog).trimEnd();
 }
 
 /** Drops Playwright's call log, which lists request header values such as Authorization and cookies. */
@@ -152,15 +153,17 @@ const REGEXP_LITERAL = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
 
 type UrlPredicate = (value: unknown) => boolean;
 
-const FUNCTION_MATCHER = /^function.*{.*}$/;
-const ARROW_FUNCTION_MATCHER = /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/;
+function looksLikeFunction(text: string): boolean {
+    const isFunction = text.startsWith('function') && text.includes('{') && text.endsWith('}');
+    return isFunction || /[\w)] =>/.test(text);
+}
 
 /**
  * A URL matcher of a keyword: a function or arrow function, a JavaScript RegExp literal
  * (an invalid one fails) or a glob string.
  */
 export function deserializeUrlOrPredicate(urlOrPredicate: string): RegExp | string | UrlPredicate {
-    if (FUNCTION_MATCHER.test(urlOrPredicate) || ARROW_FUNCTION_MATCHER.test(urlOrPredicate)) {
+    if (looksLikeFunction(urlOrPredicate)) {
         // eslint-disable-next-line @typescript-eslint/no-implied-eval
         const fn: unknown = new Function(`return (${urlOrPredicate})`)();
         if (typeof fn === 'function') return fn as UrlPredicate;
