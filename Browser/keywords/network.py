@@ -552,16 +552,9 @@ class Network(LibraryComponent):
                 ``URLSearchParams`` body.
           - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
                 ``multipart/form-data`` the way the browser encodes a ``FormData`` body, in
-                the order given. Do not set a ``Content-Type`` in ``headers``: the browser then leaves out the
-                boundary of the parts, and the server cannot read the body.
-
-        Give at most one of ``body``, ``form`` and ``multipart``. An empty ``form`` or
-        ``multipart`` dictionary is given too: it sends an empty URL-encoded body or a
-        multipart body without parts, as the browser does. ``GET`` and ``HEAD`` requests are
-        sent without a body: a text, JSON, ``form`` or ``multipart`` body is left out, and a
-        ``bytes`` body fails, so that binary data is not dropped unnoticed.
-                For now the ``body`` and the files given as ``buffer`` can be at most 4 MiB
-                together; a file given as ``path`` does not count.
+                the order given. Do not set a ``Content-Type`` in ``headers``: the browser
+                then leaves out the boundary of the parts, and the server cannot read the
+                body.
           - ``credentials``: Whether cookies and HTTP authentication are sent, see
                 `FetchCredentials`. The browser's default sends them only to the page's own
                 origin.
@@ -581,6 +574,15 @@ class Network(LibraryComponent):
                 `FetchPriority`.
           - ``timeout``: How long to wait for the whole response, body included. Defaults to
                 the library timeout; ``0`` waits without a limit.
+
+        Give at most one of ``body``, ``form`` and ``multipart``. An empty ``form`` or
+        ``multipart`` dictionary is sent too: as an empty URL-encoded body or a multipart
+        body without parts, as the browser does. The ``body`` and the files given as
+        ``buffer`` can be at most 4 MiB together; a file given as ``path`` does not count.
+
+        ``GET`` and ``HEAD`` requests are sent without a body: a text, JSON, ``form`` or
+        ``multipart`` body is left out, and a ``bytes`` body fails, so that binary data is
+        not dropped unnoticed.
 
         The keyword fails when ``fetch`` fails: on a network error, a request CORS blocks,
         ``redirect=error`` on a redirect or a wrong ``integrity``. A response with an error
@@ -1125,7 +1127,7 @@ class Network(LibraryComponent):
         | `Click`    id=reload-orders    # reaches the server
         | `Get Text`    id=orders-status    ==    loaded
 
-        See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
+        See [https://robotframework-browser.org/docs/http/route-rules|route rules] for
         more.
         """
         _check_times(times)
@@ -1225,7 +1227,7 @@ class Network(LibraryComponent):
         | `Click`    id=reload-orders    # gets 500
         | `Click`    id=reload-orders    # gets ${orders}
 
-        See [https://robotframework-browser.org/docs/concepts/route-rules|route rules] for
+        See [https://robotframework-browser.org/docs/http/route-rules|route rules] for
         more.
         """
         _check_times(times)
@@ -1322,7 +1324,7 @@ class Network(LibraryComponent):
         | VAR    &{patch} =    state=cancelled    note=${None}
         | `Modify Responses`    **/api/orders/1    json_patch=${patch}    request_headers=${auth}
 
-        See [https://robotframework-browser.org/docs/concepts/route-rules#modify-responses|route rules]
+        See [https://robotframework-browser.org/docs/http/route-rules#modify-responses|route rules]
         for redirects, cookies on a changed URL, failures and more examples.
         """
         _check_times(times)
