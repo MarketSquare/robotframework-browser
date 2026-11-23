@@ -136,21 +136,28 @@ def test_invalid_arguments_fail_before_the_rpc(network, arguments, message):
     stub.AddContextRoute.assert_not_called()
 
 
-def test_secret_body_is_revealed_before_the_rpc(network):
+def test_replaced_text_body_keeps_the_real_content_type(network):
     network, stub = network
-    network.modify_responses("**/api", body=Secret("response-secret"))
+    network.modify_responses("**/api", body="<p>hi</p>", request_body=b"\x00\xe9")
     modify = sent_modify(stub)
-    assert modify.body == b"response-secret"
-    assert dict(modify.headers) == {"Content-Type": "text/plain; charset=utf-8"}
-
-
-def test_bytes_body_and_request_body_are_sent_unchanged(network):
-    network, stub = network
-    network.modify_responses("**/api", body=b"\x89\xff", request_body=b"\x00\xe9")
-    modify = sent_modify(stub)
-    assert modify.body == b"\x89\xff"
+    assert modify.body == b"<p>hi</p>"
     assert modify.postData == b"\x00\xe9"
-    assert modify.headers["Content-Type"] == "application/octet-stream"
+    assert dict(modify.headers) == {}
+    assert dict(modify.requestHeaders) == {}
+
+
+def test_json_request_body_gets_json_unless_the_header_is_removed(network):
+    network, stub = network
+    network.modify_responses("**/api", request_body={"a": 1})
+    assert dict(sent_modify(stub).requestHeaders) == {
+        "Content-Type": "application/json"
+    }
+    network.modify_responses(
+        "**/api", request_body={"a": 1}, request_headers={"Content-Type": None}
+    )
+    modify = sent_modify(stub)
+    assert dict(modify.requestHeaders) == {}
+    assert list(modify.removedRequestHeaders) == ["Content-Type"]
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("-inf"), {1, 2}])

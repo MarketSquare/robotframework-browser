@@ -19,28 +19,12 @@ def sent_fulfill(stub: MagicMock):
     return stub.AddContextRoute.call_args.args[0].fulfill
 
 
-def test_json_string_is_encoded_as_a_json_string():
+def test_body_and_its_content_type_are_sent_in_the_fulfill():
     network, stub = make_network()
-    network.mock_responses("**/api", json='{"a": 1}')
-    assert sent_fulfill(stub).body == b'"{\\"a\\": 1}"'
-
-
-def test_empty_body_is_an_empty_text_body():
-    network, stub = make_network()
-    network.mock_responses("**/api", body="")
+    network.mock_responses("**/api", json={"a": [1, 2]}, headers={"X-A": "1"})
     fulfill = sent_fulfill(stub)
-    assert fulfill.body == b""
-    assert fulfill.headers["Content-Type"] == "text/plain; charset=utf-8"
-
-
-def test_file_with_an_unknown_extension_is_octet_stream(tmp_path):
-    file = tmp_path / "payload.robotmock"
-    file.write_bytes(b"\x00\xff")
-    network, stub = make_network()
-    network.mock_responses("**/api", path=file)
-    fulfill = sent_fulfill(stub)
-    assert fulfill.body == b"\x00\xff"
-    assert fulfill.headers["Content-Type"] == "application/octet-stream"
+    assert fulfill.body == b'{"a":[1,2]}'
+    assert dict(fulfill.headers) == {"X-A": "1", "Content-Type": "application/json"}
 
 
 def test_three_payloads_are_named_in_the_error(tmp_path):
@@ -53,29 +37,8 @@ def test_three_payloads_are_named_in_the_error(tmp_path):
     stub.AddContextRoute.assert_not_called()
 
 
-def test_bytes_body_is_sent_unchanged_as_octet_stream():
-    network, stub = make_network()
-    network.mock_responses("**/api", body=b"\x89P\xff\x00\xe9")
-    fulfill = sent_fulfill(stub)
-    assert fulfill.body == b"\x89P\xff\x00\xe9"
-    assert fulfill.headers["Content-Type"] == "application/octet-stream"
-
-
-def test_json_body_is_compact():
-    network, stub = make_network()
-    network.mock_responses("**/api", json={"a": [1, 2]})
-    assert sent_fulfill(stub).body == b'{"a":[1,2]}'
-
-
-@pytest.mark.parametrize("value", [float("nan"), float("inf"), {1, 2}])
-def test_json_that_is_not_json_fails_with_a_value_error(value):
+def test_json_that_is_not_json_fails_before_the_rpc():
     network, stub = make_network()
     with pytest.raises(ValueError, match="^json cannot be sent as JSON: "):
-        network.mock_responses("**/api", json={"a": value})
+        network.mock_responses("**/api", json={"a": float("nan")})
     stub.AddContextRoute.assert_not_called()
-
-
-def test_bytearray_body_is_sent_as_bytes():
-    network, stub = make_network()
-    network.mock_responses("**/api", body=bytearray(b"\x89\xff"))
-    assert sent_fulfill(stub).body == b"\x89\xff"

@@ -55,7 +55,6 @@ def test_only_url_method_and_timeout_are_sent_by_default(browser, stub):
         "encodedParams",
         "dataText",
         "dataBytes",
-        "dataJson",
         "failOnStatusCode",
         "maxRedirects",
         "maxRetries",
@@ -99,22 +98,25 @@ def test_string_params_are_sent_as_encoded_params(browser, stub):
         ("hello", "dataText", "hello"),
         ("", "dataText", ""),
         (b"\x00\xff", "dataBytes", b"\x00\xff"),
-        ({"name": "robot"}, "dataJson", '{"name":"robot"}'),
-        ([1, 2], "dataJson", "[1,2]"),
-        (
-            {"id": 9007199254740993, "x": 1.0},
-            "dataJson",
-            '{"id":9007199254740993,"x":1.0}',
-        ),
-        (5, "dataJson", "5"),
-        (False, "dataJson", "false"),
+        ({"name": "robot"}, "dataText", '{"name":"robot"}'),
     ],
 )
 def test_data_is_sent_by_its_type(browser, stub, data, field, value):
     request = sent(browser, stub, data=data)
     assert getattr(request, field) == value
-    others = {"dataText", "dataBytes", "dataJson"} - {field}
-    assert not any(request.HasField(other) for other in others)
+    other = ({"dataText", "dataBytes"} - {field}).pop()
+    assert not request.HasField(other)
+
+
+def test_json_data_gets_a_json_content_type_unless_headers_has_one(browser, stub):
+    request = sent(browser, stub, data=[1])
+    assert json.loads(request.headers) == {"Content-Type": "application/json"}
+    request = sent(browser, stub, data=[1], headers={"content-type": "text/x"})
+    assert json.loads(request.headers) == {"content-type": "text/x"}
+
+
+def test_text_data_sends_no_headers_of_its_own(browser, stub):
+    assert not sent(browser, stub, data="hello").HasField("headers")
 
 
 def test_form_values_are_sent_as_text(browser, stub):

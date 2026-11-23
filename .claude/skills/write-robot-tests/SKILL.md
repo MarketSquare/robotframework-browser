@@ -44,6 +44,14 @@ Split a test when it covers a second feature, not to give each assertion its own
 reruns the same setup. When reviewing, judge a test by the features it covers, not by its
 assertion count.
 
+### Acceptance tests are also usage examples
+
+People read the acceptance tests to learn how a keyword is used. When logic moves to pytest, keep
+the tests that show a different way to use the keyword, even when pytest checks the same
+decision. Move to pytest only a test that checks a Python-only corner, such as an invalid
+argument combination, and shows no usage. A usage that needs a longer explanation belongs on
+robotframework-browser.org, not in more tests.
+
 ### No `[Documentation]` in test cases or user keywords
 
 Test cases and user keywords defined in `.robot` files must **not** use `[Documentation]`. The name and structure must be sufficient. Inline comments (`#`) are acceptable sparingly for genuinely non-obvious details — they are the exception, not the rule. The one exception is robotstatuschecker expectations, see [Checking what a keyword logs or how a test ends](#checking-what-a-keyword-logs-or-how-a-test-ends).
