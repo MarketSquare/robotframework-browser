@@ -1,10 +1,7 @@
 from pathlib import Path
-from typing import get_type_hints
 
 import pytest
-from robot.running.arguments.typeinfo import TypeInfo
 
-from Browser import Browser
 from Browser.keywords.network import (
     Network,
     _add_http_response_views,
@@ -12,13 +9,11 @@ from Browser.keywords.network import (
 )
 from Browser.keywords.network import _multipart_field as _proto_multipart_field
 from Browser.utils.data_types import MultipartFields
+from utest.robot_conversion import convert_like_robot as _convert
 
 
 def convert_like_robot(argument: str, value):
-    hint = get_type_hints(Network.http)[argument]
-    return TypeInfo.from_type_hint(hint).convert(
-        value, custom_converters=Browser.ROBOT_LIBRARY_CONVERTERS
-    )
+    return _convert(Network.http, argument, value)
 
 
 def _multipart_field(name: str, value):

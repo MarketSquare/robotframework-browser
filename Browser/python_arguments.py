@@ -17,6 +17,7 @@ from functools import wraps
 from typing import NamedTuple
 
 from robot.running.arguments.typeconverters import TypeConverter
+from robot.running.arguments.typeinfo import TypeInfo
 from robotlibcore import DynamicCore  # type: ignore
 
 from .utils.data_types import RobotTypeConverter
@@ -37,6 +38,23 @@ def _rebuild(original, items):
         return type(original)(items)
     except TypeError:
         return items if isinstance(original, Mapping) else original
+
+
+def _python_converter(hint) -> TypeConverter | None:
+    """The converter for a Python caller, or None when the keyword checks the value itself.
+
+    A union with a library type, such as ``JsonSerializable | bytes``, is not converted:
+    without the library's own converters Robot Framework would pick another member, and turn
+    the text ``hello`` into ``bytes``.
+    """
+    info = TypeInfo.from_type_hint(hint)
+    # A type without a converter is None before Robot Framework 7.4, a falsy
+    # UnknownConverter from 7.4 on.
+    if info.is_union and not all(
+        TypeConverter.converter_for(item) for item in info.nested
+    ):
+        return None
+    return RobotTypeConverter.converter_for(hint)
 
 
 class _ArgumentConverter(NamedTuple):
@@ -78,8 +96,7 @@ def converting_proxy(bound_method: Callable, types: dict) -> Callable:
     plan = [
         _ArgumentConverter(name, converter, signature.parameters[name].kind)
         for name, hint in types.items()
-        if name in signature.parameters
-        and (converter := RobotTypeConverter.converter_for(hint))
+        if name in signature.parameters and (converter := _python_converter(hint))
     ]
     if not plan:
         return bound_method

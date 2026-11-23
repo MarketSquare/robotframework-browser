@@ -13,6 +13,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as os from 'os';
 import * as path from 'path';
+import { errors } from 'playwright';
 
 import { _waitForDownload, httpRequest, pageFetch, sendApiRequest, waitForRequest, waitForResponse } from '../network';
 
@@ -584,8 +585,6 @@ function makeHttpRequest(overrides: Record<string, unknown> = {}) {
         url: '/api/echo',
         method: 'POST',
         headers: '{}',
-        form: [],
-        multipart: [],
         timeout: 0,
         ...overrides,
     } as any;
@@ -633,11 +632,20 @@ describe('httpRequest', () => {
             { name: 'q', value: 'a&b' },
             { name: 'lang', value: 'en' },
         ];
-        await httpRequest(makeHttpRequest({ form }), page);
+        await httpRequest(makeHttpRequest({ form: { fields: form } }), page);
         expect(fetchArguments(page).form).toEqual([
             ['q', 'a&b'],
             ['lang', 'en'],
         ]);
+    });
+
+    it('sends an empty form and an empty multipart as given', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ form: { fields: [] } }), page);
+        expect(fetchArguments(page).form).toEqual([]);
+        const multipartPage = makeFetchPage();
+        await httpRequest(makeHttpRequest({ multipart: { fields: [] } }), multipartPage);
+        expect(fetchArguments(multipartPage).multipart).toEqual([]);
     });
 
     it('sends no form when no field is given', async () => {
@@ -652,7 +660,7 @@ describe('httpRequest', () => {
         const page = makeFetchPage();
         await httpRequest(
             makeHttpRequest({
-                multipart: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }],
+                multipart: { fields: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }] },
             }),
             page,
         );
@@ -667,13 +675,13 @@ describe('httpRequest', () => {
 
     it('sends a multipart value as text', async () => {
         const page = makeFetchPage();
-        await httpRequest(makeHttpRequest({ multipart: [{ name: 'count', value: '3' }] }), page);
+        await httpRequest(makeHttpRequest({ multipart: { fields: [{ name: 'count', value: '3' }] } }), page);
         expect(fetchArguments(page).multipart).toEqual([{ name: 'count', value: '3' }]);
     });
 
     it('sends a multipart field without value as empty text', async () => {
         const page = makeFetchPage();
-        await httpRequest(makeHttpRequest({ multipart: [{ name: 'empty' }] }), page);
+        await httpRequest(makeHttpRequest({ multipart: { fields: [{ name: 'empty' }] } }), page);
         expect(fetchArguments(page).multipart).toEqual([{ name: 'empty', value: '' }]);
     });
 
@@ -858,6 +866,19 @@ describe('sendApiRequest', () => {
         await expect(sendApiRequest(makeApiRequest(), undefined)).rejects.toThrow(
             'Tried to send an API request, but no context was open.',
         );
+    });
+
+    it('fails without the call log, which holds header values', async () => {
+        expect.assertions(3);
+        const { context, fetch } = makeApiContext();
+        const failure = new errors.TimeoutError(
+            'apiRequestContext.fetch: Timeout 500ms exceeded.\nCall log:\n  - authorization: Bearer header-secret',
+        );
+        fetch.mockRejectedValue(failure);
+        const error = (await sendApiRequest(makeApiRequest(), context).catch((e: unknown) => e)) as Error;
+        expect(error).toBeInstanceOf(errors.TimeoutError);
+        expect(error.message).toBe('apiRequestContext.fetch: Timeout 500ms exceeded.');
+        expect(error.stack).not.toContain('header-secret');
     });
 
     it('passes only method and timeout when nothing else is given', async () => {

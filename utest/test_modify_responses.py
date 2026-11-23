@@ -91,7 +91,7 @@ def test_json_patch_is_sent_as_json_text(network):
     network, stub = network
     network.modify_responses("**/api", json_patch={"order": {"note": None}})
     modify = sent_modify(stub)
-    assert modify.jsonPatch == '{"order": {"note": null}}'
+    assert modify.jsonPatch == '{"order":{"note":null}}'
     assert dict(modify.headers) == {}
 
 
@@ -142,3 +142,20 @@ def test_secret_body_is_revealed_before_the_rpc(network):
     modify = sent_modify(stub)
     assert modify.body == b"response-secret"
     assert dict(modify.headers) == {"Content-Type": "text/plain; charset=utf-8"}
+
+
+def test_bytes_body_and_request_body_are_sent_unchanged(network):
+    network, stub = network
+    network.modify_responses("**/api", body=b"\x89\xff", request_body=b"\x00\xe9")
+    modify = sent_modify(stub)
+    assert modify.body == b"\x89\xff"
+    assert modify.postData == b"\x00\xe9"
+    assert modify.headers["Content-Type"] == "application/octet-stream"
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("-inf"), {1, 2}])
+def test_json_patch_that_is_not_json_fails_with_a_value_error(network, value):
+    network, stub = network
+    with pytest.raises(ValueError, match="^json_patch cannot be sent as JSON: "):
+        network.modify_responses("**/api", json_patch={"a": value})
+    stub.AddContextRoute.assert_not_called()

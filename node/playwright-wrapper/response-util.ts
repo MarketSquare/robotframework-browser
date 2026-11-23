@@ -32,6 +32,21 @@ import { IndexedPage } from './playwright-state';
 
 const NO_BYTES = { bodyBytes: Buffer.alloc(0), postDataBytes: Buffer.alloc(0) };
 
+export function withoutCallLog(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    const callLog = message.indexOf('Call log:');
+    return callLog === -1 ? message : message.slice(0, callLog).trimEnd();
+}
+
+/** Drops Playwright's call log, which lists request header values such as Authorization and cookies. */
+export function hideCallLog(error: unknown): unknown {
+    if (!(error instanceof Error)) return error;
+    error.message = withoutCallLog(error);
+    const frames = (error.stack ?? '').split('\n').filter((line) => /^\s+at /.test(line));
+    error.stack = [`${error.name}: ${error.message}`, ...frames].join('\n');
+    return error;
+}
+
 export function emptyWithLog(text: string): Response_Empty {
     return { log: text };
 }
@@ -135,6 +150,26 @@ export function keywordsResponse(
 }
 
 const REGEXP_LITERAL = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
+
+type UrlPredicate = (value: unknown) => boolean;
+
+function looksLikeFunction(text: string): boolean {
+    const isFunction = text.startsWith('function') && text.includes('{') && text.endsWith('}');
+    return isFunction || /[\w)] =>/.test(text);
+}
+
+/**
+ * A URL matcher of a keyword: a function or arrow function, a JavaScript RegExp literal
+ * (an invalid one fails) or a glob string.
+ */
+export function deserializeUrlOrPredicate(urlOrPredicate: string): RegExp | string | UrlPredicate {
+    if (looksLikeFunction(urlOrPredicate)) {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval
+        const fn: unknown = new Function(`return (${urlOrPredicate})`)();
+        if (typeof fn === 'function') return fn as UrlPredicate;
+    }
+    return parseRegExpOrKeepStringOrThrow(urlOrPredicate);
+}
 
 export function parseRegExpOrKeepString(str: string): RegExp | string {
     try {

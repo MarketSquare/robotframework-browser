@@ -192,7 +192,17 @@ function fakeModifyRoute(
 async function runModify(modify: Partial<pb.Request_RouteModify>, route: ReturnType<typeof fakeModifyRoute>) {
     const { state, context } = fakeState();
     await addContextRoute(
-        { url: '**/api', modify: { requestHeaders: {}, headers: {}, timeout: 5000, ...modify } },
+        {
+            url: '**/api',
+            modify: {
+                requestHeaders: {},
+                headers: {},
+                removedRequestHeaders: [],
+                removedHeaders: [],
+                timeout: 5000,
+                ...modify,
+            },
+        },
         state,
     );
     await context.handlers[0](route as unknown as Route);
@@ -210,7 +220,10 @@ describe('modify route rules', () => {
             'X-Drop': 'gone',
             'x-over': 'old',
         });
-        await runModify({ status: 500, headers: { 'X-New': 'added', 'x-drop': '', 'X-Over': 'new' } }, route);
+        await runModify(
+            { status: 500, headers: { 'X-New': 'added', 'X-Over': 'new', 'X-Empty': '' }, removedHeaders: ['x-drop'] },
+            route,
+        );
         const options = route.fulfill.mock.calls[0][0];
         expect(options.status).toBe(500);
         expect(options.headers).toEqual({
@@ -218,6 +231,7 @@ describe('modify route rules', () => {
             'x-real': 'kept',
             'X-New': 'added',
             'X-Over': 'new',
+            'X-Empty': '',
         });
         expect(options.body).toBeUndefined();
         expect(options.response).toBe(await route.fetch.mock.results[0].value);
@@ -251,7 +265,10 @@ describe('modify route rules', () => {
 
     it('merges the request headers onto the real ones', async () => {
         const route = fakeModifyRoute({}, '', { accept: '*/*', 'x-remove': 'a', Cookie: 'kept=1' });
-        await runModify({ requestHeaders: { Authorization: 'Bearer abc', 'X-Remove': '' } }, route);
+        await runModify(
+            { requestHeaders: { Authorization: 'Bearer abc' }, removedRequestHeaders: ['X-Remove'] },
+            route,
+        );
         expect(route.fetch.mock.calls[0][0].headers).toEqual({
             accept: '*/*',
             Cookie: 'kept=1',

@@ -84,6 +84,9 @@ from .utils.data_types import (
     DelayedKeyword,
     FormFields,
     HighLightElement,
+    HttpHeaderChanges,
+    HttpHeaders,
+    JsonSerializable,
     KeywordCallStackEntry,
     LambdaFunction,
     MultipartFields,
@@ -148,6 +151,9 @@ class _RFContextTracker:
         FormFields: FormFields.from_dict,
         QueryParams: QueryParams.from_value,
         MultipartFields: MultipartFields.from_dict,
+        JsonSerializable: JsonSerializable.from_value,
+        HttpHeaders: HttpHeaders.from_dict,
+        HttpHeaderChanges: HttpHeaderChanges.from_dict,
     }
 )
 class Browser(DynamicCore):

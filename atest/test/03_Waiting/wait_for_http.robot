@@ -16,6 +16,14 @@ Wait For Fails If No Success
     ...    /api/get/json
     ...    timeout=100ms
 
+Invalid RegExp Matcher Fails At Once
+    Run Keyword And Expect Error    *Invalid regular expression*
+    ...    Wait For Request    /[/    timeout=10s
+    Run Keyword And Expect Error    *Invalid regular expression*
+    ...    Wait For Response    /[/    timeout=10s
+    Run Keyword And Expect Error    *Invalid regular expression*
+    ...    Wait For Navigation    /[/    timeout=10s
+
 Wait For Request Synchronous
     Click    \#delayed_request
     Wait For Request    timeout=1s

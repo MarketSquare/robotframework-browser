@@ -684,7 +684,7 @@ class Control(LibraryComponent):
             )
             logger.info(response.log)
 
-    @keyword(tags=("Setter", "BrowserControl"))
+    @keyword(tags=("Setter", "BrowserControl", "HTTP"))
     def set_offline(self, offline: bool = True):
         """Toggles the current context's offline emulation.
 
@@ -729,7 +729,7 @@ class Control(LibraryComponent):
             response = stub.SetGeolocation(Request().Json(body=geolocation))
             logger.info(response.log)
 
-    @keyword(name="Set Extra HTTP Headers", tags=("Setter", "BrowserControl"))
+    @keyword(name="Set Extra HTTP Headers", tags=("Setter", "BrowserControl", "HTTP"))
     def set_extra_http_headers(
         self,
         *,
@@ -782,7 +782,7 @@ class Control(LibraryComponent):
                 response = stub.SetContextExtraHttpHeaders(request)
             logger.info(response.log)
 
-    @keyword(name="Set HTTP Credentials", tags=("Setter", "BrowserControl"))
+    @keyword(name="Set HTTP Credentials", tags=("Setter", "BrowserControl", "HTTP"))
     def set_http_credentials(self, *credentials: HttpCredentials):
         """Sets the credentials the active context sends for HTTP authentication.
 
