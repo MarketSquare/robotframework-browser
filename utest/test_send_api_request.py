@@ -258,7 +258,7 @@ def test_header_values_are_sent_as_text(browser, stub):
 def test_a_header_value_that_is_not_text_number_or_boolean_fails(browser, stub):
     with pytest.raises(
         ValueError,
-        match="Header 'X-List' must be a string, a number or a boolean, got a list",
+        match="Header 'X-List' must be a string, a Secret, a number or a boolean, got a list",
     ):
         browser.send_api_request("/api", headers={"X-List": [1]})
 

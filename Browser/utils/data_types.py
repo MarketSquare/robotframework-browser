@@ -542,7 +542,9 @@ class RegExp(str):
         See [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp|RegExp Object]
         and [https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions|RegExp Guide] for more information.
         """
-        match = re.fullmatch(r"\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?", string)
+        match = re.fullmatch(
+            r"/(?P<matcher>.*)/(?P<flags>[gimsuy]+)?", string, re.DOTALL
+        )
         if not match:
             raise ValueError("Invalid JavaScript RegExp string")
         return cls(string)
@@ -1379,6 +1381,102 @@ class MultipartFields:
     def from_dict(value: Mapping) -> dict[str, str | MultipartFile]:
         fields = _check_names(_require_mapping("MultipartFields", value))
         return {name: _multipart_value(name, item) for name, item in fields.items()}
+
+
+class JsonSerializable:
+    """A value that the keyword sends as JSON: a dictionary, a list, a string, a number, a boolean or ``None``.
+
+    The value is sent as compact JSON, the way JavaScript's ``JSON.stringify`` writes it:
+    ``{"id":7,"tags":["new"]}``. A dictionary or a list holds only such values. ``NaN``,
+    ``Infinity`` and values JSON cannot hold, such as a set or a date, fail before the
+    request is sent.
+
+    Where an argument also takes text, such as ``body`` of `HTTP` or ``data`` of
+    `Send API Request`, a string is sent as the text it is, and only the other values are
+    sent as JSON. Where the argument is JSON only, such as ``json`` of `Mock Responses`, a
+    string is sent as a JSON string, in quotes.
+
+    | VAR    &{order} =    id=${7}    tags=${{ ["new"] }}
+    | `HTTP`    /api/orders    POST    ${order}    # sends {"id":7,"tags":["new"]}
+    | `Mock Responses`    **/api/orders    json=${{ [] }}    # answers []
+    """
+
+    # Every value reaches the keyword, which encodes it and names what JSON cannot hold.
+    @staticmethod
+    def from_value(value: object) -> Any:
+        return value
+
+
+def _header_value(name: str, value: Any, *, removable: bool) -> str | Secret | None:
+    if isinstance(value, Secret) or (value is None and removable):
+        return value
+    text = javascript_text(value)
+    if text is None:
+        kinds = (
+            "a string, a Secret, a number, a boolean or None"
+            if removable
+            else ("a string, a Secret, a number or a boolean")
+        )
+        raise ValueError(f"Header '{name}' must be {kinds}, got {_kind_of(value)}.")
+    return text
+
+
+def _header_names(type_name: str, value: Any) -> Mapping:
+    if isinstance(value, str):
+        value = TypeInfo.from_type_hint(dict).convert(value, name=type_name)
+    headers = _require_mapping(type_name, value)
+    for name in headers:
+        if not isinstance(name, str):
+            raise ValueError(f"Header names must be strings, got {_kind_of(name)}.")
+    return headers
+
+
+class HttpHeaders:
+    """HTTP headers: a dictionary of header names and values.
+
+    Used by `HTTP`, `Send API Request`, `Mock Responses` and the ``extraHTTPHeaders`` of
+    `New Context` and `New Persistent Context`. Header names are case-insensitive. The
+    dictionary can also be written as text, such as ``{"X-Tenant": "a"}``.
+
+    A value is a string, a Robot Framework ``Secret``, a number or a boolean. Numbers are
+    sent as their text and a boolean as ``true`` or ``false``, the way JavaScript writes
+    them. An empty string sends an empty header. ``None``, a dictionary or a list fails
+    before the request is sent. A ``Secret`` is revealed only when it is sent, and header
+    values are never logged above ``DEBUG`` level.
+
+    | VAR    ${token: Secret} =    %{API_TOKEN}
+    | VAR    &{headers} =    Authorization=${token}    X-Retry=${2}
+    | `Send API Request`    /api/orders    headers=${headers}    # X-Retry: 2
+    """
+
+    @staticmethod
+    def from_dict(value: Mapping | str) -> dict[str, str | Secret]:
+        headers = _header_names("HttpHeaders", value)
+        return {
+            name: _header_value(name, item, removable=False)
+            for name, item in headers.items()
+        }
+
+
+class HttpHeaderChanges:
+    """Changes to real HTTP headers: a dictionary of header names and new values.
+
+    Used by `Modify Responses`. A value is the same as in `HttpHeaders`: a string, a
+    Robot Framework ``Secret``, a number or a boolean. In addition, ``None`` removes the
+    header. A given value replaces the real one, whatever its case, and an empty string
+    sends the header empty.
+
+    | VAR    &{changes} =    X-Cache=${None}    X-Debug=${True}
+    | `Modify Responses`    **/api/orders    headers=${changes}    # removes X-Cache
+    """
+
+    @staticmethod
+    def from_dict(value: Mapping | str) -> dict[str, str | Secret | None]:
+        headers = _header_names("HttpHeaderChanges", value)
+        return {
+            name: _header_value(name, item, removable=True)
+            for name, item in headers.items()
+        }
 
 
 def _multipart_value(name: str, value: Any) -> str | MultipartFile:

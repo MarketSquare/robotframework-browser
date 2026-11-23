@@ -45,6 +45,7 @@ from ..utils import (
     ForcedColors,
     GeoLocation,
     HttpCredentials,
+    HttpHeaders,
     NewPageDetails,
     PageLoadStates,
     Permission,
@@ -65,6 +66,7 @@ from ..utils import (
 )
 from ..utils.logger import LOGLEVEL
 from ..utils.settings_stack import scope_owner
+from ..utils.types import Secret
 
 
 class PlaywrightState(LibraryComponent):
@@ -791,7 +793,9 @@ class PlaywrightState(LibraryComponent):
         colorScheme: ColorScheme | None = None,
         defaultBrowserType: SupportedBrowsers | None = None,
         deviceScaleFactor: float | None = None,
-        extraHTTPHeaders: dict[str, str] | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to HttpHeaders or None". A None default passes None anyway.
+        extraHTTPHeaders: HttpHeaders = None,  # type: ignore[assignment]
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: GeoLocation | None = None,
         hasTouch: bool | None = None,
@@ -851,8 +855,9 @@ class PlaywrightState(LibraryComponent):
                 Very useful together with the `Get Device` keyword.
           - ``deviceScaleFactor``: Specify device scale factor (can be thought of as
                 dpr). Defaults to ``1``.
-          - ``extraHTTPHeaders``: A dictionary containing additional HTTP headers to be
-                sent with every request. All header values must be strings.
+          - ``extraHTTPHeaders``: `HttpHeaders` (a dictionary) sent with every request of the
+                context. A value can be a Robot Framework ``Secret``; the values are logged as
+                ``XXX``.
           - ``forcedColors``: Emulates the ``forced-colors`` media feature, supported
                 values are ``active``, ``none`` and ``null``. Defaults to ``none``.
           - ``geolocation``: A dictionary containing ``latitude`` and ``longitude`` and
@@ -1003,7 +1008,9 @@ class PlaywrightState(LibraryComponent):
         downloadsPath: str | None = None,
         env: dict | None = None,
         executablePath: str | None = None,
-        extraHTTPHeaders: dict[str, str] | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to HttpHeaders or None". A None default passes None anyway.
+        extraHTTPHeaders: HttpHeaders = None,  # type: ignore[assignment]
         forcedColors: ForcedColors = ForcedColors.none,
         geolocation: GeoLocation | None = None,
         handleSIGHUP: bool = True,
@@ -1203,6 +1210,12 @@ class PlaywrightState(LibraryComponent):
         if "httpCredentials" in params and params["httpCredentials"] is not None:
             secret = self.resolve_secret(httpCredentials, "httpCredentials")
             params["httpCredentials"] = secret
+        if params.get("extraHTTPHeaders") is not None:
+            headers = HttpHeaders.from_dict(params["extraHTTPHeaders"])
+            params["extraHTTPHeaders"] = {
+                name: value.value if isinstance(value, Secret) else value
+                for name, value in headers.items()
+            }
         masked_params = self._mask_credentials(params.copy())
         logger.info(json.dumps(masked_params, default=str, indent=2))
         return params
@@ -1244,6 +1257,8 @@ class PlaywrightState(LibraryComponent):
     def _mask_credentials(self, data: dict):
         if "httpCredentials" in data:
             data["httpCredentials"] = "XXX"
+        if data.get("extraHTTPHeaders"):
+            data["extraHTTPHeaders"] = dict.fromkeys(data["extraHTTPHeaders"], "XXX")
         return data
 
     def _register_context(

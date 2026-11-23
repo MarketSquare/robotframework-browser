@@ -132,28 +132,79 @@ Own Content Type In Lower Case Is Kept For A JSON Body
     Should Be Equal    ${response.json.headers['content-type']}    text/plain
 
 Bytes Body With GET Fails
-    Run Keyword And Expect Error    *GET request cannot have a body, got bytes*
-    ...    HTTP    /api/echo/get    GET    ${{ b'raw' }}
+    Run Keyword And Expect Error
+    ...    ValueError: A GET request is sent without a body, but bytes cannot be left out silently. Give no body, or use another method, such as POST.
+    ...    HTTP
+    ...    /api/echo/get
+    ...    GET
+    ...    ${{ b'raw' }}
 
 Body Together With Form Fails
     &{fields} =    Create Dictionary    q=1
-    Run Keyword And Expect Error    *Only one of*
+    Run Keyword And Expect Error
+    ...    ValueError: Give at most one of body, form and multipart, got body and form.
     ...    HTTP    /api/echo/form    POST    {"q": 1}    form=${fields}
 
 Body Together With Multipart Fails
     &{fields} =    Create Dictionary    q=1
-    Run Keyword And Expect Error    *Only one of*
+    Run Keyword And Expect Error
+    ...    ValueError: Give at most one of body, form and multipart, got body and multipart.
     ...    HTTP    /api/echo/upload    POST    {"q": 1}    multipart=${fields}
 
-Form With GET Fails
-    &{fields} =    Create Dictionary    q=1
-    Run Keyword And Expect Error    *GET request cannot have a body, got form*
-    ...    HTTP    /api/echo/form    GET    form=${fields}
+Body Together With An Empty Form Fails
+    Run Keyword And Expect Error
+    ...    ValueError: Give at most one of body, form and multipart, got body and form.
+    ...    HTTP    /api/echo/form    POST    {"q": 1}    form=${{ {} }}
 
-Multipart With HEAD Fails
-    &{fields} =    Create Dictionary    q=1
-    Run Keyword And Expect Error    *HEAD request cannot have a body, got multipart*
-    ...    HTTP    /api/echo/upload    HEAD    multipart=${fields}
+Form With GET Is Sent Without A Body
+    VAR    &{fields} =    q=1
+    ${response} =    HTTP    /api/echo/form    GET    form=${fields}
+    Should Be Equal    ${response.json.method}    GET
+    Should Be Equal    ${response.json.body.size}    ${0}
+
+Multipart With HEAD Is Sent Without A Body
+    VAR    &{fields} =    q=1
+    ${response} =    HTTP    /api/echo/upload    HEAD    multipart=${fields}
+    Should Be Equal    ${response.status}    ${200}
+
+Dictionary Body With GET Is Sent Without A Body
+    ${response} =    HTTP    /api/echo/get    GET    ${{ {"q": 1} }}
+    Should Be Equal    ${response.json.body.size}    ${0}
+
+Dictionary Body Is Sent As JSON
+    VAR    &{order} =    id=${7}    tags=${{ ["new"] }}
+    ${response} =    HTTP    /api/echo/json    POST    ${order}
+    Should Be Equal    ${response.json.body.text}    {"id":7,"tags":["new"]}
+    Should Start With    ${response.json.body.contentType}    application/json
+
+List Body Is Sent As JSON
+    ${response} =    HTTP    /api/echo/json    POST    ${{ [1, 2] }}
+    Should Be Equal    ${response.json.body.text}    [1,2]
+    Should Start With    ${response.json.body.contentType}    application/json
+
+Empty Form Is Sent As An Empty URL Encoded Body
+    ${response} =    HTTP    /api/echo/form    POST    form=${{ {} }}
+    Should Start With    ${response.json.body.contentType}    application/x-www-form-urlencoded
+    Should Be Equal    ${response.json.body.size}    ${0}
+
+Empty Multipart Is Sent As A Multipart Body Without Parts
+    ${response} =    HTTP    /api/echo/upload    POST    multipart=${{ {} }}
+    Should Start With    ${response.json.body.contentType}    multipart/form-data; boundary=
+    Should Be Empty    ${response.json.parts}
+
+Secret Header Value Is Sent
+    [Tags]    require-rf-7.4+
+    Set Environment Variable    HEADER_TOKEN    header-token
+    VAR    ${token: Secret} =    %{HEADER_TOKEN}
+    VAR    &{headers} =    X-Token=${token}
+    ${response} =    HTTP    /api/echo/headers    headers=${headers}
+    Should Be Equal    ${response.json.headers['x-token']}    header-token
+
+None Header Value Fails
+    VAR    &{headers} =    X-Gone=${None}
+    Run Keyword And Expect Error
+    ...    *Header 'X-Gone' must be a string, a Secret, a number or a boolean, got None.*
+    ...    HTTP    /api/echo/headers    headers=${headers}
 
 Cookies Of The Context Are Sent By Default
     Add Cookie    flavour    oat    url=${ROOT_URL}

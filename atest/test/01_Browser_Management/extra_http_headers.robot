@@ -51,6 +51,15 @@ Secret Header Value Reaches The Server
     Set Extra HTTP Headers    Authorization=${token}
     Echoed Header Should Be    authorization    Bearer secret-token
 
+Secret Header Value Of New Context Reaches The Server
+    [Tags]    require-rf-7.4+
+    [Setup]    No Operation
+    Set Environment Variable    HEADER_TOKEN    Bearer context-token
+    VAR    ${token: Secret} =    %{HEADER_TOKEN}
+    VAR    &{headers} =    Authorization=${token}
+    Open HTTP Test Page    extraHTTPHeaders=${headers}
+    Echoed Header Should Be    authorization    Bearer context-token
+
 *** Keywords ***
 Open HTTP Test Page
     [Arguments]    &{context_options}

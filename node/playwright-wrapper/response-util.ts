@@ -150,6 +150,24 @@ export function keywordsResponse(
 
 const REGEXP_LITERAL = /^\/(?<matcher>.*)\/(?<flags>[gimsuy]+)?$/;
 
+type UrlPredicate = (value: unknown) => boolean;
+
+const FUNCTION_MATCHER = /^function.*{.*}$/;
+const ARROW_FUNCTION_MATCHER = /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/;
+
+/**
+ * A URL matcher of a keyword: a function or arrow function, a JavaScript RegExp literal
+ * (an invalid one fails) or a glob string.
+ */
+export function deserializeUrlOrPredicate(urlOrPredicate: string): RegExp | string | UrlPredicate {
+    if (FUNCTION_MATCHER.test(urlOrPredicate) || ARROW_FUNCTION_MATCHER.test(urlOrPredicate)) {
+        // eslint-disable-next-line @typescript-eslint/no-implied-eval
+        const fn: unknown = new Function(`return (${urlOrPredicate})`)();
+        if (typeof fn === 'function') return fn as UrlPredicate;
+    }
+    return parseRegExpOrKeepStringOrThrow(urlOrPredicate);
+}
+
 export function parseRegExpOrKeepString(str: string): RegExp | string {
     try {
         return parseRegExpOrKeepStringOrThrow(str);

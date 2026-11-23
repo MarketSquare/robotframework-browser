@@ -73,3 +73,9 @@ def test_json_that_is_not_json_fails_with_a_value_error(value):
     with pytest.raises(ValueError, match="^json cannot be sent as JSON: "):
         network.mock_responses("**/api", json={"a": value})
     stub.AddContextRoute.assert_not_called()
+
+
+def test_bytearray_body_is_sent_as_bytes():
+    network, stub = make_network()
+    network.mock_responses("**/api", body=bytearray(b"\x89\xff"))
+    assert sent_fulfill(stub).body == b"\x89\xff"

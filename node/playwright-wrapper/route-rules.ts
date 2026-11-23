@@ -20,7 +20,7 @@ import { isTargetClosed } from './context-tracer';
 import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, parseRegExpOrKeepStringOrThrow, withoutCallLog } from './response-util';
+import { deserializeUrlOrPredicate, emptyWithLog, withoutCallLog } from './response-util';
 
 type RouteAction = (route: Route) => Promise<void>;
 
@@ -88,12 +88,9 @@ function withoutHeaders(headers: Headers, names: Set<string>): Headers {
     return Object.fromEntries(Object.entries(headers).filter(([name]) => !names.has(name.toLowerCase())));
 }
 
-function mergeHeaders(real: Headers, changes: Headers): Headers {
-    const merged = withoutHeaders(real, new Set(Object.keys(changes).map((name) => name.toLowerCase())));
-    for (const [name, value] of Object.entries(changes)) {
-        if (value !== '') merged[name] = value;
-    }
-    return merged;
+function mergeHeaders(real: Headers, changes: Headers, removed: string[] = []): Headers {
+    const replaced = [...Object.keys(changes), ...removed].map((name) => name.toLowerCase());
+    return { ...withoutHeaders(real, new Set(replaced)), ...changes };
 }
 
 const STALE_BODY_HEADERS = new Set(['content-encoding', 'content-length']);
@@ -113,8 +110,12 @@ function fetchOptions(modify: pb.Request_RouteModify, request: Request): FetchOp
         options.url = new URL(modify.url, request.url()).toString();
         headers = withoutHeaders(headers, ORIGINAL_TARGET_HEADERS);
     }
-    if (modify.url !== undefined || Object.keys(modify.requestHeaders).length > 0) {
-        options.headers = mergeHeaders(headers, modify.requestHeaders);
+    if (
+        modify.url !== undefined ||
+        Object.keys(modify.requestHeaders).length > 0 ||
+        modify.removedRequestHeaders.length > 0
+    ) {
+        options.headers = mergeHeaders(headers, modify.requestHeaders, modify.removedRequestHeaders);
     }
     if (modify.method !== undefined) options.method = modify.method;
     if (modify.postData !== undefined) options.postData = modify.postData;
@@ -127,7 +128,12 @@ async function fetchAndFulfill(route: Route, modify: pb.Request_RouteModify): Pr
     const body = await modifiedBody(modify, response);
     const realHeaders =
         body === undefined ? response.headers() : withoutHeaders(response.headers(), STALE_BODY_HEADERS);
-    await route.fulfill({ response, status: modify.status, headers: mergeHeaders(realHeaders, modify.headers), body });
+    await route.fulfill({
+        response,
+        status: modify.status,
+        headers: mergeHeaders(realHeaders, modify.headers, modify.removedHeaders),
+        body,
+    });
 }
 
 function modifyAction(modify: pb.Request_RouteModify): RouteAction {
@@ -163,7 +169,7 @@ async function addRouteRule(
     rules: RouteRules,
     request: pb.Request_RouteRule,
 ): Promise<pb.Response_RouteRuleId> {
-    const url = parseRegExpOrKeepStringOrThrow(request.url);
+    const url = deserializeUrlOrPredicate(request.url);
     const action = routeAction(request);
     const rule: RouteRule = { id: randomUUID(), page, disposable: undefined, inFlight: new Set(), runs: 0 };
     let remaining = request.times;

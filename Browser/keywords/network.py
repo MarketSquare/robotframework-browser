@@ -40,8 +40,11 @@ from ..utils import (
     FetchPriority,
     FetchRedirect,
     FormFields,
+    HttpHeaderChanges,
+    HttpHeaders,
     HttpResponse,
     JsonDotDict,
+    JsonSerializable,
     MultipartFields,
     MultipartFile,
     QueryParams,
@@ -53,8 +56,6 @@ from ..utils.data_types import (
     PageLoadStates,
     RegExp,
     RequestMethod,
-    _kind_of,
-    javascript_text,
 )
 from ..utils.types import Secret
 
@@ -92,23 +93,53 @@ def _check_at_most_one(**given: Any):
         )
 
 
-def _revealed_headers(headers: dict[str, str | Secret] | None) -> dict[str, str]:
+def _revealed_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
     return {name: _reveal(value) for name, value in (headers or {}).items()}
+
+
+def _checked_headers(headers: Any) -> dict[str, str]:
+    return _revealed_headers(
+        None if headers is None else HttpHeaders.from_dict(headers)
+    )
+
+
+def _checked_header_changes(changes: Any) -> tuple[dict[str, str], list[str]]:
+    checked = {} if changes is None else HttpHeaderChanges.from_dict(changes)
+    removed = [name for name, value in checked.items() if value is None]
+    kept = {name: value for name, value in checked.items() if value is not None}
+    return _revealed_headers(kept), removed
+
+
+def _plain_body(body: Any) -> Any:
+    body = _reveal(body)
+    return bytes(body) if isinstance(body, bytearray) else body
+
+
+def _is_json_body(body: Any) -> bool:
+    return body is not None and not isinstance(body, str | bytes)
+
+
+def _with_content_type(headers: dict[str, str], content_type: str) -> dict[str, str]:
+    return (
+        headers
+        if _has_content_type(headers)
+        else {**headers, "Content-Type": content_type}
+    )
 
 
 def _change_log(changes: list[str]) -> str:
     return ", ".join(changes) if changes else "unchanged"
 
 
-def _header_names(headers: dict[str, str]) -> str:
+def _header_names(headers: Mapping[str, Any]) -> str:
     return f"[{', '.join(headers)}]"
 
 
 def _request_changes(
     url: str | Secret | None,
     method: RequestMethod | None,
-    headers: dict[str, str],
-    body: str | bytes | Secret | None,
+    headers: Mapping[str, Any],
+    body: Any,
 ) -> list[str]:
     changes = []
     if url is not None:
@@ -123,7 +154,7 @@ def _request_changes(
 
 
 def _response_changes(
-    status: int | None, payloads: dict[str, Any], headers: dict[str, str]
+    status: int | None, payloads: dict[str, Any], headers: Mapping[str, Any]
 ) -> list[str]:
     changes = [] if status is None else [f"status={status}"]
     changes.extend(name for name, value in payloads.items() if value is not None)
@@ -139,24 +170,29 @@ def _json_text(value: Any, name: str, hint: str = "") -> str:
         raise ValueError(f"{name} cannot be sent as JSON: {error}.{hint}") from error
 
 
-def _encoded_body(body: str | bytes) -> bytes:
-    return body if isinstance(body, bytes) else body.encode("utf-8")
+def _request_body(body: Any, headers: dict[str, str]) -> tuple[bytes, dict[str, str]]:
+    if isinstance(body, bytes):
+        return body, headers
+    if isinstance(body, str):
+        return body.encode("utf-8"), headers
+    text = _json_text(body, "request_body")
+    return text.encode("utf-8"), _with_content_type(headers, "application/json")
 
 
 def _payload_with_content_type(
-    body: str | bytes | None,
+    body: Any,
     json_value: Any,
     path: PathLike | None,
     headers: dict[str, str],
 ) -> tuple[bytes, dict[str, str], str]:
     payload, content_type, payload_kind = _mock_payload(body, json_value, path)
-    if content_type and not _has_content_type(headers):
-        headers = {**headers, "Content-Type": content_type}
+    if content_type:
+        headers = _with_content_type(headers, content_type)
     return payload, headers, payload_kind
 
 
 def _modified_payload(
-    body: str | bytes | None,
+    body: Any,
     json_value: Any,
     path: PathLike | None,
     json_patch: dict[str, Any] | None,
@@ -171,7 +207,7 @@ def _modified_payload(
 
 
 def _mock_payload(
-    body: str | bytes | None, json_value: Any, path: PathLike | None
+    body: Any, json_value: Any, path: PathLike | None
 ) -> tuple[bytes, str | None, str]:
     _check_at_most_one(body=body, json=json_value, path=path)
     if path is not None:
@@ -190,8 +226,10 @@ def _mock_payload(
         )
     if isinstance(body, bytes):
         return body, "application/octet-stream", "binary body"
-    if body is not None:
+    if isinstance(body, str):
         return body.encode("utf-8"), "text/plain; charset=utf-8", "text body"
+    if body is not None:
+        return _json_text(body, "body").encode("utf-8"), "application/json", "json body"
     return b"", None, "no body"
 
 
@@ -404,12 +442,13 @@ def _checked_multipart(multipart: Any) -> dict[str, str | MultipartFile] | None:
 
 
 def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
+    data = _plain_body(data)
     if data is None:
         return
     if isinstance(data, str):
         request.dataText = data
-    elif isinstance(data, bytes | bytearray):
-        request.dataBytes = bytes(data)
+    elif isinstance(data, bytes):
+        request.dataBytes = data
     else:
         request.dataJson = _json_text(
             data,
@@ -417,19 +456,6 @@ def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
             " Give a string, bytes, or a dictionary, a list, a number or a boolean that "
             "holds only such values and None.",
         )
-
-
-def _api_headers(headers: Mapping) -> dict[str, str]:
-    texts = {}
-    for name, value in headers.items():
-        text = javascript_text(value)
-        if text is None:
-            raise ValueError(
-                f"Header {name!r} must be a string, a number or a boolean, "
-                f"got {_kind_of(value)}."
-            )
-        texts[name] = text
-    return texts
 
 
 def _set_api_params(
@@ -442,8 +468,8 @@ def _set_api_params(
         request.params.fields.extend(_form_fields(params))
 
 
-def _set_api_fields(
-    request: Request.ApiRequest,
+def _set_fields(
+    request: Request.ApiRequest | Request.HttpRequest,
     form: Mapping[str, str] | None,
     multipart: Mapping[str, str | MultipartFile] | None,
 ) -> None:
@@ -477,11 +503,11 @@ class Network(LibraryComponent):
         self,
         url: str,
         method: RequestMethod = RequestMethod.GET,
-        body: str | bytes | None = None,
-        headers: dict | None = None,
-        *,
+        body: JsonSerializable | bytes | Secret | None = None,
         # Not "| None": in a union RF drops the converter's error and reports only
-        # "cannot be converted to FormFields or None". A None default passes None anyway.
+        # "cannot be converted to HttpHeaders or None". A None default passes None anyway.
+        headers: HttpHeaders = None,  # type: ignore[assignment]
+        *,
         form: FormFields = None,  # type: ignore[assignment]
         multipart: MultipartFields = None,  # type: ignore[assignment]
         credentials: FetchCredentials | None = None,
@@ -513,23 +539,27 @@ class Network(LibraryComponent):
         *Arguments:*
           - ``url``: The request URL, e.g. ``/api/foo``.
           - ``method``: The HTTP method. Defaults to ``GET``.
-          - ``body``: The request body, as ``str`` or ``bytes``. ``GET`` and ``HEAD``
-                cannot have a body: a ``str`` body is silently left out there, as it always
-                was, and a ``bytes`` body fails. When a ``str`` body can be parsed as JSON,
-                the ``Content-Type`` header is set to ``application/json``, unless
-                ``headers`` already has a ``Content-Type``, in any case. Otherwise the
-                browser sends a ``str`` body as ``text/plain;charset=UTF-8``, and ``bytes``
-                without a ``Content-Type``.
-          - ``headers``: A dictionary of request headers.
+          - ``body``: The request body: text, a Robot Framework ``Secret``, ``bytes``, or a
+                dictionary, a list, a number or a boolean, which is sent as JSON (see
+                `JsonSerializable`) with the ``Content-Type`` ``application/json``. When a
+                text body can be parsed as JSON, the ``Content-Type`` is also set to
+                ``application/json``. Otherwise the browser sends text as
+                ``text/plain;charset=UTF-8``, and ``bytes`` without a ``Content-Type``. A
+                ``Content-Type`` in ``headers``, in any case, always wins.
+          - ``headers``: `HttpHeaders` (a dictionary) of the request.
           - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``, the way the browser encodes a
                 ``URLSearchParams`` body.
           - ``multipart``: `MultipartFields` (a dictionary of text fields and files), sent as
                 ``multipart/form-data`` the way the browser encodes a ``FormData`` body, in
                 the order given. Do not set a ``Content-Type`` in ``headers``: the browser then leaves out the
-                boundary of the parts, and the server cannot read the body. ``body``,
-                ``form`` and ``multipart`` exclude each other, and ``form`` and
-                ``multipart`` fail with ``GET`` and ``HEAD``.
+                boundary of the parts, and the server cannot read the body.
+
+        Give at most one of ``body``, ``form`` and ``multipart``. An empty ``form`` or
+        ``multipart`` dictionary is given too: it sends an empty URL-encoded body or a
+        multipart body without parts, as the browser does. ``GET`` and ``HEAD`` requests are
+        sent without a body: a text, JSON, ``form`` or ``multipart`` body is left out, and a
+        ``bytes`` body fails, so that binary data is not dropped unnoticed.
                 For now the ``body`` and the files given as ``buffer`` can be at most 4 MiB
                 together; a file given as ``path`` does not count.
           - ``credentials``: Whether cookies and HTTP authentication are sent, see
@@ -580,44 +610,22 @@ class Network(LibraryComponent):
         [https://forum.robotframework.org/t//4296|Comment >>]
         """
         method_name = method.name if method else "GET"
+        body = _plain_body(body)
         checked_form = _checked_form(form)
         checked_multipart = _checked_multipart(multipart)
-        given = [
-            name
-            for name, value in (
-                ("body", body),
-                ("form", checked_form),
-                ("multipart", checked_multipart),
-            )
-            if value
-        ]
-        if len(given) > 1:
-            raise ValueError(
-                f"Only one of body, form or multipart can be given, got {' and '.join(given)}."
-            )
+        _check_at_most_one(body=body, form=checked_form, multipart=checked_multipart)
+        sent_headers = _checked_headers(headers)
         if method_name in METHODS_WITHOUT_BODY:
-            not_allowed = next(
-                (
-                    name
-                    for name, value in (
-                        ("bytes", isinstance(body, bytes) and body),
-                        ("form", checked_form),
-                        ("multipart", checked_multipart),
-                    )
-                    if value
-                ),
-                None,
-            )
-            if not_allowed:
+            if isinstance(body, bytes):
                 raise ValueError(
-                    f"A {method_name} request cannot have a body, got {not_allowed}."
+                    f"A {method_name} request is sent without a body, but bytes cannot be "
+                    "left out silently. Give no body, or use another method, such as POST."
                 )
-        headers = headers or {}
+            body = checked_form = checked_multipart = None
         request = Request().HttpRequest(
             url=url,
             method=method_name,
             timeout=self.get_timeout(timeout),
-            multipart=_multipart_fields(checked_multipart or {}),
         )
         _set_given(
             request,
@@ -631,14 +639,16 @@ class Network(LibraryComponent):
             keepalive=keepalive,
             priority=priority,
         )
-        request.form.extend(_form_fields(checked_form or {}))
-        if body and method_name not in METHODS_WITHOUT_BODY:
-            if isinstance(body, bytes):
-                request.bodyBytes = body
-            else:
-                request.body = body
-                headers = _get_headers(body, headers)
-        request.headers = json.dumps(headers)
+        _set_fields(request, checked_form, checked_multipart)
+        if isinstance(body, bytes):
+            request.bodyBytes = body
+        elif isinstance(body, str):
+            request.body = body
+            sent_headers = _get_headers(body, sent_headers)
+        elif body is not None:
+            request.body = _json_text(body, "body")
+            sent_headers = _with_content_type(sent_headers, "application/json")
+        request.headers = json.dumps(sent_headers)
         with self.playwright.grpc_channel() as stub:
             response, body_bytes, _ = _collect_stream(stub.HttpRequest(request))
         _add_http_response_views(response, body_bytes)
@@ -652,11 +662,11 @@ class Network(LibraryComponent):
         url: str,
         method: RequestMethod = RequestMethod.GET,
         *,
-        headers: dict | None = None,
         # Not "| None": in a union RF drops the converter's error and reports only
-        # "cannot be converted to QueryParams or None". A None default passes None anyway.
+        # "cannot be converted to HttpHeaders or None". A None default passes None anyway.
+        headers: HttpHeaders = None,  # type: ignore[assignment]
         params: QueryParams = None,  # type: ignore[assignment]
-        data: Any = None,
+        data: JsonSerializable | bytes | Secret | None = None,
         form: FormFields = None,  # type: ignore[assignment]
         multipart: MultipartFields = None,  # type: ignore[assignment]
         timeout: timedelta | None = None,
@@ -691,14 +701,14 @@ class Network(LibraryComponent):
           - ``url``: The request URL. A relative URL is resolved against the context's
                 ``baseURL`` and fails without one.
           - ``method``: The HTTP method. Defaults to ``GET``.
-          - ``headers``: A dictionary of request headers. They override the context's
-                ``extraHTTPHeaders`` with the same name. Numbers and booleans are sent as
-                text, the way JavaScript writes them, a boolean as ``true`` or ``false``.
+          - ``headers``: `HttpHeaders` (a dictionary) of the request. They override the
+                context's ``extraHTTPHeaders`` with the same name.
           - ``params``: `QueryParams` (a dictionary or a string) added to the query of the
                 ``url``. Characters such as ``&`` in a string keep their meaning in a query,
                 see `QueryParams`. The string ``None`` adds no parameters.
-          - ``data``: The request body. Leave it out to send no body; the string ``None`` is
-                sent as the text ``None``.
+          - ``data``: The request body, see `JsonSerializable`. Leave it out to send no body;
+                the string ``None`` is sent as the text ``None``. A Robot Framework ``Secret`` is
+                sent as its text.
                 - A dictionary, a list, a number or a boolean is sent as JSON, exactly as
                   Python writes it, so large integers arrive unchanged. The ``Content-Type``
                   is ``application/json`` unless ``headers`` has one. A value that JSON
@@ -765,14 +775,17 @@ class Network(LibraryComponent):
         | VAR    &{fields} =    description=Profile picture    file=${file}
         | ${response} =    `Send API Request`    /api/avatar    POST    multipart=${fields}
         """
+        checked_form = _checked_form(form)
+        checked_multipart = _checked_multipart(multipart)
+        _check_at_most_one(data=data, form=checked_form, multipart=checked_multipart)
         request = Request().ApiRequest(
             url=url,
             method=method.name if method else "GET",
             timeout=self.get_timeout(timeout),
         )
-        _set_api_fields(request, _checked_form(form), _checked_multipart(multipart))
+        _set_fields(request, checked_form, checked_multipart)
         if headers is not None:
-            request.headers = json.dumps(_api_headers(headers))
+            request.headers = json.dumps(_checked_headers(headers))
         checked_params = (
             None if params is None else QueryParams.from_value(cast(Any, params))
         )
@@ -861,7 +874,8 @@ class Network(LibraryComponent):
                 [https://playwright.dev/docs/api/class-request | Request] object and
                 returns a boolean. By default (with an empty string) the first request
                 is matched. The matcher syntax is the same as in `Wait For Response`,
-                see its matcher examples. For additional information, see the Playwright
+                see its matcher examples. An invalid RegExp fails at once. For additional
+                information, see the Playwright
                 [https://playwright.dev/docs/api/class-page#page-wait-for-request |
                 waitForRequest] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
@@ -924,7 +938,8 @@ class Network(LibraryComponent):
                 JavaScript RegExp (enclosed in ``/`` with optional trailing flags) or a
                 JavaScript arrow-function that receives the Response object and returns
                 a boolean. By default (with an empty string) the first response is
-                matched. For additional information, see the Playwright
+                matched. An invalid RegExp fails at once. For additional information, see
+                the Playwright
                 [https://playwright.dev/docs/api/class-page#page-wait-for-response |
                 page.waitForResponse] documentation.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
@@ -956,6 +971,10 @@ class Network(LibraryComponent):
         === RegExp: ===
 
         Regular Expressions are JavaScript regular expressions enclosed in ``/`` with optional trailing flags.
+        Any matcher that starts with ``/`` and ends with ``/``, or with ``/`` and only the flag
+        letters ``gimsuy``, is read as a RegExp. So a relative glob such as ``/api/users/`` or
+        ``/api/items/my`` is a RegExp, ``api/users`` and ``api/items`` with the flags ``my``.
+        Write it as ``**/api/users/`` to match it as a glob.
         Be aware that backslashes need to be escaped in Robot Framework, e.g. ``\\\\w`` instead of ``\\w``.
         See [https://regex101.com|regex101] for more information on Regular Expressions.
 
@@ -1022,7 +1041,8 @@ class Network(LibraryComponent):
         *Arguments:*
           - ``url``: Expected navigation target address, either a Glob-Pattern (a plain
                 string without wildcards matches exactly) or a JavaScript-like regex
-                wrapped in ``/`` symbols.
+                wrapped in ``/`` symbols, as in `Wait For Response`. An invalid RegExp fails
+                at once.
           - ``timeout``: Timeout supports Robot Framework time format. Uses default
                 timeout if not set.
           - ``wait_until``: When to consider the operation succeeded, defaults to load.
@@ -1063,7 +1083,7 @@ class Network(LibraryComponent):
     @keyword(tags=("Route", "Setter"))
     def abort_requests(
         self,
-        matcher: str,
+        matcher: str | RegExp,
         *,
         errorCode: AbortErrorCode = AbortErrorCode.failed,
         times: int | None = None,
@@ -1072,8 +1092,12 @@ class Network(LibraryComponent):
         """Adds a route rule that makes every request matching ``matcher`` fail.
 
         *Arguments:*
-          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
-                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``matcher``: Request URL matcher: a glob pattern, a JavaScript RegExp enclosed in
+                ``/``, or a JavaScript arrow function that receives the request
+                [https://developer.mozilla.org/en-US/docs/Web/API/URL|URL] and returns a
+                boolean, such as ``url => url.searchParams.get('id') === '7'``. Globs and
+                RegExps match as in `Wait For Response`, see its matcher examples; unlike
+                there, the function gets the URL, not the request. An invalid RegExp fails.
           - ``errorCode``: The network error the request fails with, see `AbortErrorCode`.
           - ``times``: How many matching requests the rule aborts before it ends. ``None``
                 (default) aborts every matching request until the rule is removed. Must be 1
@@ -1120,13 +1144,15 @@ class Network(LibraryComponent):
     @keyword(tags=("Route", "Setter"))
     def mock_responses(
         self,
-        matcher: str,
+        matcher: str | RegExp,
         *,
         status: int = 200,
-        body: str | bytes | Secret | None = None,
-        json: Any = None,
+        body: JsonSerializable | bytes | Secret | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to JsonSerializable or None". A None default passes None.
+        json: JsonSerializable = None,  # type: ignore[assignment]
         path: PathLike | None = None,
-        headers: dict[str, str | Secret] | None = None,
+        headers: HttpHeaders = None,  # type: ignore[assignment]
         times: int | None = None,
         on: ContextOrPage = ContextOrPage.Context,
     ) -> str:
@@ -1135,24 +1161,27 @@ class Network(LibraryComponent):
         The request never reaches the server.
 
         *Arguments:*
-          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
-                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``matcher``: Request URL matcher: a glob pattern, a JavaScript RegExp enclosed in
+                ``/``, or a JavaScript arrow function that receives the request
+                [https://developer.mozilla.org/en-US/docs/Web/API/URL|URL] and returns a
+                boolean, such as ``url => url.searchParams.get('id') === '7'``. Globs and
+                RegExps match as in `Wait For Response`, see its matcher examples; unlike
+                there, the function gets the URL, not the request. An invalid RegExp fails.
           - ``status``: The response status, from 100 to 599. There is no reason phrase
                 argument: the browser shows the standard phrase, or ``Unknown`` for a code
                 such as 299.
           - ``body``: The response body as text or a Robot Framework ``Secret``, sent as
-                UTF-8, or as bytes, sent unchanged. ``body=`` is an empty body. To answer with
-                a captured body, give its bytes, for example ``body=${response.bytes}`` from
-                `Wait For Response`.
-          - ``json``: Any JSON-serializable value, such as a dictionary, list or number,
-                sent as compact JSON. A string is sent as a JSON string, so JSON text goes in
+                UTF-8, or as bytes, sent unchanged. A dictionary, a list, a number or a
+                boolean is sent as JSON, as with ``json``. ``body=`` is an empty body. To
+                answer with a captured body, give its bytes, for example
+                ``body=${response.bytes}`` from `Wait For Response`.
+          - ``json``: A `JsonSerializable` value, such as a dictionary, list or number, sent
+                as compact JSON. A string is sent as a JSON string, so JSON text goes in
                 ``body`` with a Content-Type header. ``None`` means not given: for a JSON
-                ``null`` body use ``body=null`` with a Content-Type header. ``NaN``,
-                ``Infinity`` and values JSON cannot hold, such as a set, fail.
+                ``null`` body use ``body=null`` with a Content-Type header.
           - ``path``: A file whose bytes are the body; binary files work. A relative path
                 resolves against the working directory.
-          - ``headers``: All headers of the mock response; header names are case-insensitive.
-                A value is a string or a Robot Framework ``Secret``.
+          - ``headers``: `HttpHeaders` (a dictionary), all headers of the mock response.
           - ``times``: How many matching requests the rule answers before it ends. ``None``
                 (default) answers every matching request until the rule is removed. Must be 1
                 or more.
@@ -1202,7 +1231,7 @@ class Network(LibraryComponent):
         _check_times(times)
         _check_status(status)
         payload, response_headers, payload_kind = _payload_with_content_type(
-            _reveal(body), json, path, _revealed_headers(headers)
+            _plain_body(body), json, path, _checked_headers(headers)
         )
         request = Request().RouteRule(
             url=matcher,
@@ -1221,18 +1250,20 @@ class Network(LibraryComponent):
     @keyword(tags=("Route", "Setter"))
     def modify_responses(
         self,
-        matcher: str,
+        matcher: str | RegExp,
         *,
         status: int | None = None,
-        body: str | bytes | Secret | None = None,
-        json: Any = None,
+        body: JsonSerializable | bytes | Secret | None = None,
+        # Not "| None": in a union RF drops the converter's error and reports only
+        # "cannot be converted to HttpHeaderChanges or None". A None default passes None.
+        json: JsonSerializable = None,  # type: ignore[assignment]
         path: PathLike | None = None,
         json_patch: dict[str, Any] | None = None,
-        headers: dict[str, str | Secret] | None = None,
+        headers: HttpHeaderChanges = None,  # type: ignore[assignment]
         request_url: str | Secret | None = None,
         request_method: RequestMethod | None = None,
-        request_headers: dict[str, str | Secret] | None = None,
-        request_body: str | bytes | Secret | None = None,
+        request_headers: HttpHeaderChanges = None,  # type: ignore[assignment]
+        request_body: JsonSerializable | bytes | Secret | None = None,
         times: int | None = None,
         on: ContextOrPage = ContextOrPage.Context,
     ) -> str:
@@ -1243,31 +1274,39 @@ class Network(LibraryComponent):
         default, which keeps the real value; give at least one.
 
         *Arguments:*
-          - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
-                ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
+          - ``matcher``: Request URL matcher: a glob pattern, a JavaScript RegExp enclosed in
+                ``/``, or a JavaScript arrow function that receives the request
+                [https://developer.mozilla.org/en-US/docs/Web/API/URL|URL] and returns a
+                boolean, such as ``url => url.searchParams.get('id') === '7'``. Globs and
+                RegExps match as in `Wait For Response`, see its matcher examples; unlike
+                there, the function gets the URL, not the request. An invalid RegExp fails.
           - ``status``: The response status, from 100 to 599.
-          - ``body``: Replaces the real body with text, a Robot Framework ``Secret`` or bytes,
-                as in `Mock Responses`.
+          - ``body``: Replaces the real body with text, a Robot Framework ``Secret``, bytes or
+                a JSON value, as in `Mock Responses`.
           - ``json``: Replaces the real body with a JSON-encoded value, as in `Mock Responses`.
           - ``path``: Replaces the real body with the bytes of a file, as in `Mock Responses`.
           - ``json_patch``: Changes fields of the real JSON body, as an
                 [https://www.rfc-editor.org/rfc/rfc7386|RFC 7386 JSON Merge Patch]: dictionaries
                 merge, ``None`` deletes a key and a list replaces the whole list. Like ``json``,
                 it fails for ``NaN``, ``Infinity`` and values JSON cannot hold.
-          - ``headers``: Merged onto the real response headers.
+          - ``headers``: `HttpHeaderChanges` (a dictionary) merged onto the real response
+                headers: a value replaces the real header, ``None`` removes it.
           - ``request_url``: Sends the request to this URL instead, absolute or relative to the
                 original one. The page keeps its original URL.
           - ``request_method``: Sends the request with this method.
-          - ``request_headers``: Merged onto the real request headers.
-          - ``request_body``: Sends this text or Robot Framework ``Secret`` as UTF-8, or these
-                bytes unchanged, as the request body. A captured request body is
+          - ``request_headers``: `HttpHeaderChanges` (a dictionary) merged onto the real
+                request headers, the same way as ``headers``.
+          - ``request_body``: Sends this text or Robot Framework ``Secret`` as UTF-8, these
+                bytes unchanged, or a dictionary, a list, a number or a boolean as JSON with the
+                ``Content-Type`` ``application/json``, as the request body. A captured request body is
                 ``${request.postDataBuffer}`` from `Wait For Request`.
           - ``times``: How many matching requests the rule changes before it ends. ``None``
                 (default) changes every matching request until the rule is removed.
           - ``on``: Where the rule is added, see `ContextOrPage`.
 
         Give at most one of ``body``, ``json``, ``path`` and ``json_patch``. In ``headers`` and
-        ``request_headers`` a given value wins and an empty string removes the header.
+        ``request_headers`` a given value wins, an empty string sends the header empty and
+        ``None`` removes it.
 
         When the real request fails, the page request fails too. The real request gets the
         browser timeout that is in effect when the rule is added.
@@ -1287,33 +1326,42 @@ class Network(LibraryComponent):
         for redirects, cookies on a changed URL, failures and more examples.
         """
         _check_times(times)
-        response_headers = _revealed_headers(headers)
-        sent_headers = _revealed_headers(request_headers)
+        response_headers, removed_headers = _checked_header_changes(headers)
+        sent_headers, removed_request_headers = _checked_header_changes(request_headers)
         payloads = {"body": body, "json": json, "path": path, "json_patch": json_patch}
         _check_at_most_one(**payloads)
         request_changes = _request_changes(
-            request_url, request_method, sent_headers, request_body
+            request_url,
+            request_method,
+            {**sent_headers, **dict.fromkeys(removed_request_headers)},
+            request_body,
         )
-        response_changes = _response_changes(status, payloads, response_headers)
+        response_changes = _response_changes(
+            status, payloads, {**response_headers, **dict.fromkeys(removed_headers)}
+        )
         if not request_changes and not response_changes:
             raise ValueError("Modify Responses needs at least one change.")
         if status is not None:
             _check_status(status)
         replaced_body, json_patch_text, response_headers = _modified_payload(
-            _reveal(body), json, path, json_patch, response_headers
+            _plain_body(body), json, path, json_patch, response_headers
         )
+        post_data = None
+        request_body = _plain_body(request_body)
+        if request_body is not None:
+            post_data, sent_headers = _request_body(request_body, sent_headers)
         modify = Request().RouteModify(
             url=_reveal(request_url),
             method=request_method.name if request_method else None,
-            postData=None
-            if request_body is None
-            else _encoded_body(_reveal(request_body)),
+            postData=post_data,
             timeout=int(self.get_timeout(None)),
             status=status,
             requestHeaders=sent_headers,
             headers=response_headers,
             body=replaced_body,
             jsonPatch=json_patch_text,
+            removedRequestHeaders=removed_request_headers,
+            removedHeaders=removed_headers,
         )
         rule_id = self._add_route_rule(
             Request().RouteRule(url=matcher, times=times, modify=modify), on

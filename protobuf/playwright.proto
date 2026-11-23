@@ -401,6 +401,8 @@ message Request {
     map<string, string> headers = 11;
     optional bytes body = 12;
     optional string jsonPatch = 13;
+    repeated string removedRequestHeaders = 14;
+    repeated string removedHeaders = 15;
   }
 
   message RouteRule {
@@ -475,8 +477,8 @@ message Request {
      optional string body = 3;
      string headers = 4;
      optional bytes bodyBytes = 5;
-     repeated FormField form = 6;
-     repeated MultipartField multipart = 7;
+     optional FormFields form = 6;
+     optional MultipartFields multipart = 7;
      optional string credentials = 8;
      optional string redirect = 9;
      optional string mode = 10;

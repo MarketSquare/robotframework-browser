@@ -24,7 +24,13 @@ import { withLoadReport } from './load-report';
 import { LifecycleState, navigationOptions } from './navigation-options';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, hideCallLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
+import {
+    deserializeUrlOrPredicate,
+    emptyWithLog,
+    hideCallLog,
+    jsonResponse,
+    parseRegExpOrKeepStringOrThrow,
+} from './response-util';
 
 type PageMultipartField =
     { name: string; value: string } | { name: string; fileName?: string; mimeType?: string; buffer: Uint8Array };
@@ -145,10 +151,8 @@ export async function pageFetch({
 }
 
 export async function httpRequest(request: pb.Request_HttpRequest, page: Page): Promise<pb.Response_Json[]> {
-    const form =
-        request.form.length > 0 ? request.form.map((field): [string, string] => [field.name, field.value]) : undefined;
-    const multipart =
-        request.multipart.length > 0 ? await Promise.all(request.multipart.map(pageMultipartField)) : undefined;
+    const form = request.form?.fields.map((field): [string, string] => [field.name, field.value]);
+    const multipart = request.multipart && (await Promise.all(request.multipart.fields.map(pageMultipartField)));
     const result = await page.evaluate(pageFetch, {
         url: request.url,
         init: requestInit(request),
@@ -264,24 +268,6 @@ export async function sendApiRequest(
     } finally {
         await response.dispose();
     }
-}
-
-export function deserializeUrlOrPredicate(
-    urlOrPredicate: string,
-): RegExp | string | ((request: unknown) => boolean | Promise<boolean>) {
-    // if the matcher is a function or arrow function, wrap it in parens and evaluate.
-    if (
-        /^function.*{.*}$/.test(urlOrPredicate) ||
-        /([a-zA-Z]\w*|\([a-zA-Z]\w*(,\s*[a-zA-Z]\w*)*\)) =>/.test(urlOrPredicate)
-    ) {
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval
-        const fn = new Function(`return (${urlOrPredicate})`)();
-        if (typeof fn === 'function' || Object.prototype.toString.call(fn) === '[object Function]') {
-            return fn;
-        }
-    }
-
-    return parseRegExpOrKeepString(urlOrPredicate);
 }
 
 interface CapturedBytes {
@@ -453,7 +439,7 @@ export async function waitForRequest(request: pb.Request_HttpCapture, page: Page
 }
 
 export async function waitForNavigation(request: pb.Request_UrlOptions, page: Page): Promise<pb.Response_Empty> {
-    const url = parseRegExpOrKeepString(<string>request.url?.url);
+    const url = parseRegExpOrKeepStringOrThrow(<string>request.url?.url);
     const options = { ...navigationOptions(request.url?.defaultTimeout, request.waitUntil), url };
     await withLoadReport(page, () => page.waitForNavigation(options));
     return emptyWithLog(`Navigated to: ${url}, location is: ${page.url()}`);

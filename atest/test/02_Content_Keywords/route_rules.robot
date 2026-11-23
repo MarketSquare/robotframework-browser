@@ -195,6 +195,27 @@ Binary Body Mock Answers With The Exact Bytes
     Get Text    id=response-sha256    ==    ${sha256}
     Get Text    id=response-headers    *=    "content-type": "application/octet-stream"
 
+List Body Mock Answers With JSON
+    ${path} =    Unique HTTP Path    /api/echo/mock-list
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Mock Responses    **${path}    body=${{ [1, {"a": None}] }}
+    New Page    ${url}
+    Get Text    id=response-body    ==    [1,{"a":null}]
+    Get Text    id=response-headers    *=    "content-type": "application/json"
+
+Arrow Function Matcher Gets The URL
+    ${path} =    Unique HTTP Path    /api/echo/mock-predicate
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?id=7
+    Mock Responses    url => url.pathname === '${path}' && url.searchParams.get('id') === '7'
+    ...    body=matched
+    New Page    ${url}
+    Get Text    id=response-body    ==    matched
+    Get Text    id=served-by    ==    not test-app
+
+Invalid RegExp Matcher Fails
+    Run Keyword And Expect Error    *Invalid regular expression*
+    ...    Mock Responses    /[/    body=never
+
 Mock Without A Payload Has An Empty Body
     ${path} =    Unique HTTP Path    /api/echo/mock-empty
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
@@ -256,6 +277,9 @@ Cross Origin Mock Without CORS Headers Reaches The Page
 
 Invalid Mock Responses Fail
     Run Keyword And Expect Error
+    ...    *Header 'X-Gone' must be a string, a Secret, a number or a boolean, got None.*
+    ...    Mock Responses    **/api/echo/never    headers=${{ {"X-Gone": None} }}
+    Run Keyword And Expect Error
     ...    ValueError: Give at most one of body, json and path, got body and json.
     ...    Mock Responses    **/api/echo/never    body=text    json=${1}
     Run Keyword And Expect Error
@@ -312,14 +336,22 @@ Modified Response Has The New Status And A Merged Header
     ${journal} =    HTTP Journal    ${path}
     Length Should Be    ${journal}    1
 
-Empty Header Value Removes A Real Response Header
+None Header Value Removes A Real Response Header
     ${path} =    Unique HTTP Path    /api/respond/modify-remove-header
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?header=X-Remove:me
-    Modify Responses    **${path}*    headers=${{ {"x-remove": ""} }}
+    Modify Responses    **${path}*    headers=${{ {"x-remove": None} }}
     New Page    ${url}
     Get Text    id=state    ==    done
     Get Text    id=response-headers    not contains    x-remove
     Get Text    id=served-by    matches    ^test-app #\\d+$
+
+Empty Header Value Sends An Empty Response Header
+    ${path} =    Unique HTTP Path    /api/respond/modify-empty-header
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}?header=X-Empty:me
+    Modify Responses    **${path}*    headers=${{ {"x-empty": ""} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    Get Text    id=response-headers    *=    "x-empty": ""
 
 JSON Patch Changes Nested Fields Of The Real JSON
     ${path} =    Unique HTTP Path    /api/echo/modify-json-patch
@@ -416,6 +448,16 @@ Binary Request Body Reaches The Server Unchanged
     ${sha256} =    HTTP Fixture Sha256    image.png
     Should Be Equal    ${echo}[body][sha256]    ${sha256}
 
+Dictionary Request Body Is Sent As JSON
+    ${path} =    Unique HTTP Path    /api/echo/modify-post-json
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    Modify Responses    **${path}    request_method=POST    request_body=${{ {"id": 7} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    Should Be Equal    ${echo}[body][text]    {"id":7}
+    Should Start With    ${echo}[body][contentType]    application/json
+
 Changing A POST To GET Sends No Body
     ${path} =    Unique HTTP Path    /api/echo/modify-get
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}    method=POST    bodyMode=text    body=payload
@@ -429,12 +471,13 @@ Changing A POST To GET Sends No Body
 Request Headers Merge Onto The Real Request Headers
     ${path} =    Unique HTTP Path    /api/echo/modify-request-headers
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}    headers={"X-Remove": "page"}
-    Modify Responses    **${path}    request_headers=${{ {"X-Added": "yes", "x-remove": ""} }}
+    Modify Responses    **${path}    request_headers=${{ {"X-Added": "yes", "x-remove": None, "X-Empty": ""} }}
     New Page    ${url}
     Get Text    id=state    ==    done
     ${echo} =    Panel JSON    response-body
     Should Be Equal    ${echo}[headers][x-added]    yes
     Dictionary Should Not Contain Key    ${echo}[headers]    x-remove
+    Should Be Equal    ${echo}[headers][x-empty]    ${EMPTY}
     Dictionary Should Contain Key    ${echo}[headers]    user-agent
 
 Redirect Is Followed And The Page Keeps Its URL

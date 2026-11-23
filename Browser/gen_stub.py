@@ -60,7 +60,7 @@ from robot.utils import DotDict
 
 from Browser.utils import (
     APIResponse, CapturedRequest, CapturedResponse, HttpResponse, MultipartFile,
-    FormFields, MultipartFields, QueryParams,
+    FormFields, HttpHeaderChanges, HttpHeaders, JsonSerializable, MultipartFields, QueryParams,
     FetchCache, FetchCredentials, FetchMode, FetchPriority, FetchRedirect, ReferrerPolicy,
     ClockType, CLockAdvanceType, FormatterTypes, CookieType, CookieSameSite, DownloadInfo, NewPageDetails,
     BrowserInfo, PageLoadStates,ViewportDimensions, ServiceWorkersPermissions,
@@ -90,7 +90,12 @@ with Path("Browser/browser.pyi").open("w", encoding="utf-8") as stub_file:
 # The keywords annotate them without "| None", so that Robot Framework reports the
 # converter's error, see Browser/keywords/network.py.
 FIELD_VALUE = "str | int | float | bool"
+HEADER_VALUE = "str | Secret | int | float | bool"
 WIDENED = {
+    "JsonSerializable | bytes | Secret | None = None": "Any = None",
+    "JsonSerializable = None": "Any = None",
+    "HttpHeaders = None": f"Mapping[str, {HEADER_VALUE}] | None = None",
+    "HttpHeaderChanges = None": f"Mapping[str, {HEADER_VALUE} | None] | None = None",
     "FormFields = None": f"Mapping[str, {FIELD_VALUE}] | None = None",
     "QueryParams = None": f"Mapping[str, {FIELD_VALUE}] | str | None = None",
     "MultipartFields = None": (

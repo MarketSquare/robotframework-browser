@@ -585,8 +585,6 @@ function makeHttpRequest(overrides: Record<string, unknown> = {}) {
         url: '/api/echo',
         method: 'POST',
         headers: '{}',
-        form: [],
-        multipart: [],
         timeout: 0,
         ...overrides,
     } as any;
@@ -634,11 +632,20 @@ describe('httpRequest', () => {
             { name: 'q', value: 'a&b' },
             { name: 'lang', value: 'en' },
         ];
-        await httpRequest(makeHttpRequest({ form }), page);
+        await httpRequest(makeHttpRequest({ form: { fields: form } }), page);
         expect(fetchArguments(page).form).toEqual([
             ['q', 'a&b'],
             ['lang', 'en'],
         ]);
+    });
+
+    it('sends an empty form and an empty multipart as given', async () => {
+        const page = makeFetchPage();
+        await httpRequest(makeHttpRequest({ form: { fields: [] } }), page);
+        expect(fetchArguments(page).form).toEqual([]);
+        const multipartPage = makeFetchPage();
+        await httpRequest(makeHttpRequest({ multipart: { fields: [] } }), multipartPage);
+        expect(fetchArguments(multipartPage).multipart).toEqual([]);
     });
 
     it('sends no form when no field is given', async () => {
@@ -653,7 +660,7 @@ describe('httpRequest', () => {
         const page = makeFetchPage();
         await httpRequest(
             makeHttpRequest({
-                multipart: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }],
+                multipart: { fields: [{ name: 'file', path: file, fileName: 'notes.txt', mimeType: 'text/plain' }] },
             }),
             page,
         );
@@ -668,13 +675,13 @@ describe('httpRequest', () => {
 
     it('sends a multipart value as text', async () => {
         const page = makeFetchPage();
-        await httpRequest(makeHttpRequest({ multipart: [{ name: 'count', value: '3' }] }), page);
+        await httpRequest(makeHttpRequest({ multipart: { fields: [{ name: 'count', value: '3' }] } }), page);
         expect(fetchArguments(page).multipart).toEqual([{ name: 'count', value: '3' }]);
     });
 
     it('sends a multipart field without value as empty text', async () => {
         const page = makeFetchPage();
-        await httpRequest(makeHttpRequest({ multipart: [{ name: 'empty' }] }), page);
+        await httpRequest(makeHttpRequest({ multipart: { fields: [{ name: 'empty' }] } }), page);
         expect(fetchArguments(page).multipart).toEqual([{ name: 'empty', value: '' }]);
     });
 
