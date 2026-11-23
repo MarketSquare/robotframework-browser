@@ -108,7 +108,7 @@ def _request_changes(
     url: str | Secret | None,
     method: RequestMethod | None,
     headers: dict[str, str],
-    body: str | Secret | None,
+    body: str | bytes | Secret | None,
 ) -> list[str]:
     changes = []
     if url is not None:
@@ -132,8 +132,22 @@ def _response_changes(
     return changes
 
 
+def _json_text(value: Any, name: str, hint: str = "") -> str:
+    try:
+        return json.dumps(value, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ValueError(f"{name} cannot be sent as JSON: {error}.{hint}") from error
+
+
+def _encoded_body(body: str | bytes) -> bytes:
+    return body if isinstance(body, bytes) else body.encode("utf-8")
+
+
 def _payload_with_content_type(
-    body: str | None, json_value: Any, path: PathLike | None, headers: dict[str, str]
+    body: str | bytes | None,
+    json_value: Any,
+    path: PathLike | None,
+    headers: dict[str, str],
 ) -> tuple[bytes, dict[str, str], str]:
     payload, content_type, payload_kind = _mock_payload(body, json_value, path)
     if content_type and not _has_content_type(headers):
@@ -142,14 +156,14 @@ def _payload_with_content_type(
 
 
 def _modified_payload(
-    body: str | None,
+    body: str | bytes | None,
     json_value: Any,
     path: PathLike | None,
     json_patch: dict[str, Any] | None,
     headers: dict[str, str],
 ) -> tuple[bytes | None, str | None, dict[str, str]]:
     if json_patch is not None:
-        return None, json.dumps(json_patch), headers
+        return None, _json_text(json_patch, "json_patch"), headers
     if body is None and json_value is None and path is None:
         return None, None, headers
     payload, headers, _ = _payload_with_content_type(body, json_value, path, headers)
@@ -157,7 +171,7 @@ def _modified_payload(
 
 
 def _mock_payload(
-    body: str | None, json_value: Any, path: PathLike | None
+    body: str | bytes | None, json_value: Any, path: PathLike | None
 ) -> tuple[bytes, str | None, str]:
     _check_at_most_one(body=body, json=json_value, path=path)
     if path is not None:
@@ -169,7 +183,13 @@ def _mock_payload(
             content_type = f"{content_type}; charset=utf-8"
         return file.read_bytes(), content_type, f"file {file}"
     if json_value is not None:
-        return json.dumps(json_value).encode("utf-8"), "application/json", "json body"
+        return (
+            _json_text(json_value, "json").encode("utf-8"),
+            "application/json",
+            "json body",
+        )
+    if isinstance(body, bytes):
+        return body, "application/octet-stream", "binary body"
     if body is not None:
         return body.encode("utf-8"), "text/plain; charset=utf-8", "text body"
     return b"", None, "no body"
@@ -391,14 +411,12 @@ def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
     elif isinstance(data, bytes | bytearray):
         request.dataBytes = bytes(data)
     else:
-        try:
-            request.dataJson = json.dumps(data, separators=(",", ":"), allow_nan=False)
-        except (TypeError, ValueError) as error:
-            raise ValueError(
-                "data cannot be sent as JSON: "
-                f"{error}. Give a string, bytes, or a dictionary, a list, a number or a "
-                "boolean that holds only such values and None."
-            ) from error
+        request.dataJson = _json_text(
+            data,
+            "data",
+            " Give a string, bytes, or a dictionary, a list, a number or a boolean that "
+            "holds only such values and None.",
+        )
 
 
 def _api_headers(headers: Mapping) -> dict[str, str]:
@@ -1105,7 +1123,7 @@ class Network(LibraryComponent):
         matcher: str,
         *,
         status: int = 200,
-        body: str | Secret | None = None,
+        body: str | bytes | Secret | None = None,
         json: Any = None,
         path: PathLike | None = None,
         headers: dict[str, str | Secret] | None = None,
@@ -1123,11 +1141,14 @@ class Network(LibraryComponent):
                 argument: the browser shows the standard phrase, or ``Unknown`` for a code
                 such as 299.
           - ``body``: The response body as text or a Robot Framework ``Secret``, sent as
-                UTF-8. ``body=`` is an empty body.
+                UTF-8, or as bytes, sent unchanged. ``body=`` is an empty body. To answer with
+                a captured body, give its bytes, for example ``body=${response.bytes}`` from
+                `Wait For Response`.
           - ``json``: Any JSON-serializable value, such as a dictionary, list or number,
-                sent JSON-encoded. A string is sent as a JSON string, so JSON text goes in
+                sent as compact JSON. A string is sent as a JSON string, so JSON text goes in
                 ``body`` with a Content-Type header. ``None`` means not given: for a JSON
-                ``null`` body use ``body=null`` with a Content-Type header.
+                ``null`` body use ``body=null`` with a Content-Type header. ``NaN``,
+                ``Infinity`` and values JSON cannot hold, such as a set, fail.
           - ``path``: A file whose bytes are the body; binary files work. A relative path
                 resolves against the working directory.
           - ``headers``: All headers of the mock response; header names are case-insensitive.
@@ -1142,7 +1163,8 @@ class Network(LibraryComponent):
 
         Give at most one of ``body``, ``json`` and ``path``; none is an empty body, for example
         with ``status=204``. Unless ``headers`` has a Content-Type, which always wins, the
-        Content-Type is ``text/plain; charset=utf-8`` for ``body``, ``application/json`` for
+        Content-Type is ``text/plain; charset=utf-8`` for a text ``body``,
+        ``application/octet-stream`` for a bytes ``body``, ``application/json`` for
         ``json``, guessed from the file extension for ``path`` (``application/octet-stream``
         if unknown, and with ``charset=utf-8`` for a ``text/`` type, so give a file in another
         encoding its Content-Type in ``headers``), and none without a payload, which WebKit reports as
@@ -1202,7 +1224,7 @@ class Network(LibraryComponent):
         matcher: str,
         *,
         status: int | None = None,
-        body: str | Secret | None = None,
+        body: str | bytes | Secret | None = None,
         json: Any = None,
         path: PathLike | None = None,
         json_patch: dict[str, Any] | None = None,
@@ -1210,7 +1232,7 @@ class Network(LibraryComponent):
         request_url: str | Secret | None = None,
         request_method: RequestMethod | None = None,
         request_headers: dict[str, str | Secret] | None = None,
-        request_body: str | Secret | None = None,
+        request_body: str | bytes | Secret | None = None,
         times: int | None = None,
         on: ContextOrPage = ContextOrPage.Context,
     ) -> str:
@@ -1224,20 +1246,22 @@ class Network(LibraryComponent):
           - ``matcher``: Request URL matcher, a glob pattern or a JavaScript RegExp enclosed in
                 ``/``, matched as in `Wait For Request`. An invalid RegExp fails.
           - ``status``: The response status, from 100 to 599.
-          - ``body``: Replaces the real body with text or a Robot Framework ``Secret``, as in
-                `Mock Responses`.
+          - ``body``: Replaces the real body with text, a Robot Framework ``Secret`` or bytes,
+                as in `Mock Responses`.
           - ``json``: Replaces the real body with a JSON-encoded value, as in `Mock Responses`.
           - ``path``: Replaces the real body with the bytes of a file, as in `Mock Responses`.
           - ``json_patch``: Changes fields of the real JSON body, as an
                 [https://www.rfc-editor.org/rfc/rfc7386|RFC 7386 JSON Merge Patch]: dictionaries
-                merge, ``None`` deletes a key and a list replaces the whole list.
+                merge, ``None`` deletes a key and a list replaces the whole list. Like ``json``,
+                it fails for ``NaN``, ``Infinity`` and values JSON cannot hold.
           - ``headers``: Merged onto the real response headers.
           - ``request_url``: Sends the request to this URL instead, absolute or relative to the
                 original one. The page keeps its original URL.
           - ``request_method``: Sends the request with this method.
           - ``request_headers``: Merged onto the real request headers.
-          - ``request_body``: Sends this text, or Robot Framework ``Secret``, as the request
-                body.
+          - ``request_body``: Sends this text or Robot Framework ``Secret`` as UTF-8, or these
+                bytes unchanged, as the request body. A captured request body is
+                ``${request.postDataBuffer}`` from `Wait For Request`.
           - ``times``: How many matching requests the rule changes before it ends. ``None``
                 (default) changes every matching request until the rule is removed.
           - ``on``: Where the rule is added, see `ContextOrPage`.
@@ -1283,7 +1307,7 @@ class Network(LibraryComponent):
             method=request_method.name if request_method else None,
             postData=None
             if request_body is None
-            else _reveal(request_body).encode("utf-8"),
+            else _encoded_body(_reveal(request_body)),
             timeout=int(self.get_timeout(None)),
             status=status,
             requestHeaders=sent_headers,

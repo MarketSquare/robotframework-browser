@@ -167,7 +167,7 @@ JSON Mock Answers With An Encoded Body And JSON Content Type
     Mock Responses    **${path}    json=${orders}
     New Page    ${url}
     Get Text    id=status    ==    200
-    Get Text    id=response-body    ==    {"count": 2, "status": "open"}
+    Get Text    id=response-body    ==    {"count":2,"status":"open"}
     Get Text    id=response-headers    *=    "content-type": "application/json"
 
 File Mock Answers With The File And A Content Type From Its Extension
@@ -183,6 +183,17 @@ File Mock Answers With The File And A Content Type From Its Extension
     New Page    ${json_url}
     Get Text    id=response-body    ==    {"orders": []}
     Get Text    id=response-headers    *=    "content-type": "application/json"
+
+Binary Body Mock Answers With The Exact Bytes
+    ${path} =    Unique HTTP Path    /api/echo/mock-bytes
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    ${image} =    HTTP Fixture Bytes    image.png
+    Mock Responses    **${path}    body=${image}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${sha256} =    HTTP Fixture Sha256    image.png
+    Get Text    id=response-sha256    ==    ${sha256}
+    Get Text    id=response-headers    *=    "content-type": "application/octet-stream"
 
 Mock Without A Payload Has An Empty Body
     ${path} =    Unique HTTP Path    /api/echo/mock-empty
@@ -207,7 +218,7 @@ Content Type In Headers Wins Over The JSON Default
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
     Mock Responses    **${path}    json=${{ [1, 2] }}    headers=${{ {"content-type": "application/vnd.orders+json"} }}
     New Page    ${url}
-    Get Text    id=response-body    ==    [1, 2]
+    Get Text    id=response-body    ==    [1,2]
     Get Text    id=response-headers    *=    "content-type": "application/vnd.orders+json"
 
 Mock With Times Answers Once And Then The Server Answers
@@ -257,8 +268,11 @@ Invalid Mock Responses Fail
     ...    ValueError: path ${CURDIR}${/}missing.json is not a file.
     ...    Mock Responses    **/api/echo/never    path=${CURDIR}/missing.json
     Run Keyword And Expect Error
-    ...    TypeError: Object of type set is not JSON serializable
+    ...    ValueError: json cannot be sent as JSON: Object of type set is not JSON serializable*
     ...    Mock Responses    **/api/echo/never    json=${{ {1, 2} }}
+    Run Keyword And Expect Error
+    ...    ValueError: json cannot be sent as JSON: Out of range float values are not JSON compliant*
+    ...    Mock Responses    **/api/echo/never    json=${{ {"a": float("nan")} }}
 
 Header Names Differing Only In Case Give One Header
     [Documentation]    Which value the page gets differs between browsers.
@@ -348,6 +362,17 @@ JSON Patch On A Compressed Response Drops The Stale Encoding Headers
     Get Text    id=response-headers    not contains    content-encoding
     Content Length Should Match Response Size
 
+Binary Body Replaces The Real Body With The Exact Bytes
+    ${path} =    Unique HTTP Path    /api/echo/modify-bytes
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    ${image} =    HTTP Fixture Bytes    image.png
+    Modify Responses    **${path}    body=${image}    headers=${{ {"Content-Type": "image/png"} }}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${sha256} =    HTTP Fixture Sha256    image.png
+    Get Text    id=response-sha256    ==    ${sha256}
+    Get Text    id=response-headers    *=    "content-type": "image/png"
+
 Relative Request URL Reaches The New Path And The Page Keeps Its URL
     ${path} =    Unique HTTP Path    /api/echo/modify-relative
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
@@ -379,6 +404,17 @@ Request Method And Body Change
     ${echo} =    Panel JSON    response-body
     Should Be Equal    ${echo}[method]    POST
     Should Be Equal    ${echo}[body][text]    Hyvää päivää
+
+Binary Request Body Reaches The Server Unchanged
+    ${path} =    Unique HTTP Path    /api/echo/modify-post-bytes
+    ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
+    ${image} =    HTTP Fixture Bytes    image.png
+    Modify Responses    **${path}    request_method=POST    request_body=${image}
+    New Page    ${url}
+    Get Text    id=state    ==    done
+    ${echo} =    Panel JSON    response-body
+    ${sha256} =    HTTP Fixture Sha256    image.png
+    Should Be Equal    ${echo}[body][sha256]    ${sha256}
 
 Changing A POST To GET Sends No Body
     ${path} =    Unique HTTP Path    /api/echo/modify-get
@@ -454,11 +490,14 @@ Invalid Modify Responses Fail
     ...    ValueError: path ${CURDIR}${/}missing.json is not a file.
     ...    Modify Responses    **/api/echo/never    path=${CURDIR}/missing.json
     Run Keyword And Expect Error
-    ...    TypeError: Object of type set is not JSON serializable
+    ...    ValueError: json cannot be sent as JSON: Object of type set is not JSON serializable*
     ...    Modify Responses    **/api/echo/never    json=${{ {1, 2} }}
     Run Keyword And Expect Error
-    ...    TypeError: Object of type set is not JSON serializable
+    ...    ValueError: json_patch cannot be sent as JSON: Object of type set is not JSON serializable*
     ...    Modify Responses    **/api/echo/never    json_patch=${{ {"a": {1, 2}} }}
+    Run Keyword And Expect Error
+    ...    ValueError: json_patch cannot be sent as JSON: Out of range float values are not JSON compliant*
+    ...    Modify Responses    **/api/echo/never    json_patch=${{ {"a": float("inf")} }}
     Run Keyword And Expect Error
     ...    *RequestMethod*
     ...    Modify Responses    **/api/echo/never    request_method=FETCH

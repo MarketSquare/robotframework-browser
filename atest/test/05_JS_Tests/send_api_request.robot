@@ -59,6 +59,22 @@ Error Status Fails With Fail On Status Code
     Run Keyword And Expect Error    *404*
     ...    Send API Request    ${url}    failOnStatusCode=True
 
+Failure Message Hides Header And Cookie Values
+    Add Cookie    session    cookie-secret    url=${STATIC_URL}
+    VAR    &{headers} =    Authorization=Bearer header-secret
+    ${url} =    Respond Url    status=500    body=boom    header=Set-Cookie:sid=response-secret
+    ${message} =    Run Keyword And Expect Error    *500*
+    ...    Send API Request    ${url}    headers=${headers}    failOnStatusCode=True
+    Should Not Contain Any    ${message}    header-secret    cookie-secret    response-secret
+    [Teardown]    Delete All Cookies
+
+Timeout Message Hides Header Values
+    VAR    &{headers} =    Authorization=Bearer header-secret
+    ${url} =    Respond Url    delay=2000    body=late
+    ${message} =    Run Keyword And Expect Error    *Timeout 500ms exceeded*
+    ...    Send API Request    ${url}    headers=${headers}    timeout=500ms
+    Should Not Contain    ${message}    header-secret
+
 Request Headers Are Sent
     &{headers} =    Create Dictionary    X-Robot=Beep
     ${response} =    Send API Request    /api/echo/headers    headers=${headers}

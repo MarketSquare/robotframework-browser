@@ -13,6 +13,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import * as os from 'os';
 import * as path from 'path';
+import { errors } from 'playwright';
 
 import { _waitForDownload, httpRequest, pageFetch, sendApiRequest, waitForRequest, waitForResponse } from '../network';
 
@@ -858,6 +859,19 @@ describe('sendApiRequest', () => {
         await expect(sendApiRequest(makeApiRequest(), undefined)).rejects.toThrow(
             'Tried to send an API request, but no context was open.',
         );
+    });
+
+    it('fails without the call log, which holds header values', async () => {
+        expect.assertions(3);
+        const { context, fetch } = makeApiContext();
+        const failure = new errors.TimeoutError(
+            'apiRequestContext.fetch: Timeout 500ms exceeded.\nCall log:\n  - authorization: Bearer header-secret',
+        );
+        fetch.mockRejectedValue(failure);
+        const error = (await sendApiRequest(makeApiRequest(), context).catch((e: unknown) => e)) as Error;
+        expect(error).toBeInstanceOf(errors.TimeoutError);
+        expect(error.message).toBe('apiRequestContext.fetch: Timeout 500ms exceeded.');
+        expect(error.stack).not.toContain('header-secret');
     });
 
     it('passes only method and timeout when nothing else is given', async () => {

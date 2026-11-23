@@ -20,7 +20,7 @@ import { isTargetClosed } from './context-tracer';
 import * as pb from './generated/playwright';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, parseRegExpOrKeepStringOrThrow } from './response-util';
+import { emptyWithLog, parseRegExpOrKeepStringOrThrow, withoutCallLog } from './response-util';
 
 type RouteAction = (route: Route) => Promise<void>;
 
@@ -120,11 +120,6 @@ function fetchOptions(modify: pb.Request_RouteModify, request: Request): FetchOp
     if (modify.postData !== undefined) options.postData = modify.postData;
     else if (modify.method !== undefined && BODYLESS_METHODS.has(modify.method)) options.postData = Buffer.alloc(0);
     return options;
-}
-
-function withoutCallLog(error: unknown): string {
-    const message = error instanceof Error ? error.message : String(error);
-    return message.split(/\n\s*Call log:/)[0];
 }
 
 async function fetchAndFulfill(route: Route, modify: pb.Request_RouteModify): Promise<void> {

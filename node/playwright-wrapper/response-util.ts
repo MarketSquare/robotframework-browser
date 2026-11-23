@@ -32,6 +32,20 @@ import { IndexedPage } from './playwright-state';
 
 const NO_BYTES = { bodyBytes: Buffer.alloc(0), postDataBytes: Buffer.alloc(0) };
 
+export function withoutCallLog(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+    return message.split(/\n\s*Call log:/)[0];
+}
+
+/** Drops Playwright's call log, which lists request header values such as Authorization and cookies. */
+export function hideCallLog(error: unknown): unknown {
+    if (!(error instanceof Error)) return error;
+    error.message = withoutCallLog(error);
+    const frames = (error.stack ?? '').split('\n').filter((line) => /^\s+at /.test(line));
+    error.stack = [`${error.name}: ${error.message}`, ...frames].join('\n');
+    return error;
+}
+
 export function emptyWithLog(text: string): Response_Empty {
     return { log: text };
 }

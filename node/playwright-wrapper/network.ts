@@ -24,7 +24,7 @@ import { withLoadReport } from './load-report';
 import { LifecycleState, navigationOptions } from './navigation-options';
 import { exists } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
+import { emptyWithLog, hideCallLog, jsonResponse, parseRegExpOrKeepString } from './response-util';
 
 type PageMultipartField =
     { name: string; value: string } | { name: string; fileName?: string; mimeType?: string; buffer: Uint8Array };
@@ -246,7 +246,11 @@ export async function sendApiRequest(
     context: BrowserContext | undefined,
 ): Promise<pb.Response_Json[]> {
     exists(context, 'Tried to send an API request, but no context was open.');
-    const response = await context.request.fetch(request.url, await apiFetchOptions(request));
+    const response = await context.request
+        .fetch(request.url, await apiFetchOptions(request))
+        .catch((error: unknown) => {
+            throw hideCallLog(error);
+        });
     try {
         const meta = {
             status: response.status(),
