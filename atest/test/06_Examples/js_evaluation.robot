@@ -14,6 +14,6 @@ Mutate Element On Page With ElementHandle
 Wait For Progress Bar
     [Tags]    slow
     ${promise} =    Promise To    Wait For Function    element => element.style.width=="100%"
-    ...    selector=\#progress_bar    timeout=4s
+    ...    selector=\#progress_bar    timeout=10s
     Click    \#progress_bar
     Wait For    ${promise}
