@@ -1975,6 +1975,12 @@ def version(c, version):
     _replace_version(
         py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1
     )
+    _replace_version(
+        py_project_toml,
+        re.compile(r'"robotframework-browser-batteries>=.*"'),
+        f'"robotframework-browser-batteries>={version}"',
+        1,
+    )
     py_project_toml = BROWSER_BATTERIES_DIR / "pyproject.toml"
     _replace_version(
         py_project_toml, py_project_toml_matcher, f'version = "{version}"', 1

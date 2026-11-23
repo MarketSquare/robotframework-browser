@@ -39,7 +39,7 @@ If you upgrading from previous release with [pip](http://pip-installer.org), run
 Alternatively you can download the source distribution from
 [PyPI](https://pypi.org/project/robotframework-browser/) and
 install it manually. Browser library 21.1.0 was released on Monday November 23, 2026.
-Browser supports Python 3.11.5+, Node 22/24 LTS and Node 26, and Robot Framework 7.1.1+.
+Browser supports Python 3.11+, Node 22/24 LTS and Node 26, and Robot Framework 7.1.1+.
 Library was tested with Playwright 1.65.1. BrowserBatteries package was
 released with NodeJS 26.13.1.
 
@@ -117,8 +117,10 @@ Recorder also uses a keyword section that is already in the file, in any languag
 Many thanks to René for the fix.
 
 ### Raise Python 3.11 minimum required version to 3.11.5 because of CVE-2026-126191 ([#5546](https://github.com/MarketSquare/robotframework-browser/issues/5546))
-The soupsieve fix for CVE-2026-126191 needs Python 3.11.5 or later. Because of
-this, Browser now needs Python 3.11.5 or later.
+The soupsieve fix for CVE-2026-126191 needs Python 3.11.5 or later. Browser uses
+soupsieve only in its development environment, not at run time. Because of this,
+only the development environment now needs Python 3.11.5 or later. Browser still
+supports Python 3.11 and later.
 
 ### Assertion retry deadline uses wall-clock time and ends early when the system clock jumps ([#5577](https://github.com/MarketSquare/robotframework-browser/issues/5577))
 Browser used the system clock to measure how long an assertion can retry. When the

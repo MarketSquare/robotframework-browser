@@ -75,6 +75,9 @@ issue type decides what is listed:
 * **Task** issues are left out. Use Task for work users do not need to know about, such as CI or tooling, and for
   work parked for later.
 
+When a discussion changes an issue's scope or a decision in it, update the issue body, as #5109 does with its
+"Scope changed" note. The release notes are written from the body.
+
 `gh issue create` cannot set the issue type. Set it in the web UI, or with the GraphQL `updateIssue` mutation and
 an id from `repository(owner: "MarketSquare", name: "robotframework-browser") { issueTypes(first: 10) { nodes { id name } } }`.
 
@@ -167,7 +170,7 @@ and Node components.
 export VERSION=<version>
 inv version $VERSION
 inv build
-git add Browser/version.py browser_batteries/pyproject.toml package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release
+git add Browser/version.py browser_batteries/pyproject.toml package.json package-lock.json pyproject.toml docker/Dockerfile.latest_release uv.lock
 git commit -m "Update version to: $VERSION"
 git push
 ```
@@ -198,7 +201,12 @@ Generate a template for the release notes:
 invoke release-notes -w -v $VERSION -u $GITHUB_USERNAME -p $GITHUB_PASSWORD
 ```
 
-Fill the missing details in the generated release notes template.
+Fill the missing details in the generated release notes template. Write a summary for each issue in **Most
+important enhancements** and **Acknowledgements**:
+* Write in ASD-STE100 Simplified Technical English. 25 words per sentence is a target, not a limit.
+* Use the terms of the `GLOSSARY.md` files, see [`GLOSSARY-MAP.md`](GLOSSARY-MAP.md).
+* Describe only what users see in the public API. Leave internal changes out.
+* When the maintainers decided differently from what the issue body says, follow the decision.
 
 Make sure that issues have correct information:
 * All issues should have the issue type and priority set, see [Issues](#issues). Issues with the Task type are
