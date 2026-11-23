@@ -370,14 +370,14 @@ JSON Patch Changes Nested Fields Of The Real JSON
     Should Be Equal    ${echo}[path]    ${path}
     Get Text    id=response-headers    *=    "content-type": "application/json; charset=utf-8"
 
-Body Replaces The Real Body After The Request Reached The Server
+Text Body Replaces The Real Body And Keeps Its Content Type
     ${path} =    Unique HTTP Path    /api/echo/modify-body
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
     Modify Responses    **${path}    body=replaced
     New Page    ${url}
     Get Text    id=state    ==    done
     Get Text    id=response-body    ==    replaced
-    Get Text    id=response-headers    *=    "content-type": "text/plain; charset=utf-8"
+    Get Text    id=response-headers    *=    "content-type": "application/json; charset=utf-8"
     Get Text    id=served-by    matches    ^test-app #\\d+$
     ${journal} =    HTTP Journal    ${path}
     Length Should Be    ${journal}    1

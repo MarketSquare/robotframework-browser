@@ -15,6 +15,11 @@ A keyword call arriving by attribute access on the library instance, from a plai
 script with no Robot Framework run.
 _Avoid_: direct call, native call
 
+**Keyword body**:
+The code that runs for a keyword call, whichever path the call took: the Python method of a
+library keyword, or the JavaScript function of a **JavaScript extension keyword**.
+_Avoid_: bare "body", which in network keywords means an **HTTP body**; implementation
+
 **Keyword table**:
 The mapping the **Robot Framework path** reads (`self.keywords`), keyed by Robot name.
 _Avoid_: keyword dict, keyword registry
@@ -52,7 +57,7 @@ outstanding. It answers "did the page never load, or did the wait miss it?"
 _Avoid_: load state (that is the `waitUntil` value a keyword waits for), load diagnostics
 
 **JavaScript extension keyword**:
-A keyword whose body is a function in a `jsextension` module. It is called like any other
+A keyword whose **keyword body** is a function in a `jsextension` module. It is called like any other
 keyword, over the **Robot Framework path** or the **Python path**, and a Python library built
 on Browser can also call the function by name with `call_js_keyword`.
 _Avoid_: JS keyword, extension function (that is the JavaScript side only)
@@ -134,6 +139,13 @@ _Avoid_: browser request, network request
 An HTTP request the library sends through a context, outside any page, as
 `Send API Request` does. It shares the context's cookies but is not page traffic.
 _Avoid_: API call, backend request, page request
+
+**HTTP body**:
+The content of a request or response that a network keyword sends or makes up: the body of a
+**page request** or **API request**, of a **mock response**, or one that a **route rule** puts
+in place of the real one. The same rules turn a keyword's value into an HTTP body in both
+directions; a keyword that follows other rules says so.
+_Avoid_: payload, data, postData, bare "body" (that may be a **keyword body**)
 
 **Python side**:
 Where Robot Framework and the library run, with the working directory a test's relative paths
@@ -219,6 +231,10 @@ _Avoid_: system path, Node path
 - An **init script** runs in every document its context or page loads, before the document's
   own scripts. A **script tag** runs once, when it is added, in the document it was added
   to.
+- An **HTTP body** is either made up, for a **mock response**, a **page request** or an **API
+  request**, or it replaces the body of a real request or response that a **route rule**
+  changes. A made-up body has no type until the keyword gives it one; a replacement body keeps
+  the type of the real message unless its value says otherwise.
 - Only a **page request** is seen by `Wait For Request` and `Wait For Response`. An **API
   request** is not, even when a page of the same context is open.
 - An **API request** and the **page requests** of its context share one cookie jar: a cookie

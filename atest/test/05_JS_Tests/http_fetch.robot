@@ -177,6 +177,11 @@ Dictionary Body Is Sent As JSON
     Should Be Equal    ${response.json.body.text}    {"id":7,"tags":["new"]}
     Should Start With    ${response.json.body.contentType}    application/json
 
+Text Body Is Sent As UTF-8 Plain Text
+    ${response} =    HTTP    /api/echo/text    POST    päivää
+    Should Be Equal    ${response.json.body.text}    päivää
+    Should Be Equal    ${response.json.body.contentType}    text/plain; charset=utf-8
+
 List Body Is Sent As JSON
     ${response} =    HTTP    /api/echo/json    POST    ${{ [1, 2] }}
     Should Be Equal    ${response.json.body.text}    [1,2]

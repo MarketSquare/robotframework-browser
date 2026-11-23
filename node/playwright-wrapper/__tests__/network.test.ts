@@ -928,23 +928,10 @@ describe('sendApiRequest', () => {
     it.each([
         [{ dataText: '' }, ''],
         [{ dataBytes: Buffer.from([0, 255]) }, Buffer.from([0, 255])],
-        [{ dataJson: '{"id":9007199254740993}' }, '{"id":9007199254740993}'],
     ])('passes data %p to Playwright as %p', async (data, expected) => {
         const { context, fetch } = makeApiContext();
         await sendApiRequest(makeApiRequest(data), context);
         expect(fetchOptions(fetch).data).toEqual(expected);
-    });
-
-    it('sends JSON data as written with a JSON content type when none is given', async () => {
-        const { context, fetch } = makeApiContext();
-        await sendApiRequest(makeApiRequest({ dataJson: '[1.0]' }), context);
-        expect(fetchOptions(fetch).headers).toEqual({ 'content-type': 'application/json' });
-    });
-
-    it('keeps an own content type of any case for JSON data', async () => {
-        const { context, fetch } = makeApiContext();
-        await sendApiRequest(makeApiRequest({ dataJson: '1', headers: '{"Content-Type":"text/x"}' }), context);
-        expect(fetchOptions(fetch).headers).toEqual({ 'Content-Type': 'text/x' });
     });
 
     it.each(['params', 'form', 'multipart'])('passes an empty %s', async (option) => {

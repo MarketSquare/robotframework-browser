@@ -499,7 +499,7 @@ message Request {
      optional string encodedParams = 5;
      optional string dataText = 6;
      optional bytes dataBytes = 7;
-     optional string dataJson = 8;
+     reserved 8;
      optional FormFields form = 9;
      optional MultipartFields multipart = 10;
      double timeout = 11;

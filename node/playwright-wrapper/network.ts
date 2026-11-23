@@ -208,22 +208,11 @@ async function multipartFormData(fields: pb.Request_MultipartField[]): Promise<F
     return form;
 }
 
-function hasHeader(headers: Record<string, string>, name: string): boolean {
-    return Object.keys(headers).some((key) => key.toLowerCase() === name);
-}
-
 function setApiRequestData(options: ApiFetchOptions, request: pb.Request_ApiRequest): void {
     if (request.dataText !== undefined) {
         options.data = request.dataText;
     } else if (request.dataBytes !== undefined) {
         options.data = Buffer.from(request.dataBytes);
-    } else if (request.dataJson !== undefined) {
-        // Playwright sends a JSON string as written when the content type is JSON, so the
-        // JSON that Python wrote reaches the server unchanged, large integers included.
-        const headers = (options.headers ?? {}) as Record<string, string>;
-        if (!hasHeader(headers, 'content-type')) headers['content-type'] = 'application/json';
-        options.headers = headers;
-        options.data = request.dataJson;
     }
 }
 

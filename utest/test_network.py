@@ -5,7 +5,6 @@ import pytest
 from Browser.keywords.network import (
     Network,
     _add_http_response_views,
-    _get_headers,
 )
 from Browser.keywords.network import _multipart_field as _proto_multipart_field
 from Browser.utils.data_types import MultipartFields
@@ -182,12 +181,3 @@ def test_multipart_file_from_path_object(tmp_path):
     path.write_bytes(b"png")
     field = _multipart_field("file", {"path": path})
     assert (field.path, field.fileName) == (str(path.resolve()), "avatar.png")
-
-
-def test_json_content_type_is_added_for_a_json_body():
-    assert _get_headers('{"a": 1}', {}) == {"Content-Type": "application/json"}
-
-
-def test_own_content_type_in_any_case_is_kept_for_a_json_body():
-    headers = {"content-type": "text/plain"}
-    assert _get_headers('{"a": 1}', headers) == headers

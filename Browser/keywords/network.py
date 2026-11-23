@@ -20,7 +20,6 @@ from collections.abc import Mapping
 from datetime import timedelta
 from enum import Enum
 from os import PathLike
-from pathlib import Path
 from typing import Any, cast
 from urllib.parse import parse_qsl
 
@@ -49,6 +48,7 @@ from ..utils import (
     MultipartFile,
     QueryParams,
     ReferrerPolicy,
+    http_body,
     keyword,
     logger,
 )
@@ -67,34 +67,13 @@ def _check_times(times: int | None):
         raise ValueError(f"times must be 1 or more, got {times}.")
 
 
-def _reveal(value: Any) -> Any:
-    return value.value if isinstance(value, Secret) else value
-
-
-def _has_content_type(headers: dict[str, str]) -> bool:
-    return any(name.lower() == "content-type" for name in headers)
-
-
 def _check_status(status: int):
     if status not in HTTP_STATUS_CODES:
         raise ValueError(f"status must be from 100 to 599, got {status}.")
 
 
-def _join_with_and(names: list[str]) -> str:
-    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
-
-
-def _check_at_most_one(**given: Any):
-    given_names = [name for name, value in given.items() if value is not None]
-    if len(given_names) > 1:
-        raise ValueError(
-            f"Give at most one of {_join_with_and(list(given))}, "
-            f"got {_join_with_and(given_names)}."
-        )
-
-
 def _revealed_headers(headers: Mapping[str, Any] | None) -> dict[str, str]:
-    return {name: _reveal(value) for name, value in (headers or {}).items()}
+    return {name: http_body.revealed(value) for name, value in (headers or {}).items()}
 
 
 def _checked_headers(headers: Any) -> dict[str, str]:
@@ -108,23 +87,6 @@ def _checked_header_changes(changes: Any) -> tuple[dict[str, str], list[str]]:
     removed = [name for name, value in checked.items() if value is None]
     kept = {name: value for name, value in checked.items() if value is not None}
     return _revealed_headers(kept), removed
-
-
-def _plain_body(body: Any) -> Any:
-    body = _reveal(body)
-    return bytes(body) if isinstance(body, bytearray) else body
-
-
-def _is_json_body(body: Any) -> bool:
-    return body is not None and not isinstance(body, str | bytes)
-
-
-def _with_content_type(headers: dict[str, str], content_type: str) -> dict[str, str]:
-    return (
-        headers
-        if _has_content_type(headers)
-        else {**headers, "Content-Type": content_type}
-    )
 
 
 def _change_log(changes: list[str]) -> str:
@@ -154,93 +116,13 @@ def _request_changes(
 
 
 def _response_changes(
-    status: int | None, payloads: dict[str, Any], headers: Mapping[str, Any]
+    status: int | None, bodies: dict[str, Any], headers: Mapping[str, Any]
 ) -> list[str]:
     changes = [] if status is None else [f"status={status}"]
-    changes.extend(name for name, value in payloads.items() if value is not None)
+    changes.extend(name for name, value in bodies.items() if value is not None)
     if headers:
         changes.append(f"headers={_header_names(headers)}")
     return changes
-
-
-def _json_text(value: Any, name: str, hint: str = "") -> str:
-    try:
-        return json.dumps(value, separators=(",", ":"), allow_nan=False)
-    except (TypeError, ValueError) as error:
-        raise ValueError(f"{name} cannot be sent as JSON: {error}.{hint}") from error
-
-
-def _request_body(body: Any, headers: dict[str, str]) -> tuple[bytes, dict[str, str]]:
-    if isinstance(body, bytes):
-        return body, headers
-    if isinstance(body, str):
-        return body.encode("utf-8"), headers
-    text = _json_text(body, "request_body")
-    return text.encode("utf-8"), _with_content_type(headers, "application/json")
-
-
-def _payload_with_content_type(
-    body: Any,
-    json_value: Any,
-    path: PathLike | None,
-    headers: dict[str, str],
-) -> tuple[bytes, dict[str, str], str]:
-    payload, content_type, payload_kind = _mock_payload(body, json_value, path)
-    if content_type:
-        headers = _with_content_type(headers, content_type)
-    return payload, headers, payload_kind
-
-
-def _modified_payload(
-    body: Any,
-    json_value: Any,
-    path: PathLike | None,
-    json_patch: dict[str, Any] | None,
-    headers: dict[str, str],
-) -> tuple[bytes | None, str | None, dict[str, str]]:
-    if json_patch is not None:
-        return None, _json_text(json_patch, "json_patch"), headers
-    if body is None and json_value is None and path is None:
-        return None, None, headers
-    payload, headers, _ = _payload_with_content_type(body, json_value, path, headers)
-    return payload, None, headers
-
-
-def _mock_payload(
-    body: Any, json_value: Any, path: PathLike | None
-) -> tuple[bytes, str | None, str]:
-    _check_at_most_one(body=body, json=json_value, path=path)
-    if path is not None:
-        file = Path(path)
-        if not file.is_file():
-            raise ValueError(f"path {file} is not a file.")
-        content_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
-        if content_type.startswith("text/"):
-            content_type = f"{content_type}; charset=utf-8"
-        return file.read_bytes(), content_type, f"file {file}"
-    if json_value is not None:
-        return (
-            _json_text(json_value, "json").encode("utf-8"),
-            "application/json",
-            "json body",
-        )
-    if isinstance(body, bytes):
-        return body, "application/octet-stream", "binary body"
-    if isinstance(body, str):
-        return body.encode("utf-8"), "text/plain; charset=utf-8", "text body"
-    if body is not None:
-        return _json_text(body, "body").encode("utf-8"), "application/json", "json body"
-    return b"", None, "no body"
-
-
-def _get_headers(body: str, headers: dict):
-    if any(name.lower() == "content-type" for name in headers):
-        return headers
-    try:
-        json.loads(body)
-        return {"Content-Type": "application/json", **headers}
-    except json.decoder.JSONDecodeError:
-        return headers
 
 
 def _reject_constant(constant: str):
@@ -441,23 +323,6 @@ def _checked_multipart(multipart: Any) -> dict[str, str | MultipartFile] | None:
     return None if multipart is None else MultipartFields.from_dict(multipart)
 
 
-def _set_api_data(request: Request.ApiRequest, data: Any) -> None:
-    data = _plain_body(data)
-    if data is None:
-        return
-    if isinstance(data, str):
-        request.dataText = data
-    elif isinstance(data, bytes):
-        request.dataBytes = data
-    else:
-        request.dataJson = _json_text(
-            data,
-            "data",
-            " Give a string, bytes, or a dictionary, a list, a number or a boolean that "
-            "holds only such values and None.",
-        )
-
-
 def _set_api_params(
     request: Request.ApiRequest, params: Mapping[str, str] | str
 ) -> None:
@@ -543,9 +408,10 @@ class Network(LibraryComponent):
                 dictionary, a list, a number or a boolean, which is sent as JSON (see
                 `JsonSerializable`) with the ``Content-Type`` ``application/json``. When a
                 text body can be parsed as JSON, the ``Content-Type`` is also set to
-                ``application/json``. Otherwise the browser sends text as
-                ``text/plain;charset=UTF-8``, and ``bytes`` without a ``Content-Type``. A
-                ``Content-Type`` in ``headers``, in any case, always wins.
+                ``application/json``. Other text is sent as ``text/plain; charset=utf-8``,
+                and ``bytes`` without a ``Content-Type``, as the browser does, so that a
+                cross-origin request needs no CORS preflight for it. A ``Content-Type`` in
+                ``headers``, in any case, always wins.
           - ``headers``: `HttpHeaders` (a dictionary) of the request.
           - ``form``: `FormFields` (a dictionary), sent URL-encoded as
                 ``application/x-www-form-urlencoded``, the way the browser encodes a
@@ -612,10 +478,10 @@ class Network(LibraryComponent):
         [https://forum.robotframework.org/t//4296|Comment >>]
         """
         method_name = method.name if method else "GET"
-        body = _plain_body(body)
+        body = http_body.revealed(body)
         checked_form = _checked_form(form)
         checked_multipart = _checked_multipart(multipart)
-        _check_at_most_one(body=body, form=checked_form, multipart=checked_multipart)
+        http_body.at_most_one(body=body, form=checked_form, multipart=checked_multipart)
         sent_headers = _checked_headers(headers)
         if method_name in METHODS_WITHOUT_BODY:
             if isinstance(body, bytes):
@@ -642,14 +508,13 @@ class Network(LibraryComponent):
             priority=priority,
         )
         _set_fields(request, checked_form, checked_multipart)
-        if isinstance(body, bytes):
-            request.bodyBytes = body
-        elif isinstance(body, str):
-            request.body = body
-            sent_headers = _get_headers(body, sent_headers)
-        elif body is not None:
-            request.body = _json_text(body, "body")
-            sent_headers = _with_content_type(sent_headers, "application/json")
+        sent_body = http_body.page_request(body)
+        if sent_body is not None:
+            if isinstance(sent_body.content, bytes):
+                request.bodyBytes = sent_body.content
+            else:
+                request.body = sent_body.content
+            sent_headers = sent_body.headers(sent_headers)
         request.headers = json.dumps(sent_headers)
         with self.playwright.grpc_channel() as stub:
             response, body_bytes, _ = _collect_stream(stub.HttpRequest(request))
@@ -779,21 +644,29 @@ class Network(LibraryComponent):
         """
         checked_form = _checked_form(form)
         checked_multipart = _checked_multipart(multipart)
-        _check_at_most_one(data=data, form=checked_form, multipart=checked_multipart)
+        http_body.at_most_one(data=data, form=checked_form, multipart=checked_multipart)
+        sent_data = http_body.api_request(data)
         request = Request().ApiRequest(
             url=url,
             method=method.name if method else "GET",
             timeout=self.get_timeout(timeout),
         )
         _set_fields(request, checked_form, checked_multipart)
-        if headers is not None:
-            request.headers = json.dumps(_checked_headers(headers))
+        sent_headers = None if headers is None else _checked_headers(headers)
+        if sent_data is not None:
+            if isinstance(sent_data.content, bytes):
+                request.dataBytes = sent_data.content
+            else:
+                request.dataText = sent_data.content
+            if sent_data.content_type is not None:
+                sent_headers = sent_data.headers(sent_headers or {})
+        if sent_headers is not None:
+            request.headers = json.dumps(sent_headers)
         checked_params = (
             None if params is None else QueryParams.from_value(cast(Any, params))
         )
         if checked_params is not None:
             _set_api_params(request, checked_params)
-        _set_api_data(request, data)
         _set_given(
             request,
             failOnStatusCode=failOnStatusCode,
@@ -1198,7 +1071,7 @@ class Network(LibraryComponent):
         ``application/octet-stream`` for a bytes ``body``, ``application/json`` for
         ``json``, guessed from the file extension for ``path`` (``application/octet-stream``
         if unknown, and with ``charset=utf-8`` for a ``text/`` type, so give a file in another
-        encoding its Content-Type in ``headers``), and none without a payload, which WebKit reports as
+        encoding its Content-Type in ``headers``), and none without a body, which WebKit reports as
         ``application/octet-stream``.
 
         Returns the rule id, to give to `Remove Route Rule`.
@@ -1232,20 +1105,20 @@ class Network(LibraryComponent):
         """
         _check_times(times)
         _check_status(status)
-        payload, response_headers, payload_kind = _payload_with_content_type(
-            _plain_body(body), json, path, _checked_headers(headers)
-        )
+        mock_body = http_body.made_up(body, json, path)
         request = Request().RouteRule(
             url=matcher,
             times=times,
             fulfill=Request().RouteFulfill(
-                status=status, headers=response_headers, body=payload
+                status=status,
+                headers=mock_body.headers(_checked_headers(headers)),
+                body=mock_body.encoded,
             ),
         )
         rule_id = self._add_route_rule(request, on)
         logger.info(
             f"Added route rule {rule_id}: mock {matcher} with status {status} and "
-            f"{payload_kind}, times={times}, on={on.name}."
+            f"{mock_body.kind}, times={times}, on={on.name}."
         )
         return rule_id
 
@@ -1284,7 +1157,7 @@ class Network(LibraryComponent):
                 there, the function gets the URL, not the request. An invalid RegExp fails.
           - ``status``: The response status, from 100 to 599.
           - ``body``: Replaces the real body with text, a Robot Framework ``Secret``, bytes or
-                a JSON value, as in `Mock Responses`.
+                a JSON value, encoded as in `Mock Responses`.
           - ``json``: Replaces the real body with a JSON-encoded value, as in `Mock Responses`.
           - ``path``: Replaces the real body with the bytes of a file, as in `Mock Responses`.
           - ``json_patch``: Changes fields of the real JSON body, as an
@@ -1299,9 +1172,9 @@ class Network(LibraryComponent):
           - ``request_headers``: `HttpHeaderChanges` (a dictionary) merged onto the real
                 request headers, the same way as ``headers``.
           - ``request_body``: Sends this text or Robot Framework ``Secret`` as UTF-8, these
-                bytes unchanged, or a dictionary, a list, a number or a boolean as JSON with the
-                ``Content-Type`` ``application/json``, as the request body. A captured request body is
-                ``${request.postDataBuffer}`` from `Wait For Request`.
+                bytes unchanged, or a dictionary, a list, a number or a boolean as JSON, as the
+                request body. A captured request body is ``${request.postDataBuffer}`` from
+                `Wait For Request`.
           - ``times``: How many matching requests the rule changes before it ends. ``None``
                 (default) changes every matching request until the rule is removed.
           - ``on``: Where the rule is added, see `ContextOrPage`.
@@ -1309,6 +1182,14 @@ class Network(LibraryComponent):
         Give at most one of ``body``, ``json``, ``path`` and ``json_patch``. In ``headers`` and
         ``request_headers`` a given value wins, an empty string sends the header empty and
         ``None`` removes it.
+
+        A replaced body keeps the Content-Type of the real response or request when it is
+        text or bytes, so ``body=<p>Sold out</p>`` on an HTML page stays HTML. Text is sent as
+        UTF-8: when the real Content-Type names another ``charset``, give the Content-Type
+        with ``charset=utf-8`` in ``headers`` or ``request_headers``. A JSON value in
+        ``body``, ``json`` or ``request_body`` sets ``application/json``, and ``path`` sets
+        the type of the file as in `Mock Responses`. A Content-Type given or removed in
+        ``headers`` or ``request_headers`` always wins.
 
         When the real request fails, the page request fails too. The real request gets the
         browser timeout that is in effect when the rule is added.
@@ -1330,8 +1211,8 @@ class Network(LibraryComponent):
         _check_times(times)
         response_headers, removed_headers = _checked_header_changes(headers)
         sent_headers, removed_request_headers = _checked_header_changes(request_headers)
-        payloads = {"body": body, "json": json, "path": path, "json_patch": json_patch}
-        _check_at_most_one(**payloads)
+        bodies = {"body": body, "json": json, "path": path, "json_patch": json_patch}
+        http_body.at_most_one(**bodies)
         request_changes = _request_changes(
             request_url,
             request_method,
@@ -1339,29 +1220,30 @@ class Network(LibraryComponent):
             request_body,
         )
         response_changes = _response_changes(
-            status, payloads, {**response_headers, **dict.fromkeys(removed_headers)}
+            status, bodies, {**response_headers, **dict.fromkeys(removed_headers)}
         )
         if not request_changes and not response_changes:
             raise ValueError("Modify Responses needs at least one change.")
         if status is not None:
             _check_status(status)
-        replaced_body, json_patch_text, response_headers = _modified_payload(
-            _plain_body(body), json, path, json_patch, response_headers
-        )
-        post_data = None
-        request_body = _plain_body(request_body)
-        if request_body is not None:
-            post_data, sent_headers = _request_body(request_body, sent_headers)
+        replaced_body = http_body.replacement(body, json, path)
+        if replaced_body is not None:
+            response_headers = replaced_body.headers(response_headers, removed_headers)
+        sent_body = http_body.replacement(request_body, name="request_body")
+        if sent_body is not None:
+            sent_headers = sent_body.headers(sent_headers, removed_request_headers)
         modify = Request().RouteModify(
-            url=_reveal(request_url),
+            url=http_body.revealed(request_url),
             method=request_method.name if request_method else None,
-            postData=post_data,
+            postData=None if sent_body is None else sent_body.encoded,
             timeout=int(self.get_timeout(None)),
             status=status,
             requestHeaders=sent_headers,
             headers=response_headers,
-            body=replaced_body,
-            jsonPatch=json_patch_text,
+            body=None if replaced_body is None else replaced_body.encoded,
+            jsonPatch=None
+            if json_patch is None
+            else http_body.json_text(json_patch, "json_patch"),
             removedRequestHeaders=removed_request_headers,
             removedHeaders=removed_headers,
         )
