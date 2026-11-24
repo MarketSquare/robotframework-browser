@@ -126,9 +126,10 @@ Wait For Response Synchronous With Predicate
     Wait For Response    response => response.url().endsWith('json') && response.request().method() === 'GET'
 
 Wait For Response Async
-    ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
+    ${promise} =    Promise To    Wait For Response    matcher=**/api/get/json    timeout=3s
     Click    \#delayed_request
-    Wait For    ${promise}
+    ${response} =    Wait For    ${promise}
+    Should Be Equal As Numbers    ${response.status}    200
 
 Wait For Response With OPTIONS Request
     [Tags]    known-bug-firefox    # Playwright limitation: Firefox reports no network events for an OPTIONS fetch
