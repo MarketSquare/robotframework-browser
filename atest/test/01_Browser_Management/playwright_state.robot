@@ -310,97 +310,64 @@ When Page Without Context Is Created This Is Logged For User
 Switch Page With ALL Browsers
     [Tags]    slow
     [Timeout]    60s
-    New Browser    headless=${HEADLESS}    reuse_existing=False
-    New Context
-    ${page111} =    New Page
-    New Page
-    New Context
-    New Page
-    New Page
-    New Browser    headless=${HEADLESS}    reuse_existing=False
-    New Context
-    New Page
-    ${page212} =    New Page
-    New Context
-    ${page221} =    New Page
-    ${page222} =    New Page
+    ${ids} =    Open Two Browsers With Two Contexts Of Two Pages
 
     ${cat} =    Get Browser Catalog
     Log    ${cat}
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page222}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page222][page_id]
 
-    Switch Page    ${page111}    ALL    ALL
+    Switch Page    ${ids}[page111]    ALL    ALL
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page111}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page111][page_id]
 
-    Switch Page    ${page212}[page_id]    ALL    ALL
+    Switch Page    ${ids}[page212][page_id]    ALL    ALL
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page212}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page212][page_id]
 
-    Switch Page    ${page221}    ALL    CURRENT
+    Switch Page    ${ids}[page221]    ALL    CURRENT
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page221}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page221][page_id]
 
-    Switch Page    ${page111}    CURRENT    ALL
+    Switch Page    ${ids}[page111]    CURRENT    ALL
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page111}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page111][page_id]
 
 Switch Context With ALL Browsers
-    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context11} =    New Context
-    New Page
-    New Page
-    ${context12} =    New Context
-    New Page
-    New Page
-    New Browser    headless=${HEADLESS}    reuse_existing=False
-    New Context
-    New Page
-    New Page
-    ${context22} =    New Context
-    New Page
-    New Page
+    ${ids} =    Open Two Browsers With Two Contexts Of Two Pages
 
     ${cat} =    Get Browser Catalog
     Log    ${cat}
     ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
-    Assert Equal    ${cur_context}[0]    ${context22}
+    Assert Equal    ${cur_context}[0]    ${ids}[context22]
 
-    Switch Context    ${context12}    ALL
+    Switch Context    ${ids}[context12]    ALL
     ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
-    Assert Equal    ${cur_context}[0]    ${context12}
+    Assert Equal    ${cur_context}[0]    ${ids}[context12]
 
-    Switch Context    ${context11}    CURRENT
+    Switch Context    ${ids}[context11]    CURRENT
     ${cur_context} =    Get Context Ids    ACTIVE    ACTIVE
-    Assert Equal    ${cur_context}[0]    ${context11}
+    Assert Equal    ${cur_context}[0]    ${ids}[context11]
 
 Switch Page With ALL Browsers Failing
-    ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context11} =    New Context
-    New Page
-    New Page
-    ${context12} =    New Context
-    ${page121} =    New Page
-    ${page122} =    New Page
-    ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    New Context
-    New Page
-    New Page
-    ${context22} =    New Context
-    New Page
-    ${page222} =    New Page
+    ${ids} =    Open Two Browsers With Two Contexts Of Two Pages
 
     Get Browser Ids    ALL    then    len(value) == 2
-    Get Context Ids    ACTIVE    ALL    equals    ${context12}    ${context22}
-    Get Context Ids    ALL    ${browser1}    equals    ${context11}    ${context12}
-    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    equals    ${page222}[page_id]
+    Get Context Ids    ACTIVE    ALL    equals    ${ids}[context12]    ${ids}[context22]
+    Get Context Ids    ALL    ${ids}[browser1]    equals    ${ids}[context11]    ${ids}[context12]
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    equals    ${ids}[page222][page_id]
     # setting specific context ignores browser
-    Get Page Ids    ALL    ${context12}    ${browser2}    equals    ${page121}[page_id]    ${page122}[page_id]
+    Get Page Ids
+    ...    ALL
+    ...    ${ids}[context12]
+    ...    ${ids}[browser2]
+    ...    equals
+    ...    ${ids}[page121][page_id]
+    ...    ${ids}[page122][page_id]
     ${cat} =    Get Browser Catalog
     Log    ${cat}
     ${cur_page} =    Get Page Ids    ACTIVE    ACTIVE    ACTIVE
-    Assert Equal    ${cur_page}[0]    ${page222}[page_id]
+    Assert Equal    ${cur_page}[0]    ${ids}[page222][page_id]
 
     Run Keyword And Expect Error    EQUALS:ValueError: No page with requested id 'page=123' found.
     ...    Run Keyword And Continue On Failure
@@ -533,6 +500,28 @@ Open Browser And Assert Login Page
     New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
     Verify Browser Type    ${local_browser}
+
+Open Two Browsers With Two Contexts Of Two Pages
+    ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
+    ${context11} =    New Context
+    ${page111} =    New Page
+    ${page112} =    New Page
+    ${context12} =    New Context
+    ${page121} =    New Page
+    ${page122} =    New Page
+    ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
+    ${context21} =    New Context
+    ${page211} =    New Page
+    ${page212} =    New Page
+    ${context22} =    New Context
+    ${page221} =    New Page
+    ${page222} =    New Page
+    VAR    &{ids} =
+    ...    browser1=${browser1}    context11=${context11}    page111=${page111}    page112=${page112}
+    ...    context12=${context12}    page121=${page121}    page122=${page122}
+    ...    browser2=${browser2}    context21=${context21}    page211=${page211}    page212=${page212}
+    ...    context22=${context22}    page221=${page221}    page222=${page222}
+    RETURN    ${ids}
 
 New Page Form
     New Page    ${FORM_URL}
