@@ -48,6 +48,9 @@ Equal With Formatter Global:
     Should Be Equal    ${old}    ${{{'Get Text': []}}}
     ${old} =    Set Assertion Formatters    {'Get Text': ['strip']}    Global
     Should Be Equal    ${old}    ${{{'Get Text': ['normalize spaces']}}}
+    ${current_scope} =    Get Current Scope From Lib    Get Text
+    VAR    @{expected_scope} =    _strip
+    Should Be Equal    ${current_scope}    ${expected_scope}
     Get Text    id=two    ==    two spaces
     [Teardown]    Formatter TearDown
 
