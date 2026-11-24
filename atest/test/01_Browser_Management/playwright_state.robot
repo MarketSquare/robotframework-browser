@@ -108,7 +108,7 @@ Switch Context
     ${first_context} =    New Context
     New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
-    ${second_context} =    New Context
+    New Context
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     Switch Context    ${first_context}
@@ -151,8 +151,8 @@ Set Viewport Size
 Page Index Is Stable When Other Pages Closed
     [Tags]    slow
     ${first} =    New Page
-    ${second} =    New Page
-    ${third} =    New Page
+    New Page
+    New Page
     Close Page
     Close Page
     ${last} =    Switch Page    ${first}
@@ -161,8 +161,8 @@ Page Index Is Stable When Other Pages Closed
 Context Index Is Stable When Other Contexts Closed
     [Tags]    slow
     ${first} =    New Context
-    ${second} =    New Context
-    ${third} =    New Context
+    New Context
+    New Context
     Close Context
     Close Context
     ${last} =    Switch Context    ${first}
@@ -244,7 +244,7 @@ Close Page With Page Id
     ${c1} =    New Context
     &{p1_1} =    New Page
     &{p1_2} =    New Page
-    ${c2} =    New Context
+    New Context
     ${p2_1} =    New Page
     ${page_count} =    Get Page IDs    ALL    ${c1}    ALL    then    len(value)
     Should Be Equal As Integers    ${page_count}    2
@@ -310,18 +310,18 @@ When Page Without Context Is Created This Is Logged For User
 Switch Page With ALL Browsers
     [Tags]    slow
     [Timeout]    60s
-    ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context11} =    New Context
+    New Browser    headless=${HEADLESS}    reuse_existing=False
+    New Context
     ${page111} =    New Page
-    ${page112} =    New Page
-    ${context12} =    New Context
-    ${page121} =    New Page
-    ${page122} =    New Page
-    ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context21} =    New Context
-    ${page211} =    New Page
+    New Page
+    New Context
+    New Page
+    New Page
+    New Browser    headless=${HEADLESS}    reuse_existing=False
+    New Context
+    New Page
     ${page212} =    New Page
-    ${context22} =    New Context
+    New Context
     ${page221} =    New Page
     ${page222} =    New Page
 
@@ -347,20 +347,20 @@ Switch Page With ALL Browsers
     Assert Equal    ${cur_page}[0]    ${page111}[page_id]
 
 Switch Context With ALL Browsers
-    ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
+    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${context11} =    New Context
-    ${page111} =    New Page
-    ${page112} =    New Page
+    New Page
+    New Page
     ${context12} =    New Context
-    ${page121} =    New Page
-    ${page122} =    New Page
-    ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context21} =    New Context
-    ${page211} =    New Page
-    ${page212} =    New Page
+    New Page
+    New Page
+    New Browser    headless=${HEADLESS}    reuse_existing=False
+    New Context
+    New Page
+    New Page
     ${context22} =    New Context
-    ${page221} =    New Page
-    ${page222} =    New Page
+    New Page
+    New Page
 
     ${cat} =    Get Browser Catalog
     Log    ${cat}
@@ -378,17 +378,17 @@ Switch Context With ALL Browsers
 Switch Page With ALL Browsers Failing
     ${browser1} =    New Browser    headless=${HEADLESS}    reuse_existing=False
     ${context11} =    New Context
-    ${page111} =    New Page
-    ${page112} =    New Page
+    New Page
+    New Page
     ${context12} =    New Context
     ${page121} =    New Page
     ${page122} =    New Page
     ${browser2} =    New Browser    headless=${HEADLESS}    reuse_existing=False
-    ${context21} =    New Context
-    ${page211} =    New Page
-    ${page212} =    New Page
+    New Context
+    New Page
+    New Page
     ${context22} =    New Context
-    ${page221} =    New Page
+    New Page
     ${page222} =    New Page
 
     Get Browser Ids    ALL    then    len(value) == 2
@@ -414,7 +414,7 @@ Launch Browser Server CLI
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8270    wsPath=server1
     Should Start With    ${wsEndpoint}    ws://
     Should End With    ${wsEndpoint}    :8270/server1
-    ${browser} =    Connect To Browser    ws://localhost:8270/server1
+    Connect To Browser    ws://localhost:8270/server1
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
     [Teardown]    Close Browser Server    ${wsEndpoint}
@@ -425,7 +425,7 @@ Launch Browser Server CLI With Video
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}    port=8271    wsPath=server1
     Should Start With    ${wsEndpoint}    ws://
     Should End With    ${wsEndpoint}    :8271/server1
-    ${browser} =    Connect To Browser    ws://localhost:8271/server1
+    Connect To Browser    ws://localhost:8271/server1
     New Context
     ...    tracing=path/is/not/here/trace_999.zip
     ...    recordVideo={'dir':'videos', 'size':{'width':1080, 'height':720}}
@@ -435,7 +435,7 @@ Launch Browser Server CLI With Video
 
 Launch Browser Server Generated wsEndpoint
     ${wsEndpoint} =    Launch Browser Server    chromium    headless=${HEADLESS}
-    ${browser} =    Connect To Browser    ${wsEndpoint}
+    Connect To Browser    ${wsEndpoint}
     New Page    ${LOGIN_URL}
     Get Title    ==    Login Page
     [Teardown]    Close Browser Server    ${wsEndpoint}
@@ -443,7 +443,7 @@ Launch Browser Server Generated wsEndpoint
 Launch Browser Server Via CLI
     [Tags]    no-docker-pr
     ${python} =    Get Python Binary Path
-    ${process1} =    Start Process
+    Start Process
     ...    ${python}
     ...    -m
     ...    Browser.entry
@@ -452,7 +452,7 @@ Launch Browser Server Via CLI
     ...    headless\=${HEADLESS}
     ...    port\=8277
     ...    wsPath\=server2
-    ${process2} =    Start Process
+    Start Process
     ...    ${python}
     ...    -m
     ...    Browser.entry
@@ -490,7 +490,7 @@ Launch Browser Server Via CLI With Proxy
     ...    and this test would prove nothing.
     [Tags]    no-docker-pr
     ${python} =    Get Python Binary Path
-    ${process} =    Start Process
+    Start Process
     ...    ${python}
     ...    -m
     ...    Browser.entry
@@ -529,8 +529,10 @@ Connect To Browser With CDP With Timeout
 *** Keywords ***
 Open Browser And Assert Login Page
     [Arguments]    ${local_browser}
-    Open Browser To Login Page
+    New Browser    ${local_browser}    headless=${HEADLESS}
+    New Page    ${LOGIN_URL}
     Get Text    h1    ==    Login Page
+    Verify Browser Type    ${local_browser}
 
 New Page Form
     New Page    ${FORM_URL}

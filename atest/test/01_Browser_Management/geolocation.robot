@@ -3,7 +3,7 @@ Resource       imports.resource
 
 Suite Setup    Prepare Suite
 
-Force Tags     no-iframe
+Test Tags      no-iframe
 
 *** Variables ***
 @{permissions} =    geolocation

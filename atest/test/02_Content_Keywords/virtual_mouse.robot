@@ -5,7 +5,6 @@ Test Setup    New Page    ${LOGIN_URL}
 
 *** Variables ***
 ${Center_Func} =    {'x': (value["x"] + (value["width"] / 2)), 'y': (value["y"] + (value["height"] / 2))}
-${Dim_Func} =       {'width': value["width"], 'height': value["height"]}
 ${tol} =            1
 
 *** Test Cases ***
@@ -65,7 +64,6 @@ Drag And Drop With Coordinates
     [Timeout]    60s
     [Setup]    New Page    ${DRAGGAME_URL}
     ${obj_center} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Center_Func}
-    ${obj_dim} =    Get Boundingbox    id=blue-box    ALL    evaluate    ${Dim_Func}
     ${dest_center} =    Get Boundingbox    id=goal-post    ALL    evaluate    ${Center_Func}
     # Tests with implicit argument drop=True
     Drag And Drop By Coordinates
@@ -78,24 +76,6 @@ Drag And Drop With Coordinates
     ...    to_x=${obj_center}[x]    to_y=${obj_center}[y]    steps=200
     Take Screenshot
     Assert Position    ${obj_center}[x]    ${obj_center}[y]    ${tol}
-    # Tests with explicit values True or False for argument drop
-    # "Start coordinates" of blue-box object:
-    VAR    ${x1} =    ${obj_center}[x]
-    VAR    ${y1} =    ${obj_center}[y]
-    VAR    ${width} =    ${obj_dim}[width]
-    VAR    ${height} =    ${obj_dim}[height]
-    Log    blue-box object: ${obj_center}
-    # coordinates where to drag in relative values:
-    ${x2} =    Evaluate    ${x1} + 0.1 * ${width}
-    ${y2} =    Evaluate    ${y1} - 1.0 * ${height}
-    ${x3} =    Evaluate    ${x2} + 0.06 * ${width}
-    ${y3} =    Evaluate    ${y2} + 1.2 * ${height}
-    ${x4} =    Evaluate    ${x3} + 0.08 * ${width}
-    VAR    ${y4} =    ${y3}
-    VAR    ${x5} =    ${x4}
-    VAR    ${y5} =    ${height}
-    VAR    ${steps} =    200
-    VAR    ${time} =    1
 
 Hover And Drop To Hover
     [Setup]    New Page    ${DRAGGAME_URL}

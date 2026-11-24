@@ -18,7 +18,7 @@ Get Text
 Get Text Disabled
     [Setup]    Go To    ${ELEMENT_STATE_URL}
     presenter_mode.Set Presenter Mode    {"color": "red", "duration": "1s", "style": "solid"}
-    ${text} =    Get Text    //input[@name="readonly_with_equals_only"]
+    Get Text    //input[@name="readonly_with_equals_only"]    ==    Readonly
     [Teardown]    presenter_mode.Set Presenter Mode    False
 
 Get Text And Assert ==

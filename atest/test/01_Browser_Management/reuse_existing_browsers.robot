@@ -83,7 +83,7 @@ New Browser Reuse Switching
     ${title} =    Get Title
     New Browser    reuse_existing=True    args=["--user-agent DIFFERENT"]
     New Page    ${FORM_URL}
-    ${new_title} =    Get Title    !=    ${title}
+    Get Title    !=    ${title}
     ${new_browser_id} =    New Browser
     ...    reuse_existing=True
     ...    args=${ARGS}
@@ -91,4 +91,5 @@ New Browser Reuse Switching
     ...    slowMo=200 ms
     ...    devtools=True
     ...    timeout=30 seconds
+    Should Be Equal    ${browser_id}    ${new_browser_id}
     Get Title    ==    ${title}

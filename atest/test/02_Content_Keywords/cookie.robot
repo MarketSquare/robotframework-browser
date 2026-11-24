@@ -115,7 +115,7 @@ Add Cookie With Expiry As Epoch String
     [Tags]    no-docker-pr
     ${url} =    Get Url
     ${epoch} =    Get Current Date    increment=1 day    result_format=epoch
-    ${date_time} =    Convert Date    ${epoch}
+    ${expected_expiry} =    Evaluate    datetime.datetime.fromtimestamp(float($epoch), datetime.timezone.utc)
     ${epoch} =    Convert To Integer    ${epoch}
     ${epoch} =    Convert To String    ${epoch}
     Add Cookie
@@ -128,7 +128,7 @@ Add Cookie With Expiry As Epoch String
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
     VAR    ${expires} =    ${cookies}[0][expires]
-    Should Be Equal    ${expires.year}    ${expires.year}
+    Should Be Equal    ${expires.year}    ${expected_expiry.year}
 
 Add Cookie With Expiry As Epoch Int
     [Tags]    no-docker-pr
@@ -144,8 +144,8 @@ Add Cookie With Expiry As Epoch Int
     ${epoch_as_str} =    Convert To String    ${cookies}[0][expires]
     Should Match Regexp    ${epoch_as_str}    \\d\\d\\d\\d-\\d\\d-\\d\\d \\d\\d\\:\\d\\d\\:\\d\\d
     VAR    ${expires} =    ${cookies}[0][expires]
-    ${date_time} =    Convert Date    ${epoch}
-    Should Be Equal    ${expires.year}    ${expires.year}
+    ${expected_expiry} =    Evaluate    datetime.datetime.fromtimestamp(float($epoch), datetime.timezone.utc)
+    Should Be Equal    ${expires.year}    ${expected_expiry.year}
 
 Add Cookie With Expiry As Epoch In Different Format
     ${url} =    Get Url

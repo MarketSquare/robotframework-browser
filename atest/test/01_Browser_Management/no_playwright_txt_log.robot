@@ -15,8 +15,8 @@ Test That Logs Messages And Runs A User Keyword
     IF    ${True}    Dummy Keyword For Log File Checking
 
 Playwright Log Holds No Robot Log Messages Or User Keyword Names
-    ${log_file} =    Find Playwright Log File
-    ${log} =    Get File    ${log_file}
+    ${playwright_log} =    Find Playwright Log File
+    ${log} =    Get File    ${playwright_log}
     Log    ${log}
     Should Not Contain    ${log}    ${MESSAGE}
     Should Not Contain    ${log}    Dummy Keyword For Log File Checking

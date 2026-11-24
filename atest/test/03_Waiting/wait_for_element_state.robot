@@ -4,7 +4,7 @@ Resource       imports.resource
 Suite Setup    Open Browser To No Page
 Test Setup     New Page    ${WAIT_URL}
 
-Force Tags     slow
+Test Tags      slow
 
 *** Test Cases ***
 Wait For Elements State Attached
@@ -172,7 +172,7 @@ Wait For Elements State To Hide Fails With Promise
 Wait For Elements State To Hide With Promise And Wait For All Promises
     [Tags]    no-windows-support
     Select Options By    \#dropdown    value    True    hidden    # Now it is visible
-    ${promise} =    Promise To    Wait For Elements State    \#victim    hidden    3s
+    Promise To    Wait For Elements State    \#victim    hidden    3s
     Wait For Elements State    \#victim    visible    300ms
     Sleep    200 ms    reason=to check that the promise keeps beeing active
     ${start} =    Evaluate    time.time()

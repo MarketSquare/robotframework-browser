@@ -163,7 +163,7 @@ Body Mock Answers With Its Status, Header And Body
 JSON Mock Answers With An Encoded Body And JSON Content Type
     ${path} =    Unique HTTP Path    /api/echo/mock-json
     ${url} =    HTTP Page Url    ${HTTP_URL}    url=${path}
-    VAR    &{orders}    count=${2}    status=open
+    VAR    &{orders} =    count=${2}    status=open
     Mock Responses    **${path}    json=${orders}
     New Page    ${url}
     Get Text    id=status    ==    200

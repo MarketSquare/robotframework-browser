@@ -65,7 +65,6 @@ Plugin Keyword Example Location
     [Tags]    no-docker-pr
     [Setup]    New Page    ${FORM_URL}
     ${location} =    Get Location Object
-    ${url} =    Get Url
     Should Be Equal    ${location.hostname}    localhost
     Should Be Equal    ${location.pathname}    /prefilled_email_form.html
     Should Be Equal    ${location.protocol}    http:

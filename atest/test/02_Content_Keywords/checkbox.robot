@@ -44,10 +44,9 @@ Check Checkbox With Force
     [Documentation]
     ...    LOG 1:*    DEBUG    REGEXP: Checked checkbox: .*?\\[name=can_send_sms\\] with force: true
     Check Checkbox    [name=can_send_sms]    True
-    ${state} =    Get Checkbox State    [name=can_send_sms]    ==    on
+    Get Checkbox State    [name=can_send_sms]    ==    on
 
 Check Checkbox With Strict
-    # TODO: Change: "*2" to correct value after PW update
     Run Keyword And Expect Error    *strict mode violation*//input[@type*resolved to 2 elements*    Check Checkbox
     ...    //input[@type="checkbox"]
     Set Strict Mode    False    scope=Test

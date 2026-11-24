@@ -4,7 +4,7 @@ Resource       ../imports.resource
 
 Suite Setup    New Page    ${ERROR_URL}
 
-Force Tags     no-iframe
+Test Tags      no-iframe
 
 *** Test Cases ***
 Resource Leaker

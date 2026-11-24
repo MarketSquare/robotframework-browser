@@ -38,7 +38,7 @@ Create Video With Relative Path
 
 Create Video With Relative Path And Persistent Context
     VAR    &{record_video} =    dir=my_persistent_video
-    ${browserID}    ${contextID}    ${details1} =    New Persistent Context
+    ${_}    ${_}    ${details1} =    New Persistent Context
     ...    ${OUTPUT_DIR}/browser/profile
     ...    recordVideo=${record_video}
     ...    url=${LOGIN_URL}

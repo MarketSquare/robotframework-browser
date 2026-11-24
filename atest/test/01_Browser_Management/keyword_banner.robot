@@ -43,7 +43,7 @@ Keyword Call Banner Content
     ...    Get Attribute \ \ \ xpath=//input[@name="submit"] \ \ \ attribute=name \ \ \ assertion_operator=should be \ \ \ assertion_expected=submit
 
 Get Page Source And Take Screenshot Muting
-    ${original_settings} =    Show Keyword Banner    True
+    Show Keyword Banner    True
     Get Title
     Get Keyword Call Banner Text    ==    Get Title
     Take Screenshot    ${OUTPUTDIR}/screenshot.png
@@ -58,7 +58,7 @@ Get Page Source And Take Screenshot Muting
 
 Change Banner CSS
     Set Viewport Size    width=1200    height=800
-    ${original_settings} =    Show Keyword Banner    True
+    Show Keyword Banner    True
     Get Title
     ${style} =    Get Style    body    pseudo_element=::before
     Should Be Equal    ${style}[bottom]    5px
