@@ -7,7 +7,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from robot import version
 from robot.api import logger
@@ -15,7 +15,8 @@ from robot.libraries.BuiltIn import BuiltIn
 from robot.libraries.OperatingSystem import OperatingSystem
 from robot.utils import timestr_to_secs
 
-from Browser import Browser
+if TYPE_CHECKING:
+    from Browser import Browser
 
 
 def wait_file_count_in_directory(
@@ -255,7 +256,7 @@ def delta_time_is_less_than(
     timeout: timedelta = timedelta(seconds=30),
 ):
     """Fail if the difference between time and time in selector is greater than difference within timeout."""
-    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
+    browser = cast("Browser", BuiltIn().get_library_instance("Browser"))
     time_page = _parse_fi_date(browser.get_text(locator))
     wait_time = time.monotonic() + int(timestr_to_secs(timeout.total_seconds()))
     while not _delta_time_is_less_than(time_page, expected_time, max_difference):
