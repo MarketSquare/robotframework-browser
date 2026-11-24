@@ -496,6 +496,27 @@ describe('_waitForDownload', () => {
         jest.useRealTimers();
     });
 
+    it('reports listening once the download listener is attached, before the download starts', async () => {
+        const order: string[] = [];
+        let startDownload: (download: unknown) => void = () => {};
+        const mockPage = makeMockPage({
+            waitForEvent: jest.fn(() => {
+                order.push('listener attached');
+                return new Promise((resolve) => {
+                    startDownload = resolve;
+                });
+            }),
+        });
+
+        const result = _waitForDownload(mockPage, makeMockDownloadState(), '', 0, false, () =>
+            order.push('listening reported'),
+        );
+
+        expect(order).toEqual(['listener attached', 'listening reported']);
+        startDownload(makeMockDownload());
+        expect(JSON.parse((await result).json).state).toBe('in_progress');
+    });
+
     it('waits for the download to start at most the download timeout', async () => {
         const mockPage = makeMockPage();
 

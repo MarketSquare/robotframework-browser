@@ -34,7 +34,7 @@ import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 import * as recorder from './recorder';
-import { errorResponse, stringResponse } from './response-util';
+import { errorResponse, jsonResponse, stringResponse } from './response-util';
 import * as routeRules from './route-rules';
 import * as selectorPicker from './selector-picker';
 
@@ -479,7 +479,22 @@ export class PlaywrightServer {
         }
     }
 
-    waitForDownload = this.wrappingStatePage(network.waitForDownload);
+    async waitForDownload(call: ServerWritableStream<pb.Request_DownloadOptions, pb.Response_Json>): Promise<void> {
+        try {
+            const request = call.request;
+            if (request === null) throw Error('No request');
+            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'started' });
+            const download = await network.waitForDownload(request, this.getState(call), this.getActivePage(call), () =>
+                call.write(jsonResponse('', 'Listening for download')),
+            );
+            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'succeeded' });
+            call.write(download);
+        } catch (e) {
+            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'failed' });
+            call.emit('error', errorResponse(e));
+        }
+        call.end();
+    }
 
     evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);
 

@@ -446,11 +446,12 @@ export async function waitForDownload(
     request: pb.Request_DownloadOptions,
     state: PlaywrightState,
     page: Page,
+    onListening: () => void,
 ): Promise<pb.Response_Json> {
     const saveAs = request.path;
     const waitForFinish = request.waitForFinish;
     const downloadTimeout = request.downloadTimeout;
-    return await _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish);
+    return await _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish, onListening);
 }
 
 export async function _waitForDownload(
@@ -459,9 +460,12 @@ export async function _waitForDownload(
     saveAs: string,
     downloadTimeout: number,
     waitForFinished: boolean,
+    onListening?: () => void,
 ): Promise<pb.Response_Json> {
     const downloadWaitStartedAt = performance.now();
-    const downloadObject = await page.waitForEvent('download', { timeout: downloadTimeout || undefined });
+    const downloadEvent = page.waitForEvent('download', { timeout: downloadTimeout || undefined });
+    onListening?.();
+    const downloadObject = await downloadEvent;
 
     // @ts-ignore
     const downloadsPath = state.activeBrowser.browser?._options?.downloadsPath;

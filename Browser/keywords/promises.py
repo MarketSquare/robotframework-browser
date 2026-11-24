@@ -18,6 +18,7 @@ from datetime import timedelta
 from os import PathLike
 from pathlib import Path
 from sys import maxsize
+from threading import Event
 from time import sleep
 from typing import Any
 
@@ -163,6 +164,9 @@ class Promises(LibraryComponent):
     ) -> Future:
         """Returns a promise that waits for the next download event on the page.
 
+        The keyword returns once the page listens for the download, so a download
+        that the next keyword starts is caught.
+
         To enable downloads the context's ``acceptDownloads`` needs to be true.
 
         With the default file path downloaded files are deleted when the context the download happened in is closed.
@@ -227,36 +231,40 @@ class Promises(LibraryComponent):
         timeout_ms = (
             int(download_timeout.total_seconds() * 1000) if download_timeout else 0
         )
+        listening = Event()
         promise = self._executor.submit(
             self._wait_for_download,
+            listening,
             saveAs=saveAs,
             wait_for_finish=wait_for_finished,
             download_timeout=timeout_ms,
         )
         self.unresolved_promises.add(promise)
+        while not listening.wait(0.01):
+            pass
         return promise
 
     def _wait_for_download(
-        self, saveAs: str = "", wait_for_finish: bool = True, download_timeout: int = 0
+        self,
+        listening: Event,
+        saveAs: str = "",
+        wait_for_finish: bool = True,
+        download_timeout: int = 0,
     ) -> DownloadInfo:
-        with self.playwright.grpc_channel() as stub:
-            if not saveAs:
-                response = stub.WaitForDownload(
+        try:
+            with self.playwright.grpc_channel() as stub:
+                messages = stub.WaitForDownload(
                     Request().DownloadOptions(
-                        downloadTimeout=download_timeout, waitForFinish=wait_for_finish
-                    )
-                )
-                logger.debug(response.log)
-            else:
-                file_path = Path(saveAs)
-                file_path.resolve()
-                response = stub.WaitForDownload(
-                    Request().DownloadOptions(
-                        path=str(file_path),
+                        path=str(Path(saveAs)) if saveAs else "",
                         downloadTimeout=download_timeout,
                         waitForFinish=wait_for_finish,
                     )
                 )
+                logger.debug(next(messages).log)
+                listening.set()
+                response = next(messages)
+        finally:
+            listening.set()
         logger.info(response.log)
         return DotDict(json.loads(response.json))
 
