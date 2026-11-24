@@ -37,7 +37,7 @@ Get Property For Element Property Which Does Not Exist
     Run Keyword And Expect Error
     ...    *Property 'not_here' not found!
     ...    Get Property    ${UserNameLabel}    not_here
-    ${attribute} =    Get Property    ${UserNameLabel}    not_here    ==    ${None}
+    Get Property    ${UserNameLabel}    not_here    ==    ${None}
 
 Get Property And Then .. (Closure)
     ${text} =    Get Property    h1    innerText    then    value.replace('g', 'k')
@@ -160,7 +160,7 @@ Get Bounding Box Of Hidden Elements
         Should Be Equal    ${bbox}    ${None}
         TRY
             Get BoundingBox    ${element}
-        EXCEPT    ValueError: Element is not visible and has no bounding box: ${element}    AS    ${e}
+        EXCEPT    ValueError: Element is not visible and has no bounding box: ${element}
             Log    failed as expected
         END
     END
@@ -174,7 +174,7 @@ Get Element And Assert Y
 
 Get Element Width And Height
     ${expected} =    Evaluate    {'w': 40, 'h': 30}
-    ${wh} =    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
+    Get BoundingBox    \#progress_bar    ALL    validate    value['width'] == 40
     ${wh} =    Get BoundingBox    \#progress_bar    ALL    evaluate    {'w': value['width'], 'h': value['height']}
     Should Be Equal    ${wh}    ${expected}
 
@@ -182,7 +182,7 @@ Get Page Source
     Get Page Source    contains    <title>Login Page</title>
 
 Get Page Source Large Content
-    Evaluate JavaScript  # robocop: off=SPC15     # robocop: fmt: off=NormalizeSeparators
+    Evaluate JavaScript    # robocop: fmt: off=NormalizeSeparators
     ...    ${None}
     ...    () => {
     ...    const marker = document.createElement('div');
@@ -228,7 +228,7 @@ Get Scroll Size With Strict No Element
     Should Be True    ${size}[width] >= 0
 
 Get Scroll Size Element
-    ${size} =    Get Scroll Size    h1    width    >=    0
+    Get Scroll Size    h1    width    >=    0
 
 Get Viewport Size
     ${size} =    Get Viewport Size

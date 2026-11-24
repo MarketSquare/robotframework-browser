@@ -4,14 +4,14 @@ Resource          imports.resource
 Suite Setup       Setup
 Suite Teardown    Teardown
 
+Test Tags         slow
+
 *** Test Cases ***
 New Page Will Not Timeout
-    [Tags]    slow
     New Page    ${SLOW_PAGE}
     Get Title    ==    Slow page
 
 New Page Will Timeout And Page Will Be Removed From Catalog
-    [Tags]    slow
     Set Browser Timeout    1s    scope=Test
     New Context
     ${Catalog} =    Get Browser Catalog
@@ -27,7 +27,6 @@ New Page Will Timeout And Page Will Be Removed From Catalog
 Failure Handling Sees The Page That Stalled While Loading
     [Documentation]
     ...    LOG 6.1:*    INFO    REGEXP: .*Navigation committed: yes.*GET \\S+/api/stalled-image \\[image\\] open for \\d+ ms.*
-    [Tags]    slow
     Set Browser Timeout    1s    scope=Test
     New Context
     New Page    about:blank
@@ -45,7 +44,6 @@ Failure Handling Sees The Page That Stalled While Loading
     END
 
 Default Failure Screenshot Is Taken Of The Page That Stalled While Loading
-    [Tags]    slow
     Set Browser Timeout    1s    scope=Test
     New Context
     Register Keyword To Run On Failure    Take Screenshot    fail-screenshot-{index}    scope=Test

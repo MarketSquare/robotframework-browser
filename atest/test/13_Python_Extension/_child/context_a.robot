@@ -16,8 +16,8 @@ Call Browser From Python
 
 Outputdir And Validate Work
     Open Login Page    ${LOGIN_URL}
-    ${outputdir} =    Get Browser Output Directory
-    Should Be Equal    ${outputdir}    ${OUTPUT_DIR}
+    ${browser_output_dir} =    Get Browser Output Directory
+    Should Be Equal    ${browser_output_dir}    ${OUTPUT_DIR}
     ${texts} =    Get Heading With Validate And Then
     Should Be Equal    ${texts}[0]    Login Page
     Should Be Equal    ${texts}[1]    LOGIN PAGE

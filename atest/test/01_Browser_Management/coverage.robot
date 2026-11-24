@@ -189,11 +189,11 @@ Merge Coverage Reports With Keyword
     Start Coverage    raw=True
     Go To    ${LOGIN_URL}
     Click    id=delayed_request_big
-    ${coverage_folder} =    Stop Coverage
+    Stop Coverage
     New Page    ${LOGIN_URL}
     Start Coverage    raw=True
     Click    id=delayed_request
-    ${coverage_folder} =    Stop Coverage
+    Stop Coverage
     ${combined_folder} =    Merge Coverage Reports
     ...    ${OUTPUT_DIR}/browser/coverage
     ...    ${OUTPUT_DIR}/merge_coverage_reports_keyword_0

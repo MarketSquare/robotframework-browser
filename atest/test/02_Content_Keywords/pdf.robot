@@ -33,7 +33,6 @@ Save As PDF With All Options
     ...    tagged=True
     ...    width=20px
     Should Be Equal    ${pdf4}    ${OUTPUT_DIR}${/}welcome4.pdf
-    VAR    &{marging} =    top=10px    bottom=30px
     # footerTemplate and headerTemplate are from https://github.com/microsoft/playwright/issues/14441
     ${pdf5} =    Save Page As Pdf
     ...    welcome5.pdf

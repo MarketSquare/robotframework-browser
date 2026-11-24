@@ -3,7 +3,7 @@ Resource      imports.resource
 
 Test Setup    Ensure Location    ${LOGIN_URL}
 
-Force Tags    no-iframe
+Test Tags     no-iframe
 
 *** Variables ***
 @{REQUEST_KEYS}    url    method    headers    postData
@@ -128,7 +128,7 @@ Wait For Response Synchronous With Predicate
 Wait For Response Async
     ${promise} =    Promise To    Wait For Response    matcher=    timeout=3s
     Click    \#delayed_request
-    ${body} =    Wait For    ${promise}
+    Wait For    ${promise}
 
 Wait For Response With OPTIONS Request
     [Tags]    known-bug-firefox    # Playwright limitation: Firefox reports no network events for an OPTIONS fetch

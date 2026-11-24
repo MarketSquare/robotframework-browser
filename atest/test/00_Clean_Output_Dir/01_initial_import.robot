@@ -8,7 +8,7 @@ Test Lazy Playwright Loading
     [Documentation]    Tests that Playwright is not loaded until the first keyword is called
     ${browser_lib} =    Get Library Instance    Browser
     Should Be True    $browser_lib._playwright is None
-    ${cat} =    Get Browser Catalog
+    Get Browser Catalog
     Should Be True    isinstance($browser_lib._playwright, Browser.playwright.Playwright)
 
 Take Screenshot

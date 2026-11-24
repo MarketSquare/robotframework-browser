@@ -220,11 +220,9 @@ Wait For Download With Remote Browser Without SaveAs
     New Page    ${LOGIN_URL}
     ${dl_promise} =    Promise To Wait For Download
     Click    \#file_download
-    TRY
-        ${file_object} =    Wait For    ${dl_promise}
-    EXCEPT    *Path is not available when connecting remotely. Use saveAs() to save a local copy.    type=GLOB
-        Log    Correct Error
-    END
+    Run Keyword And Expect Error
+    ...    *Path is not available when connecting remotely. Use saveAs() to save a local copy.
+    ...    Wait For    ${dl_promise}
     [Teardown]    Close Remote Browser
 
 Get Download State Saves A Download To saveAs When It Has Finished
@@ -359,7 +357,7 @@ Set Library Timeout
     END
     ${current_contexts} =    Get Context Ids    Active    Active
     IF    $current_contexts == []    New Context
-    ${timeout} =    Set Browser Timeout    90 seconds
+    Set Browser Timeout    90 seconds
 
 Restore Library Timeout
     Set Browser Timeout    ${ORIGINAL_TIMEOUT}

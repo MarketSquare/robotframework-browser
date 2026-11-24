@@ -45,11 +45,9 @@ Failed Wait For Function Promise
     ${promise} =    Promise To    Wait For Function
     ...    (selector) => {console.log(selector); return document.activeElement === selector}
     ...    selector=\#username_field    timeout=100ms
-    TRY
-        Wait For    ${promise}
-    EXCEPT    TimeoutError: page.waitForFunction: Timeout 100ms exceeded*    type=GLOB    AS    ${error}
-        Log    {error}
-    END
+    Run Keyword And Expect Error
+    ...    TimeoutError: page.waitForFunction: Timeout 100ms exceeded*
+    ...    Wait For    ${promise}
 
 Succesful Wait For Function Promise
     [Tags]    no-iframe

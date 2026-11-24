@@ -16,15 +16,15 @@ Enable Presenter Mode With True For Default
     [Documentation]
     ...    LOG 2:3    INFO    Highlighted 1 elements for 2000 ms.
     Set Presenter Mode    True
-    ${text} =    Get Text    h1
+    Get Text    h1
     Test Presenter Mode    &{DEFAULT_CONFIG}
 
 Disable Presenter Mode With False
     [Documentation]
     ...    LOG 2:2    DEBUG    Text received successfully.
     Set Presenter Mode    False
-    ${text} =    Get Text    h1
-    ${test_set} =    Set Presenter Mode    No
+    Get Text    h1
+    Set Presenter Mode    No
     ${lib} =    Get Library Instance    Browser
     Should Be True    $lib.presenter_mode == False
     ${test_set} =    Set Presenter Mode    False
@@ -34,7 +34,7 @@ Enable Presenter Mode With Custom Config
     [Documentation]
     ...    LOG 2:3    INFO    Highlighted 1 elements for 1000 ms.
     Set Presenter Mode    ${CUSTOM_CONFIG}
-    ${text} =    Get Text    h1
+    Get Text    h1
     Test Presenter Mode    &{EXP_CUSTOM_CONFIG}
 
 Enable Presenter Mode with Dict Literal

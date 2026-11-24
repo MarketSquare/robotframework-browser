@@ -4,7 +4,7 @@ Resource       imports.resource
 
 Suite Setup    Check Screenshots Before
 
-Force Tags     slow
+Test Tags      slow
 
 *** Test Cases ***
 Failing With Screenshot 1

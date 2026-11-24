@@ -16,23 +16,22 @@ Switch Browser
     Set Browser Timeout    30s    scope=Test
     New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
-    ${second_url} =    Get Url
     ${before_switch} =    Switch Browser    ${first_browser}
     Should Be Equal As Strings    ${second_browser}    ${before_switch}
-    ${third_url} =    Get Url
+    Get Url    ==    ${first_url}
     Get Title    matches    (?i)login
 
 Switch Context
     ${br} =    New Browser    headless=True
     ${ctx} =    New Context
-    ${pg} =    New Page    ${FORM_URL}
+    New Page    ${FORM_URL}
     Get Title    ==    prefilled_email_form.html
     ${br2} =    New Browser    headless=True    reuse_existing=False
     ${ctx2} =    New Context
-    ${pg2} =    New Page    ${LOGIN_URL}
+    New Page    ${LOGIN_URL}
     Get Title    matches    (?i)login
     ${ctx3} =    New Context
-    ${pg3} =    New Page    ${ERROR_URL}
+    New Page    ${ERROR_URL}
     Get Title    ==    Error Page
 
     Switch Context    ${ctx}    ${br}

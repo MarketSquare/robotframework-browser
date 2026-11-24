@@ -43,7 +43,7 @@ Get Empty Context ID From Empty Browser
 
 Get Empty Page ID From Empty Browser And Empty Context
     [Tags]    slow
-    ${browser} =    New Browser    headless=${HEADLESS}
+    New Browser    headless=${HEADLESS}
     Check Return Value Is Empty List    Get Page Ids    Active    Active    Active
     Check Return Value Is Empty List    Get Page Ids    Active    Active    All
     Check Return Value Is Empty List    Get Page Ids    Active    All    Active

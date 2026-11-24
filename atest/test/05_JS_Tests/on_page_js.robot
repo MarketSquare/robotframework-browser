@@ -153,7 +153,7 @@ Highlight Element With Style
     Set Retry Assertions For    200ms    scope=Test
     ${bbox} =    Get Bounding Box    input#login_button
     Highlight Elements    input#login_button    duration=500ms
-    ${bbox_highlight} =    Run Keyword And Continue On Failure
+    Run Keyword And Continue On Failure
     ...    Get Bounding Box
     ...    .robotframework-browser-highlight
     ...    ALL
@@ -166,7 +166,7 @@ Highlight Element With Style
     Highlight Elements    input#login_button    duration=500ms    width=4px    style=solid    color=\#FF00FF
     Add Style Tag    * {box-sizing: border-box;}
     ${style} =    Get Style    .robotframework-browser-highlight
-    ${bbox_highlight} =    Run Keyword And Continue On Failure
+    Run Keyword And Continue On Failure
     ...    Get Bounding Box
     ...    .robotframework-browser-highlight
     ...    ALL

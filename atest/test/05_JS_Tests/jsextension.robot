@@ -1,9 +1,9 @@
 *** Settings ***
-Library       Browser    jsextension=${CURDIR}/funky.js
-Library       ../../library/http_test_page.py
-Resource      imports.resource
+Library      Browser    jsextension=${CURDIR}/funky.js
+Library      ../../library/http_test_page.py
+Resource     imports.resource
 
-Force Tags    no-iframe
+Test Tags    no-iframe
 
 *** Test Cases ***
 Plugin Routes Survive Remove All Route Rules

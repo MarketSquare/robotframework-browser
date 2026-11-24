@@ -140,7 +140,7 @@ Trace Group Names Cut Long Argument Values
     New Context
     New Page    about:blank
     Start Tracing    scope=Test
-    VAR    ${long}    ${{'x' * 300}}
+    VAR    ${long} =    ${{'x' * 300}}
     Log    ${long}
     ${trace} =    Stop Tracing    path=long-value.zip
     Extract Zip File    zip_file=${trace}    dest=${OUTPUT_DIR}/long-value/

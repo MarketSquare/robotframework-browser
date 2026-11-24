@@ -1,8 +1,8 @@
 *** Settings ***
-Library       Browser    jsextension=${js_plugins}
-Resource      imports.resource
+Library      Browser    jsextension=${js_plugins}
+Resource     imports.resource
 
-Force Tags    no-iframe
+Test Tags    no-iframe
 
 *** Variables ***
 @{js_plugins} =    ${CURDIR}/funky.js    ${CURDIR}/another.js

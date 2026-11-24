@@ -11,15 +11,15 @@ ${LEFT_FRAME_URL} =    ${ROOT_URL}frames/left.html
 Aria Snapshot YAML
     ${snapshot} =    Get Aria Snapshot    h1
     Should Be Equal    ${snapshot}    - heading "Login Page" [level=1]
-    ${snapshot} =    Get Aria Snapshot    id=username_field    yaml    ==    - textbox "User Name:"
-    ${snapshot} =    Get Aria Snapshot    id=username_field    yaml    contains    User Name
+    Get Aria Snapshot    id=username_field    yaml    ==    - textbox "User Name:"
+    Get Aria Snapshot    id=username_field    yaml    contains    User Name
 
 Aria Snapshot Dict
     VAR    @{expected} =    heading "Login Page" [level=1]
     ${snapshot} =    Get Aria Snapshot    h1    dict
     Should Be Equal    ${snapshot}    ${expected}    # Use type=list when RF 7.4 is minimum requirement
     VAR    @{expected} =    textbox "User Name:"
-    ${snapshot} =    Get Aria Snapshot    id=username_field    dict    ==    ${expected}
+    Get Aria Snapshot    id=username_field    dict    ==    ${expected}
 
 Aria Snapshot Strict Mode
     Set Strict Mode    True    scope=Test
@@ -29,7 +29,7 @@ Aria Snapshot Strict Mode
         Log    Caught expected PlaywrightError in strict mode.
     END
     Set Strict Mode    False    scope=Test
-    ${snapshot} =    Get Aria Snapshot    //input    yaml    ==    - textbox "User Name:"
+    Get Aria Snapshot    //input    yaml    ==    - textbox "User Name:"
 
 Aria Snapshot Non-existing Element
     TRY

@@ -1,13 +1,13 @@
 *** Settings ***
-Library       Collections
-Resource      imports.resource
+Library      Collections
+Resource     imports.resource
 
-Force Tags    no-iframe
+Test Tags    no-iframe
 
 *** Test Cases ***
 Normal Crawling
     VAR    @{TITLES} =    @{EMPTY}    scope=TEST
-    ${urls} =    Crawl Site    ${LINKER_URL}    My page keyword
+    Crawl Site    ${LINKER_URL}    My page keyword
     Log List    ${TITLES}
     Sort List    ${TITLES}
     VAR    @{expected} =    Always    Link 1    Link 2    Link 3    Link 4
@@ -15,7 +15,7 @@ Normal Crawling
 
 Crawling Only Limited Pages
     VAR    @{TITLES} =    @{EMPTY}    scope=TEST
-    ${urls} =    Crawl Site    ${LINKER_URL}    My page keyword    max_number_of_page_to_crawl=4
+    Crawl Site    ${LINKER_URL}    My page keyword    max_number_of_page_to_crawl=4
     Log List    ${TITLES}
     Sort List    ${TITLES}
     VAR    @{expected} =    Always    Link 1    Link 2    Link 3
@@ -23,7 +23,7 @@ Crawling Only Limited Pages
 
 Crawling Only Limited Depth
     VAR    @{TITLES} =    @{EMPTY}    scope=TEST
-    ${urls} =    Crawl Site    ${LINKER_URL}    My page keyword    max_depth_to_crawl=1
+    Crawl Site    ${LINKER_URL}    My page keyword    max_depth_to_crawl=1
     Log List    ${TITLES}
     Sort List    ${TITLES}
     VAR    @{expected} =    Always    Link 1    Link 2

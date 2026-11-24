@@ -41,12 +41,14 @@ Switching Between Two Persistent Contexts Works
     Switch Context    ${context_1}
     Get URL    ==    ${url_1}
     Get Title    ==    ${title_1}
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    equals    ${page_1}[page_id]
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_1}    ${switch_id}
 
     Switch Context    ${context_2}
     Get URL    ==    ${url_2}
     Get Title    ==    ${title_2}
+    Get Page Ids    ACTIVE    ACTIVE    ACTIVE    equals    ${page_2}[page_id]
     ${switch_id} =    Switch Context    CURRENT
     Should Be Equal    ${context_2}    ${switch_id}
 
@@ -67,7 +69,7 @@ New Persistent Context Can Use An URL
 New Persistent Context Creates An Empty Page
     Close Browser    ALL
     New Persistent Context
-    ${catalog} =    Get Browser Catalog
+    Get Browser Catalog
     Get Title    ==    ${EMPTY}
     Get Url    ==    about:blank
 
