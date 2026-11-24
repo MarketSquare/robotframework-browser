@@ -1959,6 +1959,15 @@
       "contributions": [
         "financial"
       ]
+    },
+    {
+      "login": "Sven051968",
+      "name": "Sven051968",
+      "avatar_url": "https://avatars.githubusercontent.com/u/155443193?v=4",
+      "profile": "https://github.com/Sven051968",
+      "contributions": [
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
