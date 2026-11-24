@@ -808,7 +808,8 @@ service  Playwright {
   rpc WaitForRequest(Request.HttpCapture) returns (stream Response.Json);
   /* Streams the captured response: metadata in the first message, raw body chunked in bodyBytes and the request's raw post data in postDataBytes */
   rpc WaitForResponse(Request.HttpCapture) returns (stream Response.Json);
-  rpc WaitForDownload(Request.DownloadOptions) returns (Response.Json);
+  /* Streams a first message once the download listener is attached, then the download */
+  rpc WaitForDownload(Request.DownloadOptions) returns (stream Response.Json);
   rpc WaitForNavigation(Request.UrlOptions) returns (Response.Empty);
   rpc WaitForPageLoadState(Request.PageLoadState) returns (Response.Empty);
   /* Geolocation */
