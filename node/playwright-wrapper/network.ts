@@ -444,14 +444,18 @@ export async function WaitForPageLoadState(request: pb.Request_PageLoadState, pa
 
 export async function waitForDownload(
     request: pb.Request_DownloadOptions,
-    state: PlaywrightState,
-    page: Page,
-    onListening: () => void,
-): Promise<pb.Response_Json> {
-    const saveAs = request.path;
-    const waitForFinish = request.waitForFinish;
-    const downloadTimeout = request.downloadTimeout;
-    return await _waitForDownload(page, state, saveAs, downloadTimeout, waitForFinish, onListening);
+    { state, page }: { state: PlaywrightState; page: Page },
+    send: (message: pb.Response_Json) => void,
+): Promise<pb.Response_Json[]> {
+    const download = await _waitForDownload(
+        page,
+        state,
+        request.path,
+        request.downloadTimeout,
+        request.waitForFinish,
+        () => send(jsonResponse('', 'Listening for download')),
+    );
+    return [download];
 }
 
 export async function _waitForDownload(
