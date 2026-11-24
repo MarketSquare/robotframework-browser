@@ -19,7 +19,7 @@ from os import PathLike
 from pathlib import Path
 from sys import maxsize
 from threading import Event
-from time import sleep
+from time import monotonic, sleep
 from typing import Any
 
 from robot.api.deco import keyword
@@ -165,7 +165,9 @@ class Promises(LibraryComponent):
         """Returns a promise that waits for the next download event on the page.
 
         The keyword returns once the page listens for the download, so a download
-        that the next keyword starts is caught.
+        that the next keyword starts is caught. The keyword fails if the page does not
+        start listening within ``download_timeout``, or the browser timeout if that is
+        not set.
 
         To enable downloads the context's ``acceptDownloads`` needs to be true.
 
@@ -240,8 +242,16 @@ class Promises(LibraryComponent):
             download_timeout=timeout_ms,
         )
         self.unresolved_promises.add(promise)
+        listen_timeout_ms = timeout_ms or self.get_timeout(None)
+        listen_deadline = monotonic() + listen_timeout_ms / 1000
         while not listening.wait(0.01):
-            pass
+            if monotonic() > listen_deadline:
+                promise.cancel()
+                self.unresolved_promises.discard(promise)
+                raise AssertionError(
+                    "Could not start waiting for the download within "
+                    f"{self.millisecs_to_timestr(listen_timeout_ms)}."
+                )
         return promise
 
     def _wait_for_download(
