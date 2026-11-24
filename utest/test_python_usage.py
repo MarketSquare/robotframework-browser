@@ -1,6 +1,8 @@
 import logging
 import subprocess
 import sys
+import time
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -10,6 +12,7 @@ from assertionengine import AssertionOperator
 import Browser
 import Browser.playwright
 from Browser import SupportedBrowsers
+from Browser.keywords.promises import Promises
 from Browser.utils import PlaywrightLogTypes
 
 PW_LOG = "playwright-log.txt"
@@ -117,6 +120,27 @@ def test_get_text_with_a_plain_string_assertion_operator(test_app_url, browser):
 def test_readme_example(browser):
     browser.new_page("https://playwright.dev")
     assert "Playwright" in browser.get_text("h1")
+
+
+def test_promise_to_wait_for_download_catches_a_download_when_its_thread_is_slow(
+    test_app_url, browser, monkeypatch
+):
+    wait_for_download = Promises._wait_for_download
+
+    def slow_wait_for_download(*args, **kwargs):
+        time.sleep(0.15)
+        return wait_for_download(*args, **kwargs)
+
+    monkeypatch.setattr(Promises, "_wait_for_download", slow_wait_for_download)
+    browser.new_context(acceptDownloads=True)
+    for _ in range(5):
+        browser.new_page(f"{test_app_url}/dist/#/")
+        promise = browser.promise_to_wait_for_download(
+            wait_for_finished=False, download_timeout=timedelta(seconds=2)
+        )
+        browser.click("id=file_download")
+        assert promise.result(10)["state"] == "in_progress"
+        browser.close_page()
 
 
 def test_playwright_log(browser: Browser.Browser, test_app_url):

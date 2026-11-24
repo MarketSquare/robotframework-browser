@@ -34,7 +34,7 @@ import * as pdf from './pdf';
 import * as playwrightState from './playwright-state';
 import { PlaywrightState } from './playwright-state';
 import * as recorder from './recorder';
-import { errorResponse, jsonResponse, stringResponse } from './response-util';
+import { errorResponse, stringResponse } from './response-util';
 import * as routeRules from './route-rules';
 import * as selectorPicker from './selector-picker';
 
@@ -440,14 +440,17 @@ export class PlaywrightServer {
 
     private async streamMessages<T, S>(
         call: ServerWritableStream<T, pb.Response_Json>,
-        capture: (request: T, target: S) => Promise<pb.Response_Json[]>,
+        capture: (request: T, target: S, send: (message: pb.Response_Json) => void) => Promise<pb.Response_Json[]>,
         target: () => S,
     ): Promise<void> {
         try {
             const request = call.request;
             if (request === null) throw Error('No request');
             logger.info({ event_kind: 'grpc', action: capture.name, status: 'started' });
-            const results = await capture(request, target());
+            const results = await capture(request, target(), (message) => {
+                if (message.log) logger.info(`Sending ${message.log}`);
+                call.write(message);
+            });
             logger.info({ event_kind: 'grpc', action: capture.name, status: 'succeeded' });
             for (const result of results) {
                 if (result.log) logger.info(`Sending ${result.log}`);
@@ -480,20 +483,10 @@ export class PlaywrightServer {
     }
 
     async waitForDownload(call: ServerWritableStream<pb.Request_DownloadOptions, pb.Response_Json>): Promise<void> {
-        try {
-            const request = call.request;
-            if (request === null) throw Error('No request');
-            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'started' });
-            const download = await network.waitForDownload(request, this.getState(call), this.getActivePage(call), () =>
-                call.write(jsonResponse('', 'Listening for download')),
-            );
-            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'succeeded' });
-            call.write(download);
-        } catch (e) {
-            logger.info({ event_kind: 'grpc', action: 'waitForDownload', status: 'failed' });
-            call.emit('error', errorResponse(e));
-        }
-        call.end();
+        await this.streamMessages(call, network.waitForDownload, () => ({
+            state: this.getState(call),
+            page: this.getActivePage(call),
+        }));
     }
 
     evaluateJavascript = this.wrappingStatePage(evaluation.evaluateJavascript);

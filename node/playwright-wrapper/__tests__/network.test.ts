@@ -15,7 +15,15 @@ import * as os from 'os';
 import * as path from 'path';
 import { errors } from 'playwright';
 
-import { _waitForDownload, httpRequest, pageFetch, sendApiRequest, waitForRequest, waitForResponse } from '../network';
+import {
+    _waitForDownload,
+    httpRequest,
+    pageFetch,
+    sendApiRequest,
+    waitForDownload,
+    waitForRequest,
+    waitForResponse,
+} from '../network';
 
 function makeRequest(urlOrPredicate = '/.*/', timeout = 5000, excludeBody = false) {
     return { urlOrPredicate, timeout, excludeBody } as any;
@@ -484,6 +492,31 @@ describe('waitForResponse', () => {
         const [only] = await capturedResponse(makeMockResponse());
 
         expect(only.log).toBe('Response received');
+    });
+});
+
+describe('waitForDownload', () => {
+    it('sends a listening message before the download', async () => {
+        const sent: string[] = [];
+        let startDownload: (download: unknown) => void = () => {};
+        const page = makeMockPage({
+            waitForEvent: jest.fn(
+                () =>
+                    new Promise((resolve) => {
+                        startDownload = resolve;
+                    }),
+            ),
+        });
+        const request = { url: '', path: '', waitForFinish: false, downloadTimeout: 0 };
+
+        const messages = waitForDownload(request, { state: makeMockDownloadState(), page }, (message) =>
+            sent.push(message.log),
+        );
+
+        expect(sent).toEqual(['Listening for download']);
+        startDownload(makeMockDownload());
+        const [download] = await messages;
+        expect(JSON.parse(download.json).state).toBe('in_progress');
     });
 });
 

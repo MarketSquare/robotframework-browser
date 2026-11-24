@@ -260,11 +260,16 @@ class Promises(LibraryComponent):
                         waitForFinish=wait_for_finish,
                     )
                 )
-                logger.debug(next(messages).log)
+                listening_message = next(messages, None)
                 listening.set()
-                response = next(messages)
+                response = next(messages, None)
+                if listening_message is None or response is None:
+                    raise AssertionError(
+                        "Waiting for the download ended before the download started."
+                    )
         finally:
             listening.set()
+        logger.debug(listening_message.log)
         logger.info(response.log)
         return DotDict(json.loads(response.json))
 
