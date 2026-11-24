@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, cast
 
 from assertionengine.assertion_engine import AssertionOperator, verify_assertion
 from robot.libraries.BuiltIn import BuiltIn
@@ -8,10 +8,10 @@ from Browser import Browser
 
 
 def get_keyword_call_banner_text(
-    operator: AssertionOperator = None, expected: str | None = None
+    operator: AssertionOperator | None = None, expected: str | None = None
 ):
     """Keyword is not a Browser keyword, therefore can read without influencing the keyword call banner."""
-    browser: Browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     text_content = browser.evaluate_javascript(
         None,
         "() => {const e = document.getElementById('kwCallBanner');"
@@ -29,5 +29,5 @@ def get_wrapped_page_source(
     message: str | None = None,
 ) -> str | dict | tuple:
     """Keyword is not a Browser keyword, therefore is neither shown in keyword call banner, nor is it hiding it."""
-    browser: Browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     return browser.get_page_source(assertion_operator, assertion_expected, message)

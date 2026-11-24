@@ -11,16 +11,17 @@ class ExpectFailure(Enum):
     no = auto()
 
 
-def get_image_size(img_path: str) -> tuple[int]:
+def get_image_size(img_path: str) -> tuple[int, int]:
     im: Image.Image = Image.open(img_path)
     return im.size
 
 
-def get_pixel_color(img_path: str, x: int, y: int) -> tuple[int, int]:
+def get_pixel_color(img_path: str, x: int, y: int) -> tuple[int, ...]:
     """Returns the color as (r,g,b,a) Tuple[int]"""
     im: Image.Image = Image.open(img_path)
-    pix = im.load()
-    return pix[x, y]
+    pixel = im.getpixel((x, y))
+    assert isinstance(pixel, tuple), f"Pixel {pixel} has no color channels"
+    return pixel
 
 
 def compare_images(
@@ -56,7 +57,7 @@ def compare_images(
     if box and expect_failure == ExpectFailure.no:
         logger.info(f"box: {box}, type({type(box)}), but no idea why this fails.")
         error_sum = 0
-        for pixel1, pixel2 in zip(im1.getdata(), im2.getdata()):
+        for pixel1, pixel2 in zip(im1.getdata(), im2.getdata(), strict=False):
             error_sum = error_sum + abs(pixel1[0] - pixel2[0])
             error_sum = error_sum + abs(pixel1[1] - pixel2[1])
             error_sum = error_sum + abs(pixel1[2] - pixel2[2])

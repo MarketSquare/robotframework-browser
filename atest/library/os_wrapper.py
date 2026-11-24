@@ -7,12 +7,15 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
+from typing import cast
 
-from robot import version  # type: ignore
-from robot.api import logger  # type: ignore
-from robot.libraries.BuiltIn import BuiltIn  # type: ignore
-from robot.libraries.OperatingSystem import OperatingSystem  # type: ignore
-from robot.utils import timestr_to_secs  # type: ignore
+from robot import version
+from robot.api import logger
+from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.OperatingSystem import OperatingSystem
+from robot.utils import timestr_to_secs
+
+from Browser import Browser
 
 
 def wait_file_count_in_directory(
@@ -235,11 +238,11 @@ def _parse_fi_date(date: str) -> datetime:
     if not date:
         # 2000-01-01 because of Windos raising OsError
         # https://docs.python.org/3/library/datetime.html#datetime.datetime.timestamp
-        return datetime.fromtimestamp(946688461)
+        return datetime.fromtimestamp(946688461)  # noqa: DTZ006
     try:
-        return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")
+        return datetime.strptime(date, "%d.%m.%Y klo %H.%M.%S")  # noqa: DTZ007
     except ValueError:
-        return datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(date, "%Y-%m-%d %H:%M:%S")  # noqa: DTZ007
 
 
 ROBOT_LIBRARY_CONVERTERS = {datetime: _parse_fi_date}
@@ -252,7 +255,7 @@ def delta_time_is_less_than(
     timeout: timedelta = timedelta(seconds=30),
 ):
     """Fail if the difference between time and time in selector is greater than difference within timeout."""
-    browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     time_page = _parse_fi_date(browser.get_text(locator))
     wait_time = time.monotonic() + int(timestr_to_secs(timeout.total_seconds()))
     while not _delta_time_is_less_than(time_page, expected_time, max_difference):
@@ -297,7 +300,7 @@ def dates_are_equal(date1: datetime, date2: datetime) -> bool:
     return True
 
 
-def file_as_uri(path: str) -> Path:
+def file_as_uri(path: str) -> str:
     """Return file as uri."""
     return Path(path).as_uri()
 
@@ -325,4 +328,4 @@ def convert_to_path(path: str) -> Path:
 
 
 if __name__ == "__main__":
-    print(f"Robot Framework Version: {get_robot_version()}")
+    print(f"Robot Framework Version: {get_robot_version()}")  # noqa: T201

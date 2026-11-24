@@ -1,7 +1,8 @@
 import base64
 import os
 from datetime import UTC, datetime
-from typing import NamedTuple
+from pathlib import Path
+from typing import NamedTuple, cast
 from urllib.parse import urlparse
 
 from robot.api import logger
@@ -14,6 +15,7 @@ from test_app_server import (
     start_test_app,
 )
 
+from Browser import Browser
 from Browser.utils import FormatterKeywords
 
 SERVERS: dict[str, RunningTestApp] = {}
@@ -56,12 +58,12 @@ def start_test_https_server(
     # This seems to be a very strange behaviour: if we start the server with absolute paths, it prepends
     # them with its own path and is unable to find the file. Therefore we have to count the relative path from its directory.
     server_cert_path = os.path.relpath(
-        os.path.abspath(server_cert_path), start=test_app_dir
+        Path(server_cert_path).absolute(), start=test_app_dir
     )
     server_key_path = os.path.relpath(
-        os.path.abspath(server_key_path), start=test_app_dir
+        Path(server_key_path).absolute(), start=test_app_dir
     )
-    ca_cert_path = os.path.relpath(os.path.abspath(ca_cert_path), start=test_app_dir)
+    ca_cert_path = os.path.relpath(Path(ca_cert_path).absolute(), start=test_app_dir)
 
     def cmd_builder(port: str, token: str) -> list:
         return [
@@ -92,9 +94,9 @@ def stop_test_server(port: str):
 
 
 def get_current_scope_from_lib(keyword: FormatterKeywords) -> list:
-    browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     stack = browser.scope_stack["assertion_formatter"].get()
-    return [formatter.__name__ for formatter in stack.get(keyword.name, list())]
+    return [formatter.__name__ for formatter in stack.get(keyword.name, [])]
 
 
 def numbers_are_close(number1: int, number2: int, difference: int) -> bool:

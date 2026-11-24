@@ -4,8 +4,11 @@ import json
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+from typing import cast
 
 from robot.libraries.BuiltIn import BuiltIn
+
+from Browser import Browser
 
 TIME_FMT = "%H:%M:%S.%f"
 
@@ -43,6 +46,7 @@ def _verify_key_timings(  # noqa: C901, PLR0912, PLR0915
     keys: Iterable[str],
     expected_press_ms: int,
     expected_key_delay_ms: int,
+    *,
     press_tolerance_ms: int = 20,
     key_delay_tolerance_ms: int = 20,
     target_id: str | None = "event_test_input",
@@ -172,10 +176,10 @@ def assert_key_timings(
         keys,
         int(expected_press_duration_ms.total_seconds() * 1000),
         int(expected_key_delay_ms.total_seconds() * 1000),
-        int(press_tolerance_ms.total_seconds() * 1000),
-        int(key_delay_tolerance_ms.total_seconds() * 1000),
-        target_id,
-        None
+        press_tolerance_ms=int(press_tolerance_ms.total_seconds() * 1000),
+        key_delay_tolerance_ms=int(key_delay_tolerance_ms.total_seconds() * 1000),
+        target_id=target_id,
+        max_press_ms=None
         if max_press_duration_ms is None
         else int(max_press_duration_ms.total_seconds() * 1000),
     )
@@ -188,7 +192,7 @@ def assert_key_timings(
         if res.messages:
             lines.append("Details:")
             lines.extend(f"  * {m}" for m in res.messages)
-        browser = BuiltIn().get_library_instance("Browser")
+        browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
         browser.take_screenshot()
         raise AssertionError("\n".join(lines))
     return res

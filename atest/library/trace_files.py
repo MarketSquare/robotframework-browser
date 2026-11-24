@@ -1,8 +1,11 @@
 import re
 import zipfile
 from pathlib import Path
+from typing import cast
 
 from robot.libraries.BuiltIn import BuiltIn
+
+from Browser import Browser
 
 
 def get_trace_marks(trace_zip: Path) -> list[str]:
@@ -27,7 +30,8 @@ def find_traces_with_mark(directory: Path, mark: str) -> list[str]:
 
 def mark(word: str) -> None:
     """Runs an action on the active page whose trace entry mentions ``word``."""
-    BuiltIn().get_library_instance("Browser").evaluate_javascript(None, f"() => '{word}'")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
+    browser.evaluate_javascript(None, f"() => '{word}'")
 
 
 def trace_should_be(trace: str, *path_parts: str) -> None:

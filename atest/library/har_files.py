@@ -9,7 +9,9 @@ def _har_log(har: Path) -> dict:
 
 def get_har_request_paths(har: Path) -> list[str]:
     """Returns the URL paths of the requests recorded in ``har``, in recording order."""
-    return [urlparse(entry["request"]["url"]).path for entry in _har_log(har)["entries"]]
+    return [
+        urlparse(entry["request"]["url"]).path for entry in _har_log(har)["entries"]
+    ]
 
 
 def har_should_not_have_pages(har: Path) -> None:

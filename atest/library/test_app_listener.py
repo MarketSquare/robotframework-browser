@@ -3,10 +3,10 @@ import os
 
 import requests
 from robot.api import logger
+from robot.libraries.BuiltIn import BuiltIn
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
-from robot.libraries.BuiltIn import BuiltIn
 
 
 def _post(event: str, data, status: str | None = None) -> None:

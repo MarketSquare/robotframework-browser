@@ -24,6 +24,7 @@ def app_log_file(log_dir: Path, port: str) -> Path:
     """Return the Test App Log File of the Test App on ``port``."""
     return log_dir / f"test-app-{port}.log"
 
+
 CommandBuilder = Callable[[str, str], list]
 ReadinessCheck = Callable[[str, str, Path], bool]
 

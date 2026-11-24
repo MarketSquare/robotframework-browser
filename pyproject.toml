@@ -101,6 +101,7 @@ dev = [
     "build >= 1.6.1",
     "robotframework-ghareports >= 1.0.0",
     "types-PyYAML >= 6.0.12.20261030",
+    "types-psutil >= 7.2.2.20261122",
     "requests >= 2.34.2",
 ]
 # pytest-watch needs docopt, which ships no wheel. CI installs with --no-build,

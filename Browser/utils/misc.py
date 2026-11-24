@@ -21,7 +21,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-import psutil  # type: ignore[import-untyped]
+import psutil
 from robot.api import logger
 from robot.libraries.BuiltIn import BuiltIn
 
@@ -140,7 +140,7 @@ def suppress_logging():
         BuiltIn()._context.output.set_log_level(log_level)
 
 
-def close_process_tree(proc: psutil.Popen, timeout=3):
+def close_process_tree(proc: subprocess.Popen, timeout=3):
     """Close a process and all it's child-processes.
 
     Does nothing if the process is already closed.
