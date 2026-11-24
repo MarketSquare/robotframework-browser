@@ -3,11 +3,13 @@ import hashlib
 import json
 import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from robot.libraries.BuiltIn import BuiltIn
+
+from Browser import Browser
 
 FIXTURES_DIR = (
     Path(__file__).parent.parent.parent
@@ -115,16 +117,14 @@ def panel_json(panel_id: str) -> Any:
 
     ``response-body`` holds the echo JSON, ``response-headers`` the response headers.
     """
-    browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     return json.loads(browser.get_text(f"id={panel_id}"))
 
 
 def content_length_should_match_response_size() -> None:
     """Fail if the response has a ``content-length`` header that differs from the received size."""
-    browser = BuiltIn().get_library_instance("Browser")
+    browser = cast(Browser, BuiltIn().get_library_instance("Browser"))
     size = browser.get_text("id=response-size")
     content_length = panel_json("response-headers").get("content-length", size)
     if content_length != size:
-        raise AssertionError(
-            f"content-length {content_length} != received size {size}"
-        )
+        raise AssertionError(f"content-length {content_length} != received size {size}")

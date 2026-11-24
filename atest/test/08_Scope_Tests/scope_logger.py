@@ -51,7 +51,7 @@ def assert_retried_for_at_least(start_time: datetime, min_duration_ms: int) -> N
     retry budget (or the browser timeout) is spent, so a loaded CI runner can
     make this longer but never shorter - which an upper bound cannot survive.
     """
-    elapsed_ms = int((datetime.now() - start_time).total_seconds() * 1000)
+    elapsed_ms = int((datetime.now() - start_time).total_seconds() * 1000)  # noqa: DTZ005
     logger.info(f"Retried for {elapsed_ms}ms (at least {min_duration_ms}ms expected)")
     if elapsed_ms < min_duration_ms:
         raise AssertionError(

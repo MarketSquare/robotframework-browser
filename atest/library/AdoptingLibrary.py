@@ -15,6 +15,7 @@ class AdoptingLibrary(Browser):
         headless: bool,
         tracing: Path | None,
         record_video: RecordVideo,
+        *,
         viewport: ViewportDimensions | None = None,
     ) -> str:
         """Opens a persistent context in the JavaScript extension with the options of

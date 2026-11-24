@@ -5,7 +5,7 @@ from robot.libraries.BuiltIn import BuiltIn
 from Browser import Browser
 
 
-def create_context_with_string_type_recordvideodir_and_get_type_of_recordVideo_dir(
+def create_context_with_string_type_recordvideodir_and_get_type_of_recordvideo_dir(
     video_path,
 ):
     browser: Browser = BuiltIn().get_library_instance("Browser")
@@ -16,7 +16,7 @@ def create_context_with_string_type_recordvideodir_and_get_type_of_recordVideo_d
     return str(type(record_video["dir"]))
 
 
-def create_context_with_path_type_recordvideodir_and_get_type_of_recordVideo_dir(
+def create_context_with_path_type_recordvideodir_and_get_type_of_recordvideo_dir(
     video_path,
 ):
     browser: Browser = BuiltIn().get_library_instance("Browser")
@@ -27,7 +27,7 @@ def create_context_with_path_type_recordvideodir_and_get_type_of_recordVideo_dir
     return str(type(record_video["dir"]))
 
 
-def create_persistent_context_with_string_type_recordvideodir_and_get_type_of_recordVideo_dir(
+def create_persistent_context_with_string_type_recordvideodir_and_get_type_of_recordvideo_dir(
     video_path,
 ):
     browser: Browser = BuiltIn().get_library_instance("Browser")
@@ -37,7 +37,7 @@ def create_persistent_context_with_string_type_recordvideodir_and_get_type_of_re
     return str(type(record_video["dir"]))
 
 
-def create_persistent_context_with_path_type_recordvideodir_and_get_type_of_recordVideo_dir(
+def create_persistent_context_with_path_type_recordvideodir_and_get_type_of_recordvideo_dir(
     video_path,
 ):
     browser: Browser = BuiltIn().get_library_instance("Browser")

@@ -32,13 +32,13 @@ def run_rfbrowser_help():
 
 
 def start_show_trace(zip_file: str):
-    zip_file = Path(zip_file).resolve(strict=True)
+    trace_zip = Path(zip_file).resolve(strict=True)
     exec_dir = BuiltIn().get_variable_value("${EXECDIR}")
     ouput_dir = BuiltIn().get_variable_value("${OUTPUT_DIR}")
     out_file = Path(ouput_dir, "rfbrower_1.log")
     with out_file.open("w") as file:
         process = subprocess.Popen(
-            ["rfbrowser", "show-trace", "-F", str(zip_file)],
+            ["rfbrowser", "show-trace", "-F", str(trace_zip)],
             cwd=exec_dir,
             stderr=subprocess.STDOUT,
             stdout=file,
@@ -61,44 +61,39 @@ def _check_trace_process(process: subprocess.Popen, out_file: Path):
         logger.info(process.stdout)
         raise
     proc = psutil.Process(pid)
-    binary = False
-    show_trace = False
-    file_arg = False
-    trace_zip = False
-    for cmd in proc.cmdline():
-        logger.info(f"cmd: {cmd}")
-        if "rfbrowser" in cmd:
-            binary = True
-        if "show-trace" in cmd:
-            show_trace = True
-        if "-F" in cmd:
-            file_arg = True
-        if "trace_1.zip" in cmd:
-            trace_zip = True
-    if binary and show_trace and file_arg and trace_zip:
-        logger.info("Main process found, check child process")
-        node = False
-        chromium = False
-        for child_proc in proc.children(recursive=True):
-            logger.info(child_proc)
-            if not child_proc.is_running():
-                logger.info(f"Trace file output: {out_file.read_text()}")
-            if "node" in child_proc.name().lower():
-                logger.info(child_proc.name())
-                node = True
-            if (
-                "chromium" in child_proc.name().lower()
-                or "chrome" in child_proc.name().lower()
-            ):
-                logger.info(child_proc.name())
-                chromium = True
-        if chromium and node:
-            logger.info("Child process found")
-            return True
-        logger.info("No children")
+    if not _is_show_trace_command(proc.cmdline()):
+        logger.info("Not process found")
         return False
-    logger.info("Not process found")
+    logger.info("Main process found, check child process")
+    if _has_node_and_chromium_children(proc, out_file):
+        logger.info("Child process found")
+        return True
+    logger.info("No children")
     return False
+
+
+def _is_show_trace_command(cmdline: list[str]) -> bool:
+    for cmd in cmdline:
+        logger.info(f"cmd: {cmd}")
+    expected_parts = ["rfbrowser", "show-trace", "-F", "trace_1.zip"]
+    return all(any(part in cmd for cmd in cmdline) for part in expected_parts)
+
+
+def _has_node_and_chromium_children(proc: psutil.Process, out_file: Path) -> bool:
+    node = False
+    chromium = False
+    for child_proc in proc.children(recursive=True):
+        logger.info(child_proc)
+        if not child_proc.is_running():
+            logger.info(f"Trace file output: {out_file.read_text()}")
+        name = child_proc.name().lower()
+        if "node" in name:
+            logger.info(child_proc.name())
+            node = True
+        if "chromium" in name or "chrome" in name:
+            logger.info(child_proc.name())
+            chromium = True
+    return node and chromium
 
 
 def check_trace_process(prcess: subprocess.Popen, out_file: Path):

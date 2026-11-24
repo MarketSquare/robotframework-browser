@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 from pathlib import Path
 
 from cryptography import x509
@@ -35,10 +35,8 @@ def generate_ca_certificate(cert_path: str, key_path: str):
         .issuer_name(issuer)
         .public_key(ca_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now(datetime.UTC))
-        .not_valid_after(
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=2)
-        )
+        .not_valid_before(dt.datetime.now(dt.UTC))
+        .not_valid_after(dt.datetime.now(dt.UTC) + dt.timedelta(days=2))
         .add_extension(
             x509.BasicConstraints(ca=True, path_length=None),
             critical=True,
@@ -76,6 +74,7 @@ def generate_server_certificate(
     with Path(ca_key_path).open("rb") as f:
         ca_key_data = f.read()
     ca_key = load_pem_private_key(ca_key_data, None)
+    assert isinstance(ca_key, ec.EllipticCurvePrivateKey)
 
     # load CA cert
     with Path(ca_cert_path).open("rb") as f:
@@ -108,10 +107,8 @@ def generate_server_certificate(
         .issuer_name(ca_cert.subject)
         .public_key(server_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now(datetime.UTC))
-        .not_valid_after(
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
-        )
+        .not_valid_before(dt.datetime.now(dt.UTC))
+        .not_valid_after(dt.datetime.now(dt.UTC) + dt.timedelta(days=1))
         .add_extension(
             x509.SubjectAlternativeName(
                 [
@@ -173,6 +170,7 @@ def generate_client_certificate(
     with Path(ca_key_path).open("rb") as f:
         ca_key_data = f.read()
     ca_key = load_pem_private_key(ca_key_data, None)
+    assert isinstance(ca_key, ec.EllipticCurvePrivateKey)
 
     # load CA cert
     with Path(ca_cert_path).open("rb") as f:
@@ -205,10 +203,8 @@ def generate_client_certificate(
         .issuer_name(ca_cert.subject)
         .public_key(client_key.public_key())
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.datetime.now(datetime.UTC))
-        .not_valid_after(
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
-        )
+        .not_valid_before(dt.datetime.now(dt.UTC))
+        .not_valid_after(dt.datetime.now(dt.UTC) + dt.timedelta(days=1))
         .add_extension(
             x509.BasicConstraints(ca=False, path_length=None),
             critical=True,

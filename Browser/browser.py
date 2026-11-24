@@ -1505,7 +1505,7 @@ def {name}(self, {", ".join(argument_names_and_default_values_texts)}):
             # A Windows console script such as ``robot.exe`` is a zip archive on sys.path.
             # Which may fail, therefore own wrapper.
             try:
-                modules = list(pkgutil.iter_importer_modules(importer))
+                modules = list(pkgutil.iter_importer_modules(importer))  # type: ignore[attr-defined]
             except KeyError as error:
                 logger.debug(f"Could not list modules of {importer}: {error}")
                 continue

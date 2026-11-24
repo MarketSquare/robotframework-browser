@@ -1647,6 +1647,7 @@ def lint_python(c, fix=False):
         "browser_batteries",
         ".claude/skills/",
         "tools/",
+        "atest/",
     ]
     ruff_cmd_check = [
         "ruff",
@@ -1658,6 +1659,7 @@ def lint_python(c, fix=False):
         "bootstrap.py",
         ".claude/skills/",
         "tools/",
+        "atest/",
     ]
     if fix:
         ruff_cmd_check.insert(2, "--fix")
@@ -1672,6 +1674,8 @@ def lint_python(c, fix=False):
         "mypy",
         "--exclude",
         ".venv",
+        "--exclude",
+        r"'Browser/browser\.pyi$'",
         "--config-file",
         "Browser/mypy.ini",
         "Browser/",
@@ -1679,6 +1683,7 @@ def lint_python(c, fix=False):
         "browser_batteries/",
         ".claude/skills/",
         "tools/",
+        "atest/library/",
     ]
     c.run(" ".join(mypy_cmd))
 

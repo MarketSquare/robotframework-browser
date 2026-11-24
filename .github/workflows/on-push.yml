@@ -137,7 +137,7 @@ jobs:
         run: |
           robocop check atest --config pyproject.toml --reports sonarqube --exit-zero
           ruff check Browser browser_batteries atest --config pyproject.toml --exit-zero --output-format json --output-file ruff.json
-          mypy Browser browser_batteries atest/library --exclude .venv --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
+          mypy Browser browser_batteries atest/library --exclude .venv --exclude 'Browser/browser\.pyi$' --config-file Browser/mypy.ini --no-error-summary --show-column-numbers > mypy.txt || [ $? -eq 1 ]
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
