@@ -1,4 +1,4 @@
-from tasks import LcovTotals, _drop_never_loaded_records, _lcov_totals
+from tasks.coverage_merge import LcovTotals, _drop_never_loaded_records, _lcov_totals
 
 LOADED = """TN:
 SF:node/playwright-wrapper/cookie.ts

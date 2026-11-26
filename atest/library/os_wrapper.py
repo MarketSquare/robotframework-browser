@@ -81,7 +81,7 @@ def get_child_robot_environment() -> dict:
     """Return the environment for a child robot run that starts its own node process.
 
     `inv atest` starts one shared node process for the whole run and exports
-    ROBOT_FRAMEWORK_BROWSER_NODE_PORT and DEBUG for it (tasks.py). A child run
+    ROBOT_FRAMEWORK_BROWSER_NODE_PORT and DEBUG for it (tasks/testing.py). A child run
     that inherited those would connect to the shared process instead of
     starting its own and would never write its own playwright-log.txt.
     The pino log level is set rather than inherited so the child behaves the
@@ -208,7 +208,7 @@ def get_executor_count(pabot_processes: str = "") -> str:
     A whole class of failure lives on this dimension and no other: anything
     where one worker's state reaches another's happens only when there is
     another worker, and gets rarer as there are fewer. It is not recorded
-    anywhere that outlives a run, and nobody chooses it per platform - tasks.py
+    anywhere that outlives a run, and nobody chooses it per platform - tasks/testing.py
     derives it from the runner's CPU count, so a four-core Linux runner runs
     three workers and a three-core macOS runner two, which is enough to make the
     same defect look platform specific.
@@ -224,7 +224,7 @@ def get_executor_count(pabot_processes: str = "") -> str:
 def get_node_process_sharing() -> str:
     """Whether every worker talks to one node process or starts its own.
 
-    tasks.py points every pabot worker at a single node process through
+    tasks/testing.py points every pabot worker at a single node process through
     ROBOT_FRAMEWORK_BROWSER_NODE_PORT. Anything the node side keeps in a
     module-level singleton is therefore shared between workers that have every
     reason to believe they are isolated, and whether that was the case is a fact
