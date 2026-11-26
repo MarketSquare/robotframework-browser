@@ -573,7 +573,9 @@ export class PlaywrightServer {
         });
     }
 
-    uploadFile = this.wrappingPage(interaction.uploadFile);
+    async uploadFile(call: ServerWritableStream<pb.Request_FilePath, pb.Response_Json>): Promise<void> {
+        await this.streamMessages(call, interaction.uploadFile, () => this.getActivePage(call));
+    }
     handleAlert = this.wrappingPage(interaction.handleAlert);
     waitForAlerts = this.wrappingPage(interaction.waitForAlerts);
     mouseMove = this.wrappingPage(interaction.mouseMove);

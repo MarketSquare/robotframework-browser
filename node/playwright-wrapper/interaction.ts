@@ -20,7 +20,7 @@ import { getSelections } from './getters';
 import { exists } from './playwright-invoke';
 import { findLocator, invokeOnKeyboard, invokeOnMouse } from './playwright-invoke';
 import { PlaywrightState } from './playwright-state';
-import { emptyWithLog, listStringResponse } from './response-util';
+import { emptyWithLog, jsonResponse, listStringResponse } from './response-util';
 
 export async function selectOption(
     request: pb.Request_SelectElementSelector,
@@ -223,11 +223,16 @@ export async function uploadFileBySelector(
     }
 }
 
-export async function uploadFile(request: pb.Request_FilePath, page: Page): Promise<pb.Response_Empty> {
-    const path = request.path;
-    const fileChooser = await page.waitForEvent('filechooser');
-    await fileChooser.setFiles(path);
-    return emptyWithLog('Successfully uploaded file');
+export async function uploadFile(
+    request: pb.Request_FilePath,
+    page: Page,
+    send: (message: pb.Response_Json) => void,
+): Promise<pb.Response_Json[]> {
+    const fileChooserEvent = page.waitForEvent('filechooser');
+    send(jsonResponse('', 'Listening for file chooser'));
+    const fileChooser = await fileChooserEvent;
+    await fileChooser.setFiles(request.path);
+    return [jsonResponse('', 'Successfully uploaded file')];
 }
 
 const dialogHandlers = new WeakMap<Page, (dialog: Dialog) => Promise<void>>();

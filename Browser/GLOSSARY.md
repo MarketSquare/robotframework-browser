@@ -190,8 +190,26 @@ resolved like **test content**, which is only right when the **Node side** share
 filesystem.
 _Avoid_: system path, Node path
 
+**Promise**:
+A Browser keyword running in the background, started by `Promise To` or a `Promise To …`
+keyword and resolved by `Wait For`.
+_Avoid_: future, async keyword, background keyword
+
+**Event wait**:
+A keyword that sees only the events that happen after it starts listening, such as a response,
+a request, an alert, a file chooser or a download.
+_Avoid_: event-based keyword, event keyword
+
+**State wait**:
+A keyword that checks what the page is like now, such as an element state or a function's
+result, so starting it late loses nothing.
+_Avoid_: state-based keyword, polling keyword
+
 ## Relationships
 
+- A **promise** of an **event wait** returns only once the **Node side** is listening, so the
+  keyword after it cannot fire the event too early. A **promise** of a **state wait** returns
+  as soon as it has started.
 - A context runs at most one trace at a time, a **context trace** or an **ad-hoc trace**.
   Starting a trace while one is running is a mistake in the test and fails. Stopping works the
   same for both kinds; stopping when nothing is running fails.

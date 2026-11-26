@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import timedelta
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -22,6 +23,7 @@ DOWNLOAD = {
     "downloadID": "id",
 }
 LISTENING = Response.Json(log="Listening for download")
+CHOOSER_LISTENING = Response.Json(log="Listening for file chooser")
 
 
 class _Node:
@@ -129,23 +131,119 @@ class _NeverListeningNode:
         self.released.wait()
         yield LISTENING
 
+    def UploadFile(self, request):
+        self.released.wait()
+        yield CHOOSER_LISTENING
 
-def test_fails_when_node_does_not_listen_within_the_download_timeout(executor):
+
+@pytest.fixture
+def never_listening() -> Iterator[_NeverListeningNode]:
     node = _NeverListeningNode()
-    promises = _promises(node, executor)
+    yield node
+    node.released.set()
 
-    with pytest.raises(AssertionError, match="within 200 milliseconds"):
+
+def test_fails_when_node_does_not_listen_within_twice_the_download_timeout(
+    executor, never_listening
+):
+    promises = _promises(never_listening, executor)
+
+    with pytest.raises(AssertionError, match="download within 400 milliseconds"):
         promises.promise_to_wait_for_download(
             download_timeout=timedelta(milliseconds=200)
         )
-    node.released.set()
     assert promises.unresolved_promises == set()
 
 
-def test_fails_when_node_does_not_listen_within_the_browser_timeout(executor):
-    node = _NeverListeningNode()
-    promises = _promises(node, executor, browser_timeout_ms=300)
+def test_fails_when_node_does_not_listen_within_twice_the_browser_timeout(
+    executor, never_listening
+):
+    promises = _promises(never_listening, executor, browser_timeout_ms=300)
 
-    with pytest.raises(AssertionError, match="within 300 milliseconds"):
+    with pytest.raises(AssertionError, match="download within 600 milliseconds"):
         promises.promise_to_wait_for_download()
-    node.released.set()
+
+
+class _UploadNode:
+    def __init__(self):
+        self.listening = threading.Event()
+        self.chooser_opened = threading.Event()
+        self.paths: list[str] = []
+
+    def UploadFile(self, request):
+        self.paths.append(request.path)
+        self.listening.wait()
+        yield CHOOSER_LISTENING
+        self.chooser_opened.wait()
+        yield Response.Json(log="Successfully uploaded file")
+
+
+def test_upload_returns_only_after_node_listens_for_the_file_chooser(executor):
+    node = _UploadNode()
+    promises = _promises(node, executor)
+    returned = threading.Event()
+    keyword = threading.Thread(
+        target=lambda: (promises.promise_to_upload_file(__file__), returned.set())
+    )
+
+    keyword.start()
+    assert not returned.wait(0.3)
+    node.listening.set()
+    assert returned.wait(5)
+    keyword.join()
+
+    node.chooser_opened.set()
+    (promise,) = promises.unresolved_promises
+    assert promise.result(5) == "Successfully uploaded file"
+    assert node.paths == [str(Path(__file__).resolve())]
+
+
+def test_upload_returns_when_node_fails_before_listening(executor):
+    class _FailingNode:
+        def UploadFile(self, request):
+            raise AssertionError("No page open.")
+            yield
+
+    promises = _promises(_FailingNode(), executor)
+
+    promise = promises.promise_to_upload_file(__file__)
+
+    with pytest.raises(AssertionError, match="No page open."):
+        promise.result(5)
+
+
+def test_upload_fails_the_promise_when_node_fails_after_listening(executor):
+    class _TimingOutNode:
+        def UploadFile(self, request):
+            yield CHOOSER_LISTENING
+            raise AssertionError("Timeout 3000ms exceeded")
+
+    promises = _promises(_TimingOutNode(), executor)
+
+    promise = promises.promise_to_upload_file(__file__)
+
+    with pytest.raises(AssertionError, match="Timeout 3000ms exceeded"):
+        promise.result(5)
+
+
+def test_upload_fails_the_promise_when_the_stream_ends_after_listening(executor):
+    class _EndingNode:
+        def UploadFile(self, request):
+            yield CHOOSER_LISTENING
+
+    promises = _promises(_EndingNode(), executor)
+
+    promise = promises.promise_to_upload_file(__file__)
+
+    with pytest.raises(AssertionError, match="ended before a file chooser opened"):
+        promise.result(5)
+
+
+def test_upload_fails_when_node_does_not_listen_within_twice_the_browser_timeout(
+    executor, never_listening
+):
+    promises = _promises(never_listening, executor, browser_timeout_ms=300)
+
+    with pytest.raises(AssertionError, match="file chooser within 600 milliseconds"):
+        promises.promise_to_upload_file(__file__)
+    assert promises.unresolved_promises == set()

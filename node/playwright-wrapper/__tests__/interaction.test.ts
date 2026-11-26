@@ -8,7 +8,7 @@ jest.mock('../browser_logger', () => ({
 }));
 
 import { logger } from '../browser_logger';
-import { handleAlert } from '../interaction';
+import { handleAlert, uploadFile } from '../interaction';
 
 const mockLogger = jest.mocked(logger);
 
@@ -144,5 +144,47 @@ describe('handleAlert', () => {
             expect.objectContaining({ event_kind: 'internal_error', status: 'failed' }),
             expect.stringContaining('Failed to accept dialog "Are you sure?": Target page has been closed'),
         );
+    });
+});
+
+describe('uploadFile', () => {
+    function makeChooserPage(order: string[]) {
+        let openChooser: (chooser: unknown) => void = () => {};
+        const page = {
+            waitForEvent: jest.fn(() => {
+                order.push('listener attached');
+                return new Promise((resolve) => {
+                    openChooser = resolve;
+                });
+            }),
+        } as any;
+        return { page, openChooser: (chooser: unknown) => openChooser(chooser) };
+    }
+
+    it('sends a listening message once the file chooser listener is attached, before the chooser opens', async () => {
+        const order: string[] = [];
+        const { page, openChooser } = makeChooserPage(order);
+        const setFiles = jest.fn().mockResolvedValue(undefined);
+
+        const result = uploadFile({ path: '/tmp/report.txt' }, page, (message) => order.push(message.log));
+
+        expect(order).toEqual(['listener attached', 'Listening for file chooser']);
+        openChooser({ setFiles });
+        const [uploaded] = await result;
+        expect(setFiles).toHaveBeenCalledWith('/tmp/report.txt');
+        expect(uploaded.log).toBe('Successfully uploaded file');
+    });
+
+    it('fails after the listening message when no file chooser opens', async () => {
+        expect.assertions(2);
+        const sent: string[] = [];
+        const page = {
+            waitForEvent: jest.fn().mockReturnValue(Promise.reject(new Error('Timeout 3000ms exceeded'))),
+        } as any;
+
+        await expect(
+            uploadFile({ path: '/tmp/report.txt' }, page, (message) => sent.push(message.log)),
+        ).rejects.toThrow('Timeout 3000ms exceeded');
+        expect(sent).toEqual(['Listening for file chooser']);
     });
 });

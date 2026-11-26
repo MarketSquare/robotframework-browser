@@ -13,6 +13,7 @@
 # limitations under the License.
 import json
 import re
+from collections.abc import Callable, Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import timedelta
 from os import PathLike
@@ -26,7 +27,7 @@ from robot.api.deco import keyword
 from robot.utils import DotDict
 
 from ..base import LibraryComponent
-from ..generated.playwright_pb2 import Request
+from ..generated.playwright_pb2 import Request, Response
 from ..utils import DownloadInfo, logger
 from ..utils.data_types import RobotTypeConverter as TypeConverter
 
@@ -166,8 +167,8 @@ class Promises(LibraryComponent):
 
         The keyword returns once the page listens for the download, so a download
         that the next keyword starts is caught. The keyword fails if the page does not
-        start listening within ``download_timeout``, or the browser timeout if that is
-        not set.
+        start listening within twice ``download_timeout``, or twice the browser timeout
+        if that is not set.
 
         To enable downloads the context's ``acceptDownloads`` needs to be true.
 
@@ -233,26 +234,51 @@ class Promises(LibraryComponent):
         timeout_ms = (
             int(download_timeout.total_seconds() * 1000) if download_timeout else 0
         )
-        listening = Event()
-        promise = self._executor.submit(
+        return self._promise_event_wait(
+            "download",
+            timeout_ms or self.get_timeout(None),
             self._wait_for_download,
-            listening,
             saveAs=saveAs,
             wait_for_finish=wait_for_finished,
             download_timeout=timeout_ms,
         )
+
+    def _promise_event_wait(
+        self, event: str, keyword_timeout_ms: float, body: Callable[..., Any], **kwargs
+    ) -> Future:
+        listening = Event()
+        promise = self._executor.submit(body, listening, **kwargs)
         self.unresolved_promises.add(promise)
-        listen_timeout_ms = timeout_ms or self.get_timeout(None)
+        listen_timeout_ms = 2 * keyword_timeout_ms
         listen_deadline = monotonic() + listen_timeout_ms / 1000
         while not listening.wait(0.01):
             if monotonic() > listen_deadline:
                 promise.cancel()
                 self.unresolved_promises.discard(promise)
                 raise AssertionError(
-                    "Could not start waiting for the download within "
+                    f"Could not start waiting for the {event} within "
                     f"{self.millisecs_to_timestr(listen_timeout_ms)}."
                 )
         return promise
+
+    def _event_wait_result(
+        self,
+        listening: Event,
+        rpc: Callable[[Any], Iterator[Response.Json]],
+        ended_early: str,
+    ) -> Response.Json:
+        try:
+            with self.playwright.grpc_channel() as stub:
+                messages = rpc(stub)
+                listening_message = next(messages, None)
+                listening.set()
+                response = next(messages, None)
+                if listening_message is None or response is None:
+                    raise AssertionError(ended_early)
+        finally:
+            listening.set()
+        logger.debug(listening_message.log)
+        return response
 
     def _wait_for_download(
         self,
@@ -261,25 +287,17 @@ class Promises(LibraryComponent):
         wait_for_finish: bool = True,
         download_timeout: int = 0,
     ) -> DownloadInfo:
-        try:
-            with self.playwright.grpc_channel() as stub:
-                messages = stub.WaitForDownload(
-                    Request().DownloadOptions(
-                        path=str(Path(saveAs)) if saveAs else "",
-                        downloadTimeout=download_timeout,
-                        waitForFinish=wait_for_finish,
-                    )
+        response = self._event_wait_result(
+            listening,
+            lambda stub: stub.WaitForDownload(
+                Request().DownloadOptions(
+                    path=str(Path(saveAs)) if saveAs else "",
+                    downloadTimeout=download_timeout,
+                    waitForFinish=wait_for_finish,
                 )
-                listening_message = next(messages, None)
-                listening.set()
-                response = next(messages, None)
-                if listening_message is None or response is None:
-                    raise AssertionError(
-                        "Waiting for the download ended before the download started."
-                    )
-        finally:
-            listening.set()
-        logger.debug(listening_message.log)
+            ),
+            "Waiting for the download ended before the download started.",
+        )
         logger.info(response.log)
         return DotDict(json.loads(response.json))
 
@@ -332,6 +350,10 @@ class Promises(LibraryComponent):
 
         The file from ``path`` is uploaded into the next file chooser dialog on the page.
 
+        The keyword returns once the page listens for the file chooser, so a file chooser
+        that the next keyword opens is caught. The keyword fails if the page does not
+        start listening within twice the browser timeout.
+
         The keyword fails immediately if ``path`` does not point to an existing file.
         The promise fails if no file chooser dialog is opened within the timeout.
 
@@ -351,12 +373,18 @@ class Promises(LibraryComponent):
         p = Path(path)
         if not p.is_file():
             raise ValueError(f"Nonexistent input file path '{p.resolve()}'")
-        promise = self._executor.submit(self._upload_file, path=str(p.resolve()))
-        self.unresolved_promises.add(promise)
-        return promise
+        return self._promise_event_wait(
+            "file chooser",
+            self.get_timeout(None),
+            self._upload_file,
+            path=str(p.resolve()),
+        )
 
-    def _upload_file(self, path: str):
-        with self.playwright.grpc_channel() as stub:
-            response = stub.UploadFile(Request().FilePath(path=path))
-            logger.debug(response.log)
+    def _upload_file(self, listening: Event, path: str) -> str:
+        response = self._event_wait_result(
+            listening,
+            lambda stub: stub.UploadFile(Request().FilePath(path=path)),
+            "Waiting for the file chooser ended before a file chooser opened.",
+        )
+        logger.debug(response.log)
         return response.log
