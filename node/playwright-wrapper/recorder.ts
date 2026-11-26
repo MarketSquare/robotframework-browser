@@ -32,6 +32,7 @@ import { drivePick, endPick, Pick, PickRequest, resetPlaywrightCursor } from './
 import * as pb from './generated/playwright';
 import { isGone } from './page-crash';
 import { PlaywrightState } from './playwright-state';
+import { installRewritingScript, JsExtension } from './recorder-rewrite-action';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 const RECORDER = Symbol.for('robotframework-browser.recorder.state');
@@ -84,6 +85,9 @@ export interface RecorderBuffers {
     // The page the user works on: where the last toolbar command came from, or
     // the page pressed last when Playwright's Pick locator was pressed. A pick starts there.
     userPage?: Page;
+    // The JS extensions loaded at the last poll, whose `__rewriteAction` hooks
+    // may change every Action and pick (recorder-rewrite-action.ts).
+    extensions?: JsExtension[];
 }
 
 export function toAction(payload: unknown): Action | null {
@@ -442,7 +446,7 @@ async function pickInRecording(
     }
     if (!buffers.pick) {
         if (!userPage) return { picked: { error: 'No page is open to pick in.' } };
-        buffers.pick = { page: userPage, picking: false };
+        buffers.pick = { page: userPage, picking: false, extensions: buffers.extensions };
     }
     if (starting) buffers.ownPick = true;
     return drivePick(buffers.pick, request);
@@ -470,7 +474,9 @@ export async function recorderPoll(request: pb.Request_Json, state: PlaywrightSt
         throw new Error('A Record Keyword(s) or Record Selector session is already running in this browser context.');
     }
     const buffers = await ensureRecorder(context);
+    buffers.extensions = state.extensions ?? [];
     if (reset) {
+        await installRewritingScript(context, buffers.extensions);
         rememberContext(state, context);
         await resetSession(context, buffers);
     }

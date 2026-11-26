@@ -141,6 +141,7 @@ exclude = [
     "package-lock.json",
     "css-selector.js",
     "recorder-toolbar.js",
+    "recorder-rewrite-action.js",
 ]
 
 [tool.ruff]

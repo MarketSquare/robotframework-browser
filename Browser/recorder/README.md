@@ -165,6 +165,75 @@ Exactly The Clicked Element" records a click on every element of
 `node/dynamic-test-app/static/recorder/selectors.html` and checks that the translated
 selector finds exactly that element.
 
+### Extension hooks
+
+A JS extension (`jsextension`) can change what the recorder records through the hook
+`__rewriteAction`; the user documentation is in `Record Keyword`. The hook gets every Action
+and every pick, and gives the parts of the Action to change, most often the selector. The
+name of an Action always stays Playwright's.
+
+Why the hook runs in the page: Playwright holds a left click and a navigation back for
+500 ms before it reports them, so by the time Node hears of a click, the click has had its
+effect. A hook in Node would build its selector from the page after the click, which
+replaying never sees. In the page, the hook runs at the moment of the Action, and what it
+gives is checked there with Playwright's own selector engines: a selector is taken only when
+it finds exactly the element Playwright's selector finds.
+
+The feature has two halves, one in Node and one in the page, which share only a contract:
+the names they use on the page's `window` and the script through which Node gives the page
+the hooks. The Node half puts the hooks, together with the page half, into every frame of
+the context. The page half runs the hooks on every Action before Playwright gets it.
+
+What this relies on that Playwright does not promise, established against Playwright 1.65:
+
+1. Playwright's injected recorder reports each Action by calling
+   `window.__pw_recorderRecordAction(action)` synchronously in its capture listener on
+   `document`. For a click that is after the page's `pointerdown`, `mousedown` and
+   `mouseup` handlers, and after its capture listeners at `window` or registered on
+   `document` before the recorder's, but before the click handlers at the target and in
+   bubbling. Playwright sets the binding as a plain property, before or after the page's
+   init scripts depending on the browser and the page, and never removes it while the
+   context lives.
+2. Playwright records the Action passed to that binding, also from frames and popups, with
+   the parts it does not know unchanged. Its selector is relative to the frame; Playwright
+   puts the frames before it, joined by ` >> internal:control=enter-frame >> `, which occurs
+   only between frames.
+3. Playwright merges the clicks of a double or triple click into the last one when their
+   selectors are the same. The later clicks happen after the first changed the page, so
+   they get the Action recorded for the first instead of running the hooks again.
+4. `BrowserContext._exposeConsoleApi()` sets `window.playwright` in the main world of every
+   frame. Its `$$` finds elements with Playwright's selector engines, also those registered
+   with `selectors.register`.
+
+When one of them is missing, or Playwright's selector does not find exactly one element, the
+Action is recorded as Playwright reports it and the reason is logged. Recording never fails
+because of a hook.
+
+How it behaves:
+
+- Each hook must be written with `function` and a name of its own; the name starts every
+  line it logs in `playwright-log.txt`. The page runs the hook's source, which a method, an
+  arrow or an `async` function would break for every hook. Any other hook is therefore left
+  out and logged, without running its source, so it cannot break the others.
+- The hooks of several extensions run in load order, each on the Action the one before
+  gave. What a hook gets and gives is copied as data, so it cannot change Playwright's
+  Action behind Browser's back.
+- A hook that fails, or gives a selector that does not find exactly the element, changes
+  nothing, and the reason is logged.
+- A pick reaches the hook as `{name: 'pick', selector}`. Nothing happens to the page while
+  a pick is shown, so the page then is the page of the pick.
+- A hook sees only the selector inside the element's frame; the frames before it stay as
+  Playwright found them. A hook in a frame cannot reach the frame's element in the parent,
+  across origins least of all. A second hook in Node could rewrite them later without
+  breaking extensions, should that be needed.
+- The pages get the hooks when a recording or a Record Selector session starts, and again
+  only when the hooks have changed since.
+
+The Recorder Hooks suite guards the points above in every browser: a hook sees the clicked
+element before its click handler, on a page opened during the recording, in a frame, and on
+a page with a strict Content Security Policy, and changes the selector or another part of an
+Action.
+
 ## Toolbar contract
 
 `session.py` is the source of truth: `RecorderSession.toolbar_state` for the state,

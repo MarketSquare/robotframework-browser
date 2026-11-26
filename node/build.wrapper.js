@@ -15,6 +15,18 @@ const cssSelector = esbuild.build({
     outfile: './node/playwright-wrapper/static/css-selector.js',
 });
 
+// The page side of the recorder's `__rewriteAction` hooks; runs in every frame.
+// pyproject.toml lists it in package-data, so the wheel ships it.
+const recorderRewrite = esbuild.build({
+    logLevel: 'info',
+    entryPoints: ['./node/playwright-wrapper/page/recorder-rewrite-action.main.ts'],
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    target: 'es2020',
+    outfile: './node/playwright-wrapper/static/recorder-rewrite-action.js',
+});
+
 const wrapper = esbuild.build({
     logLevel: 'info',
     entryPoints: ['./node/playwright-wrapper/index.ts'],
@@ -37,4 +49,4 @@ const wrapper = esbuild.build({
     external: ['playwright-core/*'],
 });
 
-Promise.all([cssSelector, wrapper]).catch(() => process.exit(1));
+Promise.all([cssSelector, recorderRewrite, wrapper]).catch(() => process.exit(1));

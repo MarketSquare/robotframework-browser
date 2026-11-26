@@ -29,6 +29,7 @@ ${FRAMES_URL} =                         ${ROOT_URL}frames/iframes.html
 ${RECORDER_SELECTORS_URL} =             ${ROOT_URL}recorder/selectors.html
 ${RECORDER_UPLOAD_URL} =                ${ROOT_URL}recorder/upload.html
 ${RECORDER_CSP_URL} =                   ${ROOT_URL}recorder/csp.html
+${RECORDER_REWRITE_URL} =               ${ROOT_URL}recorder/rewrite.html
 ${DEEP_FRAMES_URL} =                    ${ROOT_URL}frames/deep/a.html
 ${DEEP_FRAMES_2ND_URL} =                ${ROOT_URL}frames/deep/b.html
 ${FRAMES_BUG_REPORT} =                  ${ROOT_URL}frames/frame_for_elements.html

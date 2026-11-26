@@ -5,13 +5,14 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
     // The recorder toolbar in playwright-wrapper/static is ours and linted;
-    // css-selector.js there is built from page/css-selector.ts.
+    // css-selector.js and recorder-rewrite-action.js there are built from page/*.ts.
     {
         ignores: [
             '**/generated/**',
             '**/dist/**',
             '**/dynamic-test-app/static/**',
             '**/playwright-wrapper/static/css-selector.js',
+            '**/playwright-wrapper/static/recorder-rewrite-action.js',
         ],
     },
     eslint.configs.recommended,
