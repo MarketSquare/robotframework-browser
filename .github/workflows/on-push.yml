@@ -867,42 +867,7 @@ jobs:
       - name: Start demo app and run tests with docker image
         run: |
           uv sync --locked --no-build --only-group dev
-          browser_args=$(uv run --no-sync python -c "from tasks.testing import _browser_args; print(' '.join(_browser_args('$ATEST_BROWSER')))")
-          set +e
-          docker run \
-            -v ./atest/:/home/pwuser/atest \
-            -v ./node/:/home/pwuser/node \
-            -t tidii:latest \
-            bash -lc "
-              node /home/pwuser/node/dynamic-test-app/dist/server.js > /tmp/test-app.log 2>&1 &
-              app_pid=\$!
-              for i in \$(seq 1 30); do
-                if curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
-                  break
-                fi
-                sleep 1
-              done
-              if ! curl --fail --silent --show-error http://localhost:7272/dist/ > /dev/null; then
-                echo 'Test app failed to start inside container.'
-                cat /tmp/test-app.log
-                exit 1
-              fi
-              pabot --processes \$((\$(nproc) - 1)) --pabotlib --pabotlibport 0 \\
-                --ordering /home/pwuser/atest/atest_order.data \\
-                --artifacts png,webm,zip --artifactsinsubfolders \\
-                -v SERVER:localhost:7272 $browser_args --exclude no-docker-pr -L debug --outputdir /home/pwuser/output /home/pwuser/atest/test
-              robot_status=\$?
-              kill \$app_pid || true
-              wait \$app_pid 2>/dev/null || true
-              exit \$robot_status
-            "
-          docker_status=$?
-          inv docker-copy-output
-          copy_status=$?
-          if [ "$docker_status" -ne 0 ]; then
-            exit "$docker_status"
-          fi
-          exit "$copy_status"
+          inv docker-atest --image tidii:latest --browser "$ATEST_BROWSER"
 
       - uses: actions/upload-artifact@v7
         if: ${{ always() }}
