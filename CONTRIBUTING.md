@@ -15,9 +15,9 @@ These are the directories containing source code and tests:
 
 ### Gitpod.io Cloud Environment
 
-Gitpod.io is a cloud dev environemnt.
+Gitpod.io is a cloud dev environment.
 It can be used with a GitHub account for free for 50h per month.
-This should be sufficiant for a PR.
+This should be sufficient for a PR.
 
 To open the browser project in that environment just call gitpod with your development fork url as argument.
 
