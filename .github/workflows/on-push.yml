@@ -867,7 +867,7 @@ jobs:
       - name: Start demo app and run tests with docker image
         run: |
           uv sync --locked --no-build --only-group dev
-          browser_args=$(uv run --no-sync python -c "import tasks; print(' '.join(tasks._browser_args('$ATEST_BROWSER')))")
+          browser_args=$(uv run --no-sync python -c "from tasks.testing import _browser_args; print(' '.join(_browser_args('$ATEST_BROWSER')))")
           set +e
           docker run \
             -v ./atest/:/home/pwuser/atest \
