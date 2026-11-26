@@ -1,6 +1,6 @@
 # robotframework-browser
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-213-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-214-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![Version](https://img.shields.io/pypi/v/robotframework-browser.svg)](https://pypi.python.org/pypi/robotframework-browser)
 [![Actions Status](https://github.com/MarketSquare/robotframework-browser/workflows/Continuous%20integration/badge.svg)](https://github.com/MarketSquare/robotframework-browser/actions)
@@ -543,6 +543,7 @@ Supported by [Robocorp](https://robocorp.com/) through [Robot Framework Foundati
       <td align="center" valign="top" width="14.28%"><a href="https://checkmk.com"><img src="https://avatars.githubusercontent.com/u/47812383?v=4&size=100" width="100px" height="100px" alt="Checkmk"/><br /><sub><b>Checkmk</b></sub></a><br /><a href="#financial-Checkmk" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Sven051968"><img src="https://avatars.githubusercontent.com/u/155443193?v=4&size=100" width="100px" height="100px" alt="Sven051968"/><br /><sub><b>Sven051968</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/issues?q=author%3ASven051968" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/AtirCoder"><img src="https://avatars.githubusercontent.com/u/221433147?v=4&size=100" width="100px" height="100px" alt="AtirCoder"/><br /><sub><b>AtirCoder</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=AtirCoder" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://kayaal.is-a.dev"><img src="https://avatars.githubusercontent.com/u/117476621?v=4&size=100" width="100px" height="100px" alt="Yahya Kayaal"/><br /><sub><b>Yahya Kayaal</b></sub></a><br /><a href="https://github.com/MarketSquare/robotframework-browser/commits?author=kayaal34" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
