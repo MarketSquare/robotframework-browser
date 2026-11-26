@@ -835,7 +835,8 @@ service  Playwright {
   rpc GetTableRowIndex(Request.ElementSelector) returns (Response.Int);
   rpc GetTableCellIndex(Request.ElementSelector) returns (Response.Int);
 
-  rpc UploadFile(Request.FilePath) returns (Response.Empty);
+  /* Streams a first message once the file chooser listener is attached, then the upload result */
+  rpc UploadFile(Request.FilePath) returns (stream Response.Json);
   rpc UploadFileBySelector(stream Request.FileBySelector) returns (Response.Empty);
 
   rpc ScrollToElement(Request.ElementSelector) returns (Response.Empty);

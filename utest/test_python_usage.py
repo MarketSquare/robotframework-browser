@@ -143,6 +143,27 @@ def test_promise_to_wait_for_download_catches_a_download_when_its_thread_is_slow
         browser.close_page()
 
 
+def test_promise_to_upload_file_catches_a_file_chooser_when_its_thread_is_slow(
+    test_app_url, browser, monkeypatch
+):
+    upload_file = Promises._upload_file
+
+    def slow_upload_file(*args, **kwargs):
+        time.sleep(0.15)
+        return upload_file(*args, **kwargs)
+
+    monkeypatch.setattr(Promises, "_upload_file", slow_upload_file)
+    browser.set_browser_timeout(timedelta(seconds=2))
+    browser.new_context()
+    for _ in range(5):
+        browser.new_page(f"{test_app_url}/recorder/upload.html")
+        promise = browser.promise_to_upload_file(__file__)
+        browser.click("id=plain-file")
+        promise.result(10)
+        assert browser.get_text("id=upload_result") == Path(__file__).name
+        browser.close_page()
+
+
 def test_playwright_log(browser: Browser.Browser, test_app_url):
     root_folder = Path(browser.outputdir)
     log_file = root_folder / PW_LOG
