@@ -1977,6 +1977,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "kayaal34",
+      "name": "Yahya Kayaal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/117476621?v=4",
+      "profile": "https://kayaal.is-a.dev",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,
