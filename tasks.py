@@ -1828,7 +1828,7 @@ def docs(c, version=None):
 
     Args:
         version: Creates keyword documentation with version
-        suffix in the name. Documentation is moved to docs/vesions
+        suffix in the name. Documentation is moved to docs/versions
         folder.
     """
     output = ROOT_DIR / "docs" / "Browser.html"
