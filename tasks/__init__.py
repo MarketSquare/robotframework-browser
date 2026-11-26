@@ -16,7 +16,7 @@ from tasks.ci_failures import (
     ci_report,
     ci_verify_fixes,
 )
-from tasks.containers import docker_copy_output, docker_test, docker_tester
+from tasks.containers import docker_atest, docker_test, docker_tester
 from tasks.coverage_merge import coverage, coverage_report
 from tasks.linting import lint, lint_node, lint_python, lint_robot
 from tasks.nodejs import (
@@ -68,7 +68,7 @@ __all__ = [
     "demo_app",
     "deps",
     "dev_version",
-    "docker_copy_output",
+    "docker_atest",
     "docker_test",
     "docker_tester",
     "docs",
