@@ -1,7 +1,7 @@
 import pytest
 from invoke import Exit
 
-from tasks import _next_version
+from tasks.releasing import _next_version
 
 
 def test_lowest_open_milestone_wins():

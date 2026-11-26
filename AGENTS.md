@@ -19,6 +19,7 @@ of the CI matrix; change both together.
   selectors, strict mode and frames for almost every keyword.
 - `node/dynamic-test-app/`: the Test App that the acceptance tests drive. Network tests use its
   HTTP test page (`static/http.html`, the generic echo/respond endpoints, see its README).
+- `tasks/`: the invoke tasks, one module per area; `tasks/__init__.py` lists them.
 - `tools/ci_failures/`: maintainers' analysis of CI failures.
 
 `GLOSSARY-MAP.md` lists the domain contexts and where each `GLOSSARY.md` lives, and

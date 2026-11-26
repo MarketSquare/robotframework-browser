@@ -194,7 +194,7 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tasks.py" = [
+"tasks/**" = [
     "T201",
     "PTH123",
     "PTH120",

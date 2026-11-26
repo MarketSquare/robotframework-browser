@@ -1,5 +1,5 @@
 # The NodeJS shipped inside the BrowserBatteries wheel, and the platform floors
-# that decide which wheels pip will install. Read by tasks.py, and rewritten by
+# that decide which wheels pip will install. Read by tasks/nodejs.py, and rewritten by
 # the bot in .github/workflows/on-schedule.yml when a newer release turns up in
 # the line we already ship. Moving to a new LTS line is left to a human on
 # purpose: it changes the wheel tags, and the table in browser_batteries/README.md
