@@ -767,6 +767,10 @@ class Browser(DynamicCore):
         return self._playwright
 
     @property
+    def rf_context(self) -> dict[str, str]:
+        return self._rf_context.context()
+
+    @property
     def keyword_call_banner_add_style(self):
         return self.scope_stack["keyword_call_banner_add_style"].get()
 

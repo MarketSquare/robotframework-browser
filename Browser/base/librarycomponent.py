@@ -57,6 +57,10 @@ class LibraryComponent:
         return self.library.playwright
 
     @property
+    def rf_context(self) -> dict[str, str]:
+        return self.library.rf_context
+
+    @property
     def _auto_closing_level(self) -> AutoClosingLevel:
         return self.library._auto_closing_level
 

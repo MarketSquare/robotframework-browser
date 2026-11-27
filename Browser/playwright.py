@@ -399,6 +399,13 @@ class Playwright(LibraryComponent):
             f"{self.host}:{self.port}", options=grpc_channel_options(self.host)
         )
 
+    @cached_property
+    def _stub(self):
+        stub = playwright_pb2_grpc.PlaywrightStub(self._channel)
+        with contextlib.suppress(grpc.RpcError):
+            stub.SetRFContext(Request().RFContext(**self.rf_context))
+        return stub
+
     @contextlib.contextmanager
     def grpc_channel(self, original_error=False):
         """Yields a PlayWrightstub on a newly initialized channel
@@ -413,7 +420,7 @@ class Playwright(LibraryComponent):
                     f"Playwright process has been terminated with code {returncode}"
                 )
         try:
-            yield playwright_pb2_grpc.PlaywrightStub(self._channel)
+            yield self._stub
         except grpc.RpcError as error:
             _log_load_report(error)
             if original_error:

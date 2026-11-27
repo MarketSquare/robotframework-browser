@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import { AsyncResource } from 'node:async_hooks';
+
 import { sendUnaryData, ServerReadableStream, ServerUnaryCall, ServerWritableStream } from '@grpc/grpc-js';
 import { ServerSurfaceCall } from '@grpc/grpc-js/build/src/server-call';
 import { Page } from 'playwright';
 
-import { errorType, logger } from './browser_logger';
+import { errorType, logger, runInRFContext } from './browser_logger';
 import * as browserControl from './browser-control';
 import * as clock from './clock';
 import * as cookie from './cookie';
@@ -48,9 +50,6 @@ const RPCS_WITHOUT_ACTIVE_TARGET = new Set<keyof typeof pb.PlaywrightService>([
     'closeTraceGroup',
     'connectToBrowser',
     'getBrowserCatalog',
-    'getDevice',
-    'getDevices',
-    'health',
     'initializeExtension',
     'launchBrowserServer',
     'newBrowser',
@@ -60,11 +59,18 @@ const RPCS_WITHOUT_ACTIVE_TARGET = new Set<keyof typeof pb.PlaywrightService>([
     'recorderPoll',
     'removeFailedPage',
     'selectorPickerPoll',
-    'setPeerId',
     'setRfContext',
     'stopTracing',
     'switchBrowser',
     'switchContext',
+]);
+
+// The rpcs that never touch a peer's state, so they neither create one nor run in its context.
+const RPCS_WITHOUT_STATE = new Set<keyof typeof pb.PlaywrightService>([
+    'getDevice',
+    'getDevices',
+    'health',
+    'setPeerId',
 ]);
 
 @class_async_logger
@@ -73,12 +79,15 @@ export class PlaywrightServer {
         for (const rpc of Object.keys(pb.PlaywrightService) as (keyof typeof pb.PlaywrightService)[]) {
             const handler = (this as any)[rpc] as
                 ((call: ServerSurfaceCall, ...rest: unknown[]) => unknown) | undefined;
-            if (!handler || RPCS_WITHOUT_ACTIVE_TARGET.has(rpc)) continue;
-            (this as any)[rpc] = async (call: ServerSurfaceCall, ...rest: unknown[]) => {
+            if (!handler || RPCS_WITHOUT_STATE.has(rpc)) continue;
+            const targetsActiveContext = !RPCS_WITHOUT_ACTIVE_TARGET.has(rpc);
+            (this as any)[rpc] = (call: ServerSurfaceCall, ...rest: unknown[]) => {
                 const state = this.getState(call);
-                const active = state.activeBrowser?.context;
-                if (active) await state.traceGroups.target(active.tracer);
-                return handler.call(this, call, ...rest);
+                return runInRFContext(state.rfContext, async () => {
+                    const active = state.activeBrowser?.context;
+                    if (targetsActiveContext && active) await state.traceGroups.target(active.tracer);
+                    return handler.call(this, call, ...rest);
+                });
             };
         }
     }
@@ -537,40 +546,50 @@ export class PlaywrightServer {
     ): Promise<void> {
         let buffer = '';
         let lastRequest: pb.Request_FileBySelector | undefined;
-        call.on('data', (request: pb.Request_FileBySelector) => {
-            void (async () => {
-                try {
-                    logger.info(`Reading multiplepart uploadFileBySelector`);
-                    const newBuffer = request.buffer;
-                    buffer += newBuffer;
-                    lastRequest = request;
-                } catch (e) {
-                    callback(errorResponse(e), null);
-                }
-            })();
-        });
-        call.on('error', (e) => {
-            logger.error(
-                { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
-                'Stream error in uploadFileBySelector',
-            );
-            callback(errorResponse(e), null);
-        });
-        call.on('end', () => {
-            void (async () => {
-                try {
-                    if (!lastRequest) {
-                        callback(errorResponse(new Error('No data received for uploadFileBySelector')), null);
-                        return;
+        // Stream events arrive outside this call's context; bind them so their log lines carry it.
+        call.on(
+            'data',
+            AsyncResource.bind((request: pb.Request_FileBySelector) => {
+                void (async () => {
+                    try {
+                        logger.info(`Reading multiplepart uploadFileBySelector`);
+                        const newBuffer = request.buffer;
+                        buffer += newBuffer;
+                        lastRequest = request;
+                    } catch (e) {
+                        callback(errorResponse(e), null);
                     }
-                    const finalRequest = { ...lastRequest, buffer };
-                    const result = await interaction.uploadFileBySelector(finalRequest, this.getState(call));
-                    callback(null, result);
-                } catch (e) {
-                    callback(errorResponse(e), null);
-                }
-            })();
-        });
+                })();
+            }),
+        );
+        call.on(
+            'error',
+            AsyncResource.bind((e: Error) => {
+                logger.error(
+                    { event_kind: 'internal_error', status: 'failed', error_type: errorType(e) },
+                    'Stream error in uploadFileBySelector',
+                );
+                callback(errorResponse(e), null);
+            }),
+        );
+        call.on(
+            'end',
+            AsyncResource.bind(() => {
+                void (async () => {
+                    try {
+                        if (!lastRequest) {
+                            callback(errorResponse(new Error('No data received for uploadFileBySelector')), null);
+                            return;
+                        }
+                        const finalRequest = { ...lastRequest, buffer };
+                        const result = await interaction.uploadFileBySelector(finalRequest, this.getState(call));
+                        callback(null, result);
+                    } catch (e) {
+                        callback(errorResponse(e), null);
+                    }
+                })();
+            }),
+        );
     }
 
     async uploadFile(call: ServerWritableStream<pb.Request_FilePath, pb.Response_Json>): Promise<void> {
