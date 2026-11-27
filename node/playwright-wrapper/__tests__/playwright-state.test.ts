@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from '@jest/globals';
 import type { Browser } from 'playwright';
 
 jest.mock('../browser_logger', () => ({
+    ...jest.requireActual<object>('../browser_logger'),
     logger: { info: jest.fn(), error: jest.fn() },
 }));
 

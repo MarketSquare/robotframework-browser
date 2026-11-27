@@ -1,14 +1,8 @@
 /// <reference types="jest" />
 
-import { afterEach, describe, expect, it } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 
-import {
-    clearRFKeywordContext,
-    createLogger,
-    errorType,
-    getRFKeywordContext,
-    setRFKeywordContext,
-} from '../browser_logger';
+import { createLogger, errorType, RFContext, runInRFContext } from '../browser_logger';
 
 function makeStream() {
     const lines: Record<string, unknown>[] = [];
@@ -28,12 +22,9 @@ function makeCapture() {
     return { log, lines };
 }
 
-// Same as makeCapture but the logger's mixin picks up the real module-level RF context.
-function makeRFCapture() {
-    const { lines, stream } = makeStream();
-    const log = createLogger(stream);
-    log.level = 'trace';
-    return { log, lines };
+function makeRFCapture(rf: RFContext) {
+    const { log, lines } = makeCapture();
+    return { log: { info: (msg: string) => runInRFContext(rf, () => log.info(msg)) }, lines };
 }
 
 describe('browser_logger configuration', () => {
@@ -129,54 +120,55 @@ describe('browser_logger configuration', () => {
 });
 
 describe('RF keyword context', () => {
-    afterEach(() => {
-        clearRFKeywordContext();
+    let rf: RFContext;
+    beforeEach(() => {
+        rf = new RFContext();
     });
 
-    it('setRFKeywordContext sets kw_name, kw_file, kw_line', () => {
-        setRFKeywordContext({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 });
-        const ctx = getRFKeywordContext();
+    it('openKeyword sets kw_name, kw_file, kw_line', () => {
+        rf.openKeyword({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 }, 0);
+        const ctx = rf.fields;
         expect(ctx.kw_name).toBe('Click Button');
         expect(ctx.kw_file).toBe('test.robot');
         expect(ctx.kw_line).toBe(10);
     });
 
-    it('clearRFKeywordContext removes all keyword fields', () => {
-        setRFKeywordContext({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 });
-        clearRFKeywordContext();
-        const ctx = getRFKeywordContext();
+    it('closeKeywordsTo removes all keyword fields', () => {
+        rf.openKeyword({ kw_name: 'Click Button', kw_file: 'test.robot', kw_line: 10 }, 0);
+        rf.closeKeywordsTo(0);
+        const ctx = rf.fields;
         expect(ctx).not.toHaveProperty('kw_name');
         expect(ctx).not.toHaveProperty('kw_file');
         expect(ctx).not.toHaveProperty('kw_line');
     });
 
-    it('setRFKeywordContext replaces current context and saves previous to stack', () => {
-        setRFKeywordContext({ kw_name: 'First Keyword', kw_file: 'suite.robot', kw_line: 5 });
-        setRFKeywordContext({ kw_name: 'Second Keyword' });
-        const ctx = getRFKeywordContext();
+    it('openKeyword at a deeper level keeps the outer keyword to return to', () => {
+        rf.openKeyword({ kw_name: 'First Keyword', kw_file: 'suite.robot', kw_line: 5 }, 0);
+        rf.openKeyword({ kw_name: 'Second Keyword' }, 1);
+        const ctx = rf.fields;
         expect(ctx.kw_name).toBe('Second Keyword');
         expect(ctx).not.toHaveProperty('kw_file');
         expect(ctx).not.toHaveProperty('kw_line');
-        clearRFKeywordContext();
-        const restored = getRFKeywordContext();
+        rf.closeKeywordsTo(1);
+        const restored = rf.fields;
         expect(restored.kw_name).toBe('First Keyword');
         expect(restored.kw_file).toBe('suite.robot');
         expect(restored.kw_line).toBe(5);
     });
 
-    it('keyword fields appear in log lines after setRFKeywordContext', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 });
+    it('keyword fields appear in log lines after openKeyword', () => {
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 }, 0);
         log.info('inside keyword');
         expect(lines[0].kw_name).toBe('Open Browser');
         expect(lines[0].kw_file).toBe('browser.robot');
         expect(lines[0].kw_line).toBe(3);
     });
 
-    it('keyword fields are absent from log lines after clearRFKeywordContext', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 });
-        clearRFKeywordContext();
+    it('keyword fields are absent from log lines after closeKeywordsTo', () => {
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Open Browser', kw_file: 'browser.robot', kw_line: 3 }, 0);
+        rf.closeKeywordsTo(0);
         log.info('after keyword');
         expect(lines[0]).not.toHaveProperty('kw_name');
         expect(lines[0]).not.toHaveProperty('kw_file');
@@ -207,52 +199,54 @@ describe('errorType', () => {
     });
 });
 
-describe('setRFKeywordContext – field normalization', () => {
-    afterEach(() => {
-        clearRFKeywordContext();
+describe('RFContext keyword – field normalization', () => {
+    let rf: RFContext;
+    beforeEach(() => {
+        rf = new RFContext();
     });
 
     it('omits kw_file from log when normalized to undefined before setting', () => {
-        const { log, lines } = makeRFCapture();
+        const { log, lines } = makeRFCapture(rf);
         const file = '';
-        setRFKeywordContext({ kw_name: 'Click', kw_file: file || undefined });
+        rf.openKeyword({ kw_name: 'Click', kw_file: file || undefined }, 0);
         log.info('msg');
         expect(lines[0]).not.toHaveProperty('kw_file');
     });
 
     it('omits kw_line from log when normalized to undefined before setting', () => {
-        const { log, lines } = makeRFCapture();
+        const { log, lines } = makeRFCapture(rf);
         const line = 0;
-        setRFKeywordContext({ kw_name: 'Click', kw_line: line || undefined });
+        rf.openKeyword({ kw_name: 'Click', kw_line: line || undefined }, 0);
         log.info('msg');
         expect(lines[0]).not.toHaveProperty('kw_line');
     });
 
     it('emits kw_file when set to a non-empty string', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Click', kw_file: 'suite.robot' });
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Click', kw_file: 'suite.robot' }, 0);
         log.info('msg');
         expect(lines[0].kw_file).toBe('suite.robot');
     });
 
     it('emits kw_line when set to a non-zero number', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Click', kw_line: 42 });
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Click', kw_line: 42 }, 0);
         log.info('msg');
         expect(lines[0].kw_line).toBe(42);
     });
 });
 
-describe('setRFKeywordContext – nested keyword context stack', () => {
-    afterEach(() => {
-        clearRFKeywordContext();
+describe('RFContext keyword – nested keyword context stack', () => {
+    let rf: RFContext;
+    beforeEach(() => {
+        rf = new RFContext();
     });
 
     it('restores outer keyword context when inner keyword closes', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Outer Keyword', kw_file: 'outer.robot', kw_line: 10 });
-        setRFKeywordContext({ kw_name: 'Inner Keyword', kw_file: 'inner.robot', kw_line: 20 });
-        clearRFKeywordContext();
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Outer Keyword', kw_file: 'outer.robot', kw_line: 10 }, 0);
+        rf.openKeyword({ kw_name: 'Inner Keyword', kw_file: 'inner.robot', kw_line: 20 }, 1);
+        rf.closeKeywordsTo(1);
         log.info('after inner closes');
         expect(lines[0].kw_name).toBe('Outer Keyword');
         expect(lines[0].kw_file).toBe('outer.robot');
@@ -260,9 +254,9 @@ describe('setRFKeywordContext – nested keyword context stack', () => {
     });
 
     it('clears all kw fields after the outermost keyword closes', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Only Keyword', kw_file: 'test.robot', kw_line: 5 });
-        clearRFKeywordContext();
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Only Keyword', kw_file: 'test.robot', kw_line: 5 }, 0);
+        rf.closeKeywordsTo(0);
         log.info('after all keywords closed');
         expect(lines[0]).not.toHaveProperty('kw_name');
         expect(lines[0]).not.toHaveProperty('kw_file');
@@ -270,17 +264,17 @@ describe('setRFKeywordContext – nested keyword context stack', () => {
     });
 
     it('handles three levels of nesting correctly', () => {
-        const { log, lines } = makeRFCapture();
-        setRFKeywordContext({ kw_name: 'Level 1', kw_line: 1 });
-        setRFKeywordContext({ kw_name: 'Level 2', kw_line: 2 });
-        setRFKeywordContext({ kw_name: 'Level 3', kw_line: 3 });
-        clearRFKeywordContext();
+        const { log, lines } = makeRFCapture(rf);
+        rf.openKeyword({ kw_name: 'Level 1', kw_line: 1 }, 0);
+        rf.openKeyword({ kw_name: 'Level 2', kw_line: 2 }, 1);
+        rf.openKeyword({ kw_name: 'Level 3', kw_line: 3 }, 2);
+        rf.closeKeywordsTo(2);
         log.info('back at level 2');
         expect(lines[0].kw_name).toBe('Level 2');
-        clearRFKeywordContext();
+        rf.closeKeywordsTo(1);
         log.info('back at level 1');
         expect(lines[1].kw_name).toBe('Level 1');
-        clearRFKeywordContext();
+        rf.closeKeywordsTo(0);
         log.info('all closed');
         expect(lines[2]).not.toHaveProperty('kw_name');
     });

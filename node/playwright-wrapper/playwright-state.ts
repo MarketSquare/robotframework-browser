@@ -33,13 +33,7 @@ import {
 import strip from 'strip-comments';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-    clearRFKeywordContext,
-    logger,
-    setRFKeywordContext,
-    setRFSuiteContext,
-    setRFTestContext,
-} from './browser_logger';
+import { logger, RFContext } from './browser_logger';
 import { MAX_RESPONSE_CHUNK_BYTES, splitUtf8ByMaxBytes } from './chunking';
 import {
     adHocTraceFile,
@@ -434,6 +428,7 @@ export class PlaywrightState {
      * worker sharing this node process disposed every other worker's
      * highlights along with its own; see issue #5211. */
     public readonly highlightDisposableCache: HighlightDisposableCache;
+    public readonly rfContext = new RFContext();
     public readonly traceGroups = new TraceGroups(
         () => this.browserStack.flatMap((browser) => browser.contextStack.map((context) => context.tracer)),
         () => this.activeBrowser?.context?.tracer,
@@ -1183,7 +1178,10 @@ export async function openTraceGroup(
 ): Promise<Response_Empty> {
     const { name, file, line, column, depth } = request;
     await openBrowsers.traceGroups.open({ name, location: { file, line, column } }, depth);
-    setRFKeywordContext({ kw_name: name, kw_file: file || undefined, kw_line: line || undefined });
+    openBrowsers.rfContext.openKeyword(
+        { kw_name: name, kw_file: file || undefined, kw_line: line || undefined },
+        depth,
+    );
     return emptyWithLog('Opened trace group');
 }
 
@@ -1192,7 +1190,7 @@ export async function closeTraceGroup(
     openBrowsers: PlaywrightState,
 ): Promise<Response_Empty> {
     await openBrowsers.traceGroups.closeTo(request.depth);
-    clearRFKeywordContext();
+    openBrowsers.rfContext.closeKeywordsTo(request.depth);
     return emptyWithLog('Closed trace group');
 }
 
@@ -1242,9 +1240,9 @@ export async function stopTracing(
     });
 }
 
-export async function setRFContext(request: Request_RFContext): Promise<Response_Empty> {
-    setRFTestContext(request.testId, request.testName);
-    setRFSuiteContext(request.suiteId, request.suiteName);
+export async function setRFContext(request: Request_RFContext, state: PlaywrightState): Promise<Response_Empty> {
+    state.rfContext.setTest(request.testId, request.testName);
+    state.rfContext.setSuite(request.suiteId, request.suiteName);
     return emptyWithLog('RF context updated');
 }
 

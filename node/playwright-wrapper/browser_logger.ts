@@ -26,6 +26,8 @@
  * ```
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 import { pino, stdTimeFunctions } from 'pino';
 
 let _seq = 0;
@@ -40,85 +42,40 @@ export interface RFKeywordContext {
     suite_name?: string;
 }
 
-const currentRFContext: RFKeywordContext = {};
-const _kwContextStack: Array<{ kw_name?: string; kw_file?: string; kw_line?: number }> = [];
+type KeywordFields = Pick<RFKeywordContext, 'kw_name' | 'kw_file' | 'kw_line'>;
 
-export function setRFKeywordContext(ctx: RFKeywordContext): void {
-    _kwContextStack.push({
-        kw_name: currentRFContext.kw_name,
-        kw_file: currentRFContext.kw_file,
-        kw_line: currentRFContext.kw_line,
-    });
-    if (ctx.kw_name !== undefined) {
-        currentRFContext.kw_name = ctx.kw_name;
-    } else {
-        delete currentRFContext.kw_name;
+export class RFContext {
+    private suiteAndTest: Omit<RFKeywordContext, keyof KeywordFields> = {};
+    private keywords: KeywordFields[] = [];
+
+    setTest(testId: string, testName: string): void {
+        this.suiteAndTest.test_id = testId || undefined;
+        this.suiteAndTest.test_name = testName || undefined;
     }
-    if (ctx.kw_file !== undefined) {
-        currentRFContext.kw_file = ctx.kw_file;
-    } else {
-        delete currentRFContext.kw_file;
+
+    setSuite(suiteId: string, suiteName: string): void {
+        this.suiteAndTest.suite_id = suiteId || undefined;
+        this.suiteAndTest.suite_name = suiteName || undefined;
     }
-    if (ctx.kw_line !== undefined) {
-        currentRFContext.kw_line = ctx.kw_line;
-    } else {
-        delete currentRFContext.kw_line;
+
+    openKeyword(keyword: KeywordFields, depth: number): void {
+        this.closeKeywordsTo(depth);
+        this.keywords.push({ ...keyword });
+    }
+
+    closeKeywordsTo(depth: number): void {
+        this.keywords.length = Math.min(this.keywords.length, depth);
+    }
+
+    get fields(): Readonly<RFKeywordContext> {
+        return { ...this.suiteAndTest, ...this.keywords[this.keywords.length - 1] };
     }
 }
 
-export function clearRFKeywordContext(): void {
-    const prev = _kwContextStack.pop();
-    if (prev) {
-        if (prev.kw_name !== undefined) {
-            currentRFContext.kw_name = prev.kw_name;
-        } else {
-            delete currentRFContext.kw_name;
-        }
-        if (prev.kw_file !== undefined) {
-            currentRFContext.kw_file = prev.kw_file;
-        } else {
-            delete currentRFContext.kw_file;
-        }
-        if (prev.kw_line !== undefined) {
-            currentRFContext.kw_line = prev.kw_line;
-        } else {
-            delete currentRFContext.kw_line;
-        }
-    } else {
-        delete currentRFContext.kw_name;
-        delete currentRFContext.kw_file;
-        delete currentRFContext.kw_line;
-    }
-}
+const servedRFContext = new AsyncLocalStorage<RFContext>();
 
-export function setRFTestContext(testId: string, testName: string): void {
-    if (testId) {
-        currentRFContext.test_id = testId;
-    } else {
-        delete currentRFContext.test_id;
-    }
-    if (testName) {
-        currentRFContext.test_name = testName;
-    } else {
-        delete currentRFContext.test_name;
-    }
-}
-
-export function setRFSuiteContext(suiteId: string, suiteName: string): void {
-    if (suiteId) {
-        currentRFContext.suite_id = suiteId;
-    } else {
-        delete currentRFContext.suite_id;
-    }
-    if (suiteName) {
-        currentRFContext.suite_name = suiteName;
-    } else {
-        delete currentRFContext.suite_name;
-    }
-}
-
-export function getRFKeywordContext(): Readonly<RFKeywordContext> {
-    return { ...currentRFContext };
+export function runInRFContext<T>(context: RFContext, fn: () => T): T {
+    return servedRFContext.run(context, fn);
 }
 
 export function errorType(e: unknown): string {
@@ -137,7 +94,8 @@ export function createLogger(destination?: { write(msg: string): void }) {
                 },
             },
             mixin() {
-                const { kw_name, kw_file, kw_line, test_id, test_name, suite_id, suite_name } = currentRFContext;
+                const { kw_name, kw_file, kw_line, test_id, test_name, suite_id, suite_name } =
+                    servedRFContext.getStore()?.fields ?? {};
                 return {
                     seq: ++_seq,
                     ...(suite_id !== undefined && { suite_id }),
