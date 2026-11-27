@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Recorder hooks</title>
+</head>
+<body>
+  <!-- The extension of the Recorder Hooks suite records an element with
+       data-record-by-text by its text, one with data-rewrite-to by that selector,
+       and the text filled into one with data-record-text as that text. -->
+  <button id="ship" data-record-by-text onclick="this.textContent = 'Shipped'">Ship</button>
+  <button id="first" data-rewrite-to="#second" onclick="this.textContent = 'First clicked'">First</button>
+  <button id="second">Second</button>
+  <input id="greeting" data-record-text="Hello">
+
+  <iframe id="frame" src="rewrite-frame.html" title="Frame"></iframe>
+</body>
+</html>

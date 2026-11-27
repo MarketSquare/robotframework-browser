@@ -238,6 +238,45 @@ class Recorder(LibraryComponent):
         because Playwright does not report them. Other Actions without a
         Browser keyword are only reported in the toolbar.
 
+        *Changing what is recorded:* a JavaScript module loaded with the
+        ``jsextension`` import argument can export the optional hook
+        ``__rewriteAction({action, element, query, log})``. It runs *in the page*, at
+        the moment of the Action: for a click, before the page's own click handlers, so
+        it sees the element as the user clicked it, as replaying the recording will find
+        it. It is called for every Action with a selector, and for every element picked
+        with *Pick* or `Record Selector`, except when Playwright's own selector does not
+        find exactly one element in the page. The clicks of a double click are recorded
+        as one, with what the hook gave for the first.
+
+        - ``action`` is a copy of the Action Playwright reported, such as
+          ``{name: "click", selector: "...", ...}``, or ``{name: "pick", selector}`` for
+          a pick. Its ``selector`` is relative to the frame the element is in; its other
+          parts are Playwright's and may change with it.
+        - ``element`` is the element that selector finds.
+        - ``query(selector)`` returns the elements a selector finds in that frame, with
+          Playwright's own selector engines, also those registered with ``selectors.register``.
+        - ``log(message)`` writes a line to ``playwright-log.txt``.
+
+        Return the parts of the Action to change, such as ``{selector: "..."}``, or
+        ``undefined`` to keep it. The name of the Action is always Playwright's. A
+        selector, in the same frame, is recorded only when ``query`` finds exactly
+        ``element`` with it, so a hook never records a selector that replays on another
+        element; the frames the element is in stay as Playwright found them. Other parts
+        are recorded as the hook gives them.
+
+        The hook must be written with ``function`` and a name of its own, such as
+        ``exports.__rewriteAction = function mySelectors({action}) {...}``: the lines it
+        logs, and the reasons its changes are not recorded, start with that name. Any
+        other hook, such as an arrow function, a method of an object literal or an
+        ``async`` function, is left out, and that is logged. The page runs the
+        function's source: it cannot use anything outside its own body, nor ``require``.
+        The page waits for its click while the hook runs, so keep it fast. The hooks of
+        several extensions run in load order, each on the Action the one before gave.
+        When a hook fails, or gives a selector that does not find exactly the element,
+        none of its changes are recorded, and the reason is logged in
+        ``playwright-log.txt``. When the Playwright version in use does not offer what
+        the hooks need, the Actions are recorded as Playwright reports them.
+
         Needs a visible browser: fails if the active browser was opened headless, since
         nobody could use the toolbar there. A browser attached with `Connect To Browser`
         is assumed to be visible.
@@ -444,6 +483,9 @@ class Recorder(LibraryComponent):
 
         Like the recorder toolbar, the toolbar's commands are reachable by scripts of the
         page under test: use it on applications you trust, and check the selector you get.
+
+        A JavaScript extension can change the picked selector before it is shown; see
+        *Changing what is recorded* in `Record Keyword`.
 
         Example:
         | ${selector} =    `Record Selector`    Login button

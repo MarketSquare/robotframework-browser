@@ -22,6 +22,7 @@ import * as path from 'path';
 import { ElementHandle, Locator, Page } from 'playwright';
 
 import { locatorOn } from './playwright-invoke';
+import { JsExtension, rewritePickedSelector } from './recorder-rewrite-action';
 
 export interface Picked {
     // Playwright's selector, in its internal syntax; Python translates it.
@@ -39,6 +40,8 @@ export interface Pick {
     picking: boolean;
     picked?: Picked;
     highlight?: Disposable;
+    // JS extensions whose `__rewriteAction` hooks may change the picked selector.
+    extensions?: JsExtension[];
 }
 
 // What Python asks of a pick in one poll.
@@ -57,12 +60,16 @@ function cssSelectorScript(): string {
     return cssSource;
 }
 
+// How long a pick waits for the picked element, which may be gone right after the
+// pick: for the hooks' selector and for the `css` one.
+const PICKED_ELEMENT_TIMEOUT_MS = 1000;
+
 // The `css` selector of the picked element: one per frame, from the outermost
 // iframe element inward, joined by Browser's frame-piercing ` >>> `.
 export async function cssSelectorOf(locator: Locator): Promise<string> {
     const parts: string[] = [];
     // The element may be gone right after the pick; then there is no css selector.
-    let element: ElementHandle<Node> = await locator.elementHandle({ timeout: 1000 });
+    let element: ElementHandle<Node> = await locator.elementHandle({ timeout: PICKED_ELEMENT_TIMEOUT_MS });
     for (;;) {
         const frame = await element.ownerFrame();
         if (!frame) break;
@@ -117,7 +124,13 @@ export function startPick(pick: Pick): void {
         .then(async (locator) => {
             // Stopped meanwhile (Reselect, Cancel, Stop): the pick is not wanted any more.
             if (!pick.picking) return;
-            const selector = internalSelector(locator);
+            const selector = await rewritePickedSelector(
+                internalSelector(locator),
+                pick.page,
+                PICKED_ELEMENT_TIMEOUT_MS,
+                pick.extensions,
+            );
+            if (!pick.picking) return;
             if (selector.length > MAX_PICKED_LENGTH) {
                 pick.picked = { error: 'The picked selector is too long.' };
                 return;

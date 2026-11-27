@@ -219,7 +219,7 @@ describe('selectorPickerPoll', () => {
             on: jest.fn(),
         };
         watchCrash(page as any);
-        const state = { getActivePage: () => page, activeBrowser: { headless: true } } as any;
+        const state = { getActivePage: () => page, activeBrowser: { headless: true }, extensions: [] } as any;
         const poll = async (body: Record<string, unknown>) =>
             JSON.parse((await selectorPickerPoll({ body: JSON.stringify(body) }, state)).json);
         expect((await poll({ reset: true, allowHeadless: true })).pages).toBe(1);

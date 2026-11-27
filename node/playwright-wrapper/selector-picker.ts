@@ -29,6 +29,7 @@ import {
     removeToolbar,
     renderToolbar,
 } from './recorder';
+import { installRewritingScript } from './recorder-rewrite-action';
 import { emptyWithLog, jsonResponse } from './response-util';
 
 // One picker per library instance: pabot workers share this Node process.
@@ -56,7 +57,8 @@ async function startSession(state: PlaywrightState, allowHeadless: boolean): Pro
                 'Record Selector can run only after it ended.',
         );
     }
-    const session: PickerSession = { page, buffers: newBuffers(), picking: false };
+    await installRewritingScript(context, state.extensions);
+    const session: PickerSession = { page, buffers: newBuffers(), picking: false, extensions: state.extensions };
     session.buffers.active = true;
     (await commandListeners(context)).add(session.buffers);
     sessions.set(state, session);
